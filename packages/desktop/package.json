@@ -8,15 +8,15 @@
   "scripts": {
     "build:renderer": "vite build",
     "build:main": "tsc -p tsconfig.main.json",
-    "build": "npm run build:main && npm run build:renderer",
-    "dev": "npm run build:main && vite build --watch & sleep 1 && env -u ELECTRON_RUN_AS_NODE electron .",
-    "start": "npm run build && env -u ELECTRON_RUN_AS_NODE electron .",
-    "package:mac": "npm run build && electron-builder --mac",
-    "package:win": "npm run build && electron-builder --win",
+    "build": "pnpm run build:main && pnpm run build:renderer",
+    "dev": "pnpm run build:main && vite build --watch & sleep 1 && env -u ELECTRON_RUN_AS_NODE electron .",
+    "start": "pnpm run build && env -u ELECTRON_RUN_AS_NODE electron .",
+    "package:mac": "pnpm run build && electron-builder --mac",
+    "package:win": "pnpm run build && electron-builder --win",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.main.json --noEmit"
   },
   "dependencies": {
-    "@skills-bank/core": "*"
+    "@skills-bank/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

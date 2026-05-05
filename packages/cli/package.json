@@ -11,7 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@skills-bank/core": "*",
+    "@skills-bank/core": "workspace:*",
     "commander": "^12.1.0",
     "picocolors": "^1.1.1"
   },

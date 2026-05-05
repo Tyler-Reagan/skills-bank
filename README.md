@@ -18,8 +18,8 @@ Installing a skill creates a symlink at `~/.claude/skills/<name>` pointing into 
 ## CLI
 
 ```bash
-npm install
-npm run build
+pnpm install
+pnpm run build
 node packages/cli/dist/index.js list
 node packages/cli/dist/index.js install <name>
 node packages/cli/dist/index.js installed
@@ -30,7 +30,7 @@ node packages/cli/dist/index.js import        # migrate pre-existing ~/.claude/s
 ## Desktop
 
 ```bash
-npm run desktop:dev
+pnpm run desktop:dev
 ```
 
 ## Authoring skills
@@ -38,6 +38,6 @@ npm run desktop:dev
 Drop a folder under `skills/<category>/<name>/` containing `meta.json` (matching `docs/meta-schema.json`) and `SKILL.md`. Then:
 
 ```bash
-npm run validate
-npm run build:index
+pnpm run validate
+pnpm run build:index
 ```

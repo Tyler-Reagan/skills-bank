@@ -98,7 +98,7 @@ ipcMain.handle(
 ipcMain.handle(IPC.rebuildIndex, async () => {
   return await new Promise<{ ok: boolean; message: string; entries: number }>(
     (resolve) => {
-      const child = spawn("npm", ["run", "build:index"], {
+      const child = spawn("pnpm", ["run", "build:index"], {
         cwd: registryRoot,
         env: { ...process.env, FORCE_COLOR: "0" },
       });

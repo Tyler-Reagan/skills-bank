@@ -5,21 +5,21 @@
   "type": "module",
   "description": "Central registry of Claude Code skills with TypeScript CLI and Electron desktop manager.",
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "pnpm": ">=9"
   },
-  "workspaces": [
-    "packages/core",
-    "packages/cli",
-    "packages/desktop"
-  ],
+  "packageManager": "pnpm@10.25.0",
   "scripts": {
-    "build": "npm run build -ws --if-present",
-    "typecheck": "npm run typecheck -ws --if-present",
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "pnpm -r --if-present run typecheck",
     "validate": "tsx scripts/validate-all.ts",
     "build:index": "tsx scripts/build-index.ts",
     "cli": "node packages/cli/dist/index.js",
-    "desktop:dev": "npm run dev -w @skills-bank/desktop",
-    "desktop:build": "npm run build -w @skills-bank/desktop"
+    "desktop:dev": "pnpm --filter @skills-bank/desktop dev",
+    "desktop:build": "pnpm --filter @skills-bank/desktop build"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["electron", "esbuild"]
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
