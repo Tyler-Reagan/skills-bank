@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   applyMigration,
+  finalizeSkillsDir,
   installSkill,
   listInstalled,
   loadIndex,
@@ -132,6 +133,10 @@ ipcMain.handle(IPC.rebuildIndex, async () => {
       });
     },
   );
+});
+
+ipcMain.handle(IPC.finalize, () => {
+  return finalizeSkillsDir({ registryRoot, confirmDestructive: true });
 });
 
 void app.whenReady().then(() => {

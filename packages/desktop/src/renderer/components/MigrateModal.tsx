@@ -16,6 +16,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   const [report, setReport] = useState<ScanReport | null>(null);
   const [choices, setChoices] = useState<ChoiceMap>({});
   const [busy, setBusy] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [skillsDirHint, setSkillsDirHint] = useState<string | null>(null);
 
@@ -93,6 +94,16 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
           <p style={{ color: "#aaa", fontSize: 13 }}>
             Scanned <code>{report.claudeSkillsDir}</code> and found no entries.
           </p>
+          {report.topLevelSymlink && (
+            <FinalizeCallout
+              report={report}
+              finalizing={finalizing}
+              setFinalizing={setFinalizing}
+              onFlash={onFlash}
+              onAfter={onClose}
+              hasUnmigrated={false}
+            />
+          )}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button className="primary" onClick={() => void onClose()}>
               Done
@@ -116,6 +127,10 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
     await onClose();
   };
 
+  const stillUnmigrated = report.entries.some(
+    (e) => e.kind === "real-directory",
+  );
+
   return (
     <div style={overlay}>
       <div style={modal}>
@@ -125,6 +140,16 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
           <br />
           Skills dir: {report.claudeSkillsDir}
         </p>
+        {report.topLevelSymlink && (
+          <FinalizeCallout
+            report={report}
+            finalizing={finalizing}
+            setFinalizing={setFinalizing}
+            onFlash={onFlash}
+            onAfter={onClose}
+            hasUnmigrated={stillUnmigrated}
+          />
+        )}
         <div style={{ maxHeight: 400, overflow: "auto", marginBottom: 16 }}>
           {report.entries.map((e) => (
             <div className="row" key={e.name}>
@@ -217,6 +242,94 @@ function actionFor(type: MigrationAction["type"], e: InstalledSkill): MigrationA
       return { type: "skip", name: e.name };
   }
 }
+
+function FinalizeCallout(props: {
+  report: ScanReport;
+  finalizing: boolean;
+  setFinalizing: (v: boolean) => void;
+  onFlash: (msg: string) => void;
+  onAfter: () => void | Promise<void>;
+  hasUnmigrated: boolean;
+}): React.ReactElement {
+  const { report, finalizing, setFinalizing, onFlash, onAfter, hasUnmigrated } = props;
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
+
+  const target = report.topLevelSymlink?.resolvedTarget;
+
+  const finalize = async () => {
+    setErrorDetail(null);
+    setFinalizing(true);
+    try {
+      const r = await window.skillsBank.finalize();
+      if (r.ok) {
+        onFlash(r.message);
+        await onAfter();
+      } else {
+        setErrorDetail(
+          r.blockingEntries
+            ? `${r.message}\n\n${r.blockingEntries.map((n) => `  • ${n}`).join("\n")}`
+            : r.message,
+        );
+      }
+    } finally {
+      setFinalizing(false);
+    }
+  };
+
+  return (
+    <div style={callout}>
+      <div style={{ flex: 1 }}>
+        <strong style={{ color: "#dcc77f" }}>⚠ Top-level indirection</strong>
+        <p style={{ margin: "4px 0", fontSize: 12, color: "#ccc" }}>
+          <code>{report.claudeSkillsDir}</code> is itself a symlink → <code>{target}</code>.
+          Adopting skills here leaves a double-hop. Once everything is migrated,
+          finalize to replace the top-level symlink with a real directory.
+        </p>
+        {hasUnmigrated && (
+          <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc7f7f" }}>
+            Apply migrations first — finalize will refuse while real-directory
+            entries remain.
+          </p>
+        )}
+        {errorDetail && (
+          <pre
+            style={{
+              margin: "8px 0 0",
+              fontSize: 11,
+              color: "#dc7f7f",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {errorDetail}
+          </pre>
+        )}
+      </div>
+      <button
+        disabled={finalizing || hasUnmigrated}
+        onClick={() => void finalize()}
+      >
+        {finalizing ? (
+          <>
+            <span className="spinner inline" /> Finalizing…
+          </>
+        ) : (
+          "Finalize"
+        )}
+      </button>
+    </div>
+  );
+}
+
+const callout: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 12,
+  background: "#2d2615",
+  border: "1px solid #4a3a1e",
+  borderRadius: 6,
+  padding: 12,
+  marginBottom: 16,
+};
 
 const overlay: React.CSSProperties = {
   position: "fixed",

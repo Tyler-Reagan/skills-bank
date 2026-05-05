@@ -1,4 +1,5 @@
 import type {
+  FinalizeResult,
   InstalledSkill,
   MigrationAction,
   MigrationResult,
@@ -15,6 +16,7 @@ export const IPC = {
   migrate: "skills:migrate",
   getRoot: "skills:getRoot",
   rebuildIndex: "skills:rebuildIndex",
+  finalize: "skills:finalize",
 } as const;
 
 interface SkillsBankAPI {
@@ -31,6 +33,7 @@ interface SkillsBankAPI {
   ): Promise<MigrationResult[]>;
   getRoot(): Promise<string>;
   rebuildIndex(): Promise<{ ok: boolean; message: string; entries: number }>;
+  finalize(): Promise<FinalizeResult>;
 }
 
 declare global {

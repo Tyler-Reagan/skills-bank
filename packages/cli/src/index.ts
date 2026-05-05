@@ -5,6 +5,7 @@ import { installedCommand } from "./commands/installed.js";
 import { installCommand } from "./commands/install.js";
 import { uninstallCommand } from "./commands/uninstall.js";
 import { importCommand } from "./commands/import.js";
+import { finalizeCommand } from "./commands/finalize.js";
 
 const program = new Command();
 
@@ -49,6 +50,15 @@ program
   .option("--yes", "Skip confirmation prompts")
   .option("--root <path>", "Path to skills-bank registry root")
   .action(importCommand);
+
+program
+  .command("finalize")
+  .description(
+    "If ~/.claude/skills is itself a symlink (e.g. → ~/.agents/skills), replace it with a real directory containing the same per-skill symlinks (eliminates double-hop indirection).",
+  )
+  .option("--yes", "Skip confirmation prompt")
+  .option("--root <path>", "Path to skills-bank registry root")
+  .action(finalizeCommand);
 
 program.parseAsync(process.argv).catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : String(err));

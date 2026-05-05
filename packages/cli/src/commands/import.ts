@@ -72,7 +72,7 @@ export async function importCommand(opts: ImportOptions): Promise<void> {
     console.log();
     console.log(
       pc.dim(
-        "Adopted skills added; run `npm run build:index` to refresh index.json.",
+        "Adopted skills added; run `pnpm run build:index` to refresh index.json.",
       ),
     );
   }

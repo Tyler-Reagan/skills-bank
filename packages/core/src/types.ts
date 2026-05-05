@@ -37,10 +37,32 @@ export interface InstalledSkill {
   registryEntry?: RegistryEntry;
 }
 
+export interface TopLevelSymlinkInfo {
+  /** Absolute path the ~/.claude/skills symlink resolves to. */
+  resolvedTarget: string;
+  /** Whether the resolved target exists and is a directory. */
+  exists: boolean;
+}
+
 export interface ScanReport {
   claudeSkillsDir: string;
   registryRoot: string;
   entries: InstalledSkill[];
+  /**
+   * Set when the ~/.claude/skills path is itself a symlink to another
+   * directory (e.g. ~/.agents/skills). Surfaces the "double-hop" case so
+   * the UI can offer to finalize the directory structure.
+   */
+  topLevelSymlink: TopLevelSymlinkInfo | null;
+}
+
+export interface FinalizeResult {
+  ok: boolean;
+  message: string;
+  /** When ok=true, the path the original symlink was renamed to. */
+  backupPath?: string;
+  /** When ok=false because of unmigrated entries, list them. */
+  blockingEntries?: string[];
 }
 
 export type MigrationAction =
