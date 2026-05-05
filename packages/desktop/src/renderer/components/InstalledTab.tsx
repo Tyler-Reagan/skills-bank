@@ -20,8 +20,7 @@ const kindBlurb: Record<string, string> = {
     "Symlink targets a folder outside this registry. Migrate to adopt it into skills/, or register it as external.",
   "real-directory":
     "Plain directory not yet managed by skills-bank. Migrate to move it into skills/ and replace it with a symlink.",
-  "broken-symlink":
-    "Symlink target is missing. Migrate to remove it.",
+  "broken-symlink": "Symlink target is missing. Migrate to remove it.",
 };
 
 export function InstalledTab({
@@ -74,12 +73,12 @@ export function InstalledTab({
                 </span>
               </h2>
               <p style={{ margin: "4px 0 0", color: "#aaa", fontSize: 12 }}>
-                These skills exist under <code>~/.claude/skills</code> but aren't
-                managed by skills-bank.
+                These skills exist under <code>~/.claude/skills</code> but
+                aren't managed by skills-bank.
               </p>
             </div>
             <button className="primary" onClick={onScanForExisting}>
-              Migrate all…
+              Migrate All
             </button>
           </header>
           {unintegrated.map((s) => (
@@ -96,7 +95,7 @@ export function InstalledTab({
                   </p>
                 )}
               </div>
-              <button onClick={onScanForExisting}>Migrate…</button>
+              <button onClick={onScanForExisting}>Migrate</button>
             </div>
           ))}
         </section>
