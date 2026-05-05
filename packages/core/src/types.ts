@@ -12,6 +12,13 @@ export interface RegistryEntry extends SkillMeta {
   path: string;
   category: string;
   lastCommit?: { sha: string; date: string; message: string };
+  /**
+   * Non-fatal issues found while building this entry — for example a
+   * meta.json that fails schema validation or a folder that only has
+   * SKILL.md. Surface in the UI so users can fix metadata without
+   * having the entry silently disappear.
+   */
+  warnings?: string[];
 }
 
 export interface RegistryIndex {

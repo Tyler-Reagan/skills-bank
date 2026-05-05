@@ -82,6 +82,7 @@ export function App(): React.ReactElement {
               flash(msg);
               await refresh();
             }}
+            onSwitchToInstalled={() => setTab("installed")}
           />
         )}
         {tab === "installed" && (
