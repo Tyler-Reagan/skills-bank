@@ -4,3 +4,4 @@ export * from "./registry.js";
 export * from "./install.js";
 export * from "./installed.js";
 export * from "./import.js";
+export * from "./export.js";

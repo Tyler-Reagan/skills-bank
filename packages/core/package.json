@@ -16,7 +16,11 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "archiver": "^7.0.1"
+  },
   "devDependencies": {
+    "@types/archiver": "^6.0.3",
     "typescript": "^5.7.2"
   }
 }

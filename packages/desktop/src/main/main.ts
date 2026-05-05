@@ -1,10 +1,12 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   applyMigration,
+  exportSkill,
   finalizeSkillsDir,
+  getExportInfo,
   installSkill,
   listInstalled,
   loadIndex,
@@ -137,6 +139,36 @@ ipcMain.handle(IPC.rebuildIndex, async () => {
 
 ipcMain.handle(IPC.finalize, () => {
   return finalizeSkillsDir({ registryRoot, confirmDestructive: true });
+});
+
+ipcMain.handle(IPC.exportInfo, (_e, name: string) => {
+  return getExportInfo(registryRoot, name);
+});
+
+ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
+  try {
+    const info = getExportInfo(registryRoot, name);
+    const win = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showSaveDialog(win ?? undefined!, {
+      title: `Export ${name}`,
+      defaultPath: info.suggestedFilename,
+      filters:
+        info.kind === "standalone"
+          ? [{ name: "Markdown", extensions: ["md"] }]
+          : [{ name: "Zip Archive", extensions: ["zip"] }],
+    });
+    if (result.canceled || !result.filePath) {
+      return { ok: false, message: "export cancelled" };
+    }
+    const r = await exportSkill(registryRoot, name, result.filePath);
+    return {
+      ok: true,
+      message: `exported ${name} (${r.kind}) → ${r.destPath}`,
+      result: r,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
 });
 
 void app.whenReady().then(() => {

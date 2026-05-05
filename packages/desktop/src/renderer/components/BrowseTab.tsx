@@ -21,7 +21,7 @@ export function BrowseTab({ registry, installed, onChanged }: Props): React.Reac
 
   const runRow = async (
     name: string,
-    verb: "Installing" | "Uninstalling",
+    verb: "Installing" | "Uninstalling" | "Exporting",
     fn: () => Promise<{ ok: boolean; message: string }>,
   ) => {
     setRowBusy({ name, verb });
@@ -65,43 +65,62 @@ export function BrowseTab({ registry, installed, onChanged }: Props): React.Reac
               <h3>{e.name} <span className="tag">{e.category}</span></h3>
               <p>{e.description}</p>
             </div>
-            {isInstalled ? (
+            <div style={{ display: "flex", gap: 6 }}>
               <button
-                className="danger"
                 disabled={anyBusy}
+                title="Export this skill (.md if standalone, .zip if bundled)"
                 onClick={() =>
-                  void runRow(e.name, "Uninstalling", () =>
-                    window.skillsBank.uninstall(e.name),
+                  void runRow(e.name, "Exporting", () =>
+                    window.skillsBank.exportSkill(e.name),
                   )
                 }
               >
-                {thisBusy ? (
+                {thisBusy && rowBusy?.verb === "Exporting" ? (
                   <>
-                    <span className="spinner inline" /> {rowBusy?.verb}…
+                    <span className="spinner inline" /> Exporting…
                   </>
                 ) : (
-                  "Uninstall"
+                  "Export"
                 )}
               </button>
-            ) : (
-              <button
-                className="primary"
-                disabled={anyBusy}
-                onClick={() =>
-                  void runRow(e.name, "Installing", () =>
-                    window.skillsBank.install(e.name, false),
-                  )
-                }
-              >
-                {thisBusy ? (
-                  <>
-                    <span className="spinner inline" /> {rowBusy?.verb}…
-                  </>
-                ) : (
-                  "Install"
-                )}
-              </button>
-            )}
+              {isInstalled ? (
+                <button
+                  className="danger"
+                  disabled={anyBusy}
+                  onClick={() =>
+                    void runRow(e.name, "Uninstalling", () =>
+                      window.skillsBank.uninstall(e.name),
+                    )
+                  }
+                >
+                  {thisBusy && rowBusy?.verb === "Uninstalling" ? (
+                    <>
+                      <span className="spinner inline" /> Uninstalling…
+                    </>
+                  ) : (
+                    "Uninstall"
+                  )}
+                </button>
+              ) : (
+                <button
+                  className="primary"
+                  disabled={anyBusy}
+                  onClick={() =>
+                    void runRow(e.name, "Installing", () =>
+                      window.skillsBank.install(e.name, false),
+                    )
+                  }
+                >
+                  {thisBusy && rowBusy?.verb === "Installing" ? (
+                    <>
+                      <span className="spinner inline" /> Installing…
+                    </>
+                  ) : (
+                    "Install"
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         );
       })}

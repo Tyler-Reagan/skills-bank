@@ -1,4 +1,6 @@
 import type {
+  ExportInfo,
+  ExportResult,
   FinalizeResult,
   InstalledSkill,
   MigrationAction,
@@ -17,6 +19,8 @@ export const IPC = {
   getRoot: "skills:getRoot",
   rebuildIndex: "skills:rebuildIndex",
   finalize: "skills:finalize",
+  exportInfo: "skills:exportInfo",
+  exportSkill: "skills:export",
 } as const;
 
 interface SkillsBankAPI {
@@ -34,6 +38,10 @@ interface SkillsBankAPI {
   getRoot(): Promise<string>;
   rebuildIndex(): Promise<{ ok: boolean; message: string; entries: number }>;
   finalize(): Promise<FinalizeResult>;
+  exportInfo(name: string): Promise<ExportInfo>;
+  exportSkill(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; result?: ExportResult }>;
 }
 
 declare global {

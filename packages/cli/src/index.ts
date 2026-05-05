@@ -6,6 +6,7 @@ import { installCommand } from "./commands/install.js";
 import { uninstallCommand } from "./commands/uninstall.js";
 import { importCommand } from "./commands/import.js";
 import { finalizeCommand } from "./commands/finalize.js";
+import { exportCommand } from "./commands/export.js";
 
 const program = new Command();
 
@@ -50,6 +51,15 @@ program
   .option("--yes", "Skip confirmation prompts")
   .option("--root <path>", "Path to skills-bank registry root")
   .action(importCommand);
+
+program
+  .command("export <name>")
+  .description(
+    "Export a registry skill. Standalone skills (just SKILL.md) export as raw .md; bundled skills (with examples/, evals/, references/, etc.) export as a .zip.",
+  )
+  .option("-o, --out <path>", "Output path (default: <name>.{md,zip} in cwd)")
+  .option("--root <path>", "Path to skills-bank registry root")
+  .action(exportCommand);
 
 program
   .command("finalize")

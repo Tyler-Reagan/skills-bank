@@ -26,6 +26,7 @@ node packages/cli/dist/index.js installed
 node packages/cli/dist/index.js uninstall <name>
 node packages/cli/dist/index.js import        # migrate pre-existing ~/.claude/skills entries
 node packages/cli/dist/index.js finalize      # if ~/.claude/skills is itself a symlink, replace with a real dir
+node packages/cli/dist/index.js export <name> # export a registry skill: raw SKILL.md if standalone, .zip if bundled
 ```
 
 > `finalize` is for the case where `~/.claude/skills` was previously redirected to another folder (e.g. `~/.agents/skills`) by another tool. After all entries are adopted, finalize swaps the top-level symlink for a real directory containing the same per-skill symlinks — eliminating the double-hop indirection. The original symlink is preserved as `~/.claude/skills.bak.<timestamp>`.

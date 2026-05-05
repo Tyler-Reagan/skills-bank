@@ -29,12 +29,22 @@ export function InstalledTab({
   onBrowse,
   onScanForExisting,
 }: Props): React.ReactElement {
-  const [rowBusy, setRowBusy] = React.useState<string | null>(null);
+  const [rowBusy, setRowBusy] = React.useState<{ name: string; verb: "Uninstalling" | "Exporting" } | null>(null);
 
   const uninstall = async (name: string) => {
-    setRowBusy(name);
+    setRowBusy({ name, verb: "Uninstalling" });
     try {
       const r = await window.skillsBank.uninstall(name);
+      await onChanged(r.message);
+    } finally {
+      setRowBusy(null);
+    }
+  };
+
+  const exportSkill = async (name: string) => {
+    setRowBusy({ name, verb: "Exporting" });
+    try {
+      const r = await window.skillsBank.exportSkill(name);
       await onChanged(r.message);
     } finally {
       setRowBusy(null);
@@ -120,19 +130,34 @@ export function InstalledTab({
                 </h3>
                 <p>{s.target ?? s.linkPath}</p>
               </div>
-              <button
-                className="danger"
-                disabled={rowBusy !== null}
-                onClick={() => void uninstall(s.name)}
-              >
-                {rowBusy === s.name ? (
-                  <>
-                    <span className="spinner inline" /> Uninstalling…
-                  </>
-                ) : (
-                  "Uninstall"
-                )}
-              </button>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  disabled={rowBusy !== null}
+                  title="Export this skill (.md if standalone, .zip if bundled)"
+                  onClick={() => void exportSkill(s.name)}
+                >
+                  {rowBusy?.name === s.name && rowBusy.verb === "Exporting" ? (
+                    <>
+                      <span className="spinner inline" /> Exporting…
+                    </>
+                  ) : (
+                    "Export"
+                  )}
+                </button>
+                <button
+                  className="danger"
+                  disabled={rowBusy !== null}
+                  onClick={() => void uninstall(s.name)}
+                >
+                  {rowBusy?.name === s.name && rowBusy.verb === "Uninstalling" ? (
+                    <>
+                      <span className="spinner inline" /> Uninstalling…
+                    </>
+                  ) : (
+                    "Uninstall"
+                  )}
+                </button>
+              </div>
             </div>
           ))}
         </section>
