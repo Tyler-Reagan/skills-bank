@@ -6,7 +6,7 @@ import type {
   ScanReport,
 } from "@skills-bank/core";
 
-const IPC = {
+export const IPC = {
   listRegistry: "skills:listRegistry",
   listInstalled: "skills:listInstalled",
   install: "skills:install",
