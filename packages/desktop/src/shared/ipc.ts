@@ -14,6 +14,7 @@ export const IPC = {
   scan: "skills:scan",
   migrate: "skills:migrate",
   getRoot: "skills:getRoot",
+  rebuildIndex: "skills:rebuildIndex",
 } as const;
 
 export interface SkillsBankAPI {
@@ -26,6 +27,7 @@ export interface SkillsBankAPI {
     items: Array<{ name: string; action: MigrationAction }>,
   ): Promise<MigrationResult[]>;
   getRoot(): Promise<string>;
+  rebuildIndex(): Promise<{ ok: boolean; message: string; entries: number }>;
 }
 
 declare global {

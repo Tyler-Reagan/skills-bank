@@ -4,6 +4,8 @@ import type { InstalledSkill } from "@skills-bank/core";
 interface Props {
   installed: InstalledSkill[];
   onChanged: (message: string) => void | Promise<void>;
+  onBrowse: () => void;
+  onScanForExisting: () => void;
 }
 
 const tagClass: Record<string, string> = {
@@ -13,9 +15,26 @@ const tagClass: Record<string, string> = {
   "broken-symlink": "tag broken",
 };
 
-export function InstalledTab({ installed, onChanged }: Props): React.ReactElement {
+export function InstalledTab({
+  installed,
+  onChanged,
+  onBrowse,
+  onScanForExisting,
+}: Props): React.ReactElement {
   if (installed.length === 0) {
-    return <p style={{ color: "#888" }}>Nothing installed under ~/.claude/skills.</p>;
+    return (
+      <div style={{ color: "#aaa", textAlign: "center", padding: "48px 16px" }}>
+        <p style={{ marginBottom: 16 }}>
+          Nothing installed under <code>~/.claude/skills</code>.
+        </p>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+          <button className="primary" onClick={onBrowse}>
+            Browse registry
+          </button>
+          <button onClick={onScanForExisting}>Scan for existing skills</button>
+        </div>
+      </div>
+    );
   }
   return (
     <div>

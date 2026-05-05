@@ -10,6 +10,7 @@ const api = {
   scan: () => ipcRenderer.invoke(IPC.scan),
   migrate: (items: unknown) => ipcRenderer.invoke(IPC.migrate, items),
   getRoot: () => ipcRenderer.invoke(IPC.getRoot),
+  rebuildIndex: () => ipcRenderer.invoke(IPC.rebuildIndex),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

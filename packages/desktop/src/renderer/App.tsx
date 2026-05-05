@@ -71,6 +71,8 @@ export function App(): React.ReactElement {
               flash(msg);
               await refresh();
             }}
+            onBrowse={() => setTab("browse")}
+            onScanForExisting={() => setShowMigrate(true)}
           />
         )}
       </div>

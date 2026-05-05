@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   applyMigration,
@@ -93,6 +94,41 @@ ipcMain.handle(
     });
   },
 );
+
+ipcMain.handle(IPC.rebuildIndex, async () => {
+  return await new Promise<{ ok: boolean; message: string; entries: number }>(
+    (resolve) => {
+      const child = spawn("npm", ["run", "build:index"], {
+        cwd: registryRoot,
+        env: { ...process.env, FORCE_COLOR: "0" },
+      });
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (d: Buffer) => (stdout += d.toString()));
+      child.stderr.on("data", (d: Buffer) => (stderr += d.toString()));
+      child.on("error", (err) =>
+        resolve({ ok: false, message: err.message, entries: 0 }),
+      );
+      child.on("close", (code) => {
+        const match = stdout.match(/with (\d+) entries/);
+        const entries = match && match[1] ? Number(match[1]) : 0;
+        if (code === 0) {
+          resolve({
+            ok: true,
+            message: `index rebuilt (${entries} entries)`,
+            entries,
+          });
+        } else {
+          resolve({
+            ok: false,
+            message: stderr.trim() || `build:index exited ${code}`,
+            entries: 0,
+          });
+        }
+      });
+    },
+  );
+});
 
 void app.whenReady().then(() => {
   createWindow();

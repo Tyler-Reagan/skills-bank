@@ -9,9 +9,27 @@ interface Props {
 
 export function BrowseTab({ registry, installed, onChanged }: Props): React.ReactElement {
   const installedSet = new Set(installed.filter((i) => i.kind === "ours").map((i) => i.name));
+  const [busy, setBusy] = React.useState(false);
+
+  const rebuild = async () => {
+    setBusy(true);
+    const r = await window.skillsBank.rebuildIndex();
+    setBusy(false);
+    await onChanged(r.message);
+  };
 
   if (registry.length === 0) {
-    return <p style={{ color: "#888" }}>No skills in registry. Run <code>npm run build:index</code>.</p>;
+    return (
+      <div style={{ color: "#aaa", textAlign: "center", padding: "48px 16px" }}>
+        <p style={{ marginBottom: 16 }}>
+          The registry index is empty. If you've added skills under <code>skills/</code>,
+          rebuild the index to surface them here.
+        </p>
+        <button className="primary" disabled={busy} onClick={() => void rebuild()}>
+          {busy ? "Rebuilding…" : "Rebuild index"}
+        </button>
+      </div>
+    );
   }
 
   return (
