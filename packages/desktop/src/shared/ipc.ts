@@ -21,6 +21,8 @@ export const IPC = {
   finalize: "skills:finalize",
   exportInfo: "skills:exportInfo",
   exportSkill: "skills:export",
+  readSkillMd: "skills:readSkillMd",
+  openInFinder: "skills:openInFinder",
 } as const;
 
 interface SkillsBankAPI {
@@ -42,6 +44,8 @@ interface SkillsBankAPI {
   exportSkill(
     name: string,
   ): Promise<{ ok: boolean; message: string; result?: ExportResult }>;
+  readSkillMd(name: string): Promise<string | null>;
+  openInFinder(absolutePath: string): Promise<void>;
 }
 
 declare global {

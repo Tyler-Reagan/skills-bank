@@ -14,6 +14,9 @@ const api = {
   finalize: () => ipcRenderer.invoke(IPC.finalize),
   exportInfo: (name: string) => ipcRenderer.invoke(IPC.exportInfo, name),
   exportSkill: (name: string) => ipcRenderer.invoke(IPC.exportSkill, name),
+  readSkillMd: (name: string) => ipcRenderer.invoke(IPC.readSkillMd, name),
+  openInFinder: (absolutePath: string) =>
+    ipcRenderer.invoke(IPC.openInFinder, absolutePath),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

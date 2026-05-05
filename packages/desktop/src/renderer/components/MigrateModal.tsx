@@ -58,7 +58,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
       <div style={overlay}>
         <div style={modal}>
           <h2 style={{ marginTop: 0 }}>Scan failed</h2>
-          <p style={{ color: "#dc7f7f", fontFamily: "monospace", fontSize: 13 }}>
+          <p style={{ color: "var(--danger)", fontFamily: "monospace", fontSize: 13 }}>
             {scanError}
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -74,12 +74,12 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
       <div style={overlay}>
         <div style={modal}>
           <h2 style={{ marginTop: 0 }}>Scanning for existing skills…</h2>
-          <p style={{ color: "#aaa", fontSize: 13 }}>
+          <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Inspecting <code>~/.claude/skills/</code> and classifying each entry as
             already-integrated, foreign symlink, real directory, or broken link.
           </p>
           {skillsDirHint && (
-            <p style={{ color: "#888", fontSize: 12, fontFamily: "monospace" }}>
+            <p style={{ color: "var(--text-3)", fontSize: 12, fontFamily: "monospace" }}>
               registry: {skillsDirHint}
             </p>
           )}
@@ -99,7 +99,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
       <div style={overlay}>
         <div style={modal}>
           <h2 style={{ marginTop: 0 }}>Nothing to migrate</h2>
-          <p style={{ color: "#aaa", fontSize: 13 }}>
+          <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Scanned <code>{report.claudeSkillsDir}</code> and found no entries.
           </p>
           {report.topLevelSymlink && (
@@ -157,7 +157,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
       <div style={overlay}>
         <div style={modal}>
           <h2 style={{ marginTop: 0 }}>Migrating skills…</h2>
-          <p style={{ color: "#aaa", fontSize: 13 }}>
+          <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Applying {phase.total} action{phase.total === 1 ? "" : "s"}. Files
             are being moved/copied — this may take a moment for large skill
             bundles.
@@ -184,15 +184,15 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
                   failed.length === 1 ? "" : "s"
                 }`}
           </h2>
-          <p style={{ color: "#aaa", fontSize: 13 }}>
+          <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             {succeeded.length} of {phase.results.length} succeeded.
           </p>
           {phase.rebuilding ? (
-            <p style={{ color: "#aaa", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+            <p style={{ color: "var(--text-2)", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
               <span className="spinner inline" /> Rebuilding registry index…
             </p>
           ) : phase.rebuildMessage ? (
-            <p style={{ color: "#7fdc9a", fontSize: 12 }}>
+            <p style={{ color: "var(--success)", fontSize: 12 }}>
               ✓ {phase.rebuildMessage}
             </p>
           ) : null}
@@ -203,13 +203,13 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
                 key={`${r.action.type}-${("name" in r.action && r.action.name) || i}`}
                 style={resultRow}
               >
-                <span style={{ width: 18, color: r.ok ? "#7fdc9a" : "#dc7f7f" }}>
+                <span style={{ width: 18, color: r.ok ? "var(--success)" : "var(--danger)" }}>
                   {r.ok ? "✓" : "✗"}
                 </span>
                 <span style={{ flex: 1, fontSize: 13 }}>
-                  <code style={{ color: "#ccc" }}>{describeName(r.action)}</code>
+                  <code style={{ color: "var(--text)" }}>{describeName(r.action)}</code>
                   {" — "}
-                  <span style={{ color: r.ok ? "#aaa" : "#dc7f7f" }}>
+                  <span style={{ color: r.ok ? "#aaa" : "var(--danger)" }}>
                     {r.message}
                   </span>
                 </span>
@@ -239,7 +239,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
     <div style={overlay}>
       <div style={modal}>
         <h2 style={{ marginTop: 0 }}>Migrate existing skills</h2>
-        <p style={{ color: "#aaa", fontSize: 13 }}>
+        <p style={{ color: "var(--text-2)", fontSize: 13 }}>
           Registry: {report.registryRoot}
           <br />
           Skills dir: {report.claudeSkillsDir}
@@ -396,14 +396,14 @@ function FinalizeCallout(props: {
   return (
     <div style={callout}>
       <div style={{ flex: 1 }}>
-        <strong style={{ color: "#dcc77f" }}>⚠ Top-level indirection</strong>
-        <p style={{ margin: "4px 0", fontSize: 12, color: "#ccc" }}>
+        <strong style={{ color: "var(--warn)" }}>⚠ Top-level indirection</strong>
+        <p style={{ margin: "4px 0", fontSize: 12, color: "var(--text)" }}>
           <code>{report.claudeSkillsDir}</code> is itself a symlink → <code>{target}</code>.
           Adopting skills here leaves a double-hop. Once everything is migrated,
           finalize to replace the top-level symlink with a real directory.
         </p>
         {hasUnmigrated && (
-          <p style={{ margin: "4px 0 0", fontSize: 12, color: "#dc7f7f" }}>
+          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--danger)" }}>
             Apply migrations first — finalize will refuse while real-directory
             entries remain.
           </p>
@@ -413,7 +413,7 @@ function FinalizeCallout(props: {
             style={{
               margin: "8px 0 0",
               fontSize: 11,
-              color: "#dc7f7f",
+              color: "var(--danger)",
               whiteSpace: "pre-wrap",
             }}
           >
@@ -441,8 +441,8 @@ const callout: React.CSSProperties = {
   display: "flex",
   alignItems: "flex-start",
   gap: 12,
-  background: "#2d2615",
-  border: "1px solid #4a3a1e",
+  background: "var(--warn-dim)",
+  border: "1px solid var(--warn)",
   borderRadius: 6,
   padding: 12,
   marginBottom: 16,
@@ -459,8 +459,8 @@ const overlay: React.CSSProperties = {
 };
 
 const modal: React.CSSProperties = {
-  background: "#1e1e22",
-  border: "1px solid #444",
+  background: "var(--surface)",
+  border: "1px solid var(--border-hi)",
   borderRadius: 8,
   padding: 24,
   width: 720,

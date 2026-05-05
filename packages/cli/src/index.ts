@@ -7,6 +7,7 @@ import { uninstallCommand } from "./commands/uninstall.js";
 import { importCommand } from "./commands/import.js";
 import { finalizeCommand } from "./commands/finalize.js";
 import { exportCommand } from "./commands/export.js";
+import { syncInstalledCommand } from "./commands/sync-installed.js";
 
 const program = new Command();
 
@@ -51,6 +52,16 @@ program
   .option("--yes", "Skip confirmation prompts")
   .option("--root <path>", "Path to skills-bank registry root")
   .action(importCommand);
+
+program
+  .command("sync-installed")
+  .description(
+    "After pulling new registry skills, swap each ~/.claude/skills foreign symlink whose name matches a registry skill for the registry version. Real-directory entries are surfaced for the import flow.",
+  )
+  .option("--dry-run", "Print the plan; make no changes")
+  .option("--yes", "Skip confirmation prompt")
+  .option("--root <path>", "Path to skills-bank registry root")
+  .action(syncInstalledCommand);
 
 program
   .command("export <name>")

@@ -1,0 +1,84 @@
+/* Theme tokens — adapted from le-diegz/claude-skills-registry. */
+:root {
+  /* Backgrounds */
+  --bg:          #0d1117;
+  --surface:     #161b22;
+  --surface-hi:  #1c2128;
+  --surface-dim: #0d1117;
+
+  /* Borders */
+  --border:      #21262d;
+  --border-hi:   #30363d;
+
+  /* Text */
+  --text:        #e6edf3;
+  --text-2:      #8b949e;
+  --text-3:      #484f58;
+
+  /* Accent */
+  --accent:      #58a6ff;
+  --accent-dim:  rgba(88, 166, 255, 0.1);
+
+  /* Status */
+  --success:     #3fb950;
+  --success-dim: rgba(63, 185, 80, 0.12);
+  --warn:        #d29922;
+  --warn-dim:    rgba(210, 153, 34, 0.12);
+  --danger:      #f85149;
+  --danger-dim:  rgba(248, 81, 73, 0.12);
+
+  /* Domain colors */
+  --design:      #7C3AED;
+  --design-dim:  rgba(124, 58, 237, 0.15);
+  --code:        #2563EB;
+  --code-dim:    rgba(37, 99, 235, 0.15);
+  --content:     #059669;
+  --content-dim: rgba(5, 150, 105, 0.15);
+  --data:        #D97706;
+  --data-dim:    rgba(217, 119, 6, 0.15);
+  --meta:        #DB2777;
+  --meta-dim:    rgba(219, 39, 119, 0.15);
+  --other:       #8b949e;
+  --other-dim:   rgba(139, 148, 158, 0.15);
+
+  /* Freshness */
+  --fresh: #3fb950;
+  --aging: #d29922;
+  --stale: #484f58;
+
+  /* Typography */
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Spacing (4px base) */
+  --s1:  4px;
+  --s2:  8px;
+  --s3:  12px;
+  --s4:  16px;
+  --s5:  20px;
+  --s6:  24px;
+  --s8:  32px;
+  --s10: 40px;
+  --s12: 48px;
+  --s16: 64px;
+
+  /* Radius */
+  --r-sm: 4px;
+  --r:    6px;
+  --r-lg: 10px;
+  --r-xl: 16px;
+
+  /* Layout */
+  --max-w: 1400px;
+  --gutter: clamp(16px, 3vw, 32px);
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast: 0.12s;
+  --t:      0.18s;
+  --t-slow: 0.3s;
+
+  /* Shadows */
+  --shadow:       0 1px 3px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.3);
+  --shadow-hover: 0 4px 16px rgba(0,0,0,.6), 0 8px 32px rgba(0,0,0,.4);
+}

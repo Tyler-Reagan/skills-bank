@@ -1,4 +1,5 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -163,6 +164,32 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
   } catch (err) {
     return { ok: false, message: (err as Error).message };
   }
+});
+
+ipcMain.handle(IPC.readSkillMd, (_e, name: string) => {
+  try {
+    const index = buildRegistryIndex(registryRoot);
+    const entry = index.entries.find((x) => x.name === name);
+    if (!entry) return null;
+    const skillMd = path.join(registryRoot, entry.path, "SKILL.md");
+    if (!fs.existsSync(skillMd)) return null;
+    const fd = fs.openSync(skillMd, "r");
+    try {
+      const buf = Buffer.alloc(8192);
+      const bytes = fs.readSync(fd, buf, 0, 8192, 0);
+      const total = fs.statSync(skillMd).size;
+      const text = buf.subarray(0, bytes).toString("utf8");
+      return total > bytes ? text + "\n\n…(truncated)" : text;
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle(IPC.openInFinder, async (_e, absolutePath: string) => {
+  await shell.openPath(absolutePath);
 });
 
 void app.whenReady().then(() => {
