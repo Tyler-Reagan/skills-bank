@@ -16,7 +16,10 @@
     "build:index": "tsx scripts/build-index.ts",
     "cli": "node packages/cli/dist/index.js",
     "desktop:dev": "pnpm --filter @skills-bank/desktop dev",
-    "desktop:build": "pnpm --filter @skills-bank/desktop build"
+    "desktop:build": "pnpm --filter @skills-bank/desktop build",
+    "desktop:start": "pnpm --filter @skills-bank/desktop start",
+    "desktop:package:mac": "pnpm --filter @skills-bank/desktop package:mac",
+    "desktop:package:win": "pnpm --filter @skills-bank/desktop package:win"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["electron", "esbuild"]

@@ -29,8 +29,27 @@ node packages/cli/dist/index.js import        # migrate pre-existing ~/.claude/s
 
 ## Desktop
 
+First-time setup (installs deps and downloads the Electron binary):
+
 ```bash
-pnpm run desktop:dev
+pnpm install
+```
+
+Run the app locally:
+
+```bash
+pnpm run desktop:dev      # build main process, watch renderer with Vite, launch Electron
+# or
+pnpm run desktop:start    # one-shot production build, then launch Electron
+```
+
+`desktop:dev` keeps the renderer rebuilding on save; restart Electron (`Cmd+Q` and re-run) to pick up changes to the main or preload process.
+
+Package distributable installers (output under `packages/desktop/dist-electron/`):
+
+```bash
+pnpm run desktop:package:mac    # .dmg
+pnpm run desktop:package:win    # NSIS installer
 ```
 
 ## Authoring skills
