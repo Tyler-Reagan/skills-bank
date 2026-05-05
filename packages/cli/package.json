@@ -7,8 +7,8 @@
     "skills-bank": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "tsc -b tsconfig.json",
+    "typecheck": "tsc -b tsconfig.json"
   },
   "dependencies": {
     "@skills-bank/core": "workspace:*",

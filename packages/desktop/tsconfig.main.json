@@ -6,7 +6,9 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2022",
-    "types": ["node"]
+    "types": ["node"],
+    "composite": true,
+    "tsBuildInfoFile": "dist-main/.tsbuildinfo"
   },
   "include": ["src/main/**/*", "src/shared/**/*"],
   "references": [{ "path": "../core" }]
