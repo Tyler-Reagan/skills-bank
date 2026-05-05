@@ -10,12 +10,27 @@ interface Props {
 export function BrowseTab({ registry, installed, onChanged }: Props): React.ReactElement {
   const installedSet = new Set(installed.filter((i) => i.kind === "ours").map((i) => i.name));
   const [busy, setBusy] = React.useState(false);
+  const [rowBusy, setRowBusy] = React.useState<{ name: string; verb: string } | null>(null);
 
   const rebuild = async () => {
     setBusy(true);
     const r = await window.skillsBank.rebuildIndex();
     setBusy(false);
     await onChanged(r.message);
+  };
+
+  const runRow = async (
+    name: string,
+    verb: "Installing" | "Uninstalling",
+    fn: () => Promise<{ ok: boolean; message: string }>,
+  ) => {
+    setRowBusy({ name, verb });
+    try {
+      const r = await fn();
+      await onChanged(r.message);
+    } finally {
+      setRowBusy(null);
+    }
   };
 
   if (registry.length === 0) {
@@ -26,7 +41,13 @@ export function BrowseTab({ registry, installed, onChanged }: Props): React.Reac
           rebuild the index to surface them here.
         </p>
         <button className="primary" disabled={busy} onClick={() => void rebuild()}>
-          {busy ? "Rebuilding…" : "Rebuild index"}
+          {busy ? (
+            <>
+              <span className="spinner inline" /> Rebuilding…
+            </>
+          ) : (
+            "Rebuild index"
+          )}
         </button>
       </div>
     );
@@ -36,6 +57,8 @@ export function BrowseTab({ registry, installed, onChanged }: Props): React.Reac
     <div>
       {registry.map((e) => {
         const isInstalled = installedSet.has(e.name);
+        const thisBusy = rowBusy?.name === e.name;
+        const anyBusy = rowBusy !== null;
         return (
           <div className="row" key={e.name}>
             <div className="meta">
@@ -45,22 +68,38 @@ export function BrowseTab({ registry, installed, onChanged }: Props): React.Reac
             {isInstalled ? (
               <button
                 className="danger"
-                onClick={async () => {
-                  const r = await window.skillsBank.uninstall(e.name);
-                  await onChanged(r.message);
-                }}
+                disabled={anyBusy}
+                onClick={() =>
+                  void runRow(e.name, "Uninstalling", () =>
+                    window.skillsBank.uninstall(e.name),
+                  )
+                }
               >
-                Uninstall
+                {thisBusy ? (
+                  <>
+                    <span className="spinner inline" /> {rowBusy?.verb}…
+                  </>
+                ) : (
+                  "Uninstall"
+                )}
               </button>
             ) : (
               <button
                 className="primary"
-                onClick={async () => {
-                  const r = await window.skillsBank.install(e.name, false);
-                  await onChanged(r.message);
-                }}
+                disabled={anyBusy}
+                onClick={() =>
+                  void runRow(e.name, "Installing", () =>
+                    window.skillsBank.install(e.name, false),
+                  )
+                }
               >
-                Install
+                {thisBusy ? (
+                  <>
+                    <span className="spinner inline" /> {rowBusy?.verb}…
+                  </>
+                ) : (
+                  "Install"
+                )}
               </button>
             )}
           </div>

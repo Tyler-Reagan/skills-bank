@@ -12,6 +12,7 @@ export function App(): React.ReactElement {
   const [installed, setInstalled] = useState<InstalledSkill[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [showMigrate, setShowMigrate] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     const [r, i] = await Promise.all([
@@ -23,8 +24,19 @@ export function App(): React.ReactElement {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    void refresh().finally(() => setInitialLoading(false));
   }, [refresh]);
+
+  if (initialLoading) {
+    return (
+      <div className="app">
+        <div className="loading-screen">
+          <div className="spinner" />
+          <p>Loading registry and installed skills…</p>
+        </div>
+      </div>
+    );
+  }
 
   const flash = (msg: string) => {
     setToast(msg);

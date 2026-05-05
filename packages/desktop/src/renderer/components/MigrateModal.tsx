@@ -74,8 +74,8 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
               registry: {skillsDirHint}
             </p>
           )}
-          <div style={spinnerWrap}>
-            <div style={spinner} />
+          <div style={{ display: "flex", justifyContent: "center", padding: "24px 0" }}>
+            <div className="spinner" />
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button onClick={() => void onClose()}>Cancel</button>
@@ -155,7 +155,13 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button onClick={() => void onClose()}>Cancel</button>
           <button className="primary" disabled={busy} onClick={() => void apply()}>
-            {busy ? "Applying…" : "Apply"}
+            {busy ? (
+              <>
+                <span className="spinner inline" /> Applying…
+              </>
+            ) : (
+              "Apply"
+            )}
           </button>
         </div>
       </div>
@@ -231,17 +237,3 @@ const modal: React.CSSProperties = {
   maxWidth: "90vw",
 };
 
-const spinnerWrap: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "center",
-  padding: "24px 0",
-};
-
-const spinner: React.CSSProperties = {
-  width: 28,
-  height: 28,
-  border: "3px solid #2a2a2e",
-  borderTopColor: "#4a9eff",
-  borderRadius: "50%",
-  animation: "skills-bank-spin 0.8s linear infinite",
-};

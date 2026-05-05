@@ -21,6 +21,18 @@ export function InstalledTab({
   onBrowse,
   onScanForExisting,
 }: Props): React.ReactElement {
+  const [rowBusy, setRowBusy] = React.useState<string | null>(null);
+
+  const uninstall = async (name: string) => {
+    setRowBusy(name);
+    try {
+      const r = await window.skillsBank.uninstall(name);
+      await onChanged(r.message);
+    } finally {
+      setRowBusy(null);
+    }
+  };
+
   if (installed.length === 0) {
     return (
       <div style={{ color: "#aaa", textAlign: "center", padding: "48px 16px" }}>
@@ -49,12 +61,16 @@ export function InstalledTab({
           {s.kind === "ours" && (
             <button
               className="danger"
-              onClick={async () => {
-                const r = await window.skillsBank.uninstall(s.name);
-                await onChanged(r.message);
-              }}
+              disabled={rowBusy !== null}
+              onClick={() => void uninstall(s.name)}
             >
-              Uninstall
+              {rowBusy === s.name ? (
+                <>
+                  <span className="spinner inline" /> Uninstalling…
+                </>
+              ) : (
+                "Uninstall"
+              )}
             </button>
           )}
         </div>
