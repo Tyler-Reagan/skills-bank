@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import type {
   InstalledSkill,
   MigrationAction,
+  MigrationResult,
   ScanReport,
 } from "@skills-bank/core";
 
@@ -12,10 +13,16 @@ interface Props {
 
 type ChoiceMap = Record<string, MigrationAction>;
 
+type Phase =
+  | { kind: "scan" }
+  | { kind: "plan" }
+  | { kind: "applying"; total: number }
+  | { kind: "results"; results: MigrationResult[]; rebuilding: boolean; rebuildMessage: string | null };
+
 export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   const [report, setReport] = useState<ScanReport | null>(null);
   const [choices, setChoices] = useState<ChoiceMap>({});
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<Phase>({ kind: "scan" });
   const [finalizing, setFinalizing] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [skillsDirHint, setSkillsDirHint] = useState<string | null>(null);
@@ -34,6 +41,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
         const initial: ChoiceMap = {};
         for (const e of r.entries) initial[e.name] = defaultAction(e);
         setChoices(initial);
+        setPhase({ kind: "plan" });
       })
       .catch((err: unknown) => {
         if (!cancelled) {
@@ -115,21 +123,117 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   }
 
   const apply = async () => {
-    setBusy(true);
+    if (!report) return;
     const items = report.entries.map((e) => ({
       name: e.name,
       action: choices[e.name] ?? defaultAction(e),
     }));
+    setPhase({ kind: "applying", total: items.length });
     const results = await window.skillsBank.migrate(items);
-    const ok = results.filter((r) => r.ok).length;
-    onFlash(`migration: ${ok}/${results.length} succeeded`);
-    setBusy(false);
-    await onClose();
+    const adoptedCount = results.filter(
+      (r) => r.ok && r.action.type === "adopt",
+    ).length;
+    setPhase({ kind: "results", results, rebuilding: adoptedCount > 0, rebuildMessage: null });
+
+    // After adopt actions, regenerate index.json so the new skills register
+    // as ours rather than as foreign symlinks on the next scan.
+    if (adoptedCount > 0) {
+      const r = await window.skillsBank.rebuildIndex();
+      setPhase((prev) =>
+        prev.kind === "results"
+          ? { ...prev, rebuilding: false, rebuildMessage: r.message }
+          : prev,
+      );
+    }
   };
 
   const stillUnmigrated = report.entries.some(
     (e) => e.kind === "real-directory",
   );
+
+  // Apply-in-progress view
+  if (phase.kind === "applying") {
+    return (
+      <div style={overlay}>
+        <div style={modal}>
+          <h2 style={{ marginTop: 0 }}>Migrating skills…</h2>
+          <p style={{ color: "#aaa", fontSize: 13 }}>
+            Applying {phase.total} action{phase.total === 1 ? "" : "s"}. Files
+            are being moved/copied — this may take a moment for large skill
+            bundles.
+          </p>
+          <div style={{ display: "flex", justifyContent: "center", padding: "32px 0" }}>
+            <div className="spinner" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Results view (success/failure summary)
+  if (phase.kind === "results") {
+    const succeeded = phase.results.filter((r) => r.ok);
+    const failed = phase.results.filter((r) => !r.ok);
+    return (
+      <div style={overlay}>
+        <div style={modal}>
+          <h2 style={{ marginTop: 0 }}>
+            {failed.length === 0
+              ? "Migration complete"
+              : `Migration finished with ${failed.length} failure${
+                  failed.length === 1 ? "" : "s"
+                }`}
+          </h2>
+          <p style={{ color: "#aaa", fontSize: 13 }}>
+            {succeeded.length} of {phase.results.length} succeeded.
+          </p>
+          {phase.rebuilding ? (
+            <p style={{ color: "#aaa", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <span className="spinner inline" /> Rebuilding registry index…
+            </p>
+          ) : phase.rebuildMessage ? (
+            <p style={{ color: "#7fdc9a", fontSize: 12 }}>
+              ✓ {phase.rebuildMessage}
+            </p>
+          ) : null}
+
+          <div style={{ maxHeight: 320, overflow: "auto", marginTop: 12, marginBottom: 16 }}>
+            {phase.results.map((r, i) => (
+              <div
+                key={`${r.action.type}-${("name" in r.action && r.action.name) || i}`}
+                style={resultRow}
+              >
+                <span style={{ width: 18, color: r.ok ? "#7fdc9a" : "#dc7f7f" }}>
+                  {r.ok ? "✓" : "✗"}
+                </span>
+                <span style={{ flex: 1, fontSize: 13 }}>
+                  <code style={{ color: "#ccc" }}>{describeName(r.action)}</code>
+                  {" — "}
+                  <span style={{ color: r.ok ? "#aaa" : "#dc7f7f" }}>
+                    {r.message}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <button
+              className="primary"
+              disabled={phase.rebuilding}
+              onClick={() => {
+                onFlash(
+                  `migration: ${succeeded.length}/${phase.results.length} succeeded`,
+                );
+                void onClose();
+              }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={overlay}>
@@ -179,14 +283,8 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button onClick={() => void onClose()}>Cancel</button>
-          <button className="primary" disabled={busy} onClick={() => void apply()}>
-            {busy ? (
-              <>
-                <span className="spinner inline" /> Applying…
-              </>
-            ) : (
-              "Apply"
-            )}
+          <button className="primary" onClick={() => void apply()}>
+            Apply
           </button>
         </div>
       </div>
@@ -242,6 +340,25 @@ function actionFor(type: MigrationAction["type"], e: InstalledSkill): MigrationA
       return { type: "skip", name: e.name };
   }
 }
+
+function describeName(a: MigrationAction): string {
+  switch (a.type) {
+    case "skip":
+    case "remove":
+    case "register-external":
+      return `${a.type}: ${a.name}`;
+    case "adopt":
+      return `adopt: ${a.name} → skills/${a.category}/${a.name}`;
+  }
+}
+
+const resultRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 8,
+  padding: "6px 0",
+  borderBottom: "1px solid #2a2a2e",
+};
 
 function FinalizeCallout(props: {
   report: ScanReport;

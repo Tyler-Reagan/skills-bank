@@ -13,14 +13,20 @@ export function App(): React.ReactElement {
   const [toast, setToast] = useState<string | null>(null);
   const [showMigrate, setShowMigrate] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [r, i] = await Promise.all([
-      window.skillsBank.listRegistry(),
-      window.skillsBank.listInstalled(),
-    ]);
-    setRegistry(r);
-    setInstalled(i);
+    setRefreshing(true);
+    try {
+      const [r, i] = await Promise.all([
+        window.skillsBank.listRegistry(),
+        window.skillsBank.listInstalled(),
+      ]);
+      setRegistry(r);
+      setInstalled(i);
+    } finally {
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -52,6 +58,20 @@ export function App(): React.ReactElement {
         <div className={`tab ${tab === "installed" ? "active" : ""}`} onClick={() => setTab("installed")}>
           Installed ({installed.length})
         </div>
+        <button
+          className="refresh-btn"
+          disabled={refreshing}
+          title="Re-read index.json and ~/.claude/skills"
+          onClick={() => void refresh()}
+        >
+          {refreshing ? (
+            <>
+              <span className="spinner inline" /> Refreshing…
+            </>
+          ) : (
+            "↻ Refresh"
+          )}
+        </button>
       </div>
       <div className="content">
         {tab === "browse" && (
