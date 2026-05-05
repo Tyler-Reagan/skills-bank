@@ -16,20 +16,89 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   const [report, setReport] = useState<ScanReport | null>(null);
   const [choices, setChoices] = useState<ChoiceMap>({});
   const [busy, setBusy] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [skillsDirHint, setSkillsDirHint] = useState<string | null>(null);
 
   useEffect(() => {
-    void window.skillsBank.scan().then((r) => {
-      setReport(r);
-      const initial: ChoiceMap = {};
-      for (const e of r.entries) initial[e.name] = defaultAction(e);
-      setChoices(initial);
+    let cancelled = false;
+    // Show the target path immediately so the user sees what's being scanned.
+    void window.skillsBank.getRoot().then((root) => {
+      if (!cancelled) setSkillsDirHint(root);
     });
+    void window.skillsBank
+      .scan()
+      .then((r) => {
+        if (cancelled) return;
+        setReport(r);
+        const initial: ChoiceMap = {};
+        for (const e of r.entries) initial[e.name] = defaultAction(e);
+        setChoices(initial);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setScanError(err instanceof Error ? err.message : String(err));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  if (scanError) {
+    return (
+      <div style={overlay}>
+        <div style={modal}>
+          <h2 style={{ marginTop: 0 }}>Scan failed</h2>
+          <p style={{ color: "#dc7f7f", fontFamily: "monospace", fontSize: 13 }}>
+            {scanError}
+          </p>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={() => void onClose()}>Close</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!report) {
     return (
       <div style={overlay}>
-        <div style={modal}>Loading…</div>
+        <div style={modal}>
+          <h2 style={{ marginTop: 0 }}>Scanning for existing skills…</h2>
+          <p style={{ color: "#aaa", fontSize: 13 }}>
+            Inspecting <code>~/.claude/skills/</code> and classifying each entry as
+            already-integrated, foreign symlink, real directory, or broken link.
+          </p>
+          {skillsDirHint && (
+            <p style={{ color: "#888", fontSize: 12, fontFamily: "monospace" }}>
+              registry: {skillsDirHint}
+            </p>
+          )}
+          <div style={spinnerWrap}>
+            <div style={spinner} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={() => void onClose()}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (report.entries.length === 0) {
+    return (
+      <div style={overlay}>
+        <div style={modal}>
+          <h2 style={{ marginTop: 0 }}>Nothing to migrate</h2>
+          <p style={{ color: "#aaa", fontSize: 13 }}>
+            Scanned <code>{report.claudeSkillsDir}</code> and found no entries.
+          </p>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button className="primary" onClick={() => void onClose()}>
+              Done
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -160,4 +229,19 @@ const modal: React.CSSProperties = {
   padding: 24,
   width: 720,
   maxWidth: "90vw",
+};
+
+const spinnerWrap: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  padding: "24px 0",
+};
+
+const spinner: React.CSSProperties = {
+  width: 28,
+  height: 28,
+  border: "3px solid #2a2a2e",
+  borderTopColor: "#4a9eff",
+  borderRadius: "50%",
+  animation: "skills-bank-spin 0.8s linear infinite",
 };

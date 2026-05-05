@@ -58,6 +58,10 @@ button.danger { background: #5a2d2d; border-color: #ff4a4a; }
   justify-content: space-between;
   align-items: center;
 }
+@keyframes skills-bank-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 .toast {
   position: fixed;
   bottom: 20px;
