@@ -29,7 +29,7 @@ function createWindow(): void {
     width: 1100,
     height: 720,
     webPreferences: {
-      preload: path.join(__dirname, "..", "main", "preload.js"),
+      preload: path.join(__dirname, "..", "main", "preload.mjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
@@ -37,6 +37,10 @@ function createWindow(): void {
   });
   const indexHtml = path.join(__dirname, "..", "..", "dist", "index.html");
   void win.loadFile(indexHtml);
+
+  if (!app.isPackaged) {
+    win.webContents.openDevTools({ mode: "right" });
+  }
 }
 
 ipcMain.handle(IPC.getRoot, () => registryRoot);
