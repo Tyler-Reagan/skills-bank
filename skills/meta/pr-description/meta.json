@@ -1,0 +1,5 @@
+{
+  "name": "pr-description",
+  "description": "Generate a GitHub PR description with proper issue linkage syntax. Use when the user asks for a PR description, wants to open a pull request, or says /pr-description. Inspects branch commits and open issues to produce Closes/Related/Follow-on sections automatically.",
+  "domain": "meta"
+}
