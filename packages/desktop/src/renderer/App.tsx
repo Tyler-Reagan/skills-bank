@@ -43,10 +43,6 @@ export function App(): React.ReactElement {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const needsMigration = installed.some(
-    (i) => i.kind === "real-directory" || i.kind === "foreign-symlink" || i.kind === "broken-symlink",
-  );
-
   return (
     <div className="app">
       <div className="tabs">
@@ -58,14 +54,6 @@ export function App(): React.ReactElement {
         </div>
       </div>
       <div className="content">
-        {tab === "installed" && needsMigration && (
-          <div className="banner">
-            <span>Some installed skills aren't integrated with skills-bank yet.</span>
-            <button className="primary" onClick={() => setShowMigrate(true)}>
-              Migrate…
-            </button>
-          </div>
-        )}
         {tab === "browse" && (
           <BrowseTab
             registry={registry}
