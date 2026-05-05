@@ -1,0 +1,43 @@
+{
+  "name": "@skills-bank/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Desktop manager for skills-bank",
+  "main": "dist-main/main/main.js",
+  "scripts": {
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build": "npm run build:main && npm run build:renderer",
+    "dev": "npm run build:main && vite build --watch & sleep 1 && env -u ELECTRON_RUN_AS_NODE electron .",
+    "start": "npm run build && env -u ELECTRON_RUN_AS_NODE electron .",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.main.json --noEmit"
+  },
+  "dependencies": {
+    "@skills-bank/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^32.3.3",
+    "electron-builder": "^25.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.21"
+  },
+  "build": {
+    "appId": "com.tyler-reagan.skills-bank",
+    "productName": "Skills Bank",
+    "directories": { "output": "dist-electron" },
+    "files": [
+      "dist/**/*",
+      "dist-main/**/*"
+    ],
+    "mac": { "target": "dmg", "category": "public.app-category.developer-tools" },
+    "win": { "target": "nsis" }
+  }
+}

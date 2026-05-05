@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+dist-main/
+.DS_Store
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.skills-bank/
+.claude/settings.local.json

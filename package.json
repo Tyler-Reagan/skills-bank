@@ -1,0 +1,31 @@
+{
+  "name": "skills-bank",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Central registry of Claude Code skills with TypeScript CLI and Electron desktop manager.",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/core",
+    "packages/cli",
+    "packages/desktop"
+  ],
+  "scripts": {
+    "build": "npm run build -ws --if-present",
+    "typecheck": "npm run typecheck -ws --if-present",
+    "validate": "tsx scripts/validate-all.ts",
+    "build:index": "tsx scripts/build-index.ts",
+    "cli": "node packages/cli/dist/index.js",
+    "desktop:dev": "npm run dev -w @skills-bank/desktop",
+    "desktop:build": "npm run build -w @skills-bank/desktop"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
