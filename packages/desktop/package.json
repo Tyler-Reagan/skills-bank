@@ -33,12 +33,19 @@
   "build": {
     "appId": "com.tyler-reagan.skills-bank",
     "productName": "Skills Bank",
-    "directories": { "output": "dist-electron" },
+    "directories": {
+      "output": "dist-electron"
+    },
     "files": [
       "dist/**/*",
       "dist-main/**/*"
     ],
-    "mac": { "target": "dmg", "category": "public.app-category.developer-tools" },
-    "win": { "target": "nsis" }
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis"
+    }
   }
 }

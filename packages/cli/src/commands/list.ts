@@ -1,7 +1,7 @@
 import pc from "picocolors";
 import { loadIndex, resolveRegistryRoot } from "@skills-bank/core";
 
-export interface ListOptions {
+interface ListOptions {
   json?: boolean;
   root?: string;
 }

@@ -8,7 +8,7 @@ import {
   type MigrationAction,
 } from "@skills-bank/core";
 
-export interface ImportOptions {
+interface ImportOptions {
   dryRun?: boolean;
   adoptAll?: boolean;
   yes?: boolean;
@@ -70,7 +70,11 @@ export async function importCommand(opts: ImportOptions): Promise<void> {
   const adopted = planned.some(({ action }) => action.type === "adopt");
   if (adopted) {
     console.log();
-    console.log(pc.dim("Adopted skills added; run `npm run build:index` to refresh index.json."));
+    console.log(
+      pc.dim(
+        "Adopted skills added; run `npm run build:index` to refresh index.json.",
+      ),
+    );
   }
 }
 
@@ -80,13 +84,15 @@ async function chooseAction(
 ): Promise<MigrationAction> {
   if (opts.adoptAll) {
     if (entry.kind === "ours") return { type: "skip", name: entry.name };
-    if (entry.kind === "broken-symlink") return { type: "remove", name: entry.name };
+    if (entry.kind === "broken-symlink")
+      return { type: "remove", name: entry.name };
     return { type: "adopt", name: entry.name, category: "meta" };
   }
 
   if (opts.yes) {
     // Conservative defaults under --yes without --adopt-all
-    if (entry.kind === "broken-symlink") return { type: "remove", name: entry.name };
+    if (entry.kind === "broken-symlink")
+      return { type: "remove", name: entry.name };
     return { type: "skip", name: entry.name };
   }
 
@@ -97,16 +103,36 @@ async function chooseAction(
 
   const offer: Array<[string, string, () => MigrationAction]> = [];
   if (entry.kind === "ours") {
-    offer.push(["s", "skip (already integrated)", () => ({ type: "skip", name: entry.name })]);
+    offer.push([
+      "s",
+      "skip (already integrated)",
+      () => ({ type: "skip", name: entry.name }),
+    ]);
   } else if (entry.kind === "broken-symlink") {
-    offer.push(["r", "remove broken symlink", () => ({ type: "remove", name: entry.name })]);
+    offer.push([
+      "r",
+      "remove broken symlink",
+      () => ({ type: "remove", name: entry.name }),
+    ]);
     offer.push(["s", "skip", () => ({ type: "skip", name: entry.name })]);
   } else if (entry.kind === "foreign-symlink") {
-    offer.push(["a", "adopt into registry (copy)", () => ({ type: "adopt", name: entry.name, category: "meta" })]);
-    offer.push(["e", "register as external (no copy)", () => ({ type: "register-external", name: entry.name })]);
+    offer.push([
+      "a",
+      "adopt into registry (copy)",
+      () => ({ type: "adopt", name: entry.name, category: "meta" }),
+    ]);
+    offer.push([
+      "e",
+      "register as external (no copy)",
+      () => ({ type: "register-external", name: entry.name }),
+    ]);
     offer.push(["s", "skip", () => ({ type: "skip", name: entry.name })]);
   } else {
-    offer.push(["a", "adopt into registry (move)", () => ({ type: "adopt", name: entry.name, category: "meta" })]);
+    offer.push([
+      "a",
+      "adopt into registry (move)",
+      () => ({ type: "adopt", name: entry.name, category: "meta" }),
+    ]);
     offer.push(["s", "skip", () => ({ type: "skip", name: entry.name })]);
   }
 
@@ -133,7 +159,10 @@ function describe(a: MigrationAction): string {
 }
 
 function prompt(question: string): Promise<string> {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   return new Promise((resolve) => {
     rl.question(question, (answer) => {
       rl.close();
