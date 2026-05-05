@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   applyMigration,
   installSkill,
@@ -11,6 +12,9 @@ import {
   type MigrationAction,
 } from "@skills-bank/core";
 import { IPC } from "../shared/ipc.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let registryRoot: string;
 try {

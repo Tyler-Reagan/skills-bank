@@ -2,6 +2,7 @@
   "name": "@skills-bank/desktop",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Desktop manager for skills-bank",
   "main": "dist-main/main/main.js",
   "scripts": {
