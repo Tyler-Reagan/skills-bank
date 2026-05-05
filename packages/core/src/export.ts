@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import archiver from "archiver";
-import { findEntry, loadIndex, resolveEntryPath } from "./registry.js";
+import { findEntry, resolveEntryPath } from "./registry.js";
+import { buildRegistryIndex } from "./build.js";
 
 export type ExportKind = "standalone" | "bundled";
 
@@ -33,11 +34,11 @@ export function getExportInfo(
   registryRoot: string,
   name: string,
 ): ExportInfo {
-  const index = loadIndex(registryRoot);
+  const index = buildRegistryIndex(registryRoot);
   const entry = findEntry(index, name);
   if (!entry) {
     throw new Error(
-      `Skill "${name}" not found in registry index. Run \`pnpm run build:index\`.`,
+      `Skill "${name}" not found. Verify a folder exists at <root>/skills/<category>/${name} with a valid meta.json.`,
     );
   }
   const skillDir = resolveEntryPath(registryRoot, entry);

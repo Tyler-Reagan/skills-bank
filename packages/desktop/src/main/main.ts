@@ -1,15 +1,14 @@
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from "node:path";
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   applyMigration,
+  buildRegistryIndex,
   exportSkill,
   finalizeSkillsDir,
   getExportInfo,
   installSkill,
   listInstalled,
-  loadIndex,
   resolveRegistryRoot,
   scanExistingInstalls,
   uninstallSkill,
@@ -48,9 +47,18 @@ function createWindow(): void {
 
 ipcMain.handle(IPC.getRoot, () => registryRoot);
 
-ipcMain.handle(IPC.listRegistry, () => loadIndex(registryRoot).entries);
+// Always rebuild from filesystem on every call. The on-disk index.json is a
+// CI artifact, not the source of truth — this guarantees the UI reflects
+// reality after migrations, manual edits, or any other state change without
+// requiring the user to remember to rebuild.
+ipcMain.handle(IPC.listRegistry, () => {
+  return buildRegistryIndex(registryRoot, { writeFile: true }).entries;
+});
 
-ipcMain.handle(IPC.listInstalled, () => listInstalled(registryRoot));
+ipcMain.handle(IPC.listInstalled, () => {
+  const index = buildRegistryIndex(registryRoot);
+  return listInstalled(registryRoot, { index });
+});
 
 ipcMain.handle(IPC.install, (_e, name: string, force?: boolean) => {
   try {
@@ -102,39 +110,25 @@ ipcMain.handle(
   },
 );
 
-ipcMain.handle(IPC.rebuildIndex, async () => {
-  return await new Promise<{ ok: boolean; message: string; entries: number }>(
-    (resolve) => {
-      const child = spawn("pnpm", ["run", "build:index"], {
-        cwd: registryRoot,
-        env: { ...process.env, FORCE_COLOR: "0" },
-      });
-      let stdout = "";
-      let stderr = "";
-      child.stdout.on("data", (d: Buffer) => (stdout += d.toString()));
-      child.stderr.on("data", (d: Buffer) => (stderr += d.toString()));
-      child.on("error", (err) =>
-        resolve({ ok: false, message: err.message, entries: 0 }),
-      );
-      child.on("close", (code) => {
-        const match = stdout.match(/with (\d+) entries/);
-        const entries = match && match[1] ? Number(match[1]) : 0;
-        if (code === 0) {
-          resolve({
-            ok: true,
-            message: `index rebuilt (${entries} entries)`,
-            entries,
-          });
-        } else {
-          resolve({
-            ok: false,
-            message: stderr.trim() || `build:index exited ${code}`,
-            entries: 0,
-          });
-        }
-      });
-    },
-  );
+ipcMain.handle(IPC.rebuildIndex, () => {
+  // In-process: no subprocess, no PATH dependency, no pnpm dependency.
+  try {
+    const index = buildRegistryIndex(registryRoot, {
+      includeGitInfo: true,
+      writeFile: true,
+    });
+    return {
+      ok: true,
+      message: `index rebuilt (${index.entries.length} entries)`,
+      entries: index.entries.length,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      message: (err as Error).message,
+      entries: 0,
+    };
+  }
 });
 
 ipcMain.handle(IPC.finalize, () => {

@@ -45,6 +45,12 @@ importers:
 
   packages/core:
     dependencies:
+      ajv:
+        specifier: ^8.17.1
+        version: 8.20.0
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.20.0)
       archiver:
         specifier: ^7.0.1
         version: 7.0.1

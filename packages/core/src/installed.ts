@@ -1,17 +1,39 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getClaudeSkillsDir } from "./paths.js";
-import { loadIndex } from "./registry.js";
-import type { InstalledKind, InstalledSkill, RegistryEntry } from "./types.js";
+import { buildRegistryIndex } from "./build.js";
+import type {
+  InstalledKind,
+  InstalledSkill,
+  RegistryEntry,
+  RegistryIndex,
+} from "./types.js";
 
-export function listInstalled(registryRoot: string): InstalledSkill[] {
+export interface ListInstalledOptions {
+  /**
+   * Pre-built registry index. If omitted, listInstalled will build one in
+   * memory from the registry root. Pass an existing index when calling
+   * multiple list functions in sequence to avoid redundant scans.
+   */
+  index?: RegistryIndex;
+}
+
+export function listInstalled(
+  registryRoot: string,
+  opts: ListInstalledOptions = {},
+): InstalledSkill[] {
   const skillsDir = getClaudeSkillsDir();
   if (!fs.existsSync(skillsDir)) return [];
-  const index = loadIndex(registryRoot);
+  const index = opts.index ?? buildRegistryIndex(registryRoot);
   const entriesByPath = new Map<string, RegistryEntry>();
   for (const e of index.entries) {
     entriesByPath.set(path.resolve(registryRoot, e.path), e);
   }
+
+  // Anything under <registryRoot>/skills/ is "ours" even if not in the
+  // index — meaning a stale or missing index can never make a migrated
+  // skill look unmigrated.
+  const ownedRoot = path.resolve(registryRoot, "skills") + path.sep;
 
   const out: InstalledSkill[] = [];
   for (const name of fs.readdirSync(skillsDir)) {
@@ -28,9 +50,10 @@ export function listInstalled(registryRoot: string): InstalledSkill[] {
       const resolved = path.resolve(skillsDir, raw);
       const exists = fs.existsSync(resolved);
       const ourEntry = entriesByPath.get(resolved);
+      const isUnderRegistry = (resolved + path.sep).startsWith(ownedRoot);
       let kind: InstalledKind;
       if (!exists) kind = "broken-symlink";
-      else if (ourEntry) kind = "ours";
+      else if (ourEntry || isUnderRegistry) kind = "ours";
       else kind = "foreign-symlink";
       out.push({
         name,

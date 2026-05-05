@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getClaudeSkillsDir } from "./paths.js";
-import { findEntry, loadIndex, resolveEntryPath } from "./registry.js";
+import { findEntry, resolveEntryPath } from "./registry.js";
+import { buildRegistryIndex } from "./build.js";
 
 export interface InstallOptions {
   registryRoot: string;
@@ -17,11 +18,11 @@ export interface InstallResult {
 }
 
 export function installSkill(name: string, opts: InstallOptions): InstallResult {
-  const index = loadIndex(opts.registryRoot);
+  const index = buildRegistryIndex(opts.registryRoot);
   const entry = findEntry(index, name);
   if (!entry) {
     throw new Error(
-      `Skill "${name}" not found in registry index. Run "npm run build:index".`,
+      `Skill "${name}" not found. Verify a folder exists at <root>/skills/<category>/${name} with a valid meta.json.`,
     );
   }
   const target = resolveEntryPath(opts.registryRoot, entry);

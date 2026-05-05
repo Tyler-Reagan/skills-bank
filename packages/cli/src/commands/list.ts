@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import { loadIndex, resolveRegistryRoot } from "@skills-bank/core";
+import { buildRegistryIndex, resolveRegistryRoot } from "@skills-bank/core";
 
 interface ListOptions {
   json?: boolean;
@@ -8,13 +8,17 @@ interface ListOptions {
 
 export function listCommand(opts: ListOptions): void {
   const root = resolveRegistryRoot(opts.root);
-  const index = loadIndex(root);
+  const index = buildRegistryIndex(root);
   if (opts.json) {
     process.stdout.write(JSON.stringify(index.entries, null, 2) + "\n");
     return;
   }
   if (index.entries.length === 0) {
-    console.log(pc.dim("(no skills in registry; run `npm run build:index`)"));
+    console.log(
+      pc.dim(
+        "(no skills in registry; add one under skills/<category>/<name> with a meta.json)",
+      ),
+    );
     return;
   }
   for (const e of index.entries) {

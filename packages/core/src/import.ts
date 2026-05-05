@@ -3,6 +3,7 @@ import path from "node:path";
 import { getClaudeSkillsDir, getStateDir } from "./paths.js";
 import { listInstalled } from "./installed.js";
 import { readSkillMeta } from "./registry.js";
+import { buildRegistryIndex } from "./build.js";
 import type {
   FinalizeResult,
   InstalledSkill,
@@ -14,10 +15,13 @@ import type {
 
 export function scanExistingInstalls(registryRoot: string): ScanReport {
   const claudeSkillsDir = getClaudeSkillsDir();
+  // Build the index once and reuse for the installed-list classification
+  // so a stale on-disk index.json can't mislead either side.
+  const index = buildRegistryIndex(registryRoot);
   return {
     claudeSkillsDir,
     registryRoot,
-    entries: listInstalled(registryRoot),
+    entries: listInstalled(registryRoot, { index }),
     topLevelSymlink: detectTopLevelSymlink(claudeSkillsDir),
   };
 }

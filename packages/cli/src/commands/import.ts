@@ -67,15 +67,8 @@ export async function importCommand(opts: ImportOptions): Promise<void> {
     console.log(`  [${tag}] ${result.message}`);
   }
 
-  const adopted = planned.some(({ action }) => action.type === "adopt");
-  if (adopted) {
-    console.log();
-    console.log(
-      pc.dim(
-        "Adopted skills added; run `pnpm run build:index` to refresh index.json.",
-      ),
-    );
-  }
+  // index.json is generated on demand on every CLI / desktop call, so no
+  // manual rebuild step is needed after adopting new skills.
 }
 
 async function chooseAction(
