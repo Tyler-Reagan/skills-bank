@@ -23,8 +23,17 @@ export function InstalledTab({
     return (
       <div className="empty-state">
         <strong>Nothing installed yet.</strong>
-        <p>Install skills from the Browse tab, or scan for pre-existing entries.</p>
-        <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 16 }}>
+        <p>
+          Install skills from the Browse tab, or scan for pre-existing entries.
+        </p>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            justifyContent: "center",
+            marginTop: 16,
+          }}
+        >
           <button className="btn primary" onClick={onSwitchToBrowse}>
             Browse registry
           </button>
@@ -37,17 +46,21 @@ export function InstalledTab({
   }
 
   const registryByName = new Map(registry.map((e) => [e.name, e] as const));
-  const integrated: InstalledSkill[] = installed.filter((s) => s.kind === "ours");
-  const unintegrated: InstalledSkill[] = installed.filter((s) => s.kind !== "ours");
+  const integrated: InstalledSkill[] = installed.filter(
+    (s) => s.kind === "ours",
+  );
+  const unintegrated: InstalledSkill[] = installed.filter(
+    (s) => s.kind !== "ours",
+  );
 
   return (
     <div>
       <div className="tab-intro">
         <strong>Installed.</strong> Every entry currently under{" "}
         <code>~/.claude/skills</code> on this machine — including ones added by
-        skills-bank and ones that came from elsewhere (manual installs,
-        external tools). Skills-bank can manage the unintegrated ones if you
-        choose to migrate them.
+        skills-bank and ones that came from elsewhere (manual installs, external
+        tools). Skills-bank can manage the unintegrated ones if you choose to
+        migrate them.
         <span className="meta-counts">
           <span>{installed.length} total</span>
           <span>·</span>
@@ -65,7 +78,8 @@ export function InstalledTab({
           <header className="section-header">
             <div>
               <h2>
-                Not yet integrated <span className="count">({unintegrated.length})</span>
+                Not yet integrated{" "}
+                <span className="count">({unintegrated.length})</span>
               </h2>
               <p>
                 Live under <code>~/.claude/skills</code> but aren't managed by
@@ -73,7 +87,7 @@ export function InstalledTab({
               </p>
             </div>
             <button className="btn primary" onClick={onMigrateAll}>
-              Migrate all…
+              Migrate All
             </button>
           </header>
           <div className="skills-grid">

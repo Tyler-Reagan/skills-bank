@@ -21,7 +21,7 @@ export function SearchBar({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? "Search by name, description, tag…"}
+        placeholder={placeholder ?? "Search by name, description, or tag"}
         spellCheck={false}
         aria-label="Search skills"
       />
