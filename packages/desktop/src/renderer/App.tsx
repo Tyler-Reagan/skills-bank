@@ -4,7 +4,7 @@ import { BrowseTab } from "./components/BrowseTab.js";
 import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
 import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
-import { Header } from "./components/Header.js";
+import { Header, type Theme } from "./components/Header.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 
@@ -12,7 +12,26 @@ const LS_KEYS = {
   search: "skills-bank.searchQuery",
   tagFilter: "skills-bank.tagFilter",
   tab: "skills-bank.activeTab",
+  theme: "skills-bank.theme",
 };
+
+function readInitialTheme(): Theme {
+  try {
+    const stored = localStorage.getItem(LS_KEYS.theme);
+    if (stored === "dark" || stored === "light") return stored;
+  } catch {
+    // fall through
+  }
+  // Honor OS preference for first run when nothing is stored.
+  if (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-color-scheme: light)").matches
+  ) {
+    return "light";
+  }
+  return "dark";
+}
 
 function readLS(key: string, fallback: string): string {
   try {
@@ -64,6 +83,17 @@ export function App(): React.ReactElement {
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
   const [selectedTags, setSelectedTagsState] = useState<string[]>(readTagFilterLS);
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
+  const [theme, setTheme] = useState<Theme>(readInitialTheme);
+
+  // Apply the active theme to <html data-theme="…"> so CSS-variable
+  // overrides flow through every component.
+  useEffect(() => {
+    document.documentElement.dataset["theme"] = theme;
+    writeLS(LS_KEYS.theme, theme);
+  }, [theme]);
+
+  const toggleTheme = () =>
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
 
   const setSearch = (v: string) => {
     setSearchState(v);
@@ -110,7 +140,12 @@ export function App(): React.ReactElement {
   if (initialLoading) {
     return (
       <div className="app" aria-busy="true">
-        <Header refreshing={true} onRefresh={() => undefined} />
+        <Header
+          refreshing={true}
+          onRefresh={() => undefined}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
         <Tabs
           active="browse"
           onChange={() => undefined}
@@ -185,6 +220,8 @@ export function App(): React.ReactElement {
       <Header
         refreshing={refreshing}
         onRefresh={() => void refresh()}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
       <Tabs
         active={tab}

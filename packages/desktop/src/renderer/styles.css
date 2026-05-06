@@ -150,7 +150,7 @@ input, select { font-family: inherit; color: inherit; }
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(13, 17, 23, 0.92);
+  background: var(--header-bg);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   animation: slideDown var(--t-slow) var(--ease) both;
@@ -232,6 +232,24 @@ input, select { font-family: inherit; color: inherit; }
   background: var(--surface);
   transition: border-color var(--t) var(--ease), color var(--t) var(--ease);
 }
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--text-2);
+  transition: border-color var(--t) var(--ease), color var(--t) var(--ease), background var(--t) var(--ease);
+}
+.icon-btn:hover:not(:disabled) {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+.icon-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .refresh-btn:hover:not(:disabled) { border-color: var(--border-hi); color: var(--text); }
 .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -495,7 +513,7 @@ input, select { font-family: inherit; color: inherit; }
 }
 .btn.primary:hover:not(:disabled) {
   background: var(--accent);
-  color: #0a0d12;
+  color: var(--on-primary);
 }
 .btn.danger {
   background: var(--danger-dim);
@@ -504,7 +522,7 @@ input, select { font-family: inherit; color: inherit; }
 }
 .btn.danger:hover:not(:disabled) {
   background: var(--danger);
-  color: #0a0d12;
+  color: var(--on-primary);
 }
 .btn.ghost {
   background: transparent;
@@ -517,7 +535,7 @@ input, select { font-family: inherit; color: inherit; }
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--scrim);
   z-index: 200;
   animation: fadeIn var(--t) var(--ease) both;
 }
@@ -799,7 +817,7 @@ input, select { font-family: inherit; color: inherit; }
 }
 .toast-action:hover {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--on-primary);
 }
 
 /* ── Legacy row layout (used by MigrateModal entry list) ── */
@@ -844,9 +862,9 @@ input, select { font-family: inherit; color: inherit; }
 
 /* MigrateModal still uses className="primary" / "danger" on bare buttons. */
 button.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); padding: var(--s2) var(--s3); border-radius: var(--r); border-style: solid; border-width: 1px; font-size: 12px; }
-button.primary:hover:not(:disabled) { background: var(--accent); color: #0a0d12; }
+button.primary:hover:not(:disabled) { background: var(--accent); color: var(--on-primary); }
 button.danger { background: var(--danger-dim); border-color: var(--danger); color: var(--danger); padding: var(--s2) var(--s3); border-radius: var(--r); border-style: solid; border-width: 1px; font-size: 12px; }
-button.danger:hover:not(:disabled) { background: var(--danger); color: #0a0d12; }
+button.danger:hover:not(:disabled) { background: var(--danger); color: var(--on-primary); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Bare buttons in MigrateModal (Cancel etc.) */

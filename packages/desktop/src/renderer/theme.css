@@ -82,4 +82,61 @@
 
   /* Subtle glow used for focus/active states per skill key-effects guidance */
   --glow-accent: 0 0 0 3px var(--accent-dim);
+
+  /* Modal/drawer backdrop — themable so it doesn't look heavy on light. */
+  --scrim: rgba(0, 0, 0, 0.55);
+
+  /* Translucent header bg — sits over content with backdrop-filter blur. */
+  --header-bg: rgba(15, 23, 42, 0.85);
+
+  /* Foreground color for text painted on saturated buttons (primary/danger
+     hover). Near-black on bright greens/reds reads well in dark mode. */
+  --on-primary: #0a0d12;
+}
+
+/*
+ * Light theme — token mirror of the OLED dark mode. Same semantic
+ * shape (bg / surface / surface-hi / border / border-hi / text / text-2
+ * / text-3 / accent / status / freshness), tuned for white-paper
+ * surfaces with slate text. Green CTA stays consistent with dark mode
+ * but shifts a step darker (green-600/700) for AA contrast on
+ * near-white backgrounds.
+ */
+:root[data-theme="light"] {
+  --bg:          #F8FAFC; /* slate-50 */
+  --surface:     #FFFFFF;
+  --surface-hi:  #F1F5F9; /* slate-100 */
+  --surface-dim: #FFFFFF;
+
+  --border:      #E2E8F0; /* slate-200 */
+  --border-hi:   #CBD5E1; /* slate-300 */
+
+  --text:        #0F172A; /* slate-900 */
+  --text-2:      #475569; /* slate-600 */
+  --text-3:      #94A3B8; /* slate-400 */
+
+  --accent:      #16A34A; /* green-600 */
+  --accent-dim:  rgba(22, 163, 74, 0.12);
+  --accent-hi:   #15803D; /* green-700 */
+
+  --success:     #16A34A;
+  --success-dim: rgba(22, 163, 74, 0.12);
+  --warn:        #CA8A04; /* yellow-600 */
+  --warn-dim:    rgba(202, 138, 4, 0.12);
+  --danger:      #DC2626; /* red-600 */
+  --danger-dim:  rgba(220, 38, 38, 0.10);
+
+  --fresh: #16A34A;
+  --aging: #CA8A04;
+  --stale: #94A3B8;
+
+  --shadow:       0 1px 2px rgba(15, 23, 42, .06), 0 2px 6px rgba(15, 23, 42, .08);
+  --shadow-hover: 0 4px 12px rgba(15, 23, 42, .10), 0 8px 24px rgba(15, 23, 42, .12);
+
+  --scrim: rgba(15, 23, 42, 0.32);
+
+  --header-bg: rgba(248, 250, 252, 0.88);
+
+  /* On the darker green/red of light mode, white reads cleaner than near-black. */
+  --on-primary: #FFFFFF;
 }

@@ -366,7 +366,7 @@ const resultRow: React.CSSProperties = {
   alignItems: "flex-start",
   gap: 8,
   padding: "6px 0",
-  borderBottom: "1px solid #2a2a2e",
+  borderBottom: "1px solid var(--border)",
 };
 
 function FinalizeCallout(props: {
@@ -469,7 +469,7 @@ const callout: React.CSSProperties = {
 const overlay: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(0,0,0,0.6)",
+  background: "var(--scrim)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
