@@ -32,11 +32,14 @@ interface Props {
   title?: string;
 }
 
-const SIZE_VAR: Record<string, string> = {
-  sm: "var(--icon-sm)",
-  md: "var(--icon-md)",
-  lg: "var(--icon-lg)",
-  xl: "var(--icon-xl)",
+// SVG width/height attributes don't accept CSS variables, so the named
+// sizes resolve to numeric pixel values matching the tokens declared in
+// theme.css (--icon-sm/md/lg/xl). Keep these in sync with that file.
+const SIZE_PX: Record<string, number> = {
+  sm: 12,
+  md: 14,
+  lg: 16,
+  xl: 20,
 };
 
 export function Icon({
@@ -49,7 +52,7 @@ export function Icon({
   title,
 }: Props): React.ReactElement {
   const dimension =
-    typeof size === "number" ? `${size}px` : (SIZE_VAR[size] ?? SIZE_VAR["md"]);
+    typeof size === "number" ? size : (SIZE_PX[size] ?? SIZE_PX["md"]!);
   const a11yProps = ariaLabel
     ? { role: "img" as const, "aria-label": ariaLabel }
     : { "aria-hidden": ariaHidden };
