@@ -14,6 +14,8 @@ interface Props {
   onChangeRegistry: () => void;
   syncing: boolean;
   onSync: () => void;
+  /** When false (power persona), the canonical-sync button is hidden. */
+  showSync: boolean;
 }
 
 export function Header({
@@ -26,6 +28,7 @@ export function Header({
   onChangeRegistry,
   syncing,
   onSync,
+  showSync,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -72,25 +75,27 @@ export function Header({
           >
             <Icon name={theme === "dark" ? "sun" : "moon"} size="md" />
           </button>
-          <button
-            className="refresh-btn"
-            disabled={syncing}
-            title="Sync canonical skills from skills-bank repository"
-            aria-label={
-              syncing ? "Syncing canonical skills" : "Sync canonical skills"
-            }
-            onClick={onSync}
-          >
-            {syncing ? (
-              <>
-                <span className="spinner inline" aria-hidden="true" /> Syncing…
-              </>
-            ) : (
-              <>
-                <Icon name="download" size="md" /> Sync
-              </>
-            )}
-          </button>
+          {showSync && (
+            <button
+              className="refresh-btn"
+              disabled={syncing}
+              title="Sync canonical skills from skills-bank repository"
+              aria-label={
+                syncing ? "Syncing canonical skills" : "Sync canonical skills"
+              }
+              onClick={onSync}
+            >
+              {syncing ? (
+                <>
+                  <span className="spinner inline" aria-hidden="true" /> Syncing…
+                </>
+              ) : (
+                <>
+                  <Icon name="download" size="md" /> Sync
+                </>
+              )}
+            </button>
+          )}
           <button
             className="refresh-btn"
             disabled={refreshing}
