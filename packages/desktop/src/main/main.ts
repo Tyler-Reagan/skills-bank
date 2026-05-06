@@ -120,7 +120,10 @@ function createWindow(): void {
   const indexHtml = path.join(__dirname, "..", "..", "dist", "index.html");
   void win.loadFile(indexHtml);
 
-  if (!app.isPackaged) {
+  // DevTools is opt-in via env var to keep `pnpm desktop:dev` quiet.
+  // Cmd+Alt+I (View → Toggle Developer Tools) still summons it on demand
+  // because we don't override Electron's default menu.
+  if (process.env["SKILLS_BANK_DEVTOOLS"] === "1") {
     win.webContents.openDevTools({ mode: "right" });
   }
 }
