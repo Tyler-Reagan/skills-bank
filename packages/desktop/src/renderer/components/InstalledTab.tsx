@@ -96,6 +96,7 @@ export function InstalledTab({
                 name: s.name,
                 description: s.target ?? s.linkPath,
                 path: s.linkPath,
+                source: { source: "user" },
               };
               const status: CardStatus =
                 s.kind === "foreign-symlink"

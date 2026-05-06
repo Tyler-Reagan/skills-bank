@@ -6,8 +6,10 @@ import { MigrateModal } from "./components/MigrateModal.js";
 import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
 import { SetupScreen } from "./components/SetupScreen.js";
+import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
+import type { SyncStatus } from "../shared/ipc.js";
 
 const LS_KEYS = {
   search: "skills-bank.searchQuery",
@@ -99,6 +101,8 @@ export function App(): React.ReactElement {
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
   const [theme, setTheme] = useState<Theme>(readInitialTheme);
   const [density, setDensity] = useState<Density>(readInitialDensity);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({ kind: "idle" });
+  const [pendingConflicts, setPendingConflicts] = useState(0);
 
   // Apply the active theme to <html data-theme="…"> so CSS-variable
   // overrides flow through every component.
@@ -202,6 +206,32 @@ export function App(): React.ReactElement {
     });
   }, [flashWithAction]);
 
+  // Sync status feed: drives the SyncBanner and the Header sync button.
+  useEffect(() => {
+    if (!window.skillsBank.onSyncStatus) return;
+    return window.skillsBank.onSyncStatus((status) => {
+      setSyncStatus(status);
+      if (status.kind === "done") {
+        setPendingConflicts(status.conflicts);
+      }
+    });
+  }, []);
+
+  // Hydrate pendingConflicts from the persisted last-sync report on launch
+  // so a banner from a prior run shows immediately, before any new sync.
+  useEffect(() => {
+    void (async () => {
+      const report = await window.skillsBank.getSyncReport();
+      if (report) setPendingConflicts(report.conflicts.length);
+    })();
+  }, []);
+
+  const sync = useCallback(async () => {
+    const r = await window.skillsBank.syncCanonical();
+    flash(r.message);
+    await refresh();
+  }, [refresh, flash]);
+
   const changeRegistry = useCallback(async () => {
     const r = await window.skillsBank.setRegistryRoot();
     if (r.ok && r.registryRoot) {
@@ -255,6 +285,8 @@ export function App(): React.ReactElement {
           density={density}
           onToggleDensity={toggleDensity}
           onChangeRegistry={() => undefined}
+          syncing={false}
+          onSync={() => undefined}
         />
         <Tabs
           active="browse"
@@ -301,6 +333,15 @@ export function App(): React.ReactElement {
         density={density}
         onToggleDensity={toggleDensity}
         onChangeRegistry={() => void changeRegistry()}
+        syncing={
+          syncStatus.kind === "fetching" || syncStatus.kind === "applying"
+        }
+        onSync={() => void sync()}
+      />
+      <SyncBanner
+        status={syncStatus}
+        pendingConflicts={pendingConflicts}
+        onDismiss={() => setSyncStatus({ kind: "idle" })}
       />
       <Tabs
         active={tab}

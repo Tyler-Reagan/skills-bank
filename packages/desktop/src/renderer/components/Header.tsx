@@ -12,6 +12,8 @@ interface Props {
   density: Density;
   onToggleDensity: () => void;
   onChangeRegistry: () => void;
+  syncing: boolean;
+  onSync: () => void;
 }
 
 export function Header({
@@ -22,6 +24,8 @@ export function Header({
   density,
   onToggleDensity,
   onChangeRegistry,
+  syncing,
+  onSync,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -67,6 +71,25 @@ export function Header({
             title={`Switch to ${nextTheme} mode`}
           >
             <Icon name={theme === "dark" ? "sun" : "moon"} size="md" />
+          </button>
+          <button
+            className="refresh-btn"
+            disabled={syncing}
+            title="Sync canonical skills from skills-bank repository"
+            aria-label={
+              syncing ? "Syncing canonical skills" : "Sync canonical skills"
+            }
+            onClick={onSync}
+          >
+            {syncing ? (
+              <>
+                <span className="spinner inline" aria-hidden="true" /> Syncing…
+              </>
+            ) : (
+              <>
+                <Icon name="download" size="md" /> Sync
+              </>
+            )}
           </button>
           <button
             className="refresh-btn"

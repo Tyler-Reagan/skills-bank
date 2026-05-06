@@ -25,7 +25,8 @@ export type IconName =
   | "moon"
   | "density-compact"
   | "density-comfortable"
-  | "settings";
+  | "settings"
+  | "download";
 
 interface Props {
   name: IconName;
@@ -177,6 +178,14 @@ const PATHS: Record<IconName, React.ReactElement> = {
       <rect x="14" y="3" width="7" height="7" />
       <rect x="14" y="14" width="7" height="7" />
       <rect x="3" y="14" width="7" height="7" />
+    </>
+  ),
+  // Lucide "download" — arrow-down into a tray.
+  download: (
+    <>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
     </>
   ),
   // Lucide "settings" — gear with center circle.

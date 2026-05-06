@@ -1,22 +1,31 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
-import { autoUpdater } from "electron-updater";
+// electron-updater is CJS; destructure from the default import to interop
+// cleanly under Node's ESM loader (NodeNext module resolution).
+import electronUpdater from "electron-updater";
+const { autoUpdater } = electronUpdater;
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  applyCanonicalSync,
   applyMigration,
   buildRegistryIndex,
   exportSkill,
+  fetchCanonicalTarball,
   finalizeSkillsDir,
   getExportInfo,
   installSkill,
   listInstalled,
+  readLastSyncReport,
   resolveRegistryRoot,
   scanExistingInstalls,
   uninstallSkill,
   type MigrationAction,
 } from "@skills-bank/core";
-import { IPC, type UpdateStatus } from "../shared/ipc.js";
+import { IPC, type SyncStatus, type UpdateStatus } from "../shared/ipc.js";
+
+const CANONICAL_OWNER = "Tyler-Reagan";
+const CANONICAL_REPO = "skills-bank";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +67,11 @@ function writeConfig(cfg: AppConfig): void {
   fs.writeFileSync(p, JSON.stringify(cfg, null, 2) + "\n");
 }
 
+// Loose validator: accept any existing directory. The persona model treats
+// the registry as a folder of skills, not as a clone of a specific repo, so
+// the strict "package.json name must be skills-bank" check is gone. Folders
+// without a `skills/` subdir simply render as empty until the user adds
+// skills (or a sync populates it).
 function isValidRegistryRoot(candidate: string): {
   ok: boolean;
   reason?: string;
@@ -66,46 +80,34 @@ function isValidRegistryRoot(candidate: string): {
   if (!fs.existsSync(candidate)) {
     return { ok: false, reason: `path does not exist: ${candidate}` };
   }
-  const pkgPath = path.join(candidate, "package.json");
-  if (!fs.existsSync(pkgPath)) {
-    return {
-      ok: false,
-      reason: "no package.json in this folder — pick the skills-bank repo root",
-    };
-  }
-  try {
-    const data = JSON.parse(fs.readFileSync(pkgPath, "utf8")) as {
-      name?: string;
-    };
-    if (data.name !== "skills-bank") {
-      return {
-        ok: false,
-        reason: `package.json name is "${data.name ?? "(unset)"}", expected "skills-bank"`,
-      };
-    }
-  } catch {
-    return { ok: false, reason: "package.json is not valid JSON" };
-  }
-  if (!fs.existsSync(path.join(candidate, "skills"))) {
-    return {
-      ok: false,
-      reason: "no skills/ directory inside the chosen folder",
-    };
+  if (!fs.statSync(candidate).isDirectory()) {
+    return { ok: false, reason: `not a directory: ${candidate}` };
   }
   return { ok: true };
 }
 
-function resolveBootRegistryRoot(): string | null {
+// Default location for the convenience-persona registry: app-managed,
+// survives app upgrades, ready for canonical sync to populate it.
+function defaultManagedRegistryRoot(): string {
+  const root = path.join(app.getPath("userData"), "registry");
+  fs.mkdirSync(path.join(root, "skills"), { recursive: true });
+  return root;
+}
+
+function resolveBootRegistryRoot(): string {
   const stored = readConfig().registryRoot;
   if (stored && isValidRegistryRoot(stored).ok) return stored;
+  // SKILLS_BANK_ROOT env or a cwd walk-up takes precedence over the managed
+  // default — preserves dev workflow where the developer points at the
+  // canonical repo on disk.
   try {
-    return resolveRegistryRoot(); // env var or cwd walk-up
+    return resolveRegistryRoot();
   } catch {
-    return null;
+    return defaultManagedRegistryRoot();
   }
 }
 
-let registryRoot: string | null = resolveBootRegistryRoot();
+let registryRoot: string = resolveBootRegistryRoot();
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -455,6 +457,71 @@ ipcMain.handle(IPC.checkForUpdates, async () => {
 ipcMain.handle(IPC.quitAndInstallUpdate, () => {
   if (!app.isPackaged) return;
   autoUpdater.quitAndInstall();
+});
+
+// ─── Canonical registry sync (M2) ───────────────────────────────────────────
+//
+// Pulls Tyler-Reagan/skills-bank as a tarball, upserts canonical skills into
+// the active registryRoot, and queues conflicts for the M5 resolver. The
+// renderer subscribes to `syncStatus` for progress; results are also
+// persisted at <registryRoot>/.skills-bank/last-sync.json.
+//
+// Note: we do not gate this on persona — when M3 ships, the renderer will
+// hide the Sync button for power persona. The handler stays usable so a
+// power user could in principle still run it; nothing here writes outside
+// of the app-managed registry.
+
+function broadcastSyncStatus(status: SyncStatus): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send(IPC.syncStatus, status);
+  }
+}
+
+ipcMain.handle(IPC.syncCanonical, async () => {
+  if (!registryRoot) {
+    return { ok: false, message: NO_ROOT_MSG };
+  }
+  try {
+    broadcastSyncStatus({ kind: "fetching" });
+    const fetched = await fetchCanonicalTarball({
+      owner: CANONICAL_OWNER,
+      repo: CANONICAL_REPO,
+    });
+    try {
+      broadcastSyncStatus({ kind: "applying" });
+      const report = await applyCanonicalSync(
+        registryRoot,
+        fetched.extractedRoot,
+        fetched.commitSha,
+      );
+      broadcastSyncStatus({
+        kind: "done",
+        upserted: report.upserted.length,
+        conflicts: report.conflicts.length,
+        orphaned: report.orphaned.length,
+        commitSha: report.commitSha,
+      });
+      return {
+        ok: true,
+        message: `synced ${report.upserted.length} skill(s)${
+          report.conflicts.length > 0
+            ? `, ${report.conflicts.length} conflict(s) pending`
+            : ""
+        }`,
+      };
+    } finally {
+      fetched.cleanup();
+    }
+  } catch (err) {
+    const message = (err as Error).message;
+    broadcastSyncStatus({ kind: "error", message });
+    return { ok: false, message };
+  }
+});
+
+ipcMain.handle(IPC.getSyncReport, () => {
+  if (!registryRoot) return null;
+  return readLastSyncReport(registryRoot);
 });
 
 void app.whenReady().then(() => {

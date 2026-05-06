@@ -461,6 +461,61 @@ input, select { font-family: inherit; color: inherit; }
   border: 1px solid var(--border);
 }
 
+.skill-origin-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.skill-origin-badge.user {
+  color: var(--accent);
+  background: var(--surface-hi);
+  border: 1px solid var(--accent);
+}
+.skill-origin-badge.imported {
+  color: var(--text-2);
+  background: var(--surface-hi);
+  border: 1px dashed var(--border);
+}
+
+.sync-banner {
+  display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  margin: 0 var(--s4);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  border: 1px solid var(--border);
+  background: var(--surface-hi);
+  color: var(--text-2);
+}
+.sync-banner.active { color: var(--text); }
+.sync-banner.done {
+  color: var(--success);
+  border-color: var(--success);
+  background: var(--success-dim);
+}
+.sync-banner.error {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-dim);
+}
+.sync-banner.pending {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: var(--warn-dim);
+}
+.sync-banner-dismiss {
+  margin-left: auto;
+  display: inline-flex; align-items: center;
+  background: transparent; border: 0; color: inherit;
+  cursor: pointer; padding: var(--s1);
+  border-radius: var(--r-sm);
+}
+.sync-banner-dismiss:hover { background: rgba(0,0,0,0.1); }
+
 .skill-name {
   font-family: var(--font-mono);
   font-weight: 600; font-size: 14px;
