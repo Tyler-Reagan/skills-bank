@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T03:42:24.690Z",
+  "generatedAt": "2026-05-06T04:03:07.867Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -137,6 +137,23 @@
       "name": "next-best-practices",
       "description": "Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling",
       "path": "skills/next-best-practices"
+    },
+    {
+      "name": "polish-patterns",
+      "description": "Copy-ready React+TypeScript implementations of UI polish patterns — token-driven theming with light/dark + density toggles, focus-return modal hooks, skeleton loaders, toast-with-undo, inline ARIA validation, drawer motion, first-run setup, and a small Icon component. A launchpad of concrete code that complements ui-ux-pro-max's design rules; pair the two when you have a rule to satisfy and want a working starting point.",
+      "tags": [
+        "polish",
+        "react",
+        "typescript",
+        "accessibility",
+        "theming",
+        "patterns",
+        "electron",
+        "shortcuts"
+      ],
+      "version": "0.1.0",
+      "author": "Tyler-Reagan",
+      "path": "skills/polish-patterns"
     },
     {
       "name": "pr-description",
