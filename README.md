@@ -1,63 +1,64 @@
 # skills-bank
 
-Central registry of [Claude Code](https://claude.ai/code) skills, plus a TypeScript CLI and Electron desktop manager for installing them locally as symlinks under `~/.claude/skills/`.
+A registry of [Claude Code](https://claude.ai/code) skills plus a TypeScript CLI and Electron desktop app for managing them across every AI agent you use (Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, Codex).
 
-## What's here
+For end-user walkthroughs and concept definitions, see **[docs/user-guide.md](docs/user-guide.md)**. For the project roadmap, see **[ROADMAP.md](ROADMAP.md)**.
 
-- `skills/` — the registry. Each skill is a folder with `SKILL.md` and `meta.json`.
-- `packages/core` — shared TS library (types, registry IO, install/uninstall, migration scan).
-- `packages/cli` — `skills-bank` CLI.
-- `packages/desktop` — Electron + React + Vite desktop app.
-- `scripts/` — schema validation and `index.json` generation.
-- `docs/meta-schema.json` — JSON Schema for `meta.json`.
+## What's in this repo
 
-## Install model
+| Path | What |
+|---|---|
+| `skills/` | The registry — one folder per skill containing `SKILL.md` and (optionally) `meta.json`. |
+| `packages/core` | Shared TypeScript library: registry IO, install/uninstall, sync, migration. |
+| `packages/cli` | The `skills-bank` CLI. |
+| `packages/desktop` | Electron + React + Vite desktop app. |
+| `docs/` | User-facing documentation. `meta-schema.json` defines the `meta.json` schema. |
 
-Installing a skill creates a symlink at `~/.claude/skills/<name>` pointing into this repo's `skills/<category>/<name>` folder. No copies. Uninstalling removes the symlink only — never the source.
+## How install works
 
-## CLI
+Each skill is a folder under `skills/<name>/`. Installing a skill creates a symlink at `<agent-dir>/<name>` pointing back into `<repo>/skills/<name>/` — no copies. The desktop app and CLI broadcast the symlink across **every agent directory you have set up** (e.g. both `~/.claude/skills` and `~/.cursor/skills`), so the same skill is available wherever you run an AI agent. Uninstalling removes the symlinks; the source folder is never deleted.
+
+The "registry" is the metadata-tagged collection of skills this app manages. It is **not** the only source of skills you can use — anything you install from elsewhere (e.g. via the [skills.sh CLI](https://skills.sh/)) shows up alongside in the **Installed** tab.
+
+## Desktop app
+
+### Install
+
+Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/skills-bank/releases) — both Apple Silicon (`-arm64.dmg`) and Intel (`-x64.dmg`) builds are published. Open the dmg, drag **Skills Bank** to Applications, then launch from Spotlight. The build is unsigned, so the first launch needs **right-click → Open** to bypass Gatekeeper; subsequent launches are normal double-clicks.
+
+The app auto-updates by polling the Releases feed on launch. Updates to the app and updates to the registry contents are independent — see the user guide for details.
+
+### First launch
+
+The app shows a one-time persona decision:
+
+- **Continue without** — Convenience persona. Use the curated registry from this repo, sync updates with one click, add your own skills alongside.
+- **Authenticate with GitHub** — Power persona. Replace the registry with a GitHub repo of your own that contains a `skills/` directory. You maintain it from then on; auto-sync is off.
+- **Self-host** — Fork the app + registry and ship your own build. Opens [docs/self-host.md](docs/self-host.md).
+
+You can switch persona later (sign out / change registry) from the account menu in the header.
+
+### Local development
 
 ```bash
 pnpm install
-pnpm run build
-node packages/cli/dist/index.js list
-node packages/cli/dist/index.js install <name>
-node packages/cli/dist/index.js installed
-node packages/cli/dist/index.js uninstall <name>
-node packages/cli/dist/index.js import        # migrate pre-existing ~/.claude/skills entries
-node packages/cli/dist/index.js finalize      # if ~/.claude/skills is itself a symlink, replace with a real dir
-node packages/cli/dist/index.js export <name> # export a registry skill: raw SKILL.md if standalone, .zip if bundled
-```
-
-> `finalize` is for the case where `~/.claude/skills` was previously redirected to another folder (e.g. `~/.agents/skills`) by another tool. After all entries are adopted, finalize swaps the top-level symlink for a real directory containing the same per-skill symlinks — eliminating the double-hop indirection. The original symlink is preserved as `~/.claude/skills.bak.<timestamp>`.
-
-## Desktop
-
-First-time setup (installs deps and downloads the Electron binary):
-
-```bash
-pnpm install
-```
-
-Run the app locally:
-
-```bash
-pnpm run desktop:dev      # build main process, watch renderer with Vite, launch Electron
+pnpm run desktop:dev      # build main, watch renderer with Vite, launch Electron
 # or
 pnpm run desktop:start    # one-shot production build, then launch Electron
 ```
 
 `desktop:dev` keeps the renderer rebuilding on save; restart Electron (`Cmd+Q` and re-run) to pick up changes to the main or preload process.
 
-### Install the app (no Terminal needed after this)
+To work against the canonical skills folder on disk (so your edits to `skills/<name>/` are immediately visible), set `SKILLS_BANK_ROOT=/path/to/skills-bank` in your shell. The app reads from there directly and silently sets persona = convenience.
 
-Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/skills-bank/releases) — both Apple Silicon (`-arm64.dmg`) and Intel (`-x64.dmg`) builds are published. Open the dmg, drag **Skills Bank** to Applications, then launch from Spotlight. The build is unsigned, so the first launch needs **right-click → Open** to bypass Gatekeeper; subsequent launches are normal double-clicks.
+To wipe local config + token between test runs:
 
-Once installed, the app checks the Releases feed on each launch and offers to install new versions in-app. App updates and registry contents are independent — updating the app won't change which registry you've pointed at, and updating a registry doesn't require an app upgrade.
+```bash
+pnpm run desktop:reset          # clears persona + auth token
+pnpm run desktop:reset:hard     # also wipes the app-managed registry directory
+```
 
-On first launch, the app shows a setup screen asking you to point at a registry folder (typically a clone of this repo, but any folder with the same shape works). The choice is persisted in `~/Library/Application Support/@skills-bank/desktop/config.json` and can be changed any time via the gear icon in the Header. The config lives in user data, so it survives app upgrades.
-
-To build locally instead of downloading a release:
+### Local builds
 
 ```bash
 pnpm run desktop:package:mac          # both arm64 + x64
@@ -73,27 +74,38 @@ Release builds run on tag push:
 
 ```bash
 # bump packages/desktop/package.json version, commit, then:
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 The `release` workflow builds both DMGs and uploads them to a **draft** GitHub Release. Review and publish the draft from the GitHub UI when you're ready for users to see it.
 
-### Local dev (no .app)
+## CLI
 
 ```bash
-pnpm run desktop:dev      # build main process, watch renderer with Vite, launch Electron
-# or
-pnpm run desktop:start    # one-shot production build, then launch Electron
+pnpm install
+pnpm run build
+node packages/cli/dist/index.js list
+node packages/cli/dist/index.js install <name>     # broadcasts to every existing agent dir
+node packages/cli/dist/index.js installed
+node packages/cli/dist/index.js uninstall <name>
+node packages/cli/dist/index.js import             # adopt pre-existing skills outside the registry
+node packages/cli/dist/index.js finalize           # collapse a symlinked top-level agent dir
+node packages/cli/dist/index.js export <name>      # raw .md (standalone) or .zip (bundled)
 ```
 
-`desktop:dev` keeps the renderer rebuilding on save; restart Electron (`Cmd+Q` and re-run) to pick up changes to the main or preload process.
+## Authoring a registry skill
 
-## Authoring skills
+Drop a folder at `skills/<name>/` containing:
 
-Drop a folder under `skills/<category>/<name>/` containing `meta.json` (matching `docs/meta-schema.json`) and `SKILL.md`. Then:
+- `SKILL.md` — the skill prompt content. Optionally has YAML frontmatter (`name`, `description`).
+- `meta.json` — metadata matching `docs/meta-schema.json`. Optional fields: `tags`, `version`, `author`.
+
+Then validate and rebuild the index:
 
 ```bash
 pnpm run validate
 pnpm run build:index
 ```
+
+The desktop app re-reads the registry from disk on every refresh, so changes appear immediately when running against `SKILLS_BANK_ROOT`.

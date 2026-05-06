@@ -1,8 +1,16 @@
 import React from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
 import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
+
+const REGISTRY_TOOLTIP =
+  "A persisted collection of skills and their metadata that this app maintains. " +
+  "Installing a registry skill links it into one or more of your agent directories " +
+  "(~/.claude/skills, ~/.cursor/skills, etc.). The registry is NOT the only place " +
+  "skills can come from — anything you install from outside (e.g. the skills.sh CLI) " +
+  "shows up alongside, in the Installed tab.";
 
 interface Props {
   registry: RegistryEntry[];
@@ -67,14 +75,16 @@ export function BrowseTab({
   return (
     <div>
       <div className="tab-intro">
-        <strong>Registry.</strong> Skills published in this skills-bank repo —
-        portable across machines, shared via git. Click any card to view its
-        details, then <strong>Install</strong> to symlink it into{" "}
-        <code>~/.claude/skills</code> on this machine.
+        <strong>Registry</strong>
+        <InfoTooltip text={REGISTRY_TOOLTIP} label="What is the registry?" />
+        Skills published in this app's registry — portable across
+        machines, shared via git. Click any card to view its details, then{" "}
+        <strong>Install</strong> to link it into the agent directories you
+        use (Claude Code, Cursor, etc.).
         <span className="meta-counts">
           <span>{registry.length} in registry</span>
           <span>·</span>
-          <span>{installedFromRegistry} installed locally</span>
+          <span>{installedFromRegistry} linked locally</span>
           {warningCount > 0 && (
             <>
               <span>·</span>

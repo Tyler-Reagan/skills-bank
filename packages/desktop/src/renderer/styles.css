@@ -494,6 +494,63 @@ input, select { font-family: inherit; color: inherit; }
   color: var(--text-2);
   background: var(--surface-hi);
   border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+/* ── InfoTooltip ─── */
+.info-tooltip {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  color: var(--text-3);
+  cursor: help;
+  vertical-align: middle;
+  margin-left: var(--s1);
+}
+.info-tooltip:hover, .info-tooltip:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+.info-tooltip-bubble {
+  position: absolute;
+  bottom: calc(100% + var(--s2));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  max-width: 80vw;
+  padding: var(--s3);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+  font-family: var(--font-sans);
+  box-shadow: var(--shadow-hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-fast) var(--ease);
+  z-index: 200;
+  white-space: normal;
+}
+.info-tooltip:hover .info-tooltip-bubble,
+.info-tooltip:focus-visible .info-tooltip-bubble {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* Tooltips on right edge wrap left so they don't get clipped. */
+.info-tooltip-bubble:after {
+  content: "";
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--border-hi);
 }
 
 .sync-banner {

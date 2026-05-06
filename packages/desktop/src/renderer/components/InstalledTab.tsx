@@ -4,7 +4,22 @@ import type {
   InstalledSkill,
   RegistryEntry,
 } from "@skills-bank/core";
+import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
+
+const INSTALLED_TOOLTIP =
+  "Every skill currently linked into any agent directory on this machine " +
+  "(~/.claude/skills, ~/.cursor/skills, ~/.agents/skills, and others) — " +
+  "regardless of whether this app added it. Skills not yet under registry " +
+  "management appear in the \"Not yet integrated\" section; migrating one " +
+  "moves it into the registry so the app can manage it.";
+
+const MIGRATE_TOOLTIP =
+  "Migrating moves a skill into this app's registry so it becomes a managed entry: " +
+  "the file content moves under <repo>/skills/<name>/, the link in your agent dir is " +
+  "rewritten to point there, and the skill picks up registry metadata (warnings, " +
+  "version tracking, etc.). The original on-disk location is left empty (real-dir " +
+  "case) or untouched (foreign-symlink case).";
 
 interface InstalledGroup {
   name: string;
@@ -91,14 +106,15 @@ export function InstalledTab({
   return (
     <div>
       <div className="tab-intro">
-        <strong>Installed.</strong> Every entry currently under any agent's{" "}
-        <code>~/.&lt;agent&gt;/skills</code> directory — including ones added by
-        skills-bank and ones that came from elsewhere (manual installs, the
-        skills.sh CLI, etc). Skills-bank can manage the unintegrated ones if
-        you choose to migrate them. Chips on each card show which agents have
-        the skill linked.
+        <strong>Installed</strong>
+        <InfoTooltip text={INSTALLED_TOOLTIP} label="What does Installed mean?" />
+        Every skill currently linked into any agent directory on this
+        machine — managed by this app or installed elsewhere (e.g. the
+        skills.sh CLI). Chips show which agent dirs have each skill linked.
         <span className="meta-counts">
-          <span>{groups.length} skill{groups.length === 1 ? "" : "s"}</span>
+          <span>
+            {groups.length} skill{groups.length === 1 ? "" : "s"}
+          </span>
           <span>·</span>
           <span>{integrated.length} from registry</span>
           {unintegrated.length > 0 && (
@@ -116,10 +132,15 @@ export function InstalledTab({
               <h2>
                 Not yet integrated{" "}
                 <span className="count">({unintegrated.length})</span>
+                <InfoTooltip
+                  text={MIGRATE_TOOLTIP}
+                  label="What does migrating do?"
+                />
               </h2>
               <p>
-                Live under <code>~/.claude/skills</code> but aren't managed by
-                skills-bank. Click any card to migrate just that one.
+                Linked into an agent directory but not yet under registry
+                management. Each chip shows where the skill lives on disk.
+                Click any card to migrate just that one.
               </p>
             </div>
             <button className="btn primary" onClick={onMigrateAll}>
@@ -149,6 +170,7 @@ export function InstalledTab({
                   onSelect={() => onMigrateOne(s)}
                   index={i}
                   agents={g.agents}
+                  chipsAsPaths
                 />
               );
             })}
