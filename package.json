@@ -20,6 +20,8 @@
     "desktop:start": "pnpm --filter @skills-bank/desktop start",
     "desktop:package:mac": "pnpm --filter @skills-bank/desktop package:mac",
     "desktop:package:win": "pnpm --filter @skills-bank/desktop package:win",
+    "desktop:reset": "tsx scripts/reset-desktop-config.ts",
+    "desktop:reset:hard": "tsx scripts/reset-desktop-config.ts --hard",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache"
   },
   "pnpm": {
