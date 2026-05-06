@@ -60,6 +60,7 @@ export function SkillCard({
         >
           {entry.name}
         </p>
+        <OriginBadge source={entry.source.source} />
         <StatusChip status={status} warnings={entry.warnings?.length ?? 0} />
       </div>
 
@@ -95,6 +96,20 @@ export function SkillCard({
         {entry.version && <span>· v{entry.version}</span>}
       </div>
     </div>
+  );
+}
+
+function OriginBadge({
+  source,
+}: {
+  source: RegistryEntry["source"]["source"];
+}): React.ReactElement | null {
+  if (source === "canonical") return null;
+  const label = source === "user" ? "Yours" : "Imported";
+  return (
+    <span className={`skill-origin-badge ${source}`} title={`source: ${source}`}>
+      {label}
+    </span>
   );
 }
 

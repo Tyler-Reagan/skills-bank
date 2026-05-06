@@ -7,6 +7,7 @@ import type {
   MigrationResult,
   RegistryEntry,
   ScanReport,
+  SyncReport,
 } from "@skills-bank/core";
 
 export const IPC = {
@@ -29,7 +30,23 @@ export const IPC = {
   checkForUpdates: "app:checkForUpdates",
   quitAndInstallUpdate: "app:quitAndInstallUpdate",
   updateStatus: "app:updateStatus",
+  syncCanonical: "registry:syncCanonical",
+  getSyncReport: "registry:getSyncReport",
+  syncStatus: "registry:syncStatus",
 } as const;
+
+export type SyncStatus =
+  | { kind: "idle" }
+  | { kind: "fetching" }
+  | { kind: "applying" }
+  | {
+      kind: "done";
+      upserted: number;
+      conflicts: number;
+      orphaned: number;
+      commitSha: string;
+    }
+  | { kind: "error"; message: string };
 
 export type UpdateStatus =
   | { kind: "idle" }
@@ -79,6 +96,9 @@ interface SkillsBankAPI {
   checkForUpdates(): Promise<{ ok: boolean; message: string }>;
   quitAndInstallUpdate(): Promise<void>;
   onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
+  syncCanonical(): Promise<{ ok: boolean; message: string }>;
+  getSyncReport(): Promise<SyncReport | null>;
+  onSyncStatus(cb: (status: SyncStatus) => void): () => void;
 }
 
 declare global {

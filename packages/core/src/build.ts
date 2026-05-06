@@ -4,6 +4,7 @@ import { execSync } from "node:child_process";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { readSkillMeta } from "./registry.js";
+import { readSkillSource } from "./source.js";
 import type { RegistryEntry, RegistryIndex, SkillMeta } from "./types.js";
 
 export interface BuildIndexOptions {
@@ -188,6 +189,7 @@ function buildOneEntry(
     ...(meta.version ? { version: meta.version } : {}),
     ...(meta.author ? { author: meta.author } : {}),
     path: path.relative(registryRoot, skillDir),
+    source: readSkillSource(skillDir),
     ...(warnings.length > 0 ? { warnings } : {}),
   };
 

@@ -11,6 +11,11 @@ export interface RegistryEntry extends SkillMeta {
   path: string;
   lastCommit?: { sha: string; date: string; message: string };
   /**
+   * Origin marker for this skill. Read from a sibling .skills-bank.json
+   * inside the skill folder; absent means user-authored.
+   */
+  source: import("./source.js").SkillSource;
+  /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has
    * SKILL.md. Surface in the UI so users can fix metadata without

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IPC, type UpdateStatus } from "../shared/ipc.js";
+import { IPC, type SyncStatus, type UpdateStatus } from "../shared/ipc.js";
 
 const api = {
   listRegistry: () => ipcRenderer.invoke(IPC.listRegistry),
@@ -27,6 +27,13 @@ const api = {
     const listener = (_e: unknown, status: UpdateStatus) => cb(status);
     ipcRenderer.on(IPC.updateStatus, listener);
     return () => ipcRenderer.removeListener(IPC.updateStatus, listener);
+  },
+  syncCanonical: () => ipcRenderer.invoke(IPC.syncCanonical),
+  getSyncReport: () => ipcRenderer.invoke(IPC.getSyncReport),
+  onSyncStatus: (cb: (status: SyncStatus) => void) => {
+    const listener = (_e: unknown, status: SyncStatus) => cb(status);
+    ipcRenderer.on(IPC.syncStatus, listener);
+    return () => ipcRenderer.removeListener(IPC.syncStatus, listener);
   },
 };
 
