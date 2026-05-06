@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import type {
+  ConflictEntry,
+  InstalledSkill,
+  RegistryEntry,
+} from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
+import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js";
 import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
 import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
@@ -103,6 +108,9 @@ export function App(): React.ReactElement {
   const [density, setDensity] = useState<Density>(readInitialDensity);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ kind: "idle" });
   const [pendingConflicts, setPendingConflicts] = useState(0);
+  const [conflictModalEntries, setConflictModalEntries] = useState<
+    ConflictEntry[] | null
+  >(null);
 
   // Apply the active theme to <html data-theme="…"> so CSS-variable
   // overrides flow through every component.
@@ -207,12 +215,23 @@ export function App(): React.ReactElement {
   }, [flashWithAction]);
 
   // Sync status feed: drives the SyncBanner and the Header sync button.
+  // When a sync completes with conflicts, auto-open the resolver modal so
+  // the user doesn't have to chase the banner.
   useEffect(() => {
     if (!window.skillsBank.onSyncStatus) return;
     return window.skillsBank.onSyncStatus((status) => {
       setSyncStatus(status);
       if (status.kind === "done") {
         setPendingConflicts(status.conflicts);
+        if (status.conflicts > 0) {
+          void window.skillsBank
+            .getPendingConflicts()
+            .then((pending) => {
+              if (pending && pending.conflicts.length > 0) {
+                setConflictModalEntries(pending.conflicts);
+              }
+            });
+        }
       }
     });
   }, []);
@@ -231,6 +250,23 @@ export function App(): React.ReactElement {
     flash(r.message);
     await refresh();
   }, [refresh, flash]);
+
+  const openConflictModal = useCallback(async () => {
+    const pending = await window.skillsBank.getPendingConflicts();
+    if (!pending || pending.conflicts.length === 0) return;
+    setConflictModalEntries(pending.conflicts);
+  }, []);
+
+  const resolveConflicts = useCallback(
+    async (decisions: import("@skills-bank/core").SyncDecisions) => {
+      const r = await window.skillsBank.resolveConflicts(decisions);
+      flash(r.message);
+      setConflictModalEntries(null);
+      // The handler re-runs sync; refresh to reflect the new registry state.
+      await refresh();
+    },
+    [flash, refresh],
+  );
 
   const changeRegistry = useCallback(async () => {
     const r = await window.skillsBank.setRegistryRoot();
@@ -342,6 +378,7 @@ export function App(): React.ReactElement {
         status={syncStatus}
         pendingConflicts={pendingConflicts}
         onDismiss={() => setSyncStatus({ kind: "idle" })}
+        onResolveConflicts={() => void openConflictModal()}
       />
       <Tabs
         active={tab}
@@ -398,6 +435,14 @@ export function App(): React.ReactElement {
             await refresh();
           }}
           onFlash={flash}
+        />
+      )}
+
+      {conflictModalEntries && (
+        <ConflictResolutionModal
+          conflicts={conflictModalEntries}
+          onClose={() => setConflictModalEntries(null)}
+          onResolve={resolveConflicts}
         />
       )}
 

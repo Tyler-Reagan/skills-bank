@@ -17,10 +17,14 @@ import {
   installSkill,
   listInstalled,
   readLastSyncReport,
+  readPendingConflicts,
+  readSyncDecisions,
   resolveRegistryRoot,
   scanExistingInstalls,
   uninstallSkill,
+  writeSyncDecisions,
   type MigrationAction,
+  type SyncDecisions,
 } from "@skills-bank/core";
 import { IPC, type SyncStatus, type UpdateStatus } from "../shared/ipc.js";
 
@@ -477,10 +481,8 @@ function broadcastSyncStatus(status: SyncStatus): void {
   }
 }
 
-ipcMain.handle(IPC.syncCanonical, async () => {
-  if (!registryRoot) {
-    return { ok: false, message: NO_ROOT_MSG };
-  }
+async function runSync(): Promise<{ ok: boolean; message: string }> {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     broadcastSyncStatus({ kind: "fetching" });
     const fetched = await fetchCanonicalTarball({
@@ -489,10 +491,12 @@ ipcMain.handle(IPC.syncCanonical, async () => {
     });
     try {
       broadcastSyncStatus({ kind: "applying" });
+      const decisions = readSyncDecisions(registryRoot);
       const report = await applyCanonicalSync(
         registryRoot,
         fetched.extractedRoot,
         fetched.commitSha,
+        decisions,
       );
       broadcastSyncStatus({
         kind: "done",
@@ -507,6 +511,10 @@ ipcMain.handle(IPC.syncCanonical, async () => {
           report.conflicts.length > 0
             ? `, ${report.conflicts.length} conflict(s) pending`
             : ""
+        }${
+          report.resolved.length > 0
+            ? `, ${report.resolved.length} auto-resolved`
+            : ""
         }`,
       };
     } finally {
@@ -517,12 +525,35 @@ ipcMain.handle(IPC.syncCanonical, async () => {
     broadcastSyncStatus({ kind: "error", message });
     return { ok: false, message };
   }
-});
+}
+
+ipcMain.handle(IPC.syncCanonical, () => runSync());
 
 ipcMain.handle(IPC.getSyncReport, () => {
   if (!registryRoot) return null;
   return readLastSyncReport(registryRoot);
 });
+
+ipcMain.handle(IPC.getPendingConflicts, () => {
+  if (!registryRoot) return null;
+  return readPendingConflicts(registryRoot);
+});
+
+// Persist user choices and immediately re-run sync so the resolutions
+// take effect without a separate user action. The re-run consumes the
+// just-written decisions via readSyncDecisions inside runSync.
+ipcMain.handle(
+  IPC.resolveConflicts,
+  async (_e, decisions: SyncDecisions) => {
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    try {
+      writeSyncDecisions(registryRoot, decisions);
+    } catch (err) {
+      return { ok: false, message: (err as Error).message };
+    }
+    return runSync();
+  },
+);
 
 void app.whenReady().then(() => {
   wireAutoUpdater();

@@ -6,6 +6,7 @@ interface Props {
   status: SyncStatus;
   pendingConflicts: number;
   onDismiss: () => void;
+  onResolveConflicts: () => void;
 }
 
 /**
@@ -19,6 +20,7 @@ export function SyncBanner({
   status,
   pendingConflicts,
   onDismiss,
+  onResolveConflicts,
 }: Props): React.ReactElement | null {
   if (status.kind === "fetching") {
     return (
@@ -49,6 +51,15 @@ export function SyncBanner({
     return (
       <div className="sync-banner done" role="status">
         <Icon name="check" size="sm" /> Sync complete — {parts.join(", ")}.
+        {status.conflicts > 0 && (
+          <button
+            className="sync-banner-action"
+            type="button"
+            onClick={onResolveConflicts}
+          >
+            Resolve
+          </button>
+        )}
         <button
           className="sync-banner-dismiss"
           type="button"
@@ -81,6 +92,13 @@ export function SyncBanner({
       <div className="sync-banner pending">
         <Icon name="alert-circle" size="sm" /> {pendingConflicts}{" "}
         sync conflict{pendingConflicts === 1 ? "" : "s"} pending resolution.
+        <button
+          className="sync-banner-action"
+          type="button"
+          onClick={onResolveConflicts}
+        >
+          Resolve
+        </button>
       </div>
     );
   }

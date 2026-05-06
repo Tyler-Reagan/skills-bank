@@ -35,6 +35,9 @@ const api = {
     ipcRenderer.on(IPC.syncStatus, listener);
     return () => ipcRenderer.removeListener(IPC.syncStatus, listener);
   },
+  getPendingConflicts: () => ipcRenderer.invoke(IPC.getPendingConflicts),
+  resolveConflicts: (decisions: unknown) =>
+    ipcRenderer.invoke(IPC.resolveConflicts, decisions),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);
