@@ -516,6 +516,20 @@ input, select { font-family: inherit; color: inherit; }
 }
 .sync-banner-dismiss:hover { background: rgba(0,0,0,0.1); }
 
+.sync-banner-action {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+}
+.sync-banner-action:hover { background: rgba(0,0,0,0.08); }
+.sync-banner-action + .sync-banner-dismiss { margin-left: var(--s1); }
+
 .skill-name {
   font-family: var(--font-mono);
   font-weight: 600; font-size: 14px;

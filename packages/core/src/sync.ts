@@ -49,6 +49,28 @@ export interface SyncReport {
   commitSha: string;
   /** ISO-8601 timestamp the sync ran. */
   syncedAt: string;
+  /**
+   * Conflicts auto-resolved this run via stored sync-decisions.
+   * Empty on a sync where the user hadn't yet chosen actions.
+   */
+  resolved: ResolvedEntry[];
+}
+
+export type ConflictAction = "keep-mine" | "use-canonical" | "rename-mine";
+
+export interface ConflictDecision {
+  action: ConflictAction;
+  decidedAt: string;
+}
+
+/** name → decision. Persisted at .skills-bank/sync-decisions.json. */
+export type SyncDecisions = Record<string, ConflictDecision>;
+
+export interface ResolvedEntry {
+  name: string;
+  action: ConflictAction;
+  /** When action === "rename-mine", the new name the local skill was moved to. */
+  renamedTo?: string;
 }
 
 /**
@@ -113,17 +135,33 @@ export async function fetchCanonicalTarball(
 }
 
 /**
+ * Find an unused folder name for renaming a user-authored skill out of
+ * the way of an incoming canonical one. Tries `<name>-local` first,
+ * then `<name>-local-2`, `<name>-local-3`, etc.
+ */
+function resolveRenameTarget(skillsDir: string, name: string): string {
+  const base = `${name}-local`;
+  if (!fs.existsSync(path.join(skillsDir, base))) return base;
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${base}-${i}`;
+    if (!fs.existsSync(path.join(skillsDir, candidate))) return candidate;
+  }
+  throw new Error(`no available rename target for ${name}`);
+}
+
+/**
  * Walk the canonical tarball's `skills/` dir and upsert each skill into
- * `<registryRoot>/skills/`. User-authored skills (`source: user` /
- * `source: imported`) block name collisions and surface as conflicts;
- * the caller resolves them via M5's modal. Skills locally marked
- * canonical that no longer exist in canonical are reported as orphaned
- * but never auto-deleted.
+ * `<registryRoot>/skills/`. Conflicts on name collisions with
+ * user-authored skills are either auto-resolved via the provided
+ * decisions map or queued in the report for the M5 resolver UI.
+ * Skills locally marked canonical that no longer exist in canonical
+ * are reported as orphaned but never auto-deleted.
  */
 export async function applyCanonicalSync(
   registryRoot: string,
   extractedRoot: string,
   commitSha: string,
+  decisions: SyncDecisions = {},
 ): Promise<SyncReport> {
   const canonicalSkillsDir = path.join(extractedRoot, "skills");
   if (!fs.existsSync(canonicalSkillsDir)) {
@@ -138,6 +176,7 @@ export async function applyCanonicalSync(
   const syncedAt = new Date().toISOString();
   const upserted: string[] = [];
   const conflicts: ConflictEntry[] = [];
+  const resolved: ResolvedEntry[] = [];
 
   const canonicalNames = new Set<string>();
   for (const ent of fs.readdirSync(canonicalSkillsDir, {
@@ -152,11 +191,30 @@ export async function applyCanonicalSync(
     if (fs.existsSync(localPath)) {
       const existingSource = readSkillSource(localPath);
       if (existingSource.source !== "canonical") {
-        conflicts.push({ name, localSource: existingSource, canonicalPath });
-        continue;
+        const decision = decisions[name];
+        if (decision) {
+          // Apply the stored resolution and skip the conflict queue.
+          if (decision.action === "keep-mine") {
+            resolved.push({ name, action: "keep-mine" });
+            continue;
+          }
+          if (decision.action === "use-canonical") {
+            fs.rmSync(localPath, { recursive: true, force: true });
+            // Falls through to the canonical write below.
+            resolved.push({ name, action: "use-canonical" });
+          } else if (decision.action === "rename-mine") {
+            const target = resolveRenameTarget(localSkillsDir, name);
+            fs.renameSync(localPath, path.join(localSkillsDir, target));
+            resolved.push({ name, action: "rename-mine", renamedTo: target });
+          }
+        } else {
+          conflicts.push({ name, localSource: existingSource, canonicalPath });
+          continue;
+        }
+      } else {
+        // Canonical → canonical: overwrite in place.
+        fs.rmSync(localPath, { recursive: true, force: true });
       }
-      // Canonical → canonical: overwrite in place.
-      fs.rmSync(localPath, { recursive: true, force: true });
     }
 
     fs.cpSync(canonicalPath, localPath, { recursive: true });
@@ -185,6 +243,7 @@ export async function applyCanonicalSync(
     orphaned,
     commitSha,
     syncedAt,
+    resolved,
   };
 
   // Persist the report and any pending conflicts so the renderer can
@@ -217,4 +276,64 @@ export function readLastSyncReport(registryRoot: string): SyncReport | null {
   } catch {
     return null;
   }
+}
+
+interface PendingConflictsFile {
+  syncedAt: string;
+  commitSha: string;
+  conflicts: ConflictEntry[];
+}
+
+export function readPendingConflicts(
+  registryRoot: string,
+): PendingConflictsFile | null {
+  const p = path.join(getStateDir(registryRoot), "pending-conflicts.json");
+  if (!fs.existsSync(p)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(p, "utf8")) as PendingConflictsFile;
+  } catch {
+    return null;
+  }
+}
+
+export function readSyncDecisions(registryRoot: string): SyncDecisions {
+  const p = path.join(getStateDir(registryRoot), "sync-decisions.json");
+  if (!fs.existsSync(p)) return {};
+  try {
+    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Record<
+      string,
+      Partial<ConflictDecision>
+    >;
+    const out: SyncDecisions = {};
+    for (const [name, dec] of Object.entries(raw)) {
+      if (
+        dec.action === "keep-mine" ||
+        dec.action === "use-canonical" ||
+        dec.action === "rename-mine"
+      ) {
+        out[name] = {
+          action: dec.action,
+          decidedAt:
+            typeof dec.decidedAt === "string"
+              ? dec.decidedAt
+              : new Date().toISOString(),
+        };
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export function writeSyncDecisions(
+  registryRoot: string,
+  decisions: SyncDecisions,
+): void {
+  const stateDir = getStateDir(registryRoot);
+  fs.mkdirSync(stateDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(stateDir, "sync-decisions.json"),
+    JSON.stringify(decisions, null, 2) + "\n",
+  );
 }

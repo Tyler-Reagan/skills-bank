@@ -1,4 +1,5 @@
 import type {
+  ConflictEntry,
   ExportInfo,
   ExportResult,
   FinalizeResult,
@@ -7,6 +8,7 @@ import type {
   MigrationResult,
   RegistryEntry,
   ScanReport,
+  SyncDecisions,
   SyncReport,
 } from "@skills-bank/core";
 
@@ -33,6 +35,8 @@ export const IPC = {
   syncCanonical: "registry:syncCanonical",
   getSyncReport: "registry:getSyncReport",
   syncStatus: "registry:syncStatus",
+  getPendingConflicts: "registry:getPendingConflicts",
+  resolveConflicts: "registry:resolveConflicts",
 } as const;
 
 export type SyncStatus =
@@ -99,6 +103,14 @@ interface SkillsBankAPI {
   syncCanonical(): Promise<{ ok: boolean; message: string }>;
   getSyncReport(): Promise<SyncReport | null>;
   onSyncStatus(cb: (status: SyncStatus) => void): () => void;
+  getPendingConflicts(): Promise<{
+    syncedAt: string;
+    commitSha: string;
+    conflicts: ConflictEntry[];
+  } | null>;
+  resolveConflicts(
+    decisions: SyncDecisions,
+  ): Promise<{ ok: boolean; message: string }>;
 }
 
 declare global {
