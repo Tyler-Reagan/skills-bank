@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Central registry of Claude Code skills with TypeScript CLI and Electron desktop manager.",
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "pnpm": ">=9"
   },
   "packageManager": "pnpm@10.25.0",
