@@ -2,12 +2,15 @@ import React from "react";
 import { Icon } from "./Icon.js";
 
 export type Theme = "dark" | "light";
+export type Density = "comfortable" | "compact";
 
 interface Props {
   refreshing: boolean;
   onRefresh: () => void;
   theme: Theme;
   onToggleTheme: () => void;
+  density: Density;
+  onToggleDensity: () => void;
 }
 
 export function Header({
@@ -15,8 +18,12 @@ export function Header({
   onRefresh,
   theme,
   onToggleTheme,
+  density,
+  onToggleDensity,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+  const nextDensity: Density =
+    density === "comfortable" ? "compact" : "comfortable";
   return (
     <header className="header">
       <h1 className="visually-hidden">skills-bank</h1>
@@ -25,6 +32,22 @@ export function Header({
           skills<span>-</span>bank
         </div>
         <div className="header-stats">
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={onToggleDensity}
+            aria-label={`Switch to ${nextDensity} card density`}
+            title={`Switch to ${nextDensity} density`}
+          >
+            <Icon
+              name={
+                density === "comfortable"
+                  ? "density-compact"
+                  : "density-comfortable"
+              }
+              size="md"
+            />
+          </button>
           <button
             className="icon-btn"
             type="button"

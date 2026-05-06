@@ -362,6 +362,35 @@ input, select { font-family: inherit; color: inherit; }
   margin-bottom: var(--s4);
 }
 
+/* ── Density override: compact ──────────────────────── */
+:root[data-density="compact"] .skills-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--s3);
+}
+:root[data-density="compact"] .skill-card {
+  padding: var(--s3);
+  border-radius: var(--r);
+}
+:root[data-density="compact"] .skill-card-top { margin-bottom: var(--s2); }
+:root[data-density="compact"] .skill-name {
+  font-size: 13px;
+}
+:root[data-density="compact"] .skill-description {
+  font-size: 12px;
+  -webkit-line-clamp: 2;
+  margin-bottom: var(--s2);
+}
+:root[data-density="compact"] .skill-tags { margin-bottom: var(--s2); }
+:root[data-density="compact"] .skill-tag {
+  font-size: 10px;
+  padding: 1px var(--s1);
+}
+:root[data-density="compact"] .skill-meta-row {
+  margin-bottom: var(--s2);
+  font-size: 10px;
+}
+:root[data-density="compact"] .skill-status-chip { font-size: 10px; }
+
 /* ── Skill card ──────────────────────────────────────── */
 .skill-card {
   display: flex;

@@ -22,7 +22,9 @@ export type IconName =
   | "broken-link"
   | "folder"
   | "sun"
-  | "moon";
+  | "moon"
+  | "density-compact"
+  | "density-comfortable";
 
 interface Props {
   name: IconName;
@@ -160,5 +162,22 @@ const PATHS: Record<IconName, React.ReactElement> = {
   ),
   moon: (
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  ),
+  // Lucide "align-justify" — four horizontal lines, evokes compact rows.
+  "density-compact": (
+    <>
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </>
+  ),
+  // Lucide "layout-grid" — 2x2 boxes, evokes a roomy grid.
+  "density-comfortable": (
+    <>
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </>
   ),
 };

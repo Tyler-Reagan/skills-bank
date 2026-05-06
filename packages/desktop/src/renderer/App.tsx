@@ -4,7 +4,7 @@ import { BrowseTab } from "./components/BrowseTab.js";
 import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
 import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
-import { Header, type Theme } from "./components/Header.js";
+import { Header, type Density, type Theme } from "./components/Header.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 
@@ -13,6 +13,7 @@ const LS_KEYS = {
   tagFilter: "skills-bank.tagFilter",
   tab: "skills-bank.activeTab",
   theme: "skills-bank.theme",
+  density: "skills-bank.density",
 };
 
 function readInitialTheme(): Theme {
@@ -31,6 +32,16 @@ function readInitialTheme(): Theme {
     return "light";
   }
   return "dark";
+}
+
+function readInitialDensity(): Density {
+  try {
+    const stored = localStorage.getItem(LS_KEYS.density);
+    if (stored === "compact" || stored === "comfortable") return stored;
+  } catch {
+    // fall through
+  }
+  return "comfortable";
 }
 
 function readLS(key: string, fallback: string): string {
@@ -84,6 +95,7 @@ export function App(): React.ReactElement {
   const [selectedTags, setSelectedTagsState] = useState<string[]>(readTagFilterLS);
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
   const [theme, setTheme] = useState<Theme>(readInitialTheme);
+  const [density, setDensity] = useState<Density>(readInitialDensity);
 
   // Apply the active theme to <html data-theme="…"> so CSS-variable
   // overrides flow through every component.
@@ -92,8 +104,16 @@ export function App(): React.ReactElement {
     writeLS(LS_KEYS.theme, theme);
   }, [theme]);
 
+  // Density flows through the same pattern via data-density.
+  useEffect(() => {
+    document.documentElement.dataset["density"] = density;
+    writeLS(LS_KEYS.density, density);
+  }, [density]);
+
   const toggleTheme = () =>
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  const toggleDensity = () =>
+    setDensity((prev) => (prev === "comfortable" ? "compact" : "comfortable"));
 
   const setSearch = (v: string) => {
     setSearchState(v);
@@ -145,6 +165,8 @@ export function App(): React.ReactElement {
           onRefresh={() => undefined}
           theme={theme}
           onToggleTheme={toggleTheme}
+          density={density}
+          onToggleDensity={toggleDensity}
         />
         <Tabs
           active="browse"
@@ -222,6 +244,8 @@ export function App(): React.ReactElement {
         onRefresh={() => void refresh()}
         theme={theme}
         onToggleTheme={toggleTheme}
+        density={density}
+        onToggleDensity={toggleDensity}
       />
       <Tabs
         active={tab}
