@@ -5,6 +5,7 @@ import type {
   MigrationResult,
   ScanReport,
 } from "@skills-bank/core";
+import { useFocusReturn } from "../hooks/useFocusReturn.js";
 
 interface Props {
   onClose: () => void | Promise<void>;
@@ -20,6 +21,7 @@ type Phase =
   | { kind: "results"; results: MigrationResult[]; rebuilding: boolean; rebuildMessage: string | null };
 
 export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
+  useFocusReturn();
   const [report, setReport] = useState<ScanReport | null>(null);
   const [choices, setChoices] = useState<ChoiceMap>({});
   const [phase, setPhase] = useState<Phase>({ kind: "scan" });
@@ -56,7 +58,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   if (scanError) {
     return (
       <div style={overlay}>
-        <div style={modal}>
+        <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>Scan failed</h2>
           <p style={{ color: "var(--danger)", fontFamily: "monospace", fontSize: 13 }}>
             {scanError}
@@ -72,7 +74,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   if (!report) {
     return (
       <div style={overlay}>
-        <div style={modal}>
+        <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>Scanning for existing skills…</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Inspecting <code>~/.claude/skills/</code> and classifying each entry as
@@ -97,7 +99,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   if (report.entries.length === 0) {
     return (
       <div style={overlay}>
-        <div style={modal}>
+        <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>Nothing to migrate</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Scanned <code>{report.claudeSkillsDir}</code> and found no entries.
@@ -155,7 +157,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   if (phase.kind === "applying") {
     return (
       <div style={overlay}>
-        <div style={modal}>
+        <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>Migrating skills…</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Applying {phase.total} action{phase.total === 1 ? "" : "s"}. Files
@@ -176,7 +178,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
     const failed = phase.results.filter((r) => !r.ok);
     return (
       <div style={overlay}>
-        <div style={modal}>
+        <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>
             {failed.length === 0
               ? "Migration complete"
@@ -237,7 +239,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
 
   return (
     <div style={overlay}>
-      <div style={modal}>
+      <div style={modal} role="dialog" aria-modal="true">
         <h2 style={{ marginTop: 0 }}>Migrate existing skills</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13 }}>
           Registry: {report.registryRoot}

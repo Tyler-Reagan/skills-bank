@@ -7,9 +7,10 @@ interface Props {
 
 export function Header({ refreshing, onRefresh }: Props): React.ReactElement {
   return (
-    <div className="header">
+    <header className="header">
+      <h1 className="visually-hidden">skills-bank</h1>
       <div className="header-inner">
-        <div className="header-brand">
+        <div className="header-brand" aria-hidden="true">
           skills<span>-</span>bank
         </div>
         <div className="header-stats">
@@ -17,11 +18,16 @@ export function Header({ refreshing, onRefresh }: Props): React.ReactElement {
             className="refresh-btn"
             disabled={refreshing}
             title="Re-read registry and ~/.claude/skills"
+            aria-label={
+              refreshing
+                ? "Refreshing registry and installed skills"
+                : "Refresh registry and installed skills"
+            }
             onClick={onRefresh}
           >
             {refreshing ? (
               <>
-                <span className="spinner inline" /> Refreshing…
+                <span className="spinner inline" aria-hidden="true" /> Refreshing…
               </>
             ) : (
               "↻ Refresh"
@@ -29,6 +35,6 @@ export function Header({ refreshing, onRefresh }: Props): React.ReactElement {
           </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

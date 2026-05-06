@@ -4,6 +4,7 @@ import type {
   MigrationAction,
   MigrationResult,
 } from "@skills-bank/core";
+import { useFocusReturn } from "../hooks/useFocusReturn.js";
 
 interface Props {
   entry: InstalledSkill;
@@ -21,6 +22,7 @@ export function SingleMigrateModal({
   onClose,
   onFlash,
 }: Props): React.ReactElement {
+  useFocusReturn();
   const [action, setAction] = useState<MigrationAction>(() =>
     defaultAction(entry),
   );
@@ -42,7 +44,7 @@ export function SingleMigrateModal({
   if (phase.kind === "applying") {
     return (
       <div style={overlay}>
-        <div style={modal}>
+        <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>Migrating {entry.name}…</h2>
           <div
             style={{
@@ -61,7 +63,7 @@ export function SingleMigrateModal({
   if (phase.kind === "result") {
     return (
       <div style={overlay}>
-        <div style={modal}>
+        <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>
             {phase.result.ok ? "Migration complete" : "Migration failed"}
           </h2>
@@ -93,7 +95,7 @@ export function SingleMigrateModal({
 
   return (
     <div style={overlay}>
-      <div style={modal}>
+      <div style={modal} role="dialog" aria-modal="true">
         <h2 style={{ marginTop: 0 }}>Migrate {entry.name}</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13 }}>
           <span className="tag">{entry.kind}</span>

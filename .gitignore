@@ -5,6 +5,8 @@ dist-main/
 .DS_Store
 *.log
 *.tsbuildinfo
+__pycache__/
+*.pyc
 .env
 .env.local
 .skills-bank/

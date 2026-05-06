@@ -141,7 +141,12 @@ export function App(): React.ReactElement {
         registryCount={registry.length}
         installedCount={installed.length}
       />
-      <div className="content">
+      <div
+        className="content"
+        role="tabpanel"
+        id={`tabpanel-${tab}`}
+        aria-labelledby={`tab-${tab}`}
+      >
         {tab === "browse" && (
           <BrowseTab
             registry={registry}

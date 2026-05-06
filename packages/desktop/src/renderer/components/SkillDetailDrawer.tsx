@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
 
@@ -25,6 +26,10 @@ export function SkillDetailDrawer({
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
+  const drawerRef = useRef<HTMLElement | null>(null);
+
+  useFocusReturn();
+  useInitialFocus(drawerRef);
   const [descExpanded, setDescExpanded] = useState(false);
   const [editingTags, setEditingTags] = useState(false);
   const [tagDraft, setTagDraft] = useState<string[]>(entry.tags ?? []);
@@ -143,8 +148,14 @@ export function SkillDetailDrawer({
 
   return (
     <>
-      <div className="drawer-overlay" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-label={`${entry.name} details`}>
+      <div className="drawer-overlay" onClick={onClose} aria-hidden="true" />
+      <aside
+        ref={drawerRef}
+        className="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${entry.name} details`}
+      >
         <div className="drawer-header">
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2

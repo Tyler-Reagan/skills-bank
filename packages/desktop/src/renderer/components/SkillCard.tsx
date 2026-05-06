@@ -44,6 +44,7 @@ export function SkillCard({
       onClick={onSelect}
       role="button"
       tabIndex={0}
+      aria-label={ariaLabelFor(entry, status)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -120,6 +121,20 @@ function StatusChip({
     );
   }
   return null;
+}
+
+function ariaLabelFor(entry: RegistryEntry, status: CardStatus): string {
+  const statusLabel: Record<CardStatus["kind"], string> = {
+    uninstalled: "not installed",
+    installed: "installed",
+    external: "external symlink",
+    "real-directory": "real directory, not yet integrated",
+    "broken-symlink": "broken symlink",
+  };
+  const warnings = entry.warnings?.length ?? 0;
+  const warningSuffix =
+    warnings > 0 ? `, ${warnings} ${warnings === 1 ? "warning" : "warnings"}` : "";
+  return `${entry.name}, ${statusLabel[status.kind]}${warningSuffix}. Activate to view details.`;
 }
 
 /**
