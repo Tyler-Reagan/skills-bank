@@ -175,7 +175,10 @@ export async function pollDeviceFlow(flowId: string): Promise<GitHubUser> {
       }),
     });
     if (!res.ok) {
-      throw new DeviceFlowError("transport", `token poll failed: ${res.status}`);
+      throw new DeviceFlowError(
+        "transport",
+        `token poll failed: ${res.status}`,
+      );
     }
     const data = (await res.json()) as {
       access_token?: string;
@@ -219,10 +222,7 @@ async function fetchUser(token: string): Promise<GitHubUser> {
     },
   });
   if (!res.ok) {
-    throw new DeviceFlowError(
-      "transport",
-      `user lookup failed: ${res.status}`,
-    );
+    throw new DeviceFlowError("transport", `user lookup failed: ${res.status}`);
   }
   const data = (await res.json()) as {
     login?: string;

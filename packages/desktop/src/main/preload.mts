@@ -51,6 +51,7 @@ const api = {
   reposReplaceRegistry: (fullName: string) =>
     ipcRenderer.invoke(IPC.reposReplaceRegistry, fullName),
   openExternal: (url: string) => ipcRenderer.invoke(IPC.openExternal, url),
+  openSelfHostDocs: () => ipcRenderer.invoke(IPC.openSelfHostDocs),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

@@ -70,11 +70,11 @@ export function RepoPickerModal({
       >
         <h2 style={{ marginTop: 0 }}>Choose a registry repo</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          Pick a repo of yours that contains a <code>skills/</code> directory
-          at its root. Each subfolder of <code>skills/</code> should hold a{" "}
-          <code>SKILL.md</code> (and optionally a <code>meta.json</code>).
-          The chosen repo replaces your current registry; you maintain it on
-          your own from then on.
+          Pick a repo of yours that contains a <code>skills/</code> directory at
+          its root. Each subfolder of <code>skills/</code> should hold a{" "}
+          <code>SKILL.md</code> (and optionally a <code>meta.json</code>). The
+          chosen repo replaces your current registry; you maintain it on your
+          own from then on.
         </p>
 
         <input
@@ -104,9 +104,7 @@ export function RepoPickerModal({
           </div>
         )}
 
-        <div
-          style={{ marginTop: 12, maxHeight: "55vh", overflowY: "auto" }}
-        >
+        <div style={{ marginTop: 12, maxHeight: "55vh", overflowY: "auto" }}>
           {repos === null && (
             <p style={{ color: "var(--text-3)", fontSize: 12 }}>
               <span className="spinner inline" /> Loading your repos…
@@ -129,7 +127,9 @@ export function RepoPickerModal({
                 padding: 10,
                 marginBottom: 6,
                 background:
-                  picking === r.fullName ? "var(--accent-dim)" : "var(--surface)",
+                  picking === r.fullName
+                    ? "var(--accent-dim)"
+                    : "var(--surface)",
                 border: "1px solid var(--border)",
                 borderRadius: 6,
                 cursor: picking ? "wait" : "pointer",
@@ -143,7 +143,9 @@ export function RepoPickerModal({
                   alignItems: "baseline",
                 }}
               >
-                <strong style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>
+                <strong
+                  style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}
+                >
                   {r.fullName}
                 </strong>
                 {r.isPrivate && (

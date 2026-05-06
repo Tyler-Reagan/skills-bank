@@ -14,12 +14,11 @@
 // Until this is replaced, the LoginScreen surfaces a "GitHub auth not
 // configured" message and the Authenticate button is disabled.
 
-export const GITHUB_CLIENT_ID: string = "REPLACE_WITH_OAUTH_APP_CLIENT_ID";
+export const GITHUB_CLIENT_ID: string = "Ov23liOmNnUsuI3JpRau";
 
 export function isAuthConfigured(): boolean {
   return (
-    GITHUB_CLIENT_ID !== "REPLACE_WITH_OAUTH_APP_CLIENT_ID" &&
-    GITHUB_CLIENT_ID.length > 0
+    GITHUB_CLIENT_ID !== "Ov23liOmNnUsuI3JpRau" && GITHUB_CLIENT_ID.length > 0
   );
 }
 

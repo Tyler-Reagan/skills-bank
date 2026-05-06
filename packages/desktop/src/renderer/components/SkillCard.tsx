@@ -107,7 +107,10 @@ function OriginBadge({
   if (source === "canonical") return null;
   const label = source === "user" ? "Yours" : "Imported";
   return (
-    <span className={`skill-origin-badge ${source}`} title={`source: ${source}`}>
+    <span
+      className={`skill-origin-badge ${source}`}
+      title={`source: ${source}`}
+    >
       {label}
     </span>
   );

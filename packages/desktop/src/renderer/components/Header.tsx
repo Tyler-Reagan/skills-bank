@@ -87,7 +87,8 @@ export function Header({
             >
               {syncing ? (
                 <>
-                  <span className="spinner inline" aria-hidden="true" /> Syncing…
+                  <span className="spinner inline" aria-hidden="true" />{" "}
+                  Syncing…
                 </>
               ) : (
                 <>

@@ -47,6 +47,7 @@ export const IPC = {
   reposListMine: "repos:listMine",
   reposReplaceRegistry: "repos:replaceRegistry",
   openExternal: "system:openExternal",
+  openSelfHostDocs: "system:openSelfHostDocs",
 } as const;
 
 export type Persona = "convenience" | "power";
@@ -160,6 +161,7 @@ interface SkillsBankAPI {
     fullName: string,
   ): Promise<{ ok: boolean; message: string; importedCount?: number }>;
   openExternal(url: string): Promise<void>;
+  openSelfHostDocs(): Promise<{ ok: boolean; message?: string }>;
 }
 
 declare global {

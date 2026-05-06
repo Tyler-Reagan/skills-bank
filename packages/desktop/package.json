@@ -47,6 +47,12 @@
       "package.json",
       "node_modules/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "../../docs",
+        "to": "docs"
+      }
+    ],
     "asar": true,
     "asarUnpack": [],
     "mac": {

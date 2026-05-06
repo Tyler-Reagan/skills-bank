@@ -228,13 +228,11 @@ export function App(): React.ReactElement {
       if (status.kind === "done") {
         setPendingConflicts(status.conflicts);
         if (status.conflicts > 0) {
-          void window.skillsBank
-            .getPendingConflicts()
-            .then((pending) => {
-              if (pending && pending.conflicts.length > 0) {
-                setConflictModalEntries(pending.conflicts);
-              }
-            });
+          void window.skillsBank.getPendingConflicts().then((pending) => {
+            if (pending && pending.conflicts.length > 0) {
+              setConflictModalEntries(pending.conflicts);
+            }
+          });
         }
       }
     });

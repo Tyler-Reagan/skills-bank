@@ -7,9 +7,6 @@ interface Props {
   onStatusChanged: (status: AuthStatus) => void;
 }
 
-const SELF_HOST_URL =
-  "https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/self-host.md";
-
 /**
  * First-launch persona decision. Three paths:
  *   1. Authenticate with GitHub (Device Flow) → power persona
@@ -68,8 +65,11 @@ export function LoginScreen({
     setPollError(null);
   };
 
-  const openSelfHost = () => {
-    void window.skillsBank.openExternal(SELF_HOST_URL);
+  const openSelfHost = async () => {
+    const r = await window.skillsBank.openSelfHostDocs();
+    if (!r.ok) {
+      setPollError(r.message ?? "could not open self-host docs");
+    }
   };
 
   if (flow) {
@@ -80,9 +80,7 @@ export function LoginScreen({
             skills<span>-</span>bank
           </div>
           <h1>Authenticate with GitHub</h1>
-          <p>
-            Open the link below and enter this code:
-          </p>
+          <p>Open the link below and enter this code:</p>
           <div className="device-code-box">
             <code className="device-code">{flow.userCode}</code>
             <button
@@ -136,9 +134,7 @@ export function LoginScreen({
           skills<span>-</span>bank
         </div>
         <h1>How do you want to use skills-bank?</h1>
-        <p>
-          Pick a path below. You can change your mind later in Settings.
-        </p>
+        <p>Pick a path below. You can change your mind later in Settings.</p>
 
         <div className="login-options">
           <button
@@ -176,7 +172,7 @@ export function LoginScreen({
             type="button"
             className="login-option"
             disabled={busy}
-            onClick={openSelfHost}
+            onClick={() => void openSelfHost()}
           >
             <strong>Self-host</strong>
             <span>

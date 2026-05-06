@@ -583,18 +583,15 @@ ipcMain.handle(IPC.getPendingConflicts, () => {
 // Persist user choices and immediately re-run sync so the resolutions
 // take effect without a separate user action. The re-run consumes the
 // just-written decisions via readSyncDecisions inside runSync.
-ipcMain.handle(
-  IPC.resolveConflicts,
-  async (_e, decisions: SyncDecisions) => {
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    try {
-      writeSyncDecisions(registryRoot, decisions);
-    } catch (err) {
-      return { ok: false, message: (err as Error).message };
-    }
-    return runSync();
-  },
-);
+ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    writeSyncDecisions(registryRoot, decisions);
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+  return runSync();
+});
 
 // ─── Auth + persona (M3) ────────────────────────────────────────────────────
 //
@@ -650,7 +647,10 @@ ipcMain.handle(IPC.authLogout, async () => {
 
 // ─── User repos + registry replace (M4) ─────────────────────────────────────
 
-async function ghFetch(pathSuffix: string, init?: RequestInit): Promise<Response> {
+async function ghFetch(
+  pathSuffix: string,
+  init?: RequestInit,
+): Promise<Response> {
   const token = getStoredToken();
   if (!token) throw new Error("not authenticated");
   return fetch(`https://api.github.com${pathSuffix}`, {
@@ -693,76 +693,90 @@ ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
   return out;
 });
 
-ipcMain.handle(
-  IPC.reposReplaceRegistry,
-  async (_e, fullName: string) => {
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    const token = getStoredToken();
-    if (!token) return { ok: false, message: "not authenticated" };
-    const slash = fullName.indexOf("/");
-    if (slash <= 0) {
-      return { ok: false, message: `invalid repo: ${fullName}` };
-    }
-    const owner = fullName.slice(0, slash);
-    const repo = fullName.slice(slash + 1);
+ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const token = getStoredToken();
+  if (!token) return { ok: false, message: "not authenticated" };
+  const slash = fullName.indexOf("/");
+  if (slash <= 0) {
+    return { ok: false, message: `invalid repo: ${fullName}` };
+  }
+  const owner = fullName.slice(0, slash);
+  const repo = fullName.slice(slash + 1);
 
-    let fetched;
-    try {
-      fetched = await fetchCanonicalTarball({ owner, repo, token });
-    } catch (err) {
-      return { ok: false, message: (err as Error).message };
-    }
-    try {
-      const skillsDir = path.join(fetched.extractedRoot, "skills");
-      if (!fs.existsSync(skillsDir)) {
-        return {
-          ok: false,
-          message: `${fullName} has no skills/ directory at the repo root`,
-        };
-      }
-      // Wipe the existing local registry skills/ wholesale; the power
-      // persona is "replace, don't merge."
-      const localSkillsDir = path.join(registryRoot, "skills");
-      fs.rmSync(localSkillsDir, { recursive: true, force: true });
-      fs.mkdirSync(localSkillsDir, { recursive: true });
-
-      const importedAt = new Date().toISOString();
-      let count = 0;
-      for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-        if (!ent.isDirectory()) continue;
-        const src = path.join(skillsDir, ent.name);
-        const dest = path.join(localSkillsDir, ent.name);
-        fs.cpSync(src, dest, { recursive: true });
-        writeSkillSource(dest, {
-          source: "imported",
-          syncedFromCommit: fetched.commitSha,
-          syncedAt: importedAt,
-        });
-        count++;
-      }
-      // Clear M2 sync state so any prior canonical state doesn't leak in.
-      const stateDir = path.join(registryRoot, ".skills-bank");
-      for (const f of [
-        "last-sync.json",
-        "pending-conflicts.json",
-        "sync-decisions.json",
-      ]) {
-        const p = path.join(stateDir, f);
-        if (fs.existsSync(p)) fs.unlinkSync(p);
-      }
+  let fetched;
+  try {
+    fetched = await fetchCanonicalTarball({ owner, repo, token });
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+  try {
+    const skillsDir = path.join(fetched.extractedRoot, "skills");
+    if (!fs.existsSync(skillsDir)) {
       return {
-        ok: true,
-        message: `imported ${count} skill(s) from ${fullName}`,
-        importedCount: count,
+        ok: false,
+        message: `${fullName} has no skills/ directory at the repo root`,
       };
-    } finally {
-      fetched.cleanup();
     }
-  },
-);
+    // Wipe the existing local registry skills/ wholesale; the power
+    // persona is "replace, don't merge."
+    const localSkillsDir = path.join(registryRoot, "skills");
+    fs.rmSync(localSkillsDir, { recursive: true, force: true });
+    fs.mkdirSync(localSkillsDir, { recursive: true });
+
+    const importedAt = new Date().toISOString();
+    let count = 0;
+    for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+      if (!ent.isDirectory()) continue;
+      const src = path.join(skillsDir, ent.name);
+      const dest = path.join(localSkillsDir, ent.name);
+      fs.cpSync(src, dest, { recursive: true });
+      writeSkillSource(dest, {
+        source: "imported",
+        syncedFromCommit: fetched.commitSha,
+        syncedAt: importedAt,
+      });
+      count++;
+    }
+    // Clear M2 sync state so any prior canonical state doesn't leak in.
+    const stateDir = path.join(registryRoot, ".skills-bank");
+    for (const f of [
+      "last-sync.json",
+      "pending-conflicts.json",
+      "sync-decisions.json",
+    ]) {
+      const p = path.join(stateDir, f);
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
+    return {
+      ok: true,
+      message: `imported ${count} skill(s) from ${fullName}`,
+      importedCount: count,
+    };
+  } finally {
+    fetched.cleanup();
+  }
+});
 
 ipcMain.handle(IPC.openExternal, async (_e, url: string) => {
   await shell.openExternal(url);
+});
+
+// Open docs/self-host.md from the local app bundle. Avoids the "GitHub
+// blob URL 404s before the PR merges" problem and works offline. The
+// docs/ tree is bundled via electron-builder's `extraResources` for
+// packaged builds; in dev we resolve relative to the desktop package's
+// app path, which is `<repo>/packages/desktop/`.
+ipcMain.handle(IPC.openSelfHostDocs, async () => {
+  const docPath = app.isPackaged
+    ? path.join(process.resourcesPath, "docs", "self-host.md")
+    : path.join(app.getAppPath(), "..", "..", "docs", "self-host.md");
+  if (!fs.existsSync(docPath)) {
+    return { ok: false, message: `self-host docs not found at ${docPath}` };
+  }
+  const error = await shell.openPath(docPath);
+  if (error) return { ok: false, message: error };
+  return { ok: true };
 });
 
 void app.whenReady().then(() => {
