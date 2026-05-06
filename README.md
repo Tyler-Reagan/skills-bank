@@ -51,17 +51,33 @@ pnpm run desktop:start    # one-shot production build, then launch Electron
 
 ### Install the app (no Terminal needed after this)
 
-To get a double-clickable `.app` you can launch from Spotlight / Launchpad without going through Terminal again:
+Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/skills-bank/releases) — both Apple Silicon (`-arm64.dmg`) and Intel (`-x64.dmg`) builds are published. Open the dmg, drag **Skills Bank** to Applications, then launch from Spotlight. The build is unsigned, so the first launch needs **right-click → Open** to bypass Gatekeeper; subsequent launches are normal double-clicks.
+
+Once installed, the app checks the Releases feed on each launch and offers to install new versions in-app. App updates and registry contents are independent — updating the app won't change which registry you've pointed at, and updating a registry doesn't require an app upgrade.
+
+On first launch, the app shows a setup screen asking you to point at a registry folder (typically a clone of this repo, but any folder with the same shape works). The choice is persisted in `~/Library/Application Support/@skills-bank/desktop/config.json` and can be changed any time via the gear icon in the Header. The config lives in user data, so it survives app upgrades.
+
+To build locally instead of downloading a release:
 
 ```bash
-pnpm run desktop:package:mac
+pnpm run desktop:package:mac          # both arm64 + x64
+pnpm run desktop:package:mac:arm64    # Apple Silicon only
+pnpm run desktop:package:mac:x64      # Intel only
 ```
 
-This produces `packages/desktop/dist-electron/Skills Bank-<version>-arm64.dmg` (Apple Silicon only). Open the dmg, drag **Skills Bank** to Applications, then launch from Spotlight. The build is unsigned, so the first launch needs **right-click → Open** to bypass Gatekeeper; subsequent launches are normal double-clicks.
+Output lands in `packages/desktop/dist-electron/`. Windows (`package:win`) exists but isn't tested.
 
-On first launch, the app shows a setup screen asking you to point at this repo's folder (so it knows where to find the `skills/` registry). The choice is persisted in `~/Library/Application Support/@skills-bank/desktop/config.json` and can be changed any time via the gear icon in the Header.
+### Cutting a release
 
-Intel Mac and Windows builds aren't configured yet (`package:win` exists but isn't tested).
+Release builds run on tag push:
+
+```bash
+# bump packages/desktop/package.json version, commit, then:
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The `release` workflow builds both DMGs and uploads them to a **draft** GitHub Release. Review and publish the draft from the GitHub UI when you're ready for users to see it.
 
 ### Local dev (no .app)
 

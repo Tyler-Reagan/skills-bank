@@ -181,6 +181,26 @@ export function App(): React.ReactElement {
     void refresh().finally(() => setInitialLoading(false));
   }, [refresh]);
 
+  // Surface auto-updater state. The main process broadcasts via IPC when it
+  // detects/downloads a release. We only act on `downloaded`: nothing else
+  // requires user attention (checking/downloading happen silently in the
+  // background, "not-available" is the boring common case).
+  useEffect(() => {
+    if (!window.skillsBank.onUpdateStatus) return;
+    return window.skillsBank.onUpdateStatus((status) => {
+      if (status.kind === "downloaded") {
+        flashWithAction(
+          `Update ${status.version} ready — restart to install`,
+          "Restart",
+          () => void window.skillsBank.quitAndInstallUpdate(),
+        );
+      } else if (status.kind === "error") {
+        // Don't spam users for every transient network blip; log only.
+        console.warn("[update] error:", status.message);
+      }
+    });
+  }, [flashWithAction]);
+
   const changeRegistry = useCallback(async () => {
     const r = await window.skillsBank.setRegistryRoot();
     if (r.ok && r.registryRoot) {

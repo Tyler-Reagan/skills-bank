@@ -1,0 +1,46 @@
+name: release
+# Tagged release: builds Apple Silicon + Intel DMGs and uploads to a draft
+# GitHub Release. Trigger by pushing a version tag (e.g. `git tag v0.2.0 &&
+# git push origin v0.2.0`). The Release stays in draft until you manually
+# publish it from the GitHub UI — that's the gate before users see it.
+#
+# Code signing & notarization are scaffolded but dormant. To enable, set
+# the following repository secrets:
+#   CSC_LINK                       - base64-encoded .p12 cert (Developer ID Application)
+#   CSC_KEY_PASSWORD               - password for the .p12
+#   APPLE_ID                       - Apple ID email
+#   APPLE_APP_SPECIFIC_PASSWORD    - app-specific password generated at appleid.apple.com
+#   APPLE_TEAM_ID                  - 10-char Team ID from developer.apple.com/account
+# Then flip `mac.identity` from null and set `mac.notarize: true` in
+# packages/desktop/package.json. With those in place electron-builder
+# auto-signs and notarizes; no further workflow changes are needed.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - name: Build & publish DMGs
+        working-directory: packages/desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm exec electron-builder --mac --arm64 --x64 --publish always

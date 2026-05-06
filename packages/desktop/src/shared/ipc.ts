@@ -26,7 +26,20 @@ export const IPC = {
   editTags: "skills:editTags",
   getConfig: "skills:getConfig",
   setRegistryRoot: "skills:setRegistryRoot",
+  checkForUpdates: "app:checkForUpdates",
+  quitAndInstallUpdate: "app:quitAndInstallUpdate",
+  updateStatus: "app:updateStatus",
 } as const;
+
+export type UpdateStatus =
+  | { kind: "idle" }
+  | { kind: "checking" }
+  | { kind: "available"; version: string }
+  | { kind: "not-available"; currentVersion: string }
+  | { kind: "downloading"; percent: number }
+  | { kind: "downloaded"; version: string }
+  | { kind: "error"; message: string }
+  | { kind: "disabled"; reason: string };
 
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
@@ -63,6 +76,9 @@ interface SkillsBankAPI {
     message: string;
     registryRoot: string | null;
   }>;
+  checkForUpdates(): Promise<{ ok: boolean; message: string }>;
+  quitAndInstallUpdate(): Promise<void>;
+  onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
 }
 
 declare global {

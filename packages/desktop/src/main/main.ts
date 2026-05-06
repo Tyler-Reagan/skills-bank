@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { autoUpdater } from "electron-updater";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +16,7 @@ import {
   uninstallSkill,
   type MigrationAction,
 } from "@skills-bank/core";
-import { IPC } from "../shared/ipc.js";
+import { IPC, type UpdateStatus } from "../shared/ipc.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -377,8 +378,82 @@ ipcMain.handle(
   },
 );
 
+// ─── Auto-updates ───────────────────────────────────────────────────────────
+//
+// Auto-update is intentionally a no-op outside packaged builds: electron-updater
+// can't resolve a version when running from `pnpm dev`. The renderer subscribes
+// to `IPC.updateStatus` to surface state. Update check pulls from the GitHub
+// Releases feed configured in package.json `build.publish`.
+//
+// Registry decoupling: this only swaps the app bundle. The user's chosen
+// registryRoot lives in app.getPath("userData")/config.json, which Electron
+// preserves across upgrades.
+
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+function broadcastUpdateStatus(status: UpdateStatus): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send(IPC.updateStatus, status);
+  }
+}
+
+function wireAutoUpdater(): void {
+  if (!app.isPackaged) return;
+  autoUpdater.on("checking-for-update", () => {
+    broadcastUpdateStatus({ kind: "checking" });
+  });
+  autoUpdater.on("update-available", (info) => {
+    broadcastUpdateStatus({ kind: "available", version: info.version });
+  });
+  autoUpdater.on("update-not-available", (info) => {
+    broadcastUpdateStatus({
+      kind: "not-available",
+      currentVersion: info.version,
+    });
+  });
+  autoUpdater.on("download-progress", (p) => {
+    broadcastUpdateStatus({ kind: "downloading", percent: p.percent });
+  });
+  autoUpdater.on("update-downloaded", (info) => {
+    broadcastUpdateStatus({ kind: "downloaded", version: info.version });
+  });
+  autoUpdater.on("error", (err) => {
+    broadcastUpdateStatus({
+      kind: "error",
+      message: err.message ?? String(err),
+    });
+  });
+}
+
+ipcMain.handle(IPC.checkForUpdates, async () => {
+  if (!app.isPackaged) {
+    const reason = "auto-update is disabled in dev (not a packaged build)";
+    broadcastUpdateStatus({ kind: "disabled", reason });
+    return { ok: false, message: reason };
+  }
+  try {
+    await autoUpdater.checkForUpdates();
+    return { ok: true, message: "checking for updates" };
+  } catch (err) {
+    const message = (err as Error).message;
+    broadcastUpdateStatus({ kind: "error", message });
+    return { ok: false, message };
+  }
+});
+
+ipcMain.handle(IPC.quitAndInstallUpdate, () => {
+  if (!app.isPackaged) return;
+  autoUpdater.quitAndInstall();
+});
+
 void app.whenReady().then(() => {
+  wireAutoUpdater();
   createWindow();
+  if (app.isPackaged) {
+    // Fire-and-forget: any error broadcasts to the renderer via the error event.
+    void autoUpdater.checkForUpdates();
+  }
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

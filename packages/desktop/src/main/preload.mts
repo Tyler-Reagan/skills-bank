@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IPC } from "../shared/ipc.js";
+import { IPC, type UpdateStatus } from "../shared/ipc.js";
 
 const api = {
   listRegistry: () => ipcRenderer.invoke(IPC.listRegistry),
@@ -21,6 +21,13 @@ const api = {
     ipcRenderer.invoke(IPC.editTags, name, tags),
   getConfig: () => ipcRenderer.invoke(IPC.getConfig),
   setRegistryRoot: () => ipcRenderer.invoke(IPC.setRegistryRoot),
+  checkForUpdates: () => ipcRenderer.invoke(IPC.checkForUpdates),
+  quitAndInstallUpdate: () => ipcRenderer.invoke(IPC.quitAndInstallUpdate),
+  onUpdateStatus: (cb: (status: UpdateStatus) => void) => {
+    const listener = (_e: unknown, status: UpdateStatus) => cb(status);
+    ipcRenderer.on(IPC.updateStatus, listener);
+    return () => ipcRenderer.removeListener(IPC.updateStatus, listener);
+  },
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);
