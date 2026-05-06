@@ -234,11 +234,19 @@ ipcMain.handle(IPC.install, (_e, name: string, force?: boolean) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     const r = installSkill(name, { registryRoot, force: force ?? false });
+    const wrote = r.installs.filter((i) => !i.alreadyInstalled);
+    if (wrote.length > 0) {
+      return {
+        ok: true,
+        message: `installed ${name} for ${wrote.length} agent(s)`,
+      };
+    }
+    if (r.installs.length > 0) {
+      return { ok: true, message: `${name} already installed` };
+    }
     return {
-      ok: true,
-      message: r.alreadyInstalled
-        ? `${name} already installed`
-        : `installed ${name} → ${r.target}`,
+      ok: false,
+      message: r.errors[0]?.message ?? `nothing installed for ${name}`,
     };
   } catch (err) {
     return { ok: false, message: (err as Error).message };
@@ -321,9 +329,37 @@ ipcMain.handle(IPC.rebuildIndex, () => {
   }
 });
 
+// Finalize every agent skills dir whose top-level is a symlink. Aggregates
+// results so the UI sees one combined ok/message rather than per-agent.
 ipcMain.handle(IPC.finalize, () => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  return finalizeSkillsDir({ registryRoot, confirmDestructive: true });
+  const report = scanExistingInstalls(registryRoot);
+  if (report.topLevelSymlinks.length === 0) {
+    return {
+      ok: false,
+      message: "No agent skills directories are top-level symlinks.",
+    };
+  }
+  const results = report.topLevelSymlinks.map((tls) =>
+    finalizeSkillsDir({
+      registryRoot,
+      agent: tls.agent,
+      confirmDestructive: true,
+    }),
+  );
+  const allOk = results.every((r) => r.ok);
+  const summary = results
+    .map((r, i) => {
+      const tls = report.topLevelSymlinks[i]!;
+      return `${tls.agent}: ${r.message}`;
+    })
+    .join("; ");
+  const blockingEntries = results.flatMap((r) => r.blockingEntries ?? []);
+  return {
+    ok: allOk,
+    message: summary,
+    ...(blockingEntries.length > 0 ? { blockingEntries } : {}),
+  };
 });
 
 ipcMain.handle(IPC.exportInfo, (_e, name: string) => {

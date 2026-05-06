@@ -38,7 +38,9 @@ export type InstalledKind =
 
 export interface InstalledSkill {
   name: string;
-  /** Absolute path of `~/.claude/skills/<name>` itself. */
+  /** Stable id of the agent dir this entry was discovered in. */
+  agent: import("./agents.js").AgentId;
+  /** Absolute path of `<agent-dir>/<name>` itself. */
   linkPath: string;
   /** Absolute resolved target if it's a symlink, else null. */
   target: string | null;
@@ -48,22 +50,27 @@ export interface InstalledSkill {
 }
 
 export interface TopLevelSymlinkInfo {
-  /** Absolute path the ~/.claude/skills symlink resolves to. */
+  /** The agent whose top-level skills dir is itself a symlink. */
+  agent: import("./agents.js").AgentId;
+  /** Absolute path the agent's skills dir symlink resolves to. */
   resolvedTarget: string;
   /** Whether the resolved target exists and is a directory. */
   exists: boolean;
 }
 
 export interface ScanReport {
+  /** Map from AgentId → absolute skills dir path that was scanned. */
+  agentDirs: Record<string, string>;
+  /** Kept for backward-compat with renderer code that displayed it. */
   claudeSkillsDir: string;
   registryRoot: string;
   entries: InstalledSkill[];
   /**
-   * Set when the ~/.claude/skills path is itself a symlink to another
-   * directory (e.g. ~/.agents/skills). Surfaces the "double-hop" case so
-   * the UI can offer to finalize the directory structure.
+   * One per agent whose top-level skills dir is itself a symlink to
+   * another directory (e.g. ~/.claude/skills → ~/.agents/skills). The
+   * UI can offer to finalize each independently.
    */
-  topLevelSymlink: TopLevelSymlinkInfo | null;
+  topLevelSymlinks: TopLevelSymlinkInfo[];
 }
 
 export interface FinalizeResult {

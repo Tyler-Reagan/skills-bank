@@ -1,5 +1,9 @@
 import pc from "picocolors";
-import { installSkill, resolveRegistryRoot } from "@skills-bank/core";
+import {
+  getAgent,
+  installSkill,
+  resolveRegistryRoot,
+} from "@skills-bank/core";
 
 interface InstallCmdOptions {
   force?: boolean;
@@ -12,11 +16,19 @@ export function installCommand(name: string, opts: InstallCmdOptions): void {
     registryRoot: root,
     force: opts.force ?? false,
   });
-  if (result.alreadyInstalled) {
-    console.log(`${pc.dim("=")} ${name} already installed → ${result.target}`);
-  } else {
+  if (result.installs.length === 0) {
     console.log(
-      `${pc.green("+")} installed ${pc.bold(name)} → ${result.target}`,
+      `${pc.yellow("!")} ${name} — no agent dirs available to install into.`,
     );
+  } else {
+    for (const r of result.installs) {
+      const label = getAgent(r.agent).label;
+      const sigil = r.alreadyInstalled ? pc.dim("=") : pc.green("+");
+      const verb = r.alreadyInstalled ? "already installed" : "installed";
+      console.log(`${sigil} ${verb} ${pc.bold(name)} → ${label}`);
+    }
+  }
+  for (const e of result.errors) {
+    console.log(`${pc.red("x")} ${getAgent(e.agent).label}: ${e.message}`);
   }
 }

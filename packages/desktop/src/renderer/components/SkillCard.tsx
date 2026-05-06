@@ -1,6 +1,24 @@
 import React from "react";
-import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import type {
+  AgentId,
+  InstalledSkill,
+  RegistryEntry,
+} from "@skills-bank/core";
 import { Icon } from "./Icon.js";
+
+// Renderer-only label map. Don't import AGENTS as a runtime value from
+// @skills-bank/core — that pulls build.ts (and node:child_process) into
+// the renderer bundle. Keep this list in sync with packages/core/src/agents.ts.
+const AGENT_LABELS: Record<AgentId, string> = {
+  claude: "Claude Code",
+  cursor: "Cursor",
+  gemini: "Gemini",
+  copilot: "GitHub Copilot",
+  continue: "Continue",
+  cline: "Cline",
+  codex: "OpenAI Codex",
+  agents: "Agents (shared)",
+};
 
 function freshness(lastCommit: RegistryEntry["lastCommit"]): {
   label: string;
@@ -26,6 +44,8 @@ interface Props {
   status: CardStatus;
   onSelect: () => void;
   index?: number;
+  /** Agents this skill is currently installed for. Used to render chips. */
+  agents?: AgentId[];
 }
 
 export function SkillCard({
@@ -33,6 +53,7 @@ export function SkillCard({
   status,
   onSelect,
   index = 0,
+  agents,
 }: Props): React.ReactElement {
   const fresh = freshness(entry.lastCommit);
   const visibleTags = (entry.tags ?? []).slice(0, 3);
@@ -95,8 +116,36 @@ export function SkillCard({
         <span>{fresh.label}</span>
         {entry.version && <span>· v{entry.version}</span>}
       </div>
+
+      {agents && agents.length > 0 && (
+        <div
+          className="skill-agent-chips"
+          aria-label={`Installed for: ${agents.map((a) => AGENT_LABELS[a]).join(", ")}`}
+        >
+          {agents.map((a) => (
+            <span key={a} className="skill-agent-chip" title={AGENT_LABELS[a]}>
+              {AGENT_LABELS[a]}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+/**
+ * Deduplicated list of agents in which a skill named `name` is currently
+ * installed. Empty when the skill isn't installed under any agent dir.
+ */
+export function agentsForSkill(
+  installed: InstalledSkill[],
+  name: string,
+): AgentId[] {
+  const seen = new Set<AgentId>();
+  for (const i of installed) {
+    if (i.name === name && i.kind === "ours") seen.add(i.agent);
+  }
+  return Array.from(seen);
 }
 
 function OriginBadge({

@@ -129,7 +129,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Scanned <code>{report.claudeSkillsDir}</code> and found no entries.
           </p>
-          {report.topLevelSymlink && (
+          {report.topLevelSymlinks.length > 0 && (
             <FinalizeCallout
               report={report}
               finalizing={finalizing}
@@ -307,7 +307,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
           <br />
           Skills dir: {report.claudeSkillsDir}
         </p>
-        {report.topLevelSymlink && (
+        {report.topLevelSymlinks.length > 0 && (
           <FinalizeCallout
             report={report}
             finalizing={finalizing}
@@ -443,7 +443,7 @@ function FinalizeCallout(props: {
     props;
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
-  const target = report.topLevelSymlink?.resolvedTarget;
+  const target = report.topLevelSymlinks[0]?.resolvedTarget;
 
   const finalize = async () => {
     setErrorDetail(null);

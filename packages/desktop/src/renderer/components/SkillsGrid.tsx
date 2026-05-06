@@ -1,6 +1,6 @@
 import React from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
-import { SkillCard, statusForEntry } from "./SkillCard.js";
+import { SkillCard, agentsForSkill, statusForEntry } from "./SkillCard.js";
 
 interface Props {
   entries: RegistryEntry[];
@@ -50,6 +50,7 @@ export function SkillsGrid({
           status={statusForEntry(e, installed)}
           onSelect={() => onSelect(e)}
           index={i}
+          agents={agentsForSkill(installed, e.name)}
         />
       ))}
     </div>

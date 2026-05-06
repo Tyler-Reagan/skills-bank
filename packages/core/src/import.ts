@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { getClaudeSkillsDir, getStateDir } from "./paths.js";
+import {
+  AGENTS,
+  getAgent,
+  getAgentSkillsDir,
+  type AgentDef,
+  type AgentId,
+} from "./agents.js";
+import { getStateDir } from "./paths.js";
 import { listInstalled } from "./installed.js";
 import { readSkillMeta } from "./registry.js";
 import { buildRegistryIndex } from "./build.js";
@@ -14,19 +21,30 @@ import type {
 } from "./types.js";
 
 export function scanExistingInstalls(registryRoot: string): ScanReport {
-  const claudeSkillsDir = getClaudeSkillsDir();
   // Build the index once and reuse for the installed-list classification
   // so a stale on-disk index.json can't mislead either side.
   const index = buildRegistryIndex(registryRoot);
+  const agentDirs: Record<string, string> = {};
+  const topLevelSymlinks: TopLevelSymlinkInfo[] = [];
+  for (const agent of AGENTS) {
+    const dir = getAgentSkillsDir(agent);
+    agentDirs[agent.id] = dir;
+    const tls = detectTopLevelSymlink(agent, dir);
+    if (tls) topLevelSymlinks.push(tls);
+  }
   return {
-    claudeSkillsDir,
+    agentDirs,
+    claudeSkillsDir: getAgentSkillsDir("claude"),
     registryRoot,
     entries: listInstalled(registryRoot, { index }),
-    topLevelSymlink: detectTopLevelSymlink(claudeSkillsDir),
+    topLevelSymlinks,
   };
 }
 
-function detectTopLevelSymlink(skillsDir: string): TopLevelSymlinkInfo | null {
+function detectTopLevelSymlink(
+  agent: AgentDef,
+  skillsDir: string,
+): TopLevelSymlinkInfo | null {
   let stat: fs.Stats;
   try {
     stat = fs.lstatSync(skillsDir);
@@ -41,12 +59,13 @@ function detectTopLevelSymlink(skillsDir: string): TopLevelSymlinkInfo | null {
     // Broken symlink at the top level — read the link target verbatim.
     const raw = fs.readlinkSync(skillsDir);
     return {
+      agent: agent.id,
       resolvedTarget: path.resolve(path.dirname(skillsDir), raw),
       exists: false,
     };
   }
   const exists = fs.existsSync(resolvedTarget);
-  return { resolvedTarget, exists };
+  return { agent: agent.id, resolvedTarget, exists };
 }
 
 export interface MigrateOptions {
@@ -255,14 +274,20 @@ function recordMigration(registryRoot: string, entry: MigrationLogEntry): void {
 
 export interface FinalizeOptions {
   registryRoot: string;
+  /**
+   * Which agent's top-level skills dir to finalize. Defaults to "claude"
+   * (the historical behavior — Claude is by far the most common case
+   * where ~/.claude/skills is itself a symlink).
+   */
+  agent?: AgentId;
   /** Required to actually swap the top-level symlink for a real directory. */
   confirmDestructive?: boolean;
 }
 
 /**
- * Replace a symlinked `~/.claude/skills` with a real directory containing the
- * same per-skill symlinks, eliminating the double-hop indirection that
- * remains after adopting skills from a parent like `~/.agents/skills/`.
+ * Replace a symlinked `<agent>/skills` with a real directory containing
+ * the same per-skill symlinks, eliminating the double-hop indirection
+ * that remains after adopting skills from a parent like `~/.agents/skills/`.
  *
  * Refuses to run unless every entry in the resolved directory is already a
  * symlink (i.e. all real-directory entries have been adopted via
@@ -270,7 +295,8 @@ export interface FinalizeOptions {
  * timestamped backup rather than deleted.
  */
 export function finalizeSkillsDir(opts: FinalizeOptions): FinalizeResult {
-  const skillsDir = getClaudeSkillsDir();
+  const agent = opts.agent ? getAgent(opts.agent) : getAgent("claude");
+  const skillsDir = getAgentSkillsDir(agent);
 
   let stat: fs.Stats;
   try {
