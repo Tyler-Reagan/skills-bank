@@ -123,9 +123,7 @@ export function SingleMigrateModal({
                 background:
                   action.type === o.value ? "var(--accent-dim)" : "transparent",
                 borderColor:
-                  action.type === o.value
-                    ? "var(--accent)"
-                    : "var(--border)",
+                  action.type === o.value ? "var(--accent)" : "var(--border)",
               }}
             >
               <input

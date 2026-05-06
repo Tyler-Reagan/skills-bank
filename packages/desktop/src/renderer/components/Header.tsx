@@ -81,7 +81,8 @@ export function Header({
           >
             {refreshing ? (
               <>
-                <span className="spinner inline" aria-hidden="true" /> Refreshing…
+                <span className="spinner inline" aria-hidden="true" />{" "}
+                Refreshing…
               </>
             ) : (
               <>

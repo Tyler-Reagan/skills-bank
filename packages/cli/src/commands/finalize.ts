@@ -23,8 +23,12 @@ export async function finalizeCommand(opts: FinalizeCmdOptions): Promise<void> {
   }
 
   console.log(pc.bold("Finalize ~/.claude/skills"));
-  console.log(`  current: ${report.claudeSkillsDir} → ${report.topLevelSymlink.resolvedTarget}`);
-  console.log(`  result:  ${report.claudeSkillsDir} (real dir with per-skill symlinks)`);
+  console.log(
+    `  current: ${report.claudeSkillsDir} → ${report.topLevelSymlink.resolvedTarget}`,
+  );
+  console.log(
+    `  result:  ${report.claudeSkillsDir} (real dir with per-skill symlinks)`,
+  );
   console.log();
 
   const unmigrated = report.entries.filter((e) => e.kind === "real-directory");

@@ -33,7 +33,8 @@ export function BrowseTab({
         <strong>The registry is empty.</strong>
         <p>
           Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
-          <code>meta.json</code> or a <code>SKILL.md</code> with YAML frontmatter.
+          <code>meta.json</code> or a <code>SKILL.md</code> with YAML
+          frontmatter.
         </p>
         <div style={{ marginTop: 16 }}>
           <button
@@ -55,7 +56,9 @@ export function BrowseTab({
   }
 
   const filtered = applyFilters(registry, search, selectedTags);
-  const installedFromRegistry = installed.filter((i) => i.kind === "ours").length;
+  const installedFromRegistry = installed.filter(
+    (i) => i.kind === "ours",
+  ).length;
   const warningCount = registry.reduce(
     (acc, e) => acc + (e.warnings?.length ?? 0),
     0,

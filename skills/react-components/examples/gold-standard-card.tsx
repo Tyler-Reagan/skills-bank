@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React from "react";
 // Note for Agent: The '@' alias refers to the target project's src directory.
 // Ensure src/data/mockData.ts is created before generating this component.
-import { cardData } from '../data/mockData';
+import { cardData } from "../data/mockData";
 
 /**
  * Gold Standard: ActivityCard
@@ -26,7 +26,7 @@ import { cardData } from '../data/mockData';
 interface ActivityCardProps {
   readonly id: string;
   readonly username: string;
-  readonly action: 'MERGED' | 'COMMIT';
+  readonly action: "MERGED" | "COMMIT";
   readonly timestamp: string;
   readonly avatarUrl: string;
   readonly repoName: string;
@@ -39,7 +39,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   avatarUrl,
   repoName,
 }) => {
-  const isMerged = action === 'MERGED';
+  const isMerged = action === "MERGED";
 
   return (
     <div className="flex items-center justify-between gap-4 rounded-lg bg-surface-dark p-4 min-h-14 shadow-sm ring-1 ring-white/10">
@@ -51,12 +51,20 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         />
 
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:text-base">
-          <a href="#" className="font-semibold text-primary hover:underline truncate">
+          <a
+            href="#"
+            className="font-semibold text-primary hover:underline truncate"
+          >
             {username}
           </a>
 
-          <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${isMerged ? 'bg-purple-500/30 text-purple-300' : 'bg-primary/30 text-primary'
-            }`}>
+          <span
+            className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${
+              isMerged
+                ? "bg-purple-500/30 text-purple-300"
+                : "bg-primary/30 text-primary"
+            }`}
+          >
             {action}
           </span>
 

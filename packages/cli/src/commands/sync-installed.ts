@@ -38,7 +38,9 @@ interface AuditRecord {
   brokenSymlinks: string[];
 }
 
-export async function syncInstalledCommand(opts: SyncCmdOptions): Promise<void> {
+export async function syncInstalledCommand(
+  opts: SyncCmdOptions,
+): Promise<void> {
   const root = resolveRegistryRoot(opts.root);
   const index = buildRegistryIndex(root);
   const registryByName = new Map<string, RegistryEntry>();
@@ -81,14 +83,16 @@ export async function syncInstalledCommand(opts: SyncCmdOptions): Promise<void> 
   console.log();
 
   if (swaps.length === 0) {
-    console.log(pc.dim("No foreign symlinks match registry entries — nothing to swap."));
+    console.log(
+      pc.dim("No foreign symlinks match registry entries — nothing to swap."),
+    );
   } else {
-    console.log(pc.bold(`Plan (${swaps.length} swap${swaps.length === 1 ? "" : "s"}):`));
+    console.log(
+      pc.bold(`Plan (${swaps.length} swap${swaps.length === 1 ? "" : "s"}):`),
+    );
     for (const s of swaps) {
       const newTarget = path.resolve(root, s.toRegistryEntry.path);
-      console.log(
-        `  ${pc.cyan("⇄")} ${pc.bold(s.name)}`,
-      );
+      console.log(`  ${pc.cyan("⇄")} ${pc.bold(s.name)}`);
       console.log(`      ${pc.dim("from")} ${s.fromTarget}`);
       console.log(`      ${pc.dim("to")}   ${newTarget}`);
     }
@@ -106,7 +110,9 @@ export async function syncInstalledCommand(opts: SyncCmdOptions): Promise<void> 
   if (broken.length > 0) {
     console.log();
     console.log(
-      pc.red(`Broken symlinks (not auto-handled — run \`skills-bank import\`):`),
+      pc.red(
+        `Broken symlinks (not auto-handled — run \`skills-bank import\`):`,
+      ),
     );
     for (const e of broken) console.log(`    - ${e.name} → ${e.target}`);
   }
@@ -163,9 +169,7 @@ export async function syncInstalledCommand(opts: SyncCmdOptions): Promise<void> 
           ? `already pointed at registry`
           : `swapped → ${r.target}`,
       });
-      console.log(
-        `  ${pc.green("✓")} ${pc.bold(s.name)} → ${r.target}`,
-      );
+      console.log(`  ${pc.green("✓")} ${pc.bold(s.name)} → ${r.target}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       audit.swaps.push({

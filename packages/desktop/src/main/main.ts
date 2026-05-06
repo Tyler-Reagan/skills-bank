@@ -130,7 +130,8 @@ function createWindow(): void {
 }
 
 // Single guard for handlers that need a configured registry root.
-const NO_ROOT_MSG = "Registry folder not configured. Use the Settings button to pick the skills-bank repo.";
+const NO_ROOT_MSG =
+  "Registry folder not configured. Use the Settings button to pick the skills-bank repo.";
 
 ipcMain.handle(IPC.getRoot, () => registryRoot);
 
@@ -144,7 +145,8 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
   const win = BrowserWindow.getFocusedWindow();
   const result = await dialog.showOpenDialog(win ?? undefined!, {
     title: "Choose your skills-bank repo folder",
-    message: "Pick the skills-bank folder you cloned (must contain package.json with name 'skills-bank' and a skills/ directory).",
+    message:
+      "Pick the skills-bank folder you cloned (must contain package.json with name 'skills-bank' and a skills/ directory).",
     properties: ["openDirectory"],
     defaultPath: registryRoot ?? app.getPath("home"),
   });
@@ -154,7 +156,11 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
   const candidate = result.filePaths[0]!;
   const validation = isValidRegistryRoot(candidate);
   if (!validation.ok) {
-    return { ok: false, message: validation.reason ?? "invalid folder", registryRoot };
+    return {
+      ok: false,
+      message: validation.reason ?? "invalid folder",
+      registryRoot,
+    };
   }
   registryRoot = candidate;
   writeConfig({ registryRoot: candidate });
@@ -171,7 +177,8 @@ ipcMain.handle(IPC.listRegistry, () => {
 });
 
 ipcMain.handle(IPC.listInstalled, () => {
-  if (!registryRoot) return listInstalled("", { index: { generatedAt: "", entries: [] } });
+  if (!registryRoot)
+    return listInstalled("", { index: { generatedAt: "", entries: [] } });
   const index = buildRegistryIndex(registryRoot);
   return listInstalled(registryRoot, { index });
 });
@@ -344,7 +351,10 @@ ipcMain.handle(
       const trimmed = t.trim();
       if (!trimmed) continue;
       if (trimmed.length > 64) {
-        return { ok: false, message: `tag "${trimmed.slice(0, 24)}…" exceeds 64 chars` };
+        return {
+          ok: false,
+          message: `tag "${trimmed.slice(0, 24)}…" exceeds 64 chars`,
+        };
       }
       if (cleaned.includes(trimmed)) continue;
       cleaned.push(trimmed);

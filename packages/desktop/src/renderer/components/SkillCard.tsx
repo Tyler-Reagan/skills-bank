@@ -54,7 +54,10 @@ export function SkillCard({
       }}
     >
       <div className="skill-card-top">
-        <p className="skill-name" style={{ flex: 1, minWidth: 0, marginBottom: 0 }}>
+        <p
+          className="skill-name"
+          style={{ flex: 1, minWidth: 0, marginBottom: 0 }}
+        >
           {entry.name}
         </p>
         <StatusChip status={status} warnings={entry.warnings?.length ?? 0} />
@@ -151,7 +154,9 @@ function ariaLabelFor(entry: RegistryEntry, status: CardStatus): string {
   };
   const warnings = entry.warnings?.length ?? 0;
   const warningSuffix =
-    warnings > 0 ? `, ${warnings} ${warnings === 1 ? "warning" : "warnings"}` : "";
+    warnings > 0
+      ? `, ${warnings} ${warnings === 1 ? "warning" : "warnings"}`
+      : "";
   return `${entry.name}, ${statusLabel[status.kind]}${warningSuffix}. Activate to view details.`;
 }
 

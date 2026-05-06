@@ -98,7 +98,11 @@ export function applyMigration(
       }
     }
   } catch (err) {
-    return { action, ok: false, message: String(err instanceof Error ? err.message : err) };
+    return {
+      action,
+      ok: false,
+      message: String(err instanceof Error ? err.message : err),
+    };
   }
 }
 
@@ -129,10 +133,12 @@ function adoptIntoRegistry(
 
   // For real-directory: move the folder. For foreign symlink: copy contents.
   if (entry.kind === "real-directory") {
-    if (fs.existsSync(destDir)) fs.rmSync(destDir, { recursive: true, force: true });
+    if (fs.existsSync(destDir))
+      fs.rmSync(destDir, { recursive: true, force: true });
     fs.renameSync(sourcePath, destDir);
   } else {
-    if (fs.existsSync(destDir)) fs.rmSync(destDir, { recursive: true, force: true });
+    if (fs.existsSync(destDir))
+      fs.rmSync(destDir, { recursive: true, force: true });
     copyDir(sourcePath, destDir);
   }
 

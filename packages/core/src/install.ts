@@ -17,7 +17,10 @@ export interface InstallResult {
   alreadyInstalled: boolean;
 }
 
-export function installSkill(name: string, opts: InstallOptions): InstallResult {
+export function installSkill(
+  name: string,
+  opts: InstallOptions,
+): InstallResult {
   const index = buildRegistryIndex(opts.registryRoot);
   const entry = findEntry(index, name);
   if (!entry) {
@@ -59,7 +62,10 @@ export function installSkill(name: string, opts: InstallOptions): InstallResult 
   return { name, linkPath, target, alreadyInstalled: false };
 }
 
-export function uninstallSkill(name: string): { removed: boolean; linkPath: string } {
+export function uninstallSkill(name: string): {
+  removed: boolean;
+  linkPath: string;
+} {
   const linkPath = path.join(getClaudeSkillsDir(), name);
   if (!isSymlink(linkPath)) {
     if (fs.existsSync(linkPath)) {

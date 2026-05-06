@@ -136,7 +136,9 @@ function buildOneEntry(
         ...(typeof raw["description"] === "string"
           ? { description: raw["description"] }
           : {}),
-        ...(Array.isArray(raw["tags"]) ? { tags: raw["tags"] as string[] } : {}),
+        ...(Array.isArray(raw["tags"])
+          ? { tags: raw["tags"] as string[] }
+          : {}),
         ...(typeof raw["version"] === "string"
           ? { version: raw["version"] }
           : {}),
@@ -160,7 +162,8 @@ function buildOneEntry(
     const fm = readSkillMeta(skillDir);
     if (fm) {
       if (!meta.name && fm.name) meta.name = fm.name;
-      if (!meta.description && fm.description) meta.description = fm.description;
+      if (!meta.description && fm.description)
+        meta.description = fm.description;
       if (!meta.version && fm.version) meta.version = fm.version;
       if (!meta.author && fm.author) meta.author = fm.author;
     }

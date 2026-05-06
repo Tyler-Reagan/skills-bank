@@ -94,7 +94,8 @@ export function App(): React.ReactElement {
   const [rebuilding, setRebuilding] = useState(false);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
-  const [selectedTags, setSelectedTagsState] = useState<string[]>(readTagFilterLS);
+  const [selectedTags, setSelectedTagsState] =
+    useState<string[]>(readTagFilterLS);
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
   const [theme, setTheme] = useState<Theme>(readInitialTheme);
   const [density, setDensity] = useState<Density>(readInitialDensity);
@@ -382,10 +383,7 @@ export function App(): React.ReactElement {
         <div className="toast" role="status" aria-live="polite">
           <span>{toast.message}</span>
           {toast.action && (
-            <button
-              className="toast-action"
-              onClick={toast.action.onClick}
-            >
+            <button className="toast-action" onClick={toast.action.onClick}>
               {toast.action.label}
             </button>
           )}

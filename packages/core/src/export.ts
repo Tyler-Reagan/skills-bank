@@ -30,10 +30,7 @@ const STANDALONE_ALLOWED = new Set(["SKILL.md", "meta.json"]);
  * Standalone (raw SKILL.md) when the folder contains nothing other than
  * SKILL.md and (optionally) meta.json; otherwise bundled (zip).
  */
-export function getExportInfo(
-  registryRoot: string,
-  name: string,
-): ExportInfo {
+export function getExportInfo(registryRoot: string, name: string): ExportInfo {
   const index = buildRegistryIndex(registryRoot);
   const entry = findEntry(index, name);
   if (!entry) {

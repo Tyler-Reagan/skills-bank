@@ -20,8 +20,13 @@ export function findRegistryRoot(start: string = process.cwd()): string {
     const pkg = path.join(dir, "package.json");
     if (fs.existsSync(pkg)) {
       try {
-        const data = JSON.parse(fs.readFileSync(pkg, "utf8")) as { name?: string };
-        if (data.name === "skills-bank" && fs.existsSync(path.join(dir, "skills"))) {
+        const data = JSON.parse(fs.readFileSync(pkg, "utf8")) as {
+          name?: string;
+        };
+        if (
+          data.name === "skills-bank" &&
+          fs.existsSync(path.join(dir, "skills"))
+        ) {
           return dir;
         }
       } catch {

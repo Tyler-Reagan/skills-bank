@@ -2,10 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import pc from "picocolors";
-import {
-  getClaudeSkillsDir,
-  resolveRegistryRoot,
-} from "@skills-bank/core";
+import { getClaudeSkillsDir, resolveRegistryRoot } from "@skills-bank/core";
 
 interface Options {
   dryRun?: boolean;
@@ -29,9 +26,7 @@ interface Plan {
  * symlink that pointed at the old nested path. Idempotent: running again
  * is a no-op once the tree is flat.
  */
-export async function migrateCategoriesCommand(
-  opts: Options,
-): Promise<void> {
+export async function migrateCategoriesCommand(opts: Options): Promise<void> {
   const root = resolveRegistryRoot(opts.root);
   const skillsDir = path.join(root, "skills");
   const claudeSkills = getClaudeSkillsDir();
@@ -162,11 +157,7 @@ export async function migrateCategoriesCommand(
   }
 
   if (plan.folderMoves.length > 0) {
-    console.log(
-      pc.bold(
-        `Folder moves (${plan.folderMoves.length}):`,
-      ),
-    );
+    console.log(pc.bold(`Folder moves (${plan.folderMoves.length}):`));
     for (const m of plan.folderMoves) {
       console.log(
         `  ${pc.cyan("⇄")} ${path.relative(root, m.from)} → ${path.relative(
@@ -187,9 +178,7 @@ export async function migrateCategoriesCommand(
     console.log();
   }
   if (plan.symlinkRepoints.length > 0) {
-    console.log(
-      pc.bold(`Symlink re-points (${plan.symlinkRepoints.length}):`),
-    );
+    console.log(pc.bold(`Symlink re-points (${plan.symlinkRepoints.length}):`));
     for (const s of plan.symlinkRepoints) {
       console.log(
         `  ${pc.cyan("→")} ${s.linkPath}\n      from ${s.fromTarget}\n      to   ${s.toTarget}`,
@@ -220,7 +209,10 @@ export async function migrateCategoriesCommand(
   }
   for (const s of plan.metaScrubs) {
     try {
-      const raw = JSON.parse(fs.readFileSync(s.path, "utf8")) as Record<string, unknown>;
+      const raw = JSON.parse(fs.readFileSync(s.path, "utf8")) as Record<
+        string,
+        unknown
+      >;
       for (const k of s.willRemove) delete raw[k];
       fs.writeFileSync(s.path, JSON.stringify(raw, null, 2) + "\n");
       console.log(`  ${pc.green("✓")} scrubbed ${path.relative(root, s.path)}`);
@@ -246,7 +238,9 @@ export async function migrateCategoriesCommand(
     if (looksLikeSkill) continue;
     if (fs.readdirSync(catDir).length === 0) {
       fs.rmdirSync(catDir);
-      console.log(`  ${pc.green("✓")} removed empty ${path.relative(root, catDir)}/`);
+      console.log(
+        `  ${pc.green("✓")} removed empty ${path.relative(root, catDir)}/`,
+      );
     }
   }
 

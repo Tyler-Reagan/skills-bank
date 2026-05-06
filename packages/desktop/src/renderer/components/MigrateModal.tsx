@@ -19,7 +19,12 @@ type Phase =
   | { kind: "scan" }
   | { kind: "plan" }
   | { kind: "applying"; total: number }
-  | { kind: "results"; results: MigrationResult[]; rebuilding: boolean; rebuildMessage: string | null };
+  | {
+      kind: "results";
+      results: MigrationResult[];
+      rebuilding: boolean;
+      rebuildMessage: string | null;
+    };
 
 export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   useFocusReturn();
@@ -61,7 +66,13 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
       <div style={overlay}>
         <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>Scan failed</h2>
-          <p style={{ color: "var(--danger)", fontFamily: "monospace", fontSize: 13 }}>
+          <p
+            style={{
+              color: "var(--danger)",
+              fontFamily: "monospace",
+              fontSize: 13,
+            }}
+          >
             {scanError}
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -78,15 +89,28 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
         <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>Scanning for existing skills…</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
-            Inspecting <code>~/.claude/skills/</code> and classifying each entry as
-            already-integrated, foreign symlink, real directory, or broken link.
+            Inspecting <code>~/.claude/skills/</code> and classifying each entry
+            as already-integrated, foreign symlink, real directory, or broken
+            link.
           </p>
           {skillsDirHint && (
-            <p style={{ color: "var(--text-3)", fontSize: 12, fontFamily: "monospace" }}>
+            <p
+              style={{
+                color: "var(--text-3)",
+                fontSize: 12,
+                fontFamily: "monospace",
+              }}
+            >
               registry: {skillsDirHint}
             </p>
           )}
-          <div style={{ display: "flex", justifyContent: "center", padding: "24px 0" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "24px 0",
+            }}
+          >
             <div className="spinner" />
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -136,7 +160,12 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
     const adoptedCount = results.filter(
       (r) => r.ok && r.action.type === "adopt",
     ).length;
-    setPhase({ kind: "results", results, rebuilding: adoptedCount > 0, rebuildMessage: null });
+    setPhase({
+      kind: "results",
+      results,
+      rebuilding: adoptedCount > 0,
+      rebuildMessage: null,
+    });
 
     // After adopt actions, regenerate index.json so the new skills register
     // as ours rather than as foreign symlinks on the next scan.
@@ -165,7 +194,13 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
             are being moved/copied — this may take a moment for large skill
             bundles.
           </p>
-          <div style={{ display: "flex", justifyContent: "center", padding: "32px 0" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "32px 0",
+            }}
+          >
             <div className="spinner" />
           </div>
         </div>
@@ -191,7 +226,15 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
             {succeeded.length} of {phase.results.length} succeeded.
           </p>
           {phase.rebuilding ? (
-            <p style={{ color: "var(--text-2)", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+            <p
+              style={{
+                color: "var(--text-2)",
+                fontSize: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
               <span className="spinner inline" /> Rebuilding registry index…
             </p>
           ) : phase.rebuildMessage ? (
@@ -200,7 +243,14 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
             </p>
           ) : null}
 
-          <div style={{ maxHeight: 320, overflow: "auto", marginTop: 12, marginBottom: 16 }}>
+          <div
+            style={{
+              maxHeight: 320,
+              overflow: "auto",
+              marginTop: 12,
+              marginBottom: 16,
+            }}
+          >
             {phase.results.map((r, i) => (
               <div
                 key={`${r.action.type}-${("name" in r.action && r.action.name) || i}`}
@@ -216,9 +266,13 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
                   <Icon name={r.ok ? "check" : "x"} size="sm" />
                 </span>
                 <span style={{ flex: 1, fontSize: 13 }}>
-                  <code style={{ color: "var(--text)" }}>{describeName(r.action)}</code>
+                  <code style={{ color: "var(--text)" }}>
+                    {describeName(r.action)}
+                  </code>
                   {" — "}
-                  <span style={{ color: r.ok ? "var(--text-2)" : "var(--danger)" }}>
+                  <span
+                    style={{ color: r.ok ? "var(--text-2)" : "var(--danger)" }}
+                  >
                     {r.message}
                   </span>
                 </span>
@@ -277,7 +331,10 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
                 onChange={(ev) =>
                   setChoices((c) => ({
                     ...c,
-                    [e.name]: actionFor(ev.target.value as MigrationAction["type"], e),
+                    [e.name]: actionFor(
+                      ev.target.value as MigrationAction["type"],
+                      e,
+                    ),
                   }))
                 }
               >
@@ -314,7 +371,9 @@ function defaultAction(e: InstalledSkill): MigrationAction {
   }
 }
 
-function actionsFor(e: InstalledSkill): Array<{ value: MigrationAction["type"]; label: string }> {
+function actionsFor(
+  e: InstalledSkill,
+): Array<{ value: MigrationAction["type"]; label: string }> {
   switch (e.kind) {
     case "ours":
       return [{ value: "skip", label: "Skip (already integrated)" }];
@@ -337,7 +396,10 @@ function actionsFor(e: InstalledSkill): Array<{ value: MigrationAction["type"]; 
   }
 }
 
-function actionFor(type: MigrationAction["type"], e: InstalledSkill): MigrationAction {
+function actionFor(
+  type: MigrationAction["type"],
+  e: InstalledSkill,
+): MigrationAction {
   switch (type) {
     case "adopt":
       return { type: "adopt", name: e.name };
@@ -377,7 +439,8 @@ function FinalizeCallout(props: {
   onAfter: () => void | Promise<void>;
   hasUnmigrated: boolean;
 }): React.ReactElement {
-  const { report, finalizing, setFinalizing, onFlash, onAfter, hasUnmigrated } = props;
+  const { report, finalizing, setFinalizing, onFlash, onAfter, hasUnmigrated } =
+    props;
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const target = report.topLevelSymlink?.resolvedTarget;
@@ -416,12 +479,15 @@ function FinalizeCallout(props: {
           <Icon name="alert-triangle" size="sm" /> Top-level indirection
         </strong>
         <p style={{ margin: "4px 0", fontSize: 12, color: "var(--text)" }}>
-          <code>{report.claudeSkillsDir}</code> is itself a symlink → <code>{target}</code>.
-          Adopting skills here leaves a double-hop. Once everything is migrated,
-          finalize to replace the top-level symlink with a real directory.
+          <code>{report.claudeSkillsDir}</code> is itself a symlink →{" "}
+          <code>{target}</code>. Adopting skills here leaves a double-hop. Once
+          everything is migrated, finalize to replace the top-level symlink with
+          a real directory.
         </p>
         {hasUnmigrated && (
-          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--danger)" }}>
+          <p
+            style={{ margin: "4px 0 0", fontSize: 12, color: "var(--danger)" }}
+          >
             Apply migrations first — finalize will refuse while real-directory
             entries remain.
           </p>
@@ -484,4 +550,3 @@ const modal: React.CSSProperties = {
   width: 720,
   maxWidth: "90vw",
 };
-

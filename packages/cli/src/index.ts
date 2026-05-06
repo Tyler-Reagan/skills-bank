@@ -33,7 +33,9 @@ program
 
 program
   .command("install <name>")
-  .description("Install a registry skill (creates a symlink in ~/.claude/skills)")
+  .description(
+    "Install a registry skill (creates a symlink in ~/.claude/skills)",
+  )
   .option("--force", "Replace an existing symlink at the target")
   .option("--root <path>", "Path to skills-bank registry root")
   .action(installCommand);

@@ -37,9 +37,9 @@ export function SetupScreen({ onConfigured }: Props): React.ReactElement {
         </div>
         <h1>Welcome — pick your registry folder.</h1>
         <p>
-          skills-bank manages skills that live inside a cloned git repo on
-          your machine. To get started, point this app at the folder where
-          you cloned <code>skills-bank</code>.
+          skills-bank manages skills that live inside a cloned git repo on your
+          machine. To get started, point this app at the folder where you cloned{" "}
+          <code>skills-bank</code>.
         </p>
         <p className="setup-hint">
           The folder must contain a <code>package.json</code> whose name is
@@ -67,8 +67,8 @@ export function SetupScreen({ onConfigured }: Props): React.ReactElement {
         )}
         <p className="setup-footnote">
           Don&apos;t have it cloned yet? Run{" "}
-          <code>git clone git@github.com:Tyler-Reagan/skills-bank.git</code>{" "}
-          in a Terminal first, then come back and pick that folder.
+          <code>git clone git@github.com:Tyler-Reagan/skills-bank.git</code> in
+          a Terminal first, then come back and pick that folder.
         </p>
       </div>
     </div>

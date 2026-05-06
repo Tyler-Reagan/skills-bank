@@ -247,7 +247,10 @@ export function SkillDetailDrawer({
             >
               <h3 style={{ margin: 0 }}>Tags</h3>
               {!editingTags ? (
-                <button className="link-btn" onClick={() => setEditingTags(true)}>
+                <button
+                  className="link-btn"
+                  onClick={() => setEditingTags(true)}
+                >
                   Edit
                 </button>
               ) : (
@@ -307,11 +310,7 @@ export function SkillDetailDrawer({
                   }
                 />
                 {tagInputError && (
-                  <p
-                    id="tag-input-error"
-                    className="form-error"
-                    role="alert"
-                  >
+                  <p id="tag-input-error" className="form-error" role="alert">
                     {tagInputError}
                   </p>
                 )}
@@ -325,7 +324,13 @@ export function SkillDetailDrawer({
                 ))}
               </div>
             ) : (
-              <p style={{ color: "var(--text-3)", fontStyle: "italic", fontSize: 12 }}>
+              <p
+                style={{
+                  color: "var(--text-3)",
+                  fontStyle: "italic",
+                  fontSize: 12,
+                }}
+              >
                 (no tags)
               </p>
             )}
