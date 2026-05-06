@@ -7,6 +7,12 @@ interface Props {
   installed: InstalledSkill[];
   onSelect: (entry: RegistryEntry) => void;
   emptyMessage?: React.ReactNode;
+  /**
+   * If provided, the empty-state renders a "Clear filters" CTA. Call it
+   * only when filters are actually narrowing the result set; otherwise
+   * pass undefined and the grid keeps its generic empty message.
+   */
+  onClearFilters?: () => void;
 }
 
 export function SkillsGrid({
@@ -14,6 +20,7 @@ export function SkillsGrid({
   installed,
   onSelect,
   emptyMessage,
+  onClearFilters,
 }: Props): React.ReactElement {
   if (entries.length === 0) {
     return (
@@ -21,8 +28,15 @@ export function SkillsGrid({
         {emptyMessage ?? (
           <>
             <strong>No skills match the current filter.</strong>
-            <p>Try clearing the search or picking a different domain.</p>
+            <p>Try a different search term or pick a different tag.</p>
           </>
+        )}
+        {onClearFilters && (
+          <div style={{ marginTop: 16 }}>
+            <button className="btn primary" onClick={onClearFilters}>
+              Clear filters
+            </button>
+          </div>
         )}
       </div>
     );

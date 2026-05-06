@@ -63,7 +63,14 @@ input, select { font-family: inherit; color: inherit; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0.6; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes drawerBodyFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @keyframes skills-bank-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes skills-bank-shimmer { from { background-position: -800px 0; } to { background-position: 800px 0; } }
 
@@ -525,7 +532,9 @@ input, select { font-family: inherit; color: inherit; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideInRight var(--t-slow) var(--ease) both;
+  /* Spring-ish overshoot — natural feel without disorienting bounce. */
+  animation: slideInRight 0.28s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+  will-change: transform, opacity;
 }
 .drawer-header {
   padding: var(--s5);
@@ -549,6 +558,9 @@ input, select { font-family: inherit; color: inherit; }
   flex: 1;
   overflow-y: auto;
   padding: var(--s5);
+  /* Reveal contents just after the panel arrives so the eye lands on
+     a settled card rather than scrolling content while it slides. */
+  animation: drawerBodyFade var(--t) var(--ease) 0.12s both;
 }
 .drawer-section { margin-bottom: var(--s5); }
 .drawer-section h3 {
@@ -859,6 +871,19 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   font-size: 12px;
   font-family: var(--font-sans);
 }
+
+/* Inline empty (used inside drawer sections) — softer than the page-level empty state. */
+.empty-inline {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--r);
+  padding: var(--s4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+.empty-inline p { margin: 0; font-size: 12px; }
 
 /* ── Empty / error states ───────────────────────────── */
 .empty-state {

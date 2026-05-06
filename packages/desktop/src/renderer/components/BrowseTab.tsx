@@ -96,6 +96,14 @@ export function BrowseTab({
         entries={filtered}
         installed={installed}
         onSelect={onSelect}
+        onClearFilters={
+          search.length > 0 || selectedTags.length > 0
+            ? () => {
+                setSearch("");
+                setSelectedTags([]);
+              }
+            : undefined
+        }
       />
     </div>
   );

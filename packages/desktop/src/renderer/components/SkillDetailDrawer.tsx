@@ -379,9 +379,19 @@ export function SkillDetailDrawer({
                 dangerouslySetInnerHTML={{ __html: renderedMd }}
               />
             ) : (
-              <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
-                (no SKILL.md found)
-              </p>
+              <div className="empty-inline">
+                <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
+                  No <code>SKILL.md</code> in this folder.
+                </p>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={reveal}
+                  disabled={!registryRoot}
+                >
+                  <Icon name="folder" size="sm" /> Open folder to create one
+                </button>
+              </div>
             )}
           </div>
         </div>
