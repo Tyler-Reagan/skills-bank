@@ -762,12 +762,34 @@ ipcMain.handle(IPC.openExternal, async (_e, url: string) => {
   await shell.openExternal(url);
 });
 
-// Open docs/self-host.md from the local app bundle. Avoids the "GitHub
-// blob URL 404s before the PR merges" problem and works offline. The
-// docs/ tree is bundled via electron-builder's `extraResources` for
-// packaged builds; in dev we resolve relative to the desktop package's
-// app path, which is `<repo>/packages/desktop/`.
+// Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
+// for installed users post-merge) and fall back to the locally bundled
+// copy if GitHub returns 404 (the docs file isn't on main yet) or the
+// user is offline. The docs/ tree is bundled via electron-builder's
+// `extraResources` for packaged builds; in dev we resolve relative to
+// the desktop package's app path (`<repo>/packages/desktop/`).
+const SELF_HOST_URL =
+  "https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/self-host.md";
+
+async function selfHostUrlReachable(): Promise<boolean> {
+  try {
+    const res = await fetch(SELF_HOST_URL, {
+      method: "HEAD",
+      // GitHub redirects unauthenticated HEAD on private/missing pages —
+      // accept the redirect chain and check the terminal status.
+      redirect: "follow",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 ipcMain.handle(IPC.openSelfHostDocs, async () => {
+  if (await selfHostUrlReachable()) {
+    await shell.openExternal(SELF_HOST_URL);
+    return { ok: true };
+  }
   const docPath = app.isPackaged
     ? path.join(process.resourcesPath, "docs", "self-host.md")
     : path.join(app.getAppPath(), "..", "..", "docs", "self-host.md");

@@ -1,7 +1,11 @@
 import { app, safeStorage } from "electron";
 import fs from "node:fs";
 import path from "node:path";
-import { GITHUB_CLIENT_ID, GITHUB_SCOPE } from "./auth-config.js";
+import {
+  GITHUB_CLIENT_ID,
+  GITHUB_SCOPE,
+  isAuthConfigured,
+} from "./auth-config.js";
 
 const DEVICE_CODE_URL = "https://github.com/login/device/code";
 const TOKEN_URL = "https://github.com/login/oauth/access_token";
@@ -77,10 +81,7 @@ export function clearStoredToken(): void {
 }
 
 export async function startDeviceFlow(): Promise<DeviceFlowStart> {
-  if (
-    GITHUB_CLIENT_ID === "REPLACE_WITH_OAUTH_APP_CLIENT_ID" ||
-    !GITHUB_CLIENT_ID
-  ) {
+  if (!isAuthConfigured()) {
     throw new DeviceFlowError(
       "not-configured",
       "GitHub OAuth Client ID not set. See packages/desktop/src/main/auth-config.ts.",

@@ -8,18 +8,22 @@
 //   - Authorization callback URL: any value (Device Flow ignores it)
 //   - Enable Device Flow: ✅ (required)
 //
-// Then copy the resulting Client ID into the constant below.
+// Then assign your Client ID to GITHUB_CLIENT_ID below.
 // The Client ID is NOT a secret — it's safe to commit to source.
 //
-// Until this is replaced, the LoginScreen surfaces a "GitHub auth not
-// configured" message and the Authenticate button is disabled.
+// IMPORTANT: only edit the GITHUB_CLIENT_ID line. Do NOT find-replace
+// the literal placeholder string elsewhere in this file — the
+// PLACEHOLDER constant must keep that exact value because
+// isAuthConfigured() compares against it to detect "user has set a
+// real value." A bulk find-replace will break that check and the
+// LoginScreen Authenticate button will stay disabled.
+
+const PLACEHOLDER = "REPLACE_WITH_OAUTH_APP_CLIENT_ID";
 
 export const GITHUB_CLIENT_ID: string = "Ov23liOmNnUsuI3JpRau";
 
 export function isAuthConfigured(): boolean {
-  return (
-    GITHUB_CLIENT_ID !== "Ov23liOmNnUsuI3JpRau" && GITHUB_CLIENT_ID.length > 0
-  );
+  return GITHUB_CLIENT_ID !== PLACEHOLDER && GITHUB_CLIENT_ID.length > 0;
 }
 
 // Scope: read access to private repos (for the M4 registry-replacement
