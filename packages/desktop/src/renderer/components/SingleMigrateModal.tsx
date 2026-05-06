@@ -5,6 +5,7 @@ import type {
   MigrationResult,
 } from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { Icon } from "./Icon.js";
 
 interface Props {
   entry: InstalledSkill;
@@ -71,9 +72,13 @@ export function SingleMigrateModal({
             style={{
               color: phase.result.ok ? "var(--success)" : "var(--danger)",
               fontSize: 13,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
-            {phase.result.ok ? "✓" : "✗"} {phase.result.message}
+            <Icon name={phase.result.ok ? "check" : "x"} size="sm" />{" "}
+            {phase.result.message}
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
             <button

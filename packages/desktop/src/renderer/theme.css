@@ -1,50 +1,42 @@
-/* Theme tokens — adapted from le-diegz/claude-skills-registry. */
+/*
+ * Theme tokens — skills-bank.
+ * Style: Dark Mode (OLED) per the ui-ux-pro-max design-system search
+ * for "developer tool registry desktop". Slate-900 base + green CTA;
+ * intentionally NOT aligned with the le-diegz palette we forked from.
+ */
 :root {
-  /* Backgrounds */
-  --bg:          #0d1117;
-  --surface:     #161b22;
-  --surface-hi:  #1c2128;
-  --surface-dim: #0d1117;
+  /* Backgrounds — slate-900 base; surface and surface-hi step up by ~8% L */
+  --bg:          #0F172A; /* slate-900 */
+  --surface:     #1E293B; /* slate-800 */
+  --surface-hi:  #272F42; /* between slate-800 and slate-700 */
+  --surface-dim: #0F172A;
 
   /* Borders */
-  --border:      #21262d;
-  --border-hi:   #30363d;
+  --border:      #334155; /* slate-700 */
+  --border-hi:   #475569; /* slate-600 */
 
   /* Text */
-  --text:        #e6edf3;
-  --text-2:      #8b949e;
-  --text-3:      #484f58;
+  --text:        #F8FAFC; /* slate-50 */
+  --text-2:      #94A3B8; /* slate-400 */
+  --text-3:      #64748B; /* slate-500 (slightly brighter than before for label legibility) */
 
-  /* Accent */
-  --accent:      #58a6ff;
-  --accent-dim:  rgba(88, 166, 255, 0.1);
+  /* Accent — green CTA per skill recommendation ("code dark + run green") */
+  --accent:      #22C55E; /* green-500 */
+  --accent-dim:  rgba(34, 197, 94, 0.12);
+  --accent-hi:   #16A34A; /* green-600 — used for hover/pressed states on primary */
 
   /* Status */
-  --success:     #3fb950;
-  --success-dim: rgba(63, 185, 80, 0.12);
-  --warn:        #d29922;
-  --warn-dim:    rgba(210, 153, 34, 0.12);
-  --danger:      #f85149;
-  --danger-dim:  rgba(248, 81, 73, 0.12);
+  --success:     #22C55E; /* same green; success and primary share the "go" semantic */
+  --success-dim: rgba(34, 197, 94, 0.12);
+  --warn:        #EAB308; /* yellow-500 */
+  --warn-dim:    rgba(234, 179, 8, 0.12);
+  --danger:      #EF4444; /* red-500 */
+  --danger-dim:  rgba(239, 68, 68, 0.12);
 
-  /* Domain colors */
-  --design:      #7C3AED;
-  --design-dim:  rgba(124, 58, 237, 0.15);
-  --code:        #2563EB;
-  --code-dim:    rgba(37, 99, 235, 0.15);
-  --content:     #059669;
-  --content-dim: rgba(5, 150, 105, 0.15);
-  --data:        #D97706;
-  --data-dim:    rgba(217, 119, 6, 0.15);
-  --meta:        #DB2777;
-  --meta-dim:    rgba(219, 39, 119, 0.15);
-  --other:       #8b949e;
-  --other-dim:   rgba(139, 148, 158, 0.15);
-
-  /* Freshness */
-  --fresh: #3fb950;
-  --aging: #d29922;
-  --stale: #484f58;
+  /* Freshness — keep semantics consistent with status */
+  --fresh: #22C55E;
+  --aging: #EAB308;
+  --stale: #475569;
 
   /* Typography */
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
@@ -62,6 +54,12 @@
   --s12: 48px;
   --s16: 64px;
 
+  /* Icon sizes */
+  --icon-sm: 12px;
+  --icon-md: 14px;
+  --icon-lg: 16px;
+  --icon-xl: 20px;
+
   /* Radius */
   --r-sm: 4px;
   --r:    6px;
@@ -78,7 +76,10 @@
   --t:      0.18s;
   --t-slow: 0.3s;
 
-  /* Shadows */
-  --shadow:       0 1px 3px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.3);
-  --shadow-hover: 0 4px 16px rgba(0,0,0,.6), 0 8px 32px rgba(0,0,0,.4);
+  /* Shadows — heavier for OLED contrast */
+  --shadow:       0 1px 3px rgba(0,0,0,.6), 0 4px 12px rgba(0,0,0,.4);
+  --shadow-hover: 0 4px 16px rgba(0,0,0,.7), 0 8px 32px rgba(0,0,0,.5);
+
+  /* Subtle glow used for focus/active states per skill key-effects guidance */
+  --glow-accent: 0 0 0 3px var(--accent-dim);
 }

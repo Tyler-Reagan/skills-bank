@@ -1,5 +1,6 @@
 import React from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import { Icon } from "./Icon.js";
 
 function freshness(lastCommit: RegistryEntry["lastCommit"]): {
   label: string;
@@ -102,21 +103,38 @@ function StatusChip({
   warnings: number;
 }): React.ReactElement | null {
   if (status.kind === "installed") {
-    return <span className="skill-status-chip ours">✓ Installed</span>;
+    return (
+      <span className="skill-status-chip ours">
+        <Icon name="check" size="sm" /> Installed
+      </span>
+    );
   }
   if (status.kind === "external") {
-    return <span className="skill-status-chip neutral">External</span>;
+    return (
+      <span className="skill-status-chip neutral">
+        <Icon name="external-link" size="sm" /> External
+      </span>
+    );
   }
   if (status.kind === "real-directory") {
-    return <span className="skill-status-chip warn">Real-dir</span>;
+    return (
+      <span className="skill-status-chip warn">
+        <Icon name="folder" size="sm" /> Real-dir
+      </span>
+    );
   }
   if (status.kind === "broken-symlink") {
-    return <span className="skill-status-chip danger">Broken</span>;
+    return (
+      <span className="skill-status-chip danger">
+        <Icon name="broken-link" size="sm" /> Broken
+      </span>
+    );
   }
   if (warnings > 0) {
     return (
       <span className="skill-status-chip warn">
-        ⚠ {warnings} {warnings === 1 ? "warning" : "warnings"}
+        <Icon name="alert-triangle" size="sm" /> {warnings}{" "}
+        {warnings === 1 ? "warning" : "warnings"}
       </span>
     );
   }

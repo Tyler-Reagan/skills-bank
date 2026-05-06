@@ -6,6 +6,7 @@ import type {
   ScanReport,
 } from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { Icon } from "./Icon.js";
 
 interface Props {
   onClose: () => void | Promise<void>;
@@ -195,7 +196,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
             </p>
           ) : phase.rebuildMessage ? (
             <p style={{ color: "var(--success)", fontSize: 12 }}>
-              ✓ {phase.rebuildMessage}
+              <Icon name="check" size="sm" /> {phase.rebuildMessage}
             </p>
           ) : null}
 
@@ -205,13 +206,19 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
                 key={`${r.action.type}-${("name" in r.action && r.action.name) || i}`}
                 style={resultRow}
               >
-                <span style={{ width: 18, color: r.ok ? "var(--success)" : "var(--danger)" }}>
-                  {r.ok ? "✓" : "✗"}
+                <span
+                  style={{
+                    color: r.ok ? "var(--success)" : "var(--danger)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <Icon name={r.ok ? "check" : "x"} size="sm" />
                 </span>
                 <span style={{ flex: 1, fontSize: 13 }}>
                   <code style={{ color: "var(--text)" }}>{describeName(r.action)}</code>
                   {" — "}
-                  <span style={{ color: r.ok ? "#aaa" : "var(--danger)" }}>
+                  <span style={{ color: r.ok ? "var(--text-2)" : "var(--danger)" }}>
                     {r.message}
                   </span>
                 </span>
@@ -398,7 +405,16 @@ function FinalizeCallout(props: {
   return (
     <div style={callout}>
       <div style={{ flex: 1 }}>
-        <strong style={{ color: "var(--warn)" }}>⚠ Top-level indirection</strong>
+        <strong
+          style={{
+            color: "var(--warn)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <Icon name="alert-triangle" size="sm" /> Top-level indirection
+        </strong>
         <p style={{ margin: "4px 0", fontSize: 12, color: "var(--text)" }}>
           <code>{report.claudeSkillsDir}</code> is itself a symlink → <code>{target}</code>.
           Adopting skills here leaves a double-hop. Once everything is migrated,

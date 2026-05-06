@@ -3,6 +3,7 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
+import { Icon } from "./Icon.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
 
@@ -181,7 +182,7 @@ export function SkillDetailDrawer({
             )}
           </div>
           <button className="drawer-close" onClick={onClose} aria-label="Close">
-            ×
+            <Icon name="x" size="lg" />
           </button>
         </div>
 
@@ -189,7 +190,7 @@ export function SkillDetailDrawer({
           {entry.warnings && entry.warnings.length > 0 && (
             <div className="drawer-warnings">
               <strong>
-                ⚠ {entry.warnings.length}{" "}
+                <Icon name="alert-triangle" size="sm" /> {entry.warnings.length}{" "}
                 {entry.warnings.length === 1 ? "warning" : "warnings"}
               </strong>
               <ul>
@@ -266,7 +267,7 @@ export function SkillDetailDrawer({
                         aria-label={`remove ${t}`}
                         onClick={() => removeTag(t)}
                       >
-                        ×
+                        <Icon name="x" size="sm" />
                       </button>
                     </span>
                   ))}

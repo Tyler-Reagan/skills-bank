@@ -1,4 +1,5 @@
 import React from "react";
+import { Icon } from "./Icon.js";
 
 interface Props {
   refreshing: boolean;
@@ -30,7 +31,9 @@ export function Header({ refreshing, onRefresh }: Props): React.ReactElement {
                 <span className="spinner inline" aria-hidden="true" /> Refreshing…
               </>
             ) : (
-              "↻ Refresh"
+              <>
+                <Icon name="refresh" size="md" /> Refresh
+              </>
             )}
           </button>
         </div>
