@@ -8,18 +8,12 @@ import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
 
 const INSTALLED_TOOLTIP =
-  "Every skill currently linked into any agent directory on this machine " +
-  "(~/.claude/skills, ~/.cursor/skills, ~/.agents/skills, and others) — " +
-  "regardless of whether this app added it. Skills not yet under registry " +
-  "management appear in the \"Not yet integrated\" section; migrating one " +
-  "moves it into the registry so the app can manage it.";
+  "Every skill linked into any agent directory on this machine — managed " +
+  "by the registry or installed elsewhere.";
 
 const MIGRATE_TOOLTIP =
-  "Migrating moves a skill into this app's registry so it becomes a managed entry: " +
-  "the file content moves under <repo>/skills/<name>/, the link in your agent dir is " +
-  "rewritten to point there, and the skill picks up registry metadata (warnings, " +
-  "version tracking, etc.). The original on-disk location is left empty (real-dir " +
-  "case) or untouched (foreign-symlink case).";
+  "Move a skill into the registry: files go under <repo>/skills/<name>/, " +
+  "the agent symlink is rewritten, and registry metadata is applied.";
 
 interface InstalledGroup {
   name: string;
@@ -106,8 +100,13 @@ export function InstalledTab({
   return (
     <div>
       <div className="tab-intro">
-        <strong>Installed</strong>
-        <InfoTooltip text={INSTALLED_TOOLTIP} label="What does Installed mean?" />
+        <span className="tab-intro-heading">
+          <strong>Installed</strong>
+          <InfoTooltip
+            text={INSTALLED_TOOLTIP}
+            label="What does Installed mean?"
+          />
+        </span>{" "}
         Every skill currently linked into any agent directory on this
         machine — managed by this app or installed elsewhere (e.g. the
         skills.sh CLI). Chips show which agent dirs have each skill linked.
@@ -129,9 +128,11 @@ export function InstalledTab({
         <section>
           <header className="section-header">
             <div>
-              <h2>
-                Not yet integrated{" "}
-                <span className="count">({unintegrated.length})</span>
+              <h2 className="section-heading-with-info">
+                <span>
+                  Not yet integrated{" "}
+                  <span className="count">({unintegrated.length})</span>
+                </span>
                 <InfoTooltip
                   text={MIGRATE_TOOLTIP}
                   label="What does migrating do?"

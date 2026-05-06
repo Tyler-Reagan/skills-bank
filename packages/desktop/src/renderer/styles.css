@@ -499,6 +499,17 @@ input, select { font-family: inherit; color: inherit; }
 }
 
 /* ── InfoTooltip ─── */
+/* Inline-flex container so the heading + info icon share a common
+   alignment baseline. Used by both .tab-intro-heading (Browse / Installed
+   tab intros) and .section-heading-with-info ("Not yet integrated" h2). */
+.tab-intro-heading,
+.section-heading-with-info {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.section-heading-with-info { display: flex; }
+
 .info-tooltip {
   position: relative;
   display: inline-flex; align-items: center; justify-content: center;
@@ -506,27 +517,28 @@ input, select { font-family: inherit; color: inherit; }
   border-radius: 50%;
   color: var(--text-3);
   cursor: help;
-  vertical-align: middle;
-  /* Symmetric horizontal padding so the icon doesn't crowd surrounding
-     text on either side. Bottom margin nudges it onto the visual baseline
-     of the heading next to it. */
-  margin: 0 var(--s2);
+  flex-shrink: 0;
 }
 .info-tooltip:hover, .info-tooltip:focus-visible {
   color: var(--accent);
   outline: none;
 }
+/* Lift the tab-intro paragraph above its sibling .filters-section so the
+   tooltip bubble (positioned absolutely below the icon) renders on top of
+   the search bar / tag pills instead of behind them. */
+.tab-intro {
+  position: relative;
+  z-index: 10;
+}
 .info-tooltip-bubble {
   position: absolute;
   /* Anchor BELOW the icon; tab-intro is at the top of the content area
      so a bubble positioned above gets clipped by the header. Left-anchor
-     to the icon and grow rightward — header tooltips live on the left
-     side of the viewport, so left-anchor never overflows the right edge.
-     Width is capped to the viewport for safety on narrow windows. */
+     to the icon and grow rightward. */
   top: calc(100% + var(--s2));
   left: 0;
-  width: 320px;
-  max-width: min(80vw, 360px);
+  width: 280px;
+  max-width: min(80vw, 320px);
   padding: var(--s3);
   background: var(--surface);
   color: var(--text);

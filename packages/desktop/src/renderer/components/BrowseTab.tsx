@@ -6,11 +6,8 @@ import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
 
 const REGISTRY_TOOLTIP =
-  "A persisted collection of skills and their metadata that this app maintains. " +
-  "Installing a registry skill links it into one or more of your agent directories " +
-  "(~/.claude/skills, ~/.cursor/skills, etc.). The registry is NOT the only place " +
-  "skills can come from — anything you install from outside (e.g. the skills.sh CLI) " +
-  "shows up alongside, in the Installed tab.";
+  "Curated skills and metadata maintained by this app. Not the only source — " +
+  "installs from elsewhere appear in the Installed tab.";
 
 interface Props {
   registry: RegistryEntry[];
@@ -75,10 +72,12 @@ export function BrowseTab({
   return (
     <div>
       <div className="tab-intro">
-        <strong>Registry</strong>
-        <InfoTooltip text={REGISTRY_TOOLTIP} label="What is the registry?" />
-        Skills published in this app's registry — portable across
-        machines, shared via git. Click any card to view its details, then{" "}
+        <span className="tab-intro-heading">
+          <strong>Registry</strong>
+          <InfoTooltip text={REGISTRY_TOOLTIP} label="What is the registry?" />
+        </span>{" "}
+        Skills published in this app's registry — portable across machines,
+        shared via git. Click any card to view its details, then{" "}
         <strong>Install</strong> to link it into the agent directories you
         use (Claude Code, Cursor, etc.).
         <span className="meta-counts">
