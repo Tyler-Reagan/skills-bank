@@ -15,9 +15,24 @@ interface Props {
   onChanged: (msg: string) => void | Promise<void>;
   /** Called specifically after a successful uninstall so the host can offer Undo. */
   onUninstalled?: (name: string) => void;
+  /** Open the dedicated "Manage agent links" modal for this skill. */
+  onManageLinks?: () => void;
+  /**
+   * When true, the entry is a real registry-managed skill: tag editing,
+   * install/uninstall, and Markdown loading from the registry path all
+   * apply. When false, the entry is a synthetic stand-in for a skill
+   * that lives only in some agent dir(s); the drawer offers a "Register
+   * in registry" action instead, and hides registry-only chrome.
+   */
+  isRegistered: boolean;
+  /**
+   * Trigger registration into the registry for a not-yet-registered
+   * entry. Required when isRegistered is false; ignored otherwise.
+   */
+  onRegister?: () => Promise<void> | void;
 }
 
-type ActionState = null | "installing" | "uninstalling" | "exporting";
+type ActionState = null | "installing" | "uninstalling" | "exporting" | "registering";
 
 export function SkillDetailDrawer({
   entry,
@@ -26,6 +41,9 @@ export function SkillDetailDrawer({
   onClose,
   onChanged,
   onUninstalled,
+  onManageLinks,
+  isRegistered,
+  onRegister,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
@@ -402,33 +420,69 @@ export function SkillDetailDrawer({
         </div>
 
         <div className="drawer-actions">
-          {isInstalled ? (
-            <button
-              className="btn danger"
-              disabled={action !== null}
-              onClick={() => void uninstall()}
-            >
-              {action === "uninstalling" ? (
-                <>
-                  <span className="spinner inline" /> Uninstalling…
-                </>
-              ) : (
-                "Uninstall"
-              )}
-            </button>
-          ) : (
+          {/* For not-registered entries, the only useful primary action is
+              moving them into the registry. install/uninstall don't apply
+              because there's no registry copy to symlink to yet. */}
+          {!isRegistered && onRegister && (
             <button
               className="btn primary"
               disabled={action !== null}
-              onClick={() => void install()}
+              onClick={() => {
+                setAction("registering");
+                void Promise.resolve(onRegister()).finally(() =>
+                  setAction(null),
+                );
+              }}
             >
-              {action === "installing" ? (
+              {action === "registering" ? (
                 <>
-                  <span className="spinner inline" /> Installing…
+                  <span className="spinner inline" /> Registering…
                 </>
               ) : (
-                "Install"
+                "Register in registry"
               )}
+            </button>
+          )}
+          {isRegistered &&
+            (isInstalled ? (
+              <button
+                className="btn danger"
+                disabled={action !== null}
+                onClick={() => void uninstall()}
+              >
+                {action === "uninstalling" ? (
+                  <>
+                    <span className="spinner inline" /> Uninstalling…
+                  </>
+                ) : (
+                  "Uninstall"
+                )}
+              </button>
+            ) : (
+              <button
+                className="btn primary"
+                disabled={action !== null}
+                onClick={() => void install()}
+              >
+                {action === "installing" ? (
+                  <>
+                    <span className="spinner inline" /> Installing…
+                  </>
+                ) : (
+                  "Install"
+                )}
+              </button>
+            ))}
+          {/* Manage agent links — available for any skill regardless of
+              registration state. Distinct from Register: this only adjusts
+              symlinks across agent dirs. */}
+          {onManageLinks && (
+            <button
+              className="btn"
+              disabled={action !== null}
+              onClick={onManageLinks}
+            >
+              Manage agent links
             </button>
           )}
           <button

@@ -8,9 +8,9 @@ import { BrowseTab } from "./components/BrowseTab.js";
 import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js";
 import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
-import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
 import { LoginScreen } from "./components/LoginScreen.js";
+import { ManageLinksModal } from "./components/ManageLinksModal.js";
 import { RepoPickerModal } from "./components/RepoPickerModal.js";
 import { SetupScreen } from "./components/SetupScreen.js";
 import { SyncBanner } from "./components/SyncBanner.js";
@@ -96,8 +96,13 @@ export function App(): React.ReactElement {
   const [toast, setToast] = useState<ToastShape | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showMigrate, setShowMigrate] = useState(false);
-  const [singleMigrateTarget, setSingleMigrateTarget] =
-    useState<InstalledSkill | null>(null);
+  // Manage-agent-links is a standalone modal targeting a single skill name.
+  // Its target may originate from the registry tab, the installed-registered
+  // section, or the installed-not-registered section — uniformly handled.
+  const [manageLinksTarget, setManageLinksTarget] = useState<{
+    name: string;
+    installations: InstalledSkill[];
+  } | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
@@ -494,7 +499,21 @@ export function App(): React.ReactElement {
             registry={registry}
             onSwitchToBrowse={() => setTabPersisted("browse")}
             onMigrateAll={() => setShowMigrate(true)}
-            onMigrateOne={(s) => setSingleMigrateTarget(s)}
+            onMigrateOne={(s) => {
+              // Open the unified detail drawer with a synthetic registry
+              // entry so the user gets the same Register / Manage-links /
+              // Remove action surface as a registered skill — the two
+              // operations are now distinct buttons, not a radio group.
+              const synthetic: RegistryEntry = registry.find(
+                (r) => r.name === s.name,
+              ) ?? {
+                name: s.name,
+                description: s.target ?? s.linkPath,
+                path: s.linkPath,
+                source: { source: "user" },
+              };
+              setSelected(synthetic);
+            }}
             onSelectIntegrated={(e) => setSelected(e)}
           />
         )}
@@ -510,14 +529,12 @@ export function App(): React.ReactElement {
         />
       )}
 
-      {singleMigrateTarget && (
-        <SingleMigrateModal
-          entry={singleMigrateTarget}
-          installations={installed.filter(
-            (i) => i.name === singleMigrateTarget.name,
-          )}
+      {manageLinksTarget && (
+        <ManageLinksModal
+          name={manageLinksTarget.name}
+          installations={manageLinksTarget.installations}
           onClose={async () => {
-            setSingleMigrateTarget(null);
+            setManageLinksTarget(null);
             await refresh();
           }}
           onFlash={flash}
@@ -540,24 +557,58 @@ export function App(): React.ReactElement {
         />
       )}
 
-      {selected && (
-        <SkillDetailDrawer
-          entry={selected}
-          installed={installed}
-          registryRoot={registryRoot}
-          onClose={() => setSelected(null)}
-          onChanged={async (msg) => {
-            flash(msg);
-            await refresh();
-          }}
-          onUninstalled={(name) => {
-            flashWithAction(`Uninstalled ${name}`, "Undo", () =>
-              undoUninstall(name),
-            );
-            void refresh();
-          }}
-        />
-      )}
+      {selected &&
+        (() => {
+          const isRegistered = registry.some((r) => r.name === selected.name);
+          const installations = installed.filter(
+            (i) => i.name === selected.name,
+          );
+          return (
+            <SkillDetailDrawer
+              entry={selected}
+              installed={installed}
+              registryRoot={registryRoot}
+              isRegistered={isRegistered}
+              onClose={() => setSelected(null)}
+              onChanged={async (msg) => {
+                flash(msg);
+                await refresh();
+              }}
+              onUninstalled={(name) => {
+                flashWithAction(`Uninstalled ${name}`, "Undo", () =>
+                  undoUninstall(name),
+                );
+                void refresh();
+              }}
+              onManageLinks={() => {
+                setManageLinksTarget({
+                  name: selected.name,
+                  installations,
+                });
+                setSelected(null);
+              }}
+              onRegister={
+                isRegistered
+                  ? undefined
+                  : async () => {
+                      const results = await window.skillsBank.migrate([
+                        {
+                          name: selected.name,
+                          action: { type: "adopt", name: selected.name },
+                        },
+                      ]);
+                      const r = results[0]!;
+                      flash(r.message);
+                      if (r.ok) {
+                        void window.skillsBank.rebuildIndex();
+                        setSelected(null);
+                      }
+                      await refresh();
+                    }
+              }
+            />
+          );
+        })()}
 
       {toast && (
         <div className="toast" role="status" aria-live="polite">
