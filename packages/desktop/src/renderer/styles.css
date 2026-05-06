@@ -1122,6 +1122,73 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .link-btn:hover { color: var(--text); }
 
+/* ── Header account/settings menu ─── */
+.header-menu { position: relative; }
+.header-menu-trigger {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color var(--t-fast) var(--ease),
+              background var(--t-fast) var(--ease);
+}
+.header-menu-trigger:hover { border-color: var(--accent); }
+.header-menu-trigger[aria-expanded="true"] { border-color: var(--accent); }
+.header-menu-avatar {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: block;
+}
+.header-menu-label {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.header-menu-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--s1));
+  min-width: 240px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: var(--s1);
+  box-shadow: var(--shadow-hover);
+  z-index: 100;
+  display: flex; flex-direction: column;
+  animation: fadeUp var(--t-fast) var(--ease) both;
+}
+.header-menu-meta {
+  font-size: 11px;
+  color: var(--text-3);
+  padding: var(--s2) var(--s3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s1);
+}
+.header-menu-item {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  width: 100%;
+  text-align: left;
+  padding: var(--s2) var(--s3);
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: var(--r-sm);
+}
+.header-menu-item:hover { background: var(--surface-hi); }
+.header-menu-item.danger { color: var(--danger); }
+.header-menu-item.danger:hover { background: var(--danger-dim); }
+
 /* Inline empty (used inside drawer sections) — softer than the page-level empty state. */
 .empty-inline {
   background: var(--surface);

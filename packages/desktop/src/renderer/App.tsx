@@ -365,6 +365,8 @@ export function App(): React.ReactElement {
           syncing={false}
           onSync={() => undefined}
           showSync={false}
+          authStatus={null}
+          onSignOut={() => undefined}
         />
         <Tabs
           active="browse"
@@ -429,6 +431,8 @@ export function App(): React.ReactElement {
         }
         onSync={() => void sync()}
         showSync={authStatus?.persona !== "power"}
+        authStatus={authStatus}
+        onSignOut={signOut}
       />
       <SyncBanner
         status={syncStatus}

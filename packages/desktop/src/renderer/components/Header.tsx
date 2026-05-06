@@ -1,4 +1,6 @@
 import React from "react";
+import type { AuthStatus } from "../../shared/ipc.js";
+import { HeaderMenu } from "./HeaderMenu.js";
 import { Icon } from "./Icon.js";
 
 export type Theme = "dark" | "light";
@@ -16,6 +18,8 @@ interface Props {
   onSync: () => void;
   /** When false (power persona), the canonical-sync button is hidden. */
   showSync: boolean;
+  authStatus: AuthStatus | null;
+  onSignOut: () => Promise<void> | void;
 }
 
 export function Header({
@@ -29,6 +33,8 @@ export function Header({
   syncing,
   onSync,
   showSync,
+  authStatus,
+  onSignOut,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -44,18 +50,9 @@ export function Header({
           <button
             className="icon-btn"
             type="button"
-            onClick={onChangeRegistry}
-            aria-label="Change registry folder"
-            title="Change registry folder"
-          >
-            <Icon name="settings" size="md" />
-          </button>
-          <button
-            className="icon-btn"
-            type="button"
             onClick={onToggleDensity}
             aria-label={`Switch to ${nextDensity} card density`}
-            title={`Switch to ${nextDensity} density`}
+            title={`Switch to ${nextDensity} card density`}
           >
             <Icon
               name={
@@ -79,9 +76,11 @@ export function Header({
             <button
               className="refresh-btn"
               disabled={syncing}
-              title="Sync canonical skills from skills-bank repository"
+              title="Pull the latest canonical skills from this repo"
               aria-label={
-                syncing ? "Syncing canonical skills" : "Sync canonical skills"
+                syncing
+                  ? "Syncing canonical skills"
+                  : "Sync canonical skills from skills-bank repository"
               }
               onClick={onSync}
             >
@@ -92,7 +91,7 @@ export function Header({
                 </>
               ) : (
                 <>
-                  <Icon name="download" size="md" /> Sync
+                  <Icon name="download" size="md" /> Sync skills
                 </>
               )}
             </button>
@@ -100,7 +99,7 @@ export function Header({
           <button
             className="refresh-btn"
             disabled={refreshing}
-            title="Re-read registry and ~/.claude/skills"
+            title="Re-read the registry and ~/.claude/skills from disk"
             aria-label={
               refreshing
                 ? "Refreshing registry and installed skills"
@@ -119,6 +118,11 @@ export function Header({
               </>
             )}
           </button>
+          <HeaderMenu
+            authStatus={authStatus}
+            onChangeRegistry={onChangeRegistry}
+            onSignOut={onSignOut}
+          />
         </div>
       </div>
     </header>
