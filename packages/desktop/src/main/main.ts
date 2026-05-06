@@ -23,6 +23,7 @@ import {
   scanExistingInstalls,
   uninstallSkill,
   writeSyncDecisions,
+  type InstalledKind,
   type MigrationAction,
   type SyncDecisions,
 } from "@skills-bank/core";
@@ -290,7 +291,26 @@ ipcMain.handle(
       }));
     }
     const report = scanExistingInstalls(registryRoot);
-    const byName = new Map(report.entries.map((e) => [e.name, e]));
+    // Prefer the most actionable entry per name when a skill exists in
+    // multiple agent dirs. Adopt and setAgents both need a usable
+    // source, so prioritise: real-directory (actual content) > ours
+    // (working symlink to registry) > foreign-symlink > broken-symlink.
+    // Without this, a naive Map keyed by name silently overwrites the
+    // useful real-dir entry with whatever sorted last (often a broken
+    // claude symlink), making realpath calls explode downstream.
+    const kindRank: Record<InstalledKind, number> = {
+      "real-directory": 4,
+      ours: 3,
+      "foreign-symlink": 2,
+      "broken-symlink": 1,
+    };
+    const byName = new Map<string, (typeof report.entries)[number]>();
+    for (const e of report.entries) {
+      const existing = byName.get(e.name);
+      if (!existing || kindRank[e.kind] > kindRank[existing.kind]) {
+        byName.set(e.name, e);
+      }
+    }
     return items.map(({ name, action }) => {
       const entry = byName.get(name);
       if (!entry) {
