@@ -116,8 +116,8 @@ export function applyMigration(
         return adoptIntoRegistry(entry, opts);
       }
 
-      case "propagate": {
-        return propagateToAgents(entry, action.toAgents);
+      case "setAgents": {
+        return setAgentLinks(entry, action.agents);
       }
     }
   } catch (err) {
@@ -130,31 +130,29 @@ export function applyMigration(
 }
 
 /**
- * Symlink a skill into additional agent directories without moving its
- * source content. Used when the user has a skill installed in one agent
- * dir (e.g. `~/.agents/skills/readme-i18n` from the skills.sh CLI) and
- * wants to also expose it to other agents (e.g. Claude Code) without
- * adopting it into the registry.
+ * Reconcile the set of agent dirs that have this skill linked to match
+ * `desired`. Adds symlinks for desired agents that don't currently have
+ * one; removes symlinks for currently-present agents that aren't in the
+ * desired list. Real-directory entries are never deleted — that's the
+ * skill's actual content, not a removable link.
  *
- * The symlink target is the entry's REAL path (resolved through any
- * existing symlink chain) so propagated copies all point at the same
- * source, not at each other.
+ * Used to expose a skill to Claude Code (or any other agent) when it
+ * was installed via the skills.sh CLI under a different agent dir, and
+ * to back the same flow out by unchecking the box.
  */
-function propagateToAgents(
+function setAgentLinks(
   entry: InstalledSkill,
-  toAgents: AgentId[],
+  desired: AgentId[],
 ): MigrationResult {
   const action: MigrationAction = {
-    type: "propagate",
+    type: "setAgents",
     name: entry.name,
-    toAgents,
+    agents: desired,
   };
-  if (toAgents.length === 0) {
-    return { action, ok: false, message: "no agents selected" };
-  }
 
-  // Resolve the actual on-disk content. For real-directory entries the
-  // linkPath IS the content; for symlinks we follow to the target.
+  // Resolve the actual on-disk content of the skill via realpath so a
+  // symlink chain doesn't mislead us. For real-directory entries the
+  // linkPath IS the content.
   let realPath: string;
   try {
     realPath = fs.realpathSync(entry.linkPath);
@@ -173,34 +171,56 @@ function propagateToAgents(
     };
   }
 
-  const linked: string[] = [];
-  const skipped: string[] = [];
-  for (const id of toAgents) {
-    const agent = getAgent(id);
+  const desiredSet = new Set<AgentId>(desired);
+  const added: string[] = [];
+  const removed: string[] = [];
+  const protectedAgents: string[] = [];
+
+  for (const agent of AGENTS) {
     const skillsDir = getAgentSkillsDir(agent);
-    fs.mkdirSync(skillsDir, { recursive: true });
-    const targetLink = path.join(skillsDir, entry.name);
-    if (fs.existsSync(targetLink) || isSymlink(targetLink)) {
-      skipped.push(agent.label);
+    const linkPath = path.join(skillsDir, entry.name);
+    let stat: fs.Stats | null = null;
+    try {
+      stat = fs.lstatSync(linkPath);
+    } catch {
+      stat = null;
+    }
+    const wanted = desiredSet.has(agent.id);
+
+    // Real-directory entries house the actual content. Never remove,
+    // and report so the caller knows we couldn't satisfy a removal.
+    if (stat?.isDirectory() && !stat.isSymbolicLink()) {
+      if (!wanted) protectedAgents.push(agent.label);
       continue;
     }
-    fs.symlinkSync(realPath, targetLink, "dir");
-    linked.push(agent.label);
+
+    if (wanted) {
+      if (stat?.isSymbolicLink()) continue; // already linked
+      fs.mkdirSync(skillsDir, { recursive: true });
+      fs.symlinkSync(realPath, linkPath, "dir");
+      added.push(agent.label);
+    } else if (stat?.isSymbolicLink()) {
+      fs.unlinkSync(linkPath);
+      removed.push(agent.label);
+    }
   }
 
-  if (linked.length === 0) {
+  if (added.length === 0 && removed.length === 0) {
     return {
       action,
-      ok: false,
-      message: `${entry.name} already linked in all selected agent dirs`,
+      ok: true,
+      message: `no changes for ${entry.name}`,
     };
   }
-  const skipMsg =
-    skipped.length > 0 ? ` (skipped: ${skipped.join(", ")})` : "";
+  const parts: string[] = [];
+  if (added.length > 0) parts.push(`linked: ${added.join(", ")}`);
+  if (removed.length > 0) parts.push(`unlinked: ${removed.join(", ")}`);
+  if (protectedAgents.length > 0)
+    parts.push(`source kept: ${protectedAgents.join(", ")}`);
   return {
     action,
     ok: true,
-    message: `linked ${entry.name} to ${linked.join(", ")}${skipMsg}`,
+    message: `${entry.name} — ${parts.join("; ")}`,
   };
 }
 

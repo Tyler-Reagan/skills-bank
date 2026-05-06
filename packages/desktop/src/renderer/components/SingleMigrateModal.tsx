@@ -42,8 +42,13 @@ const ALL_AGENTS: AgentId[] = [
 
 interface Props {
   entry: InstalledSkill;
-  /** Agents that already have this skill linked. Excluded from the propagate picker. */
-  installedAgents?: AgentId[];
+  /**
+   * All installations of this skill name across agent dirs. Used to
+   * derive which agents currently have the skill linked and which one
+   * (if any) is the source-of-truth real directory that can't be
+   * unlinked safely.
+   */
+  installations?: InstalledSkill[];
   onClose: () => void | Promise<void>;
   onFlash: (msg: string) => void;
 }
@@ -55,23 +60,36 @@ type Phase =
 
 export function SingleMigrateModal({
   entry,
-  installedAgents = [],
+  installations,
   onClose,
   onFlash,
 }: Props): React.ReactElement {
   useFocusReturn();
+
+  const allInstalls = installations ?? [entry];
+  // Agents that currently have the skill linked.
+  const currentAgents = useMemo(
+    () => new Set<AgentId>(allInstalls.map((i) => i.agent)),
+    [allInstalls],
+  );
+  // Source agents: ones holding the actual content (real directory). The
+  // checkbox stays checked + disabled because deleting a real dir would
+  // delete the skill itself.
+  const sourceAgents = useMemo(
+    () =>
+      new Set<AgentId>(
+        allInstalls.filter((i) => i.kind === "real-directory").map((i) => i.agent),
+      ),
+    [allInstalls],
+  );
+
   const [actionType, setActionType] = useState<MigrationAction["type"]>(() =>
     defaultActionType(entry),
   );
-  // Agents available as propagation targets — every known agent that
-  // doesn't already have this skill linked. Initial state: all checked
-  // (broadcast) so the common case is one click.
-  const propagateCandidates = useMemo(
-    () => ALL_AGENTS.filter((id) => !installedAgents.includes(id)),
-    [installedAgents],
-  );
-  const [propagateTargets, setPropagateTargets] = useState<AgentId[]>(
-    propagateCandidates,
+  // Initial desired set mirrors the current state — toggling reflects
+  // the user's intent to either preserve, remove, or add per agent.
+  const [desiredAgents, setDesiredAgents] = useState<Set<AgentId>>(
+    new Set(currentAgents),
   );
   const [phase, setPhase] = useState<Phase>({ kind: "plan" });
 
@@ -90,15 +108,16 @@ export function SingleMigrateModal({
       case "skip":
         action = { type: "skip", name: entry.name };
         break;
-      case "propagate":
-        if (propagateTargets.length === 0) {
-          onFlash("Pick at least one agent to link to.");
-          return;
-        }
+      case "setAgents":
         action = {
-          type: "propagate",
+          type: "setAgents",
           name: entry.name,
-          toAgents: propagateTargets,
+          // Always include source agents so the diff doesn't try to
+          // remove their real-dir entries (the core layer guards too,
+          // but keeping intent explicit is clearer).
+          agents: Array.from(
+            new Set<AgentId>([...desiredAgents, ...sourceAgents]),
+          ),
         };
         break;
     }
@@ -108,23 +127,26 @@ export function SingleMigrateModal({
     ]);
     const result = results[0]!;
     if (result.ok && result.action.type === "adopt") {
-      // Refresh the index so the freshly adopted skill is recognised.
       void window.skillsBank.rebuildIndex();
     }
     setPhase({ kind: "result", result });
   };
 
-  const togglePropagate = (id: AgentId) => {
-    setPropagateTargets((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+  const toggleAgent = (id: AgentId) => {
+    if (sourceAgents.has(id)) return; // source is locked
+    setDesiredAgents((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   if (phase.kind === "applying") {
     return (
       <div style={overlay}>
         <div style={modal} role="dialog" aria-modal="true">
-          <h2 style={{ marginTop: 0 }}>Migrating {entry.name}…</h2>
+          <h2 style={{ marginTop: 0 }}>Updating {entry.name}…</h2>
           <div
             style={{
               display: "flex",
@@ -144,7 +166,7 @@ export function SingleMigrateModal({
       <div style={overlay}>
         <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>
-            {phase.result.ok ? "Migration complete" : "Migration failed"}
+            {phase.result.ok ? "Update complete" : "Update failed"}
           </h2>
           <p
             style={{
@@ -223,20 +245,13 @@ export function SingleMigrateModal({
                   {o.description}
                 </p>
 
-                {o.value === "propagate" && selected && (
+                {o.value === "setAgents" && selected && (
                   <div style={{ margin: "10px 0 0 24px" }}>
-                    {propagateCandidates.length === 0 ? (
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: "var(--text-3)",
-                          margin: 0,
-                        }}
-                      >
-                        Already linked in every known agent directory.
-                      </p>
-                    ) : (
-                      propagateCandidates.map((id) => (
+                    {ALL_AGENTS.map((id) => {
+                      const isSource = sourceAgents.has(id);
+                      const isChecked =
+                        isSource || desiredAgents.has(id);
+                      return (
                         <label
                           key={id}
                           style={{
@@ -245,15 +260,16 @@ export function SingleMigrateModal({
                             gap: 8,
                             padding: "4px 0",
                             fontSize: 12,
-                            color: "var(--text)",
-                            cursor: "pointer",
+                            color: isSource ? "var(--text-2)" : "var(--text)",
+                            cursor: isSource ? "default" : "pointer",
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <input
                             type="checkbox"
-                            checked={propagateTargets.includes(id)}
-                            onChange={() => togglePropagate(id)}
+                            checked={isChecked}
+                            disabled={isSource}
+                            onChange={() => toggleAgent(id)}
                           />
                           <span>{AGENT_LABELS[id]}</span>
                           <code
@@ -264,9 +280,21 @@ export function SingleMigrateModal({
                           >
                             {AGENT_PATHS[id]}/skills/
                           </code>
+                          {isSource && (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: "var(--text-3)",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                              }}
+                            >
+                              source
+                            </span>
+                          )}
                         </label>
-                      ))
-                    )}
+                      );
+                    })}
                   </div>
                 )}
               </label>
@@ -285,21 +313,17 @@ export function SingleMigrateModal({
   );
 }
 
-// Default to "propagate" for the most common user intent: a skill exists
-// in some agent dir(s) and the user wants to expose it to others
-// (e.g. a CLI install in ~/.agents/skills that should also be linked
-// from ~/.claude/skills so Claude Code can use it). Adopt remains
-// available for users who want to bring the skill under registry mgmt.
+// Default to "setAgents" for almost every kind — managing agent links is
+// the most common reason a user opens this modal. broken-symlink defaults
+// to remove (the dead link is the actionable thing).
 function defaultActionType(e: InstalledSkill): MigrationAction["type"] {
   switch (e.kind) {
-    case "ours":
-      return "skip";
     case "broken-symlink":
       return "remove";
+    case "ours":
     case "foreign-symlink":
-      return "propagate";
     case "real-directory":
-      return "propagate";
+      return "setAgents";
   }
 }
 
@@ -310,13 +334,23 @@ interface ActionOption {
 }
 
 function optionsFor(e: InstalledSkill): ActionOption[] {
+  // Manage-agent-links is offered for every kind (including ours) so a
+  // user can broaden or narrow which agents have a skill at any time.
+  const setAgentsOption: ActionOption = {
+    value: "setAgents",
+    label: "Manage agent links",
+    description:
+      "Pick which agent directories have this skill linked. Already-checked agents reflect current state; unchecking removes the link, checking adds it. Source directories that hold the actual content are locked.",
+  };
+
   switch (e.kind) {
     case "ours":
       return [
+        setAgentsOption,
         {
           value: "skip",
           label: "Skip",
-          description: "Already integrated. No action needed.",
+          description: "No changes.",
         },
       ];
     case "broken-symlink":
@@ -334,47 +368,37 @@ function optionsFor(e: InstalledSkill): ActionOption[] {
       ];
     case "foreign-symlink":
       return [
-        {
-          value: "propagate",
-          label: "Link to other agents…",
-          description:
-            "Add a symlink in additional agent directories so the skill is available wherever you run an AI tool. Source content is untouched.",
-        },
+        setAgentsOption,
         {
           value: "adopt",
-          label: "Adopt into registry",
+          label: "Register in registry",
           description:
             "Copy the target folder into skills/<name>/ and re-point the symlink at the registry. Brings the skill under registry management.",
         },
         {
           value: "register-external",
-          label: "Register as external",
+          label: "Track as external",
           description:
             "Track the symlink in .skills-bank/external.json without touching the source.",
         },
-        { value: "skip", label: "Skip", description: "Leave it as-is." },
+        { value: "skip", label: "Skip", description: "No changes." },
         {
           value: "remove",
           label: "Remove symlink",
           description:
-            "Delete the symlink (leaves the target folder untouched).",
+            "Delete this agent's symlink (leaves the source target untouched).",
         },
       ];
     case "real-directory":
       return [
-        {
-          value: "propagate",
-          label: "Link to other agents…",
-          description:
-            "Add a symlink in additional agent directories pointing at this folder. Source content stays where it is.",
-        },
+        setAgentsOption,
         {
           value: "adopt",
-          label: "Adopt into registry",
+          label: "Register in registry",
           description:
             "Move the directory into skills/<name>/ and replace it with a symlink. Brings the skill under registry management.",
         },
-        { value: "skip", label: "Skip", description: "Leave it as-is." },
+        { value: "skip", label: "Skip", description: "No changes." },
       ];
   }
 }

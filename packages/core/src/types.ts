@@ -88,10 +88,15 @@ export type MigrationAction =
   | { type: "adopt"; name: string }
   | { type: "register-external"; name: string }
   | {
-      type: "propagate";
+      type: "setAgents";
       name: string;
-      /** Agent dirs to additionally symlink the skill into. */
-      toAgents: import("./agents.js").AgentId[];
+      /**
+       * Desired agent links. Symlinks are added for entries in this list
+       * that don't currently have one and removed for entries currently
+       * present but absent from this list. Real-directory entries are
+       * never removed (the actual content lives there).
+       */
+      agents: import("./agents.js").AgentId[];
     };
 
 export interface MigrationResult {

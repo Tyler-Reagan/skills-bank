@@ -172,8 +172,18 @@ export function App(): React.ReactElement {
     [],
   );
 
-  const refresh = useCallback(async () => {
+  // Minimum spinner duration so the user actually sees the load state.
+  // Without it, a sub-100ms refresh just flickers and reads as "nothing
+  // happened." Returns counts so the Refresh-button click handler can
+  // surface a meaningful toast.
+  const refresh = useCallback(async (): Promise<{
+    registryCount: number;
+    installedCount: number;
+  }> => {
     setRefreshing(true);
+    const minSpinner = new Promise<void>((resolve) =>
+      setTimeout(resolve, 250),
+    );
     try {
       const cfg = await window.skillsBank.getConfig();
       setRegistryRoot(cfg.registryRoot);
@@ -181,7 +191,8 @@ export function App(): React.ReactElement {
       if (!cfg.registryRoot) {
         setRegistry([]);
         setInstalled([]);
-        return;
+        await minSpinner;
+        return { registryCount: 0, installedCount: 0 };
       }
       const [r, i] = await Promise.all([
         window.skillsBank.listRegistry(),
@@ -189,10 +200,22 @@ export function App(): React.ReactElement {
       ]);
       setRegistry(r);
       setInstalled(i);
+      await minSpinner;
+      return {
+        registryCount: r.length,
+        installedCount: new Set(i.map((x) => x.name)).size,
+      };
     } finally {
       setRefreshing(false);
     }
   }, []);
+
+  const onRefreshClick = useCallback(async () => {
+    const { registryCount, installedCount } = await refresh();
+    flash(
+      `Refreshed — ${registryCount} in registry, ${installedCount} installed`,
+    );
+  }, [refresh, flash]);
 
   useEffect(() => {
     void refresh().finally(() => setInitialLoading(false));
@@ -420,7 +443,7 @@ export function App(): React.ReactElement {
     <div className="app">
       <Header
         refreshing={refreshing}
-        onRefresh={() => void refresh()}
+        onRefresh={() => void onRefreshClick()}
         theme={theme}
         onToggleTheme={toggleTheme}
         density={density}
@@ -490,9 +513,9 @@ export function App(): React.ReactElement {
       {singleMigrateTarget && (
         <SingleMigrateModal
           entry={singleMigrateTarget}
-          installedAgents={installed
-            .filter((i) => i.name === singleMigrateTarget.name)
-            .map((i) => i.agent)}
+          installations={installed.filter(
+            (i) => i.name === singleMigrateTarget.name,
+          )}
           onClose={async () => {
             setSingleMigrateTarget(null);
             await refresh();

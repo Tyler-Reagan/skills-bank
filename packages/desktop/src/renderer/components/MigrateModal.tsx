@@ -125,7 +125,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
     return (
       <div style={overlay}>
         <div style={modal} role="dialog" aria-modal="true">
-          <h2 style={{ marginTop: 0 }}>Nothing to migrate</h2>
+          <h2 style={{ marginTop: 0 }}>Nothing to register</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Scanned <code>{report.claudeSkillsDir}</code> and found no entries.
           </p>
@@ -301,7 +301,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   return (
     <div style={overlay}>
       <div style={modal} role="dialog" aria-modal="true">
-        <h2 style={{ marginTop: 0 }}>Migrate existing skills</h2>
+        <h2 style={{ marginTop: 0 }}>Register existing skills</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13 }}>
           Registry: {report.registryRoot}
           <br />
@@ -409,9 +409,9 @@ function actionFor(
       return { type: "remove", name: e.name };
     case "skip":
       return { type: "skip", name: e.name };
-    case "propagate":
-      // Bulk Migrate-All flow doesn't expose per-skill agent pickers;
-      // the user uses the per-card SingleMigrateModal for propagation.
+    case "setAgents":
+      // Bulk Register-All flow doesn't expose per-skill agent pickers;
+      // the user uses the per-card SingleMigrateModal for that.
       return { type: "skip", name: e.name };
   }
 }
@@ -423,9 +423,9 @@ function describeName(a: MigrationAction): string {
     case "register-external":
       return `${a.type}: ${a.name}`;
     case "adopt":
-      return `adopt: ${a.name} → skills/${a.name}`;
-    case "propagate":
-      return `link ${a.name} → ${a.toAgents.length} agent(s)`;
+      return `register: ${a.name} → skills/${a.name}`;
+    case "setAgents":
+      return `set-agents ${a.name} → ${a.agents.length} agent(s)`;
   }
 }
 
@@ -486,15 +486,15 @@ function FinalizeCallout(props: {
         </strong>
         <p style={{ margin: "4px 0", fontSize: 12, color: "var(--text)" }}>
           <code>{report.claudeSkillsDir}</code> is itself a symlink →{" "}
-          <code>{target}</code>. Adopting skills here leaves a double-hop. Once
-          everything is migrated, finalize to replace the top-level symlink with
-          a real directory.
+          <code>{target}</code>. Registering skills here leaves a double-hop.
+          Once everything is registered, finalize to replace the top-level
+          symlink with a real directory.
         </p>
         {hasUnmigrated && (
           <p
             style={{ margin: "4px 0 0", fontSize: 12, color: "var(--danger)" }}
           >
-            Apply migrations first — finalize will refuse while real-directory
+            Register first — finalize will refuse while real-directory
             entries remain.
           </p>
         )}

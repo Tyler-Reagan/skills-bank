@@ -8,12 +8,13 @@ import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
 
 const INSTALLED_TOOLTIP =
-  "Every skill linked into any agent directory on this machine — managed " +
-  "by the registry or installed elsewhere.";
+  "Every skill linked into any agent directory on this machine — registered " +
+  "in the registry or installed elsewhere.";
 
-const MIGRATE_TOOLTIP =
-  "Move a skill into the registry: files go under <repo>/skills/<name>/, " +
-  "the agent symlink is rewritten, and registry metadata is applied.";
+const REGISTER_TOOLTIP =
+  "Register a skill in the registry: files move under <repo>/skills/<name>/, " +
+  "the agent symlink is rewritten to the registry copy, and registry " +
+  "metadata is applied.";
 
 interface InstalledGroup {
   name: string;
@@ -69,7 +70,8 @@ export function InstalledTab({
       <div className="empty-state">
         <strong>Nothing installed yet.</strong>
         <p>
-          Install skills from the Browse tab, or scan for pre-existing entries.
+          Install skills from the Registry tab, or scan for pre-existing
+          entries.
         </p>
         <div
           style={{
@@ -108,18 +110,18 @@ export function InstalledTab({
           />
         </span>{" "}
         Every skill currently linked into any agent directory on this
-        machine — managed by this app or installed elsewhere (e.g. the
+        machine — registered by this app or installed elsewhere (e.g. the
         skills.sh CLI). Chips show which agent dirs have each skill linked.
         <span className="meta-counts">
           <span>
             {groups.length} skill{groups.length === 1 ? "" : "s"}
           </span>
           <span>·</span>
-          <span>{integrated.length} from registry</span>
+          <span>{integrated.length} registered</span>
           {unintegrated.length > 0 && (
             <>
               <span>·</span>
-              <span>{unintegrated.length} not yet integrated</span>
+              <span>{unintegrated.length} not registered</span>
             </>
           )}
         </span>
@@ -130,22 +132,22 @@ export function InstalledTab({
             <div>
               <h2 className="section-heading-with-info">
                 <span>
-                  Not yet integrated{" "}
+                  Not registered{" "}
                   <span className="count">({unintegrated.length})</span>
                 </span>
                 <InfoTooltip
-                  text={MIGRATE_TOOLTIP}
-                  label="What does migrating do?"
+                  text={REGISTER_TOOLTIP}
+                  label="What does registering do?"
                 />
               </h2>
               <p>
-                Linked into an agent directory but not yet under registry
-                management. Each chip shows where the skill lives on disk.
-                Click any card to migrate just that one.
+                Linked into an agent directory but not yet registered. Each
+                chip shows where the skill lives on disk. Click any card to
+                manage just that one.
               </p>
             </div>
             <button className="btn primary" onClick={onMigrateAll}>
-              Migrate All
+              Register All
             </button>
           </header>
           <div className="skills-grid">
@@ -183,7 +185,7 @@ export function InstalledTab({
           <header className="section-header">
             <div>
               <h2>
-                Integrated <span className="count">({integrated.length})</span>
+                Registered <span className="count">({integrated.length})</span>
               </h2>
               <p>Symlinked into the skills-bank registry.</p>
             </div>
