@@ -11,6 +11,7 @@ interface Props {
   onToggleTheme: () => void;
   density: Density;
   onToggleDensity: () => void;
+  onChangeRegistry: () => void;
 }
 
 export function Header({
@@ -20,6 +21,7 @@ export function Header({
   onToggleTheme,
   density,
   onToggleDensity,
+  onChangeRegistry,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -32,6 +34,15 @@ export function Header({
           skills<span>-</span>bank
         </div>
         <div className="header-stats">
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={onChangeRegistry}
+            aria-label="Change registry folder"
+            title="Change registry folder"
+          >
+            <Icon name="settings" size="md" />
+          </button>
           <button
             className="icon-btn"
             type="button"

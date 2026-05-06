@@ -11,7 +11,7 @@
     "build": "pnpm run build:main && pnpm run build:renderer",
     "dev": "pnpm run build:main && vite build --watch & sleep 1 && env -u ELECTRON_RUN_AS_NODE electron .",
     "start": "pnpm run build && env -u ELECTRON_RUN_AS_NODE electron .",
-    "package:mac": "pnpm run build && electron-builder --mac",
+    "package:mac": "pnpm run build && electron-builder --mac --arm64",
     "package:win": "pnpm run build && electron-builder --win",
     "typecheck": "tsc -b tsconfig.main.json && tsc -p tsconfig.json --noEmit"
   },
@@ -40,11 +40,27 @@
     },
     "files": [
       "dist/**/*",
-      "dist-main/**/*"
+      "dist-main/**/*",
+      "package.json",
+      "node_modules/**/*"
     ],
+    "asar": true,
+    "asarUnpack": [],
     "mac": {
-      "target": "dmg",
-      "category": "public.app-category.developer-tools"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": "arm64"
+        }
+      ],
+      "category": "public.app-category.developer-tools",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "writeUpdateInfo": false,
+      "title": "${productName} ${version}"
     },
     "win": {
       "target": "nsis"

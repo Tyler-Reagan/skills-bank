@@ -919,6 +919,77 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   font-family: var(--font-sans);
 }
 
+/* ── Setup screen (first-run; no registry configured) ─── */
+.setup-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--s8);
+  background: var(--bg);
+}
+.setup-card {
+  max-width: 540px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--s8);
+  box-shadow: var(--shadow-hover);
+  animation: fadeUp var(--t-slow) var(--ease) both;
+}
+.setup-brand {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+  color: var(--text-2);
+  margin-bottom: var(--s5);
+}
+.setup-brand span { color: var(--accent); }
+.setup-card h1 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: var(--s3);
+}
+.setup-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin-bottom: var(--s3);
+}
+.setup-card p code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--surface-hi);
+  padding: 1px 4px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+}
+.setup-hint { color: var(--text-3) !important; font-size: 12px !important; }
+.setup-cta { font-size: 14px; padding: var(--s3) var(--s5); margin-top: var(--s3); }
+.setup-error {
+  margin-top: var(--s4);
+  padding: var(--s3);
+  background: var(--danger-dim);
+  border: 1px solid var(--danger);
+  border-radius: var(--r);
+  color: var(--danger) !important;
+  font-size: 12px !important;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.setup-footnote {
+  margin-top: var(--s5) !important;
+  padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+  font-size: 12px !important;
+  color: var(--text-3) !important;
+}
+
 /* Inline empty (used inside drawer sections) — softer than the page-level empty state. */
 .empty-inline {
   background: var(--surface);

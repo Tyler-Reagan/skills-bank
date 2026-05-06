@@ -49,12 +49,29 @@ pnpm run desktop:start    # one-shot production build, then launch Electron
 
 `desktop:dev` keeps the renderer rebuilding on save; restart Electron (`Cmd+Q` and re-run) to pick up changes to the main or preload process.
 
-Package distributable installers (output under `packages/desktop/dist-electron/`):
+### Install the app (no Terminal needed after this)
+
+To get a double-clickable `.app` you can launch from Spotlight / Launchpad without going through Terminal again:
 
 ```bash
-pnpm run desktop:package:mac    # .dmg
-pnpm run desktop:package:win    # NSIS installer
+pnpm run desktop:package:mac
 ```
+
+This produces `packages/desktop/dist-electron/Skills Bank-<version>-arm64.dmg` (Apple Silicon only). Open the dmg, drag **Skills Bank** to Applications, then launch from Spotlight. The build is unsigned, so the first launch needs **right-click → Open** to bypass Gatekeeper; subsequent launches are normal double-clicks.
+
+On first launch, the app shows a setup screen asking you to point at this repo's folder (so it knows where to find the `skills/` registry). The choice is persisted in `~/Library/Application Support/@skills-bank/desktop/config.json` and can be changed any time via the gear icon in the Header.
+
+Intel Mac and Windows builds aren't configured yet (`package:win` exists but isn't tested).
+
+### Local dev (no .app)
+
+```bash
+pnpm run desktop:dev      # build main process, watch renderer with Vite, launch Electron
+# or
+pnpm run desktop:start    # one-shot production build, then launch Electron
+```
+
+`desktop:dev` keeps the renderer rebuilding on save; restart Electron (`Cmd+Q` and re-run) to pick up changes to the main or preload process.
 
 ## Authoring skills
 

@@ -19,6 +19,8 @@ const api = {
     ipcRenderer.invoke(IPC.openInFinder, absolutePath),
   editTags: (name: string, tags: string[]) =>
     ipcRenderer.invoke(IPC.editTags, name, tags),
+  getConfig: () => ipcRenderer.invoke(IPC.getConfig),
+  setRegistryRoot: () => ipcRenderer.invoke(IPC.setRegistryRoot),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

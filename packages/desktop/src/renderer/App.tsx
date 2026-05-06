@@ -5,6 +5,7 @@ import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
 import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
+import { SetupScreen } from "./components/SetupScreen.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 
@@ -78,6 +79,7 @@ export function App(): React.ReactElement {
   const [registry, setRegistry] = useState<RegistryEntry[]>([]);
   const [installed, setInstalled] = useState<InstalledSkill[]>([]);
   const [registryRoot, setRegistryRoot] = useState<string | null>(null);
+  const [configChecked, setConfigChecked] = useState(false);
   type ToastShape = {
     message: string;
     action?: { label: string; onClick: () => void };
@@ -128,17 +130,48 @@ export function App(): React.ReactElement {
     writeLS(LS_KEYS.tab, t);
   };
 
+  const flash = useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ message: msg });
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  const flashWithAction = useCallback(
+    (msg: string, label: string, onClick: () => void) => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      setToast({
+        message: msg,
+        action: {
+          label,
+          onClick: () => {
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+            setToast(null);
+            onClick();
+          },
+        },
+      });
+      toastTimerRef.current = setTimeout(() => setToast(null), 6000);
+    },
+    [],
+  );
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [r, i, root] = await Promise.all([
+      const cfg = await window.skillsBank.getConfig();
+      setRegistryRoot(cfg.registryRoot);
+      setConfigChecked(true);
+      if (!cfg.registryRoot) {
+        setRegistry([]);
+        setInstalled([]);
+        return;
+      }
+      const [r, i] = await Promise.all([
         window.skillsBank.listRegistry(),
         window.skillsBank.listInstalled(),
-        window.skillsBank.getRoot(),
       ]);
       setRegistry(r);
       setInstalled(i);
-      setRegistryRoot(root);
     } finally {
       setRefreshing(false);
     }
@@ -147,6 +180,38 @@ export function App(): React.ReactElement {
   useEffect(() => {
     void refresh().finally(() => setInitialLoading(false));
   }, [refresh]);
+
+  const changeRegistry = useCallback(async () => {
+    const r = await window.skillsBank.setRegistryRoot();
+    if (r.ok && r.registryRoot) {
+      flash(`Registry set to ${r.registryRoot}`);
+      await refresh();
+    } else if (r.message !== "cancelled") {
+      flash(`Couldn't set registry: ${r.message}`);
+    }
+  }, [refresh, flash]);
+
+  const undoUninstall = useCallback(
+    (name: string) => {
+      void (async () => {
+        const r = await window.skillsBank.install(name, false);
+        flash(r.message);
+        await refresh();
+      })();
+    },
+    [refresh, flash],
+  );
+
+  const rebuild = useCallback(async () => {
+    setRebuilding(true);
+    try {
+      const r = await window.skillsBank.rebuildIndex();
+      flash(r.message);
+      await refresh();
+    } finally {
+      setRebuilding(false);
+    }
+  }, [refresh, flash]);
 
   // Keep the drawer's entry up-to-date if the registry refreshes.
   useEffect(() => {
@@ -157,6 +222,7 @@ export function App(): React.ReactElement {
     }
   }, [registry, selected]);
 
+  // Initial loading — skeleton over real chrome.
   if (initialLoading) {
     return (
       <div className="app" aria-busy="true">
@@ -167,6 +233,7 @@ export function App(): React.ReactElement {
           onToggleTheme={toggleTheme}
           density={density}
           onToggleDensity={toggleDensity}
+          onChangeRegistry={() => undefined}
         />
         <Tabs
           active="browse"
@@ -192,50 +259,16 @@ export function App(): React.ReactElement {
     );
   }
 
-  const flash = (msg: string) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast({ message: msg });
-    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
-  };
-
-  const flashWithAction = (
-    msg: string,
-    label: string,
-    onClick: () => void,
-  ) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast({
-      message: msg,
-      action: {
-        label,
-        onClick: () => {
-          if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-          setToast(null);
-          onClick();
-        },
-      },
-    });
-    toastTimerRef.current = setTimeout(() => setToast(null), 6000);
-  };
-
-  const undoUninstall = (name: string) => {
-    void (async () => {
-      const r = await window.skillsBank.install(name, false);
-      flash(r.message);
-      await refresh();
-    })();
-  };
-
-  const rebuild = async () => {
-    setRebuilding(true);
-    try {
-      const r = await window.skillsBank.rebuildIndex();
-      flash(r.message);
-      await refresh();
-    } finally {
-      setRebuilding(false);
-    }
-  };
+  // Config checked, no registry root resolved → show setup.
+  if (configChecked && !registryRoot) {
+    return (
+      <SetupScreen
+        onConfigured={async () => {
+          await refresh();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="app">
@@ -246,6 +279,7 @@ export function App(): React.ReactElement {
         onToggleTheme={toggleTheme}
         density={density}
         onToggleDensity={toggleDensity}
+        onChangeRegistry={() => void changeRegistry()}
       />
       <Tabs
         active={tab}

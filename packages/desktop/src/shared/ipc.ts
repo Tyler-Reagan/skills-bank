@@ -24,6 +24,8 @@ export const IPC = {
   readSkillMd: "skills:readSkillMd",
   openInFinder: "skills:openInFinder",
   editTags: "skills:editTags",
+  getConfig: "skills:getConfig",
+  setRegistryRoot: "skills:setRegistryRoot",
 } as const;
 
 interface SkillsBankAPI {
@@ -51,6 +53,16 @@ interface SkillsBankAPI {
     name: string,
     tags: string[],
   ): Promise<{ ok: boolean; message: string }>;
+  getConfig(): Promise<{
+    registryRoot: string | null;
+    configValid: boolean;
+    isPackaged: boolean;
+  }>;
+  setRegistryRoot(): Promise<{
+    ok: boolean;
+    message: string;
+    registryRoot: string | null;
+  }>;
 }
 
 declare global {
