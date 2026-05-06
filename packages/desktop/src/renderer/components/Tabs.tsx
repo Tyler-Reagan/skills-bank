@@ -21,7 +21,7 @@ export function Tabs({
         className={`tab ${active === "browse" ? "active" : ""}`}
         onClick={() => onChange("browse")}
       >
-        Browse <span className="count">({registryCount})</span>
+        Registry <span className="count">({registryCount})</span>
       </div>
       <div
         className={`tab ${active === "installed" ? "active" : ""}`}

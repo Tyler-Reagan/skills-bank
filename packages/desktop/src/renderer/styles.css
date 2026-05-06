@@ -162,6 +162,29 @@ input, select { font-family: inherit; color: inherit; }
 .refresh-btn:hover:not(:disabled) { border-color: var(--border-hi); color: var(--text); }
 .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ── Tab intro ───────────────────────────────────────── */
+.tab-intro {
+  margin-bottom: var(--s5);
+  padding: var(--s3) var(--s4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-2);
+  animation: fadeUp var(--t-slow) var(--ease) both;
+}
+.tab-intro strong { color: var(--text); font-weight: 600; }
+.tab-intro code { font-family: var(--font-mono); color: var(--text); }
+.tab-intro .meta-counts {
+  display: inline-flex;
+  gap: var(--s3);
+  margin-left: var(--s3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
 /* ── Filters section ─────────────────────────────────── */
 .filters-section {
   display: flex;

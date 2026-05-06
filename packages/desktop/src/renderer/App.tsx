@@ -132,8 +132,6 @@ export function App(): React.ReactElement {
   return (
     <div className="app">
       <Header
-        registry={registry}
-        installed={installed}
         refreshing={refreshing}
         onRefresh={() => void refresh()}
       />

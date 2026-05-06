@@ -42,6 +42,24 @@ export function InstalledTab({
 
   return (
     <div>
+      <div className="tab-intro">
+        <strong>Installed.</strong> Every entry currently under{" "}
+        <code>~/.claude/skills</code> on this machine — including ones added by
+        skills-bank and ones that came from elsewhere (manual installs,
+        external tools). Skills-bank can manage the unintegrated ones if you
+        choose to migrate them.
+        <span className="meta-counts">
+          <span>{installed.length} total</span>
+          <span>·</span>
+          <span>{integrated.length} from registry</span>
+          {unintegrated.length > 0 && (
+            <>
+              <span>·</span>
+              <span>{unintegrated.length} not yet integrated</span>
+            </>
+          )}
+        </span>
+      </div>
       {unintegrated.length > 0 && (
         <section>
           <header className="section-header">

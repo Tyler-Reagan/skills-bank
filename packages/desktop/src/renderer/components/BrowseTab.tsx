@@ -55,9 +55,31 @@ export function BrowseTab({
   }
 
   const filtered = applyFilters(registry, search, selectedTags);
+  const installedFromRegistry = installed.filter((i) => i.kind === "ours").length;
+  const warningCount = registry.reduce(
+    (acc, e) => acc + (e.warnings?.length ?? 0),
+    0,
+  );
 
   return (
     <div>
+      <div className="tab-intro">
+        <strong>Registry.</strong> Skills published in this skills-bank repo —
+        portable across machines, shared via git. Click any card to view its
+        details, then <strong>Install</strong> to symlink it into{" "}
+        <code>~/.claude/skills</code> on this machine.
+        <span className="meta-counts">
+          <span>{registry.length} in registry</span>
+          <span>·</span>
+          <span>{installedFromRegistry} installed locally</span>
+          {warningCount > 0 && (
+            <>
+              <span>·</span>
+              <span>{warningCount} warnings</span>
+            </>
+          )}
+        </span>
+      </div>
       <div className="filters-section">
         <SearchBar value={search} onChange={setSearch} />
         <TagFilter
