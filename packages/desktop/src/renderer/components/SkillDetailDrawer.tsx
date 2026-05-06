@@ -13,6 +13,8 @@ interface Props {
   registryRoot: string | null;
   onClose: () => void;
   onChanged: (msg: string) => void | Promise<void>;
+  /** Called specifically after a successful uninstall so the host can offer Undo. */
+  onUninstalled?: (name: string) => void;
 }
 
 type ActionState = null | "installing" | "uninstalling" | "exporting";
@@ -23,6 +25,7 @@ export function SkillDetailDrawer({
   registryRoot,
   onClose,
   onChanged,
+  onUninstalled,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
@@ -35,6 +38,7 @@ export function SkillDetailDrawer({
   const [editingTags, setEditingTags] = useState(false);
   const [tagDraft, setTagDraft] = useState<string[]>(entry.tags ?? []);
   const [tagInput, setTagInput] = useState("");
+  const [tagInputError, setTagInputError] = useState<string | null>(null);
   const [savingTags, setSavingTags] = useState(false);
 
   useEffect(() => {
@@ -96,7 +100,11 @@ export function SkillDetailDrawer({
     setAction("uninstalling");
     try {
       const r = await window.skillsBank.uninstall(entry.name);
-      await onChanged(r.message);
+      if (r.ok && onUninstalled) {
+        onUninstalled(entry.name);
+      } else {
+        await onChanged(r.message);
+      }
     } finally {
       setAction(null);
     }
@@ -117,12 +125,17 @@ export function SkillDetailDrawer({
   const addTag = () => {
     const t = tagInput.trim();
     if (!t) return;
+    if (t.length > 64) {
+      setTagInputError(`tag is ${t.length} chars; 64 max`);
+      return;
+    }
     if (tagDraft.includes(t)) {
-      setTagInput("");
+      setTagInputError(`"${t}" is already in the list`);
       return;
     }
     setTagDraft([...tagDraft, t]);
     setTagInput("");
+    setTagInputError(null);
   };
   const removeTag = (t: string) => {
     setTagDraft(tagDraft.filter((x) => x !== t));
@@ -131,6 +144,7 @@ export function SkillDetailDrawer({
     setEditingTags(false);
     setTagDraft(entry.tags ?? []);
     setTagInput("");
+    setTagInputError(null);
   };
   const saveTags = async () => {
     setSavingTags(true);
@@ -275,7 +289,10 @@ export function SkillDetailDrawer({
                 <input
                   type="text"
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
+                  onChange={(e) => {
+                    setTagInput(e.target.value);
+                    if (tagInputError) setTagInputError(null);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -283,8 +300,21 @@ export function SkillDetailDrawer({
                     }
                   }}
                   placeholder="add a tag, press Enter"
-                  className="tag-input"
+                  className={`tag-input ${tagInputError ? "invalid" : ""}`}
+                  aria-invalid={tagInputError ? true : undefined}
+                  aria-describedby={
+                    tagInputError ? "tag-input-error" : undefined
+                  }
                 />
+                {tagInputError && (
+                  <p
+                    id="tag-input-error"
+                    className="form-error"
+                    role="alert"
+                  >
+                    {tagInputError}
+                  </p>
+                )}
               </div>
             ) : entry.tags && entry.tags.length > 0 ? (
               <div className="skill-tags">
@@ -327,9 +357,22 @@ export function SkillDetailDrawer({
           <div className="drawer-section">
             <h3>SKILL.md preview</h3>
             {skillMdLoading ? (
-              <p style={{ color: "var(--text-3)" }}>
-                <span className="spinner inline" /> Loading…
-              </p>
+              <div
+                aria-label="Loading SKILL.md preview"
+                aria-busy="true"
+                role="status"
+              >
+                {[100, 86, 92, 70, 96, 64].map((width, i) => (
+                  <div
+                    key={i}
+                    className="skeleton skeleton-line"
+                    style={{
+                      width: `${width}%`,
+                      animationDelay: `${i * 60}ms`,
+                    }}
+                  />
+                ))}
+              </div>
             ) : renderedMd ? (
               <div
                 className="skill-md-preview md"

@@ -65,6 +65,28 @@ input, select { font-family: inherit; color: inherit; }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes skills-bank-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes skills-bank-shimmer { from { background-position: -800px 0; } to { background-position: 800px 0; } }
+
+/* ── Skeletons ──────────────────────────────────────── */
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--surface) 0%,
+    var(--surface-hi) 50%,
+    var(--surface) 100%
+  );
+  background-size: 800px 100%;
+  background-repeat: no-repeat;
+  border-radius: var(--r-sm);
+  animation: skills-bank-shimmer 1.4s linear infinite;
+}
+.skeleton-line { height: 12px; margin-bottom: var(--s2); }
+.skeleton-card {
+  height: 184px;
+  border-radius: var(--r-lg);
+  animation-duration: 1.6s;
+}
 
 /* ── Scrollbar ────────────────────────────────────────── */
 * { scrollbar-width: thin; scrollbar-color: var(--surface-hi) var(--bg); }
@@ -324,6 +346,8 @@ input, select { font-family: inherit; color: inherit; }
   border-radius: var(--r-lg);
   padding: var(--s5);
   cursor: pointer;
+  will-change: transform;
+  transform: translateZ(0);
   transition:
     transform var(--t) var(--ease),
     border-color var(--t) var(--ease),
@@ -333,9 +357,13 @@ input, select { font-family: inherit; color: inherit; }
 }
 .skill-card:hover {
   transform: translateY(-2px);
-  border-color: var(--card-domain-color, var(--border-hi));
+  border-color: var(--border-hi);
   box-shadow: var(--shadow-hover);
   background: var(--surface-hi);
+}
+.skill-card:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: var(--t-fast);
 }
 .skill-card-top {
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -685,6 +713,18 @@ input, select { font-family: inherit; color: inherit; }
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
+.tag-input.invalid {
+  border-color: var(--danger);
+}
+.tag-input.invalid:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-dim);
+}
+.form-error {
+  margin-top: var(--s1);
+  font-size: 11px;
+  color: var(--danger);
+}
 
 /* ── Section header (Installed tab groups) ──────────── */
 .section-header {
@@ -729,6 +769,25 @@ input, select { font-family: inherit; color: inherit; }
   box-shadow: var(--shadow);
   z-index: 300;
   animation: slideDown var(--t) var(--ease) both;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+.toast-action {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--r-sm);
+  padding: 2px var(--s2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.toast-action:hover {
+  background: var(--accent);
+  color: var(--bg);
 }
 
 /* ── Legacy row layout (used by MigrateModal entry list) ── */

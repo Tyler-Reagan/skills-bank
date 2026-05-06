@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
 import { InstalledTab } from "./components/InstalledTab.js";
@@ -48,7 +48,12 @@ export function App(): React.ReactElement {
   const [registry, setRegistry] = useState<RegistryEntry[]>([]);
   const [installed, setInstalled] = useState<InstalledSkill[]>([]);
   const [registryRoot, setRegistryRoot] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  type ToastShape = {
+    message: string;
+    action?: { label: string; onClick: () => void };
+  };
+  const [toast, setToast] = useState<ToastShape | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showMigrate, setShowMigrate] = useState(false);
   const [singleMigrateTarget, setSingleMigrateTarget] =
     useState<InstalledSkill | null>(null);
@@ -104,18 +109,64 @@ export function App(): React.ReactElement {
 
   if (initialLoading) {
     return (
-      <div className="app">
-        <div className="loading-screen">
-          <div className="spinner" />
-          <p>Loading registry and installed skills…</p>
+      <div className="app" aria-busy="true">
+        <Header refreshing={true} onRefresh={() => undefined} />
+        <Tabs
+          active="browse"
+          onChange={() => undefined}
+          registryCount={0}
+          installedCount={0}
+        />
+        <div className="content">
+          <div
+            className="skills-grid"
+            aria-label="Loading registry and installed skills"
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="skeleton skeleton-card"
+                style={{ animationDelay: `${i * 80}ms` }}
+              />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   const flash = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2500);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ message: msg });
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+  };
+
+  const flashWithAction = (
+    msg: string,
+    label: string,
+    onClick: () => void,
+  ) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({
+      message: msg,
+      action: {
+        label,
+        onClick: () => {
+          if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+          setToast(null);
+          onClick();
+        },
+      },
+    });
+    toastTimerRef.current = setTimeout(() => setToast(null), 6000);
+  };
+
+  const undoUninstall = (name: string) => {
+    void (async () => {
+      const r = await window.skillsBank.install(name, false);
+      flash(r.message);
+      await refresh();
+    })();
   };
 
   const rebuild = async () => {
@@ -203,10 +254,28 @@ export function App(): React.ReactElement {
             flash(msg);
             await refresh();
           }}
+          onUninstalled={(name) => {
+            flashWithAction(`Uninstalled ${name}`, "Undo", () =>
+              undoUninstall(name),
+            );
+            void refresh();
+          }}
         />
       )}
 
-      {toast && <div className="toast">{toast}</div>}
+      {toast && (
+        <div className="toast" role="status" aria-live="polite">
+          <span>{toast.message}</span>
+          {toast.action && (
+            <button
+              className="toast-action"
+              onClick={toast.action.onClick}
+            >
+              {toast.action.label}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
