@@ -94,7 +94,7 @@ export function applyMigration(
       }
 
       case "adopt": {
-        return adoptIntoRegistry(entry, action.category, opts);
+        return adoptIntoRegistry(entry, opts);
       }
     }
   } catch (err) {
@@ -104,23 +104,22 @@ export function applyMigration(
 
 function adoptIntoRegistry(
   entry: InstalledSkill,
-  category: string,
   opts: MigrateOptions,
 ): MigrationResult {
   const sourcePath =
     entry.kind === "real-directory" ? entry.linkPath : entry.target;
   if (!sourcePath || !fs.existsSync(sourcePath)) {
     return {
-      action: { type: "adopt", name: entry.name, category },
+      action: { type: "adopt", name: entry.name },
       ok: false,
       message: `source path missing for ${entry.name}`,
     };
   }
 
-  const destDir = path.join(opts.registryRoot, "skills", category, entry.name);
+  const destDir = path.join(opts.registryRoot, "skills", entry.name);
   if (fs.existsSync(destDir) && !opts.confirmDestructive) {
     return {
-      action: { type: "adopt", name: entry.name, category },
+      action: { type: "adopt", name: entry.name },
       ok: false,
       message: `${destDir} already exists; pass confirmDestructive to overwrite`,
     };
@@ -146,11 +145,7 @@ function adoptIntoRegistry(
     };
     fs.writeFileSync(
       metaPath,
-      JSON.stringify(
-        { ...meta, name: entry.name, domain: meta.domain ?? category },
-        null,
-        2,
-      ) + "\n",
+      JSON.stringify({ ...meta, name: entry.name }, null, 2) + "\n",
     );
   }
 
@@ -170,7 +165,6 @@ function adoptIntoRegistry(
   recordMigration(opts.registryRoot, {
     timestamp: new Date().toISOString(),
     name: entry.name,
-    category,
     sourceKind: entry.kind,
     sourcePath,
     destPath: destDir,
@@ -178,7 +172,7 @@ function adoptIntoRegistry(
   });
 
   return {
-    action: { type: "adopt", name: entry.name, category },
+    action: { type: "adopt", name: entry.name },
     ok: true,
     message: `adopted ${entry.name} → ${path.relative(opts.registryRoot, destDir)}`,
   };
@@ -237,7 +231,6 @@ function registerExternal(
 interface MigrationLogEntry {
   timestamp: string;
   name: string;
-  category: string;
   sourceKind: string;
   sourcePath: string;
   destPath: string;

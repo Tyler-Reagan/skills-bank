@@ -79,7 +79,7 @@ async function chooseAction(
     if (entry.kind === "ours") return { type: "skip", name: entry.name };
     if (entry.kind === "broken-symlink")
       return { type: "remove", name: entry.name };
-    return { type: "adopt", name: entry.name, category: "meta" };
+    return { type: "adopt", name: entry.name };
   }
 
   if (opts.yes) {
@@ -112,7 +112,7 @@ async function chooseAction(
     offer.push([
       "a",
       "adopt into registry (copy)",
-      () => ({ type: "adopt", name: entry.name, category: "meta" }),
+      () => ({ type: "adopt", name: entry.name }),
     ]);
     offer.push([
       "e",
@@ -124,7 +124,7 @@ async function chooseAction(
     offer.push([
       "a",
       "adopt into registry (move)",
-      () => ({ type: "adopt", name: entry.name, category: "meta" }),
+      () => ({ type: "adopt", name: entry.name }),
     ]);
     offer.push(["s", "skip", () => ({ type: "skip", name: entry.name })]);
   }
@@ -147,7 +147,7 @@ function describe(a: MigrationAction): string {
     case "register-external":
       return pc.yellow("register as external");
     case "adopt":
-      return pc.green(`adopt → skills/${a.category}/${a.name}`);
+      return pc.green(`adopt → skills/${a.name}`);
   }
 }
 

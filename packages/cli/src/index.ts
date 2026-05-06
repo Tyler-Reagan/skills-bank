@@ -8,6 +8,7 @@ import { importCommand } from "./commands/import.js";
 import { finalizeCommand } from "./commands/finalize.js";
 import { exportCommand } from "./commands/export.js";
 import { syncInstalledCommand } from "./commands/sync-installed.js";
+import { migrateCategoriesCommand } from "./commands/migrate-categories.js";
 
 const program = new Command();
 
@@ -52,6 +53,16 @@ program
   .option("--yes", "Skip confirmation prompts")
   .option("--root <path>", "Path to skills-bank registry root")
   .action(importCommand);
+
+program
+  .command("migrate-categories")
+  .description(
+    "One-time: flatten skills/<category>/<name>/ to skills/<name>/, drop `domain` from each meta.json, and re-point installed symlinks. Idempotent — safe to re-run.",
+  )
+  .option("--dry-run", "Print the plan; make no changes")
+  .option("--yes", "Skip confirmation prompt")
+  .option("--root <path>", "Path to skills-bank registry root")
+  .action(migrateCategoriesCommand);
 
 program
   .command("sync-installed")

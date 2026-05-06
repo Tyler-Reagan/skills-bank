@@ -6,16 +6,18 @@ interface Props {
   installed: InstalledSkill[];
   registry: RegistryEntry[];
   onSwitchToBrowse: () => void;
-  onScanForExisting: () => void;
-  onSelect: (entry: RegistryEntry) => void;
+  onMigrateAll: () => void;
+  onMigrateOne: (entry: InstalledSkill) => void;
+  onSelectIntegrated: (entry: RegistryEntry) => void;
 }
 
 export function InstalledTab({
   installed,
   registry,
   onSwitchToBrowse,
-  onScanForExisting,
-  onSelect,
+  onMigrateAll,
+  onMigrateOne,
+  onSelectIntegrated,
 }: Props): React.ReactElement {
   if (installed.length === 0) {
     return (
@@ -26,7 +28,7 @@ export function InstalledTab({
           <button className="btn primary" onClick={onSwitchToBrowse}>
             Browse registry
           </button>
-          <button className="btn" onClick={onScanForExisting}>
+          <button className="btn" onClick={onMigrateAll}>
             Scan for existing skills
           </button>
         </div>
@@ -48,10 +50,11 @@ export function InstalledTab({
                 Not yet integrated <span className="count">({unintegrated.length})</span>
               </h2>
               <p>
-                Live under <code>~/.claude/skills</code> but aren't managed by skills-bank.
+                Live under <code>~/.claude/skills</code> but aren't managed by
+                skills-bank. Click any card to migrate just that one.
               </p>
             </div>
-            <button className="btn primary" onClick={onScanForExisting}>
+            <button className="btn primary" onClick={onMigrateAll}>
               Migrate all…
             </button>
           </header>
@@ -60,7 +63,6 @@ export function InstalledTab({
               const entry: RegistryEntry = registryByName.get(s.name) ?? {
                 name: s.name,
                 description: s.target ?? s.linkPath,
-                category: "—",
                 path: s.linkPath,
               };
               const status: CardStatus =
@@ -74,7 +76,7 @@ export function InstalledTab({
                   key={s.name}
                   entry={entry}
                   status={status}
-                  onSelect={onScanForExisting}
+                  onSelect={() => onMigrateOne(s)}
                   index={i}
                 />
               );
@@ -102,7 +104,7 @@ export function InstalledTab({
                   key={s.name}
                   entry={entry}
                   status={{ kind: "installed" }}
-                  onSelect={() => onSelect(entry)}
+                  onSelect={() => onSelectIntegrated(entry)}
                   index={i}
                 />
               );

@@ -1,23 +1,13 @@
 import React from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 
-const DOMAIN_TOKENS: Record<string, { color: string; dim: string }> = {
-  design: { color: "var(--design)", dim: "var(--design-dim)" },
-  code: { color: "var(--code)", dim: "var(--code-dim)" },
-  content: { color: "var(--content)", dim: "var(--content-dim)" },
-  data: { color: "var(--data)", dim: "var(--data-dim)" },
-  meta: { color: "var(--meta)", dim: "var(--meta-dim)" },
-  other: { color: "var(--other)", dim: "var(--other-dim)" },
-};
-
 function freshness(lastCommit: RegistryEntry["lastCommit"]): {
   label: string;
   color: string;
 } {
   if (!lastCommit?.date) return { label: "no history", color: "var(--stale)" };
   const days = (Date.now() - new Date(lastCommit.date).getTime()) / 86_400_000;
-  const label =
-    days < 1 ? "today" : `${Math.floor(days)}d ago`;
+  const label = days < 1 ? "today" : `${Math.floor(days)}d ago`;
   if (days < 30) return { label, color: "var(--fresh)" };
   if (days < 90) return { label, color: "var(--aging)" };
   return { label, color: "var(--stale)" };
@@ -43,8 +33,6 @@ export function SkillCard({
   onSelect,
   index = 0,
 }: Props): React.ReactElement {
-  const domain = entry.domain ?? "other";
-  const tok = DOMAIN_TOKENS[domain] ?? DOMAIN_TOKENS["other"]!;
   const fresh = freshness(entry.lastCommit);
   const visibleTags = (entry.tags ?? []).slice(0, 3);
   const hidden = (entry.tags?.length ?? 0) - visibleTags.length;
@@ -52,12 +40,7 @@ export function SkillCard({
   return (
     <div
       className="skill-card"
-      style={
-        {
-          "--card-domain-color": tok.color,
-          animationDelay: `${index * 30}ms`,
-        } as React.CSSProperties
-      }
+      style={{ animationDelay: `${index * 30}ms` } as React.CSSProperties}
       onClick={onSelect}
       role="button"
       tabIndex={0}
@@ -69,21 +52,11 @@ export function SkillCard({
       }}
     >
       <div className="skill-card-top">
-        <span
-          className="skill-domain-badge"
-          style={
-            {
-              "--badge-color": tok.color,
-              "--badge-bg": tok.dim,
-            } as React.CSSProperties
-          }
-        >
-          {domain}
-        </span>
+        <p className="skill-name" style={{ flex: 1, minWidth: 0, marginBottom: 0 }}>
+          {entry.name}
+        </p>
         <StatusChip status={status} warnings={entry.warnings?.length ?? 0} />
       </div>
-
-      <p className="skill-name">{entry.name}</p>
 
       {entry.description ? (
         <p className="skill-description">{entry.description}</p>
@@ -100,7 +73,7 @@ export function SkillCard({
         <div className="skill-tags">
           {visibleTags.map((t) => (
             <span key={t} className="skill-tag">
-              {t}
+              #{t}
             </span>
           ))}
           {hidden > 0 && <span className="skill-tag-more">+{hidden}</span>}

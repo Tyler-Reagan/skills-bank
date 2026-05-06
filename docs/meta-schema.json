@@ -14,18 +14,12 @@
     },
     "description": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 280
-    },
-    "domain": {
-      "type": "string",
-      "enum": ["code", "content", "data", "design", "meta", "other"]
+      "minLength": 1
     },
     "tags": {
       "type": "array",
-      "items": { "type": "string" },
-      "uniqueItems": true,
-      "maxItems": 16
+      "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+      "uniqueItems": true
     },
     "version": {
       "type": "string",

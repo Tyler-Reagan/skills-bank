@@ -1,7 +1,7 @@
 import React from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { SearchBar } from "./SearchBar.js";
-import { DomainFilter } from "./DomainFilter.js";
+import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
 
 interface Props {
@@ -9,8 +9,8 @@ interface Props {
   installed: InstalledSkill[];
   search: string;
   setSearch: (v: string) => void;
-  domain: string | null;
-  setDomain: (d: string | null) => void;
+  selectedTags: string[];
+  setSelectedTags: (next: string[]) => void;
   onSelect: (entry: RegistryEntry) => void;
   onRebuild: () => void | Promise<void>;
   rebuilding: boolean;
@@ -21,8 +21,8 @@ export function BrowseTab({
   installed,
   search,
   setSearch,
-  domain,
-  setDomain,
+  selectedTags,
+  setSelectedTags,
   onSelect,
   onRebuild,
   rebuilding,
@@ -32,8 +32,8 @@ export function BrowseTab({
       <div className="empty-state">
         <strong>The registry is empty.</strong>
         <p>
-          Add a skill folder under <code>skills/&lt;category&gt;/&lt;name&gt;/</code>{" "}
-          with a <code>meta.json</code> or a <code>SKILL.md</code> with YAML frontmatter.
+          Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
+          <code>meta.json</code> or a <code>SKILL.md</code> with YAML frontmatter.
         </p>
         <div style={{ marginTop: 16 }}>
           <button
@@ -54,20 +54,21 @@ export function BrowseTab({
     );
   }
 
-  const filtered = applyFilters(registry, search, domain);
+  const filtered = applyFilters(registry, search, selectedTags);
 
   return (
     <div>
       <div className="filters-section">
         <SearchBar value={search} onChange={setSearch} />
-        <DomainFilter
+        <TagFilter
           registry={registry}
-          selected={domain}
-          onChange={setDomain}
+          selected={selectedTags}
+          onChange={setSelectedTags}
         />
       </div>
       <p className="results-count">
-        {filtered.length} of {registry.length} skill{registry.length === 1 ? "" : "s"}
+        {filtered.length} of {registry.length} skill
+        {registry.length === 1 ? "" : "s"}
       </p>
       <SkillsGrid
         entries={filtered}
@@ -81,11 +82,16 @@ export function BrowseTab({
 function applyFilters(
   registry: RegistryEntry[],
   search: string,
-  domain: string | null,
+  selectedTags: string[],
 ): RegistryEntry[] {
   const q = search.trim().toLowerCase();
   return registry.filter((e) => {
-    if (domain && (e.domain ?? "other") !== domain) return false;
+    if (
+      selectedTags.length > 0 &&
+      !selectedTags.some((t) => e.tags?.includes(t))
+    ) {
+      return false;
+    }
     if (!q) return true;
     if (e.name.toLowerCase().includes(q)) return true;
     if (e.description.toLowerCase().includes(q)) return true;

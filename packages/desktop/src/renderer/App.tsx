@@ -3,13 +3,14 @@ import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
 import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
+import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
 import { Header } from "./components/Header.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 
 const LS_KEYS = {
   search: "skills-bank.searchQuery",
-  domain: "skills-bank.domainFilter",
+  tagFilter: "skills-bank.tagFilter",
   tab: "skills-bank.activeTab",
 };
 
@@ -29,6 +30,17 @@ function writeLS(key: string, value: string): void {
   }
 }
 
+function readTagFilterLS(): string[] {
+  try {
+    const raw = localStorage.getItem(LS_KEYS.tagFilter);
+    if (!raw) return [];
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 export function App(): React.ReactElement {
   const [tab, setTab] = useState<TabId>(
     (readLS(LS_KEYS.tab, "browse") as TabId) ?? "browse",
@@ -38,24 +50,23 @@ export function App(): React.ReactElement {
   const [registryRoot, setRegistryRoot] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showMigrate, setShowMigrate] = useState(false);
+  const [singleMigrateTarget, setSingleMigrateTarget] =
+    useState<InstalledSkill | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
-  const [domain, setDomainState] = useState<string | null>(() => {
-    const v = readLS(LS_KEYS.domain, "");
-    return v ? v : null;
-  });
+  const [selectedTags, setSelectedTagsState] = useState<string[]>(readTagFilterLS);
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
 
   const setSearch = (v: string) => {
     setSearchState(v);
     writeLS(LS_KEYS.search, v);
   };
-  const setDomain = (d: string | null) => {
-    setDomainState(d);
-    writeLS(LS_KEYS.domain, d ?? "");
+  const setSelectedTags = (next: string[]) => {
+    setSelectedTagsState(next);
+    writeLS(LS_KEYS.tagFilter, JSON.stringify(next));
   };
   const setTabPersisted = (t: TabId) => {
     setTab(t);
@@ -120,14 +131,17 @@ export function App(): React.ReactElement {
 
   return (
     <div className="app">
-      <Header registry={registry} installed={installed} />
+      <Header
+        registry={registry}
+        installed={installed}
+        refreshing={refreshing}
+        onRefresh={() => void refresh()}
+      />
       <Tabs
         active={tab}
         onChange={setTabPersisted}
         registryCount={registry.length}
         installedCount={installed.length}
-        refreshing={refreshing}
-        onRefresh={() => void refresh()}
       />
       <div className="content">
         {tab === "browse" && (
@@ -136,8 +150,8 @@ export function App(): React.ReactElement {
             installed={installed}
             search={search}
             setSearch={setSearch}
-            domain={domain}
-            setDomain={setDomain}
+            selectedTags={selectedTags}
+            setSelectedTags={setSelectedTags}
             onSelect={(e) => setSelected(e)}
             onRebuild={rebuild}
             rebuilding={rebuilding}
@@ -148,8 +162,9 @@ export function App(): React.ReactElement {
             installed={installed}
             registry={registry}
             onSwitchToBrowse={() => setTabPersisted("browse")}
-            onScanForExisting={() => setShowMigrate(true)}
-            onSelect={(e) => setSelected(e)}
+            onMigrateAll={() => setShowMigrate(true)}
+            onMigrateOne={(s) => setSingleMigrateTarget(s)}
+            onSelectIntegrated={(e) => setSelected(e)}
           />
         )}
       </div>
@@ -158,6 +173,17 @@ export function App(): React.ReactElement {
         <MigrateModal
           onClose={async () => {
             setShowMigrate(false);
+            await refresh();
+          }}
+          onFlash={flash}
+        />
+      )}
+
+      {singleMigrateTarget && (
+        <SingleMigrateModal
+          entry={singleMigrateTarget}
+          onClose={async () => {
+            setSingleMigrateTarget(null);
             await refresh();
           }}
           onFlash={flash}

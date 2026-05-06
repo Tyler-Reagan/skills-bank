@@ -24,6 +24,18 @@ input, select { font-family: inherit; color: inherit; }
 @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes skills-bank-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+/* ── Scrollbar ────────────────────────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: var(--surface-hi) var(--bg); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb {
+  background: var(--surface-hi);
+  border-radius: var(--r);
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
+::-webkit-scrollbar-corner { background: var(--bg); }
+
 /* ── App skeleton ─────────────────────────────────────── */
 .app { display: flex; flex-direction: column; height: 100%; }
 .content {
@@ -139,12 +151,12 @@ input, select { font-family: inherit; color: inherit; }
 .tab.active .count { color: var(--accent); }
 
 .refresh-btn {
-  margin-left: auto;
   font-size: 12px;
   padding: var(--s2) var(--s3);
   border: 1px solid var(--border);
   border-radius: var(--r);
   color: var(--text-2);
+  background: var(--surface);
   transition: border-color var(--t) var(--ease), color var(--t) var(--ease);
 }
 .refresh-btn:hover:not(:disabled) { border-color: var(--border-hi); color: var(--text); }
@@ -493,14 +505,117 @@ input, select { font-family: inherit; color: inherit; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: var(--s3);
+  padding: var(--s3) var(--s4);
+  color: var(--text-2);
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.skill-md-preview.md > * + * { margin-top: var(--s2); }
+.skill-md-preview.md h1,
+.skill-md-preview.md h2,
+.skill-md-preview.md h3,
+.skill-md-preview.md h4 {
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  margin-top: var(--s4);
+  margin-bottom: var(--s1);
+  line-height: 1.3;
+}
+.skill-md-preview.md h1 { font-size: 16px; }
+.skill-md-preview.md h2 { font-size: 14px; }
+.skill-md-preview.md h3 { font-size: 13px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; }
+.skill-md-preview.md p { color: var(--text-2); }
+.skill-md-preview.md ul, .skill-md-preview.md ol {
+  padding-left: var(--s5);
+  color: var(--text-2);
+}
+.skill-md-preview.md li { margin: 2px 0; }
+.skill-md-preview.md code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--surface-hi);
+  padding: 1px 4px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+}
+.skill-md-preview.md pre {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-2);
-  white-space: pre-wrap;
-  max-height: 240px;
-  overflow-y: auto;
-  line-height: 1.5;
+  background: var(--surface-hi);
+  padding: var(--s3);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  color: var(--text);
+}
+.skill-md-preview.md pre code { background: transparent; padding: 0; }
+.skill-md-preview.md a { color: var(--accent); text-decoration: underline; }
+.skill-md-preview.md blockquote {
+  border-left: 2px solid var(--border-hi);
+  padding-left: var(--s3);
+  color: var(--text-3);
+  font-style: italic;
+}
+.skill-md-preview.md hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--s3) 0;
+}
+.skill-md-preview.md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.skill-md-preview.md th, .skill-md-preview.md td {
+  border: 1px solid var(--border);
+  padding: var(--s1) var(--s2);
+  text-align: left;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+}
+.link-btn:hover:not(:disabled) { color: var(--text); }
+.link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.skill-tag.editable {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+}
+.tag-remove {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.tag-remove:hover { color: var(--danger); }
+
+.tag-input {
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  outline: none;
+}
+.tag-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 /* ── Section header (Installed tab groups) ──────────── */

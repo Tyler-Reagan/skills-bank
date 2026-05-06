@@ -192,6 +192,52 @@ ipcMain.handle(IPC.openInFinder, async (_e, absolutePath: string) => {
   await shell.openPath(absolutePath);
 });
 
+ipcMain.handle(
+  IPC.editTags,
+  (_e, name: string, tags: unknown): { ok: boolean; message: string } => {
+    if (!Array.isArray(tags)) {
+      return { ok: false, message: "tags must be an array" };
+    }
+    const cleaned: string[] = [];
+    for (const t of tags) {
+      if (typeof t !== "string") continue;
+      const trimmed = t.trim();
+      if (!trimmed) continue;
+      if (trimmed.length > 64) {
+        return { ok: false, message: `tag "${trimmed.slice(0, 24)}…" exceeds 64 chars` };
+      }
+      if (cleaned.includes(trimmed)) continue;
+      cleaned.push(trimmed);
+    }
+    const index = buildRegistryIndex(registryRoot);
+    const entry = index.entries.find((x) => x.name === name);
+    if (!entry) {
+      return { ok: false, message: `skill "${name}" not in registry` };
+    }
+    const metaPath = path.join(registryRoot, entry.path, "meta.json");
+    if (!fs.existsSync(metaPath)) {
+      return { ok: false, message: `meta.json missing at ${entry.path}` };
+    }
+    let raw: Record<string, unknown>;
+    try {
+      raw = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+    } catch (err) {
+      return { ok: false, message: `meta.json: ${(err as Error).message}` };
+    }
+    if (cleaned.length === 0) delete raw["tags"];
+    else raw["tags"] = cleaned;
+    try {
+      fs.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
+    } catch (err) {
+      return { ok: false, message: (err as Error).message };
+    }
+    return {
+      ok: true,
+      message: `tags updated (${cleaned.length})`,
+    };
+  },
+);
+
 void app.whenReady().then(() => {
   createWindow();
   app.on("activate", () => {

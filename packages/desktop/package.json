@@ -16,7 +16,9 @@
     "typecheck": "tsc -b tsconfig.main.json && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@skills-bank/core": "workspace:*"
+    "@skills-bank/core": "workspace:*",
+    "dompurify": "^3.2.4",
+    "marked": "^15.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

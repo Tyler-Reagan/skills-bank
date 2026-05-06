@@ -16,13 +16,16 @@ export function listCommand(opts: ListOptions): void {
   if (index.entries.length === 0) {
     console.log(
       pc.dim(
-        "(no skills in registry; add one under skills/<category>/<name> with a meta.json)",
+        "(no skills in registry; add one under skills/<name>/ with a meta.json)",
       ),
     );
     return;
   }
   for (const e of index.entries) {
-    const tag = e.category ? pc.dim(`[${e.category}]`) : "";
-    console.log(`${pc.bold(e.name)} ${tag} — ${e.description}`);
+    const tags =
+      e.tags && e.tags.length > 0
+        ? " " + pc.dim(e.tags.map((t) => `#${t}`).join(" "))
+        : "";
+    console.log(`${pc.bold(e.name)}${tags} — ${e.description}`);
   }
 }

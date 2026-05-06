@@ -17,6 +17,8 @@ const api = {
   readSkillMd: (name: string) => ipcRenderer.invoke(IPC.readSkillMd, name),
   openInFinder: (absolutePath: string) =>
     ipcRenderer.invoke(IPC.openInFinder, absolutePath),
+  editTags: (name: string, tags: string[]) =>
+    ipcRenderer.invoke(IPC.editTags, name, tags),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

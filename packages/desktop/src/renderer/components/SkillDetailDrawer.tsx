@@ -1,14 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 
-const DOMAIN_TOKENS: Record<string, { color: string; dim: string }> = {
-  design: { color: "var(--design)", dim: "var(--design-dim)" },
-  code: { color: "var(--code)", dim: "var(--code-dim)" },
-  content: { color: "var(--content)", dim: "var(--content-dim)" },
-  data: { color: "var(--data)", dim: "var(--data-dim)" },
-  meta: { color: "var(--meta)", dim: "var(--meta-dim)" },
-  other: { color: "var(--other)", dim: "var(--other-dim)" },
-};
+const DESCRIPTION_SOFT_CAP = 400;
 
 interface Props {
   entry: RegistryEntry;
@@ -30,11 +25,20 @@ export function SkillDetailDrawer({
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [editingTags, setEditingTags] = useState(false);
+  const [tagDraft, setTagDraft] = useState<string[]>(entry.tags ?? []);
+  const [tagInput, setTagInput] = useState("");
+  const [savingTags, setSavingTags] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setSkillMd(null);
     setSkillMdLoading(true);
+    setDescExpanded(false);
+    setEditingTags(false);
+    setTagDraft(entry.tags ?? []);
+    setTagInput("");
     void window.skillsBank.readSkillMd(entry.name).then((md) => {
       if (!cancelled) {
         setSkillMd(md);
@@ -44,7 +48,7 @@ export function SkillDetailDrawer({
     return () => {
       cancelled = true;
     };
-  }, [entry.name]);
+  }, [entry.name, entry.tags]);
 
   // Esc-to-close.
   useEffect(() => {
@@ -58,9 +62,20 @@ export function SkillDetailDrawer({
   const isInstalled = installed.some(
     (i) => i.name === entry.name && i.kind === "ours",
   );
-  const domain = entry.domain ?? "other";
-  const tok = DOMAIN_TOKENS[domain] ?? DOMAIN_TOKENS["other"]!;
   const absPath = registryRoot ? `${registryRoot}/${entry.path}` : entry.path;
+
+  const renderedMd = useMemo(() => {
+    if (!skillMd) return null;
+    const html = marked.parse(skillMd, { breaks: true, async: false });
+    return DOMPurify.sanitize(html as string);
+  }, [skillMd]);
+
+  const description = entry.description;
+  const isLongDescription = description.length > DESCRIPTION_SOFT_CAP;
+  const visibleDescription =
+    !descExpanded && isLongDescription
+      ? description.slice(0, DESCRIPTION_SOFT_CAP).trimEnd() + "…"
+      : description;
 
   const install = async () => {
     setAction("installing");
@@ -93,28 +108,49 @@ export function SkillDetailDrawer({
     if (registryRoot) void window.skillsBank.openInFinder(absPath);
   };
 
+  const addTag = () => {
+    const t = tagInput.trim();
+    if (!t) return;
+    if (tagDraft.includes(t)) {
+      setTagInput("");
+      return;
+    }
+    setTagDraft([...tagDraft, t]);
+    setTagInput("");
+  };
+  const removeTag = (t: string) => {
+    setTagDraft(tagDraft.filter((x) => x !== t));
+  };
+  const cancelTagEdit = () => {
+    setEditingTags(false);
+    setTagDraft(entry.tags ?? []);
+    setTagInput("");
+  };
+  const saveTags = async () => {
+    setSavingTags(true);
+    try {
+      const r = await window.skillsBank.editTags(entry.name, tagDraft);
+      if (r.ok) {
+        setEditingTags(false);
+        await onChanged(r.message);
+      } else {
+        await onChanged(`tag save failed: ${r.message}`);
+      }
+    } finally {
+      setSavingTags(false);
+    }
+  };
+
   return (
     <>
       <div className="drawer-overlay" onClick={onClose} />
       <aside className="drawer" role="dialog" aria-label={`${entry.name} details`}>
         <div className="drawer-header">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <span
-              className="skill-domain-badge"
-              style={
-                {
-                  "--badge-color": tok.color,
-                  "--badge-bg": tok.dim,
-                } as React.CSSProperties
-              }
-            >
-              {domain}
-            </span>
             <h2
               style={{
                 fontFamily: "var(--font-mono)",
                 fontSize: 18,
-                marginTop: 8,
                 wordBreak: "break-word",
               }}
             >
@@ -155,8 +191,18 @@ export function SkillDetailDrawer({
 
           <div className="drawer-section">
             <h3>Description</h3>
-            {entry.description ? (
-              <p>{entry.description}</p>
+            {description ? (
+              <>
+                <p>{visibleDescription}</p>
+                {isLongDescription && (
+                  <button
+                    className="link-btn"
+                    onClick={() => setDescExpanded((v) => !v)}
+                  >
+                    {descExpanded ? "Show less" : "Show more"}
+                  </button>
+                )}
+              </>
             ) : (
               <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
                 (no description)
@@ -164,25 +210,87 @@ export function SkillDetailDrawer({
             )}
           </div>
 
-          {entry.tags && entry.tags.length > 0 && (
-            <div className="drawer-section">
-              <h3>Tags</h3>
+          <div className="drawer-section">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <h3 style={{ margin: 0 }}>Tags</h3>
+              {!editingTags ? (
+                <button className="link-btn" onClick={() => setEditingTags(true)}>
+                  Edit
+                </button>
+              ) : (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    className="link-btn"
+                    onClick={cancelTagEdit}
+                    disabled={savingTags}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="link-btn"
+                    style={{ color: "var(--accent)" }}
+                    onClick={() => void saveTags()}
+                    disabled={savingTags}
+                  >
+                    {savingTags ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              )}
+            </div>
+            {editingTags ? (
+              <div>
+                <div className="skill-tags" style={{ marginBottom: 8 }}>
+                  {tagDraft.map((t) => (
+                    <span key={t} className="skill-tag editable">
+                      #{t}
+                      <button
+                        className="tag-remove"
+                        aria-label={`remove ${t}`}
+                        onClick={() => removeTag(t)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                  placeholder="add a tag, press Enter"
+                  className="tag-input"
+                />
+              </div>
+            ) : entry.tags && entry.tags.length > 0 ? (
               <div className="skill-tags">
                 {entry.tags.map((t) => (
                   <span key={t} className="skill-tag">
-                    {t}
+                    #{t}
                   </span>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p style={{ color: "var(--text-3)", fontStyle: "italic", fontSize: 12 }}>
+                (no tags)
+              </p>
+            )}
+          </div>
 
           <div className="drawer-section">
             <h3>Metadata</h3>
-            <div className="drawer-meta-row">
-              <span className="drawer-meta-key">category</span>
-              <span className="drawer-meta-value">{entry.category}</span>
-            </div>
             {entry.author && (
               <div className="drawer-meta-row">
                 <span className="drawer-meta-key">author</span>
@@ -210,8 +318,11 @@ export function SkillDetailDrawer({
               <p style={{ color: "var(--text-3)" }}>
                 <span className="spinner inline" /> Loading…
               </p>
-            ) : skillMd ? (
-              <pre className="skill-md-preview">{skillMd}</pre>
+            ) : renderedMd ? (
+              <div
+                className="skill-md-preview md"
+                dangerouslySetInnerHTML={{ __html: renderedMd }}
+              />
             ) : (
               <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
                 (no SKILL.md found)

@@ -4,9 +4,16 @@ import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 interface Props {
   registry: RegistryEntry[];
   installed: InstalledSkill[];
+  refreshing: boolean;
+  onRefresh: () => void;
 }
 
-export function Header({ registry, installed }: Props): React.ReactElement {
+export function Header({
+  registry,
+  installed,
+  refreshing,
+  onRefresh,
+}: Props): React.ReactElement {
   const integratedCount = installed.filter((i) => i.kind === "ours").length;
   const warningCount = registry.reduce(
     (acc, e) => acc + (e.warnings?.length ?? 0),
@@ -30,6 +37,20 @@ export function Header({ registry, installed }: Props): React.ReactElement {
               <strong>{warningCount}</strong> warnings
             </div>
           )}
+          <button
+            className="refresh-btn"
+            disabled={refreshing}
+            title="Re-read registry and ~/.claude/skills"
+            onClick={onRefresh}
+          >
+            {refreshing ? (
+              <>
+                <span className="spinner inline" /> Refreshing…
+              </>
+            ) : (
+              "↻ Refresh"
+            )}
+          </button>
         </div>
       </div>
     </div>

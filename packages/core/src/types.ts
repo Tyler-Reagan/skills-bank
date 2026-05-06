@@ -1,16 +1,14 @@
 export interface SkillMeta {
   name: string;
   description: string;
-  domain?: string;
   tags?: string[];
   version?: string;
   author?: string;
 }
 
 export interface RegistryEntry extends SkillMeta {
-  /** Path relative to registry root, e.g. "skills/meta/hello". */
+  /** Path relative to registry root, e.g. "skills/hello". */
   path: string;
-  category: string;
   lastCommit?: { sha: string; date: string; message: string };
   /**
    * Non-fatal issues found while building this entry — for example a
@@ -75,7 +73,7 @@ export interface FinalizeResult {
 export type MigrationAction =
   | { type: "skip"; name: string }
   | { type: "remove"; name: string }
-  | { type: "adopt"; name: string; category: string }
+  | { type: "adopt"; name: string }
   | { type: "register-external"; name: string };
 
 export interface MigrationResult {

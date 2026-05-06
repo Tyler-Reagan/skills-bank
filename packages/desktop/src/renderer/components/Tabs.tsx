@@ -7,8 +7,6 @@ interface Props {
   onChange: (tab: TabId) => void;
   registryCount: number;
   installedCount: number;
-  refreshing: boolean;
-  onRefresh: () => void;
 }
 
 export function Tabs({
@@ -16,8 +14,6 @@ export function Tabs({
   onChange,
   registryCount,
   installedCount,
-  refreshing,
-  onRefresh,
 }: Props): React.ReactElement {
   return (
     <div className="tabs-row">
@@ -33,20 +29,6 @@ export function Tabs({
       >
         Installed <span className="count">({installedCount})</span>
       </div>
-      <button
-        className="refresh-btn"
-        disabled={refreshing}
-        title="Re-read registry and ~/.claude/skills"
-        onClick={onRefresh}
-      >
-        {refreshing ? (
-          <>
-            <span className="spinner inline" /> Refreshing…
-          </>
-        ) : (
-          "↻ Refresh"
-        )}
-      </button>
     </div>
   );
 }

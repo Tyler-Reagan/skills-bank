@@ -301,7 +301,7 @@ function defaultAction(e: InstalledSkill): MigrationAction {
     case "foreign-symlink":
       return { type: "register-external", name: e.name };
     case "real-directory":
-      return { type: "adopt", name: e.name, category: "meta" };
+      return { type: "adopt", name: e.name };
   }
 }
 
@@ -331,7 +331,7 @@ function actionsFor(e: InstalledSkill): Array<{ value: MigrationAction["type"]; 
 function actionFor(type: MigrationAction["type"], e: InstalledSkill): MigrationAction {
   switch (type) {
     case "adopt":
-      return { type: "adopt", name: e.name, category: "meta" };
+      return { type: "adopt", name: e.name };
     case "register-external":
       return { type: "register-external", name: e.name };
     case "remove":
@@ -348,7 +348,7 @@ function describeName(a: MigrationAction): string {
     case "register-external":
       return `${a.type}: ${a.name}`;
     case "adopt":
-      return `adopt: ${a.name} → skills/${a.category}/${a.name}`;
+      return `adopt: ${a.name} → skills/${a.name}`;
   }
 }
 

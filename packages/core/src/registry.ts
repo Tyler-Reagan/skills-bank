@@ -53,7 +53,6 @@ export function readSkillMeta(skillDir: string): SkillMeta | null {
         return {
           name: fm["name"],
           description: fm["description"],
-          ...(fm["domain"] ? { domain: fm["domain"] } : {}),
           ...(fm["version"] ? { version: fm["version"] } : {}),
           ...(fm["author"] ? { author: fm["author"] } : {}),
         };

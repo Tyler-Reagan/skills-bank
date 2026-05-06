@@ -53,9 +53,9 @@ function loadValidator(registryRoot: string): SchemaValidator | null {
 }
 
 /**
- * Walk `<registryRoot>/skills/<category>/<name>/meta.json` and produce a
- * RegistryIndex in memory. Synchronous and dependency-free at runtime so
- * it can be called from the Electron main process without a subprocess.
+ * Walk `<registryRoot>/skills/<name>/meta.json` and produce a RegistryIndex
+ * in memory. Synchronous and dependency-free at runtime so it can be called
+ * from the Electron main process without a subprocess.
  *
  * Lenient by default: a folder with only SKILL.md, or one whose meta.json
  * fails schema validation, still becomes an entry (with warnings). This
@@ -72,22 +72,17 @@ export function buildRegistryIndex(
   const entries: RegistryEntry[] = [];
 
   if (fs.existsSync(skillsDir)) {
-    for (const cat of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-      if (!cat.isDirectory()) continue;
-      const catDir = path.join(skillsDir, cat.name);
-      for (const sk of fs.readdirSync(catDir, { withFileTypes: true })) {
-        if (!sk.isDirectory()) continue;
-        const skillDir = path.join(catDir, sk.name);
-        const built = buildOneEntry(
-          registryRoot,
-          skillDir,
-          cat.name,
-          sk.name,
-          validate,
-          opts,
-        );
-        if (built) entries.push(built);
-      }
+    for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+      if (!sk.isDirectory()) continue;
+      const skillDir = path.join(skillsDir, sk.name);
+      const built = buildOneEntry(
+        registryRoot,
+        skillDir,
+        sk.name,
+        validate,
+        opts,
+      );
+      if (built) entries.push(built);
     }
   }
 
@@ -110,7 +105,6 @@ export function buildRegistryIndex(
 function buildOneEntry(
   registryRoot: string,
   skillDir: string,
-  category: string,
   folderName: string,
   validate: SchemaValidator | null,
   opts: BuildIndexOptions,
@@ -142,7 +136,6 @@ function buildOneEntry(
         ...(typeof raw["description"] === "string"
           ? { description: raw["description"] }
           : {}),
-        ...(typeof raw["domain"] === "string" ? { domain: raw["domain"] } : {}),
         ...(Array.isArray(raw["tags"]) ? { tags: raw["tags"] as string[] } : {}),
         ...(typeof raw["version"] === "string"
           ? { version: raw["version"] }
@@ -168,7 +161,6 @@ function buildOneEntry(
     if (fm) {
       if (!meta.name && fm.name) meta.name = fm.name;
       if (!meta.description && fm.description) meta.description = fm.description;
-      if (!meta.domain && fm.domain) meta.domain = fm.domain;
       if (!meta.version && fm.version) meta.version = fm.version;
       if (!meta.author && fm.author) meta.author = fm.author;
     }
@@ -189,11 +181,9 @@ function buildOneEntry(
   const entry: RegistryEntry = {
     name: meta.name,
     description: meta.description,
-    ...(meta.domain ? { domain: meta.domain } : {}),
     ...(meta.tags ? { tags: meta.tags } : {}),
     ...(meta.version ? { version: meta.version } : {}),
     ...(meta.author ? { author: meta.author } : {}),
-    category,
     path: path.relative(registryRoot, skillDir),
     ...(warnings.length > 0 ? { warnings } : {}),
   };

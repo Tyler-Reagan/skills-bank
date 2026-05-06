@@ -61,11 +61,7 @@ function findSkillFolders(root: string): string[] {
   if (!fs.existsSync(root)) return out;
   for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
     if (!ent.isDirectory()) continue;
-    const category = path.join(root, ent.name);
-    for (const sub of fs.readdirSync(category, { withFileTypes: true })) {
-      if (!sub.isDirectory()) continue;
-      out.push(path.join(category, sub.name));
-    }
+    out.push(path.join(root, ent.name));
   }
   return out;
 }

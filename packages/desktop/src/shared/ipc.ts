@@ -23,6 +23,7 @@ export const IPC = {
   exportSkill: "skills:export",
   readSkillMd: "skills:readSkillMd",
   openInFinder: "skills:openInFinder",
+  editTags: "skills:editTags",
 } as const;
 
 interface SkillsBankAPI {
@@ -46,6 +47,10 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; message: string; result?: ExportResult }>;
   readSkillMd(name: string): Promise<string | null>;
   openInFinder(absolutePath: string): Promise<void>;
+  editTags(
+    name: string,
+    tags: string[],
+  ): Promise<{ ok: boolean; message: string }>;
 }
 
 declare global {

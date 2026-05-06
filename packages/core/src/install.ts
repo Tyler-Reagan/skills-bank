@@ -22,7 +22,7 @@ export function installSkill(name: string, opts: InstallOptions): InstallResult 
   const entry = findEntry(index, name);
   if (!entry) {
     throw new Error(
-      `Skill "${name}" not found. Verify a folder exists at <root>/skills/<category>/${name} with a valid meta.json.`,
+      `Skill "${name}" not found. Verify a folder exists at <root>/skills/${name} with a valid meta.json.`,
     );
   }
   const target = resolveEntryPath(opts.registryRoot, entry);
