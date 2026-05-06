@@ -1,5 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
-import { autoUpdater } from "electron-updater";
+// electron-updater is CJS; destructure from the default import to interop
+// cleanly under Node's ESM loader (NodeNext module resolution).
+import electronUpdater from "electron-updater";
+const { autoUpdater } = electronUpdater;
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
