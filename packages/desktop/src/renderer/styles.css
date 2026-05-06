@@ -481,6 +481,21 @@ input, select { font-family: inherit; color: inherit; }
   border: 1px dashed var(--border);
 }
 
+.skill-agent-chips {
+  display: flex; flex-wrap: wrap; gap: var(--s1);
+  margin-top: var(--s2);
+}
+.skill-agent-chip {
+  display: inline-flex; align-items: center;
+  padding: 1px var(--s2);
+  border-radius: var(--r-sm);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+}
+
 .sync-banner {
   display: flex; align-items: center; gap: var(--s2);
   padding: var(--s2) var(--s3);
@@ -1058,6 +1073,136 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   font-size: 12px !important;
   color: var(--text-3) !important;
 }
+
+.login-options {
+  display: flex; flex-direction: column; gap: var(--s3);
+  margin-top: var(--s4);
+}
+.login-option {
+  display: flex; flex-direction: column; gap: var(--s1);
+  text-align: left;
+  padding: var(--s4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease),
+              background var(--t-fast) var(--ease);
+}
+.login-option:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.login-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.login-option strong {
+  font-size: 14px; font-weight: 600;
+}
+.login-option span {
+  font-size: 12px; color: var(--text-2); line-height: 1.5;
+}
+.login-disabled-note {
+  font-size: 11px;
+  color: var(--warn);
+  font-style: normal;
+}
+
+.device-code-box {
+  display: flex; align-items: center; gap: var(--s3);
+  margin: var(--s4) 0;
+  padding: var(--s4);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  justify-content: space-between;
+}
+.device-code {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+}
+.link-btn {
+  background: transparent;
+  border: 0;
+  color: var(--text-2);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 12px;
+  padding: 0;
+}
+.link-btn:hover { color: var(--text); }
+
+/* ── Header account/settings menu ─── */
+.header-menu { position: relative; }
+.header-menu-trigger {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color var(--t-fast) var(--ease),
+              background var(--t-fast) var(--ease);
+}
+.header-menu-trigger:hover { border-color: var(--accent); }
+.header-menu-trigger[aria-expanded="true"] { border-color: var(--accent); }
+.header-menu-avatar {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: block;
+}
+.header-menu-label {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.header-menu-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--s1));
+  min-width: 240px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: var(--s1);
+  box-shadow: var(--shadow-hover);
+  z-index: 100;
+  display: flex; flex-direction: column;
+  animation: fadeUp var(--t-fast) var(--ease) both;
+}
+.header-menu-meta {
+  font-size: 11px;
+  color: var(--text-3);
+  padding: var(--s2) var(--s3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s1);
+}
+.header-menu-item {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  width: 100%;
+  text-align: left;
+  padding: var(--s2) var(--s3);
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: var(--r-sm);
+}
+.header-menu-item:hover { background: var(--surface-hi); }
+.header-menu-item.danger { color: var(--danger); }
+.header-menu-item.danger:hover { background: var(--danger-dim); }
 
 /* Inline empty (used inside drawer sections) — softer than the page-level empty state. */
 .empty-inline {

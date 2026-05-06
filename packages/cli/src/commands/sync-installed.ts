@@ -160,12 +160,14 @@ export async function syncInstalledCommand(
     try {
       uninstallSkill(s.name);
       const r = installSkill(s.name, { registryRoot: root, force: false });
+      const allAlready =
+        r.installs.length > 0 && r.installs.every((i) => i.alreadyInstalled);
       audit.swaps.push({
         name: s.name,
         previousTarget: s.fromTarget,
         newTarget: r.target,
         ok: true,
-        message: r.alreadyInstalled
+        message: allAlready
           ? `already pointed at registry`
           : `swapped → ${r.target}`,
       });

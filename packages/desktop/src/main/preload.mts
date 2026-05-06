@@ -38,6 +38,20 @@ const api = {
   getPendingConflicts: () => ipcRenderer.invoke(IPC.getPendingConflicts),
   resolveConflicts: (decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveConflicts, decisions),
+  authStatus: () => ipcRenderer.invoke(IPC.authStatus),
+  authSetPersonaConvenience: () =>
+    ipcRenderer.invoke(IPC.authSetPersonaConvenience),
+  authStartDeviceFlow: () => ipcRenderer.invoke(IPC.authStartDeviceFlow),
+  authPollDeviceFlow: (flowId: string) =>
+    ipcRenderer.invoke(IPC.authPollDeviceFlow, flowId),
+  authCancelDeviceFlow: (flowId: string) =>
+    ipcRenderer.invoke(IPC.authCancelDeviceFlow, flowId),
+  authLogout: () => ipcRenderer.invoke(IPC.authLogout),
+  reposListMine: () => ipcRenderer.invoke(IPC.reposListMine),
+  reposReplaceRegistry: (fullName: string) =>
+    ipcRenderer.invoke(IPC.reposReplaceRegistry, fullName),
+  openExternal: (url: string) => ipcRenderer.invoke(IPC.openExternal, url),
+  openSelfHostDocs: () => ipcRenderer.invoke(IPC.openSelfHostDocs),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

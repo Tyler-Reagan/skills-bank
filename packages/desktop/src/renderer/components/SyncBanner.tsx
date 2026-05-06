@@ -25,8 +25,8 @@ export function SyncBanner({
   if (status.kind === "fetching") {
     return (
       <div className="sync-banner active" role="status" aria-live="polite">
-        <span className="spinner inline" aria-hidden="true" /> Fetching canonical
-        skills…
+        <span className="spinner inline" aria-hidden="true" /> Fetching
+        canonical skills…
       </div>
     );
   }
@@ -40,13 +40,14 @@ export function SyncBanner({
   if (status.kind === "done") {
     const parts: string[] = [];
     if (status.upserted > 0)
-      parts.push(`${status.upserted} skill${status.upserted === 1 ? "" : "s"} updated`);
+      parts.push(
+        `${status.upserted} skill${status.upserted === 1 ? "" : "s"} updated`,
+      );
     if (status.conflicts > 0)
       parts.push(
         `${status.conflicts} conflict${status.conflicts === 1 ? "" : "s"} pending`,
       );
-    if (status.orphaned > 0)
-      parts.push(`${status.orphaned} orphaned`);
+    if (status.orphaned > 0) parts.push(`${status.orphaned} orphaned`);
     if (parts.length === 0) parts.push("already up to date");
     return (
       <div className="sync-banner done" role="status">
@@ -90,8 +91,8 @@ export function SyncBanner({
   if (pendingConflicts > 0) {
     return (
       <div className="sync-banner pending">
-        <Icon name="alert-circle" size="sm" /> {pendingConflicts}{" "}
-        sync conflict{pendingConflicts === 1 ? "" : "s"} pending resolution.
+        <Icon name="alert-circle" size="sm" /> {pendingConflicts} sync conflict
+        {pendingConflicts === 1 ? "" : "s"} pending resolution.
         <button
           className="sync-banner-action"
           type="button"

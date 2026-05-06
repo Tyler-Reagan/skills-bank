@@ -1,142 +1,216 @@
 {
-  "generatedAt": "2026-05-06T04:23:52.327Z",
+  "generatedAt": "2026-05-06T20:01:32.348Z",
   "registry": "skills-bank",
   "entries": [
     {
       "name": "404-page-generator",
       "description": "When the user wants to create, optimize, or audit 404 error pages. Also use when the user mentions \"404 page,\" \"404 error,\" \"error page,\" \"page not found,\" \"broken link page,\" \"404 design,\" \"custom 404,\" \"404 redirect,\" \"404 page UX,\" or \"404 recovery.\" For sitewide page planning, use website-structure.",
       "version": "1.0.1",
-      "path": "skills/404-page-generator"
+      "path": "skills/404-page-generator",
+      "source": {
+        "source": "canonical",
+        "syncedFromCommit": "10ed0cfc17c103d400c49d9e0e7d7610e0bb41d4",
+        "syncedAt": "2026-05-06T18:29:03.715Z"
+      }
     },
     {
       "name": "api-page-generator",
       "description": "When the user wants to create, optimize, or audit the API introduction/overview page. Also use when the user mentions \"API page,\" \"API landing page,\" \"/api page,\" \"API overview,\" \"developer landing,\" \"API marketing,\" or \"API for developers.\" Note: API documentation (endpoint reference) lives in docs; use docs-page-generator.",
       "version": "1.0.1",
-      "path": "skills/api-page-generator"
+      "path": "skills/api-page-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "brand-visual-generator",
       "description": "When the user wants to define, audit, or apply visual identity (typography, colors, spacing, design tokens, frontend aesthetics). Also use when the user mentions \"brand style guide,\" \"visual identity,\" \"design system,\" \"typography,\" \"color palette,\" \"brand guidelines,\" \"AI brand aesthetics,\" \"brand colors,\" \"font choices,\" \"spacing system,\" \"design tokens,\" \"motion,\" \"distinctive design,\" \"frontend aesthetics,\" \"PowerPoint theme,\" \"Google Slides brand,\" or \"slide master colors.\" For brand story, positioning, and voice, use branding.",
       "version": "1.4.0",
-      "path": "skills/brand-visual-generator"
+      "path": "skills/brand-visual-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "branding",
       "description": "When the user wants to define, audit, or apply brand strategy—purpose, values, positioning, storytelling, voice, narrative (not only visuals). Also use when the user mentions \"brand strategy,\" \"brand story,\" \"brand storytelling,\" \"brand voice,\" \"brand identity,\" \"brand guidelines,\" \"brand purpose,\" \"brand values,\" \"origin story,\" \"brand narrative,\" \"brand personality,\" \"brand archetype,\" \"slide deck branding,\" \"PPT brand colors,\" or \"document style guide.\" For typography, colors, design tokens, and frontend visuals, use brand-visual-generator.",
       "version": "1.2.0",
-      "path": "skills/branding"
+      "path": "skills/branding",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "carousel",
       "description": "When the user wants to design, optimize, or audit carousel/slider layouts for content display. Also use when the user mentions \"carousel,\" \"slider,\" \"carousel layout,\" \"testimonial carousel,\" \"gallery carousel,\" \"quote carousel,\" \"image slider,\" or \"carousel accessibility.\" For hero-area patterns, use hero-generator.",
       "version": "1.1.0",
-      "path": "skills/carousel"
+      "path": "skills/carousel",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "competitor-research",
       "description": "When the user wants to analyze competitors for SEO, content, backlinks, or positioning. Also use when the user mentions \"competitor analysis,\" \"competitor research,\" \"competitor keywords,\" \"competitor backlinks,\" \"link gap,\" \"content gap,\" \"competitor content,\" \"competitive analysis,\" or \"competitor comparison.\" For content roadmap, use content-strategy.",
       "version": "1.2.1",
-      "path": "skills/competitor-research"
+      "path": "skills/competitor-research",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "content-optimization",
       "description": "When the user wants to optimize content for SEO—word count, H2 keywords, keyword density, multimedia, tables, lists. Also use when the user mentions \"content length,\" \"word count,\" \"keyword stuffing,\" \"H2 keywords,\" \"keyword density,\" \"tables,\" \"bullet points,\" or \"content structure.\" For keywords, use keyword-research.",
       "version": "1.2.1",
-      "path": "skills/content-optimization"
+      "path": "skills/content-optimization",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "content-strategy",
       "description": "When the user wants to plan content for SEO, create content calendar, or build topic clusters. Also use when the user mentions \"content strategy,\" \"content plan,\" \"topic clusters,\" \"pillar content,\" \"pillar page,\" \"cluster articles,\" \"editorial calendar,\" \"content hub,\" \"content planning,\" \"content clusters,\" \"topic cluster strategy,\" \"content strategy for SEO,\" or \"content calendar.\" For editorial mix, use content-marketing.",
       "version": "1.1.1",
-      "path": "skills/content-strategy"
+      "path": "skills/content-strategy",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "core-web-vitals",
       "description": "When the user wants to optimize Core Web Vitals, fix LCP, INP, or CLS issues. Also use when the user mentions \"Core Web Vitals,\" \"CWV,\" \"LCP,\" \"INP,\" \"CLS,\" \"FID,\" \"page speed,\" \"page performance,\" \"Largest Contentful Paint,\" \"Interaction to Next Paint,\" \"Cumulative Layout Shift,\" or \"Page Experience.\" For GSC CWV, use google-search-console.",
       "version": "1.0.1",
-      "path": "skills/core-web-vitals"
+      "path": "skills/core-web-vitals",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "d3-viz",
       "description": "Creating interactive data visualisations using d3.js. This skill should be used when creating custom charts, graphs, network diagrams, geographic visualisations, or any complex SVG-based data visualisation that requires fine-grained control over visual elements, transitions, or interactions. Use this for bespoke visualisations beyond standard charting libraries, whether in React, Vue, Svelte, vanilla JavaScript, or any other environment.",
-      "path": "skills/d3-viz"
+      "path": "skills/d3-viz",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "docs-page-generator",
       "description": "When the user wants to create, optimize, or structure a documentation site. Also use when the user mentions \"docs,\" \"documentation site,\" \"docs subdomain,\" \"docs.yourdomain.com,\" \"help center,\" \"knowledge base,\" \"Getting Started,\" \"API Reference,\" \"user guides,\" or \"tutorials.\" For API marketing landing, use api-page-generator.",
       "version": "1.0.1",
-      "path": "skills/docs-page-generator"
+      "path": "skills/docs-page-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "electron",
       "description": "Build cross-platform desktop applications with Electron, covering main/renderer process architecture, IPC communication, BrowserWindow management, menus, tray icons, packaging, and security best practices. Use when the user asks about Electron, needs to create desktop applications, implement Electron features, or build cross-platform desktop apps.",
-      "path": "skills/electron"
+      "path": "skills/electron",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "favicon-generator",
       "description": "When the user wants to implement, optimize, or audit favicon and app icons. Also use when the user mentions \"favicon,\" \"app icon,\" \"browser icon,\" \"touch icon,\" \"PWA icon,\" \"favicon sizes,\" \"apple-touch-icon,\" \"favicon.ico,\" \"site icon,\" or \"tab icon.\" For visual system, use brand-visual-generator.",
       "version": "1.0.1",
-      "path": "skills/favicon-generator"
+      "path": "skills/favicon-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "find-skills",
       "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
-      "path": "skills/find-skills"
+      "path": "skills/find-skills",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "footer-generator",
       "description": "When the user wants to design, optimize, or audit website footers. Also use when the user mentions \"footer,\" \"page footer,\" \"site footer,\" \"footer links,\" \"footer navigation,\" \"footer SEO,\" \"footer design,\" \"footer CTA,\" \"multi-column footer,\" or \"footer sitemap.\" For main nav, use navigation-menu-generator.",
       "version": "1.0.1",
-      "path": "skills/footer-generator"
+      "path": "skills/footer-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "frontend-design",
       "description": "Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.",
-      "path": "skills/frontend-design"
+      "path": "skills/frontend-design",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "hero-generator",
       "description": "When the user wants to design, optimize, or audit hero sections (above-the-fold main visual area). Also use when the user mentions \"hero,\" \"hero section,\" \"hero area,\" \"above the fold,\" \"above the fold content,\" \"landing hero,\" \"main banner,\" \"banner section,\" \"first fold,\" \"hero section design,\" \"hero conversion,\" \"split layout hero,\" \"centered hero,\" or \"hero alignment.\" For homepage, use homepage-generator.",
       "version": "1.2.1",
-      "path": "skills/hero-generator"
+      "path": "skills/hero-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "homepage-generator",
       "description": "When the user wants to create, optimize, or audit the main site homepage (primary entry page). Also use when the user mentions \"homepage,\" \"main page,\" \"home page,\" \"hero section,\" \"above the fold,\" \"home page design,\" \"homepage conversion,\" or \"homepage structure.\" Not for paid campaign or ad landing pages—use landing-page-generator. For sitewide page planning, use website-structure.",
       "version": "1.2.0",
-      "path": "skills/homepage-generator"
+      "path": "skills/homepage-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "impeccable",
       "description": "Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks.",
-      "path": "skills/impeccable"
+      "path": "skills/impeccable",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "landing-page-generator",
       "description": "When the user wants to create, optimize, or audit campaign landing pages for paid ads, email, or other traffic. Also use when the user mentions \"landing page,\" \"PPC landing page,\" \"SEM landing page,\" \"conversion page,\" \"campaign page,\" \"lead capture page,\" \"landing page optimization,\" \"LP conversion,\" \"single-page funnel,\" or \"squeeze page.\" Not for the main site homepage; use homepage-generator.",
       "version": "1.4.1",
-      "path": "skills/landing-page-generator"
+      "path": "skills/landing-page-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "logo-generator",
       "description": "When the user wants to optimize logo placement, linking, or branding on a website. Also use when the user mentions \"logo,\" \"brand logo,\" \"header logo,\" \"logo placement,\" \"AI logo design,\" \"logo link,\" \"logo alt text,\" \"logo sizing,\" \"favicon logo,\" or \"logo usage.\" For full brand visuals, use brand-visual-generator.",
       "version": "1.0.1",
-      "path": "skills/logo-generator"
+      "path": "skills/logo-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "mcp-builder",
       "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).",
-      "path": "skills/mcp-builder"
+      "path": "skills/mcp-builder",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "mermaid-diagrams",
       "description": "Comprehensive guide for creating software diagrams using Mermaid syntax. Use when users need to create, visualize, or document software through diagrams including class diagrams (domain modeling, object-oriented design), sequence diagrams (application flows, API interactions, code execution), flowcharts (processes, algorithms, user journeys), entity relationship diagrams (database schemas), C4 architecture diagrams (system context, containers, components), state diagrams, git graphs, pie charts, gantt charts, or any other diagram type. Triggers include requests to \"diagram\", \"visualize\", \"model\", \"map out\", \"show the flow\", or when explaining system architecture, database design, code structure, or user/application flows.",
-      "path": "skills/mermaid-diagrams"
+      "path": "skills/mermaid-diagrams",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "next-best-practices",
       "description": "Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling",
-      "path": "skills/next-best-practices"
+      "path": "skills/next-best-practices",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "polish-patterns",
@@ -153,80 +227,124 @@
       ],
       "version": "0.1.0",
       "author": "Tyler-Reagan",
-      "path": "skills/polish-patterns"
+      "path": "skills/polish-patterns",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "pr-description",
       "description": "Generate a GitHub PR description with proper issue linkage syntax. Use when the user asks for a PR description, wants to open a pull request, or says /pr-description. Inspects branch commits and open issues to produce Closes/Related/Follow-on sections automatically.",
-      "path": "skills/pr-description"
+      "path": "skills/pr-description",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "pretty-mermaid",
       "description": "|",
-      "path": "skills/pretty-mermaid"
+      "path": "skills/pretty-mermaid",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "react-components",
       "description": "Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.",
-      "path": "skills/react-components"
+      "path": "skills/react-components",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "react-state-management",
       "description": "Master modern React state management with Redux Toolkit, Zustand, Jotai, and React Query. Use when setting up global state, managing server state, or choosing between state management solutions.",
-      "path": "skills/react-state-management"
+      "path": "skills/react-state-management",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "seo-strategy",
       "description": "When the user wants to plan SEO strategy, prioritize SEO work, or understand the SEO workflow. Also use when the user mentions \"SEO strategy,\" \"SEO plan,\" \"SEO roadmap,\" \"SEO priority,\" \"SEO audit,\" \"SEO workflow,\" \"where to start SEO,\" \"SEO approach,\" \"organic growth strategy,\" \"why SEO,\" \"SEO value,\" or \"search strategy.\" For technical/crawl audit execution, use seo-audit. For keyword research, use keyword-research. For AI search visibility, use generative-engine-optimization.",
       "version": "1.3.0",
-      "path": "skills/seo-strategy"
+      "path": "skills/seo-strategy",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "signup-login-page-generator",
       "description": "When the user wants to create, optimize, or audit signup and login pages. Also use when the user mentions \"signup page,\" \"login page,\" \"registration page,\" \"auth page,\" \"sign up form,\" \"create account,\" \"student discount at signup,\" or \"auth subdomain.\" For indexing/auth URLs, use indexing.",
       "version": "1.0.1",
-      "path": "skills/signup-login-page-generator"
+      "path": "skills/signup-login-page-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "theme-factory",
       "description": "Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors/fonts that you can apply to any artifact that has been creating, or can generate a new theme on-the-fly.",
-      "path": "skills/theme-factory"
+      "path": "skills/theme-factory",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "typescript-mcp-server-generator",
       "description": "Generate a complete MCP server project in TypeScript with tools, resources, and proper configuration",
-      "path": "skills/typescript-mcp-server-generator"
+      "path": "skills/typescript-mcp-server-generator",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "typescript-react-reviewer",
       "description": "Expert code reviewer for TypeScript + React 19 applications. Use when reviewing React code, identifying anti-patterns, evaluating state management, or assessing code maintainability. Triggers: code review requests, PR reviews, React architecture evaluation, identifying code smells, TypeScript type safety checks, useEffect abuse detection, state management review.",
-      "path": "skills/typescript-react-reviewer"
+      "path": "skills/typescript-react-reviewer",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "ui-ux-pro-max",
       "description": "UI/UX design intelligence for web and mobile. Includes 50+ styles, 161 color palettes, 57 font pairings, 161 product types, 99 UX guidelines, and 25 chart types across 10 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui, and HTML/CSS). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, and check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, and mobile app. Elements: button, modal, navbar, sidebar, card, table, form, and chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, and flat design. Topics: color systems, accessibility, animation, layout, typography, font pairing, spacing, interaction states, shadow, and gradient. Integrations: shadcn/ui MCP for component search and examples.",
-      "path": "skills/ui-ux-pro-max"
+      "path": "skills/ui-ux-pro-max",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "vercel-react-best-practices",
       "description": "React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements.",
       "version": "1.0.0",
       "author": "vercel",
-      "path": "skills/vercel-react-best-practices"
+      "path": "skills/vercel-react-best-practices",
+      "source": {
+        "source": "user"
+      }
     },
     {
       "name": "vite",
       "description": "Vite build tool configuration, plugin API, SSR, and Vite 8 Rolldown migration. Use when working with Vite projects, vite.config.ts, Vite plugins, or building libraries/SSR apps with Vite.",
       "version": "2026.1.31",
       "author": "Anthony Fu",
-      "path": "skills/vite"
+      "path": "skills/vite",
+      "source": {
+        "source": "canonical",
+        "syncedFromCommit": "10ed0cfc17c103d400c49d9e0e7d7610e0bb41d4",
+        "syncedAt": "2026-05-06T18:29:03.715Z"
+      }
     },
     {
       "name": "web-design-guidelines",
       "description": "Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\".",
       "version": "1.0.0",
       "author": "vercel",
-      "path": "skills/web-design-guidelines"
+      "path": "skills/web-design-guidelines",
+      "source": {
+        "source": "user"
+      }
     }
   ]
 }

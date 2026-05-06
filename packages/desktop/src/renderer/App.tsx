@@ -10,11 +10,13 @@ import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
 import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
+import { LoginScreen } from "./components/LoginScreen.js";
+import { RepoPickerModal } from "./components/RepoPickerModal.js";
 import { SetupScreen } from "./components/SetupScreen.js";
 import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
-import type { SyncStatus } from "../shared/ipc.js";
+import type { AuthStatus, SyncStatus } from "../shared/ipc.js";
 
 const LS_KEYS = {
   search: "skills-bank.searchQuery",
@@ -111,6 +113,8 @@ export function App(): React.ReactElement {
   const [conflictModalEntries, setConflictModalEntries] = useState<
     ConflictEntry[] | null
   >(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
+  const [showRepoPicker, setShowRepoPicker] = useState(false);
 
   // Apply the active theme to <html data-theme="…"> so CSS-variable
   // overrides flow through every component.
@@ -224,13 +228,11 @@ export function App(): React.ReactElement {
       if (status.kind === "done") {
         setPendingConflicts(status.conflicts);
         if (status.conflicts > 0) {
-          void window.skillsBank
-            .getPendingConflicts()
-            .then((pending) => {
-              if (pending && pending.conflicts.length > 0) {
-                setConflictModalEntries(pending.conflicts);
-              }
-            });
+          void window.skillsBank.getPendingConflicts().then((pending) => {
+            if (pending && pending.conflicts.length > 0) {
+              setConflictModalEntries(pending.conflicts);
+            }
+          });
         }
       }
     });
@@ -242,6 +244,15 @@ export function App(): React.ReactElement {
     void (async () => {
       const report = await window.skillsBank.getSyncReport();
       if (report) setPendingConflicts(report.conflicts.length);
+    })();
+  }, []);
+
+  // Initial auth/persona snapshot. The LoginScreen is shown until persona
+  // resolves to convenience or power.
+  useEffect(() => {
+    void (async () => {
+      const s = await window.skillsBank.authStatus();
+      setAuthStatus(s);
     })();
   }, []);
 
@@ -269,6 +280,14 @@ export function App(): React.ReactElement {
   );
 
   const changeRegistry = useCallback(async () => {
+    // For power-persona users, the gear opens the GitHub repo picker;
+    // they can't pick local folders since their registry is GitHub-sourced.
+    // Convenience users get the legacy folder picker — useful for
+    // pointing at a custom local clone or the dev-mode override.
+    if (authStatus?.persona === "power") {
+      setShowRepoPicker(true);
+      return;
+    }
     const r = await window.skillsBank.setRegistryRoot();
     if (r.ok && r.registryRoot) {
       flash(`Registry set to ${r.registryRoot}`);
@@ -276,7 +295,29 @@ export function App(): React.ReactElement {
     } else if (r.message !== "cancelled") {
       flash(`Couldn't set registry: ${r.message}`);
     }
-  }, [refresh, flash]);
+  }, [refresh, flash, authStatus]);
+
+  const pickRepo = useCallback(
+    async (fullName: string) => {
+      const r = await window.skillsBank.reposReplaceRegistry(fullName);
+      if (r.ok) {
+        flash(r.message);
+        setShowRepoPicker(false);
+        await refresh();
+      } else {
+        // Surface as a thrown error so the modal can show it inline.
+        throw new Error(r.message);
+      }
+    },
+    [refresh, flash],
+  );
+
+  const signOut = useCallback(async () => {
+    const s = await window.skillsBank.authLogout();
+    setAuthStatus(s);
+    setShowRepoPicker(false);
+    flash("Signed out");
+  }, [flash]);
 
   const undoUninstall = useCallback(
     (name: string) => {
@@ -323,6 +364,9 @@ export function App(): React.ReactElement {
           onChangeRegistry={() => undefined}
           syncing={false}
           onSync={() => undefined}
+          showSync={false}
+          authStatus={null}
+          onSignOut={() => undefined}
         />
         <Tabs
           active="browse"
@@ -359,6 +403,19 @@ export function App(): React.ReactElement {
     );
   }
 
+  // Persona unresolved → first-launch login decision.
+  if (authStatus && authStatus.persona === null) {
+    return (
+      <LoginScreen
+        isAuthConfigured={authStatus.isAuthConfigured}
+        onStatusChanged={(s) => {
+          setAuthStatus(s);
+          if (s.persona !== null) void refresh();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <Header
@@ -373,6 +430,9 @@ export function App(): React.ReactElement {
           syncStatus.kind === "fetching" || syncStatus.kind === "applying"
         }
         onSync={() => void sync()}
+        showSync={authStatus?.persona !== "power"}
+        authStatus={authStatus}
+        onSignOut={signOut}
       />
       <SyncBanner
         status={syncStatus}
@@ -443,6 +503,14 @@ export function App(): React.ReactElement {
           conflicts={conflictModalEntries}
           onClose={() => setConflictModalEntries(null)}
           onResolve={resolveConflicts}
+        />
+      )}
+
+      {showRepoPicker && (
+        <RepoPickerModal
+          onClose={() => setShowRepoPicker(false)}
+          onPicked={pickRepo}
+          onSignOut={signOut}
         />
       )}
 

@@ -37,7 +37,45 @@ export const IPC = {
   syncStatus: "registry:syncStatus",
   getPendingConflicts: "registry:getPendingConflicts",
   resolveConflicts: "registry:resolveConflicts",
+  authStatus: "auth:status",
+  authIsConfigured: "auth:isConfigured",
+  authSetPersonaConvenience: "auth:setPersonaConvenience",
+  authStartDeviceFlow: "auth:startDeviceFlow",
+  authPollDeviceFlow: "auth:pollDeviceFlow",
+  authCancelDeviceFlow: "auth:cancelDeviceFlow",
+  authLogout: "auth:logout",
+  reposListMine: "repos:listMine",
+  reposReplaceRegistry: "repos:replaceRegistry",
+  openExternal: "system:openExternal",
+  openSelfHostDocs: "system:openSelfHostDocs",
 } as const;
+
+export type Persona = "convenience" | "power";
+
+export interface AuthStatus {
+  persona: Persona | null;
+  isAuthConfigured: boolean;
+  user: {
+    login: string;
+    avatarUrl: string;
+    htmlUrl: string;
+  } | null;
+}
+
+export interface DeviceFlowStartPayload {
+  userCode: string;
+  verificationUri: string;
+  expiresIn: number;
+  interval: number;
+  flowId: string;
+}
+
+export interface UserRepo {
+  fullName: string;
+  isPrivate: boolean;
+  defaultBranch: string;
+  description: string | null;
+}
 
 export type SyncStatus =
   | { kind: "idle" }
@@ -91,6 +129,7 @@ interface SkillsBankAPI {
     registryRoot: string | null;
     configValid: boolean;
     isPackaged: boolean;
+    persona: Persona | null;
   }>;
   setRegistryRoot(): Promise<{
     ok: boolean;
@@ -111,6 +150,18 @@ interface SkillsBankAPI {
   resolveConflicts(
     decisions: SyncDecisions,
   ): Promise<{ ok: boolean; message: string }>;
+  authStatus(): Promise<AuthStatus>;
+  authSetPersonaConvenience(): Promise<AuthStatus>;
+  authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
+  authPollDeviceFlow(flowId: string): Promise<AuthStatus>;
+  authCancelDeviceFlow(flowId: string): Promise<void>;
+  authLogout(): Promise<AuthStatus>;
+  reposListMine(): Promise<UserRepo[]>;
+  reposReplaceRegistry(
+    fullName: string,
+  ): Promise<{ ok: boolean; message: string; importedCount?: number }>;
+  openExternal(url: string): Promise<void>;
+  openSelfHostDocs(): Promise<{ ok: boolean; message?: string }>;
 }
 
 declare global {

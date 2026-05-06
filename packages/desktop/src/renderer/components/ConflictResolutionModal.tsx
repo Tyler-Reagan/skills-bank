@@ -66,12 +66,17 @@ export function ConflictResolutionModal({
 
   return (
     <div style={overlay}>
-      <div style={modal} role="dialog" aria-modal="true" aria-label="Resolve sync conflicts">
+      <div
+        style={modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Resolve sync conflicts"
+      >
         <h2 style={{ marginTop: 0 }}>Resolve sync conflicts</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} have
-          name collisions between your local registry and canonical. Pick an
-          action for each. Your choice is remembered for future syncs.
+          {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} have name
+          collisions between your local registry and canonical. Pick an action
+          for each. Your choice is remembered for future syncs.
         </p>
 
         <div style={{ marginTop: 16, maxHeight: "60vh", overflowY: "auto" }}>
@@ -96,9 +101,7 @@ export function ConflictResolutionModal({
                 <strong style={{ fontFamily: "var(--font-mono)" }}>
                   {c.name}
                 </strong>
-                <span
-                  style={{ color: "var(--text-3)", fontSize: 11 }}
-                >
+                <span style={{ color: "var(--text-3)", fontSize: 11 }}>
                   yours: {c.localSource.source}
                 </span>
               </div>
@@ -143,7 +146,14 @@ export function ConflictResolutionModal({
           ))}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            marginTop: 12,
+          }}
+        >
           <button onClick={onClose} disabled={submitting}>
             Cancel
           </button>

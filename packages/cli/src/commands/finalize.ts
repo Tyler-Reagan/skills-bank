@@ -2,6 +2,7 @@ import readline from "node:readline";
 import pc from "picocolors";
 import {
   finalizeSkillsDir,
+  getAgent,
   resolveRegistryRoot,
   scanExistingInstalls,
 } from "@skills-bank/core";
@@ -15,20 +16,22 @@ export async function finalizeCommand(opts: FinalizeCmdOptions): Promise<void> {
   const root = resolveRegistryRoot(opts.root);
   const report = scanExistingInstalls(root);
 
-  if (!report.topLevelSymlink) {
+  if (report.topLevelSymlinks.length === 0) {
     console.log(
-      `${report.claudeSkillsDir} is already a real directory; nothing to finalize.`,
+      "No agent skills directories are top-level symlinks; nothing to finalize.",
     );
     return;
   }
 
-  console.log(pc.bold("Finalize ~/.claude/skills"));
-  console.log(
-    `  current: ${report.claudeSkillsDir} → ${report.topLevelSymlink.resolvedTarget}`,
-  );
-  console.log(
-    `  result:  ${report.claudeSkillsDir} (real dir with per-skill symlinks)`,
-  );
+  // Process each agent dir whose top-level is a symlink. The CLI loops
+  // through them; the user confirms once to apply all.
+  console.log(pc.bold("Finalize agent skills directories"));
+  for (const tls of report.topLevelSymlinks) {
+    const dir = report.agentDirs[tls.agent];
+    console.log(
+      `  ${getAgent(tls.agent).label}: ${dir} → ${tls.resolvedTarget}`,
+    );
+  }
   console.log();
 
   const unmigrated = report.entries.filter((e) => e.kind === "real-directory");
@@ -40,33 +43,42 @@ export async function finalizeCommand(opts: FinalizeCmdOptions): Promise<void> {
         } still real director${unmigrated.length === 1 ? "y" : "ies"}.`,
       ),
     );
-    for (const e of unmigrated) console.log(`    - ${e.name}`);
+    for (const e of unmigrated)
+      console.log(`    - ${e.name} (${getAgent(e.agent).label})`);
     console.log();
     console.log(pc.dim("Run `skills-bank import` first to adopt them."));
     process.exit(1);
   }
 
   if (!opts.yes) {
-    const ok = await prompt("Apply finalize? [y/N] ");
+    const ok = await prompt(
+      `Apply finalize to ${report.topLevelSymlinks.length} agent dir(s)? [y/N] `,
+    );
     if (!/^y(es)?$/i.test(ok.trim())) {
       console.log(pc.dim("aborted"));
       return;
     }
   }
 
-  const result = finalizeSkillsDir({
-    registryRoot: root,
-    confirmDestructive: true,
-  });
-  if (result.ok) {
-    console.log(pc.green("✓ ") + result.message);
-  } else {
-    console.error(pc.red("✖ ") + result.message);
-    if (result.blockingEntries) {
-      for (const n of result.blockingEntries) console.error(`    - ${n}`);
+  let failed = false;
+  for (const tls of report.topLevelSymlinks) {
+    const result = finalizeSkillsDir({
+      registryRoot: root,
+      agent: tls.agent,
+      confirmDestructive: true,
+    });
+    const label = getAgent(tls.agent).label;
+    if (result.ok) {
+      console.log(pc.green("✓ ") + `${label}: ${result.message}`);
+    } else {
+      failed = true;
+      console.error(pc.red("✖ ") + `${label}: ${result.message}`);
+      if (result.blockingEntries) {
+        for (const n of result.blockingEntries) console.error(`    - ${n}`);
+      }
     }
-    process.exit(1);
   }
+  if (failed) process.exit(1);
 }
 
 function prompt(question: string): Promise<string> {

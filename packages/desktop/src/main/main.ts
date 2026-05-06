@@ -26,7 +26,24 @@ import {
   type MigrationAction,
   type SyncDecisions,
 } from "@skills-bank/core";
-import { IPC, type SyncStatus, type UpdateStatus } from "../shared/ipc.js";
+import {
+  IPC,
+  type AuthStatus,
+  type SyncStatus,
+  type UpdateStatus,
+  type UserRepo,
+} from "../shared/ipc.js";
+import {
+  cancelDeviceFlow,
+  clearStoredToken,
+  DeviceFlowError,
+  getCurrentUser,
+  getStoredToken,
+  pollDeviceFlow,
+  startDeviceFlow,
+} from "./auth.js";
+import { isAuthConfigured } from "./auth-config.js";
+import { writeSkillSource } from "@skills-bank/core";
 
 const CANONICAL_OWNER = "Tyler-Reagan";
 const CANONICAL_REPO = "skills-bank";
@@ -43,8 +60,11 @@ const __dirname = path.dirname(__filename);
 // Result is exposed to the renderer via IPC.getConfig so it can show the
 // first-run setup screen when nothing resolves to a valid registry.
 
+export type Persona = "convenience" | "power";
+
 interface AppConfig {
   registryRoot: string | null;
+  persona: Persona | null;
 }
 
 function configFilePath(): string {
@@ -54,14 +74,18 @@ function configFilePath(): string {
 function readConfig(): AppConfig {
   const p = configFilePath();
   try {
-    if (!fs.existsSync(p)) return { registryRoot: null };
+    if (!fs.existsSync(p)) return { registryRoot: null, persona: null };
     const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<AppConfig>;
     return {
       registryRoot:
         typeof raw.registryRoot === "string" ? raw.registryRoot : null,
+      persona:
+        raw.persona === "convenience" || raw.persona === "power"
+          ? raw.persona
+          : null,
     };
   } catch {
-    return { registryRoot: null };
+    return { registryRoot: null, persona: null };
   }
 }
 
@@ -113,6 +137,22 @@ function resolveBootRegistryRoot(): string {
 
 let registryRoot: string = resolveBootRegistryRoot();
 
+// Resolve persona at boot. If the dev override (SKILLS_BANK_ROOT) is set,
+// silently treat the install as convenience-persona — devs running against
+// the canonical repo on disk shouldn't see the LoginScreen. Any explicit
+// stored persona wins.
+function resolveBootPersona(): Persona | null {
+  const stored = readConfig().persona;
+  if (stored) return stored;
+  if (process.env["SKILLS_BANK_ROOT"]) {
+    writeConfig({ registryRoot, persona: "convenience" });
+    return "convenience";
+  }
+  return null;
+}
+
+let persona: Persona | null = resolveBootPersona();
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1100,
@@ -145,6 +185,7 @@ ipcMain.handle(IPC.getConfig, () => ({
   registryRoot,
   configValid: registryRoot !== null,
   isPackaged: app.isPackaged,
+  persona,
 }));
 
 ipcMain.handle(IPC.setRegistryRoot, async () => {
@@ -169,7 +210,7 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
     };
   }
   registryRoot = candidate;
-  writeConfig({ registryRoot: candidate });
+  writeConfig({ registryRoot: candidate, persona });
   return { ok: true, message: `registry set to ${candidate}`, registryRoot };
 });
 
@@ -193,11 +234,19 @@ ipcMain.handle(IPC.install, (_e, name: string, force?: boolean) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     const r = installSkill(name, { registryRoot, force: force ?? false });
+    const wrote = r.installs.filter((i) => !i.alreadyInstalled);
+    if (wrote.length > 0) {
+      return {
+        ok: true,
+        message: `installed ${name} for ${wrote.length} agent(s)`,
+      };
+    }
+    if (r.installs.length > 0) {
+      return { ok: true, message: `${name} already installed` };
+    }
     return {
-      ok: true,
-      message: r.alreadyInstalled
-        ? `${name} already installed`
-        : `installed ${name} → ${r.target}`,
+      ok: false,
+      message: r.errors[0]?.message ?? `nothing installed for ${name}`,
     };
   } catch (err) {
     return { ok: false, message: (err as Error).message };
@@ -280,9 +329,37 @@ ipcMain.handle(IPC.rebuildIndex, () => {
   }
 });
 
+// Finalize every agent skills dir whose top-level is a symlink. Aggregates
+// results so the UI sees one combined ok/message rather than per-agent.
 ipcMain.handle(IPC.finalize, () => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  return finalizeSkillsDir({ registryRoot, confirmDestructive: true });
+  const report = scanExistingInstalls(registryRoot);
+  if (report.topLevelSymlinks.length === 0) {
+    return {
+      ok: false,
+      message: "No agent skills directories are top-level symlinks.",
+    };
+  }
+  const results = report.topLevelSymlinks.map((tls) =>
+    finalizeSkillsDir({
+      registryRoot,
+      agent: tls.agent,
+      confirmDestructive: true,
+    }),
+  );
+  const allOk = results.every((r) => r.ok);
+  const summary = results
+    .map((r, i) => {
+      const tls = report.topLevelSymlinks[i]!;
+      return `${tls.agent}: ${r.message}`;
+    })
+    .join("; ");
+  const blockingEntries = results.flatMap((r) => r.blockingEntries ?? []);
+  return {
+    ok: allOk,
+    message: summary,
+    ...(blockingEntries.length > 0 ? { blockingEntries } : {}),
+  };
 });
 
 ipcMain.handle(IPC.exportInfo, (_e, name: string) => {
@@ -542,18 +619,223 @@ ipcMain.handle(IPC.getPendingConflicts, () => {
 // Persist user choices and immediately re-run sync so the resolutions
 // take effect without a separate user action. The re-run consumes the
 // just-written decisions via readSyncDecisions inside runSync.
-ipcMain.handle(
-  IPC.resolveConflicts,
-  async (_e, decisions: SyncDecisions) => {
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    try {
-      writeSyncDecisions(registryRoot, decisions);
-    } catch (err) {
-      return { ok: false, message: (err as Error).message };
+ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    writeSyncDecisions(registryRoot, decisions);
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+  return runSync();
+});
+
+// ─── Auth + persona (M3) ────────────────────────────────────────────────────
+//
+// Persona drives which features the renderer surfaces. Convenience users get
+// the canonical Sync flow (M2/M5); power users get the M4 registry-replace
+// flow. Persona = null means first-launch and the renderer shows LoginScreen.
+
+async function buildAuthStatus(): Promise<AuthStatus> {
+  const user = persona === "power" ? await getCurrentUser() : null;
+  return {
+    persona,
+    isAuthConfigured: isAuthConfigured(),
+    user,
+  };
+}
+
+ipcMain.handle(IPC.authStatus, () => buildAuthStatus());
+
+ipcMain.handle(IPC.authSetPersonaConvenience, async () => {
+  persona = "convenience";
+  writeConfig({ registryRoot, persona });
+  return buildAuthStatus();
+});
+
+ipcMain.handle(IPC.authStartDeviceFlow, async () => {
+  return startDeviceFlow();
+});
+
+ipcMain.handle(IPC.authPollDeviceFlow, async (_e, flowId: string) => {
+  try {
+    await pollDeviceFlow(flowId);
+    persona = "power";
+    writeConfig({ registryRoot, persona });
+    return await buildAuthStatus();
+  } catch (err) {
+    if (err instanceof DeviceFlowError) {
+      throw new Error(`device-flow:${err.code}:${err.message}`);
     }
-    return runSync();
-  },
-);
+    throw err;
+  }
+});
+
+ipcMain.handle(IPC.authCancelDeviceFlow, (_e, flowId: string) => {
+  cancelDeviceFlow(flowId);
+});
+
+ipcMain.handle(IPC.authLogout, async () => {
+  clearStoredToken();
+  persona = null;
+  writeConfig({ registryRoot, persona });
+  return buildAuthStatus();
+});
+
+// ─── User repos + registry replace (M4) ─────────────────────────────────────
+
+async function ghFetch(
+  pathSuffix: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const token = getStoredToken();
+  if (!token) throw new Error("not authenticated");
+  return fetch(`https://api.github.com${pathSuffix}`, {
+    ...init,
+    headers: {
+      ...(init?.headers ?? {}),
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "User-Agent": "skills-bank",
+    },
+  });
+}
+
+ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
+  const out: UserRepo[] = [];
+  // Up to 3 pages (300 repos) — enough for nearly every user.
+  for (let page = 1; page <= 3; page++) {
+    const res = await ghFetch(
+      `/user/repos?per_page=100&page=${page}&sort=updated&affiliation=owner,collaborator,organization_member`,
+    );
+    if (!res.ok) {
+      throw new Error(`GitHub /user/repos: ${res.status}`);
+    }
+    const repos = (await res.json()) as Array<{
+      full_name: string;
+      private: boolean;
+      default_branch: string;
+      description: string | null;
+    }>;
+    for (const r of repos) {
+      out.push({
+        fullName: r.full_name,
+        isPrivate: r.private,
+        defaultBranch: r.default_branch,
+        description: r.description ?? null,
+      });
+    }
+    if (repos.length < 100) break;
+  }
+  return out;
+});
+
+ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const token = getStoredToken();
+  if (!token) return { ok: false, message: "not authenticated" };
+  const slash = fullName.indexOf("/");
+  if (slash <= 0) {
+    return { ok: false, message: `invalid repo: ${fullName}` };
+  }
+  const owner = fullName.slice(0, slash);
+  const repo = fullName.slice(slash + 1);
+
+  let fetched;
+  try {
+    fetched = await fetchCanonicalTarball({ owner, repo, token });
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+  try {
+    const skillsDir = path.join(fetched.extractedRoot, "skills");
+    if (!fs.existsSync(skillsDir)) {
+      return {
+        ok: false,
+        message: `${fullName} has no skills/ directory at the repo root`,
+      };
+    }
+    // Wipe the existing local registry skills/ wholesale; the power
+    // persona is "replace, don't merge."
+    const localSkillsDir = path.join(registryRoot, "skills");
+    fs.rmSync(localSkillsDir, { recursive: true, force: true });
+    fs.mkdirSync(localSkillsDir, { recursive: true });
+
+    const importedAt = new Date().toISOString();
+    let count = 0;
+    for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+      if (!ent.isDirectory()) continue;
+      const src = path.join(skillsDir, ent.name);
+      const dest = path.join(localSkillsDir, ent.name);
+      fs.cpSync(src, dest, { recursive: true });
+      writeSkillSource(dest, {
+        source: "imported",
+        syncedFromCommit: fetched.commitSha,
+        syncedAt: importedAt,
+      });
+      count++;
+    }
+    // Clear M2 sync state so any prior canonical state doesn't leak in.
+    const stateDir = path.join(registryRoot, ".skills-bank");
+    for (const f of [
+      "last-sync.json",
+      "pending-conflicts.json",
+      "sync-decisions.json",
+    ]) {
+      const p = path.join(stateDir, f);
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
+    return {
+      ok: true,
+      message: `imported ${count} skill(s) from ${fullName}`,
+      importedCount: count,
+    };
+  } finally {
+    fetched.cleanup();
+  }
+});
+
+ipcMain.handle(IPC.openExternal, async (_e, url: string) => {
+  await shell.openExternal(url);
+});
+
+// Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
+// for installed users post-merge) and fall back to the locally bundled
+// copy if GitHub returns 404 (the docs file isn't on main yet) or the
+// user is offline. The docs/ tree is bundled via electron-builder's
+// `extraResources` for packaged builds; in dev we resolve relative to
+// the desktop package's app path (`<repo>/packages/desktop/`).
+const SELF_HOST_URL =
+  "https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/self-host.md";
+
+async function selfHostUrlReachable(): Promise<boolean> {
+  try {
+    const res = await fetch(SELF_HOST_URL, {
+      method: "HEAD",
+      // GitHub redirects unauthenticated HEAD on private/missing pages —
+      // accept the redirect chain and check the terminal status.
+      redirect: "follow",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+ipcMain.handle(IPC.openSelfHostDocs, async () => {
+  if (await selfHostUrlReachable()) {
+    await shell.openExternal(SELF_HOST_URL);
+    return { ok: true };
+  }
+  const docPath = app.isPackaged
+    ? path.join(process.resourcesPath, "docs", "self-host.md")
+    : path.join(app.getAppPath(), "..", "..", "docs", "self-host.md");
+  if (!fs.existsSync(docPath)) {
+    return { ok: false, message: `self-host docs not found at ${docPath}` };
+  }
+  const error = await shell.openPath(docPath);
+  if (error) return { ok: false, message: error };
+  return { ok: true };
+});
 
 void app.whenReady().then(() => {
   wireAutoUpdater();
