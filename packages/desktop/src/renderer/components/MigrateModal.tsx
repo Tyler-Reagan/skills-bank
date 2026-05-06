@@ -409,6 +409,10 @@ function actionFor(
       return { type: "remove", name: e.name };
     case "skip":
       return { type: "skip", name: e.name };
+    case "propagate":
+      // Bulk Migrate-All flow doesn't expose per-skill agent pickers;
+      // the user uses the per-card SingleMigrateModal for propagation.
+      return { type: "skip", name: e.name };
   }
 }
 
@@ -420,6 +424,8 @@ function describeName(a: MigrationAction): string {
       return `${a.type}: ${a.name}`;
     case "adopt":
       return `adopt: ${a.name} → skills/${a.name}`;
+    case "propagate":
+      return `link ${a.name} → ${a.toAgents.length} agent(s)`;
   }
 }
 

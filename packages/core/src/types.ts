@@ -86,7 +86,13 @@ export type MigrationAction =
   | { type: "skip"; name: string }
   | { type: "remove"; name: string }
   | { type: "adopt"; name: string }
-  | { type: "register-external"; name: string };
+  | { type: "register-external"; name: string }
+  | {
+      type: "propagate";
+      name: string;
+      /** Agent dirs to additionally symlink the skill into. */
+      toAgents: import("./agents.js").AgentId[];
+    };
 
 export interface MigrationResult {
   action: MigrationAction;

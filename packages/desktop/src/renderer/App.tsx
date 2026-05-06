@@ -490,6 +490,9 @@ export function App(): React.ReactElement {
       {singleMigrateTarget && (
         <SingleMigrateModal
           entry={singleMigrateTarget}
+          installedAgents={installed
+            .filter((i) => i.name === singleMigrateTarget.name)
+            .map((i) => i.agent)}
           onClose={async () => {
             setSingleMigrateTarget(null);
             await refresh();

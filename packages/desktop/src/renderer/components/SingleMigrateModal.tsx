@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import type {
+  AgentId,
   InstalledSkill,
   MigrationAction,
   MigrationResult,
@@ -7,8 +8,42 @@ import type {
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
 import { Icon } from "./Icon.js";
 
+const AGENT_LABELS: Record<AgentId, string> = {
+  claude: "Claude Code",
+  cursor: "Cursor",
+  gemini: "Gemini",
+  copilot: "GitHub Copilot",
+  continue: "Continue",
+  cline: "Cline",
+  codex: "OpenAI Codex",
+  agents: "Agents (shared)",
+};
+const AGENT_PATHS: Record<AgentId, string> = {
+  claude: "~/.claude",
+  cursor: "~/.cursor",
+  gemini: "~/.gemini",
+  copilot: "~/.copilot",
+  continue: "~/.continue",
+  cline: "~/.cline",
+  codex: "~/.codex",
+  agents: "~/.agents",
+};
+
+const ALL_AGENTS: AgentId[] = [
+  "claude",
+  "cursor",
+  "gemini",
+  "copilot",
+  "continue",
+  "cline",
+  "codex",
+  "agents",
+];
+
 interface Props {
   entry: InstalledSkill;
+  /** Agents that already have this skill linked. Excluded from the propagate picker. */
+  installedAgents?: AgentId[];
   onClose: () => void | Promise<void>;
   onFlash: (msg: string) => void;
 }
@@ -20,16 +55,53 @@ type Phase =
 
 export function SingleMigrateModal({
   entry,
+  installedAgents = [],
   onClose,
   onFlash,
 }: Props): React.ReactElement {
   useFocusReturn();
-  const [action, setAction] = useState<MigrationAction>(() =>
-    defaultAction(entry),
+  const [actionType, setActionType] = useState<MigrationAction["type"]>(() =>
+    defaultActionType(entry),
+  );
+  // Agents available as propagation targets — every known agent that
+  // doesn't already have this skill linked. Initial state: all checked
+  // (broadcast) so the common case is one click.
+  const propagateCandidates = useMemo(
+    () => ALL_AGENTS.filter((id) => !installedAgents.includes(id)),
+    [installedAgents],
+  );
+  const [propagateTargets, setPropagateTargets] = useState<AgentId[]>(
+    propagateCandidates,
   );
   const [phase, setPhase] = useState<Phase>({ kind: "plan" });
 
   const apply = async () => {
+    let action: MigrationAction;
+    switch (actionType) {
+      case "adopt":
+        action = { type: "adopt", name: entry.name };
+        break;
+      case "register-external":
+        action = { type: "register-external", name: entry.name };
+        break;
+      case "remove":
+        action = { type: "remove", name: entry.name };
+        break;
+      case "skip":
+        action = { type: "skip", name: entry.name };
+        break;
+      case "propagate":
+        if (propagateTargets.length === 0) {
+          onFlash("Pick at least one agent to link to.");
+          return;
+        }
+        action = {
+          type: "propagate",
+          name: entry.name,
+          toAgents: propagateTargets,
+        };
+        break;
+    }
     setPhase({ kind: "applying" });
     const results = await window.skillsBank.migrate([
       { name: entry.name, action },
@@ -40,6 +112,12 @@ export function SingleMigrateModal({
       void window.skillsBank.rebuildIndex();
     }
     setPhase({ kind: "result", result });
+  };
+
+  const togglePropagate = (id: AgentId) => {
+    setPropagateTargets((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   if (phase.kind === "applying") {
@@ -101,7 +179,7 @@ export function SingleMigrateModal({
   return (
     <div style={overlay}>
       <div style={modal} role="dialog" aria-modal="true">
-        <h2 style={{ marginTop: 0 }}>Migrate {entry.name}</h2>
+        <h2 style={{ marginTop: 0 }}>Manage {entry.name}</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13 }}>
           <span className="tag">{entry.kind}</span>
         </p>
@@ -110,42 +188,90 @@ export function SingleMigrateModal({
         </p>
 
         <div style={{ marginTop: 16, marginBottom: 16 }}>
-          {options.map((o) => (
-            <label
-              key={o.value}
-              style={{
-                display: "block",
-                padding: 10,
-                marginBottom: 6,
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                cursor: "pointer",
-                background:
-                  action.type === o.value ? "var(--accent-dim)" : "transparent",
-                borderColor:
-                  action.type === o.value ? "var(--accent)" : "var(--border)",
-              }}
-            >
-              <input
-                type="radio"
-                name="action"
-                value={o.value}
-                checked={action.type === o.value}
-                onChange={() => setAction(actionFor(o.value, entry))}
-                style={{ marginRight: 8 }}
-              />
-              <strong style={{ color: "var(--text)" }}>{o.label}</strong>
-              <p
+          {options.map((o) => {
+            const selected = actionType === o.value;
+            return (
+              <label
+                key={o.value}
                 style={{
-                  margin: "4px 0 0 24px",
-                  fontSize: 12,
-                  color: "var(--text-2)",
+                  display: "block",
+                  padding: 10,
+                  marginBottom: 6,
+                  border: "1px solid var(--border)",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  background: selected ? "var(--accent-dim)" : "transparent",
+                  borderColor: selected ? "var(--accent)" : "var(--border)",
                 }}
               >
-                {o.description}
-              </p>
-            </label>
-          ))}
+                <input
+                  type="radio"
+                  name="action"
+                  value={o.value}
+                  checked={selected}
+                  onChange={() => setActionType(o.value)}
+                  style={{ marginRight: 8 }}
+                />
+                <strong style={{ color: "var(--text)" }}>{o.label}</strong>
+                <p
+                  style={{
+                    margin: "4px 0 0 24px",
+                    fontSize: 12,
+                    color: "var(--text-2)",
+                  }}
+                >
+                  {o.description}
+                </p>
+
+                {o.value === "propagate" && selected && (
+                  <div style={{ margin: "10px 0 0 24px" }}>
+                    {propagateCandidates.length === 0 ? (
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-3)",
+                          margin: 0,
+                        }}
+                      >
+                        Already linked in every known agent directory.
+                      </p>
+                    ) : (
+                      propagateCandidates.map((id) => (
+                        <label
+                          key={id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "4px 0",
+                            fontSize: 12,
+                            color: "var(--text)",
+                            cursor: "pointer",
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={propagateTargets.includes(id)}
+                            onChange={() => togglePropagate(id)}
+                          />
+                          <span>{AGENT_LABELS[id]}</span>
+                          <code
+                            style={{
+                              color: "var(--text-3)",
+                              fontSize: 11,
+                            }}
+                          >
+                            {AGENT_PATHS[id]}/skills/
+                          </code>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                )}
+              </label>
+            );
+          })}
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
@@ -159,16 +285,21 @@ export function SingleMigrateModal({
   );
 }
 
-function defaultAction(e: InstalledSkill): MigrationAction {
+// Default to "propagate" for the most common user intent: a skill exists
+// in some agent dir(s) and the user wants to expose it to others
+// (e.g. a CLI install in ~/.agents/skills that should also be linked
+// from ~/.claude/skills so Claude Code can use it). Adopt remains
+// available for users who want to bring the skill under registry mgmt.
+function defaultActionType(e: InstalledSkill): MigrationAction["type"] {
   switch (e.kind) {
     case "ours":
-      return { type: "skip", name: e.name };
+      return "skip";
     case "broken-symlink":
-      return { type: "remove", name: e.name };
+      return "remove";
     case "foreign-symlink":
-      return { type: "register-external", name: e.name };
+      return "propagate";
     case "real-directory":
-      return { type: "adopt", name: e.name };
+      return "propagate";
   }
 }
 
@@ -193,7 +324,7 @@ function optionsFor(e: InstalledSkill): ActionOption[] {
         {
           value: "remove",
           label: "Remove broken symlink",
-          description: "Delete the dead link from ~/.claude/skills.",
+          description: "Delete the dead link.",
         },
         {
           value: "skip",
@@ -204,10 +335,16 @@ function optionsFor(e: InstalledSkill): ActionOption[] {
     case "foreign-symlink":
       return [
         {
+          value: "propagate",
+          label: "Link to other agents…",
+          description:
+            "Add a symlink in additional agent directories so the skill is available wherever you run an AI tool. Source content is untouched.",
+        },
+        {
           value: "adopt",
           label: "Adopt into registry",
           description:
-            "Copy the target folder into skills/<name>/ and re-point the symlink at the registry.",
+            "Copy the target folder into skills/<name>/ and re-point the symlink at the registry. Brings the skill under registry management.",
         },
         {
           value: "register-external",
@@ -226,29 +363,19 @@ function optionsFor(e: InstalledSkill): ActionOption[] {
     case "real-directory":
       return [
         {
+          value: "propagate",
+          label: "Link to other agents…",
+          description:
+            "Add a symlink in additional agent directories pointing at this folder. Source content stays where it is.",
+        },
+        {
           value: "adopt",
           label: "Adopt into registry",
           description:
-            "Move the directory into skills/<name>/ and replace it with a symlink.",
+            "Move the directory into skills/<name>/ and replace it with a symlink. Brings the skill under registry management.",
         },
         { value: "skip", label: "Skip", description: "Leave it as-is." },
       ];
-  }
-}
-
-function actionFor(
-  type: MigrationAction["type"],
-  e: InstalledSkill,
-): MigrationAction {
-  switch (type) {
-    case "adopt":
-      return { type: "adopt", name: e.name };
-    case "register-external":
-      return { type: "register-external", name: e.name };
-    case "remove":
-      return { type: "remove", name: e.name };
-    case "skip":
-      return { type: "skip", name: e.name };
   }
 }
 

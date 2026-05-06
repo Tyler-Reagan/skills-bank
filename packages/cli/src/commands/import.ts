@@ -148,6 +148,8 @@ function describe(a: MigrationAction): string {
       return pc.yellow("register as external");
     case "adopt":
       return pc.green(`adopt → skills/${a.name}`);
+    case "propagate":
+      return pc.cyan(`link → ${a.toAgents.length} agent(s)`);
   }
 }
 

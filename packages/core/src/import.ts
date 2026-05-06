@@ -115,6 +115,10 @@ export function applyMigration(
       case "adopt": {
         return adoptIntoRegistry(entry, opts);
       }
+
+      case "propagate": {
+        return propagateToAgents(entry, action.toAgents);
+      }
     }
   } catch (err) {
     return {
@@ -123,6 +127,81 @@ export function applyMigration(
       message: String(err instanceof Error ? err.message : err),
     };
   }
+}
+
+/**
+ * Symlink a skill into additional agent directories without moving its
+ * source content. Used when the user has a skill installed in one agent
+ * dir (e.g. `~/.agents/skills/readme-i18n` from the skills.sh CLI) and
+ * wants to also expose it to other agents (e.g. Claude Code) without
+ * adopting it into the registry.
+ *
+ * The symlink target is the entry's REAL path (resolved through any
+ * existing symlink chain) so propagated copies all point at the same
+ * source, not at each other.
+ */
+function propagateToAgents(
+  entry: InstalledSkill,
+  toAgents: AgentId[],
+): MigrationResult {
+  const action: MigrationAction = {
+    type: "propagate",
+    name: entry.name,
+    toAgents,
+  };
+  if (toAgents.length === 0) {
+    return { action, ok: false, message: "no agents selected" };
+  }
+
+  // Resolve the actual on-disk content. For real-directory entries the
+  // linkPath IS the content; for symlinks we follow to the target.
+  let realPath: string;
+  try {
+    realPath = fs.realpathSync(entry.linkPath);
+  } catch (err) {
+    return {
+      action,
+      ok: false,
+      message: `cannot resolve real path for ${entry.name}: ${(err as Error).message}`,
+    };
+  }
+  if (!fs.existsSync(realPath)) {
+    return {
+      action,
+      ok: false,
+      message: `source path missing for ${entry.name}: ${realPath}`,
+    };
+  }
+
+  const linked: string[] = [];
+  const skipped: string[] = [];
+  for (const id of toAgents) {
+    const agent = getAgent(id);
+    const skillsDir = getAgentSkillsDir(agent);
+    fs.mkdirSync(skillsDir, { recursive: true });
+    const targetLink = path.join(skillsDir, entry.name);
+    if (fs.existsSync(targetLink) || isSymlink(targetLink)) {
+      skipped.push(agent.label);
+      continue;
+    }
+    fs.symlinkSync(realPath, targetLink, "dir");
+    linked.push(agent.label);
+  }
+
+  if (linked.length === 0) {
+    return {
+      action,
+      ok: false,
+      message: `${entry.name} already linked in all selected agent dirs`,
+    };
+  }
+  const skipMsg =
+    skipped.length > 0 ? ` (skipped: ${skipped.join(", ")})` : "";
+  return {
+    action,
+    ok: true,
+    message: `linked ${entry.name} to ${linked.join(", ")}${skipMsg}`,
+  };
 }
 
 function adoptIntoRegistry(
