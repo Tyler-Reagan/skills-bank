@@ -170,7 +170,6 @@ export function InstalledTab({
                   onSelect={() => onMigrateOne(s)}
                   index={i}
                   agents={g.agents}
-                  chipsAsPaths
                 />
               );
             })}

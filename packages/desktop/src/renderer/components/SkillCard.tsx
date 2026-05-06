@@ -58,12 +58,6 @@ interface Props {
   index?: number;
   /** Agents this skill is currently installed for. Used to render chips. */
   agents?: AgentId[];
-  /**
-   * When true, chips show the tilde path (e.g. `~/.cursor`) instead of
-   * the human label. Useful for "pending migration" cards where the
-   * dir is the disambiguator the user needs to make a decision.
-   */
-  chipsAsPaths?: boolean;
 }
 
 export function SkillCard({
@@ -72,7 +66,6 @@ export function SkillCard({
   onSelect,
   index = 0,
   agents,
-  chipsAsPaths = false,
 }: Props): React.ReactElement {
   const fresh = freshness(entry.lastCommit);
   const visibleTags = (entry.tags ?? []).slice(0, 3);
@@ -145,9 +138,9 @@ export function SkillCard({
             <span
               key={a}
               className="skill-agent-chip"
-              title={`${AGENT_LABELS[a]} (${AGENT_PATHS[a]}/skills)`}
+              title={AGENT_LABELS[a]}
             >
-              {chipsAsPaths ? AGENT_PATHS[a] : AGENT_LABELS[a]}
+              {AGENT_PATHS[a]}
             </span>
           ))}
         </div>

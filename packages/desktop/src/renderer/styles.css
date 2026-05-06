@@ -507,7 +507,10 @@ input, select { font-family: inherit; color: inherit; }
   color: var(--text-3);
   cursor: help;
   vertical-align: middle;
-  margin-left: var(--s1);
+  /* Symmetric horizontal padding so the icon doesn't crowd surrounding
+     text on either side. Bottom margin nudges it onto the visual baseline
+     of the heading next to it. */
+  margin: 0 var(--s2);
 }
 .info-tooltip:hover, .info-tooltip:focus-visible {
   color: var(--accent);
@@ -515,11 +518,15 @@ input, select { font-family: inherit; color: inherit; }
 }
 .info-tooltip-bubble {
   position: absolute;
-  bottom: calc(100% + var(--s2));
-  left: 50%;
-  transform: translateX(-50%);
+  /* Anchor BELOW the icon; tab-intro is at the top of the content area
+     so a bubble positioned above gets clipped by the header. Left-anchor
+     to the icon and grow rightward — header tooltips live on the left
+     side of the viewport, so left-anchor never overflows the right edge.
+     Width is capped to the viewport for safety on narrow windows. */
+  top: calc(100% + var(--s2));
+  left: 0;
   width: 320px;
-  max-width: 80vw;
+  max-width: min(80vw, 360px);
   padding: var(--s3);
   background: var(--surface);
   color: var(--text);
@@ -543,14 +550,15 @@ input, select { font-family: inherit; color: inherit; }
   opacity: 1;
   pointer-events: auto;
 }
-/* Tooltips on right edge wrap left so they don't get clipped. */
+/* Arrow points UP toward the icon, anchored near the bubble's left edge
+   so it lines up with the icon center regardless of bubble width. */
 .info-tooltip-bubble:after {
   content: "";
   position: absolute;
-  top: 100%; left: 50%;
-  transform: translateX(-50%);
+  bottom: 100%;
+  left: 4px;
   border: 6px solid transparent;
-  border-top-color: var(--border-hi);
+  border-bottom-color: var(--border-hi);
 }
 
 .sync-banner {
