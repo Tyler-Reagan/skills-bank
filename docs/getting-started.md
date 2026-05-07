@@ -17,6 +17,8 @@ The app auto-updates by polling the GitHub Releases feed on launch — when a ne
 
 You'll see a one-time setup screen with two sections.
 
+![First-launch setup screen with Quick start and Advanced sections](images/setup.png)
+
 **Quick start**:
 - *Use the bundled registry* — Browse the curated skills shipped with this app, pull updates with one click, and add your own alongside. No GitHub required. **This is the right choice for most users.**
 
@@ -28,6 +30,8 @@ You can change your mind later via the account menu in the header.
 
 ## Use a skill in Claude Code
 
+![The Registry tab — the default view](images/registry.png)
+
 1. Open the **Registry** tab (it's the default).
 2. Click any card to open the detail drawer.
 3. Click **Install**. Skills Bank symlinks the skill into every agent directory you have set up — `~/.claude/skills/`, `~/.cursor/skills/`, etc.
@@ -38,6 +42,8 @@ Want to install only into specific agent directories instead of all of them? Ope
 ## See everything that's already installed
 
 Open the **Installed** tab. You'll see two sections:
+
+![The Installed tab with Registered and Not registered sections](images/installed.png)
 
 - **Registered** — skills installed via Skills Bank (or otherwise linked to the registry)
 - **Not registered** — skills installed by other tools (e.g. `npx skills add` from [skills.sh](https://skills.sh/))

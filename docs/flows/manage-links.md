@@ -10,6 +10,9 @@ A registered skill can be linked into any subset of your agent directories. Use 
    - **Linked** — the agent dir has a symlink to the registry copy. A checked checkbox.
    - **Not linked** — the agent dir doesn't have this skill. An unchecked checkbox.
    - **Conflict** — the agent dir has something at this name that *isn't* a Skills Bank symlink (e.g. a real folder). The row is disabled with a hint pointing at conflict resolution.
+
+   ![Manage agent links modal — per-agent checkboxes with target paths](../images/manage-links.png)
+
 4. Tick or untick agents to add or remove links. Click **Apply**.
 5. Skills Bank creates the missing symlinks and removes the unticked ones. The registry copy is never touched.
 

@@ -2,11 +2,16 @@
 
 The everyday flow. Browse the **Registry** tab, find a skill, link it into your agents.
 
+![The Registry tab — search, tag filters, and Installed-only toggle](../images/registry.png)
+
 ## Steps
 
 1. Open the **Registry** tab (it's the default tab).
 2. Use the search bar or tag filters to narrow the list. Toggle **Installed only** to filter to skills you've already linked.
 3. Click any card to open its detail drawer. The drawer shows the full `SKILL.md` preview, tags, source, and warnings if any.
+
+   ![Skill detail drawer with SKILL.md preview, Install, Manage agent links](../images/skill-detail.png)
+
 4. Click **Install**.
 5. Skills Bank creates a symlink at `<agent-dir>/<skill-name>` for every supported agent directory you have set up. By default, every existing agent dir gets a link.
 6. Restart the affected agent (Claude Code, Cursor, …). The skill is available next session.
@@ -14,6 +19,8 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 ## Choosing which agents get the link
 
 Open the account menu → **Settings…** → set **Default install agents** to a subset of agents. From then on, the Install button targets only those directories. Leave it empty to keep the default "broadcast to all existing dirs" behavior.
+
+![Settings modal — Default install agents, card grid columns, search debounce](../images/settings.png)
 
 You can override per-skill from the drawer's **Manage agent links…** action — pick exactly which agents this one skill goes into.
 

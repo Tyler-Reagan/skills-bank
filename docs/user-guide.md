@@ -2,10 +2,33 @@
 
 This page is an index. Pick whichever doc matches what you're trying to do.
 
+![The Registry tab — the default view of the desktop app](images/registry.png)
+
 ## Start here
 
 - **[`getting-started.md`](getting-started.md)** — From "I downloaded the app" to "I'm using a skill in Claude Code" in five minutes.
 - **[`concepts.md`](concepts.md)** — The vocabulary the UI uses: skill, registry, persona, source, publish state, conflict, …
+
+## A quick tour
+
+The desktop app is organized into three tabs in the header:
+
+| Tab | What it shows |
+|---|---|
+| **Registry** ([`flows/install.md`](flows/install.md)) | Curated skills you can install with one click. |
+| **Installed** ([`flows/register.md`](flows/register.md)) | Skills currently linked into your agents — both registered and unmanaged. |
+| **Discover** | The wider [skills.sh](https://skills.sh/) ecosystem, embedded. |
+
+<table>
+<tr>
+<td><img src="images/installed.png" alt="Installed tab" /><br /><sub><b>Installed</b> — see Registered and Not registered sections side-by-side</sub></td>
+<td><img src="images/discover.png" alt="Discover tab" /><br /><sub><b>Discover</b> — skills.sh, embedded, with Open Terminal / Open in browser shortcuts</sub></td>
+</tr>
+</table>
+
+Click any card to open its detail drawer:
+
+![Skill detail drawer open over the Registry tab](images/skill-detail.png)
 
 ## Day-to-day flows
 

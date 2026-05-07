@@ -2,6 +2,8 @@
 
 The first launch shows a one-time setup screen. The choice you make here decides which features the app exposes — but it's not permanent: you can switch any time from the account menu.
 
+![First-launch setup screen with Quick start and Advanced sections](../images/setup.png)
+
 ## The three options
 
 The screen has two sections: **Quick start** and **Advanced**.
