@@ -58,10 +58,6 @@ const api = {
     ipcRenderer.invoke(IPC.removeBrokenLinks, name, agents),
   resolveSkillConflicts: (name: string, decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveSkillConflicts, name, decisions),
-  persistSkillLocally: (name: string) =>
-    ipcRenderer.invoke(IPC.persistSkillLocally, name),
-  unprotectSkillFromSync: (name: string) =>
-    ipcRenderer.invoke(IPC.unprotectSkillFromSync, name),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

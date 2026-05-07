@@ -49,32 +49,15 @@ Each registry skill carries a `source` marker that records *where it came from*:
 
 Markers live in a sibling `.skills-bank.json` per skill so they don't pollute upstream.
 
-## Publish state
+### Tags are local
 
-Where `source` records origin, **publish state** records whether a skill has been pushed to the registry's remote. It's computed from the git status of `<repo>/skills/<name>/`:
+Tags are a local-only dimension. You can add or remove tags on any skill — including the curated ones bundled with the app — and Sync will preserve your tag edits on the next pull. No protection step required: Sync reads the existing local tag list before writing the canonical content and splices it back in.
 
-- **`pushed`** — The skill's latest commit is on the upstream branch. The card has no badge — this is the calm default for clean registry skills.
-- **`draft`** — Committed locally but not yet on the remote.
-- **`untracked`** — New or modified files that aren't committed.
+### Card badges
 
-The badge on each card combines source + publish state:
-
-- **`YOURS`** — purely locally-authored: either the skill isn't in the registry yet, or it's a registry skill with `source: user` and no canonical history.
-- **`PROTECTED`** — a previously-canonical registry skill saved locally. Sync skips it.
+- **`YOURS`** — skill isn't in the registry, or is registered with `source: user`.
 - **`IMPORTED`** — registry skill from a power-persona repo replacement.
-- **`DRAFT`** — a `canonical` registry skill with uncommitted or unpushed local changes. **Sync may overwrite these on the next pull.** Click **Save locally** in the drawer to flip its source to `user` and protect your changes.
-- *(no badge)* — `canonical` and pushed: the calm default.
-
-### Save locally / Protected (convenience persona)
-
-For convenience persona, every change you make through the UI (editing tags, etc.) is auto-committed in the app-managed registry repo. That means:
-
-- Tag-edit a `canonical` skill → it auto-flips to `source: user` and commits, so the badge moves directly from no-badge to **PROTECTED** with no DRAFT in between. Sync will skip the skill from now on.
-- Tag-edit a `user`-authored skill → auto-commit clears DRAFT immediately; the badge stays YOURS.
-
-The **Save locally** button in the drawer is a manual fallback for any DRAFT card — it runs the same protect-and-commit logic if the auto-path didn't fire (e.g. when you edited files outside the UI). The drawer's Metadata section also surfaces the protection state with an **Unprotect** link to revert a protected skill back to `canonical`, allowing Sync to overwrite it next time.
-
-Power-persona and self-host users don't see these affordances and never get auto-commits — they manage persistence through their own repo's git workflow.
+- *(no badge)* — curated/canonical: the calm default.
 
 ## Installation kind
 

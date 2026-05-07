@@ -25,9 +25,6 @@ import {
   removeBrokenLinks,
   repairBrokenLinks,
   resolveSkillConflicts,
-  persistSkillLocally,
-  unprotectSkillFromSync,
-  commitSkillChanges,
   writeSyncDecisions,
   AGENTS,
   getAgentSkillsDir,
@@ -230,18 +227,7 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
 // requiring the user to remember to rebuild.
 ipcMain.handle(IPC.listRegistry, () => {
   if (!registryRoot) return [];
-  const entries = buildRegistryIndex(registryRoot, { writeFile: true }).entries;
-  // Convenience persona doesn't push — the registry is app-managed in
-  // userData with no user-driven git workflow. A locally-committed
-  // skill is the user's "saved" final state, so collapse the
-  // pushed/draft distinction at the IPC boundary. Power and self-host
-  // personas keep the original semantics.
-  if (persona === "convenience") {
-    return entries.map((e) =>
-      e.publishState === "draft" ? { ...e, publishState: "pushed" } : e,
-    );
-  }
-  return entries;
+  return buildRegistryIndex(registryRoot, { writeFile: true }).entries;
 });
 
 ipcMain.handle(IPC.listInstalled, () => {
@@ -532,37 +518,10 @@ ipcMain.handle(
     } catch (err) {
       return { ok: false, message: (err as Error).message };
     }
-    // Auto-protect: a tag edit is a personal customization the user
-    // wants to keep. Re-tag canonical → user so the next Sync skips
-    // this skill instead of overwriting their tags. No-op for skills
-    // that are already user/imported.
-    let protectedNow = false;
-    try {
-      const before = entry.source.source;
-      persistSkillLocally(registryRoot, name);
-      protectedNow = before === "canonical";
-    } catch {
-      // Non-fatal: tags persisted, protection just didn't apply.
-    }
-    // Convenience-persona only: auto-commit the change in the
-    // app-managed registry repo so DRAFT clears immediately. Power
-    // and self-host personas manage their own repo's commits.
-    let committed = false;
-    if (persona === "convenience") {
-      try {
-        committed = commitSkillChanges(
-          registryRoot,
-          name,
-          `chore(skills): edit tags ${name}`,
-        );
-      } catch {
-        // Non-fatal — leave it dirty.
-      }
-    }
-    const parts = [`Tags updated (${cleaned.length})`];
-    if (protectedNow) parts.push("saved locally");
-    if (committed) parts.push("committed");
-    return { ok: true, message: parts.join(" — ") };
+    return {
+      ok: true,
+      message: `Tags updated (${cleaned.length})`,
+    };
   },
 );
 
@@ -925,50 +884,6 @@ ipcMain.handle(
   },
 );
 
-ipcMain.handle(IPC.persistSkillLocally, (_e, name: string) => {
-  if (!registryRoot) {
-    return { ok: false, message: NO_ROOT_MSG };
-  }
-  try {
-    persistSkillLocally(registryRoot, name);
-    // Convenience-persona "Save locally" should also clear the DRAFT
-    // state by committing in the app-managed repo. Power persona
-    // shouldn't trigger this codepath (the renderer hides the button)
-    // but guard anyway so we never auto-commit in a user's own repo.
-    if (persona === "convenience") {
-      try {
-        commitSkillChanges(
-          registryRoot,
-          name,
-          `chore(skills): save ${name} locally`,
-        );
-      } catch {
-        // Non-fatal — protect succeeded; commit can be retried.
-      }
-    }
-    return { ok: true };
-  } catch (err) {
-    return {
-      ok: false,
-      message: err instanceof Error ? err.message : String(err),
-    };
-  }
-});
-
-ipcMain.handle(IPC.unprotectSkillFromSync, (_e, name: string) => {
-  if (!registryRoot) {
-    return { ok: false, message: NO_ROOT_MSG };
-  }
-  try {
-    unprotectSkillFromSync(registryRoot, name);
-    return { ok: true };
-  } catch (err) {
-    return {
-      ok: false,
-      message: err instanceof Error ? err.message : String(err),
-    };
-  }
-});
 
 // Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
 // for installed users post-merge) and fall back to the locally bundled

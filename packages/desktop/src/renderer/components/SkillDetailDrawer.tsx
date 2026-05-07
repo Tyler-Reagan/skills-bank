@@ -42,12 +42,6 @@ interface Props {
    * install broadcasts to every existing agent dir (legacy behavior).
    */
   defaultInstallAgents?: import("@skills-bank/core").AgentId[];
-  /**
-   * Active persona — controls whether persona-specific affordances show
-   * up. The "Save locally" button only makes sense for `convenience`
-   * users, since power/self-host users persist via their own repo.
-   */
-  persona?: import("../../shared/ipc.js").Persona | null;
 }
 
 type ActionState =
@@ -55,8 +49,7 @@ type ActionState =
   | "installing"
   | "uninstalling"
   | "exporting"
-  | "registering"
-  | "persisting";
+  | "registering";
 
 export function SkillDetailDrawer({
   entry,
@@ -70,7 +63,6 @@ export function SkillDetailDrawer({
   isRegistered,
   onRegister,
   defaultInstallAgents,
-  persona,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
@@ -235,36 +227,6 @@ export function SkillDetailDrawer({
     try {
       const r = await window.skillsBank.exportSkill(entry.name);
       await onChanged(r.message);
-    } finally {
-      setAction(null);
-    }
-  };
-  const persistLocally = async () => {
-    setAction("persisting");
-    try {
-      const r = await window.skillsBank.persistSkillLocally(entry.name);
-      const succeeded =
-        r.ok
-          ? entry.source.source === "canonical"
-            ? `Saved ${entry.name} locally — Sync will keep your version.`
-            : `Saved ${entry.name}.`
-          : null;
-      await onChanged(
-        succeeded ?? r.message ?? `Could not save ${entry.name} locally.`,
-      );
-    } finally {
-      setAction(null);
-    }
-  };
-  const unprotectFromSync = async () => {
-    setAction("persisting");
-    try {
-      const r = await window.skillsBank.unprotectSkillFromSync(entry.name);
-      await onChanged(
-        r.ok
-          ? `${entry.name} no longer protected — Sync may update it.`
-          : r.message ?? `Could not unprotect ${entry.name}.`,
-      );
     } finally {
       setAction(null);
     }
@@ -512,41 +474,6 @@ export function SkillDetailDrawer({
                 </span>
               </div>
             )}
-            {persona === "convenience" && isRegistered && (
-              <div className="drawer-meta-row">
-                <span className="drawer-meta-key">sync</span>
-                <span className="drawer-meta-value">
-                  {entry.source.source === "user" &&
-                  entry.source.syncedFromCommit ? (
-                    <>
-                      <span className="protected-pill" title="Sync will skip this skill on the next pull">
-                        Protected
-                      </span>
-                      <button
-                        className="link-button"
-                        disabled={action !== null}
-                        onClick={() => void unprotectFromSync()}
-                        title="Allow Sync to overwrite this skill again"
-                      >
-                        {action === "persisting" ? "…" : "Unprotect"}
-                      </button>
-                    </>
-                  ) : entry.source.source === "user" ? (
-                    <span className="drawer-meta-muted">
-                      Locally authored — never synced
-                    </span>
-                  ) : entry.source.source === "imported" ? (
-                    <span className="drawer-meta-muted">
-                      Imported — managed via your repo
-                    </span>
-                  ) : (
-                    <span className="drawer-meta-muted">
-                      Eligible for Sync overwrite
-                    </span>
-                  )}
-                </span>
-              </div>
-            )}
           </div>
 
           <div className="drawer-section">
@@ -645,35 +572,6 @@ export function SkillDetailDrawer({
                 )}
               </button>
             ))}
-          {/* Convenience-persona only: any DRAFT skill gets a "Save
-              locally" button. The action protects (canonical → user
-              if applicable) and commits the change in the registry
-              repo so the badge moves out of DRAFT. Power-persona
-              users manage their own repo and handle this via git
-              themselves. */}
-          {persona === "convenience" &&
-            isRegistered &&
-            (entry.publishState === "draft" ||
-              entry.publishState === "untracked") && (
-              <button
-                className="btn warn"
-                disabled={action !== null}
-                onClick={() => void persistLocally()}
-                title={
-                  entry.source.source === "canonical"
-                    ? "Save these changes locally and protect from Sync"
-                    : "Commit your edits in the local registry"
-                }
-              >
-                {action === "persisting" ? (
-                  <>
-                    <span className="spinner inline" /> Saving…
-                  </>
-                ) : (
-                  "Save locally"
-                )}
-              </button>
-            )}
           {/* Manage agent links — available for any skill regardless of
               registration state. Distinct from Register: this only adjusts
               symlinks across agent dirs. */}

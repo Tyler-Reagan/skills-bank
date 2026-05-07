@@ -265,17 +265,14 @@ export function agentsForSkill(
 }
 
 /**
- * Single badge that surfaces the most useful publish-state signal:
- *   - YOURS    — skill exists only in an agent dir, not in the registry
- *                (e.g. a CLI install at ~/.agents/skills/<name>).
- *   - DRAFT    — registered + locally modified or committed-but-unpushed.
+ * Single badge that surfaces a skill's origin:
+ *   - YOURS    — not in the registry, OR registered but locally authored.
  *   - IMPORTED — registered with `source: imported` (power-persona repo
  *                replacement).
- *   - (none)   — registered + clean + pushed: the calm default.
+ *   - (none)   — curated/canonical: the calm default.
  *
- * Replaces the old OriginBadge which rendered YOURS for every registry
- * skill that lacked a `.skills-bank.json` sibling — a classification
- * that is structurally always true for upstream registries.
+ * Tags are local-only — Sync preserves them — so we don't surface
+ * uncommitted-edit state on cards.
  */
 function PublishBadge({
   entry,
@@ -301,42 +298,6 @@ function PublishBadge({
         title="Imported from an external registry repo"
       >
         IMPORTED
-      </span>
-    );
-  }
-  // PROTECTED is sticky: a `user`-tagged skill with a syncedFromCommit
-  // was originally canonical and got saved locally. The badge wins
-  // even if the local copy is dirty, because the protection status is
-  // what the user cares about — Sync skips this skill regardless.
-  if (entry.source.source === "user" && entry.source.syncedFromCommit) {
-    return (
-      <span
-        className="skill-origin-badge protected"
-        title="Protected — Sync will not overwrite this skill"
-      >
-        PROTECTED
-      </span>
-    );
-  }
-  // DRAFT covers any registered skill with uncommitted or unpushed
-  // local changes, regardless of source. Tooltip distinguishes the
-  // implication: canonical drafts may be overwritten by Sync, while
-  // user-authored drafts are just locally uncommitted.
-  if (
-    entry.publishState === "draft" ||
-    entry.publishState === "untracked"
-  ) {
-    const draftTip =
-      entry.source.source === "canonical"
-        ? entry.publishState === "untracked"
-          ? "Local changes not yet committed — Sync may overwrite them. Click Save locally to protect."
-          : "Committed locally but not pushed — Sync may overwrite. Click Save locally to protect."
-        : entry.publishState === "untracked"
-          ? "Uncommitted edits in the local registry"
-          : "Committed locally but not yet pushed";
-    return (
-      <span className="skill-origin-badge draft" title={draftTip}>
-        DRAFT
       </span>
     );
   }

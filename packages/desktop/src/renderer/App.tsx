@@ -717,7 +717,6 @@ export function App(): React.ReactElement {
                   ? settings.defaultInstallAgents
                   : undefined
               }
-              persona={authStatus?.persona ?? null}
               onClose={() => setSelected(null)}
               onChanged={async (msg) => {
                 flash(msg);
