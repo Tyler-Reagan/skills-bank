@@ -1,8 +1,16 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  shell,
+  WebContentsView,
+} from "electron";
 // electron-updater is CJS; destructure from the default import to interop
 // cleanly under Node's ESM loader (NodeNext module resolution).
 import electronUpdater from "electron-updater";
 const { autoUpdater } = electronUpdater;
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,6 +44,8 @@ import {
 import {
   IPC,
   type AuthStatus,
+  type Bounds,
+  type DiscoverStatus,
   type SyncStatus,
   type UpdateStatus,
   type UserRepo,
@@ -163,6 +173,205 @@ let persona: Persona | null = resolveBootPersona();
 // Source PNG used for window/dock icons in dev. Packaged macOS builds use
 // the .icns embedded by electron-builder; Windows uses the .ico.
 const iconPng = path.join(__dirname, "..", "..", "build", "icon.png");
+
+// ─── Discover tab: embedded skills.sh WebContentsView ───────────────────────
+//
+// We embed skills.sh as a top-level WebContentsView (not an iframe — they
+// send `X-Frame-Options: DENY`). The view is lazy-created on first show,
+// reused across show/hide so back-history and scroll persist, and lives
+// in its own `persist:skills-sh` session so its cookies/cache stay isolated
+// from the rest of the app.
+//
+// Bounds come from the renderer (placeholder `getBoundingClientRect()`) and
+// are coordinates relative to the BrowserWindow's contentView, which is
+// what `view.setBounds` expects on macOS / Windows / Linux Electron 32.
+
+const DISCOVER_HOME = "https://skills.sh";
+const DISCOVER_HOSTS = new Set(["skills.sh", "www.skills.sh"]);
+
+let discoverView: WebContentsView | null = null;
+let discoverAttached = false;
+let discoverCurrentUrl = DISCOVER_HOME;
+
+function broadcastDiscoverStatus(status: DiscoverStatus): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send(IPC.discoverStatus, status);
+  }
+}
+
+function ensureDiscoverView(parent: BrowserWindow): WebContentsView {
+  if (discoverView) return discoverView;
+  const view = new WebContentsView({
+    webPreferences: {
+      partition: "persist:skills-sh",
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
+    },
+  });
+  const wc = view.webContents;
+  wc.setWindowOpenHandler(({ url }) => {
+    void shell.openExternal(url);
+    return { action: "deny" };
+  });
+  wc.on("will-navigate", (e, url) => {
+    try {
+      const host = new URL(url).hostname;
+      if (!DISCOVER_HOSTS.has(host)) {
+        e.preventDefault();
+        void shell.openExternal(url);
+      }
+    } catch {
+      // Malformed URL — let Chromium handle / reject.
+    }
+  });
+  wc.on("did-start-loading", () => {
+    broadcastDiscoverStatus({ kind: "loading", url: discoverCurrentUrl });
+  });
+  wc.on("did-navigate", (_e, url) => {
+    discoverCurrentUrl = url;
+    broadcastDiscoverStatus({
+      kind: "ready",
+      url,
+      canGoBack: wc.navigationHistory.canGoBack(),
+    });
+  });
+  wc.on("did-navigate-in-page", (_e, url, isMainFrame) => {
+    if (!isMainFrame) return;
+    discoverCurrentUrl = url;
+    broadcastDiscoverStatus({
+      kind: "ready",
+      url,
+      canGoBack: wc.navigationHistory.canGoBack(),
+    });
+  });
+  wc.on("did-finish-load", () => {
+    broadcastDiscoverStatus({
+      kind: "ready",
+      url: discoverCurrentUrl,
+      canGoBack: wc.navigationHistory.canGoBack(),
+    });
+  });
+  wc.on("did-fail-load", (_e, errorCode, description, validatedURL, isMainFrame) => {
+    if (!isMainFrame) return;
+    if (errorCode === -3) return; // ERR_ABORTED — fires on every reload, ignore.
+    broadcastDiscoverStatus({
+      kind: "error",
+      url: validatedURL || discoverCurrentUrl,
+      errorCode,
+      description,
+    });
+  });
+  parent.on("closed", () => {
+    discoverView = null;
+    discoverAttached = false;
+  });
+  discoverView = view;
+  void wc.loadURL(DISCOVER_HOME);
+  return view;
+}
+
+function intBounds(b: Bounds): Electron.Rectangle {
+  return {
+    x: Math.round(b.x),
+    y: Math.round(b.y),
+    width: Math.max(0, Math.round(b.width)),
+    height: Math.max(0, Math.round(b.height)),
+  };
+}
+
+ipcMain.handle(IPC.discoverShow, (_e, bounds: Bounds) => {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+  if (!win) return;
+  const view = ensureDiscoverView(win);
+  view.setBounds(intBounds(bounds));
+  view.setVisible(true);
+  if (!discoverAttached) {
+    win.contentView.addChildView(view);
+    discoverAttached = true;
+  }
+});
+
+ipcMain.handle(IPC.discoverHide, () => {
+  if (!discoverView) return;
+  // Visibility-toggle (cheap), keep the view attached so back-history and
+  // scroll persist. We zero the bounds too so the view doesn't capture clicks
+  // in the rare case Chromium ignores `setVisible` on a child.
+  discoverView.setVisible(false);
+  discoverView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+});
+
+ipcMain.handle(IPC.discoverSetBounds, (_e, bounds: Bounds) => {
+  if (!discoverView) return;
+  discoverView.setBounds(intBounds(bounds));
+});
+
+ipcMain.handle(IPC.discoverGoBack, () => {
+  if (!discoverView) return;
+  const h = discoverView.webContents.navigationHistory;
+  if (h.canGoBack()) h.goBack();
+});
+
+ipcMain.handle(IPC.discoverReload, () => {
+  if (!discoverView) {
+    // Reload before first show = retry from a previous error without an
+    // attached view. Recreate lazily on next show; emit a transient loading
+    // ping so the renderer knows we acknowledged.
+    broadcastDiscoverStatus({ kind: "loading", url: DISCOVER_HOME });
+    return;
+  }
+  void discoverView.webContents.loadURL(DISCOVER_HOME);
+});
+
+ipcMain.handle(IPC.discoverOpenExternal, async () => {
+  await shell.openExternal(discoverCurrentUrl);
+});
+
+ipcMain.handle(IPC.discoverOpenTerminal, async () => {
+  // Detached spawn so the terminal process outlives our app session and
+  // doesn't block on stdio. Cwd is the registry root if known so the user
+  // lands somewhere skill-relevant; otherwise the process default.
+  const cwd = registryRoot ?? undefined;
+  try {
+    if (process.platform === "darwin") {
+      // `open -a Terminal <path>` opens the system terminal at that dir.
+      const args = ["-a", "Terminal"];
+      if (cwd) args.push(cwd);
+      spawn("open", args, { detached: true, stdio: "ignore" }).unref();
+    } else if (process.platform === "win32") {
+      // `start ""` consumes the title arg so the path isn't taken as one.
+      // Falls back to cmd if Windows Terminal isn't installed.
+      const command = cwd
+        ? `start "" wt.exe -d "${cwd}" || start "" cmd.exe /K cd /D "${cwd}"`
+        : `start "" wt.exe || start "" cmd.exe`;
+      spawn("cmd.exe", ["/c", command], { detached: true, stdio: "ignore" }).unref();
+    } else {
+      // Linux best-effort. Most distros ship `x-terminal-emulator` (Debian)
+      // or expose one of the common emulators on PATH.
+      const candidates = ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm"];
+      let launched = false;
+      for (const bin of candidates) {
+        try {
+          const child = spawn(bin, cwd ? ["--working-directory", cwd] : [], {
+            detached: true,
+            stdio: "ignore",
+          });
+          child.unref();
+          launched = true;
+          break;
+        } catch {
+          // try next candidate
+        }
+      }
+      if (!launched) {
+        return { ok: false, message: "no terminal emulator found on PATH" };
+      }
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
 
 function createWindow(): void {
   const win = new BrowserWindow({

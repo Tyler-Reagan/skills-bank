@@ -23,6 +23,7 @@ import { RepoPickerModal } from "./components/RepoPickerModal.js";
 import { SetupScreen } from "./components/SetupScreen.js";
 import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
+import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import type { AuthStatus, SyncStatus } from "../shared/ipc.js";
 
@@ -589,54 +590,58 @@ export function App(): React.ReactElement {
         registryCount={registry.length}
         installedCount={uniqueInstalledCount}
       />
-      <div
-        className="content"
-        role="tabpanel"
-        id={`tabpanel-${tab}`}
-        aria-labelledby={`tab-${tab}`}
-      >
-        {tab === "browse" && (
-          <BrowseTab
-            registry={registry}
-            installed={installed}
-            search={search}
-            setSearch={setSearch}
-            selectedTags={selectedTags}
-            setSelectedTags={setSelectedTags}
-            installedOnly={installedOnly}
-            setInstalledOnly={setInstalledOnly}
-            onSelect={(e) => setSelected(e)}
-            onSaveTags={saveCardTags}
-            onRebuild={rebuild}
-            rebuilding={rebuilding}
-            searchInputRef={searchInputRef}
-          />
-        )}
-        {tab === "installed" && (
-          <InstalledTab
-            installed={installed}
-            registry={registry}
-            onSwitchToBrowse={() => setTabPersisted("browse")}
-            onMigrateAll={() => setShowMigrate(true)}
-            onMigrateOne={(s) => {
-              // Open the unified detail drawer with a synthetic registry
-              // entry so the user gets the same Register / Manage-links /
-              // Remove action surface as a registered skill — the two
-              // operations are now distinct buttons, not a radio group.
-              const synthetic: RegistryEntry = registry.find(
-                (r) => r.name === s.name,
-              ) ?? {
-                name: s.name,
-                description: s.target ?? s.linkPath,
-                path: s.linkPath,
-                source: { source: "user" },
-              };
-              setSelected(synthetic);
-            }}
-            onSelectIntegrated={(e) => setSelected(e)}
-          />
-        )}
-      </div>
+      {tab === "discover" ? (
+        <DiscoverTab />
+      ) : (
+        <div
+          className="content"
+          role="tabpanel"
+          id={`tabpanel-${tab}`}
+          aria-labelledby={`tab-${tab}`}
+        >
+          {tab === "browse" && (
+            <BrowseTab
+              registry={registry}
+              installed={installed}
+              search={search}
+              setSearch={setSearch}
+              selectedTags={selectedTags}
+              setSelectedTags={setSelectedTags}
+              installedOnly={installedOnly}
+              setInstalledOnly={setInstalledOnly}
+              onSelect={(e) => setSelected(e)}
+              onSaveTags={saveCardTags}
+              onRebuild={rebuild}
+              rebuilding={rebuilding}
+              searchInputRef={searchInputRef}
+            />
+          )}
+          {tab === "installed" && (
+            <InstalledTab
+              installed={installed}
+              registry={registry}
+              onSwitchToBrowse={() => setTabPersisted("browse")}
+              onMigrateAll={() => setShowMigrate(true)}
+              onMigrateOne={(s) => {
+                // Open the unified detail drawer with a synthetic registry
+                // entry so the user gets the same Register / Manage-links /
+                // Remove action surface as a registered skill — the two
+                // operations are now distinct buttons, not a radio group.
+                const synthetic: RegistryEntry = registry.find(
+                  (r) => r.name === s.name,
+                ) ?? {
+                  name: s.name,
+                  description: s.target ?? s.linkPath,
+                  path: s.linkPath,
+                  source: { source: "user" },
+                };
+                setSelected(synthetic);
+              }}
+              onSelectIntegrated={(e) => setSelected(e)}
+            />
+          )}
+        </div>
+      )}
 
       {showMigrate && (
         <MigrateModal

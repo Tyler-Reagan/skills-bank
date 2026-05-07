@@ -1,6 +1,6 @@
 import React from "react";
 
-export type TabId = "browse" | "installed";
+export type TabId = "browse" | "installed" | "discover";
 
 interface Props {
   active: TabId;
@@ -15,9 +15,10 @@ export function Tabs({
   registryCount,
   installedCount,
 }: Props): React.ReactElement {
-  const tabs: Array<{ id: TabId; label: string; count: number }> = [
+  const tabs: Array<{ id: TabId; label: string; count?: number }> = [
     { id: "browse", label: "Registry", count: registryCount },
     { id: "installed", label: "Installed", count: installedCount },
+    { id: "discover", label: "Discover" },
   ];
 
   const onTabKeyDown = (e: React.KeyboardEvent, currentIdx: number) => {
@@ -51,7 +52,13 @@ export function Tabs({
             onClick={() => onChange(t.id)}
             onKeyDown={(e) => onTabKeyDown(e, idx)}
           >
-            {t.label} <span className="count tabular-nums">({t.count})</span>
+            {t.label}
+            {typeof t.count === "number" && (
+              <>
+                {" "}
+                <span className="count tabular-nums">({t.count})</span>
+              </>
+            )}
           </button>
         );
       })}
