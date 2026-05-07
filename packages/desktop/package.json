@@ -15,7 +15,8 @@
     "package:mac:x64": "pnpm run build && electron-builder --mac --x64",
     "package:mac": "pnpm run build && electron-builder --mac --arm64 --x64",
     "package:win": "pnpm run build && electron-builder --win",
-    "typecheck": "tsc -b tsconfig.main.json && tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -b tsconfig.main.json && tsc -p tsconfig.json --noEmit",
+    "icons": "bash scripts/build-icons.sh"
   },
   "dependencies": {
     "@skills-bank/core": "workspace:*",
@@ -44,6 +45,7 @@
     "files": [
       "dist/**/*",
       "dist-main/**/*",
+      "build/icon.png",
       "package.json",
       "node_modules/**/*"
     ],

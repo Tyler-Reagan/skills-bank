@@ -1,0 +1,13 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <title>Skills Bank</title>
+  <desc>Forward slash constructed as three stacked deposit layers — fuses /skill invocation with the bank-vault metaphor.</desc>
+
+  <rect width="1024" height="1024" rx="230" ry="230" fill="#0F172A"/>
+  <rect x="3" y="3" width="1018" height="1018" rx="227" ry="227" fill="none" stroke="#1E293B" stroke-width="2"/>
+
+  <g fill="#22C55E">
+    <polygon points="560,192 760,192 669,388 469,388"/>
+    <polygon points="457,414 657,414 567,610 367,610"/>
+    <polygon points="355,636 555,636 464,832 264,832"/>
+  </g>
+</svg>

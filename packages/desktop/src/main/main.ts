@@ -160,10 +160,15 @@ function resolveBootPersona(): Persona | null {
 
 let persona: Persona | null = resolveBootPersona();
 
+// Source PNG used for window/dock icons in dev. Packaged macOS builds use
+// the .icns embedded by electron-builder; Windows uses the .ico.
+const iconPng = path.join(__dirname, "..", "..", "build", "icon.png");
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1100,
     height: 720,
+    icon: iconPng,
     webPreferences: {
       preload: path.join(__dirname, "..", "main", "preload.mjs"),
       contextIsolation: true,
@@ -925,6 +930,11 @@ ipcMain.handle(IPC.openSelfHostDocs, async () => {
 });
 
 void app.whenReady().then(() => {
+  // macOS dev: dock icon comes from the binary (Electron's default) until we
+  // override. Packaged .app gets its dock icon from the bundle's .icns.
+  if (process.platform === "darwin" && !app.isPackaged && fs.existsSync(iconPng)) {
+    app.dock?.setIcon(iconPng);
+  }
   wireAutoUpdater();
   createWindow();
   if (app.isPackaged) {
