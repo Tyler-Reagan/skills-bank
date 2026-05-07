@@ -90,7 +90,61 @@ export function SkillDetailDrawer({
   const isInstalled = installed.some(
     (i) => i.name === entry.name && i.kind === "ours",
   );
-  const absPath = registryRoot ? `${registryRoot}/${entry.path}` : entry.path;
+  const brokenInstallations = installed.filter(
+    (i) => i.name === entry.name && i.kind === "broken-symlink",
+  );
+  const hasBrokenLinks = brokenInstallations.length > 0;
+  const [repairState, setRepairState] = useState<
+    | { kind: "idle" }
+    | { kind: "running" }
+    | { kind: "confirm-delete"; agents: import("@skills-bank/core").AgentId[]; reasons: string[] }
+  >({ kind: "idle" });
+
+  const repairOrRemoveBroken = async () => {
+    setRepairState({ kind: "running" });
+    const report = await window.skillsBank.repairBrokenLinks(entry.name);
+    if (report.unrepairable.length === 0) {
+      setRepairState({ kind: "idle" });
+      await onChanged(
+        report.repaired.length > 0
+          ? `Repaired ${report.repaired.length} broken link(s) for ${entry.name}`
+          : `No broken links for ${entry.name}`,
+      );
+      return;
+    }
+    setRepairState({
+      kind: "confirm-delete",
+      agents: report.unrepairable.map((u) => u.agent),
+      reasons: report.unrepairable.map(
+        (u) => `${u.linkPath}: ${u.reason}`,
+      ),
+    });
+  };
+
+  const confirmDeleteBroken = async () => {
+    if (repairState.kind !== "confirm-delete") return;
+    setRepairState({ kind: "running" });
+    const report = await window.skillsBank.removeBrokenLinks(
+      entry.name,
+      repairState.agents,
+    );
+    setRepairState({ kind: "idle" });
+    if (report.errors.length > 0) {
+      await onChanged(
+        `Removed ${report.removed.length}; ${report.errors.length} failed`,
+      );
+    } else {
+      await onChanged(`Deleted ${report.removed.length} broken link(s)`);
+    }
+  };
+  // Synthetic entries (not-registered skills) carry an absolute linkPath
+  // as `entry.path`; registered entries carry a relative `skills/<name>`.
+  // Compose vs. use-as-is so Reveal in Finder works in both cases.
+  const absPath = entry.path.startsWith("/")
+    ? entry.path
+    : registryRoot
+      ? `${registryRoot}/${entry.path}`
+      : entry.path;
 
   const renderedMd = useMemo(() => {
     if (!skillMd) return null;
@@ -137,7 +191,7 @@ export function SkillDetailDrawer({
     }
   };
   const reveal = () => {
-    if (registryRoot) void window.skillsBank.openInFinder(absPath);
+    if (absPath) void window.skillsBank.openInFinder(absPath);
   };
 
   const addTag = () => {
@@ -485,6 +539,26 @@ export function SkillDetailDrawer({
               Manage agent links
             </button>
           )}
+          {/* Two-step repair-or-delete for broken symlinks. First click
+              tries to find a usable source elsewhere (other agent dirs or
+              the registry) and repoints. Anything that can't be repaired
+              comes back as a confirm prompt before deletion. */}
+          {hasBrokenLinks && (
+            <button
+              className="btn warn"
+              disabled={action !== null || repairState.kind === "running"}
+              onClick={() => void repairOrRemoveBroken()}
+              title={`${brokenInstallations.length} broken symlink(s) for this skill`}
+            >
+              {repairState.kind === "running" ? (
+                <>
+                  <span className="spinner inline" /> Repairing…
+                </>
+              ) : (
+                `Fix broken link${brokenInstallations.length === 1 ? "" : "s"}`
+              )}
+            </button>
+          )}
           <button
             className="btn"
             disabled={action !== null}
@@ -502,12 +576,79 @@ export function SkillDetailDrawer({
             className="btn ghost"
             style={{ gridColumn: "1 / -1" }}
             onClick={reveal}
-            disabled={!registryRoot}
+            disabled={!absPath}
           >
             Reveal in Finder
           </button>
         </div>
       </aside>
+      {repairState.kind === "confirm-delete" && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "var(--scrim)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1100,
+          }}
+        >
+          <div
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border-hi)",
+              borderRadius: 8,
+              padding: 24,
+              width: 480,
+              maxWidth: "90vw",
+            }}
+          >
+            <h3 style={{ marginTop: 0 }}>Couldn't repair broken link{repairState.agents.length === 1 ? "" : "s"}</h3>
+            <p style={{ color: "var(--text-2)", fontSize: 13 }}>
+              No usable source found for these broken symlink
+              {repairState.agents.length === 1 ? "" : "s"}. Delete{" "}
+              {repairState.agents.length === 1 ? "it" : "them"}?
+            </p>
+            <ul
+              style={{
+                margin: "8px 0",
+                padding: "8px 12px",
+                background: "var(--surface-hi)",
+                borderRadius: 4,
+                fontSize: 11,
+                fontFamily: "var(--font-mono)",
+                color: "var(--text-3)",
+                listStyle: "none",
+                maxHeight: 160,
+                overflowY: "auto",
+              }}
+            >
+              {repairState.reasons.map((r) => (
+                <li key={r} style={{ padding: "2px 0" }}>
+                  {r}
+                </li>
+              ))}
+            </ul>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button
+                className="btn"
+                onClick={() => setRepairState({ kind: "idle" })}
+              >
+                Keep as-is
+              </button>
+              <button
+                className="btn danger"
+                onClick={() => void confirmDeleteBroken()}
+              >
+                Delete broken link{repairState.agents.length === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

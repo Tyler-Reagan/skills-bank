@@ -1,4 +1,7 @@
 import type {
+  AgentId,
+  BrokenLinkRemoveReport,
+  BrokenLinkRepairReport,
   ConflictEntry,
   ExportInfo,
   ExportResult,
@@ -48,6 +51,8 @@ export const IPC = {
   reposReplaceRegistry: "repos:replaceRegistry",
   openExternal: "system:openExternal",
   openSelfHostDocs: "system:openSelfHostDocs",
+  repairBrokenLinks: "skills:repairBrokenLinks",
+  removeBrokenLinks: "skills:removeBrokenLinks",
 } as const;
 
 export type Persona = "convenience" | "power";
@@ -162,6 +167,11 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; message: string; importedCount?: number }>;
   openExternal(url: string): Promise<void>;
   openSelfHostDocs(): Promise<{ ok: boolean; message?: string }>;
+  repairBrokenLinks(name: string): Promise<BrokenLinkRepairReport>;
+  removeBrokenLinks(
+    name: string,
+    agents: AgentId[],
+  ): Promise<BrokenLinkRemoveReport>;
 }
 
 declare global {

@@ -581,3 +581,109 @@ function recordFinalize(registryRoot: string, entry: FinalizeLogEntry): void {
   );
   fs.writeFileSync(file, JSON.stringify(entry, null, 2) + "\n");
 }
+
+// ─── Broken-link repair / removal ───────────────────────────────────────────
+//
+// Two-step affordance for skills that have at least one broken symlink in
+// some agent dir (target deleted, registry copy gone, etc.):
+//   1. Try to find a usable source for `name` from any non-broken
+//      installation OR the registry. Repoint each broken symlink there.
+//   2. Whatever can't be repaired is reported back; the caller (UI)
+//      confirms with the user before calling removeBrokenLinks to delete.
+
+export interface BrokenLinkRepairReport {
+  repaired: { agent: AgentId; newTarget: string }[];
+  unrepairable: { agent: AgentId; linkPath: string; reason: string }[];
+}
+
+export function repairBrokenLinks(
+  registryRoot: string,
+  name: string,
+): BrokenLinkRepairReport {
+  const installations = listInstalled(registryRoot).filter(
+    (i) => i.name === name,
+  );
+  const broken = installations.filter((i) => i.kind === "broken-symlink");
+
+  // Look for a source: any non-broken installation's realpath, falling back
+  // to the registry path if that exists on disk.
+  let source: string | null = null;
+  for (const i of installations) {
+    if (i.kind === "broken-symlink") continue;
+    try {
+      const real = fs.realpathSync(i.linkPath);
+      if (fs.existsSync(real)) {
+        source = real;
+        break;
+      }
+    } catch {
+      // try next
+    }
+  }
+  if (!source) {
+    const registryPath = path.join(registryRoot, "skills", name);
+    if (fs.existsSync(registryPath)) source = registryPath;
+  }
+
+  const repaired: BrokenLinkRepairReport["repaired"] = [];
+  const unrepairable: BrokenLinkRepairReport["unrepairable"] = [];
+
+  if (!source) {
+    for (const b of broken) {
+      unrepairable.push({
+        agent: b.agent,
+        linkPath: b.linkPath,
+        reason: "no source content found",
+      });
+    }
+    return { repaired, unrepairable };
+  }
+
+  for (const b of broken) {
+    try {
+      fs.unlinkSync(b.linkPath);
+      fs.symlinkSync(source, b.linkPath, "dir");
+      repaired.push({ agent: b.agent, newTarget: source });
+    } catch (err) {
+      unrepairable.push({
+        agent: b.agent,
+        linkPath: b.linkPath,
+        reason: (err as Error).message,
+      });
+    }
+  }
+  return { repaired, unrepairable };
+}
+
+export interface BrokenLinkRemoveReport {
+  removed: AgentId[];
+  errors: { agent: AgentId; message: string }[];
+}
+
+export function removeBrokenLinks(
+  registryRoot: string,
+  name: string,
+  agents: AgentId[],
+): BrokenLinkRemoveReport {
+  const removed: AgentId[] = [];
+  const errors: BrokenLinkRemoveReport["errors"] = [];
+  const installations = listInstalled(registryRoot).filter(
+    (i) => i.name === name && agents.includes(i.agent),
+  );
+  for (const i of installations) {
+    if (i.kind !== "broken-symlink") {
+      errors.push({
+        agent: i.agent,
+        message: `${i.linkPath} is ${i.kind}, refusing to remove`,
+      });
+      continue;
+    }
+    try {
+      fs.unlinkSync(i.linkPath);
+      removed.push(i.agent);
+    } catch (err) {
+      errors.push({ agent: i.agent, message: (err as Error).message });
+    }
+  }
+  return { removed, errors };
+}

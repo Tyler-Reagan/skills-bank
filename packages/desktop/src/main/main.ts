@@ -22,7 +22,10 @@ import {
   resolveRegistryRoot,
   scanExistingInstalls,
   uninstallSkill,
+  removeBrokenLinks,
+  repairBrokenLinks,
   writeSyncDecisions,
+  type AgentId,
   type InstalledKind,
   type MigrationAction,
   type SyncDecisions,
@@ -817,6 +820,21 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
 ipcMain.handle(IPC.openExternal, async (_e, url: string) => {
   await shell.openExternal(url);
 });
+
+ipcMain.handle(IPC.repairBrokenLinks, (_e, name: string) => {
+  if (!registryRoot)
+    return { repaired: [], unrepairable: [{ agent: "claude", linkPath: "", reason: NO_ROOT_MSG }] };
+  return repairBrokenLinks(registryRoot, name);
+});
+
+ipcMain.handle(
+  IPC.removeBrokenLinks,
+  (_e, name: string, agents: AgentId[]) => {
+    if (!registryRoot)
+      return { removed: [], errors: [{ agent: "claude", message: NO_ROOT_MSG }] };
+    return removeBrokenLinks(registryRoot, name, agents);
+  },
+);
 
 // Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
 // for installed users post-merge) and fall back to the locally bundled
