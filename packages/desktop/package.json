@@ -9,7 +9,7 @@
     "build:renderer": "vite build",
     "build:main": "tsc -b tsconfig.main.json",
     "build": "pnpm run build:main && pnpm run build:renderer",
-    "dev": "pnpm run build:main && vite build --watch & sleep 1 && env -u ELECTRON_RUN_AS_NODE electron .",
+    "dev": "pnpm run build:main && vite build --watch & sleep 1 && env -u ELECTRON_RUN_AS_NODE SKILLS_BANK_DEVTOOLS=1 electron .",
     "start": "pnpm run build && env -u ELECTRON_RUN_AS_NODE electron .",
     "package:mac:arm64": "pnpm run build && electron-builder --mac --arm64",
     "package:mac:x64": "pnpm run build && electron-builder --mac --x64",
