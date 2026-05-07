@@ -34,13 +34,29 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - name: Build & publish DMGs
+      - name: Build DMGs
         working-directory: packages/desktop
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: pnpm exec electron-builder --mac --arm64 --x64 --publish always
+        run: pnpm exec electron-builder --mac --arm64 --x64 --publish never
+      - name: Upload DMGs to GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view ${{ github.ref_name }} 2>/dev/null \
+            || gh release create ${{ github.ref_name }} \
+               --draft \
+               --title "${{ github.ref_name }}" \
+               --notes ""
+          gh release upload ${{ github.ref_name }} \
+            packages/desktop/dist-electron/*.dmg \
+            --clobber
+          if ls packages/desktop/dist-electron/latest-mac.yml 2>/dev/null; then
+            gh release upload ${{ github.ref_name }} \
+              packages/desktop/dist-electron/latest-mac.yml \
+              --clobber
+          fi
