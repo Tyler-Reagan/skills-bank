@@ -25,6 +25,8 @@ import {
   removeBrokenLinks,
   repairBrokenLinks,
   writeSyncDecisions,
+  AGENTS,
+  getAgentSkillsDir,
   type AgentId,
   type InstalledKind,
   type MigrationAction,
@@ -417,24 +419,45 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
   }
 });
 
+// Read up to 8 KB of SKILL.md text, with a "…(truncated)" marker when
+// the file is bigger. Pulled out so the readSkillMd IPC can reuse it
+// against any candidate path (registry copy or agent dir).
+function readSkillMdText(skillMdPath: string): string | null {
+  if (!fs.existsSync(skillMdPath)) return null;
+  const fd = fs.openSync(skillMdPath, "r");
+  try {
+    const buf = Buffer.alloc(8192);
+    const bytes = fs.readSync(fd, buf, 0, 8192, 0);
+    const total = fs.statSync(skillMdPath).size;
+    const text = buf.subarray(0, bytes).toString("utf8");
+    return total > bytes ? text + "\n\n…(truncated)" : text;
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+// Resolve SKILL.md for `name` by checking the registry first (if the
+// skill is registered there) and then walking every known agent dir.
+// This makes the drawer preview work for not-yet-registered skills
+// whose actual content lives at e.g. `~/.agents/skills/<name>/SKILL.md`
+// after a `npx skills add` install.
 ipcMain.handle(IPC.readSkillMd, (_e, name: string) => {
   if (!registryRoot) return null;
   try {
     const index = buildRegistryIndex(registryRoot);
     const entry = index.entries.find((x) => x.name === name);
-    if (!entry) return null;
-    const skillMd = path.join(registryRoot, entry.path, "SKILL.md");
-    if (!fs.existsSync(skillMd)) return null;
-    const fd = fs.openSync(skillMd, "r");
-    try {
-      const buf = Buffer.alloc(8192);
-      const bytes = fs.readSync(fd, buf, 0, 8192, 0);
-      const total = fs.statSync(skillMd).size;
-      const text = buf.subarray(0, bytes).toString("utf8");
-      return total > bytes ? text + "\n\n…(truncated)" : text;
-    } finally {
-      fs.closeSync(fd);
+    if (entry) {
+      const fromRegistry = readSkillMdText(
+        path.join(registryRoot, entry.path, "SKILL.md"),
+      );
+      if (fromRegistry !== null) return fromRegistry;
     }
+    for (const agent of AGENTS) {
+      const candidate = path.join(getAgentSkillsDir(agent), name, "SKILL.md");
+      const text = readSkillMdText(candidate);
+      if (text !== null) return text;
+    }
+    return null;
   } catch {
     return null;
   }
