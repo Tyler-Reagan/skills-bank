@@ -18,6 +18,12 @@ name: release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.5.1)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -27,6 +33,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
@@ -47,16 +55,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view ${{ github.ref_name }} 2>/dev/null \
-            || gh release create ${{ github.ref_name }} \
+          TAG=${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          gh release view "$TAG" 2>/dev/null \
+            || gh release create "$TAG" \
                --draft \
-               --title "${{ github.ref_name }}" \
+               --title "$TAG" \
                --notes ""
-          gh release upload ${{ github.ref_name }} \
+          gh release upload "$TAG" \
             packages/desktop/dist-electron/*.dmg \
             --clobber
           if ls packages/desktop/dist-electron/latest-mac.yml 2>/dev/null; then
-            gh release upload ${{ github.ref_name }} \
+            gh release upload "$TAG" \
               packages/desktop/dist-electron/latest-mac.yml \
               --clobber
           fi
