@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IPC, type SyncStatus, type UpdateStatus } from "../shared/ipc.js";
+import {
+  IPC,
+  type Bounds,
+  type DiscoverStatus,
+  type SyncStatus,
+  type UpdateStatus,
+} from "../shared/ipc.js";
 
 const api = {
   listRegistry: () => ipcRenderer.invoke(IPC.listRegistry),
@@ -58,6 +64,18 @@ const api = {
     ipcRenderer.invoke(IPC.removeBrokenLinks, name, agents),
   resolveSkillConflicts: (name: string, decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveSkillConflicts, name, decisions),
+  discoverShow: (bounds: Bounds) => ipcRenderer.invoke(IPC.discoverShow, bounds),
+  discoverHide: () => ipcRenderer.invoke(IPC.discoverHide),
+  discoverSetBounds: (bounds: Bounds) =>
+    ipcRenderer.invoke(IPC.discoverSetBounds, bounds),
+  discoverGoBack: () => ipcRenderer.invoke(IPC.discoverGoBack),
+  discoverReload: () => ipcRenderer.invoke(IPC.discoverReload),
+  discoverOpenExternal: () => ipcRenderer.invoke(IPC.discoverOpenExternal),
+  onDiscoverStatus: (cb: (status: DiscoverStatus) => void) => {
+    const listener = (_e: unknown, status: DiscoverStatus) => cb(status);
+    ipcRenderer.on(IPC.discoverStatus, listener);
+    return () => ipcRenderer.removeListener(IPC.discoverStatus, listener);
+  },
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);
