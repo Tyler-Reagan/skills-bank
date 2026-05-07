@@ -67,14 +67,14 @@ The badge on each card combines source + publish state:
 
 ### Save locally / Protected (convenience persona)
 
-The convenience-persona Sync flow refreshes anything tagged `canonical` from upstream. Any local change to a curated skill — editing tags via the card, modifying `SKILL.md`, etc. — automatically flips its source to `user` so Sync won't touch it on the next pull. The card shows the `PROTECTED` badge.
+For convenience persona, every change you make through the UI (editing tags, etc.) is auto-committed in the app-managed registry repo. That means:
 
-The drawer surfaces the protection state in the Metadata section. You can:
+- Tag-edit a `canonical` skill → it auto-flips to `source: user` and commits, so the badge moves directly from no-badge to **PROTECTED** with no DRAFT in between. Sync will skip the skill from now on.
+- Tag-edit a `user`-authored skill → auto-commit clears DRAFT immediately; the badge stays YOURS.
 
-- Click **Save locally** if a curated skill picked up edits some other way and the protection didn't auto-apply.
-- Click **Unprotect** to revert a protected skill to `canonical`, allowing Sync to overwrite it next time.
+The **Save locally** button in the drawer is a manual fallback for any DRAFT card — it runs the same protect-and-commit logic if the auto-path didn't fire (e.g. when you edited files outside the UI). The drawer's Metadata section also surfaces the protection state with an **Unprotect** link to revert a protected skill back to `canonical`, allowing Sync to overwrite it next time.
 
-Power-persona and self-host users don't see these affordances — they manage persistence through their own repo's git workflow.
+Power-persona and self-host users don't see these affordances and never get auto-commits — they manage persistence through their own repo's git workflow.
 
 ## Installation kind
 

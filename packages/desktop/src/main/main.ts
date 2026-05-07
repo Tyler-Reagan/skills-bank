@@ -27,6 +27,7 @@ import {
   resolveSkillConflicts,
   persistSkillLocally,
   unprotectSkillFromSync,
+  commitSkillChanges,
   writeSyncDecisions,
   AGENTS,
   getAgentSkillsDir,
@@ -532,12 +533,25 @@ ipcMain.handle(
     } catch {
       // Non-fatal: tags persisted, protection just didn't apply.
     }
-    return {
-      ok: true,
-      message: protectedNow
-        ? `Tags updated (${cleaned.length}) — saved locally so Sync won't overwrite.`
-        : `Tags updated (${cleaned.length})`,
-    };
+    // Convenience-persona only: auto-commit the change in the
+    // app-managed registry repo so DRAFT clears immediately. Power
+    // and self-host personas manage their own repo's commits.
+    let committed = false;
+    if (persona === "convenience") {
+      try {
+        committed = commitSkillChanges(
+          registryRoot,
+          name,
+          `chore(skills): edit tags ${name}`,
+        );
+      } catch {
+        // Non-fatal — leave it dirty.
+      }
+    }
+    const parts = [`Tags updated (${cleaned.length})`];
+    if (protectedNow) parts.push("saved locally");
+    if (committed) parts.push("committed");
+    return { ok: true, message: parts.join(" — ") };
   },
 );
 
@@ -906,6 +920,21 @@ ipcMain.handle(IPC.persistSkillLocally, (_e, name: string) => {
   }
   try {
     persistSkillLocally(registryRoot, name);
+    // Convenience-persona "Save locally" should also clear the DRAFT
+    // state by committing in the app-managed repo. Power persona
+    // shouldn't trigger this codepath (the renderer hides the button)
+    // but guard anyway so we never auto-commit in a user's own repo.
+    if (persona === "convenience") {
+      try {
+        commitSkillChanges(
+          registryRoot,
+          name,
+          `chore(skills): save ${name} locally`,
+        );
+      } catch {
+        // Non-fatal — protect succeeded; commit can be retried.
+      }
+    }
     return { ok: true };
   } catch (err) {
     return {

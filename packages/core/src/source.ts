@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 export type SkillOrigin = "canonical" | "user" | "imported";
 
@@ -70,6 +71,48 @@ export function persistSkillLocally(
   if (existing.syncedAt) next.syncedAt = existing.syncedAt;
   writeSkillSource(skillDir, next);
   return next;
+}
+
+/**
+ * Stage and commit a single skill's changes in the registry repo, so
+ * a tag edit (or other UI mutation) ends up in a clean, pushed state.
+ * Used by the "Save locally" affordance to clear DRAFT for
+ * convenience-persona users without making them think about git.
+ *
+ * No-op when the registry root isn't a git repo, when the skill folder
+ * is missing, or when there's nothing to commit. Errors from git are
+ * swallowed: the caller already wrote meta.json, so the worst case is
+ * the skill stays in DRAFT — not data loss.
+ *
+ * Returns true when a commit was created.
+ */
+export function commitSkillChanges(
+  registryRoot: string,
+  name: string,
+  message?: string,
+): boolean {
+  if (!fs.existsSync(path.join(registryRoot, ".git"))) return false;
+  const skillRel = path.posix.join("skills", name);
+  if (!fs.existsSync(path.join(registryRoot, skillRel))) return false;
+  const exec = (cmd: string): string | null => {
+    try {
+      return execSync(cmd, {
+        cwd: registryRoot,
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+    } catch {
+      return null;
+    }
+  };
+  const status = exec(`git status --porcelain "${skillRel}"`);
+  if (status === null || status.trim() === "") return false;
+  if (exec(`git add -- "${skillRel}"`) === null) return false;
+  const msg = message ?? `chore(skills): edit ${name}`;
+  if (exec(`git commit -m "${msg.replace(/"/g, '\\"')}" -- "${skillRel}"`) === null) {
+    return false;
+  }
+  return true;
 }
 
 /**

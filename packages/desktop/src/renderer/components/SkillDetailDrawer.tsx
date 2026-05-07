@@ -243,10 +243,14 @@ export function SkillDetailDrawer({
     setAction("persisting");
     try {
       const r = await window.skillsBank.persistSkillLocally(entry.name);
-      await onChanged(
+      const succeeded =
         r.ok
-          ? `Saved ${entry.name} locally — Sync will keep your version.`
-          : r.message ?? `Could not save ${entry.name} locally.`,
+          ? entry.source.source === "canonical"
+            ? `Saved ${entry.name} locally — Sync will keep your version.`
+            : `Saved ${entry.name}.`
+          : null;
+      await onChanged(
+        succeeded ?? r.message ?? `Could not save ${entry.name} locally.`,
       );
     } finally {
       setAction(null);
@@ -641,21 +645,25 @@ export function SkillDetailDrawer({
                 )}
               </button>
             ))}
-          {/* Convenience-persona only: when a curated (canonical) skill
-              has uncommitted local edits, "Save locally" flips its
-              source marker to `user` so the next Sync won't overwrite
-              it. Power-persona users persist via their own repo and
-              don't need this affordance. */}
+          {/* Convenience-persona only: any DRAFT skill gets a "Save
+              locally" button. The action protects (canonical → user
+              if applicable) and commits the change in the registry
+              repo so the badge moves out of DRAFT. Power-persona
+              users manage their own repo and handle this via git
+              themselves. */}
           {persona === "convenience" &&
             isRegistered &&
-            entry.source.source === "canonical" &&
             (entry.publishState === "draft" ||
               entry.publishState === "untracked") && (
               <button
                 className="btn warn"
                 disabled={action !== null}
                 onClick={() => void persistLocally()}
-                title="Mark this skill as yours so Sync won't overwrite your changes"
+                title={
+                  entry.source.source === "canonical"
+                    ? "Save these changes locally and protect from Sync"
+                    : "Commit your edits in the local registry"
+                }
               >
                 {action === "persisting" ? (
                   <>
