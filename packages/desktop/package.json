@@ -70,6 +70,7 @@
       "gatekeeperAssess": false
     },
     "dmg": {
+      "background": null,
       "writeUpdateInfo": true,
       "title": "${productName} ${version}"
     },
