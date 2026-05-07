@@ -6,6 +6,7 @@ import type {
   ScanReport,
 } from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
 
 interface Props {
@@ -28,6 +29,7 @@ type Phase =
 
 export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   useFocusReturn();
+  useEscapeToClose(() => void onClose());
   const [report, setReport] = useState<ScanReport | null>(null);
   const [choices, setChoices] = useState<ChoiceMap>({});
   const [phase, setPhase] = useState<Phase>({ kind: "scan" });

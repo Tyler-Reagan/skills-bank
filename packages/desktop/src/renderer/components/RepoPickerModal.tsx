@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { UserRepo } from "../../shared/ipc.js";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
 
 interface Props {
@@ -22,6 +23,7 @@ export function RepoPickerModal({
   onSignOut,
 }: Props): React.ReactElement {
   useFocusReturn();
+  useEscapeToClose(onClose);
   const [repos, setRepos] = useState<UserRepo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");

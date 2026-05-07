@@ -3,6 +3,7 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
@@ -18,6 +19,12 @@ interface Props {
   /** Open the dedicated "Manage agent links" modal for this skill. */
   onManageLinks?: () => void;
   /**
+   * Open the conflict-resolve modal for non-ours, non-broken
+   * installations of a registered skill (e.g. leftover real-dir
+   * duplicates after CLI installs). Only relevant when isRegistered.
+   */
+  onResolveConflicts?: () => void;
+  /**
    * When true, the entry is a real registry-managed skill: tag editing,
    * install/uninstall, and Markdown loading from the registry path all
    * apply. When false, the entry is a synthetic stand-in for a skill
@@ -30,9 +37,19 @@ interface Props {
    * entry. Required when isRegistered is false; ignored otherwise.
    */
   onRegister?: () => Promise<void> | void;
+  /**
+   * Optional override of which agent dirs to install into. When omitted,
+   * install broadcasts to every existing agent dir (legacy behavior).
+   */
+  defaultInstallAgents?: import("@skills-bank/core").AgentId[];
 }
 
-type ActionState = null | "installing" | "uninstalling" | "exporting" | "registering";
+type ActionState =
+  | null
+  | "installing"
+  | "uninstalling"
+  | "exporting"
+  | "registering";
 
 export function SkillDetailDrawer({
   entry,
@@ -42,13 +59,21 @@ export function SkillDetailDrawer({
   onChanged,
   onUninstalled,
   onManageLinks,
+  onResolveConflicts,
   isRegistered,
   onRegister,
+  defaultInstallAgents,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
+  // The drawer slides in from the right (~280ms). Until it lands,
+  // its hit area is offscreen — a click on the eventual drawer position
+  // would land on the overlay underneath and dismiss the drawer the
+  // user just opened. Guard the overlay's close handler until the
+  // entrance animation settles.
+  const [overlayReady, setOverlayReady] = useState(false);
 
   useFocusReturn();
   useInitialFocus(drawerRef);
@@ -78,14 +103,12 @@ export function SkillDetailDrawer({
     };
   }, [entry.name, entry.tags]);
 
-  // Esc-to-close.
+  useEscapeToClose(onClose);
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    const id = window.setTimeout(() => setOverlayReady(true), 300);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const isInstalled = installed.some(
     (i) => i.name === entry.name && i.kind === "ours",
@@ -94,6 +117,20 @@ export function SkillDetailDrawer({
     (i) => i.name === entry.name && i.kind === "broken-symlink",
   );
   const hasBrokenLinks = brokenInstallations.length > 0;
+  // Non-ours, non-broken stragglers for a REGISTERED skill = duplicates
+  // / stale external links that need conflict resolution. Only
+  // meaningful when the skill is in the registry; for purely
+  // not-registered skills these would be the only installations.
+  const conflictInstallations =
+    isRegistered && isInstalled
+      ? installed.filter(
+          (i) =>
+            i.name === entry.name &&
+            i.kind !== "ours" &&
+            i.kind !== "broken-symlink",
+        )
+      : [];
+  const hasConflicts = conflictInstallations.length > 0;
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
     | { kind: "running" }
@@ -162,7 +199,11 @@ export function SkillDetailDrawer({
   const install = async () => {
     setAction("installing");
     try {
-      const r = await window.skillsBank.install(entry.name, false);
+      const r = await window.skillsBank.install(
+        entry.name,
+        false,
+        defaultInstallAgents,
+      );
       await onChanged(r.message);
     } finally {
       setAction(null);
@@ -235,7 +276,11 @@ export function SkillDetailDrawer({
 
   return (
     <>
-      <div className="drawer-overlay" onClick={onClose} aria-hidden="true" />
+      <div
+        className="drawer-overlay"
+        onClick={overlayReady ? onClose : undefined}
+        aria-hidden="true"
+      />
       <aside
         ref={drawerRef}
         className="drawer"
@@ -537,6 +582,21 @@ export function SkillDetailDrawer({
               onClick={onManageLinks}
             >
               Manage agent links
+            </button>
+          )}
+          {/* Conflict resolution for registered skills with non-ours
+              stragglers in other agent dirs (e.g. duplicate real-dir
+              from a prior CLI install). Distinct from broken-link
+              repair: these are intact alternative installations that
+              the user must explicitly choose how to reconcile. */}
+          {hasConflicts && onResolveConflicts && (
+            <button
+              className="btn warn"
+              disabled={action !== null}
+              onClick={onResolveConflicts}
+              title={`${conflictInstallations.length} agent dir(s) have duplicate or stale entries for this skill`}
+            >
+              Resolve conflicts ({conflictInstallations.length})
             </button>
           )}
           {/* Two-step repair-or-delete for broken symlinks. First click

@@ -13,6 +13,13 @@ interface Props {
    * pass undefined and the grid keeps its generic empty message.
    */
   onClearFilters?: () => void;
+  /**
+   * When set, cards expose quick-tag affordances (per-tag X + inline
+   * add). Skipped for read-only contexts (e.g. Installed tab pending
+   * cards rendered via synthetic entries — those have no registry
+   * meta.json to write back to).
+   */
+  onSaveTags?: (name: string, next: string[]) => Promise<void> | void;
 }
 
 export function SkillsGrid({
@@ -21,6 +28,7 @@ export function SkillsGrid({
   onSelect,
   emptyMessage,
   onClearFilters,
+  onSaveTags,
 }: Props): React.ReactElement {
   if (entries.length === 0) {
     return (
@@ -51,6 +59,9 @@ export function SkillsGrid({
           onSelect={() => onSelect(e)}
           index={i}
           agents={agentsForSkill(installed, e.name)}
+          {...(onSaveTags
+            ? { onSaveTags: (next: string[]) => onSaveTags(e.name, next) }
+            : {})}
         />
       ))}
     </div>

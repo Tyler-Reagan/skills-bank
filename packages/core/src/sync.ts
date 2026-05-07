@@ -12,6 +12,46 @@ import {
 const GH_API_BASE = "https://api.github.com";
 const USER_AGENT = "skills-bank";
 
+// Read the `tags` field from a skill's meta.json, if present and valid.
+// Returns null when the file is missing, malformed, or has no tag list.
+function readMetaTags(skillDir: string): string[] | null {
+  const metaPath = path.join(skillDir, "meta.json");
+  if (!fs.existsSync(metaPath)) return null;
+  try {
+    const raw = JSON.parse(fs.readFileSync(metaPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const tags = raw["tags"];
+    if (!Array.isArray(tags)) return null;
+    return tags.filter((t): t is string => typeof t === "string");
+  } catch {
+    return null;
+  }
+}
+
+// Splice a tag list into a freshly-written canonical meta.json,
+// preserving the user's local tag edits across a Sync.
+function writeMetaTags(skillDir: string, tags: string[]): void {
+  const metaPath = path.join(skillDir, "meta.json");
+  if (!fs.existsSync(metaPath)) return;
+  let raw: Record<string, unknown>;
+  try {
+    raw = JSON.parse(fs.readFileSync(metaPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+  } catch {
+    return;
+  }
+  if (tags.length === 0) {
+    delete raw["tags"];
+  } else {
+    raw["tags"] = tags;
+  }
+  fs.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
+}
+
 export interface FetchTarballOptions {
   owner: string;
   repo: string;
@@ -188,7 +228,12 @@ export async function applyCanonicalSync(
     const canonicalPath = path.join(canonicalSkillsDir, name);
     const localPath = path.join(localSkillsDir, name);
 
+    // Capture local tags before any destructive step so a canonical
+    // overwrite preserves the user's tag edits. Tags are a local-only
+    // dimension; Sync never overwrites them.
+    let preservedTags: string[] | null = null;
     if (fs.existsSync(localPath)) {
+      preservedTags = readMetaTags(localPath);
       const existingSource = readSkillSource(localPath);
       if (existingSource.source !== "canonical") {
         const decision = decisions[name];
@@ -218,6 +263,9 @@ export async function applyCanonicalSync(
     }
 
     fs.cpSync(canonicalPath, localPath, { recursive: true });
+    if (preservedTags !== null) {
+      writeMetaTags(localPath, preservedTags);
+    }
     writeSkillSource(localPath, {
       source: "canonical",
       syncedFromCommit: commitSha,

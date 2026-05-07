@@ -2,7 +2,7 @@
 
 A registry of [Claude Code](https://claude.ai/code) skills plus a TypeScript CLI and Electron desktop app for managing them across every AI agent you use (Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, Codex).
 
-For end-user walkthroughs and concept definitions, see **[docs/user-guide.md](docs/user-guide.md)**. For the project roadmap, see **[ROADMAP.md](ROADMAP.md)**.
+End-user docs live in **[`docs/`](docs/)** — start with [`docs/getting-started.md`](docs/getting-started.md). For the project roadmap, see **[ROADMAP.md](ROADMAP.md)**.
 
 ## What's in this repo
 
@@ -30,13 +30,13 @@ The app auto-updates by polling the Releases feed on launch. Updates to the app 
 
 ### First launch
 
-The app shows a one-time persona decision:
+The app shows a one-time setup decision split across **Quick start** and **Advanced** sections:
 
-- **Continue without** — Convenience persona. Use the curated registry from this repo, sync updates with one click, add your own skills alongside.
-- **Authenticate with GitHub** — Power persona. Replace the registry with a GitHub repo of your own that contains a `skills/` directory. You maintain it from then on; auto-sync is off.
-- **Self-host** — Fork the app + registry and ship your own build. Opens [docs/self-host.md](docs/self-host.md).
+- **Use the bundled registry** *(quick start)* — Browse the curated skills shipped with this app, pull updates with one click, add your own skills alongside. No GitHub required.
+- **Connect a GitHub registry** *(advanced)* — Replace the registry with one of your own GitHub repos. You maintain it; auto-sync is off.
+- **Self-host** *(advanced)* — Fork the app + registry and ship your own build. Opens [docs/self-host.md](docs/self-host.md).
 
-You can switch persona later (sign out / change registry) from the account menu in the header.
+You can switch later (sign out / change registry) from the account menu in the header. Defaults like which agent directories an "Install" action targets live in **Settings…** in the same menu.
 
 ### Local development
 

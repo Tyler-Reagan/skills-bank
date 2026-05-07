@@ -43,3 +43,4 @@ export function writeSkillSource(skillDir: string, src: SkillSource): void {
   fs.mkdirSync(skillDir, { recursive: true });
   fs.writeFileSync(p, JSON.stringify(src, null, 2) + "\n");
 }
+

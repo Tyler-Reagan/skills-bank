@@ -24,6 +24,7 @@ import {
   uninstallSkill,
   removeBrokenLinks,
   repairBrokenLinks,
+  resolveSkillConflicts,
   writeSyncDecisions,
   AGENTS,
   getAgentSkillsDir,
@@ -236,10 +237,16 @@ ipcMain.handle(IPC.listInstalled, () => {
   return listInstalled(registryRoot, { index });
 });
 
-ipcMain.handle(IPC.install, (_e, name: string, force?: boolean) => {
+ipcMain.handle(
+  IPC.install,
+  (_e, name: string, force?: boolean, agents?: AgentId[]) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
-    const r = installSkill(name, { registryRoot, force: force ?? false });
+    const r = installSkill(name, {
+      registryRoot,
+      force: force ?? false,
+      ...(agents && agents.length > 0 ? { agents } : {}),
+    });
     const wrote = r.installs.filter((i) => !i.alreadyInstalled);
     if (wrote.length > 0) {
       return {
@@ -257,7 +264,8 @@ ipcMain.handle(IPC.install, (_e, name: string, force?: boolean) => {
   } catch (err) {
     return { ok: false, message: (err as Error).message };
   }
-});
+  },
+);
 
 // Uninstall doesn't need the registry — it just removes the symlink at
 // ~/.claude/skills/<name>. Leave it functional even with no registry.
@@ -512,7 +520,7 @@ ipcMain.handle(
     }
     return {
       ok: true,
-      message: `tags updated (${cleaned.length})`,
+      message: `Tags updated (${cleaned.length})`,
     };
   },
 );
@@ -858,6 +866,24 @@ ipcMain.handle(
     return removeBrokenLinks(registryRoot, name, agents);
   },
 );
+
+ipcMain.handle(
+  IPC.resolveSkillConflicts,
+  (_e, name: string, decisions: import("@skills-bank/core").ConflictResolveDecision[]) => {
+    if (!registryRoot) {
+      return {
+        applied: [],
+        errors: decisions.map((d) => ({
+          agent: d.agent,
+          action: d.action,
+          message: NO_ROOT_MSG,
+        })),
+      };
+    }
+    return resolveSkillConflicts(registryRoot, name, decisions);
+  },
+);
+
 
 // Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
 // for installed users post-merge) and fall back to the locally bundled

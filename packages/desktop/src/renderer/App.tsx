@@ -9,8 +9,16 @@ import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js
 import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
+import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
 import { LoginScreen } from "./components/LoginScreen.js";
+import { SplashScreen } from "./components/SplashScreen.js";
 import { ManageLinksModal } from "./components/ManageLinksModal.js";
+import {
+  DEFAULT_SETTINGS,
+  SettingsModal,
+  type AppSettings,
+} from "./components/SettingsModal.js";
+import { KeyboardShortcutsOverlay } from "./components/KeyboardShortcutsOverlay.js";
 import { RepoPickerModal } from "./components/RepoPickerModal.js";
 import { SetupScreen } from "./components/SetupScreen.js";
 import { SyncBanner } from "./components/SyncBanner.js";
@@ -24,7 +32,20 @@ const LS_KEYS = {
   tab: "skills-bank.activeTab",
   theme: "skills-bank.theme",
   density: "skills-bank.density",
+  installedOnly: "skills-bank.installedOnly",
+  settings: "skills-bank.settings",
 };
+
+function readSettings(): AppSettings {
+  try {
+    const raw = localStorage.getItem(LS_KEYS.settings);
+    if (!raw) return DEFAULT_SETTINGS;
+    const parsed = JSON.parse(raw) as Partial<AppSettings>;
+    return { ...DEFAULT_SETTINGS, ...parsed };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
 
 function readInitialTheme(): Theme {
   try {
@@ -103,11 +124,30 @@ export function App(): React.ReactElement {
     name: string;
     installations: InstalledSkill[];
   } | null>(null);
+  const [conflictTarget, setConflictTarget] = useState<{
+    name: string;
+    conflicts: InstalledSkill[];
+  } | null>(null);
+  const [settings, setSettingsState] = useState<AppSettings>(readSettings);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const saveSettings = useCallback((next: AppSettings) => {
+    setSettingsState(next);
+    try {
+      localStorage.setItem(LS_KEYS.settings, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  }, []);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
+  const [installedOnly, setInstalledOnlyState] = useState<boolean>(
+    () => readLS(LS_KEYS.installedOnly, "false") === "true",
+  );
   const [selectedTags, setSelectedTagsState] =
     useState<string[]>(readTagFilterLS);
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
@@ -120,6 +160,11 @@ export function App(): React.ReactElement {
   >(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
+
+  // Tab badge counts — dedupe by skill name so a skill linked into two
+  // agent dirs counts once. The toast computed by refresh() uses the
+  // same expression; keep them in sync via this single derivation.
+  const uniqueInstalledCount = new Set(installed.map((i) => i.name)).size;
 
   // Apply the active theme to <html data-theme="…"> so CSS-variable
   // overrides flow through every component.
@@ -134,6 +179,34 @@ export function App(): React.ReactElement {
     writeLS(LS_KEYS.density, density);
   }, [density]);
 
+  // Grid columns from settings → data-grid-cols on <html>; CSS reads
+  // this attribute to override the auto-fit grid layout.
+  useEffect(() => {
+    document.documentElement.dataset["gridCols"] = settings.gridColumns;
+  }, [settings.gridColumns]);
+
+  // Global keyboard shortcuts: Cmd/Ctrl+K and "/" focus the search bar.
+  // Skip when the user is already typing in another input/textarea so
+  // we don't hijack their typing.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inEditable =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
+      const cmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
+      const slash = e.key === "/" && !inEditable;
+      if (cmdK || slash) {
+        e.preventDefault();
+        if (tab !== "browse") setTabPersisted("browse");
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [tab]);
+
   const toggleTheme = () =>
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   const toggleDensity = () =>
@@ -146,6 +219,10 @@ export function App(): React.ReactElement {
   const setSelectedTags = (next: string[]) => {
     setSelectedTagsState(next);
     writeLS(LS_KEYS.tagFilter, JSON.stringify(next));
+  };
+  const setInstalledOnly = (v: boolean) => {
+    setInstalledOnlyState(v);
+    writeLS(LS_KEYS.installedOnly, String(v));
   };
   const setTabPersisted = (t: TabId) => {
     setTab(t);
@@ -284,6 +361,29 @@ export function App(): React.ReactElement {
     })();
   }, []);
 
+  // Quick tag editing from card affordances (X to remove, "+ tag" to
+  // add). Drawer's full edit flow stays available; this skips it for
+  // single-edit speed.
+  //
+  // Optimistic: paint the new tags into local state before the IPC
+  // round-trip + registry rebuild resolves. Background refresh picks
+  // up any source/publishState changes (e.g. auto-protect after
+  // editing a canonical skill) without blocking the user's next click.
+  const saveCardTags = useCallback(
+    async (name: string, next: string[]) => {
+      setRegistry((prev) =>
+        prev.map((e) => (e.name === name ? { ...e, tags: next } : e)),
+      );
+      const r = await window.skillsBank.editTags(name, next);
+      flash(r.message);
+      // Refresh in the background either way — on success to pick up
+      // source/publishState changes, on failure to roll back the
+      // optimistic paint.
+      void refresh();
+    },
+    [flash, refresh],
+  );
+
   const sync = useCallback(async () => {
     const r = await window.skillsBank.syncCanonical();
     flash(r.message);
@@ -382,6 +482,27 @@ export function App(): React.ReactElement {
     }
   }, [registry, selected]);
 
+  // Pre-mount splash: render this until the renderer knows which top-
+  // level view to show. Without it, the app skeleton flashes for a beat
+  // before LoginScreen mounts on first launch.
+  if (!authStatus) {
+    return <SplashScreen />;
+  }
+
+  // Persona unresolved → LoginScreen. Hoisted above the data-skeleton
+  // so we never render the app shell for a not-yet-onboarded user.
+  if (authStatus.persona === null) {
+    return (
+      <LoginScreen
+        isAuthConfigured={authStatus.isAuthConfigured}
+        onStatusChanged={(s) => {
+          setAuthStatus(s);
+          if (s.persona !== null) void refresh();
+        }}
+      />
+    );
+  }
+
   // Initial loading — skeleton over real chrome.
   if (initialLoading) {
     return (
@@ -399,6 +520,7 @@ export function App(): React.ReactElement {
           showSync={false}
           authStatus={null}
           onSignOut={() => undefined}
+          onOpenSettings={() => undefined}
         />
         <Tabs
           active="browse"
@@ -435,19 +557,6 @@ export function App(): React.ReactElement {
     );
   }
 
-  // Persona unresolved → first-launch login decision.
-  if (authStatus && authStatus.persona === null) {
-    return (
-      <LoginScreen
-        isAuthConfigured={authStatus.isAuthConfigured}
-        onStatusChanged={(s) => {
-          setAuthStatus(s);
-          if (s.persona !== null) void refresh();
-        }}
-      />
-    );
-  }
-
   return (
     <div className="app">
       <Header
@@ -465,6 +574,8 @@ export function App(): React.ReactElement {
         showSync={authStatus?.persona !== "power"}
         authStatus={authStatus}
         onSignOut={signOut}
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenKeyboardShortcuts={() => setShowShortcuts(true)}
       />
       <SyncBanner
         status={syncStatus}
@@ -476,7 +587,7 @@ export function App(): React.ReactElement {
         active={tab}
         onChange={setTabPersisted}
         registryCount={registry.length}
-        installedCount={installed.length}
+        installedCount={uniqueInstalledCount}
       />
       <div
         className="content"
@@ -492,9 +603,13 @@ export function App(): React.ReactElement {
             setSearch={setSearch}
             selectedTags={selectedTags}
             setSelectedTags={setSelectedTags}
+            installedOnly={installedOnly}
+            setInstalledOnly={setInstalledOnly}
             onSelect={(e) => setSelected(e)}
+            onSaveTags={saveCardTags}
             onRebuild={rebuild}
             rebuilding={rebuilding}
+            searchInputRef={searchInputRef}
           />
         )}
         {tab === "installed" && (
@@ -545,6 +660,30 @@ export function App(): React.ReactElement {
         />
       )}
 
+      {conflictTarget && (
+        <ConflictResolveModal
+          name={conflictTarget.name}
+          conflicts={conflictTarget.conflicts}
+          onClose={async () => {
+            setConflictTarget(null);
+            await refresh();
+          }}
+          onFlash={flash}
+        />
+      )}
+
+      {showSettings && (
+        <SettingsModal
+          settings={settings}
+          onSave={saveSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showShortcuts && (
+        <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
+      )}
+
       {conflictModalEntries && (
         <ConflictResolutionModal
           conflicts={conflictModalEntries}
@@ -573,6 +712,11 @@ export function App(): React.ReactElement {
               installed={installed}
               registryRoot={registryRoot}
               isRegistered={isRegistered}
+              defaultInstallAgents={
+                settings.defaultInstallAgents.length > 0
+                  ? settings.defaultInstallAgents
+                  : undefined
+              }
               onClose={() => setSelected(null)}
               onChanged={async (msg) => {
                 flash(msg);
@@ -589,6 +733,14 @@ export function App(): React.ReactElement {
                   name: selected.name,
                   installations,
                 });
+                setSelected(null);
+              }}
+              onResolveConflicts={() => {
+                const conflicts = installations.filter(
+                  (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
+                );
+                if (conflicts.length === 0) return;
+                setConflictTarget({ name: selected.name, conflicts });
                 setSelected(null);
               }}
               onRegister={

@@ -660,6 +660,82 @@ export interface BrokenLinkRemoveReport {
   errors: { agent: AgentId; message: string }[];
 }
 
+// ─── Registry-vs-installed conflict resolution ─────────────────────────────
+//
+// When a skill is BOTH registered (registry has it; some agent dir
+// symlinks to the registry copy) AND has stragglers in other agent
+// dirs (real-directory duplicates, foreign-symlinks pointing at random
+// locations, etc.), we need a way to clean up the stragglers without
+// touching the working registry symlinks.
+
+export type ConflictResolveAction =
+  | "replace-with-symlink" // wipe the straggler and symlink the agent dir at the registry copy
+  | "delete" // wipe the straggler entirely (no replacement symlink)
+  | "keep"; // leave it alone
+
+export interface ConflictResolveDecision {
+  agent: AgentId;
+  action: ConflictResolveAction;
+}
+
+export interface ConflictResolveReport {
+  applied: { agent: AgentId; action: ConflictResolveAction }[];
+  errors: { agent: AgentId; action: ConflictResolveAction; message: string }[];
+}
+
+export function resolveSkillConflicts(
+  registryRoot: string,
+  name: string,
+  decisions: ConflictResolveDecision[],
+): ConflictResolveReport {
+  const registryDir = path.join(registryRoot, "skills", name);
+  if (!fs.existsSync(registryDir)) {
+    return {
+      applied: [],
+      errors: decisions.map((d) => ({
+        agent: d.agent,
+        action: d.action,
+        message: `${name} is not in the registry; cannot replace with symlinks to it`,
+      })),
+    };
+  }
+
+  const applied: ConflictResolveReport["applied"] = [];
+  const errors: ConflictResolveReport["errors"] = [];
+  for (const d of decisions) {
+    const agent = getAgent(d.agent);
+    const linkPath = path.join(getAgentSkillsDir(agent), name);
+    if (d.action === "keep") {
+      applied.push({ agent: d.agent, action: "keep" });
+      continue;
+    }
+    try {
+      if (fs.existsSync(linkPath) || isSymlink(linkPath)) {
+        const stat = fs.lstatSync(linkPath);
+        if (stat.isSymbolicLink()) {
+          fs.unlinkSync(linkPath);
+        } else if (stat.isDirectory()) {
+          fs.rmSync(linkPath, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(linkPath);
+        }
+      }
+      if (d.action === "replace-with-symlink") {
+        fs.mkdirSync(path.dirname(linkPath), { recursive: true });
+        fs.symlinkSync(registryDir, linkPath, "dir");
+      }
+      applied.push({ agent: d.agent, action: d.action });
+    } catch (err) {
+      errors.push({
+        agent: d.agent,
+        action: d.action,
+        message: (err as Error).message,
+      });
+    }
+  }
+  return { applied, errors };
+}
+
 export function removeBrokenLinks(
   registryRoot: string,
   name: string,

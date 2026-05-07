@@ -136,51 +136,65 @@ export function LoginScreen({
         <h1>How do you want to use skills-bank?</h1>
         <p>Pick a path below. You can change your mind later in Settings.</p>
 
-        <div className="login-options">
-          <button
-            type="button"
-            className="login-option"
-            disabled={!isAuthConfigured || busy}
-            onClick={() => void beginAuth()}
-          >
-            <strong>Authenticate with GitHub</strong>
-            <span>
-              Power user. Replace the registry with one of your own GitHub
-              repos. You maintain it yourself; auto-sync is off.
-            </span>
-            {!isAuthConfigured && (
-              <em className="login-disabled-note">
-                Not configured — see <code>auth-config.ts</code>.
-              </em>
-            )}
-          </button>
+        <section className="login-section">
+          <h2 className="login-section-title">Quick start</h2>
+          <p className="login-section-hint">
+            The fastest way in. Use the curated skills shipped with this app.
+          </p>
+          <div className="login-options">
+            <button
+              type="button"
+              className="login-option primary"
+              disabled={busy}
+              onClick={() => void skip()}
+            >
+              <strong>Use the bundled registry</strong>
+              <span>
+                Browse the curated skills shipped with this app, pull updates
+                with one click, and add your own alongside. No GitHub required.
+              </span>
+            </button>
+          </div>
+        </section>
 
-          <button
-            type="button"
-            className="login-option"
-            disabled={busy}
-            onClick={() => void skip()}
-          >
-            <strong>Continue without</strong>
-            <span>
-              Convenience user. Use this repo's curated registry, sync updates
-              with one click, and add your own skills alongside.
-            </span>
-          </button>
+        <section className="login-section login-section-advanced">
+          <h2 className="login-section-title">Advanced</h2>
+          <p className="login-section-hint">
+            Bring your own registry — at the cost of maintaining it yourself.
+          </p>
+          <div className="login-options">
+            <button
+              type="button"
+              className="login-option"
+              disabled={!isAuthConfigured || busy}
+              onClick={() => void beginAuth()}
+            >
+              <strong>Connect a GitHub registry</strong>
+              <span>
+                Replace the registry with one of your own GitHub repos. You
+                maintain it; auto-sync is off.
+              </span>
+              {!isAuthConfigured && (
+                <em className="login-disabled-note">
+                  Not configured — see <code>auth-config.ts</code>.
+                </em>
+              )}
+            </button>
 
-          <button
-            type="button"
-            className="login-option"
-            disabled={busy}
-            onClick={() => void openSelfHost()}
-          >
-            <strong>Self-host</strong>
-            <span>
-              Fork the app + registry and ship your own build. Opens
-              instructions in your browser.
-            </span>
-          </button>
-        </div>
+            <button
+              type="button"
+              className="login-option"
+              disabled={busy}
+              onClick={() => void openSelfHost()}
+            >
+              <strong>Self-host</strong>
+              <span>
+                Fork the app + registry and ship your own build. Opens
+                instructions in your browser.
+              </span>
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );

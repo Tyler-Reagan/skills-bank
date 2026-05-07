@@ -5,6 +5,7 @@ import type {
   SyncDecisions,
 } from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 
 interface Props {
   conflicts: ConflictEntry[];
@@ -40,6 +41,7 @@ export function ConflictResolutionModal({
   onResolve,
 }: Props): React.ReactElement {
   useFocusReturn();
+  useEscapeToClose(onClose);
   // Default each conflict to keep-mine (the safest action — no destructive
   // overwrite, no rename surprises). User must actively change it.
   const [picks, setPicks] = useState<Record<string, ConflictAction>>(() => {
