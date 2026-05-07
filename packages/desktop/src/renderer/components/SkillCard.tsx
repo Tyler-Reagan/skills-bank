@@ -304,6 +304,16 @@ function PublishBadge({
       </span>
     );
   }
+  if (entry.source.source === "user") {
+    return (
+      <span
+        className="skill-origin-badge user"
+        title="Saved locally — Sync will not overwrite this skill"
+      >
+        YOURS
+      </span>
+    );
+  }
   if (
     entry.publishState === "draft" ||
     entry.publishState === "untracked"
@@ -313,7 +323,7 @@ function PublishBadge({
         className="skill-origin-badge draft"
         title={
           entry.publishState === "untracked"
-            ? "Local changes not yet committed"
+            ? "Local changes not yet committed — Sync may overwrite them"
             : "Committed locally but not pushed to upstream"
         }
       >

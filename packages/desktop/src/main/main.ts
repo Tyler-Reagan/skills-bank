@@ -25,6 +25,7 @@ import {
   removeBrokenLinks,
   repairBrokenLinks,
   resolveSkillConflicts,
+  persistSkillLocally,
   writeSyncDecisions,
   AGENTS,
   getAgentSkillsDir,
@@ -883,6 +884,21 @@ ipcMain.handle(
     return resolveSkillConflicts(registryRoot, name, decisions);
   },
 );
+
+ipcMain.handle(IPC.persistSkillLocally, (_e, name: string) => {
+  if (!registryRoot) {
+    return { ok: false, message: NO_ROOT_MSG };
+  }
+  try {
+    persistSkillLocally(registryRoot, name);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      message: err instanceof Error ? err.message : String(err),
+    };
+  }
+});
 
 // Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
 // for installed users post-merge) and fall back to the locally bundled

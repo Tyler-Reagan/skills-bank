@@ -3,6 +3,7 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
@@ -41,9 +42,21 @@ interface Props {
    * install broadcasts to every existing agent dir (legacy behavior).
    */
   defaultInstallAgents?: import("@skills-bank/core").AgentId[];
+  /**
+   * Active persona — controls whether persona-specific affordances show
+   * up. The "Save locally" button only makes sense for `convenience`
+   * users, since power/self-host users persist via their own repo.
+   */
+  persona?: import("../../shared/ipc.js").Persona | null;
 }
 
-type ActionState = null | "installing" | "uninstalling" | "exporting" | "registering";
+type ActionState =
+  | null
+  | "installing"
+  | "uninstalling"
+  | "exporting"
+  | "registering"
+  | "persisting";
 
 export function SkillDetailDrawer({
   entry,
@@ -57,11 +70,18 @@ export function SkillDetailDrawer({
   isRegistered,
   onRegister,
   defaultInstallAgents,
+  persona,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
+  // The drawer slides in from the right (~280ms). Until it lands,
+  // its hit area is offscreen — a click on the eventual drawer position
+  // would land on the overlay underneath and dismiss the drawer the
+  // user just opened. Guard the overlay's close handler until the
+  // entrance animation settles.
+  const [overlayReady, setOverlayReady] = useState(false);
 
   useFocusReturn();
   useInitialFocus(drawerRef);
@@ -91,14 +111,12 @@ export function SkillDetailDrawer({
     };
   }, [entry.name, entry.tags]);
 
-  // Esc-to-close.
+  useEscapeToClose(onClose);
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    const id = window.setTimeout(() => setOverlayReady(true), 300);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const isInstalled = installed.some(
     (i) => i.name === entry.name && i.kind === "ours",
@@ -221,6 +239,19 @@ export function SkillDetailDrawer({
       setAction(null);
     }
   };
+  const persistLocally = async () => {
+    setAction("persisting");
+    try {
+      const r = await window.skillsBank.persistSkillLocally(entry.name);
+      await onChanged(
+        r.ok
+          ? `Saved ${entry.name} locally — Sync will keep your version.`
+          : r.message ?? `Could not save ${entry.name} locally.`,
+      );
+    } finally {
+      setAction(null);
+    }
+  };
   const reveal = () => {
     if (absPath) void window.skillsBank.openInFinder(absPath);
   };
@@ -266,7 +297,11 @@ export function SkillDetailDrawer({
 
   return (
     <>
-      <div className="drawer-overlay" onClick={onClose} aria-hidden="true" />
+      <div
+        className="drawer-overlay"
+        onClick={overlayReady ? onClose : undefined}
+        aria-hidden="true"
+      />
       <aside
         ref={drawerRef}
         className="drawer"
@@ -558,6 +593,31 @@ export function SkillDetailDrawer({
                 )}
               </button>
             ))}
+          {/* Convenience-persona only: when a curated (canonical) skill
+              has uncommitted local edits, "Save locally" flips its
+              source marker to `user` so the next Sync won't overwrite
+              it. Power-persona users persist via their own repo and
+              don't need this affordance. */}
+          {persona === "convenience" &&
+            isRegistered &&
+            entry.source.source === "canonical" &&
+            (entry.publishState === "draft" ||
+              entry.publishState === "untracked") && (
+              <button
+                className="btn warn"
+                disabled={action !== null}
+                onClick={() => void persistLocally()}
+                title="Mark this skill as yours so Sync won't overwrite your changes"
+              >
+                {action === "persisting" ? (
+                  <>
+                    <span className="spinner inline" /> Saving…
+                  </>
+                ) : (
+                  "Save locally"
+                )}
+              </button>
+            )}
           {/* Manage agent links — available for any skill regardless of
               registration state. Distinct from Register: this only adjusts
               symlinks across agent dirs. */}

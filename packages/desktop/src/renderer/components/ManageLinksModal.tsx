@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import type { AgentId, InstalledSkill, MigrationResult } from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
 
 const AGENT_LABELS: Record<AgentId, string> = {
@@ -64,6 +65,7 @@ export function ManageLinksModal({
   onFlash,
 }: Props): React.ReactElement {
   useFocusReturn();
+  useEscapeToClose(() => void onClose());
 
   const currentAgents = useMemo(
     () => new Set<AgentId>(installations.map((i) => i.agent)),

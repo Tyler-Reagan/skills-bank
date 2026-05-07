@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T00:26:11.605Z",
+  "generatedAt": "2026-05-07T02:27:39.642Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -8,10 +8,14 @@
       "version": "1.0.1",
       "path": "skills/404-page-generator",
       "source": {
-        "source": "canonical",
-        "syncedFromCommit": "10ed0cfc17c103d400c49d9e0e7d7610e0bb41d4",
-        "syncedAt": "2026-05-06T18:29:03.715Z"
-      }
+        "source": "user"
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "api-page-generator",
@@ -20,7 +24,13 @@
       "path": "skills/api-page-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "brand-visual-generator",
@@ -29,7 +39,13 @@
       "path": "skills/brand-visual-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "branding",
@@ -38,7 +54,13 @@
       "path": "skills/branding",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "carousel",
@@ -47,7 +69,13 @@
       "path": "skills/carousel",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "competitor-research",
@@ -56,7 +84,13 @@
       "path": "skills/competitor-research",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "content-optimization",
@@ -65,7 +99,13 @@
       "path": "skills/content-optimization",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "content-strategy",
@@ -74,7 +114,13 @@
       "path": "skills/content-strategy",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "core-web-vitals",
@@ -83,7 +129,13 @@
       "path": "skills/core-web-vitals",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "d3-viz",
@@ -91,7 +143,13 @@
       "path": "skills/d3-viz",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "d5ef26ff962851f34bb2edac1967d2360befb0cb",
+        "date": "2026-05-06 09:47:55 -0700",
+        "message": "format: ran prettier formatter repo-wide"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "docs-page-generator",
@@ -100,7 +158,13 @@
       "path": "skills/docs-page-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "electron",
@@ -108,7 +172,13 @@
       "path": "skills/electron",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "favicon-generator",
@@ -117,7 +187,13 @@
       "path": "skills/favicon-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "find-skills",
@@ -125,7 +201,13 @@
       "path": "skills/find-skills",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "footer-generator",
@@ -134,7 +216,13 @@
       "path": "skills/footer-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "frontend-design",
@@ -142,7 +230,13 @@
       "path": "skills/frontend-design",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "hero-generator",
@@ -151,7 +245,13 @@
       "path": "skills/hero-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "homepage-generator",
@@ -160,7 +260,13 @@
       "path": "skills/homepage-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "impeccable",
@@ -168,7 +274,13 @@
       "path": "skills/impeccable",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "d5ef26ff962851f34bb2edac1967d2360befb0cb",
+        "date": "2026-05-06 09:47:55 -0700",
+        "message": "format: ran prettier formatter repo-wide"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "landing-page-generator",
@@ -177,7 +289,13 @@
       "path": "skills/landing-page-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "logo-generator",
@@ -186,7 +304,13 @@
       "path": "skills/logo-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "mcp-builder",
@@ -194,7 +318,13 @@
       "path": "skills/mcp-builder",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "mermaid-diagrams",
@@ -202,7 +332,13 @@
       "path": "skills/mermaid-diagrams",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "naming-analyzer",
@@ -210,7 +346,13 @@
       "path": "skills/naming-analyzer",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
+        "date": "2026-05-06 17:27:20 -0700",
+        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "next-best-practices",
@@ -218,7 +360,13 @@
       "path": "skills/next-best-practices",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "polish-patterns",
@@ -238,7 +386,13 @@
       "path": "skills/polish-patterns",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "ee09b371652e8fd57f73465e3a4a735048c90b3c",
+        "date": "2026-05-05 21:07:53 -0700",
+        "message": "feat(skills): add polish-patterns — implementation companion to ui-ux-pro-max"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "pr-description",
@@ -246,7 +400,13 @@
       "path": "skills/pr-description",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "pretty-mermaid",
@@ -254,7 +414,13 @@
       "path": "skills/pretty-mermaid",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "react-components",
@@ -262,7 +428,13 @@
       "path": "skills/react-components",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "d5ef26ff962851f34bb2edac1967d2360befb0cb",
+        "date": "2026-05-06 09:47:55 -0700",
+        "message": "format: ran prettier formatter repo-wide"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "react-state-management",
@@ -270,7 +442,13 @@
       "path": "skills/react-state-management",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "readme-i18n",
@@ -278,7 +456,13 @@
       "path": "skills/readme-i18n",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
+        "date": "2026-05-06 17:27:20 -0700",
+        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "seo-strategy",
@@ -287,7 +471,13 @@
       "path": "skills/seo-strategy",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "signup-login-page-generator",
@@ -296,7 +486,13 @@
       "path": "skills/signup-login-page-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "specs-code-cleanup",
@@ -304,7 +500,13 @@
       "path": "skills/specs-code-cleanup",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
+        "date": "2026-05-06 17:27:20 -0700",
+        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "theme-factory",
@@ -312,7 +514,13 @@
       "path": "skills/theme-factory",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "typescript-mcp-server-generator",
@@ -320,7 +528,13 @@
       "path": "skills/typescript-mcp-server-generator",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "typescript-react-reviewer",
@@ -328,7 +542,13 @@
       "path": "skills/typescript-react-reviewer",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "ui-ux-pro-max",
@@ -336,7 +556,13 @@
       "path": "skills/ui-ux-pro-max",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "user-personas",
@@ -344,7 +570,13 @@
       "path": "skills/user-personas",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
+        "date": "2026-05-06 17:27:20 -0700",
+        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "vercel-react-best-practices",
@@ -354,7 +586,13 @@
       "path": "skills/vercel-react-best-practices",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "vite",
@@ -363,10 +601,14 @@
       "author": "Anthony Fu",
       "path": "skills/vite",
       "source": {
-        "source": "canonical",
-        "syncedFromCommit": "10ed0cfc17c103d400c49d9e0e7d7610e0bb41d4",
-        "syncedAt": "2026-05-06T18:29:03.715Z"
-      }
+        "source": "user"
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     },
     {
       "name": "web-design-guidelines",
@@ -376,7 +618,13 @@
       "path": "skills/web-design-guidelines",
       "source": {
         "source": "user"
-      }
+      },
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
+      "publishState": "pushed"
     }
   ]
 }

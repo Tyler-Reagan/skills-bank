@@ -56,6 +56,7 @@ export const IPC = {
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
+  persistSkillLocally: "skills:persistSkillLocally",
 } as const;
 
 export type Persona = "convenience" | "power";
@@ -180,6 +181,11 @@ interface SkillsBankAPI {
     name: string,
     decisions: ConflictResolveDecision[],
   ): Promise<ConflictResolveReport>;
+  /**
+   * Re-tag a registry skill from `canonical` to `user` so Sync no longer
+   * overwrites it. Used by the "Save locally" affordance.
+   */
+  persistSkillLocally(name: string): Promise<{ ok: boolean; message?: string }>;
 }
 
 declare global {

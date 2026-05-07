@@ -1,5 +1,6 @@
 import React from "react";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 
 interface Props {
   onClose: () => void;
@@ -21,6 +22,7 @@ const SHORTCUTS: { keys: string[]; description: string }[] = [
  */
 export function KeyboardShortcutsOverlay({ onClose }: Props): React.ReactElement {
   useFocusReturn();
+  useEscapeToClose(onClose);
   return (
     <div style={overlay} onClick={onClose}>
       <div

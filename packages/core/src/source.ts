@@ -43,3 +43,31 @@ export function writeSkillSource(skillDir: string, src: SkillSource): void {
   fs.mkdirSync(skillDir, { recursive: true });
   fs.writeFileSync(p, JSON.stringify(src, null, 2) + "\n");
 }
+
+/**
+ * Re-tag a registry skill's origin marker from `canonical` to `user`,
+ * which prevents Sync from overwriting it on the next pull. The
+ * "Save locally" affordance for convenience-persona users who've
+ * customized a curated skill and want to keep their changes.
+ *
+ * Idempotent: if the skill is already `user` or `imported`, returns
+ * the existing source unchanged.
+ */
+export function persistSkillLocally(
+  registryRoot: string,
+  name: string,
+): SkillSource {
+  const skillDir = path.join(registryRoot, "skills", name);
+  if (!fs.existsSync(skillDir)) {
+    throw new Error(`skill not found in registry: ${name}`);
+  }
+  const existing = readSkillSource(skillDir);
+  if (existing.source !== "canonical") return existing;
+  const next: SkillSource = { source: "user" };
+  if (existing.syncedFromCommit) {
+    next.syncedFromCommit = existing.syncedFromCommit;
+  }
+  if (existing.syncedAt) next.syncedAt = existing.syncedAt;
+  writeSkillSource(skillDir, next);
+  return next;
+}

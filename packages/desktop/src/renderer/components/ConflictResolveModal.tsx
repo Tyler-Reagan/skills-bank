@@ -6,6 +6,7 @@ import type {
   InstalledSkill,
 } from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
 
 const AGENT_LABELS: Record<AgentId, string> = {
@@ -73,6 +74,7 @@ export function ConflictResolveModal({
   onFlash,
 }: Props): React.ReactElement {
   useFocusReturn();
+  useEscapeToClose(() => void onClose());
   const [picks, setPicks] = useState<Record<AgentId, ConflictResolveAction>>(
     () => {
       const initial: Partial<Record<AgentId, ConflictResolveAction>> = {};

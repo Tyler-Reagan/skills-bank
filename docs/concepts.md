@@ -54,10 +54,21 @@ Markers live in a sibling `.skills-bank.json` per skill so they don't pollute up
 Where `source` records origin, **publish state** records whether a skill has been pushed to the registry's remote. It's computed from the git status of `<repo>/skills/<name>/`:
 
 - **`pushed`** — The skill's latest commit is on the upstream branch. The card has no badge — this is the calm default for clean registry skills.
-- **`draft`** — Committed locally but not yet on the remote. The card shows a `DRAFT` badge.
-- **`untracked`** — New or modified files that aren't committed. Also `DRAFT`.
+- **`draft`** — Committed locally but not yet on the remote.
+- **`untracked`** — New or modified files that aren't committed.
 
-Skills not in the registry at all show `YOURS`. Imported skills show `IMPORTED`.
+The badge on each card combines source + publish state:
+
+- **`YOURS`** — either the skill isn't in the registry yet, or it's a registry skill with `source: user` (you own it; Sync won't touch it).
+- **`IMPORTED`** — registry skill from a power-persona repo replacement.
+- **`DRAFT`** — a `canonical` registry skill with uncommitted or unpushed local changes. **Sync may overwrite these on the next pull.** Click **Save locally** in the drawer to flip its source to `user` and protect your changes.
+- *(no badge)* — `canonical` and pushed: the calm default.
+
+### Save locally (convenience persona)
+
+The convenience-persona Sync flow refreshes anything tagged `canonical` from upstream. If you've edited a curated skill, the drawer surfaces a **Save locally** button alongside the DRAFT badge. Clicking it re-tags the skill as `source: user`, which makes Sync skip it on every future pull. The badge changes to `YOURS`.
+
+Power-persona and self-host users don't need this affordance — they manage persistence through their own repo's git workflow.
 
 ## Installation kind
 

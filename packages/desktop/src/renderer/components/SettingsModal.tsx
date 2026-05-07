@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { AgentId } from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 
 const AGENT_LABELS: Record<AgentId, string> = {
   claude: "Claude Code",
@@ -69,6 +70,7 @@ export function SettingsModal({
   onClose,
 }: Props): React.ReactElement {
   useFocusReturn();
+  useEscapeToClose(onClose);
   const [draft, setDraft] = useState<AppSettings>(settings);
 
   const toggleAgent = (id: AgentId) => {
