@@ -369,12 +369,16 @@ export function App(): React.ReactElement {
     }
   }, [refresh, flash]);
 
-  // Keep the drawer's entry up-to-date if the registry refreshes.
+  // Keep the drawer's entry up-to-date if the registry refreshes. Don't
+  // close the drawer when no registry entry is found — the selection may
+  // be a synthetic entry for a not-yet-registered skill (opened from the
+  // Installed tab "Not registered" section), in which case the registry
+  // legitimately doesn't have it and we want the drawer to stay open so
+  // the user can hit Register or Manage agent links.
   useEffect(() => {
     if (selected) {
       const fresh = registry.find((e) => e.name === selected.name);
       if (fresh && fresh !== selected) setSelected(fresh);
-      else if (!fresh) setSelected(null);
     }
   }, [registry, selected]);
 
