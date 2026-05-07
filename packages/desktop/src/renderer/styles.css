@@ -480,6 +480,48 @@ input, select { font-family: inherit; color: inherit; }
   background: var(--surface-hi);
   border: 1px dashed var(--border);
 }
+.skill-origin-badge.draft {
+  color: var(--warn);
+  background: var(--warn-dim);
+  border: 1px solid var(--warn);
+}
+
+/* ── Browse filter row ─── */
+.filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 4px var(--s3);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease),
+              background var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
+}
+.filter-chip:hover { border-color: var(--accent); }
+.filter-chip.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.filter-chip-count {
+  font-size: 11px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.filter-chip.active .filter-chip-count { color: var(--accent); }
 
 .skill-agent-chips {
   display: flex; flex-wrap: wrap; gap: var(--s1);
@@ -1151,9 +1193,38 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   color: var(--text-3) !important;
 }
 
+.login-section {
+  margin-top: var(--s5);
+}
+.login-section-advanced {
+  padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+}
+.login-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  margin: 0;
+}
+.login-section-advanced .login-section-title { color: var(--text-3); }
+.login-section-hint {
+  font-size: 12px !important;
+  color: var(--text-3) !important;
+  margin: var(--s1) 0 var(--s3) 0 !important;
+}
 .login-options {
   display: flex; flex-direction: column; gap: var(--s3);
-  margin-top: var(--s4);
+  margin-top: var(--s2);
+}
+.login-option.primary {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.login-option.primary:hover:not(:disabled) {
+  background: var(--accent-dim);
+  filter: brightness(1.1);
 }
 .login-option {
   display: flex; flex-direction: column; gap: var(--s1);

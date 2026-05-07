@@ -20,32 +20,77 @@ interface InstalledGroup {
   name: string;
   agents: AgentId[];
   representative: InstalledSkill;
-  /** Worst kind across the group; used to drive the card status. */
+  /**
+   * Group-level status: "ours" if ANY installation is properly linked
+   * to the registry; otherwise the most actionable straggler kind in
+   * source-priority order (real-directory > foreign-symlink > broken).
+   * Was previously "first-encountered, only downgrades from ours" which
+   * stranded find-skills-style skills (registered + leftover real-dir
+   * elsewhere) in the Not-Registered section.
+   */
   kind: InstalledSkill["kind"];
+  /**
+   * Non-ours installations of the same skill name in agent dirs other
+   * than the registry-symlink ones. Surfaced to the drawer as
+   * resolvable conflicts (duplicate real-dir, stale symlink, etc.).
+   */
+  conflicts: InstalledSkill[];
 }
 
-function groupByName(installed: InstalledSkill[]): InstalledGroup[] {
+function aggregateByName(installed: InstalledSkill[]): InstalledGroup[] {
   const map = new Map<string, InstalledGroup>();
   for (const i of installed) {
     const existing = map.get(i.name);
-    if (existing) {
-      if (!existing.agents.includes(i.agent)) existing.agents.push(i.agent);
-      // Prefer "ours" → "foreign-symlink" → "real-directory" → "broken-symlink"
-      // when surfacing a single status. Real-dirs and broken links are the
-      // most attention-grabbing for the migration flow.
-      if (existing.kind === "ours" && i.kind !== "ours") existing.kind = i.kind;
-    } else {
+    if (!existing) {
       map.set(i.name, {
         name: i.name,
         agents: [i.agent],
         representative: i,
         kind: i.kind,
+        conflicts: i.kind === "ours" ? [] : [i],
       });
+      continue;
+    }
+    if (!existing.agents.includes(i.agent)) existing.agents.push(i.agent);
+
+    // Upgrade group to "ours" if any entry is registry-managed —
+    // surfaces the skill in the Registered section even when stragglers
+    // exist elsewhere.
+    if (i.kind === "ours") {
+      if (existing.kind !== "ours") {
+        existing.kind = "ours";
+        existing.representative = i;
+      }
+    } else {
+      existing.conflicts.push(i);
+      // No upgrade. If existing already "ours", keep it. Otherwise pick
+      // the more actionable kind (real-directory beats foreign-symlink
+      // beats broken-symlink) so the card status reads usefully.
+      if (
+        existing.kind !== "ours" &&
+        kindRank(i.kind) > kindRank(existing.kind)
+      ) {
+        existing.kind = i.kind;
+        existing.representative = i;
+      }
     }
   }
   return Array.from(map.values()).sort((a, b) =>
     a.name.localeCompare(b.name),
   );
+}
+
+function kindRank(k: InstalledSkill["kind"]): number {
+  switch (k) {
+    case "real-directory":
+      return 3;
+    case "foreign-symlink":
+      return 2;
+    case "broken-symlink":
+      return 1;
+    default:
+      return 0;
+  }
 }
 
 interface Props {
@@ -95,7 +140,7 @@ export function InstalledTab({
   const registryByName = new Map(registry.map((e) => [e.name, e] as const));
   // Dedupe across agent dirs: a skill linked from both .claude and .cursor
   // shows once with two agent chips, not twice.
-  const groups = groupByName(installed);
+  const groups = aggregateByName(installed);
   const integrated = groups.filter((g) => g.kind === "ours");
   const unintegrated = groups.filter((g) => g.kind !== "ours");
 
@@ -153,7 +198,8 @@ export function InstalledTab({
           <div className="skills-grid">
             {unintegrated.map((g, i) => {
               const s = g.representative;
-              const entry: RegistryEntry = registryByName.get(g.name) ?? {
+              const registryHit = registryByName.get(g.name);
+              const entry: RegistryEntry = registryHit ?? {
                 name: g.name,
                 description: s.target ?? s.linkPath,
                 path: s.linkPath,
@@ -173,6 +219,7 @@ export function InstalledTab({
                   onSelect={() => onMigrateOne(s)}
                   index={i}
                   agents={g.agents}
+                  isRegistered={registryHit !== undefined}
                 />
               );
             })}

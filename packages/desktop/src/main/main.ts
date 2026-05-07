@@ -24,6 +24,7 @@ import {
   uninstallSkill,
   removeBrokenLinks,
   repairBrokenLinks,
+  resolveSkillConflicts,
   writeSyncDecisions,
   AGENTS,
   getAgentSkillsDir,
@@ -856,6 +857,23 @@ ipcMain.handle(
     if (!registryRoot)
       return { removed: [], errors: [{ agent: "claude", message: NO_ROOT_MSG }] };
     return removeBrokenLinks(registryRoot, name, agents);
+  },
+);
+
+ipcMain.handle(
+  IPC.resolveSkillConflicts,
+  (_e, name: string, decisions: import("@skills-bank/core").ConflictResolveDecision[]) => {
+    if (!registryRoot) {
+      return {
+        applied: [],
+        errors: decisions.map((d) => ({
+          agent: d.agent,
+          action: d.action,
+          message: NO_ROOT_MSG,
+        })),
+      };
+    }
+    return resolveSkillConflicts(registryRoot, name, decisions);
   },
 );
 

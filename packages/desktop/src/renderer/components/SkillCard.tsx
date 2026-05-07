@@ -58,6 +58,13 @@ interface Props {
   index?: number;
   /** Agents this skill is currently installed for. Used to render chips. */
   agents?: AgentId[];
+  /**
+   * True when the entry corresponds to a real registry skill (the skill
+   * has a folder under `<repo>/skills/<name>/`). Drives the publish
+   * badge: not-in-registry skills always render YOURS, in-registry
+   * skills render DRAFT only when locally modified or unpushed.
+   */
+  isRegistered?: boolean;
 }
 
 export function SkillCard({
@@ -66,6 +73,7 @@ export function SkillCard({
   onSelect,
   index = 0,
   agents,
+  isRegistered = true,
 }: Props): React.ReactElement {
   const fresh = freshness(entry.lastCommit);
   const visibleTags = (entry.tags ?? []).slice(0, 3);
@@ -93,7 +101,7 @@ export function SkillCard({
         >
           {entry.name}
         </p>
-        <OriginBadge source={entry.source.source} />
+        <PublishBadge entry={entry} isRegistered={isRegistered} />
         <StatusChip status={status} warnings={entry.warnings?.length ?? 0} />
       </div>
 
@@ -164,21 +172,64 @@ export function agentsForSkill(
   return Array.from(seen);
 }
 
-function OriginBadge({
-  source,
+/**
+ * Single badge that surfaces the most useful publish-state signal:
+ *   - YOURS    — skill exists only in an agent dir, not in the registry
+ *                (e.g. a CLI install at ~/.agents/skills/<name>).
+ *   - DRAFT    — registered + locally modified or committed-but-unpushed.
+ *   - IMPORTED — registered with `source: imported` (power-persona repo
+ *                replacement).
+ *   - (none)   — registered + clean + pushed: the calm default.
+ *
+ * Replaces the old OriginBadge which rendered YOURS for every registry
+ * skill that lacked a `.skills-bank.json` sibling — a classification
+ * that is structurally always true for upstream registries.
+ */
+function PublishBadge({
+  entry,
+  isRegistered,
 }: {
-  source: RegistryEntry["source"]["source"];
+  entry: RegistryEntry;
+  isRegistered: boolean;
 }): React.ReactElement | null {
-  if (source === "canonical") return null;
-  const label = source === "user" ? "Yours" : "Imported";
-  return (
-    <span
-      className={`skill-origin-badge ${source}`}
-      title={`source: ${source}`}
-    >
-      {label}
-    </span>
-  );
+  if (!isRegistered) {
+    return (
+      <span
+        className="skill-origin-badge user"
+        title="This skill exists in an agent directory but isn't in the registry"
+      >
+        YOURS
+      </span>
+    );
+  }
+  if (entry.source.source === "imported") {
+    return (
+      <span
+        className="skill-origin-badge imported"
+        title="Imported from an external registry repo"
+      >
+        IMPORTED
+      </span>
+    );
+  }
+  if (
+    entry.publishState === "draft" ||
+    entry.publishState === "untracked"
+  ) {
+    return (
+      <span
+        className="skill-origin-badge draft"
+        title={
+          entry.publishState === "untracked"
+            ? "Local changes not yet committed"
+            : "Committed locally but not pushed to upstream"
+        }
+      >
+        DRAFT
+      </span>
+    );
+  }
+  return null;
 }
 
 function StatusChip({

@@ -3,6 +3,8 @@ import type {
   BrokenLinkRemoveReport,
   BrokenLinkRepairReport,
   ConflictEntry,
+  ConflictResolveDecision,
+  ConflictResolveReport,
   ExportInfo,
   ExportResult,
   FinalizeResult,
@@ -53,6 +55,7 @@ export const IPC = {
   openSelfHostDocs: "system:openSelfHostDocs",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
+  resolveSkillConflicts: "skills:resolveSkillConflicts",
 } as const;
 
 export type Persona = "convenience" | "power";
@@ -172,6 +175,10 @@ interface SkillsBankAPI {
     name: string,
     agents: AgentId[],
   ): Promise<BrokenLinkRemoveReport>;
+  resolveSkillConflicts(
+    name: string,
+    decisions: ConflictResolveDecision[],
+  ): Promise<ConflictResolveReport>;
 }
 
 declare global {

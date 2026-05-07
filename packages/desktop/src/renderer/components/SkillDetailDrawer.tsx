@@ -18,6 +18,12 @@ interface Props {
   /** Open the dedicated "Manage agent links" modal for this skill. */
   onManageLinks?: () => void;
   /**
+   * Open the conflict-resolve modal for non-ours, non-broken
+   * installations of a registered skill (e.g. leftover real-dir
+   * duplicates after CLI installs). Only relevant when isRegistered.
+   */
+  onResolveConflicts?: () => void;
+  /**
    * When true, the entry is a real registry-managed skill: tag editing,
    * install/uninstall, and Markdown loading from the registry path all
    * apply. When false, the entry is a synthetic stand-in for a skill
@@ -42,6 +48,7 @@ export function SkillDetailDrawer({
   onChanged,
   onUninstalled,
   onManageLinks,
+  onResolveConflicts,
   isRegistered,
   onRegister,
 }: Props): React.ReactElement {
@@ -94,6 +101,20 @@ export function SkillDetailDrawer({
     (i) => i.name === entry.name && i.kind === "broken-symlink",
   );
   const hasBrokenLinks = brokenInstallations.length > 0;
+  // Non-ours, non-broken stragglers for a REGISTERED skill = duplicates
+  // / stale external links that need conflict resolution. Only
+  // meaningful when the skill is in the registry; for purely
+  // not-registered skills these would be the only installations.
+  const conflictInstallations =
+    isRegistered && isInstalled
+      ? installed.filter(
+          (i) =>
+            i.name === entry.name &&
+            i.kind !== "ours" &&
+            i.kind !== "broken-symlink",
+        )
+      : [];
+  const hasConflicts = conflictInstallations.length > 0;
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
     | { kind: "running" }
@@ -537,6 +558,21 @@ export function SkillDetailDrawer({
               onClick={onManageLinks}
             >
               Manage agent links
+            </button>
+          )}
+          {/* Conflict resolution for registered skills with non-ours
+              stragglers in other agent dirs (e.g. duplicate real-dir
+              from a prior CLI install). Distinct from broken-link
+              repair: these are intact alternative installations that
+              the user must explicitly choose how to reconcile. */}
+          {hasConflicts && onResolveConflicts && (
+            <button
+              className="btn warn"
+              disabled={action !== null}
+              onClick={onResolveConflicts}
+              title={`${conflictInstallations.length} agent dir(s) have duplicate or stale entries for this skill`}
+            >
+              Resolve conflicts ({conflictInstallations.length})
             </button>
           )}
           {/* Two-step repair-or-delete for broken symlinks. First click

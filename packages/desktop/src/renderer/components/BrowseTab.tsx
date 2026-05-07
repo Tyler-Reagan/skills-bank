@@ -16,6 +16,9 @@ interface Props {
   setSearch: (v: string) => void;
   selectedTags: string[];
   setSelectedTags: (next: string[]) => void;
+  /** When true, filter to skills with at least one ours installation. */
+  installedOnly: boolean;
+  setInstalledOnly: (v: boolean) => void;
   onSelect: (entry: RegistryEntry) => void;
   onRebuild: () => void | Promise<void>;
   rebuilding: boolean;
@@ -28,6 +31,8 @@ export function BrowseTab({
   setSearch,
   selectedTags,
   setSelectedTags,
+  installedOnly,
+  setInstalledOnly,
   onSelect,
   onRebuild,
   rebuilding,
@@ -60,14 +65,23 @@ export function BrowseTab({
     );
   }
 
-  const filtered = applyFilters(registry, search, selectedTags);
-  const installedFromRegistry = installed.filter(
-    (i) => i.kind === "ours",
-  ).length;
+  const installedNames = new Set(
+    installed.filter((i) => i.kind === "ours").map((i) => i.name),
+  );
+  const filtered = applyFilters(
+    registry,
+    search,
+    selectedTags,
+    installedOnly,
+    installedNames,
+  );
+  const installedFromRegistry = installedNames.size;
   const warningCount = registry.reduce(
     (acc, e) => acc + (e.warnings?.length ?? 0),
     0,
   );
+  const filtersActive =
+    search.length > 0 || selectedTags.length > 0 || installedOnly;
 
   return (
     <div>
@@ -94,11 +108,29 @@ export function BrowseTab({
       </div>
       <div className="filters-section">
         <SearchBar value={search} onChange={setSearch} />
-        <TagFilter
-          registry={registry}
-          selected={selectedTags}
-          onChange={setSelectedTags}
-        />
+        <div className="filter-row">
+          <button
+            type="button"
+            className={`filter-chip${installedOnly ? " active" : ""}`}
+            onClick={() => setInstalledOnly(!installedOnly)}
+            aria-pressed={installedOnly}
+            title={
+              installedOnly
+                ? "Showing only registry skills you have installed"
+                : "Show only registry skills you have installed"
+            }
+          >
+            Installed only{" "}
+            <span className="filter-chip-count">
+              ({installedFromRegistry})
+            </span>
+          </button>
+          <TagFilter
+            registry={registry}
+            selected={selectedTags}
+            onChange={setSelectedTags}
+          />
+        </div>
       </div>
       <p className="results-count">
         {filtered.length} of {registry.length} skill
@@ -109,10 +141,11 @@ export function BrowseTab({
         installed={installed}
         onSelect={onSelect}
         onClearFilters={
-          search.length > 0 || selectedTags.length > 0
+          filtersActive
             ? () => {
                 setSearch("");
                 setSelectedTags([]);
+                setInstalledOnly(false);
               }
             : undefined
         }
@@ -125,9 +158,12 @@ function applyFilters(
   registry: RegistryEntry[],
   search: string,
   selectedTags: string[],
+  installedOnly: boolean,
+  installedNames: Set<string>,
 ): RegistryEntry[] {
   const q = search.trim().toLowerCase();
   return registry.filter((e) => {
+    if (installedOnly && !installedNames.has(e.name)) return false;
     if (
       selectedTags.length > 0 &&
       !selectedTags.some((t) => e.tags?.includes(t))

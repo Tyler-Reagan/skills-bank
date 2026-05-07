@@ -9,6 +9,7 @@ import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js
 import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
+import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
 import { LoginScreen } from "./components/LoginScreen.js";
 import { ManageLinksModal } from "./components/ManageLinksModal.js";
 import { RepoPickerModal } from "./components/RepoPickerModal.js";
@@ -24,6 +25,7 @@ const LS_KEYS = {
   tab: "skills-bank.activeTab",
   theme: "skills-bank.theme",
   density: "skills-bank.density",
+  installedOnly: "skills-bank.installedOnly",
 };
 
 function readInitialTheme(): Theme {
@@ -103,11 +105,18 @@ export function App(): React.ReactElement {
     name: string;
     installations: InstalledSkill[];
   } | null>(null);
+  const [conflictTarget, setConflictTarget] = useState<{
+    name: string;
+    conflicts: InstalledSkill[];
+  } | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
+  const [installedOnly, setInstalledOnlyState] = useState<boolean>(
+    () => readLS(LS_KEYS.installedOnly, "false") === "true",
+  );
   const [selectedTags, setSelectedTagsState] =
     useState<string[]>(readTagFilterLS);
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
@@ -120,6 +129,11 @@ export function App(): React.ReactElement {
   >(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
+
+  // Tab badge counts — dedupe by skill name so a skill linked into two
+  // agent dirs counts once. The toast computed by refresh() uses the
+  // same expression; keep them in sync via this single derivation.
+  const uniqueInstalledCount = new Set(installed.map((i) => i.name)).size;
 
   // Apply the active theme to <html data-theme="…"> so CSS-variable
   // overrides flow through every component.
@@ -146,6 +160,10 @@ export function App(): React.ReactElement {
   const setSelectedTags = (next: string[]) => {
     setSelectedTagsState(next);
     writeLS(LS_KEYS.tagFilter, JSON.stringify(next));
+  };
+  const setInstalledOnly = (v: boolean) => {
+    setInstalledOnlyState(v);
+    writeLS(LS_KEYS.installedOnly, String(v));
   };
   const setTabPersisted = (t: TabId) => {
     setTab(t);
@@ -476,7 +494,7 @@ export function App(): React.ReactElement {
         active={tab}
         onChange={setTabPersisted}
         registryCount={registry.length}
-        installedCount={installed.length}
+        installedCount={uniqueInstalledCount}
       />
       <div
         className="content"
@@ -492,6 +510,8 @@ export function App(): React.ReactElement {
             setSearch={setSearch}
             selectedTags={selectedTags}
             setSelectedTags={setSelectedTags}
+            installedOnly={installedOnly}
+            setInstalledOnly={setInstalledOnly}
             onSelect={(e) => setSelected(e)}
             onRebuild={rebuild}
             rebuilding={rebuilding}
@@ -545,6 +565,18 @@ export function App(): React.ReactElement {
         />
       )}
 
+      {conflictTarget && (
+        <ConflictResolveModal
+          name={conflictTarget.name}
+          conflicts={conflictTarget.conflicts}
+          onClose={async () => {
+            setConflictTarget(null);
+            await refresh();
+          }}
+          onFlash={flash}
+        />
+      )}
+
       {conflictModalEntries && (
         <ConflictResolutionModal
           conflicts={conflictModalEntries}
@@ -589,6 +621,14 @@ export function App(): React.ReactElement {
                   name: selected.name,
                   installations,
                 });
+                setSelected(null);
+              }}
+              onResolveConflicts={() => {
+                const conflicts = installations.filter(
+                  (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
+                );
+                if (conflicts.length === 0) return;
+                setConflictTarget({ name: selected.name, conflicts });
                 setSelected(null);
               }}
               onRegister={
