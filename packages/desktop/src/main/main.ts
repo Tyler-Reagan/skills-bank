@@ -230,7 +230,18 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
 // requiring the user to remember to rebuild.
 ipcMain.handle(IPC.listRegistry, () => {
   if (!registryRoot) return [];
-  return buildRegistryIndex(registryRoot, { writeFile: true }).entries;
+  const entries = buildRegistryIndex(registryRoot, { writeFile: true }).entries;
+  // Convenience persona doesn't push — the registry is app-managed in
+  // userData with no user-driven git workflow. A locally-committed
+  // skill is the user's "saved" final state, so collapse the
+  // pushed/draft distinction at the IPC boundary. Power and self-host
+  // personas keep the original semantics.
+  if (persona === "convenience") {
+    return entries.map((e) =>
+      e.publishState === "draft" ? { ...e, publishState: "pushed" } : e,
+    );
+  }
+  return entries;
 });
 
 ipcMain.handle(IPC.listInstalled, () => {
