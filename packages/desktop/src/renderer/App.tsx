@@ -454,6 +454,36 @@ export function App(): React.ReactElement {
     flash("Signed out");
   }, [flash]);
 
+  // Dispatch actions from the native header menu (popup and macOS menu bar).
+  useEffect(() => {
+    if (!window.skillsBank.onHeaderMenuAction) return;
+    return window.skillsBank.onHeaderMenuAction((action) => {
+      switch (action) {
+        case "changeRegistry":
+          void changeRegistry();
+          break;
+        case "exportRegistry":
+          void exportRegistry();
+          break;
+        case "openSettings":
+          setShowSettings(true);
+          break;
+        case "openShortcuts":
+          setShowShortcuts(true);
+          break;
+        case "signOut":
+          void signOut();
+          break;
+        case "refresh":
+          void onRefreshClick();
+          break;
+        case "sync":
+          void sync();
+          break;
+      }
+    });
+  }, [changeRegistry, exportRegistry, signOut, onRefreshClick, sync]);
+
   const undoUninstall = useCallback(
     (name: string) => {
       void (async () => {
@@ -521,13 +551,10 @@ export function App(): React.ReactElement {
           onToggleTheme={toggleTheme}
           density={density}
           onToggleDensity={toggleDensity}
-          onChangeRegistry={() => undefined}
           syncing={false}
           onSync={() => undefined}
           showSync={false}
           authStatus={null}
-          onSignOut={() => undefined}
-          onOpenSettings={() => undefined}
         />
         <Tabs
           active="browse"
@@ -574,17 +601,12 @@ export function App(): React.ReactElement {
           onToggleTheme={toggleTheme}
           density={density}
           onToggleDensity={toggleDensity}
-          onChangeRegistry={() => void changeRegistry()}
-          onExportRegistry={() => void exportRegistry()}
           syncing={
             syncStatus.kind === "fetching" || syncStatus.kind === "applying"
           }
           onSync={() => void sync()}
           showSync={authStatus?.persona !== "power"}
           authStatus={authStatus}
-          onSignOut={signOut}
-          onOpenSettings={() => setShowSettings(true)}
-          onOpenKeyboardShortcuts={() => setShowShortcuts(true)}
         />
         <SyncBanner
           status={syncStatus}
@@ -599,7 +621,19 @@ export function App(): React.ReactElement {
           installedCount={uniqueInstalledCount}
         />
         {tab === "discover" ? (
-          <DiscoverTab />
+          <DiscoverTab
+            modalOpen={
+              showRegister ||
+              !!manageLinksTarget ||
+              !!conflictTarget ||
+              showSettings ||
+              showShortcuts ||
+              !!conflictModalEntries ||
+              showRepoPicker ||
+              !!selected
+            }
+            terminalApp={settings.terminalApp}
+          />
         ) : (
           <div
             className="content"

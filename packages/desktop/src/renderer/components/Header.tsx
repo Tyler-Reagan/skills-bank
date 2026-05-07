@@ -13,16 +13,11 @@ interface Props {
   onToggleTheme: () => void;
   density: Density;
   onToggleDensity: () => void;
-  onChangeRegistry: () => void;
-  onExportRegistry?: () => void;
   syncing: boolean;
   onSync: () => void;
   /** When false (power persona), the canonical-sync button is hidden. */
   showSync: boolean;
   authStatus: AuthStatus | null;
-  onSignOut: () => Promise<void> | void;
-  onOpenSettings: () => void;
-  onOpenKeyboardShortcuts?: () => void;
 }
 
 export function Header({
@@ -32,15 +27,10 @@ export function Header({
   onToggleTheme,
   density,
   onToggleDensity,
-  onChangeRegistry,
-  onExportRegistry,
   syncing,
   onSync,
   showSync,
   authStatus,
-  onSignOut,
-  onOpenSettings,
-  onOpenKeyboardShortcuts,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -124,14 +114,7 @@ export function Header({
               </>
             )}
           </button>
-          <HeaderMenu
-            authStatus={authStatus}
-            onChangeRegistry={onChangeRegistry}
-            onExportRegistry={onExportRegistry}
-            onSignOut={onSignOut}
-            onOpenSettings={onOpenSettings}
-            {...(onOpenKeyboardShortcuts ? { onOpenKeyboardShortcuts } : {})}
-          />
+          <HeaderMenu authStatus={authStatus} showSync={showSync} />
         </div>
       </div>
     </header>

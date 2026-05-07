@@ -68,6 +68,7 @@ const api = {
     ipcRenderer.invoke(IPC.resolveSkillConflicts, name, decisions),
   discoverShow: (bounds: Bounds) => ipcRenderer.invoke(IPC.discoverShow, bounds),
   discoverHide: () => ipcRenderer.invoke(IPC.discoverHide),
+  discoverHideSync: () => ipcRenderer.sendSync(IPC.discoverHideSync),
   discoverSetBounds: (bounds: Bounds) =>
     ipcRenderer.invoke(IPC.discoverSetBounds, bounds),
   discoverGoBack: () => ipcRenderer.invoke(IPC.discoverGoBack),
@@ -79,6 +80,13 @@ const api = {
     const listener = (_e: unknown, status: DiscoverStatus) => cb(status);
     ipcRenderer.on(IPC.discoverStatus, listener);
     return () => ipcRenderer.removeListener(IPC.discoverStatus, listener);
+  },
+  showHeaderMenu: (context: unknown) =>
+    ipcRenderer.invoke(IPC.showHeaderMenu, context),
+  onHeaderMenuAction: (cb: (action: string) => void) => {
+    const listener = (_e: unknown, action: string) => cb(action);
+    ipcRenderer.on(IPC.headerMenuAction, listener);
+    return () => ipcRenderer.removeListener(IPC.headerMenuAction, listener);
   },
 };
 

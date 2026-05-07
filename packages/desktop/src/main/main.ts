@@ -3,9 +3,11 @@ import {
   BrowserWindow,
   dialog,
   ipcMain,
+  Menu,
   shell,
   WebContentsView,
 } from "electron";
+import type { MenuItemConstructorOptions } from "electron";
 // electron-updater is CJS; destructure from the default import to interop
 // cleanly under Node's ESM loader (NodeNext module resolution).
 import electronUpdater from "electron-updater";
@@ -47,6 +49,8 @@ import {
   type AuthStatus,
   type Bounds,
   type DiscoverStatus,
+  type HeaderMenuAction,
+  type HeaderMenuContext,
   type SyncStatus,
   type UpdateStatus,
   type UserRepo,
@@ -295,15 +299,39 @@ ipcMain.handle(IPC.discoverShow, (_e, bounds: Bounds) => {
     win.contentView.addChildView(view);
     discoverAttached = true;
   }
+  // Push current status to renderer on every show — on tab re-entry the view
+  // is reused without a new navigation, so did-start-loading / did-finish-load
+  // never fire and the renderer would be stuck in its initial "loading" state.
+  const wc = view.webContents;
+  broadcastDiscoverStatus(
+    wc.isLoading()
+      ? { kind: "loading", url: discoverCurrentUrl }
+      : {
+          kind: "ready",
+          url: discoverCurrentUrl,
+          canGoBack: wc.navigationHistory.canGoBack(),
+        },
+  );
 });
 
-ipcMain.handle(IPC.discoverHide, () => {
+function hideDiscoverView(): void {
   if (!discoverView) return;
-  // Visibility-toggle (cheap), keep the view attached so back-history and
-  // scroll persist. We zero the bounds too so the view doesn't capture clicks
-  // in the rare case Chromium ignores `setVisible` on a child.
   discoverView.setVisible(false);
   discoverView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+}
+
+// Async hide (used when timing isn't critical).
+ipcMain.handle(IPC.discoverHide, () => {
+  hideDiscoverView();
+});
+
+// Synchronous hide — called from the renderer's useLayoutEffect so the
+// WebContentsView is guaranteed hidden before the next paint. Without this,
+// modal overlays (SettingsModal, etc.) render behind the embedded browser
+// for one frame before the async hide message arrives.
+ipcMain.on(IPC.discoverHideSync, (event) => {
+  hideDiscoverView();
+  event.returnValue = null;
 });
 
 ipcMain.handle(IPC.discoverSetBounds, (_e, bounds: Bounds) => {
@@ -332,15 +360,21 @@ ipcMain.handle(IPC.discoverOpenExternal, async () => {
   await shell.openExternal(discoverCurrentUrl);
 });
 
-ipcMain.handle(IPC.discoverOpenTerminal, async () => {
+ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
   // Detached spawn so the terminal process outlives our app session and
   // doesn't block on stdio. Cwd is the registry root if known so the user
   // lands somewhere skill-relevant; otherwise the process default.
   const cwd = registryRoot ?? undefined;
   try {
     if (process.platform === "darwin") {
-      // `open -a Terminal <path>` opens the system terminal at that dir.
-      const args = ["-a", "Terminal"];
+      const appName =
+        terminalApp === "iterm2"    ? "iTerm" :
+        terminalApp === "warp"      ? "Warp" :
+        terminalApp === "hyper"     ? "Hyper" :
+        terminalApp === "alacritty" ? "Alacritty" :
+        terminalApp === "kitty"     ? "kitty" :
+        "Terminal";
+      const args = ["-a", appName];
       if (cwd) args.push(cwd);
       spawn("open", args, { detached: true, stdio: "ignore" }).unref();
     } else if (process.platform === "win32") {
@@ -385,6 +419,134 @@ ipcMain.handle(IPC.discoverOpenTerminal, async () => {
     return { ok: false, message: (err as Error).message };
   }
 });
+
+// ─── Header native menu ──────────────────────────────────────────────────────
+//
+// The header "Settings" / account button triggers a native Electron popup
+// menu instead of a React popover so it renders above the WebContentsView.
+// Action strings are sent back to the renderer via IPC.headerMenuAction.
+
+ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return;
+
+  const send = (action: HeaderMenuAction) =>
+    event.sender.send(IPC.headerMenuAction, action);
+
+  const template: MenuItemConstructorOptions[] = [];
+
+  if (ctx.persona === "power") {
+    if (ctx.user) {
+      template.push({ label: `Signed in as ${ctx.user.login}`, enabled: false });
+      template.push({ type: "separator" });
+    }
+    template.push({
+      label: "Choose registry repo…",
+      click: () => send("changeRegistry"),
+    });
+  } else {
+    template.push({ label: "Using bundled registry", enabled: false });
+    template.push({ type: "separator" });
+    template.push({
+      label: "Import a registry…",
+      click: () => send("changeRegistry"),
+    });
+    template.push({
+      label: "Export registry…",
+      click: () => send("exportRegistry"),
+    });
+  }
+
+  if (ctx.showSync) {
+    template.push({ type: "separator" });
+    template.push({ label: "Pull updates", click: () => send("sync") });
+  }
+
+  template.push({ type: "separator" });
+  template.push({ label: "Settings…", click: () => send("openSettings") });
+  template.push({
+    label: "Keyboard shortcuts…",
+    click: () => send("openShortcuts"),
+  });
+
+  if (ctx.persona === "power") {
+    template.push({ type: "separator" });
+    template.push({
+      label: "Sign out of GitHub",
+      click: () => send("signOut"),
+    });
+  }
+
+  Menu.buildFromTemplate(template).popup({ window: win });
+});
+
+// macOS menu bar. Items that affect renderer state send via IPC.headerMenuAction.
+// The menu is built once at launch; persona-specific items (e.g. Export) are
+// always present but the renderer ignores actions that don't apply to its state.
+function buildAppMenu(): Menu {
+  const send = (action: HeaderMenuAction) => {
+    const win =
+      BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    if (win) win.webContents.send(IPC.headerMenuAction, action);
+  };
+
+  const template: MenuItemConstructorOptions[] = [
+    {
+      label: app.name,
+      submenu: [
+        { role: "about" },
+        { type: "separator" },
+        {
+          label: "Settings…",
+          accelerator: "CmdOrCtrl+,",
+          click: () => send("openSettings"),
+        },
+        { type: "separator" },
+        { role: "services" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    },
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "selectAll" },
+      ],
+    },
+    {
+      label: "View",
+      submenu: [
+        { label: "Refresh", click: () => send("refresh") },
+        { label: "Pull updates", click: () => send("sync") },
+        { type: "separator" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        { role: "togglefullscreen" },
+      ],
+    },
+    {
+      label: "Window",
+      submenu: [
+        { role: "minimize" },
+        { role: "zoom" },
+        { type: "separator" },
+        { role: "front" },
+      ],
+    },
+  ];
+
+  return Menu.buildFromTemplate(template);
+}
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -1231,6 +1393,7 @@ void app.whenReady().then(() => {
     app.dock?.setIcon(iconPng);
   }
   wireAutoUpdater();
+  Menu.setApplicationMenu(buildAppMenu());
   createWindow();
   if (app.isPackaged) {
     // Fire-and-forget: any error broadcasts to the renderer via the error event.

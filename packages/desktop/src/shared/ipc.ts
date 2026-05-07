@@ -60,12 +60,15 @@ export const IPC = {
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
+  discoverHideSync: "discover:hideSync",
   discoverSetBounds: "discover:setBounds",
   discoverGoBack: "discover:goBack",
   discoverReload: "discover:reload",
   discoverOpenExternal: "discover:openExternal",
   discoverOpenTerminal: "discover:openTerminal",
   discoverStatus: "discover:status",
+  showHeaderMenu: "header:showMenu",
+  headerMenuAction: "header:action",
 } as const;
 
 export type Persona = "convenience" | "power";
@@ -124,6 +127,21 @@ export type DiscoverStatus =
   | { kind: "loading"; url: string }
   | { kind: "ready"; url: string; canGoBack: boolean }
   | { kind: "error"; url: string; errorCode: number; description: string };
+
+export interface HeaderMenuContext {
+  persona: "convenience" | "power" | null;
+  user: { login: string } | null;
+  showSync: boolean;
+}
+
+export type HeaderMenuAction =
+  | "changeRegistry"
+  | "exportRegistry"
+  | "openSettings"
+  | "openShortcuts"
+  | "signOut"
+  | "refresh"
+  | "sync";
 
 export type UpdateStatus =
   | { kind: "idle" }
@@ -220,12 +238,16 @@ interface SkillsBankAPI {
   ): Promise<ConflictResolveReport>;
   discoverShow(bounds: Bounds): Promise<void>;
   discoverHide(): Promise<void>;
+  /** Synchronous hide — blocks until the main process has hidden the view. */
+  discoverHideSync(): void;
   discoverSetBounds(bounds: Bounds): Promise<void>;
   discoverGoBack(): Promise<void>;
   discoverReload(): Promise<void>;
   discoverOpenExternal(): Promise<void>;
-  discoverOpenTerminal(): Promise<{ ok: boolean; message?: string }>;
+  discoverOpenTerminal(terminalApp?: string): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
+  showHeaderMenu(context: HeaderMenuContext): Promise<void>;
+  onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
 }
 
 declare global {

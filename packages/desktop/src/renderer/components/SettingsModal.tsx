@@ -36,6 +36,13 @@ const ALL_AGENTS: AgentId[] = [
 
 export type GridColumns = "auto" | "2" | "3" | "4";
 export type SearchDebounce = "off" | "100" | "250";
+export type TerminalApp =
+  | "system"
+  | "iterm2"
+  | "warp"
+  | "hyper"
+  | "alacritty"
+  | "kitty";
 
 export interface AppSettings {
   /**
@@ -45,12 +52,15 @@ export interface AppSettings {
   defaultInstallAgents: AgentId[];
   gridColumns: GridColumns;
   searchDebounceMs: SearchDebounce;
+  /** macOS only: which terminal app the Discover tab's "Open Terminal" uses. */
+  terminalApp: TerminalApp;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   defaultInstallAgents: [],
   gridColumns: "auto",
   searchDebounceMs: "off",
+  terminalApp: "system",
 };
 
 interface Props {
@@ -157,6 +167,38 @@ export function SettingsModal({
                   }
                 />
                 <span>{v === "off" ? "Off" : `${v} ms`}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <section style={section}>
+          <h3 style={sectionTitle}>Terminal app (macOS)</h3>
+          <p style={hint}>
+            Used by the "Open Terminal" button in the Discover tab. The chosen
+            app must be installed — uninstalled apps will fall back to Terminal.
+          </p>
+          <div style={radioRow}>
+            {(
+              [
+                ["system", "Terminal"],
+                ["iterm2", "iTerm2"],
+                ["warp", "Warp"],
+                ["hyper", "Hyper"],
+                ["alacritty", "Alacritty"],
+                ["kitty", "kitty"],
+              ] as [TerminalApp, string][]
+            ).map(([v, label]) => (
+              <label key={v} style={radioOption}>
+                <input
+                  type="radio"
+                  name="terminal-app"
+                  checked={draft.terminalApp === v}
+                  onChange={() =>
+                    setDraft((prev) => ({ ...prev, terminalApp: v }))
+                  }
+                />
+                <span>{label}</span>
               </label>
             ))}
           </div>

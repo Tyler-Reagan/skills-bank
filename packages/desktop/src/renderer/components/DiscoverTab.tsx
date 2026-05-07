@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { DiscoverStatus } from "../../shared/ipc.js";
 import { DiscoverEmpty } from "./DiscoverEmpty.js";
 
@@ -16,7 +16,14 @@ function formatUrl(url: string): string {
   }
 }
 
-export function DiscoverTab(): React.ReactElement {
+interface Props {
+  /** When true (any modal is open), hide the WebContentsView so it doesn't render above modal overlays. */
+  modalOpen: boolean;
+  /** macOS terminal app preference forwarded to the IPC handler. */
+  terminalApp?: string;
+}
+
+export function DiscoverTab({ modalOpen, terminalApp }: Props): React.ReactElement {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [status, setStatus] = useState<DiscoverStatus>({
     kind: "loading",
@@ -79,10 +86,32 @@ export function DiscoverTab(): React.ReactElement {
     };
   }, []);
 
+  // Hide the WebContentsView whenever a modal overlay is open — child views
+  // always render above BrowserWindow content in Electron, so modals would
+  // otherwise appear behind the embedded browser.
+  // useLayoutEffect fires synchronously before the browser paints, ensuring
+  // the view is hidden before the modal becomes visible (async hide arrives
+  // too late and causes a visible flash of the embedded browser over the modal).
+  useLayoutEffect(() => {
+    if (modalOpen) {
+      window.skillsBank.discoverHideSync();
+    } else {
+      const host = hostRef.current;
+      if (!host) return;
+      const r = host.getBoundingClientRect();
+      void window.skillsBank.discoverShow({
+        x: r.left,
+        y: r.top,
+        width: r.width,
+        height: r.height,
+      });
+    }
+  }, [modalOpen]);
+
   const onBack = () => void window.skillsBank.discoverGoBack();
   const onReload = () => void window.skillsBank.discoverReload();
   const onOpenExternal = () => void window.skillsBank.discoverOpenExternal();
-  const onOpenTerminal = () => void window.skillsBank.discoverOpenTerminal();
+  const onOpenTerminal = () => void window.skillsBank.discoverOpenTerminal(terminalApp);
 
   const isError = status.kind === "error";
   const isLoading = status.kind === "loading";
