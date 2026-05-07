@@ -76,22 +76,22 @@ export function Header({
             <button
               className="refresh-btn"
               disabled={syncing}
-              title="Pull the latest canonical skills from this repo"
+              title="Pull canonical updates from upstream into the registry. User-authored skills are not touched."
               aria-label={
                 syncing
-                  ? "Syncing canonical skills"
-                  : "Sync canonical skills from skills-bank repository"
+                  ? "Pulling canonical updates"
+                  : "Pull canonical updates from upstream"
               }
               onClick={onSync}
             >
               {syncing ? (
                 <>
                   <span className="spinner inline" aria-hidden="true" />{" "}
-                  Syncing…
+                  Pulling…
                 </>
               ) : (
                 <>
-                  <Icon name="download" size="md" /> Sync skills
+                  <Icon name="download" size="md" /> Pull updates
                 </>
               )}
             </button>
@@ -99,18 +99,18 @@ export function Header({
           <button
             className="refresh-btn"
             disabled={refreshing}
-            title="Re-read the registry and ~/.claude/skills from disk"
+            title="Re-scan the registry and every agent directory from disk. No network."
             aria-label={
               refreshing
-                ? "Refreshing registry and installed skills"
-                : "Refresh registry and installed skills"
+                ? "Re-scanning registry and agent directories"
+                : "Re-scan registry and agent directories"
             }
             onClick={onRefresh}
           >
             {refreshing ? (
               <>
                 <span className="spinner inline" aria-hidden="true" />{" "}
-                Refreshing…
+                Re-scanning…
               </>
             ) : (
               <>

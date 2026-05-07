@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T20:01:32.348Z",
+  "generatedAt": "2026-05-07T00:26:11.605Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -205,6 +205,14 @@
       }
     },
     {
+      "name": "naming-analyzer",
+      "description": "Suggest better variable, function, and class names based on context and conventions.",
+      "path": "skills/naming-analyzer",
+      "source": {
+        "source": "user"
+      }
+    },
+    {
       "name": "next-best-practices",
       "description": "Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling",
       "path": "skills/next-best-practices",
@@ -265,6 +273,14 @@
       }
     },
     {
+      "name": "readme-i18n",
+      "description": "Use when the user wants to translate a repository README, make a repo multilingual, localize docs, add a language switcher, internationalize the README, or update localized README variants in a GitHub-style repository.",
+      "path": "skills/readme-i18n",
+      "source": {
+        "source": "user"
+      }
+    },
+    {
       "name": "seo-strategy",
       "description": "When the user wants to plan SEO strategy, prioritize SEO work, or understand the SEO workflow. Also use when the user mentions \"SEO strategy,\" \"SEO plan,\" \"SEO roadmap,\" \"SEO priority,\" \"SEO audit,\" \"SEO workflow,\" \"where to start SEO,\" \"SEO approach,\" \"organic growth strategy,\" \"why SEO,\" \"SEO value,\" or \"search strategy.\" For technical/crawl audit execution, use seo-audit. For keyword research, use keyword-research. For AI search visibility, use generative-engine-optimization.",
       "version": "1.3.0",
@@ -278,6 +294,14 @@
       "description": "When the user wants to create, optimize, or audit signup and login pages. Also use when the user mentions \"signup page,\" \"login page,\" \"registration page,\" \"auth page,\" \"sign up form,\" \"create account,\" \"student discount at signup,\" or \"auth subdomain.\" For indexing/auth URLs, use indexing.",
       "version": "1.0.1",
       "path": "skills/signup-login-page-generator",
+      "source": {
+        "source": "user"
+      }
+    },
+    {
+      "name": "specs-code-cleanup",
+      "description": "Provides final code cleanup after task review approval. Removes debug logs, temporary comments, dead code, optimizes imports, and improves readability. Use when asked to clean up code, polish, finalize, tidy up, remove technical debt, or prepare code for completion after review. Not for refactoring logic or fixing bugs—focused solely on cosmetic and hygiene cleanup.",
+      "path": "skills/specs-code-cleanup",
       "source": {
         "source": "user"
       }
@@ -310,6 +334,14 @@
       "name": "ui-ux-pro-max",
       "description": "UI/UX design intelligence for web and mobile. Includes 50+ styles, 161 color palettes, 57 font pairings, 161 product types, 99 UX guidelines, and 25 chart types across 10 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui, and HTML/CSS). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, and check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, and mobile app. Elements: button, modal, navbar, sidebar, card, table, form, and chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, and flat design. Topics: color systems, accessibility, animation, layout, typography, font pairing, spacing, interaction states, shadow, and gradient. Integrations: shadcn/ui MCP for component search and examples.",
       "path": "skills/ui-ux-pro-max",
+      "source": {
+        "source": "user"
+      }
+    },
+    {
+      "name": "user-personas",
+      "description": "Create refined user personas from research data — 3 personas with JTBD, pains, gains, and unexpected insights. Use when building personas from survey data, creating user profiles from research, or segmenting users for product decisions.",
+      "path": "skills/user-personas",
       "source": {
         "source": "user"
       }

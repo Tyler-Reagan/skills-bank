@@ -22,7 +22,13 @@ import {
   resolveRegistryRoot,
   scanExistingInstalls,
   uninstallSkill,
+  removeBrokenLinks,
+  repairBrokenLinks,
   writeSyncDecisions,
+  AGENTS,
+  getAgentSkillsDir,
+  type AgentId,
+  type InstalledKind,
   type MigrationAction,
   type SyncDecisions,
 } from "@skills-bank/core";
@@ -290,7 +296,26 @@ ipcMain.handle(
       }));
     }
     const report = scanExistingInstalls(registryRoot);
-    const byName = new Map(report.entries.map((e) => [e.name, e]));
+    // Prefer the most actionable entry per name when a skill exists in
+    // multiple agent dirs. Adopt and setAgents both need a usable
+    // source, so prioritise: real-directory (actual content) > ours
+    // (working symlink to registry) > foreign-symlink > broken-symlink.
+    // Without this, a naive Map keyed by name silently overwrites the
+    // useful real-dir entry with whatever sorted last (often a broken
+    // claude symlink), making realpath calls explode downstream.
+    const kindRank: Record<InstalledKind, number> = {
+      "real-directory": 4,
+      ours: 3,
+      "foreign-symlink": 2,
+      "broken-symlink": 1,
+    };
+    const byName = new Map<string, (typeof report.entries)[number]>();
+    for (const e of report.entries) {
+      const existing = byName.get(e.name);
+      if (!existing || kindRank[e.kind] > kindRank[existing.kind]) {
+        byName.set(e.name, e);
+      }
+    }
     return items.map(({ name, action }) => {
       const entry = byName.get(name);
       if (!entry) {
@@ -394,24 +419,45 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
   }
 });
 
+// Read up to 8 KB of SKILL.md text, with a "…(truncated)" marker when
+// the file is bigger. Pulled out so the readSkillMd IPC can reuse it
+// against any candidate path (registry copy or agent dir).
+function readSkillMdText(skillMdPath: string): string | null {
+  if (!fs.existsSync(skillMdPath)) return null;
+  const fd = fs.openSync(skillMdPath, "r");
+  try {
+    const buf = Buffer.alloc(8192);
+    const bytes = fs.readSync(fd, buf, 0, 8192, 0);
+    const total = fs.statSync(skillMdPath).size;
+    const text = buf.subarray(0, bytes).toString("utf8");
+    return total > bytes ? text + "\n\n…(truncated)" : text;
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+// Resolve SKILL.md for `name` by checking the registry first (if the
+// skill is registered there) and then walking every known agent dir.
+// This makes the drawer preview work for not-yet-registered skills
+// whose actual content lives at e.g. `~/.agents/skills/<name>/SKILL.md`
+// after a `npx skills add` install.
 ipcMain.handle(IPC.readSkillMd, (_e, name: string) => {
   if (!registryRoot) return null;
   try {
     const index = buildRegistryIndex(registryRoot);
     const entry = index.entries.find((x) => x.name === name);
-    if (!entry) return null;
-    const skillMd = path.join(registryRoot, entry.path, "SKILL.md");
-    if (!fs.existsSync(skillMd)) return null;
-    const fd = fs.openSync(skillMd, "r");
-    try {
-      const buf = Buffer.alloc(8192);
-      const bytes = fs.readSync(fd, buf, 0, 8192, 0);
-      const total = fs.statSync(skillMd).size;
-      const text = buf.subarray(0, bytes).toString("utf8");
-      return total > bytes ? text + "\n\n…(truncated)" : text;
-    } finally {
-      fs.closeSync(fd);
+    if (entry) {
+      const fromRegistry = readSkillMdText(
+        path.join(registryRoot, entry.path, "SKILL.md"),
+      );
+      if (fromRegistry !== null) return fromRegistry;
     }
+    for (const agent of AGENTS) {
+      const candidate = path.join(getAgentSkillsDir(agent), name, "SKILL.md");
+      const text = readSkillMdText(candidate);
+      if (text !== null) return text;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -797,6 +843,21 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
 ipcMain.handle(IPC.openExternal, async (_e, url: string) => {
   await shell.openExternal(url);
 });
+
+ipcMain.handle(IPC.repairBrokenLinks, (_e, name: string) => {
+  if (!registryRoot)
+    return { repaired: [], unrepairable: [{ agent: "claude", linkPath: "", reason: NO_ROOT_MSG }] };
+  return repairBrokenLinks(registryRoot, name);
+});
+
+ipcMain.handle(
+  IPC.removeBrokenLinks,
+  (_e, name: string, agents: AgentId[]) => {
+    if (!registryRoot)
+      return { removed: [], errors: [{ agent: "claude", message: NO_ROOT_MSG }] };
+    return removeBrokenLinks(registryRoot, name, agents);
+  },
+);
 
 // Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
 // for installed users post-merge) and fall back to the locally bundled

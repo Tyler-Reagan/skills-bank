@@ -59,10 +59,21 @@ export function listInstalled(
 
       if (stat.isSymbolicLink()) {
         const raw = fs.readlinkSync(linkPath);
-        const resolved = path.resolve(skillsDir, raw);
-        const exists = fs.existsSync(resolved);
-        const ourEntry = entriesByPath.get(resolved);
-        const isUnderRegistry = (resolved + path.sep).startsWith(ownedRoot);
+        const literal = path.resolve(skillsDir, raw);
+        // Classify on the FINAL endpoint of the symlink chain, not the
+        // first hop. After Adopt turns a real-directory into a symlink
+        // pointing at the registry, propagated symlinks become
+        // symlink-of-symlink-to-registry; classifying on `literal` would
+        // miss the registry, leaving the entry stuck in "Not registered."
+        let realPath = literal;
+        try {
+          realPath = fs.realpathSync(linkPath);
+        } catch {
+          // Broken chain — keep literal for the broken-symlink classification below.
+        }
+        const exists = fs.existsSync(realPath);
+        const ourEntry = entriesByPath.get(realPath);
+        const isUnderRegistry = (realPath + path.sep).startsWith(ownedRoot);
         let kind: InstalledKind;
         if (!exists) kind = "broken-symlink";
         else if (ourEntry || isUnderRegistry) kind = "ours";
@@ -71,7 +82,10 @@ export function listInstalled(
           name,
           agent: agent.id,
           linkPath,
-          target: resolved,
+          // `target` is the literal one-hop link target — useful for
+          // showing the user what their symlink actually points at, even
+          // when it's an indirection through another agent's dir.
+          target: literal,
           kind,
           ...(ourEntry ? { registryEntry: ourEntry } : {}),
         });

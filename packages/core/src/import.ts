@@ -115,6 +115,10 @@ export function applyMigration(
       case "adopt": {
         return adoptIntoRegistry(entry, opts);
       }
+
+      case "setAgents": {
+        return setAgentLinks(entry, action.agents);
+      }
     }
   } catch (err) {
     return {
@@ -125,43 +129,152 @@ export function applyMigration(
   }
 }
 
+/**
+ * Reconcile the set of agent dirs that have this skill linked to match
+ * `desired`. Adds symlinks for desired agents that don't currently have
+ * one; removes symlinks for currently-present agents that aren't in the
+ * desired list. Real-directory entries are never deleted — that's the
+ * skill's actual content, not a removable link.
+ *
+ * Used to expose a skill to Claude Code (or any other agent) when it
+ * was installed via the skills.sh CLI under a different agent dir, and
+ * to back the same flow out by unchecking the box.
+ */
+function setAgentLinks(
+  entry: InstalledSkill,
+  desired: AgentId[],
+): MigrationResult {
+  const action: MigrationAction = {
+    type: "setAgents",
+    name: entry.name,
+    agents: desired,
+  };
+
+  // Resolve the actual on-disk content of the skill via realpath so a
+  // symlink chain doesn't mislead us. For real-directory entries the
+  // linkPath IS the content.
+  let realPath: string;
+  try {
+    realPath = fs.realpathSync(entry.linkPath);
+  } catch (err) {
+    return {
+      action,
+      ok: false,
+      message: `cannot resolve real path for ${entry.name}: ${(err as Error).message}`,
+    };
+  }
+  if (!fs.existsSync(realPath)) {
+    return {
+      action,
+      ok: false,
+      message: `source path missing for ${entry.name}: ${realPath}`,
+    };
+  }
+
+  const desiredSet = new Set<AgentId>(desired);
+  const added: string[] = [];
+  const removed: string[] = [];
+  const protectedAgents: string[] = [];
+
+  for (const agent of AGENTS) {
+    const skillsDir = getAgentSkillsDir(agent);
+    const linkPath = path.join(skillsDir, entry.name);
+    let stat: fs.Stats | null = null;
+    try {
+      stat = fs.lstatSync(linkPath);
+    } catch {
+      stat = null;
+    }
+    const wanted = desiredSet.has(agent.id);
+
+    // Real-directory entries house the actual content. Never remove,
+    // and report so the caller knows we couldn't satisfy a removal.
+    if (stat?.isDirectory() && !stat.isSymbolicLink()) {
+      if (!wanted) protectedAgents.push(agent.label);
+      continue;
+    }
+
+    if (wanted) {
+      if (stat?.isSymbolicLink()) continue; // already linked
+      fs.mkdirSync(skillsDir, { recursive: true });
+      fs.symlinkSync(realPath, linkPath, "dir");
+      added.push(agent.label);
+    } else if (stat?.isSymbolicLink()) {
+      fs.unlinkSync(linkPath);
+      removed.push(agent.label);
+    }
+  }
+
+  if (added.length === 0 && removed.length === 0) {
+    return {
+      action,
+      ok: true,
+      message: `no changes for ${entry.name}`,
+    };
+  }
+  const parts: string[] = [];
+  if (added.length > 0) parts.push(`linked: ${added.join(", ")}`);
+  if (removed.length > 0) parts.push(`unlinked: ${removed.join(", ")}`);
+  if (protectedAgents.length > 0)
+    parts.push(`source kept: ${protectedAgents.join(", ")}`);
+  return {
+    action,
+    ok: true,
+    message: `${entry.name} — ${parts.join("; ")}`,
+  };
+}
+
 function adoptIntoRegistry(
   entry: InstalledSkill,
   opts: MigrateOptions,
 ): MigrationResult {
-  const sourcePath =
-    entry.kind === "real-directory" ? entry.linkPath : entry.target;
-  if (!sourcePath || !fs.existsSync(sourcePath)) {
+  const action: MigrationAction = { type: "adopt", name: entry.name };
+
+  // Always resolve the actual on-disk source via realpath so we move
+  // the real content (not a one-hop symlink target). Without this, an
+  // adopt triggered from a foreign-symlink entry would copy contents
+  // and leave the source dir behind in another agent — which is what
+  // caused the "Not registered" duplicate-source bug.
+  let sourcePath: string;
+  try {
+    sourcePath = fs.realpathSync(entry.linkPath);
+  } catch (err) {
     return {
-      action: { type: "adopt", name: entry.name },
+      action,
       ok: false,
-      message: `source path missing for ${entry.name}`,
+      message: `cannot resolve source for ${entry.name}: ${(err as Error).message}`,
+    };
+  }
+  if (!fs.existsSync(sourcePath)) {
+    return {
+      action,
+      ok: false,
+      message: `source path missing for ${entry.name}: ${sourcePath}`,
     };
   }
 
   const destDir = path.join(opts.registryRoot, "skills", entry.name);
-  if (fs.existsSync(destDir) && !opts.confirmDestructive) {
-    return {
-      action: { type: "adopt", name: entry.name },
-      ok: false,
-      message: `${destDir} already exists; pass confirmDestructive to overwrite`,
-    };
-  }
-
   fs.mkdirSync(path.dirname(destDir), { recursive: true });
 
-  // For real-directory: move the folder. For foreign symlink: copy contents.
-  if (entry.kind === "real-directory") {
-    if (fs.existsSync(destDir))
+  const sourceIsAlreadyRegistry =
+    path.resolve(sourcePath) === path.resolve(destDir);
+
+  if (!sourceIsAlreadyRegistry) {
+    if (fs.existsSync(destDir)) {
+      if (!opts.confirmDestructive) {
+        return {
+          action,
+          ok: false,
+          message: `${destDir} already exists; pass confirmDestructive to overwrite`,
+        };
+      }
       fs.rmSync(destDir, { recursive: true, force: true });
+    }
     fs.renameSync(sourcePath, destDir);
-  } else {
-    if (fs.existsSync(destDir))
-      fs.rmSync(destDir, { recursive: true, force: true });
-    copyDir(sourcePath, destDir);
   }
 
-  // If meta.json missing, synthesize a minimal one from SKILL.md or fallback.
+  // Synthesize meta.json if missing (skills installed via the CLI rarely
+  // ship one). Done after move so we write directly into the registry copy.
   const metaPath = path.join(destDir, "meta.json");
   if (!fs.existsSync(metaPath)) {
     const meta = readSkillMeta(destDir) ?? {
@@ -174,18 +287,48 @@ function adoptIntoRegistry(
     );
   }
 
-  // Replace the original ~/.claude/skills/<name> with a symlink to destDir.
-  // (For foreign-symlink the original symlink path still exists; replace it.)
-  if (fs.existsSync(entry.linkPath) || isSymlink(entry.linkPath)) {
-    const stat = fs.lstatSync(entry.linkPath);
-    if (stat.isSymbolicLink() || stat.isFile()) {
-      fs.unlinkSync(entry.linkPath);
-    } else if (stat.isDirectory()) {
-      // The directory was renamed away; this branch shouldn't normally hit.
-      fs.rmSync(entry.linkPath, { recursive: true, force: true });
+  // Sweep every known agent dir and reconcile its <name> entry with the
+  // registry copy:
+  //   - missing entry at the now-emptied source location → recreate as symlink to destDir
+  //   - existing symlink whose realpath != destDir → replace (handles broken chains, stale targets, and old foreign symlinks pointing at the moved source)
+  //   - real directory at the same name in another agent → leave alone (could be intentional unrelated content)
+  // This is what makes Adopt converge a duplicate-source state to a clean
+  // single-source-in-registry state, which the prior copyDir flow couldn't.
+  const swept: string[] = [];
+  for (const agent of AGENTS) {
+    const linkPath = path.join(getAgentSkillsDir(agent), entry.name);
+    let stat: fs.Stats | null = null;
+    try {
+      stat = fs.lstatSync(linkPath);
+    } catch {
+      stat = null;
     }
+
+    if (!stat) {
+      if (path.resolve(linkPath) === path.resolve(sourcePath)) {
+        fs.mkdirSync(path.dirname(linkPath), { recursive: true });
+        fs.symlinkSync(destDir, linkPath, "dir");
+        swept.push(agent.label);
+      }
+      continue;
+    }
+
+    if (stat.isSymbolicLink()) {
+      let realTarget = "";
+      try {
+        realTarget = fs.realpathSync(linkPath);
+      } catch {
+        realTarget = "";
+      }
+      if (realTarget !== destDir) {
+        fs.unlinkSync(linkPath);
+        fs.symlinkSync(destDir, linkPath, "dir");
+        swept.push(agent.label);
+      }
+    }
+    // Real directories with the same name in another agent dir are not
+    // touched — they may be unrelated to this skill.
   }
-  fs.symlinkSync(destDir, entry.linkPath, "dir");
 
   recordMigration(opts.registryRoot, {
     timestamp: new Date().toISOString(),
@@ -197,9 +340,12 @@ function adoptIntoRegistry(
   });
 
   return {
-    action: { type: "adopt", name: entry.name },
+    action,
     ok: true,
-    message: `adopted ${entry.name} → ${path.relative(opts.registryRoot, destDir)}`,
+    message:
+      swept.length > 0
+        ? `registered ${entry.name}; updated ${swept.length} agent link(s)`
+        : `registered ${entry.name}`,
   };
 }
 
@@ -434,4 +580,110 @@ function recordFinalize(registryRoot: string, entry: FinalizeLogEntry): void {
     `finalize-${entry.timestamp.replace(/[:.]/g, "-")}.json`,
   );
   fs.writeFileSync(file, JSON.stringify(entry, null, 2) + "\n");
+}
+
+// ─── Broken-link repair / removal ───────────────────────────────────────────
+//
+// Two-step affordance for skills that have at least one broken symlink in
+// some agent dir (target deleted, registry copy gone, etc.):
+//   1. Try to find a usable source for `name` from any non-broken
+//      installation OR the registry. Repoint each broken symlink there.
+//   2. Whatever can't be repaired is reported back; the caller (UI)
+//      confirms with the user before calling removeBrokenLinks to delete.
+
+export interface BrokenLinkRepairReport {
+  repaired: { agent: AgentId; newTarget: string }[];
+  unrepairable: { agent: AgentId; linkPath: string; reason: string }[];
+}
+
+export function repairBrokenLinks(
+  registryRoot: string,
+  name: string,
+): BrokenLinkRepairReport {
+  const installations = listInstalled(registryRoot).filter(
+    (i) => i.name === name,
+  );
+  const broken = installations.filter((i) => i.kind === "broken-symlink");
+
+  // Look for a source: any non-broken installation's realpath, falling back
+  // to the registry path if that exists on disk.
+  let source: string | null = null;
+  for (const i of installations) {
+    if (i.kind === "broken-symlink") continue;
+    try {
+      const real = fs.realpathSync(i.linkPath);
+      if (fs.existsSync(real)) {
+        source = real;
+        break;
+      }
+    } catch {
+      // try next
+    }
+  }
+  if (!source) {
+    const registryPath = path.join(registryRoot, "skills", name);
+    if (fs.existsSync(registryPath)) source = registryPath;
+  }
+
+  const repaired: BrokenLinkRepairReport["repaired"] = [];
+  const unrepairable: BrokenLinkRepairReport["unrepairable"] = [];
+
+  if (!source) {
+    for (const b of broken) {
+      unrepairable.push({
+        agent: b.agent,
+        linkPath: b.linkPath,
+        reason: "no source content found",
+      });
+    }
+    return { repaired, unrepairable };
+  }
+
+  for (const b of broken) {
+    try {
+      fs.unlinkSync(b.linkPath);
+      fs.symlinkSync(source, b.linkPath, "dir");
+      repaired.push({ agent: b.agent, newTarget: source });
+    } catch (err) {
+      unrepairable.push({
+        agent: b.agent,
+        linkPath: b.linkPath,
+        reason: (err as Error).message,
+      });
+    }
+  }
+  return { repaired, unrepairable };
+}
+
+export interface BrokenLinkRemoveReport {
+  removed: AgentId[];
+  errors: { agent: AgentId; message: string }[];
+}
+
+export function removeBrokenLinks(
+  registryRoot: string,
+  name: string,
+  agents: AgentId[],
+): BrokenLinkRemoveReport {
+  const removed: AgentId[] = [];
+  const errors: BrokenLinkRemoveReport["errors"] = [];
+  const installations = listInstalled(registryRoot).filter(
+    (i) => i.name === name && agents.includes(i.agent),
+  );
+  for (const i of installations) {
+    if (i.kind !== "broken-symlink") {
+      errors.push({
+        agent: i.agent,
+        message: `${i.linkPath} is ${i.kind}, refusing to remove`,
+      });
+      continue;
+    }
+    try {
+      fs.unlinkSync(i.linkPath);
+      removed.push(i.agent);
+    } catch (err) {
+      errors.push({ agent: i.agent, message: (err as Error).message });
+    }
+  }
+  return { removed, errors };
 }

@@ -8,9 +8,9 @@ import { BrowseTab } from "./components/BrowseTab.js";
 import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js";
 import { InstalledTab } from "./components/InstalledTab.js";
 import { MigrateModal } from "./components/MigrateModal.js";
-import { SingleMigrateModal } from "./components/SingleMigrateModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
 import { LoginScreen } from "./components/LoginScreen.js";
+import { ManageLinksModal } from "./components/ManageLinksModal.js";
 import { RepoPickerModal } from "./components/RepoPickerModal.js";
 import { SetupScreen } from "./components/SetupScreen.js";
 import { SyncBanner } from "./components/SyncBanner.js";
@@ -96,8 +96,13 @@ export function App(): React.ReactElement {
   const [toast, setToast] = useState<ToastShape | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showMigrate, setShowMigrate] = useState(false);
-  const [singleMigrateTarget, setSingleMigrateTarget] =
-    useState<InstalledSkill | null>(null);
+  // Manage-agent-links is a standalone modal targeting a single skill name.
+  // Its target may originate from the registry tab, the installed-registered
+  // section, or the installed-not-registered section — uniformly handled.
+  const [manageLinksTarget, setManageLinksTarget] = useState<{
+    name: string;
+    installations: InstalledSkill[];
+  } | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
@@ -172,8 +177,18 @@ export function App(): React.ReactElement {
     [],
   );
 
-  const refresh = useCallback(async () => {
+  // Minimum spinner duration so the user actually sees the load state.
+  // Without it, a sub-100ms refresh just flickers and reads as "nothing
+  // happened." Returns counts so the Refresh-button click handler can
+  // surface a meaningful toast.
+  const refresh = useCallback(async (): Promise<{
+    registryCount: number;
+    installedCount: number;
+  }> => {
     setRefreshing(true);
+    const minSpinner = new Promise<void>((resolve) =>
+      setTimeout(resolve, 250),
+    );
     try {
       const cfg = await window.skillsBank.getConfig();
       setRegistryRoot(cfg.registryRoot);
@@ -181,7 +196,8 @@ export function App(): React.ReactElement {
       if (!cfg.registryRoot) {
         setRegistry([]);
         setInstalled([]);
-        return;
+        await minSpinner;
+        return { registryCount: 0, installedCount: 0 };
       }
       const [r, i] = await Promise.all([
         window.skillsBank.listRegistry(),
@@ -189,10 +205,22 @@ export function App(): React.ReactElement {
       ]);
       setRegistry(r);
       setInstalled(i);
+      await minSpinner;
+      return {
+        registryCount: r.length,
+        installedCount: new Set(i.map((x) => x.name)).size,
+      };
     } finally {
       setRefreshing(false);
     }
   }, []);
+
+  const onRefreshClick = useCallback(async () => {
+    const { registryCount, installedCount } = await refresh();
+    flash(
+      `Refreshed — ${registryCount} in registry, ${installedCount} installed`,
+    );
+  }, [refresh, flash]);
 
   useEffect(() => {
     void refresh().finally(() => setInitialLoading(false));
@@ -341,12 +369,16 @@ export function App(): React.ReactElement {
     }
   }, [refresh, flash]);
 
-  // Keep the drawer's entry up-to-date if the registry refreshes.
+  // Keep the drawer's entry up-to-date if the registry refreshes. Don't
+  // close the drawer when no registry entry is found — the selection may
+  // be a synthetic entry for a not-yet-registered skill (opened from the
+  // Installed tab "Not registered" section), in which case the registry
+  // legitimately doesn't have it and we want the drawer to stay open so
+  // the user can hit Register or Manage agent links.
   useEffect(() => {
     if (selected) {
       const fresh = registry.find((e) => e.name === selected.name);
       if (fresh && fresh !== selected) setSelected(fresh);
-      else if (!fresh) setSelected(null);
     }
   }, [registry, selected]);
 
@@ -420,7 +452,7 @@ export function App(): React.ReactElement {
     <div className="app">
       <Header
         refreshing={refreshing}
-        onRefresh={() => void refresh()}
+        onRefresh={() => void onRefreshClick()}
         theme={theme}
         onToggleTheme={toggleTheme}
         density={density}
@@ -471,7 +503,21 @@ export function App(): React.ReactElement {
             registry={registry}
             onSwitchToBrowse={() => setTabPersisted("browse")}
             onMigrateAll={() => setShowMigrate(true)}
-            onMigrateOne={(s) => setSingleMigrateTarget(s)}
+            onMigrateOne={(s) => {
+              // Open the unified detail drawer with a synthetic registry
+              // entry so the user gets the same Register / Manage-links /
+              // Remove action surface as a registered skill — the two
+              // operations are now distinct buttons, not a radio group.
+              const synthetic: RegistryEntry = registry.find(
+                (r) => r.name === s.name,
+              ) ?? {
+                name: s.name,
+                description: s.target ?? s.linkPath,
+                path: s.linkPath,
+                source: { source: "user" },
+              };
+              setSelected(synthetic);
+            }}
             onSelectIntegrated={(e) => setSelected(e)}
           />
         )}
@@ -487,11 +533,12 @@ export function App(): React.ReactElement {
         />
       )}
 
-      {singleMigrateTarget && (
-        <SingleMigrateModal
-          entry={singleMigrateTarget}
+      {manageLinksTarget && (
+        <ManageLinksModal
+          name={manageLinksTarget.name}
+          installations={manageLinksTarget.installations}
           onClose={async () => {
-            setSingleMigrateTarget(null);
+            setManageLinksTarget(null);
             await refresh();
           }}
           onFlash={flash}
@@ -514,24 +561,58 @@ export function App(): React.ReactElement {
         />
       )}
 
-      {selected && (
-        <SkillDetailDrawer
-          entry={selected}
-          installed={installed}
-          registryRoot={registryRoot}
-          onClose={() => setSelected(null)}
-          onChanged={async (msg) => {
-            flash(msg);
-            await refresh();
-          }}
-          onUninstalled={(name) => {
-            flashWithAction(`Uninstalled ${name}`, "Undo", () =>
-              undoUninstall(name),
-            );
-            void refresh();
-          }}
-        />
-      )}
+      {selected &&
+        (() => {
+          const isRegistered = registry.some((r) => r.name === selected.name);
+          const installations = installed.filter(
+            (i) => i.name === selected.name,
+          );
+          return (
+            <SkillDetailDrawer
+              entry={selected}
+              installed={installed}
+              registryRoot={registryRoot}
+              isRegistered={isRegistered}
+              onClose={() => setSelected(null)}
+              onChanged={async (msg) => {
+                flash(msg);
+                await refresh();
+              }}
+              onUninstalled={(name) => {
+                flashWithAction(`Uninstalled ${name}`, "Undo", () =>
+                  undoUninstall(name),
+                );
+                void refresh();
+              }}
+              onManageLinks={() => {
+                setManageLinksTarget({
+                  name: selected.name,
+                  installations,
+                });
+                setSelected(null);
+              }}
+              onRegister={
+                isRegistered
+                  ? undefined
+                  : async () => {
+                      const results = await window.skillsBank.migrate([
+                        {
+                          name: selected.name,
+                          action: { type: "adopt", name: selected.name },
+                        },
+                      ]);
+                      const r = results[0]!;
+                      flash(r.message);
+                      if (r.ok) {
+                        void window.skillsBank.rebuildIndex();
+                        setSelected(null);
+                      }
+                      await refresh();
+                    }
+              }
+            />
+          );
+        })()}
 
       {toast && (
         <div className="toast" role="status" aria-live="polite">

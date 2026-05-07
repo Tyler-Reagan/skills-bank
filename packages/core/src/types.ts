@@ -86,7 +86,18 @@ export type MigrationAction =
   | { type: "skip"; name: string }
   | { type: "remove"; name: string }
   | { type: "adopt"; name: string }
-  | { type: "register-external"; name: string };
+  | { type: "register-external"; name: string }
+  | {
+      type: "setAgents";
+      name: string;
+      /**
+       * Desired agent links. Symlinks are added for entries in this list
+       * that don't currently have one and removed for entries currently
+       * present but absent from this list. Real-directory entries are
+       * never removed (the actual content lives there).
+       */
+      agents: import("./agents.js").AgentId[];
+    };
 
 export interface MigrationResult {
   action: MigrationAction;

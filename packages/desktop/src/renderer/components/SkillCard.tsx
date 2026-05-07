@@ -6,9 +6,10 @@ import type {
 } from "@skills-bank/core";
 import { Icon } from "./Icon.js";
 
-// Renderer-only label map. Don't import AGENTS as a runtime value from
-// @skills-bank/core — that pulls build.ts (and node:child_process) into
-// the renderer bundle. Keep this list in sync with packages/core/src/agents.ts.
+// Renderer-only label + path maps. Don't import AGENTS as a runtime value
+// from @skills-bank/core — that pulls build.ts (and node:child_process)
+// into the renderer bundle. Keep these in sync with
+// packages/core/src/agents.ts.
 const AGENT_LABELS: Record<AgentId, string> = {
   claude: "Claude Code",
   cursor: "Cursor",
@@ -18,6 +19,17 @@ const AGENT_LABELS: Record<AgentId, string> = {
   cline: "Cline",
   codex: "OpenAI Codex",
   agents: "Agents (shared)",
+};
+
+const AGENT_PATHS: Record<AgentId, string> = {
+  claude: "~/.claude",
+  cursor: "~/.cursor",
+  gemini: "~/.gemini",
+  copilot: "~/.copilot",
+  continue: "~/.continue",
+  cline: "~/.cline",
+  codex: "~/.codex",
+  agents: "~/.agents",
 };
 
 function freshness(lastCommit: RegistryEntry["lastCommit"]): {
@@ -123,8 +135,12 @@ export function SkillCard({
           aria-label={`Installed for: ${agents.map((a) => AGENT_LABELS[a]).join(", ")}`}
         >
           {agents.map((a) => (
-            <span key={a} className="skill-agent-chip" title={AGENT_LABELS[a]}>
-              {AGENT_LABELS[a]}
+            <span
+              key={a}
+              className="skill-agent-chip"
+              title={AGENT_LABELS[a]}
+            >
+              {AGENT_PATHS[a]}
             </span>
           ))}
         </div>
