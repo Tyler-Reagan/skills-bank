@@ -20,8 +20,10 @@ interface Props {
   installedOnly: boolean;
   setInstalledOnly: (v: boolean) => void;
   onSelect: (entry: RegistryEntry) => void;
+  onSaveTags?: (name: string, next: string[]) => Promise<void> | void;
   onRebuild: () => void | Promise<void>;
   rebuilding: boolean;
+  searchInputRef?: React.Ref<HTMLInputElement>;
 }
 
 export function BrowseTab({
@@ -34,8 +36,10 @@ export function BrowseTab({
   installedOnly,
   setInstalledOnly,
   onSelect,
+  onSaveTags,
   onRebuild,
   rebuilding,
+  searchInputRef,
 }: Props): React.ReactElement {
   if (registry.length === 0) {
     return (
@@ -107,7 +111,7 @@ export function BrowseTab({
         </span>
       </div>
       <div className="filters-section">
-        <SearchBar value={search} onChange={setSearch} />
+        <SearchBar value={search} onChange={setSearch} ref={searchInputRef} />
         <div className="filter-row">
           <button
             type="button"
@@ -140,6 +144,7 @@ export function BrowseTab({
         entries={filtered}
         installed={installed}
         onSelect={onSelect}
+        {...(onSaveTags ? { onSaveTags } : {})}
         onClearFilters={
           filtersActive
             ? () => {

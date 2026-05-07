@@ -6,6 +6,8 @@ interface Props {
   authStatus: AuthStatus | null;
   onChangeRegistry: () => void;
   onSignOut: () => Promise<void> | void;
+  onOpenSettings: () => void;
+  onOpenKeyboardShortcuts?: () => void;
 }
 
 /**
@@ -25,6 +27,8 @@ export function HeaderMenu({
   authStatus,
   onChangeRegistry,
   onSignOut,
+  onOpenSettings,
+  onOpenKeyboardShortcuts,
 }: Props): React.ReactElement {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -98,18 +102,6 @@ export function HeaderMenu({
                 <Icon name="folder" size="sm" />
                 <span>Choose registry repo…</span>
               </button>
-              <button
-                role="menuitem"
-                type="button"
-                className="header-menu-item danger"
-                onClick={() => {
-                  close();
-                  void onSignOut();
-                }}
-              >
-                <Icon name="log-out" size="sm" />
-                <span>Sign out of GitHub</span>
-              </button>
             </>
           ) : (
             <>
@@ -129,6 +121,46 @@ export function HeaderMenu({
                 <span>Change registry folder…</span>
               </button>
             </>
+          )}
+          <button
+            role="menuitem"
+            type="button"
+            className="header-menu-item"
+            onClick={() => {
+              close();
+              onOpenSettings();
+            }}
+          >
+            <Icon name="settings" size="sm" />
+            <span>Settings…</span>
+          </button>
+          {onOpenKeyboardShortcuts && (
+            <button
+              role="menuitem"
+              type="button"
+              className="header-menu-item"
+              onClick={() => {
+                close();
+                onOpenKeyboardShortcuts();
+              }}
+            >
+              <Icon name="info" size="sm" />
+              <span>Keyboard shortcuts…</span>
+            </button>
+          )}
+          {isPower && (
+            <button
+              role="menuitem"
+              type="button"
+              className="header-menu-item danger"
+              onClick={() => {
+                close();
+                void onSignOut();
+              }}
+            >
+              <Icon name="log-out" size="sm" />
+              <span>Sign out of GitHub</span>
+            </button>
           )}
         </div>
       )}

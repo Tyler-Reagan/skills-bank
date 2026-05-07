@@ -356,6 +356,9 @@ input, select { font-family: inherit; color: inherit; }
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--s4);
 }
+:root[data-grid-cols="2"] .skills-grid { grid-template-columns: repeat(2, 1fr); }
+:root[data-grid-cols="3"] .skills-grid { grid-template-columns: repeat(3, 1fr); }
+:root[data-grid-cols="4"] .skills-grid { grid-template-columns: repeat(4, 1fr); }
 .results-count {
   font-size: 12px;
   color: var(--text-3);
@@ -700,6 +703,50 @@ input, select { font-family: inherit; color: inherit; }
   font-size: 11px;
   color: var(--text-3);
   align-self: center;
+}
+.skill-tag.interactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.skill-tag-x {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  padding: 0 2px;
+  margin: 0 -2px 0 2px;
+  border-radius: 999px;
+  color: var(--text-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease),
+              background var(--t-fast) var(--ease);
+}
+.skill-tag.interactive:hover .skill-tag-x,
+.skill-tag-x:focus-visible { opacity: 1; }
+.skill-tag-x:hover { color: var(--danger); background: var(--danger-dim); }
+.skill-tag-add {
+  font-size: 11px;
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-3);
+  border: 1px dashed var(--border);
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+.skill-tag-add:hover { color: var(--accent); border-color: var(--accent); }
+.skill-tag-add-form input {
+  font-size: 11px;
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  font-family: var(--font-mono);
+  max-width: 100px;
 }
 .skill-meta-row {
   display: flex; align-items: center; gap: var(--s2);

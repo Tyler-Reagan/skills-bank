@@ -20,6 +20,8 @@ interface Props {
   showSync: boolean;
   authStatus: AuthStatus | null;
   onSignOut: () => Promise<void> | void;
+  onOpenSettings: () => void;
+  onOpenKeyboardShortcuts?: () => void;
 }
 
 export function Header({
@@ -35,6 +37,8 @@ export function Header({
   showSync,
   authStatus,
   onSignOut,
+  onOpenSettings,
+  onOpenKeyboardShortcuts,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -122,6 +126,10 @@ export function Header({
             authStatus={authStatus}
             onChangeRegistry={onChangeRegistry}
             onSignOut={onSignOut}
+            onOpenSettings={onOpenSettings}
+            {...(onOpenKeyboardShortcuts
+              ? { onOpenKeyboardShortcuts }
+              : {})}
           />
         </div>
       </div>

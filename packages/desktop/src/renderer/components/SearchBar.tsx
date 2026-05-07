@@ -1,4 +1,4 @@
-import React from "react";
+import React, { forwardRef } from "react";
 import { Icon } from "./Icon.js";
 
 interface Props {
@@ -7,17 +7,17 @@ interface Props {
   placeholder?: string;
 }
 
-export function SearchBar({
-  value,
-  onChange,
-  placeholder,
-}: Props): React.ReactElement {
+export const SearchBar = forwardRef<HTMLInputElement, Props>(function SearchBar(
+  { value, onChange, placeholder },
+  ref,
+): React.ReactElement {
   return (
     <div className="search-bar">
       <span className="search-bar-icon" aria-hidden="true">
         <Icon name="search" size="md" />
       </span>
       <input
+        ref={ref}
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -36,4 +36,4 @@ export function SearchBar({
       )}
     </div>
   );
-}
+});

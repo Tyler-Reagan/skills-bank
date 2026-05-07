@@ -36,6 +36,11 @@ interface Props {
    * entry. Required when isRegistered is false; ignored otherwise.
    */
   onRegister?: () => Promise<void> | void;
+  /**
+   * Optional override of which agent dirs to install into. When omitted,
+   * install broadcasts to every existing agent dir (legacy behavior).
+   */
+  defaultInstallAgents?: import("@skills-bank/core").AgentId[];
 }
 
 type ActionState = null | "installing" | "uninstalling" | "exporting" | "registering";
@@ -51,6 +56,7 @@ export function SkillDetailDrawer({
   onResolveConflicts,
   isRegistered,
   onRegister,
+  defaultInstallAgents,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
@@ -183,7 +189,11 @@ export function SkillDetailDrawer({
   const install = async () => {
     setAction("installing");
     try {
-      const r = await window.skillsBank.install(entry.name, false);
+      const r = await window.skillsBank.install(
+        entry.name,
+        false,
+        defaultInstallAgents,
+      );
       await onChanged(r.message);
     } finally {
       setAction(null);

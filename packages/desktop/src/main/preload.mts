@@ -4,8 +4,8 @@ import { IPC, type SyncStatus, type UpdateStatus } from "../shared/ipc.js";
 const api = {
   listRegistry: () => ipcRenderer.invoke(IPC.listRegistry),
   listInstalled: () => ipcRenderer.invoke(IPC.listInstalled),
-  install: (name: string, force?: boolean) =>
-    ipcRenderer.invoke(IPC.install, name, force),
+  install: (name: string, force?: boolean, agents?: unknown) =>
+    ipcRenderer.invoke(IPC.install, name, force, agents),
   uninstall: (name: string) => ipcRenderer.invoke(IPC.uninstall, name),
   scan: () => ipcRenderer.invoke(IPC.scan),
   migrate: (items: unknown) => ipcRenderer.invoke(IPC.migrate, items),

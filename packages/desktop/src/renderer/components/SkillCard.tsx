@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type {
   AgentId,
   InstalledSkill,
@@ -65,6 +65,12 @@ interface Props {
    * skills render DRAFT only when locally modified or unpushed.
    */
   isRegistered?: boolean;
+  /**
+   * Save a tag list directly from the card (quick X + quick add).
+   * When omitted, tags render as plain chips with no inline edit
+   * affordance — caller can still edit via the detail drawer.
+   */
+  onSaveTags?: (next: string[]) => Promise<void> | void;
 }
 
 export function SkillCard({
@@ -74,10 +80,41 @@ export function SkillCard({
   index = 0,
   agents,
   isRegistered = true,
+  onSaveTags,
 }: Props): React.ReactElement {
   const fresh = freshness(entry.lastCommit);
   const visibleTags = (entry.tags ?? []).slice(0, 3);
   const hidden = (entry.tags?.length ?? 0) - visibleTags.length;
+  const [adding, setAdding] = useState(false);
+  const [addInput, setAddInput] = useState("");
+
+  const removeTag = async (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onSaveTags) return;
+    const current = entry.tags ?? [];
+    await onSaveTags(current.filter((t) => t !== tag));
+  };
+
+  const submitAdd = async (e: React.FormEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!onSaveTags) return;
+    const t = addInput.trim();
+    if (!t || t.length > 64) {
+      setAdding(false);
+      setAddInput("");
+      return;
+    }
+    const current = entry.tags ?? [];
+    if (current.includes(t)) {
+      setAdding(false);
+      setAddInput("");
+      return;
+    }
+    await onSaveTags([...current, t]);
+    setAdding(false);
+    setAddInput("");
+  };
 
   return (
     <div
@@ -116,14 +153,69 @@ export function SkillCard({
         </p>
       )}
 
-      {visibleTags.length > 0 && (
+      {(visibleTags.length > 0 || onSaveTags) && (
         <div className="skill-tags">
           {visibleTags.map((t) => (
-            <span key={t} className="skill-tag">
+            <span
+              key={t}
+              className={`skill-tag${onSaveTags ? " interactive" : ""}`}
+            >
               #{t}
+              {onSaveTags && (
+                <button
+                  type="button"
+                  className="skill-tag-x"
+                  aria-label={`Remove tag ${t}`}
+                  onClick={(e) => void removeTag(t, e)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  <Icon name="x" size="sm" />
+                </button>
+              )}
             </span>
           ))}
           {hidden > 0 && <span className="skill-tag-more">+{hidden}</span>}
+          {onSaveTags && !adding && (
+            <button
+              type="button"
+              className="skill-tag-add"
+              aria-label="Add tag"
+              onClick={(e) => {
+                e.stopPropagation();
+                setAdding(true);
+              }}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              + tag
+            </button>
+          )}
+          {onSaveTags && adding && (
+            <form
+              onSubmit={submitAdd}
+              onClick={(e) => e.stopPropagation()}
+              className="skill-tag-add-form"
+            >
+              <input
+                autoFocus
+                type="text"
+                value={addInput}
+                placeholder="tag…"
+                maxLength={64}
+                onChange={(e) => setAddInput(e.target.value)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Escape") {
+                    setAdding(false);
+                    setAddInput("");
+                  }
+                }}
+                onBlur={() => {
+                  setAdding(false);
+                  setAddInput("");
+                }}
+              />
+            </form>
+          )}
         </div>
       )}
 

@@ -114,6 +114,7 @@ interface SkillsBankAPI {
   install(
     name: string,
     force?: boolean,
+    agents?: AgentId[],
   ): Promise<{ ok: boolean; message: string }>;
   uninstall(name: string): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;

@@ -12,6 +12,12 @@ import { Header, type Density, type Theme } from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
 import { LoginScreen } from "./components/LoginScreen.js";
 import { ManageLinksModal } from "./components/ManageLinksModal.js";
+import {
+  DEFAULT_SETTINGS,
+  SettingsModal,
+  type AppSettings,
+} from "./components/SettingsModal.js";
+import { KeyboardShortcutsOverlay } from "./components/KeyboardShortcutsOverlay.js";
 import { RepoPickerModal } from "./components/RepoPickerModal.js";
 import { SetupScreen } from "./components/SetupScreen.js";
 import { SyncBanner } from "./components/SyncBanner.js";
@@ -26,7 +32,19 @@ const LS_KEYS = {
   theme: "skills-bank.theme",
   density: "skills-bank.density",
   installedOnly: "skills-bank.installedOnly",
+  settings: "skills-bank.settings",
 };
+
+function readSettings(): AppSettings {
+  try {
+    const raw = localStorage.getItem(LS_KEYS.settings);
+    if (!raw) return DEFAULT_SETTINGS;
+    const parsed = JSON.parse(raw) as Partial<AppSettings>;
+    return { ...DEFAULT_SETTINGS, ...parsed };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
 
 function readInitialTheme(): Theme {
   try {
@@ -109,6 +127,18 @@ export function App(): React.ReactElement {
     name: string;
     conflicts: InstalledSkill[];
   } | null>(null);
+  const [settings, setSettingsState] = useState<AppSettings>(readSettings);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const saveSettings = useCallback((next: AppSettings) => {
+    setSettingsState(next);
+    try {
+      localStorage.setItem(LS_KEYS.settings, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  }, []);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
@@ -147,6 +177,34 @@ export function App(): React.ReactElement {
     document.documentElement.dataset["density"] = density;
     writeLS(LS_KEYS.density, density);
   }, [density]);
+
+  // Grid columns from settings → data-grid-cols on <html>; CSS reads
+  // this attribute to override the auto-fit grid layout.
+  useEffect(() => {
+    document.documentElement.dataset["gridCols"] = settings.gridColumns;
+  }, [settings.gridColumns]);
+
+  // Global keyboard shortcuts: Cmd/Ctrl+K and "/" focus the search bar.
+  // Skip when the user is already typing in another input/textarea so
+  // we don't hijack their typing.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inEditable =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
+      const cmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
+      const slash = e.key === "/" && !inEditable;
+      if (cmdK || slash) {
+        e.preventDefault();
+        if (tab !== "browse") setTabPersisted("browse");
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [tab]);
 
   const toggleTheme = () =>
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
@@ -302,6 +360,18 @@ export function App(): React.ReactElement {
     })();
   }, []);
 
+  // Quick tag editing from card affordances (X to remove, "+ tag" to
+   // add). Drawer's full edit flow stays available; this skips it for
+   // single-edit speed.
+  const saveCardTags = useCallback(
+    async (name: string, next: string[]) => {
+      const r = await window.skillsBank.editTags(name, next);
+      flash(r.message);
+      if (r.ok) await refresh();
+    },
+    [flash, refresh],
+  );
+
   const sync = useCallback(async () => {
     const r = await window.skillsBank.syncCanonical();
     flash(r.message);
@@ -417,6 +487,7 @@ export function App(): React.ReactElement {
           showSync={false}
           authStatus={null}
           onSignOut={() => undefined}
+          onOpenSettings={() => undefined}
         />
         <Tabs
           active="browse"
@@ -483,6 +554,8 @@ export function App(): React.ReactElement {
         showSync={authStatus?.persona !== "power"}
         authStatus={authStatus}
         onSignOut={signOut}
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenKeyboardShortcuts={() => setShowShortcuts(true)}
       />
       <SyncBanner
         status={syncStatus}
@@ -513,8 +586,10 @@ export function App(): React.ReactElement {
             installedOnly={installedOnly}
             setInstalledOnly={setInstalledOnly}
             onSelect={(e) => setSelected(e)}
+            onSaveTags={saveCardTags}
             onRebuild={rebuild}
             rebuilding={rebuilding}
+            searchInputRef={searchInputRef}
           />
         )}
         {tab === "installed" && (
@@ -577,6 +652,18 @@ export function App(): React.ReactElement {
         />
       )}
 
+      {showSettings && (
+        <SettingsModal
+          settings={settings}
+          onSave={saveSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showShortcuts && (
+        <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
+      )}
+
       {conflictModalEntries && (
         <ConflictResolutionModal
           conflicts={conflictModalEntries}
@@ -605,6 +692,11 @@ export function App(): React.ReactElement {
               installed={installed}
               registryRoot={registryRoot}
               isRegistered={isRegistered}
+              defaultInstallAgents={
+                settings.defaultInstallAgents.length > 0
+                  ? settings.defaultInstallAgents
+                  : undefined
+              }
               onClose={() => setSelected(null)}
               onChanged={async (msg) => {
                 flash(msg);
