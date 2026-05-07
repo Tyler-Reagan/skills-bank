@@ -2,7 +2,6 @@
   "name": "polish-patterns",
   "description": "Copy-ready React+TypeScript implementations of UI polish patterns — token-driven theming with light/dark + density toggles, focus-return modal hooks, skeleton loaders, toast-with-undo, inline ARIA validation, drawer motion, first-run setup, and a small Icon component. A launchpad of concrete code that complements ui-ux-pro-max's design rules; pair the two when you have a rule to satisfy and want a working starting point.",
   "tags": [
-    "patterns",
     "electron",
     "shortcuts"
   ],
