@@ -185,7 +185,7 @@ export async function syncInstalledCommand(
     }
   }
 
-  // Persist the audit log alongside other migration logs.
+  // Persist the audit log alongside other registration logs.
   const stateDir = path.join(root, ".skills-bank");
   fs.mkdirSync(stateDir, { recursive: true });
   const stamp = audit.timestamp.replace(/[:.]/g, "-");

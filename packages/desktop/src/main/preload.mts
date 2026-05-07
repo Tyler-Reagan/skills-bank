@@ -14,7 +14,7 @@ const api = {
     ipcRenderer.invoke(IPC.install, name, force, agents),
   uninstall: (name: string) => ipcRenderer.invoke(IPC.uninstall, name),
   scan: () => ipcRenderer.invoke(IPC.scan),
-  migrate: (items: unknown) => ipcRenderer.invoke(IPC.migrate, items),
+  register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),
   getRoot: () => ipcRenderer.invoke(IPC.getRoot),
   rebuildIndex: () => ipcRenderer.invoke(IPC.rebuildIndex),
   finalize: () => ipcRenderer.invoke(IPC.finalize),
@@ -73,7 +73,8 @@ const api = {
   discoverGoBack: () => ipcRenderer.invoke(IPC.discoverGoBack),
   discoverReload: () => ipcRenderer.invoke(IPC.discoverReload),
   discoverOpenExternal: () => ipcRenderer.invoke(IPC.discoverOpenExternal),
-  discoverOpenTerminal: () => ipcRenderer.invoke(IPC.discoverOpenTerminal),
+  discoverOpenTerminal: (terminalApp?: string) =>
+    ipcRenderer.invoke(IPC.discoverOpenTerminal, terminalApp),
   onDiscoverStatus: (cb: (status: DiscoverStatus) => void) => {
     const listener = (_e: unknown, status: DiscoverStatus) => cb(status);
     ipcRenderer.on(IPC.discoverStatus, listener);

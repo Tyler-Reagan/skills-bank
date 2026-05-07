@@ -95,7 +95,7 @@ export function ManageLinksModal({
       new Set<AgentId>([...desiredAgents, ...sourceAgents]),
     );
     setPhase({ kind: "applying" });
-    const results = await window.skillsBank.migrate([
+    const results = await window.skillsBank.register([
       { name, action: { type: "setAgents", name, agents } },
     ]);
     setPhase({ kind: "result", result: results[0]! });

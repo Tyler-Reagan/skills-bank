@@ -23,7 +23,7 @@ export const IPC = {
   install: "skills:install",
   uninstall: "skills:uninstall",
   scan: "skills:scan",
-  migrate: "skills:migrate",
+  register: "skills:register",
   getRoot: "skills:getRoot",
   rebuildIndex: "skills:rebuildIndex",
   finalize: "skills:finalize",
@@ -145,7 +145,7 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; message: string }>;
   uninstall(name: string): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;
-  migrate(
+  register(
     items: Array<{ name: string; action: RegistrationAction }>,
   ): Promise<RegistrationResult[]>;
   getRoot(): Promise<string>;

@@ -138,7 +138,7 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
               setFinalizing={setFinalizing}
               onFlash={onFlash}
               onAfter={onClose}
-              hasUnmigrated={false}
+              hasUnregistered={false}
             />
           )}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -158,7 +158,7 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
       action: choices[e.name] ?? defaultAction(e),
     }));
     setPhase({ kind: "applying", total: items.length });
-    const results = await window.skillsBank.migrate(items);
+    const results = await window.skillsBank.register(items);
     const adoptedCount = results.filter(
       (r) => r.ok && r.action.type === "adopt",
     ).length;
@@ -181,7 +181,7 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
     }
   };
 
-  const stillUnmigrated = report.entries.some(
+  const stillUnregistered = report.entries.some(
     (e) => e.kind === "real-directory",
   );
 
@@ -190,7 +190,7 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
     return (
       <div style={overlay}>
         <div style={modal} role="dialog" aria-modal="true">
-          <h2 style={{ marginTop: 0 }}>Migrating skills…</h2>
+          <h2 style={{ marginTop: 0 }}>Registering skills…</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Applying {phase.total} action{phase.total === 1 ? "" : "s"}. Files
             are being moved/copied — this may take a moment for large skill
@@ -219,8 +219,8 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
         <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>
             {failed.length === 0
-              ? "Migration complete"
-              : `Migration finished with ${failed.length} failure${
+              ? "Registration complete"
+              : `Registration finished with ${failed.length} failure${
                   failed.length === 1 ? "" : "s"
                 }`}
           </h2>
@@ -287,7 +287,7 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
               disabled={phase.rebuilding}
               onClick={() => {
                 onFlash(
-                  `migration: ${succeeded.length}/${phase.results.length} succeeded`,
+                  `registration: ${succeeded.length}/${phase.results.length} succeeded`,
                 );
                 void onClose();
               }}
@@ -316,7 +316,7 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
             setFinalizing={setFinalizing}
             onFlash={onFlash}
             onAfter={onClose}
-            hasUnmigrated={stillUnmigrated}
+            hasUnregistered={stillUnregistered}
           />
         )}
         <div style={{ maxHeight: 400, overflow: "auto", marginBottom: 16 }}>
@@ -418,7 +418,7 @@ function actionFor(
       return { type: "skip", name: e.name };
     case "setAgents":
       // Bulk Register-All flow doesn't expose per-skill agent pickers;
-      // the user uses the per-card SingleMigrateModal for that.
+      // the user uses the per-card SingleRegisterModal for that.
       return { type: "skip", name: e.name };
   }
 }
@@ -450,9 +450,9 @@ function FinalizeCallout(props: {
   setFinalizing: (v: boolean) => void;
   onFlash: (msg: string) => void;
   onAfter: () => void | Promise<void>;
-  hasUnmigrated: boolean;
+  hasUnregistered: boolean;
 }): React.ReactElement {
-  const { report, finalizing, setFinalizing, onFlash, onAfter, hasUnmigrated } =
+  const { report, finalizing, setFinalizing, onFlash, onAfter, hasUnregistered } =
     props;
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
@@ -497,7 +497,7 @@ function FinalizeCallout(props: {
           Once everything is registered, finalize to replace the top-level
           symlink with a real directory.
         </p>
-        {hasUnmigrated && (
+        {hasUnregistered && (
           <p
             style={{ margin: "4px 0 0", fontSize: 12, color: "var(--danger)" }}
           >
@@ -519,7 +519,7 @@ function FinalizeCallout(props: {
         )}
       </div>
       <button
-        disabled={finalizing || hasUnmigrated}
+        disabled={finalizing || hasUnregistered}
         onClick={() => void finalize()}
       >
         {finalizing ? (

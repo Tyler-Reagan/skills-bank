@@ -1,7 +1,7 @@
 import readline from "node:readline";
 import pc from "picocolors";
 import {
-  applyMigration,
+  applyRegistration,
   resolveRegistryRoot,
   scanExistingInstalls,
   type InstalledSkill,
@@ -26,7 +26,7 @@ export async function importCommand(opts: ImportOptions): Promise<void> {
   console.log();
 
   if (report.entries.length === 0) {
-    console.log(pc.dim("Nothing to migrate."));
+    console.log(pc.dim("Nothing to register."));
     return;
   }
 
@@ -60,7 +60,7 @@ export async function importCommand(opts: ImportOptions): Promise<void> {
 
   console.log();
   for (const { entry, action } of planned) {
-    const result = applyMigration(entry, action, {
+    const result = applyRegistration(entry, action, {
       registryRoot: root,
       confirmDestructive: true,
     });

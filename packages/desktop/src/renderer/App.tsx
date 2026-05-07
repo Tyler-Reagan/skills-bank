@@ -760,7 +760,7 @@ export function App(): React.ReactElement {
                   isRegistered
                     ? undefined
                     : async () => {
-                        const results = await window.skillsBank.migrate([
+                        const results = await window.skillsBank.register([
                           {
                             name: selected.name,
                             action: { type: "adopt", name: selected.name },

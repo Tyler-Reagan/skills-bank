@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   applyCanonicalSync,
-  applyMigration,
+  applyRegistration,
   buildRegistryIndex,
   exportSkill,
   exportRegistry,
@@ -450,7 +450,7 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
 
 // Always rebuild from filesystem on every call. The on-disk index.json is a
 // CI artifact, not the source of truth — this guarantees the UI reflects
-// reality after migrations, manual edits, or any other state change without
+// reality after registrations, manual edits, or any other state change without
 // requiring the user to remember to rebuild.
 ipcMain.handle(IPC.listRegistry, () => {
   if (!registryRoot) return [];
@@ -521,7 +521,7 @@ ipcMain.handle(IPC.scan, () => {
 });
 
 ipcMain.handle(
-  IPC.migrate,
+  IPC.register,
   (_e, items: Array<{ name: string; action: RegistrationAction }>) => {
     if (!registryRoot) {
       return items.map(({ action }) => ({
@@ -560,7 +560,7 @@ ipcMain.handle(
           message: `entry ${name} not found in scan`,
         };
       }
-      return applyMigration(entry, action, {
+      return applyRegistration(entry, action, {
         registryRoot: registryRoot!,
         confirmDestructive: true,
       });

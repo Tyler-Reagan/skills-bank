@@ -78,7 +78,7 @@ A skill is in conflict when it's registered in Skills Bank **and** has straggler
 
 A one-click pull of upstream registry updates. Sync is **upsert**: canonical skills refresh, skills you authored or imported are never touched. Name collisions surface a modal — keep yours, take theirs, or rename yours.
 
-## Migrate
+## Register
 
 The act of moving an "installed but unmanaged" skill into the registry. The files relocate to `<repo>/skills/<name>/`, the original agent-dir entry becomes a symlink, and the skill picks up registry metadata.
 

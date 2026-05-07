@@ -68,16 +68,16 @@ function detectTopLevelSymlink(
   return { agent: agent.id, resolvedTarget, exists };
 }
 
-export interface MigrateOptions {
+export interface RegisterOptions {
   registryRoot: string;
   /** Required to delete real directories or overwrite existing in-repo skill folders. */
   confirmDestructive?: boolean;
 }
 
-export function applyMigration(
+export function applyRegistration(
   entry: InstalledSkill,
   action: RegistrationAction,
-  opts: MigrateOptions,
+  opts: RegisterOptions,
 ): RegistrationResult {
   try {
     switch (action.type) {
@@ -226,7 +226,7 @@ function setAgentLinks(
 
 function adoptIntoRegistry(
   entry: InstalledSkill,
-  opts: MigrateOptions,
+  opts: RegisterOptions,
 ): RegistrationResult {
   const action: RegistrationAction = { type: "adopt", name: entry.name };
 
@@ -330,7 +330,7 @@ function adoptIntoRegistry(
     // touched — they may be unrelated to this skill.
   }
 
-  recordMigration(opts.registryRoot, {
+  recordRegistration(opts.registryRoot, {
     timestamp: new Date().toISOString(),
     name: entry.name,
     sourceKind: entry.kind,
@@ -399,7 +399,7 @@ function registerExternal(
   fs.writeFileSync(p, JSON.stringify(filtered, null, 2) + "\n");
 }
 
-interface MigrationLogEntry {
+interface RegistrationLogEntry {
   timestamp: string;
   name: string;
   sourceKind: string;
@@ -408,12 +408,12 @@ interface MigrationLogEntry {
   linkPath: string;
 }
 
-function recordMigration(registryRoot: string, entry: MigrationLogEntry): void {
+function recordRegistration(registryRoot: string, entry: RegistrationLogEntry): void {
   const dir = getStateDir(registryRoot);
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(
     dir,
-    `migration-${entry.timestamp.replace(/[:.]/g, "-")}.json`,
+    `registration-${entry.timestamp.replace(/[:.]/g, "-")}.json`,
   );
   fs.writeFileSync(file, JSON.stringify(entry, null, 2) + "\n");
 }
@@ -437,7 +437,7 @@ export interface FinalizeOptions {
  *
  * Refuses to run unless every entry in the resolved directory is already a
  * symlink (i.e. all real-directory entries have been adopted via
- * applyMigration first). The original top-level symlink is renamed to a
+ * applyRegistration first). The original top-level symlink is renamed to a
  * timestamped backup rather than deleted.
  */
 export function finalizeSkillsDir(opts: FinalizeOptions): FinalizeResult {
@@ -503,7 +503,7 @@ export function finalizeSkillsDir(opts: FinalizeOptions): FinalizeResult {
         blocking.length === 1 ? "y is" : "ies are"
       } still real director${
         blocking.length === 1 ? "y" : "ies"
-      }. Migrate them first.`,
+      }. Register them first.`,
       blockingEntries: blocking,
     };
   }

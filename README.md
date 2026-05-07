@@ -11,7 +11,7 @@ End-user docs live in **[`docs/`](docs/)** — start with [`docs/getting-started
 | Path | What |
 |---|---|
 | `skills/` | The registry — one folder per skill containing `SKILL.md` and (optionally) `meta.json`. |
-| `packages/core` | Shared TypeScript library: registry IO, install/uninstall, sync, migration. |
+| `packages/core` | Shared TypeScript library: registry IO, install/uninstall, sync, registration. |
 | `packages/cli` | The `skills-bank` CLI. |
 | `packages/desktop` | Electron + React + Vite desktop app. |
 | `docs/` | User-facing documentation. `meta-schema.json` defines the `meta.json` schema. |

@@ -34,16 +34,16 @@ export async function finalizeCommand(opts: FinalizeCmdOptions): Promise<void> {
   }
   console.log();
 
-  const unmigrated = report.entries.filter((e) => e.kind === "real-directory");
-  if (unmigrated.length > 0) {
+  const unregistered = report.entries.filter((e) => e.kind === "real-directory");
+  if (unregistered.length > 0) {
     console.log(
       pc.red(
-        `Cannot finalize: ${unmigrated.length} entr${
-          unmigrated.length === 1 ? "y is" : "ies are"
-        } still real director${unmigrated.length === 1 ? "y" : "ies"}.`,
+        `Cannot finalize: ${unregistered.length} entr${
+          unregistered.length === 1 ? "y is" : "ies are"
+        } still real director${unregistered.length === 1 ? "y" : "ies"}.`,
       ),
     );
-    for (const e of unmigrated)
+    for (const e of unregistered)
       console.log(`    - ${e.name} (${getAgent(e.agent).label})`);
     console.log();
     console.log(pc.dim("Run `skills-bank import` first to adopt them."));

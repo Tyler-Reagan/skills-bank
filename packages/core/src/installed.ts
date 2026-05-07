@@ -33,8 +33,8 @@ export function listInstalled(
     entriesByPath.set(path.resolve(registryRoot, e.path), e);
   }
   // Anything under <registryRoot>/skills/ is "ours" even if not in the
-  // index — meaning a stale or missing index can never make a migrated
-  // skill look unmigrated.
+  // index — meaning a stale or missing index can never make a registered
+  // skill look unregistered.
   const ownedRoot = path.resolve(registryRoot, "skills") + path.sep;
 
   const agents = opts.agents ?? AGENTS;

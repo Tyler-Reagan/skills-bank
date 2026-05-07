@@ -94,7 +94,7 @@ export interface FinalizeResult {
   message: string;
   /** When ok=true, the path the original symlink was renamed to. */
   backupPath?: string;
-  /** When ok=false because of unmigrated entries, list them. */
+  /** When ok=false because of unregistered entries, list them. */
   blockingEntries?: string[];
 }
 
