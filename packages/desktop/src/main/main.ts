@@ -26,6 +26,7 @@ import {
   repairBrokenLinks,
   resolveSkillConflicts,
   persistSkillLocally,
+  unprotectSkillFromSync,
   writeSyncDecisions,
   AGENTS,
   getAgentSkillsDir,
@@ -519,9 +520,23 @@ ipcMain.handle(
     } catch (err) {
       return { ok: false, message: (err as Error).message };
     }
+    // Auto-protect: a tag edit is a personal customization the user
+    // wants to keep. Re-tag canonical → user so the next Sync skips
+    // this skill instead of overwriting their tags. No-op for skills
+    // that are already user/imported.
+    let protectedNow = false;
+    try {
+      const before = entry.source.source;
+      persistSkillLocally(registryRoot, name);
+      protectedNow = before === "canonical";
+    } catch {
+      // Non-fatal: tags persisted, protection just didn't apply.
+    }
     return {
       ok: true,
-      message: `tags updated (${cleaned.length})`,
+      message: protectedNow
+        ? `Tags updated (${cleaned.length}) — saved locally so Sync won't overwrite.`
+        : `Tags updated (${cleaned.length})`,
     };
   },
 );
@@ -891,6 +906,21 @@ ipcMain.handle(IPC.persistSkillLocally, (_e, name: string) => {
   }
   try {
     persistSkillLocally(registryRoot, name);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      message: err instanceof Error ? err.message : String(err),
+    };
+  }
+});
+
+ipcMain.handle(IPC.unprotectSkillFromSync, (_e, name: string) => {
+  if (!registryRoot) {
+    return { ok: false, message: NO_ROOT_MSG };
+  }
+  try {
+    unprotectSkillFromSync(registryRoot, name);
     return { ok: true };
   } catch (err) {
     return {

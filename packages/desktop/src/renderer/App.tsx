@@ -11,6 +11,7 @@ import { MigrateModal } from "./components/MigrateModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
 import { LoginScreen } from "./components/LoginScreen.js";
+import { SplashScreen } from "./components/SplashScreen.js";
 import { ManageLinksModal } from "./components/ManageLinksModal.js";
 import {
   DEFAULT_SETTINGS,
@@ -470,6 +471,27 @@ export function App(): React.ReactElement {
     }
   }, [registry, selected]);
 
+  // Pre-mount splash: render this until the renderer knows which top-
+  // level view to show. Without it, the app skeleton flashes for a beat
+  // before LoginScreen mounts on first launch.
+  if (!authStatus) {
+    return <SplashScreen />;
+  }
+
+  // Persona unresolved → LoginScreen. Hoisted above the data-skeleton
+  // so we never render the app shell for a not-yet-onboarded user.
+  if (authStatus.persona === null) {
+    return (
+      <LoginScreen
+        isAuthConfigured={authStatus.isAuthConfigured}
+        onStatusChanged={(s) => {
+          setAuthStatus(s);
+          if (s.persona !== null) void refresh();
+        }}
+      />
+    );
+  }
+
   // Initial loading — skeleton over real chrome.
   if (initialLoading) {
     return (
@@ -519,19 +541,6 @@ export function App(): React.ReactElement {
       <SetupScreen
         onConfigured={async () => {
           await refresh();
-        }}
-      />
-    );
-  }
-
-  // Persona unresolved → first-launch login decision.
-  if (authStatus && authStatus.persona === null) {
-    return (
-      <LoginScreen
-        isAuthConfigured={authStatus.isAuthConfigured}
-        onStatusChanged={(s) => {
-          setAuthStatus(s);
-          if (s.persona !== null) void refresh();
         }}
       />
     );

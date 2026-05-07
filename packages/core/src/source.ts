@@ -71,3 +71,33 @@ export function persistSkillLocally(
   writeSkillSource(skillDir, next);
   return next;
 }
+
+/**
+ * Inverse of persistSkillLocally — flips a `user` skill back to
+ * `canonical` so the next Sync may overwrite it. Only meaningful for
+ * skills that originated from canonical (have syncedFromCommit set);
+ * for purely user-authored skills there's no canonical to revert to.
+ *
+ * Idempotent: returns the existing source unchanged if no
+ * `syncedFromCommit` is on file or if the skill isn't currently
+ * marked `user`.
+ */
+export function unprotectSkillFromSync(
+  registryRoot: string,
+  name: string,
+): SkillSource {
+  const skillDir = path.join(registryRoot, "skills", name);
+  if (!fs.existsSync(skillDir)) {
+    throw new Error(`skill not found in registry: ${name}`);
+  }
+  const existing = readSkillSource(skillDir);
+  if (existing.source !== "user") return existing;
+  if (!existing.syncedFromCommit) return existing;
+  const next: SkillSource = {
+    source: "canonical",
+    syncedFromCommit: existing.syncedFromCommit,
+  };
+  if (existing.syncedAt) next.syncedAt = existing.syncedAt;
+  writeSkillSource(skillDir, next);
+  return next;
+}

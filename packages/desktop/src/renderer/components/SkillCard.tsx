@@ -305,10 +305,25 @@ function PublishBadge({
     );
   }
   if (entry.source.source === "user") {
+    // A `user`-tagged skill with a syncedFromCommit was originally
+    // canonical and got saved locally — visually distinct from a
+    // purely user-authored skill, since "Protected" is the actionable
+    // word: Sync skips it. Skills with no syncedFromCommit have no
+    // canonical history to protect from, so they keep YOURS.
+    if (entry.source.syncedFromCommit) {
+      return (
+        <span
+          className="skill-origin-badge protected"
+          title="Protected — Sync will not overwrite this skill"
+        >
+          PROTECTED
+        </span>
+      );
+    }
     return (
       <span
         className="skill-origin-badge user"
-        title="Saved locally — Sync will not overwrite this skill"
+        title="Authored locally — not part of the curated registry"
       >
         YOURS
       </span>

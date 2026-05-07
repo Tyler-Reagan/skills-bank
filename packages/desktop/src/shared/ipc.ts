@@ -57,6 +57,7 @@ export const IPC = {
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   persistSkillLocally: "skills:persistSkillLocally",
+  unprotectSkillFromSync: "skills:unprotectSkillFromSync",
 } as const;
 
 export type Persona = "convenience" | "power";
@@ -186,6 +187,14 @@ interface SkillsBankAPI {
    * overwrites it. Used by the "Save locally" affordance.
    */
   persistSkillLocally(name: string): Promise<{ ok: boolean; message?: string }>;
+  /**
+   * Inverse of persistSkillLocally — flips a `user`-tagged registry
+   * skill back to `canonical` so future Sync runs overwrite it. Only
+   * valid for skills with a recorded syncedFromCommit.
+   */
+  unprotectSkillFromSync(
+    name: string,
+  ): Promise<{ ok: boolean; message?: string }>;
 }
 
 declare global {

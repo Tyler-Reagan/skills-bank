@@ -252,6 +252,19 @@ export function SkillDetailDrawer({
       setAction(null);
     }
   };
+  const unprotectFromSync = async () => {
+    setAction("persisting");
+    try {
+      const r = await window.skillsBank.unprotectSkillFromSync(entry.name);
+      await onChanged(
+        r.ok
+          ? `${entry.name} no longer protected — Sync may update it.`
+          : r.message ?? `Could not unprotect ${entry.name}.`,
+      );
+    } finally {
+      setAction(null);
+    }
+  };
   const reveal = () => {
     if (absPath) void window.skillsBank.openInFinder(absPath);
   };
@@ -492,6 +505,41 @@ export function SkillDetailDrawer({
                 <span className="drawer-meta-value">
                   {new Date(entry.lastCommit.date).toLocaleDateString()} ·{" "}
                   {entry.lastCommit.sha.slice(0, 7)}
+                </span>
+              </div>
+            )}
+            {persona === "convenience" && isRegistered && (
+              <div className="drawer-meta-row">
+                <span className="drawer-meta-key">sync</span>
+                <span className="drawer-meta-value">
+                  {entry.source.source === "user" &&
+                  entry.source.syncedFromCommit ? (
+                    <>
+                      <span className="protected-pill" title="Sync will skip this skill on the next pull">
+                        Protected
+                      </span>
+                      <button
+                        className="link-button"
+                        disabled={action !== null}
+                        onClick={() => void unprotectFromSync()}
+                        title="Allow Sync to overwrite this skill again"
+                      >
+                        {action === "persisting" ? "…" : "Unprotect"}
+                      </button>
+                    </>
+                  ) : entry.source.source === "user" ? (
+                    <span className="drawer-meta-muted">
+                      Locally authored — never synced
+                    </span>
+                  ) : entry.source.source === "imported" ? (
+                    <span className="drawer-meta-muted">
+                      Imported — managed via your repo
+                    </span>
+                  ) : (
+                    <span className="drawer-meta-muted">
+                      Eligible for Sync overwrite
+                    </span>
+                  )}
                 </span>
               </div>
             )}

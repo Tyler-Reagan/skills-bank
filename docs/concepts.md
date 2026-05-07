@@ -59,16 +59,22 @@ Where `source` records origin, **publish state** records whether a skill has bee
 
 The badge on each card combines source + publish state:
 
-- **`YOURS`** — either the skill isn't in the registry yet, or it's a registry skill with `source: user` (you own it; Sync won't touch it).
+- **`YOURS`** — purely locally-authored: either the skill isn't in the registry yet, or it's a registry skill with `source: user` and no canonical history.
+- **`PROTECTED`** — a previously-canonical registry skill saved locally. Sync skips it.
 - **`IMPORTED`** — registry skill from a power-persona repo replacement.
 - **`DRAFT`** — a `canonical` registry skill with uncommitted or unpushed local changes. **Sync may overwrite these on the next pull.** Click **Save locally** in the drawer to flip its source to `user` and protect your changes.
 - *(no badge)* — `canonical` and pushed: the calm default.
 
-### Save locally (convenience persona)
+### Save locally / Protected (convenience persona)
 
-The convenience-persona Sync flow refreshes anything tagged `canonical` from upstream. If you've edited a curated skill, the drawer surfaces a **Save locally** button alongside the DRAFT badge. Clicking it re-tags the skill as `source: user`, which makes Sync skip it on every future pull. The badge changes to `YOURS`.
+The convenience-persona Sync flow refreshes anything tagged `canonical` from upstream. Any local change to a curated skill — editing tags via the card, modifying `SKILL.md`, etc. — automatically flips its source to `user` so Sync won't touch it on the next pull. The card shows the `PROTECTED` badge.
 
-Power-persona and self-host users don't need this affordance — they manage persistence through their own repo's git workflow.
+The drawer surfaces the protection state in the Metadata section. You can:
+
+- Click **Save locally** if a curated skill picked up edits some other way and the protection didn't auto-apply.
+- Click **Unprotect** to revert a protected skill to `canonical`, allowing Sync to overwrite it next time.
+
+Power-persona and self-host users don't see these affordances — they manage persistence through their own repo's git workflow.
 
 ## Installation kind
 
