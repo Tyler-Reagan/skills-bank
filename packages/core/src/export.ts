@@ -74,6 +74,61 @@ export function getExportInfo(registryRoot: string, name: string): ExportInfo {
   };
 }
 
+export interface RegistryExportResult {
+  skillCount: number;
+  destPath: string;
+  bytesWritten: number;
+}
+
+/**
+ * Zip the entire skills/ directory of a registry into a single archive.
+ * Intended for convenience-persona users who want to migrate their registry
+ * to another machine (export here, import there).
+ */
+export async function exportRegistry(
+  registryRoot: string,
+  destPath: string,
+): Promise<RegistryExportResult> {
+  const skillsDir = path.join(registryRoot, "skills");
+  if (!fs.existsSync(skillsDir)) {
+    throw new Error(`No skills/ directory found at ${registryRoot}`);
+  }
+  const absDest = path.resolve(destPath);
+  fs.mkdirSync(path.dirname(absDest), { recursive: true });
+
+  const skillCount = fs
+    .readdirSync(skillsDir)
+    .filter((e) => fs.statSync(path.join(skillsDir, e)).isDirectory()).length;
+
+  return await new Promise<RegistryExportResult>((resolve, reject) => {
+    const output = fs.createWriteStream(absDest);
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    let settled = false;
+    output.on("close", () => {
+      if (settled) return;
+      settled = true;
+      resolve({
+        skillCount,
+        destPath: absDest,
+        bytesWritten: archive.pointer(),
+      });
+    });
+    output.on("error", (err) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    });
+    archive.on("error", (err) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    });
+    archive.pipe(output);
+    archive.directory(skillsDir, "skills");
+    void archive.finalize();
+  });
+}
+
 export interface ExportResult {
   name: string;
   kind: ExportKind;

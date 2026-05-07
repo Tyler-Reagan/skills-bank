@@ -9,8 +9,15 @@ interface Props {
 const SHORTCUTS: { keys: string[]; description: string }[] = [
   { keys: ["⌘ K", "/"], description: "Focus the Registry search" },
   { keys: ["Esc"], description: "Close the open dialog or drawer" },
-  { keys: ["←", "→"], description: "Move between Registry / Installed tabs (when a tab is focused)" },
-  { keys: ["Enter", "Space"], description: "Open the focused skill card's detail drawer" },
+  {
+    keys: ["←", "→"],
+    description:
+      "Move between Registry / Installed tabs (when a tab is focused)",
+  },
+  {
+    keys: ["Enter", "Space"],
+    description: "Open the focused skill card's detail drawer",
+  },
   { keys: ["Tab"], description: "Move focus through cards and controls" },
 ];
 
@@ -20,7 +27,9 @@ const SHORTCUTS: { keys: string[]; description: string }[] = [
  * outside-click. Acts as a discoverability surface so power users find
  * the shortcuts without trial-and-error.
  */
-export function KeyboardShortcutsOverlay({ onClose }: Props): React.ReactElement {
+export function KeyboardShortcutsOverlay({
+  onClose,
+}: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
   return (
@@ -36,7 +45,9 @@ export function KeyboardShortcutsOverlay({ onClose }: Props): React.ReactElement
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
           A handful of shortcuts to keep your hands on the keys.
         </p>
-        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}
+        >
           <tbody>
             {SHORTCUTS.map((s) => (
               <tr key={s.description}>
@@ -52,7 +63,9 @@ export function KeyboardShortcutsOverlay({ onClose }: Props): React.ReactElement
             ))}
           </tbody>
         </table>
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+        <div
+          style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}
+        >
           <button className="primary" onClick={onClose}>
             Done
           </button>

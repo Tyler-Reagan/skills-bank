@@ -225,9 +225,7 @@ function buildOneEntry(
  * three execs total — porcelain status, the unpushed SHA list, and a
  * single bulk `git log` — independent of skill count.
  */
-function computePublishStates(
-  registryRoot: string,
-): Map<string, PublishState> {
+function computePublishStates(registryRoot: string): Map<string, PublishState> {
   const out = new Map<string, PublishState>();
   if (!fs.existsSync(path.join(registryRoot, ".git"))) return out;
 
@@ -279,9 +277,7 @@ function computePublishStates(
   for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
     if (!sk.isDirectory()) continue;
     if (out.has(sk.name)) continue; // already untracked
-    const sha = exec(
-      `git log -1 --format=%H -- "skills/${sk.name}"`,
-    )?.trim();
+    const sha = exec(`git log -1 --format=%H -- "skills/${sk.name}"`)?.trim();
     if (!sha) {
       // Folder has no commit history → counts as a local edit.
       out.set(sk.name, "untracked");

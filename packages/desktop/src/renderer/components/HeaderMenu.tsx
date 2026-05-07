@@ -5,6 +5,7 @@ import { Icon } from "./Icon.js";
 interface Props {
   authStatus: AuthStatus | null;
   onChangeRegistry: () => void;
+  onExportRegistry?: () => void;
   onSignOut: () => Promise<void> | void;
   onOpenSettings: () => void;
   onOpenKeyboardShortcuts?: () => void;
@@ -26,6 +27,7 @@ interface Props {
 export function HeaderMenu({
   authStatus,
   onChangeRegistry,
+  onExportRegistry,
   onSignOut,
   onOpenSettings,
   onOpenKeyboardShortcuts,
@@ -51,9 +53,7 @@ export function HeaderMenu({
 
   const isPower = authStatus?.persona === "power";
   const user = authStatus?.user ?? null;
-  const triggerLabel = isPower
-    ? user?.login ?? "Account"
-    : "Settings";
+  const triggerLabel = isPower ? (user?.login ?? "Account") : "Settings";
 
   const close = () => setOpen(false);
 
@@ -105,9 +105,7 @@ export function HeaderMenu({
             </>
           ) : (
             <>
-              <div className="header-menu-meta">
-                Convenience mode (no GitHub auth)
-              </div>
+              <div className="header-menu-meta">Using bundled registry</div>
               <button
                 role="menuitem"
                 type="button"
@@ -118,8 +116,22 @@ export function HeaderMenu({
                 }}
               >
                 <Icon name="folder" size="sm" />
-                <span>Change registry folder…</span>
+                <span>Import a registry…</span>
               </button>
+              {onExportRegistry && (
+                <button
+                  role="menuitem"
+                  type="button"
+                  className="header-menu-item"
+                  onClick={() => {
+                    close();
+                    onExportRegistry();
+                  }}
+                >
+                  <Icon name="folder" size="sm" />
+                  <span>Export registry…</span>
+                </button>
+              )}
             </>
           )}
           <button

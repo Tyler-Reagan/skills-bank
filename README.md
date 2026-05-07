@@ -4,7 +4,7 @@ A registry of [Claude Code](https://claude.ai/code) skills plus a TypeScript CLI
 
 ![The Registry tab — browse, search, and install curated skills](docs/images/registry.png)
 
-End-user docs live in **[`docs/`](docs/)** — start with [`docs/getting-started.md`](docs/getting-started.md). For the project roadmap, see **[ROADMAP.md](ROADMAP.md)**.
+End-user docs live in **[`docs/`](docs/)** — start with [`docs/getting-started.md`](docs/getting-started.md).
 
 ## What's in this repo
 

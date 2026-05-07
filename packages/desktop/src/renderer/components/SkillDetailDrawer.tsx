@@ -5,6 +5,7 @@ import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
+import { usePersona } from "../PersonaContext.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
 
@@ -64,6 +65,7 @@ export function SkillDetailDrawer({
   onRegister,
   defaultInstallAgents,
 }: Props): React.ReactElement {
+  const persona = usePersona();
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
@@ -134,7 +136,11 @@ export function SkillDetailDrawer({
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
     | { kind: "running" }
-    | { kind: "confirm-delete"; agents: import("@skills-bank/core").AgentId[]; reasons: string[] }
+    | {
+        kind: "confirm-delete";
+        agents: import("@skills-bank/core").AgentId[];
+        reasons: string[];
+      }
   >({ kind: "idle" });
 
   const repairOrRemoveBroken = async () => {
@@ -152,9 +158,7 @@ export function SkillDetailDrawer({
     setRepairState({
       kind: "confirm-delete",
       agents: report.unrepairable.map((u) => u.agent),
-      reasons: report.unrepairable.map(
-        (u) => `${u.linkPath}: ${u.reason}`,
-      ),
+      reasons: report.unrepairable.map((u) => `${u.linkPath}: ${u.reason}`),
     });
   };
 
@@ -523,24 +527,31 @@ export function SkillDetailDrawer({
               moving them into the registry. install/uninstall don't apply
               because there's no registry copy to symlink to yet. */}
           {!isRegistered && onRegister && (
-            <button
-              className="btn primary"
-              disabled={action !== null}
-              onClick={() => {
-                setAction("registering");
-                void Promise.resolve(onRegister()).finally(() =>
-                  setAction(null),
-                );
-              }}
-            >
-              {action === "registering" ? (
-                <>
-                  <span className="spinner inline" /> Registering…
-                </>
-              ) : (
-                "Register in registry"
-              )}
-            </button>
+            <>
+              <button
+                className="btn primary"
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("registering");
+                  void Promise.resolve(onRegister()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+              >
+                {action === "registering" ? (
+                  <>
+                    <span className="spinner inline" /> Registering…
+                  </>
+                ) : (
+                  "Register in registry"
+                )}
+              </button>
+              <p className="drawer-action-hint">
+                {persona === "power"
+                  ? "Files move into your repo's skills/ directory. Commit to persist."
+                  : "Files move to the app's local registry. Safe from Pull updates; linkable across agents."}
+              </p>
+            </>
           )}
           {isRegistered &&
             (isInstalled ? (
@@ -666,7 +677,10 @@ export function SkillDetailDrawer({
               maxWidth: "90vw",
             }}
           >
-            <h3 style={{ marginTop: 0 }}>Couldn't repair broken link{repairState.agents.length === 1 ? "" : "s"}</h3>
+            <h3 style={{ marginTop: 0 }}>
+              Couldn't repair broken link
+              {repairState.agents.length === 1 ? "" : "s"}
+            </h3>
             <p style={{ color: "var(--text-2)", fontSize: 13 }}>
               No usable source found for these broken symlink
               {repairState.agents.length === 1 ? "" : "s"}. Delete{" "}
@@ -692,7 +706,9 @@ export function SkillDetailDrawer({
                 </li>
               ))}
             </ul>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
+            >
               <button
                 className="btn"
                 onClick={() => setRepairState({ kind: "idle" })}

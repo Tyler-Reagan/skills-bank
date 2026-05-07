@@ -5,7 +5,7 @@ import {
   resolveRegistryRoot,
   scanExistingInstalls,
   type InstalledSkill,
-  type MigrationAction,
+  type RegistrationAction,
 } from "@skills-bank/core";
 
 interface ImportOptions {
@@ -30,7 +30,8 @@ export async function importCommand(opts: ImportOptions): Promise<void> {
     return;
   }
 
-  const planned: Array<{ entry: InstalledSkill; action: MigrationAction }> = [];
+  const planned: Array<{ entry: InstalledSkill; action: RegistrationAction }> =
+    [];
 
   for (const entry of report.entries) {
     const action = await chooseAction(entry, opts);
@@ -74,7 +75,7 @@ export async function importCommand(opts: ImportOptions): Promise<void> {
 async function chooseAction(
   entry: InstalledSkill,
   opts: ImportOptions,
-): Promise<MigrationAction> {
+): Promise<RegistrationAction> {
   if (opts.adoptAll) {
     if (entry.kind === "ours") return { type: "skip", name: entry.name };
     if (entry.kind === "broken-symlink")
@@ -89,12 +90,12 @@ async function chooseAction(
     return { type: "skip", name: entry.name };
   }
 
-  const choices: Record<string, MigrationAction> = {};
+  const choices: Record<string, RegistrationAction> = {};
   console.log();
   console.log(`${pc.bold(entry.name)} ${pc.dim(`(${entry.kind})`)}`);
   if (entry.target) console.log(`  target: ${entry.target}`);
 
-  const offer: Array<[string, string, () => MigrationAction]> = [];
+  const offer: Array<[string, string, () => RegistrationAction]> = [];
   if (entry.kind === "ours") {
     offer.push([
       "s",
@@ -138,7 +139,7 @@ async function chooseAction(
   return choices[ans] ?? choices[def] ?? { type: "skip", name: entry.name };
 }
 
-function describe(a: MigrationAction): string {
+function describe(a: RegistrationAction): string {
   switch (a.type) {
     case "skip":
       return pc.dim("skip");

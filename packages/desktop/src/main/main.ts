@@ -19,6 +19,7 @@ import {
   applyMigration,
   buildRegistryIndex,
   exportSkill,
+  exportRegistry,
   fetchCanonicalTarball,
   finalizeSkillsDir,
   getExportInfo,
@@ -38,7 +39,7 @@ import {
   getAgentSkillsDir,
   type AgentId,
   type InstalledKind,
-  type MigrationAction,
+  type RegistrationAction,
   type SyncDecisions,
 } from "@skills-bank/core";
 import {
@@ -252,16 +253,19 @@ function ensureDiscoverView(parent: BrowserWindow): WebContentsView {
       canGoBack: wc.navigationHistory.canGoBack(),
     });
   });
-  wc.on("did-fail-load", (_e, errorCode, description, validatedURL, isMainFrame) => {
-    if (!isMainFrame) return;
-    if (errorCode === -3) return; // ERR_ABORTED — fires on every reload, ignore.
-    broadcastDiscoverStatus({
-      kind: "error",
-      url: validatedURL || discoverCurrentUrl,
-      errorCode,
-      description,
-    });
-  });
+  wc.on(
+    "did-fail-load",
+    (_e, errorCode, description, validatedURL, isMainFrame) => {
+      if (!isMainFrame) return;
+      if (errorCode === -3) return; // ERR_ABORTED — fires on every reload, ignore.
+      broadcastDiscoverStatus({
+        kind: "error",
+        url: validatedURL || discoverCurrentUrl,
+        errorCode,
+        description,
+      });
+    },
+  );
   parent.on("closed", () => {
     discoverView = null;
     discoverAttached = false;
@@ -281,7 +285,8 @@ function intBounds(b: Bounds): Electron.Rectangle {
 }
 
 ipcMain.handle(IPC.discoverShow, (_e, bounds: Bounds) => {
-  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+  const win =
+    BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
   if (!win) return;
   const view = ensureDiscoverView(win);
   view.setBounds(intBounds(bounds));
@@ -344,11 +349,19 @@ ipcMain.handle(IPC.discoverOpenTerminal, async () => {
       const command = cwd
         ? `start "" wt.exe -d "${cwd}" || start "" cmd.exe /K cd /D "${cwd}"`
         : `start "" wt.exe || start "" cmd.exe`;
-      spawn("cmd.exe", ["/c", command], { detached: true, stdio: "ignore" }).unref();
+      spawn("cmd.exe", ["/c", command], {
+        detached: true,
+        stdio: "ignore",
+      }).unref();
     } else {
       // Linux best-effort. Most distros ship `x-terminal-emulator` (Debian)
       // or expose one of the common emulators on PATH.
-      const candidates = ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm"];
+      const candidates = [
+        "x-terminal-emulator",
+        "gnome-terminal",
+        "konsole",
+        "xterm",
+      ];
       let launched = false;
       for (const bin of candidates) {
         try {
@@ -454,30 +467,30 @@ ipcMain.handle(IPC.listInstalled, () => {
 ipcMain.handle(
   IPC.install,
   (_e, name: string, force?: boolean, agents?: AgentId[]) => {
-  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  try {
-    const r = installSkill(name, {
-      registryRoot,
-      force: force ?? false,
-      ...(agents && agents.length > 0 ? { agents } : {}),
-    });
-    const wrote = r.installs.filter((i) => !i.alreadyInstalled);
-    if (wrote.length > 0) {
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    try {
+      const r = installSkill(name, {
+        registryRoot,
+        force: force ?? false,
+        ...(agents && agents.length > 0 ? { agents } : {}),
+      });
+      const wrote = r.installs.filter((i) => !i.alreadyInstalled);
+      if (wrote.length > 0) {
+        return {
+          ok: true,
+          message: `installed ${name} for ${wrote.length} agent(s)`,
+        };
+      }
+      if (r.installs.length > 0) {
+        return { ok: true, message: `${name} already installed` };
+      }
       return {
-        ok: true,
-        message: `installed ${name} for ${wrote.length} agent(s)`,
+        ok: false,
+        message: r.errors[0]?.message ?? `nothing installed for ${name}`,
       };
+    } catch (err) {
+      return { ok: false, message: (err as Error).message };
     }
-    if (r.installs.length > 0) {
-      return { ok: true, message: `${name} already installed` };
-    }
-    return {
-      ok: false,
-      message: r.errors[0]?.message ?? `nothing installed for ${name}`,
-    };
-  } catch (err) {
-    return { ok: false, message: (err as Error).message };
-  }
   },
 );
 
@@ -509,7 +522,7 @@ ipcMain.handle(IPC.scan, () => {
 
 ipcMain.handle(
   IPC.migrate,
-  (_e, items: Array<{ name: string; action: MigrationAction }>) => {
+  (_e, items: Array<{ name: string; action: RegistrationAction }>) => {
     if (!registryRoot) {
       return items.map(({ action }) => ({
         action,
@@ -639,6 +652,72 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
   } catch (err) {
     return { ok: false, message: (err as Error).message };
   }
+});
+
+ipcMain.handle(IPC.exportRegistry, async () => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    const skillsDir = path.join(registryRoot, "skills");
+    const date = new Date().toISOString().slice(0, 10);
+    const win = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showSaveDialog(win ?? undefined!, {
+      title: "Export registry",
+      defaultPath: `skills-bank-registry-${date}.zip`,
+      filters: [{ name: "Zip Archive", extensions: ["zip"] }],
+    });
+    if (result.canceled || !result.filePath) {
+      return { ok: false, message: "export cancelled" };
+    }
+    const r = await exportRegistry(registryRoot, result.filePath);
+    return {
+      ok: true,
+      message: `Exported ${r.skillCount} skill${r.skillCount === 1 ? "" : "s"} → ${r.destPath}`,
+      skillCount: r.skillCount,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+ipcMain.handle(IPC.importRegistry, async () => {
+  const win = BrowserWindow.getFocusedWindow();
+  const result = await dialog.showOpenDialog(win ?? undefined!, {
+    title: "Import a registry",
+    message: "Pick a folder containing a skills/ subdirectory.",
+    properties: ["openDirectory"],
+    defaultPath: app.getPath("home"),
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return { ok: false, message: "cancelled", registryRoot };
+  }
+  const candidate = result.filePaths[0]!;
+  const validation = isValidRegistryRoot(candidate);
+  if (!validation.ok) {
+    return {
+      ok: false,
+      message: validation.reason ?? "invalid folder",
+      registryRoot,
+    };
+  }
+  const skillsDir = path.join(candidate, "skills");
+  if (!fs.existsSync(skillsDir)) {
+    return {
+      ok: false,
+      message: `No skills/ directory found in the selected folder. Make sure you're pointing at a valid registry.`,
+      registryRoot,
+    };
+  }
+  const skillCount = fs
+    .readdirSync(skillsDir)
+    .filter((e) => fs.statSync(path.join(skillsDir, e)).isDirectory()).length;
+  registryRoot = candidate;
+  writeConfig({ registryRoot: candidate, persona });
+  return {
+    ok: true,
+    message: `Registry imported — ${skillCount} skill${skillCount === 1 ? "" : "s"} found`,
+    registryRoot: candidate,
+    skillCount,
+  };
 });
 
 // Read up to 8 KB of SKILL.md text, with a "…(truncated)" marker when
@@ -1068,22 +1147,26 @@ ipcMain.handle(IPC.openExternal, async (_e, url: string) => {
 
 ipcMain.handle(IPC.repairBrokenLinks, (_e, name: string) => {
   if (!registryRoot)
-    return { repaired: [], unrepairable: [{ agent: "claude", linkPath: "", reason: NO_ROOT_MSG }] };
+    return {
+      repaired: [],
+      unrepairable: [{ agent: "claude", linkPath: "", reason: NO_ROOT_MSG }],
+    };
   return repairBrokenLinks(registryRoot, name);
 });
 
-ipcMain.handle(
-  IPC.removeBrokenLinks,
-  (_e, name: string, agents: AgentId[]) => {
-    if (!registryRoot)
-      return { removed: [], errors: [{ agent: "claude", message: NO_ROOT_MSG }] };
-    return removeBrokenLinks(registryRoot, name, agents);
-  },
-);
+ipcMain.handle(IPC.removeBrokenLinks, (_e, name: string, agents: AgentId[]) => {
+  if (!registryRoot)
+    return { removed: [], errors: [{ agent: "claude", message: NO_ROOT_MSG }] };
+  return removeBrokenLinks(registryRoot, name, agents);
+});
 
 ipcMain.handle(
   IPC.resolveSkillConflicts,
-  (_e, name: string, decisions: import("@skills-bank/core").ConflictResolveDecision[]) => {
+  (
+    _e,
+    name: string,
+    decisions: import("@skills-bank/core").ConflictResolveDecision[],
+  ) => {
     if (!registryRoot) {
       return {
         applied: [],
@@ -1097,7 +1180,6 @@ ipcMain.handle(
     return resolveSkillConflicts(registryRoot, name, decisions);
   },
 );
-
 
 // Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
 // for installed users post-merge) and fall back to the locally bundled
@@ -1141,7 +1223,11 @@ ipcMain.handle(IPC.openSelfHostDocs, async () => {
 void app.whenReady().then(() => {
   // macOS dev: dock icon comes from the binary (Electron's default) until we
   // override. Packaged .app gets its dock icon from the bundle's .icns.
-  if (process.platform === "darwin" && !app.isPackaged && fs.existsSync(iconPng)) {
+  if (
+    process.platform === "darwin" &&
+    !app.isPackaged &&
+    fs.existsSync(iconPng)
+  ) {
     app.dock?.setIcon(iconPng);
   }
   wireAutoUpdater();

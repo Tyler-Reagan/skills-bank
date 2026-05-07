@@ -98,7 +98,7 @@ export interface FinalizeResult {
   blockingEntries?: string[];
 }
 
-export type MigrationAction =
+export type RegistrationAction =
   | { type: "skip"; name: string }
   | { type: "remove"; name: string }
   | { type: "adopt"; name: string }
@@ -115,8 +115,8 @@ export type MigrationAction =
       agents: import("./agents.js").AgentId[];
     };
 
-export interface MigrationResult {
-  action: MigrationAction;
+export interface RegistrationResult {
+  action: RegistrationAction;
   ok: boolean;
   message: string;
 }

@@ -9,8 +9,8 @@ import type {
   ExportResult,
   FinalizeResult,
   InstalledSkill,
-  MigrationAction,
-  MigrationResult,
+  RegistrationAction,
+  RegistrationResult,
   RegistryEntry,
   ScanReport,
   SyncDecisions,
@@ -53,6 +53,8 @@ export const IPC = {
   reposReplaceRegistry: "repos:replaceRegistry",
   openExternal: "system:openExternal",
   openSelfHostDocs: "system:openSelfHostDocs",
+  exportRegistry: "skills:exportRegistry",
+  importRegistry: "skills:importRegistry",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
@@ -144,8 +146,8 @@ interface SkillsBankAPI {
   uninstall(name: string): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;
   migrate(
-    items: Array<{ name: string; action: MigrationAction }>,
-  ): Promise<MigrationResult[]>;
+    items: Array<{ name: string; action: RegistrationAction }>,
+  ): Promise<RegistrationResult[]>;
   getRoot(): Promise<string>;
   rebuildIndex(): Promise<{ ok: boolean; message: string; entries: number }>;
   finalize(): Promise<FinalizeResult>;
@@ -196,6 +198,17 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; message: string; importedCount?: number }>;
   openExternal(url: string): Promise<void>;
   openSelfHostDocs(): Promise<{ ok: boolean; message?: string }>;
+  exportRegistry(): Promise<{
+    ok: boolean;
+    message: string;
+    skillCount?: number;
+  }>;
+  importRegistry(): Promise<{
+    ok: boolean;
+    message: string;
+    registryRoot: string | null;
+    skillCount?: number;
+  }>;
   repairBrokenLinks(name: string): Promise<BrokenLinkRepairReport>;
   removeBrokenLinks(
     name: string,

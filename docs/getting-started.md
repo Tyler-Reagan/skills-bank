@@ -19,14 +19,15 @@ You'll see a one-time setup screen with two sections.
 
 ![First-launch setup screen with Quick start and Advanced sections](images/setup.png)
 
-**Quick start**:
-- *Use the bundled registry* — Browse the curated skills shipped with this app, pull updates with one click, and add your own alongside. No GitHub required. **This is the right choice for most users.**
+**Use the bundled registry** *(recommended for most users)*
+Browse and install the curated skill set shipped with this app. Pull updates with one click. Add your own skills alongside, and export the registry to back it up or move it to another machine. No GitHub required.
 
-**Advanced**:
-- *Connect a GitHub registry* — Replace the registry with one of your own GitHub repos containing a `skills/` directory. You maintain it from then on; auto-sync is off.
-- *Self-host* — Fork this entire app and registry and ship your own build. See [self-host.md](self-host.md).
+**Connect your own registry**
+Point the app at a GitHub repo you own and maintain as your skill registry. The app clones it locally and never auto-syncs it — manage content through your normal git workflow. Not a fork of this app — just your own repo with a `skills/` directory.
 
-You can change your mind later via the account menu in the header.
+Want to fork the entire app and ship your own build? See [self-host.md](self-host.md).
+
+You can change your mind later via the account menu in the header. See [personas.md](personas.md) for a detailed feature comparison by registry choice.
 
 ## Use a skill in Claude Code
 

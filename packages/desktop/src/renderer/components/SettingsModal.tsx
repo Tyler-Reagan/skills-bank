@@ -95,9 +95,9 @@ export function SettingsModal({
         <section style={section}>
           <h3 style={sectionTitle}>Default install agents</h3>
           <p style={hint}>
-            When you install a skill from the Registry tab, link it into
-            these agent directories. Leave all unchecked to broadcast to
-            every agent directory that exists on this machine.
+            When you install a skill from the Registry tab, link it into these
+            agent directories. Leave all unchecked to broadcast to every agent
+            directory that exists on this machine.
           </p>
           <div style={{ marginTop: 8 }}>
             {ALL_AGENTS.map((id) => (
@@ -119,9 +119,8 @@ export function SettingsModal({
         <section style={section}>
           <h3 style={sectionTitle}>Card grid columns</h3>
           <p style={hint}>
-            Auto adapts to the window width; fixed values give you
-            consistent card density at the cost of overflow on narrow
-            windows.
+            Auto adapts to the window width; fixed values give you consistent
+            card density at the cost of overflow on narrow windows.
           </p>
           <div style={radioRow}>
             {(["auto", "2", "3", "4"] as GridColumns[]).map((v) => (
@@ -143,8 +142,8 @@ export function SettingsModal({
         <section style={section}>
           <h3 style={sectionTitle}>Search debounce</h3>
           <p style={hint}>
-            Delay before search filtering applies. Higher values keep the
-            UI smooth on large registries.
+            Delay before search filtering applies. Higher values keep the UI
+            smooth on large registries.
           </p>
           <div style={radioRow}>
             {(["off", "100", "250"] as SearchDebounce[]).map((v) => (

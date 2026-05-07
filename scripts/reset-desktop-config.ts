@@ -46,8 +46,8 @@ function appSupportRoot(): string {
 function userDataCandidates(): { label: string; path: string }[] {
   const root = appSupportRoot();
   return [
-    { label: "packaged",   path: path.join(root, "Skills Bank") },
-    { label: "dev",        path: path.join(root, "@skills-bank", "desktop") },
+    { label: "packaged", path: path.join(root, "Skills Bank") },
+    { label: "dev", path: path.join(root, "@skills-bank", "desktop") },
   ];
 }
 

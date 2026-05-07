@@ -1,9 +1,5 @@
 import pc from "picocolors";
-import {
-  getAgent,
-  installSkill,
-  resolveRegistryRoot,
-} from "@skills-bank/core";
+import { getAgent, installSkill, resolveRegistryRoot } from "@skills-bank/core";
 
 interface InstallCmdOptions {
   force?: boolean;

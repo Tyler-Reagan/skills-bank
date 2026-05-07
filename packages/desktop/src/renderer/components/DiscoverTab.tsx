@@ -8,7 +8,8 @@ function formatUrl(url: string): string {
   try {
     const u = new URL(url);
     const host = u.hostname.replace(/^www\./, "");
-    const tail = u.pathname === "/" && !u.search ? "" : `${u.pathname}${u.search}`;
+    const tail =
+      u.pathname === "/" && !u.search ? "" : `${u.pathname}${u.search}`;
     return `${host}${tail}`;
   } catch {
     return url;
@@ -32,7 +33,12 @@ export function DiscoverTab(): React.ReactElement {
     let rafHandle = 0;
     let lastSent = "";
 
-    const measure = (): { x: number; y: number; width: number; height: number } => {
+    const measure = (): {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } => {
       const r = host.getBoundingClientRect();
       return { x: r.left, y: r.top, width: r.width, height: r.height };
     };
@@ -85,7 +91,11 @@ export function DiscoverTab(): React.ReactElement {
 
   return (
     <div className="discover-tab">
-      <div className="discover-chrome" role="toolbar" aria-label="skills.sh navigation">
+      <div
+        className="discover-chrome"
+        role="toolbar"
+        aria-label="skills.sh navigation"
+      >
         <button
           type="button"
           className="icon-btn"

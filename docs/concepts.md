@@ -31,13 +31,14 @@ The registry is **not** the only source of skills you can use. Skills installed 
 
 ## Persona
 
-A one-time decision made on first launch that controls which features the app exposes:
+A one-time decision made on first launch that determines how the app manages your registry:
 
-- **Convenience** — Use the curated registry bundled with the app. One-click sync pulls upstream updates; you can add your own skills on top.
-- **Power** — Replace the registry with a GitHub repo of your own. You maintain it; auto-sync is off.
-- **Self-host** — Fork the app + registry and ship your own build.
+- **Bundled registry** — Use the curated skill set shipped with this app. Pull updates with one click; add your own skills alongside. Export the registry to back it up or move it to another machine.
+- **Your own registry** — Point the app at a GitHub repo you own and maintain. The app clones it locally and never auto-syncs it — you manage content through your normal git workflow.
 
-Persona is persisted. You can switch by signing out (account menu → **Sign out of GitHub**) or by changing registry from the same menu.
+Self-hosting (forking the entire app) is a developer path, not a runtime persona. See [self-host.md](self-host.md) for details.
+
+Persona is persisted. You can switch via the account menu in the header. See [personas.md](personas.md) for a full feature comparison.
 
 ## Source
 

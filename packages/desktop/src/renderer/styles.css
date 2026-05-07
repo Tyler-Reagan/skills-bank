@@ -924,6 +924,13 @@ input, select { font-family: inherit; color: inherit; }
   gap: var(--s2);
   background: var(--surface);
 }
+.drawer-action-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.4;
+}
 .drawer-warnings {
   background: var(--warn-dim);
   border: 1px solid var(--warn);
@@ -1126,7 +1133,7 @@ input, select { font-family: inherit; color: inherit; }
   color: var(--on-primary);
 }
 
-/* ── Legacy row layout (used by MigrateModal entry list) ── */
+/* ── Legacy row layout (used by RegisterModal entry list) ── */
 .row {
   display: flex;
   align-items: center;
@@ -1166,14 +1173,14 @@ input, select { font-family: inherit; color: inherit; }
   font-family: var(--font-mono);
 }
 
-/* MigrateModal still uses className="primary" / "danger" on bare buttons. */
+/* RegisterModal still uses className="primary" / "danger" on bare buttons. */
 button.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); padding: var(--s2) var(--s3); border-radius: var(--r); border-style: solid; border-width: 1px; font-size: 12px; }
 button.primary:hover:not(:disabled) { background: var(--accent); color: var(--on-primary); }
 button.danger { background: var(--danger-dim); border-color: var(--danger); color: var(--danger); padding: var(--s2) var(--s3); border-radius: var(--r); border-style: solid; border-width: 1px; font-size: 12px; }
 button.danger:hover:not(:disabled) { background: var(--danger); color: var(--on-primary); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Bare buttons in MigrateModal (Cancel etc.) */
+/* Bare buttons in RegisterModal (Cancel etc.) */
 .drawer-actions button:not(.btn),
 .row button {
   padding: var(--s2) var(--s3);
@@ -1185,7 +1192,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .row button:hover:not(:disabled) { border-color: var(--border-hi); }
 
-/* Plain selects in MigrateModal */
+/* Plain selects in RegisterModal */
 .row select {
   padding: var(--s2) var(--s3);
   background: var(--surface-hi);
@@ -1291,14 +1298,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .login-options {
   display: flex; flex-direction: column; gap: var(--s3);
   margin-top: var(--s2);
-}
-.login-option.primary {
-  border-color: var(--accent);
-  background: var(--accent-dim);
-}
-.login-option.primary:hover:not(:disabled) {
-  background: var(--accent-dim);
-  filter: brightness(1.1);
 }
 .login-option {
   display: flex; flex-direction: column; gap: var(--s1);

@@ -46,9 +46,7 @@ export const AGENTS: readonly AgentDef[] = [
   { id: "agents", label: "Agents (shared)", relativePath: ".agents/skills" },
 ] as const;
 
-const AGENTS_BY_ID = new Map<AgentId, AgentDef>(
-  AGENTS.map((a) => [a.id, a]),
-);
+const AGENTS_BY_ID = new Map<AgentId, AgentDef>(AGENTS.map((a) => [a.id, a]));
 
 export function getAgent(id: AgentId): AgentDef {
   const a = AGENTS_BY_ID.get(id);

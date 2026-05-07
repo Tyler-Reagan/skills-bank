@@ -1,9 +1,5 @@
 import React, { useState } from "react";
-import type {
-  AgentId,
-  InstalledSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { Icon } from "./Icon.js";
 
 // Renderer-only label + path maps. Don't import AGENTS as a runtime value
@@ -235,11 +231,7 @@ export function SkillCard({
           aria-label={`Installed for: ${agents.map((a) => AGENT_LABELS[a]).join(", ")}`}
         >
           {agents.map((a) => (
-            <span
-              key={a}
-              className="skill-agent-chip"
-              title={AGENT_LABELS[a]}
-            >
+            <span key={a} className="skill-agent-chip" title={AGENT_LABELS[a]}>
               {AGENT_PATHS[a]}
             </span>
           ))}

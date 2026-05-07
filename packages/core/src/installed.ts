@@ -102,7 +102,6 @@ export function listInstalled(
   }
   // Sort by name then agent for stable ordering.
   return out.sort(
-    (a, b) =>
-      a.name.localeCompare(b.name) || a.agent.localeCompare(b.agent),
+    (a, b) => a.name.localeCompare(b.name) || a.agent.localeCompare(b.agent),
   );
 }

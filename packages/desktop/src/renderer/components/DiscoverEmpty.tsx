@@ -26,11 +26,7 @@ export function DiscoverEmpty({
           >
             Retry
           </button>
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={onOpenExternal}
-          >
+          <button type="button" className="btn ghost" onClick={onOpenExternal}>
             Open in browser
           </button>
         </div>

@@ -14,7 +14,7 @@ You installed a skill from somewhere else (e.g. `npx skills add` or a manual cop
 
 ## Bulk register
 
-Use **Register all** in the section header to register every "Not registered" skill in one pass. Each skill is processed sequentially with a progress toast.
+Use **Register all** in the section header to make individual selections for every "Not registered" skill in one pass. Each skill is processed sequentially with a progress toast.
 
 ## What if the same name is already registered?
 

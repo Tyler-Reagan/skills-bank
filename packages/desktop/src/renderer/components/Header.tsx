@@ -14,6 +14,7 @@ interface Props {
   density: Density;
   onToggleDensity: () => void;
   onChangeRegistry: () => void;
+  onExportRegistry?: () => void;
   syncing: boolean;
   onSync: () => void;
   /** When false (power persona), the canonical-sync button is hidden. */
@@ -32,6 +33,7 @@ export function Header({
   density,
   onToggleDensity,
   onChangeRegistry,
+  onExportRegistry,
   syncing,
   onSync,
   showSync,
@@ -125,11 +127,10 @@ export function Header({
           <HeaderMenu
             authStatus={authStatus}
             onChangeRegistry={onChangeRegistry}
+            onExportRegistry={onExportRegistry}
             onSignOut={onSignOut}
             onOpenSettings={onOpenSettings}
-            {...(onOpenKeyboardShortcuts
-              ? { onOpenKeyboardShortcuts }
-              : {})}
+            {...(onOpenKeyboardShortcuts ? { onOpenKeyboardShortcuts } : {})}
           />
         </div>
       </div>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import type {
   InstalledSkill,
-  MigrationAction,
-  MigrationResult,
+  RegistrationAction,
+  RegistrationResult,
   ScanReport,
 } from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
@@ -14,7 +14,7 @@ interface Props {
   onFlash: (msg: string) => void;
 }
 
-type ChoiceMap = Record<string, MigrationAction>;
+type ChoiceMap = Record<string, RegistrationAction>;
 
 type Phase =
   | { kind: "scan" }
@@ -22,12 +22,12 @@ type Phase =
   | { kind: "applying"; total: number }
   | {
       kind: "results";
-      results: MigrationResult[];
+      results: RegistrationResult[];
       rebuilding: boolean;
       rebuildMessage: string | null;
     };
 
-export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
+export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(() => void onClose());
   const [report, setReport] = useState<ScanReport | null>(null);
@@ -320,34 +320,39 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
           />
         )}
         <div style={{ maxHeight: 400, overflow: "auto", marginBottom: 16 }}>
-          {report.entries.map((e) => (
-            <div className="row" key={e.name}>
-              <div className="meta">
-                <h3>
-                  {e.name} <span className="tag">{e.kind}</span>
-                </h3>
-                <p>{e.target ?? e.linkPath}</p>
+          {report.entries
+            .filter(
+              (e) =>
+                actionsFor(e).filter((opt) => opt.value !== "skip").length > 0,
+            )
+            .map((e) => (
+              <div className="row" key={e.name}>
+                <div className="meta">
+                  <h3>
+                    {e.name} <span className="tag">{e.kind}</span>
+                  </h3>
+                  <p>{e.target ?? e.linkPath}</p>
+                </div>
+                <select
+                  value={choices[e.name]?.type ?? "skip"}
+                  onChange={(ev) =>
+                    setChoices((c) => ({
+                      ...c,
+                      [e.name]: actionFor(
+                        ev.target.value as RegistrationAction["type"],
+                        e,
+                      ),
+                    }))
+                  }
+                >
+                  {actionsFor(e).map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <select
-                value={choices[e.name]?.type ?? "skip"}
-                onChange={(ev) =>
-                  setChoices((c) => ({
-                    ...c,
-                    [e.name]: actionFor(
-                      ev.target.value as MigrationAction["type"],
-                      e,
-                    ),
-                  }))
-                }
-              >
-                {actionsFor(e).map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+            ))}
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button onClick={() => void onClose()}>Cancel</button>
@@ -360,7 +365,7 @@ export function MigrateModal({ onClose, onFlash }: Props): React.ReactElement {
   );
 }
 
-function defaultAction(e: InstalledSkill): MigrationAction {
+function defaultAction(e: InstalledSkill): RegistrationAction {
   switch (e.kind) {
     case "ours":
       return { type: "skip", name: e.name };
@@ -375,7 +380,7 @@ function defaultAction(e: InstalledSkill): MigrationAction {
 
 function actionsFor(
   e: InstalledSkill,
-): Array<{ value: MigrationAction["type"]; label: string }> {
+): Array<{ value: RegistrationAction["type"]; label: string }> {
   switch (e.kind) {
     case "ours":
       return [{ value: "skip", label: "Skip (already integrated)" }];
@@ -399,9 +404,9 @@ function actionsFor(
 }
 
 function actionFor(
-  type: MigrationAction["type"],
+  type: RegistrationAction["type"],
   e: InstalledSkill,
-): MigrationAction {
+): RegistrationAction {
   switch (type) {
     case "adopt":
       return { type: "adopt", name: e.name };
@@ -418,7 +423,7 @@ function actionFor(
   }
 }
 
-function describeName(a: MigrationAction): string {
+function describeName(a: RegistrationAction): string {
   switch (a.type) {
     case "skip":
     case "remove":
@@ -496,8 +501,8 @@ function FinalizeCallout(props: {
           <p
             style={{ margin: "4px 0 0", fontSize: 12, color: "var(--danger)" }}
           >
-            Register first — finalize will refuse while real-directory
-            entries remain.
+            Register first — finalize will refuse while real-directory entries
+            remain.
           </p>
         )}
         {errorDetail && (

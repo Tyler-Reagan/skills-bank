@@ -1,20 +1,21 @@
 import React from "react";
-import type {
-  AgentId,
-  InstalledSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
+import { usePersona } from "../PersonaContext.js";
 
 const INSTALLED_TOOLTIP =
   "Every skill linked into any agent directory on this machine — registered " +
   "in the registry or installed elsewhere.";
 
-const REGISTER_TOOLTIP =
-  "Register a skill in the registry: files move under <repo>/skills/<name>/, " +
-  "the agent symlink is rewritten to the registry copy, and registry " +
-  "metadata is applied.";
+const REGISTER_TOOLTIP_CONVENIENCE =
+  "Moves files into the app's local registry. The skill becomes cross-agent " +
+  "linkable and is never overwritten by Pull updates. Lives on this machine only — " +
+  "use Export registry to back it up or move it to another machine.";
+
+const REGISTER_TOOLTIP_POWER =
+  "Moves files into your GitHub repo's skills/ directory. Commit and push " +
+  "to persist across machines and share with others.";
 
 interface InstalledGroup {
   name: string;
@@ -75,9 +76,7 @@ function aggregateByName(installed: InstalledSkill[]): InstalledGroup[] {
       }
     }
   }
-  return Array.from(map.values()).sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function kindRank(k: InstalledSkill["kind"]): number {
@@ -97,8 +96,8 @@ interface Props {
   installed: InstalledSkill[];
   registry: RegistryEntry[];
   onSwitchToBrowse: () => void;
-  onMigrateAll: () => void;
-  onMigrateOne: (entry: InstalledSkill) => void;
+  onRegisterAll: () => void;
+  onRegisterOne: (entry: InstalledSkill) => void;
   onSelectIntegrated: (entry: RegistryEntry) => void;
 }
 
@@ -106,10 +105,13 @@ export function InstalledTab({
   installed,
   registry,
   onSwitchToBrowse,
-  onMigrateAll,
-  onMigrateOne,
+  onRegisterAll,
+  onRegisterOne,
   onSelectIntegrated,
 }: Props): React.ReactElement {
+  const persona = usePersona();
+  const registerTooltip =
+    persona === "power" ? REGISTER_TOOLTIP_POWER : REGISTER_TOOLTIP_CONVENIENCE;
   if (installed.length === 0) {
     return (
       <div className="empty-state">
@@ -129,7 +131,7 @@ export function InstalledTab({
           <button className="btn primary" onClick={onSwitchToBrowse}>
             Browse registry
           </button>
-          <button className="btn" onClick={onMigrateAll}>
+          <button className="btn" onClick={onRegisterAll}>
             Scan for existing skills
           </button>
         </div>
@@ -154,9 +156,9 @@ export function InstalledTab({
             label="What does Installed mean?"
           />
         </span>{" "}
-        Every skill currently linked into any agent directory on this
-        machine — registered by this app or installed elsewhere (e.g. the
-        skills.sh CLI). Chips show which agent dirs have each skill linked.
+        Every skill currently linked into any agent directory on this machine —
+        registered by this app or installed elsewhere (e.g. the skills.sh CLI).
+        Chips show which agent dirs have each skill linked.
         <span className="meta-counts">
           <span>
             {groups.length} skill{groups.length === 1 ? "" : "s"}
@@ -181,17 +183,17 @@ export function InstalledTab({
                   <span className="count">({unintegrated.length})</span>
                 </span>
                 <InfoTooltip
-                  text={REGISTER_TOOLTIP}
+                  text={registerTooltip}
                   label="What does registering do?"
                 />
               </h2>
               <p>
-                Linked into an agent directory but not yet registered. Each
-                chip shows where the skill lives on disk. Click any card to
-                manage just that one.
+                Linked into an agent directory but not yet registered. Each chip
+                shows where the skill lives on disk. Click any card to manage
+                just that one.
               </p>
             </div>
-            <button className="btn primary" onClick={onMigrateAll}>
+            <button className="btn primary" onClick={onRegisterAll}>
               Register All
             </button>
           </header>
@@ -216,7 +218,7 @@ export function InstalledTab({
                   key={g.name}
                   entry={entry}
                   status={status}
-                  onSelect={() => onMigrateOne(s)}
+                  onSelect={() => onRegisterOne(s)}
                   index={i}
                   agents={g.agents}
                   isRegistered={registryHit !== undefined}

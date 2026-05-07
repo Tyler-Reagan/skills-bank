@@ -121,8 +121,8 @@ export function ConflictResolveModal({
       <div style={modal} role="dialog" aria-modal="true">
         <h2 style={{ marginTop: 0 }}>Resolve conflicts — {name}</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          {name} is registered, but some agent directories have stragglers
-          that aren't symlinks to the registry copy. Pick how to handle each.
+          {name} is registered, but some agent directories have stragglers that
+          aren't symlinks to the registry copy. Pick how to handle each.
         </p>
 
         <div

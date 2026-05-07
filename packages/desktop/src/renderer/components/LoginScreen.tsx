@@ -134,67 +134,58 @@ export function LoginScreen({
           skills<span>-</span>bank
         </div>
         <h1>How do you want to use skills-bank?</h1>
-        <p>Pick a path below. You can change your mind later in Settings.</p>
+        <p>
+          Pick a path below. You can change your mind later from the Settings
+          menu.
+        </p>
 
-        <section className="login-section">
-          <h2 className="login-section-title">Quick start</h2>
-          <p className="login-section-hint">
-            The fastest way in. Use the curated skills shipped with this app.
-          </p>
-          <div className="login-options">
-            <button
-              type="button"
-              className="login-option primary"
-              disabled={busy}
-              onClick={() => void skip()}
-            >
-              <strong>Use the bundled registry</strong>
-              <span>
-                Browse the curated skills shipped with this app, pull updates
-                with one click, and add your own alongside. No GitHub required.
-              </span>
-            </button>
-          </div>
-        </section>
+        <div className="login-options">
+          <button
+            type="button"
+            className="login-option"
+            disabled={busy}
+            onClick={() => void skip()}
+          >
+            <strong>Use the bundled registry</strong>
+            <span>
+              Browse and install the curated skill set shipped with this app.
+              Pull updates with one click. Add your own skills alongside, and
+              export the registry to back it up or move it to another machine.
+              No GitHub required.
+            </span>
+          </button>
 
-        <section className="login-section login-section-advanced">
-          <h2 className="login-section-title">Advanced</h2>
-          <p className="login-section-hint">
-            Bring your own registry — at the cost of maintaining it yourself.
-          </p>
-          <div className="login-options">
-            <button
-              type="button"
-              className="login-option"
-              disabled={!isAuthConfigured || busy}
-              onClick={() => void beginAuth()}
-            >
-              <strong>Connect a GitHub registry</strong>
-              <span>
-                Replace the registry with one of your own GitHub repos. You
-                maintain it; auto-sync is off.
-              </span>
-              {!isAuthConfigured && (
-                <em className="login-disabled-note">
-                  Not configured — see <code>auth-config.ts</code>.
-                </em>
-              )}
-            </button>
+          <button
+            type="button"
+            className="login-option"
+            disabled={!isAuthConfigured || busy}
+            onClick={() => void beginAuth()}
+          >
+            <strong>Connect your own registry</strong>
+            <span>
+              Point the app at a GitHub repo you own and maintain as your skill
+              registry. Manage content through your normal git workflow
+              (disables auto-sync).
+            </span>
+            {!isAuthConfigured && (
+              <em className="login-disabled-note">
+                Not configured — see <code>auth-config.ts</code>.
+              </em>
+            )}
+          </button>
+        </div>
 
-            <button
-              type="button"
-              className="login-option"
-              disabled={busy}
-              onClick={() => void openSelfHost()}
-            >
-              <strong>Self-host</strong>
-              <span>
-                Fork the app + registry and ship your own build. Opens
-                instructions in your browser.
-              </span>
-            </button>
-          </div>
-        </section>
+        <p className="setup-footnote">
+          Want to fork this app and ship your own build?{" "}
+          <button
+            type="button"
+            className="link-btn"
+            disabled={busy}
+            onClick={() => void openSelfHost()}
+          >
+            Self-host instructions →
+          </button>
+        </p>
       </div>
     </div>
   );

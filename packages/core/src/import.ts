@@ -14,8 +14,8 @@ import { buildRegistryIndex } from "./build.js";
 import type {
   FinalizeResult,
   InstalledSkill,
-  MigrationAction,
-  MigrationResult,
+  RegistrationAction,
+  RegistrationResult,
   ScanReport,
   TopLevelSymlinkInfo,
 } from "./types.js";
@@ -76,9 +76,9 @@ export interface MigrateOptions {
 
 export function applyMigration(
   entry: InstalledSkill,
-  action: MigrationAction,
+  action: RegistrationAction,
   opts: MigrateOptions,
-): MigrationResult {
+): RegistrationResult {
   try {
     switch (action.type) {
       case "skip":
@@ -143,8 +143,8 @@ export function applyMigration(
 function setAgentLinks(
   entry: InstalledSkill,
   desired: AgentId[],
-): MigrationResult {
-  const action: MigrationAction = {
+): RegistrationResult {
+  const action: RegistrationAction = {
     type: "setAgents",
     name: entry.name,
     agents: desired,
@@ -227,8 +227,8 @@ function setAgentLinks(
 function adoptIntoRegistry(
   entry: InstalledSkill,
   opts: MigrateOptions,
-): MigrationResult {
-  const action: MigrationAction = { type: "adopt", name: entry.name };
+): RegistrationResult {
+  const action: RegistrationAction = { type: "adopt", name: entry.name };
 
   // Always resolve the actual on-disk source via realpath so we move
   // the real content (not a one-hop symlink target). Without this, an

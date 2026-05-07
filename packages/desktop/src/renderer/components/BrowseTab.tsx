@@ -4,10 +4,15 @@ import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
 import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
+import { usePersona } from "../PersonaContext.js";
 
-const REGISTRY_TOOLTIP =
-  "Curated skills and metadata maintained by this app. Not the only source — " +
-  "installs from elsewhere appear in the Installed tab.";
+const REGISTRY_TOOLTIP_CONVENIENCE =
+  "Curated skills bundled with this app. Click Pull updates in the header to sync the latest from upstream. " +
+  "Skills you install from elsewhere appear in the Installed tab.";
+
+const REGISTRY_TOOLTIP_POWER =
+  "Skills in your connected GitHub repo. Manage content directly in your repo — " +
+  "the app never auto-syncs it. Skills you install from elsewhere appear in the Installed tab.";
 
 interface Props {
   registry: RegistryEntry[];
@@ -41,15 +46,25 @@ export function BrowseTab({
   rebuilding,
   searchInputRef,
 }: Props): React.ReactElement {
+  const persona = usePersona();
+  const isPower = persona === "power";
+
   if (registry.length === 0) {
     return (
       <div className="empty-state">
         <strong>The registry is empty.</strong>
-        <p>
-          Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
-          <code>meta.json</code> or a <code>SKILL.md</code> with YAML
-          frontmatter.
-        </p>
+        {isPower ? (
+          <p>
+            Add skills to your connected GitHub repo, then click{" "}
+            <strong>Refresh</strong> to reload.
+          </p>
+        ) : (
+          <p>
+            Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
+            <code>meta.json</code> or a <code>SKILL.md</code> with YAML
+            frontmatter.
+          </p>
+        )}
         <div style={{ marginTop: 16 }}>
           <button
             className="btn primary"
@@ -92,12 +107,18 @@ export function BrowseTab({
       <div className="tab-intro">
         <span className="tab-intro-heading">
           <strong>Registry</strong>
-          <InfoTooltip text={REGISTRY_TOOLTIP} label="What is the registry?" />
+          <InfoTooltip
+            text={
+              isPower ? REGISTRY_TOOLTIP_POWER : REGISTRY_TOOLTIP_CONVENIENCE
+            }
+            label="What is the registry?"
+          />
         </span>{" "}
-        Skills published in this app's registry — portable across machines,
-        shared via git. Click any card to view its details, then{" "}
-        <strong>Install</strong> to link it into the agent directories you
-        use (Claude Code, Cursor, etc.).
+        {isPower
+          ? "Browse and install skills from your connected registry. Manage content through your git repo — the app never overwrites it."
+          : "Browse and install curated skills. Click Pull updates in the header to pull upstream updates."}{" "}
+        Click any card to view its details, then <strong>Install</strong> to
+        link it into the agent directories you use (Claude Code, Cursor, etc.).
         <span className="meta-counts">
           <span>{registry.length} in registry</span>
           <span>·</span>
@@ -125,9 +146,7 @@ export function BrowseTab({
             }
           >
             Installed only{" "}
-            <span className="filter-chip-count">
-              ({installedFromRegistry})
-            </span>
+            <span className="filter-chip-count">({installedFromRegistry})</span>
           </button>
           <TagFilter
             registry={registry}

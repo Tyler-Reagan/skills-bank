@@ -7,7 +7,7 @@ import type {
 import { BrowseTab } from "./components/BrowseTab.js";
 import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js";
 import { InstalledTab } from "./components/InstalledTab.js";
-import { MigrateModal } from "./components/MigrateModal.js";
+import { RegisterModal } from "./components/RegisterModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
 import { LoginScreen } from "./components/LoginScreen.js";
@@ -26,6 +26,7 @@ import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import type { AuthStatus, SyncStatus } from "../shared/ipc.js";
+import { PersonaProvider } from "./PersonaContext.js";
 
 const LS_KEYS = {
   search: "skills-bank.searchQuery",
@@ -117,7 +118,7 @@ export function App(): React.ReactElement {
   };
   const [toast, setToast] = useState<ToastShape | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showMigrate, setShowMigrate] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
   // Manage-agent-links is a standalone modal targeting a single skill name.
   // Its target may originate from the registry tab, the installed-registered
   // section, or the installed-not-registered section — uniformly handled.
@@ -264,9 +265,7 @@ export function App(): React.ReactElement {
     installedCount: number;
   }> => {
     setRefreshing(true);
-    const minSpinner = new Promise<void>((resolve) =>
-      setTimeout(resolve, 250),
-    );
+    const minSpinner = new Promise<void>((resolve) => setTimeout(resolve, 250));
     try {
       const cfg = await window.skillsBank.getConfig();
       setRegistryRoot(cfg.registryRoot);
@@ -409,22 +408,29 @@ export function App(): React.ReactElement {
   );
 
   const changeRegistry = useCallback(async () => {
-    // For power-persona users, the gear opens the GitHub repo picker;
-    // they can't pick local folders since their registry is GitHub-sourced.
-    // Convenience users get the legacy folder picker — useful for
-    // pointing at a custom local clone or the dev-mode override.
+    // Power-persona users pick a GitHub repo; convenience users import
+    // a local folder (validated to contain a skills/ subdirectory).
     if (authStatus?.persona === "power") {
       setShowRepoPicker(true);
       return;
     }
-    const r = await window.skillsBank.setRegistryRoot();
+    const r = await window.skillsBank.importRegistry();
     if (r.ok && r.registryRoot) {
-      flash(`Registry set to ${r.registryRoot}`);
+      flash(r.message);
       await refresh();
     } else if (r.message !== "cancelled") {
-      flash(`Couldn't set registry: ${r.message}`);
+      flash(`Couldn't import registry: ${r.message}`);
     }
   }, [refresh, flash, authStatus]);
+
+  const exportRegistry = useCallback(async () => {
+    const r = await window.skillsBank.exportRegistry();
+    if (!r.ok && r.message !== "export cancelled") {
+      flash(`Export failed: ${r.message}`);
+    } else if (r.ok) {
+      flash(r.message);
+    }
+  }, [flash]);
 
   const pickRepo = useCallback(
     async (fullName: string) => {
@@ -559,228 +565,231 @@ export function App(): React.ReactElement {
   }
 
   return (
-    <div className="app">
-      <Header
-        refreshing={refreshing}
-        onRefresh={() => void onRefreshClick()}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        density={density}
-        onToggleDensity={toggleDensity}
-        onChangeRegistry={() => void changeRegistry()}
-        syncing={
-          syncStatus.kind === "fetching" || syncStatus.kind === "applying"
-        }
-        onSync={() => void sync()}
-        showSync={authStatus?.persona !== "power"}
-        authStatus={authStatus}
-        onSignOut={signOut}
-        onOpenSettings={() => setShowSettings(true)}
-        onOpenKeyboardShortcuts={() => setShowShortcuts(true)}
-      />
-      <SyncBanner
-        status={syncStatus}
-        pendingConflicts={pendingConflicts}
-        onDismiss={() => setSyncStatus({ kind: "idle" })}
-        onResolveConflicts={() => void openConflictModal()}
-      />
-      <Tabs
-        active={tab}
-        onChange={setTabPersisted}
-        registryCount={registry.length}
-        installedCount={uniqueInstalledCount}
-      />
-      {tab === "discover" ? (
-        <DiscoverTab />
-      ) : (
-        <div
-          className="content"
-          role="tabpanel"
-          id={`tabpanel-${tab}`}
-          aria-labelledby={`tab-${tab}`}
-        >
-          {tab === "browse" && (
-            <BrowseTab
-              registry={registry}
-              installed={installed}
-              search={search}
-              setSearch={setSearch}
-              selectedTags={selectedTags}
-              setSelectedTags={setSelectedTags}
-              installedOnly={installedOnly}
-              setInstalledOnly={setInstalledOnly}
-              onSelect={(e) => setSelected(e)}
-              onSaveTags={saveCardTags}
-              onRebuild={rebuild}
-              rebuilding={rebuilding}
-              searchInputRef={searchInputRef}
-            />
-          )}
-          {tab === "installed" && (
-            <InstalledTab
-              installed={installed}
-              registry={registry}
-              onSwitchToBrowse={() => setTabPersisted("browse")}
-              onMigrateAll={() => setShowMigrate(true)}
-              onMigrateOne={(s) => {
-                // Open the unified detail drawer with a synthetic registry
-                // entry so the user gets the same Register / Manage-links /
-                // Remove action surface as a registered skill — the two
-                // operations are now distinct buttons, not a radio group.
-                const synthetic: RegistryEntry = registry.find(
-                  (r) => r.name === s.name,
-                ) ?? {
-                  name: s.name,
-                  description: s.target ?? s.linkPath,
-                  path: s.linkPath,
-                  source: { source: "user" },
-                };
-                setSelected(synthetic);
-              }}
-              onSelectIntegrated={(e) => setSelected(e)}
-            />
-          )}
-        </div>
-      )}
-
-      {showMigrate && (
-        <MigrateModal
-          onClose={async () => {
-            setShowMigrate(false);
-            await refresh();
-          }}
-          onFlash={flash}
-        />
-      )}
-
-      {manageLinksTarget && (
-        <ManageLinksModal
-          name={manageLinksTarget.name}
-          installations={manageLinksTarget.installations}
-          onClose={async () => {
-            setManageLinksTarget(null);
-            await refresh();
-          }}
-          onFlash={flash}
-        />
-      )}
-
-      {conflictTarget && (
-        <ConflictResolveModal
-          name={conflictTarget.name}
-          conflicts={conflictTarget.conflicts}
-          onClose={async () => {
-            setConflictTarget(null);
-            await refresh();
-          }}
-          onFlash={flash}
-        />
-      )}
-
-      {showSettings && (
-        <SettingsModal
-          settings={settings}
-          onSave={saveSettings}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
-
-      {showShortcuts && (
-        <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
-      )}
-
-      {conflictModalEntries && (
-        <ConflictResolutionModal
-          conflicts={conflictModalEntries}
-          onClose={() => setConflictModalEntries(null)}
-          onResolve={resolveConflicts}
-        />
-      )}
-
-      {showRepoPicker && (
-        <RepoPickerModal
-          onClose={() => setShowRepoPicker(false)}
-          onPicked={pickRepo}
+    <PersonaProvider persona={authStatus?.persona ?? null}>
+      <div className="app">
+        <Header
+          refreshing={refreshing}
+          onRefresh={() => void onRefreshClick()}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          density={density}
+          onToggleDensity={toggleDensity}
+          onChangeRegistry={() => void changeRegistry()}
+          onExportRegistry={() => void exportRegistry()}
+          syncing={
+            syncStatus.kind === "fetching" || syncStatus.kind === "applying"
+          }
+          onSync={() => void sync()}
+          showSync={authStatus?.persona !== "power"}
+          authStatus={authStatus}
           onSignOut={signOut}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenKeyboardShortcuts={() => setShowShortcuts(true)}
         />
-      )}
+        <SyncBanner
+          status={syncStatus}
+          pendingConflicts={pendingConflicts}
+          onDismiss={() => setSyncStatus({ kind: "idle" })}
+          onResolveConflicts={() => void openConflictModal()}
+        />
+        <Tabs
+          active={tab}
+          onChange={setTabPersisted}
+          registryCount={registry.length}
+          installedCount={uniqueInstalledCount}
+        />
+        {tab === "discover" ? (
+          <DiscoverTab />
+        ) : (
+          <div
+            className="content"
+            role="tabpanel"
+            id={`tabpanel-${tab}`}
+            aria-labelledby={`tab-${tab}`}
+          >
+            {tab === "browse" && (
+              <BrowseTab
+                registry={registry}
+                installed={installed}
+                search={search}
+                setSearch={setSearch}
+                selectedTags={selectedTags}
+                setSelectedTags={setSelectedTags}
+                installedOnly={installedOnly}
+                setInstalledOnly={setInstalledOnly}
+                onSelect={(e) => setSelected(e)}
+                onSaveTags={saveCardTags}
+                onRebuild={rebuild}
+                rebuilding={rebuilding}
+                searchInputRef={searchInputRef}
+              />
+            )}
+            {tab === "installed" && (
+              <InstalledTab
+                installed={installed}
+                registry={registry}
+                onSwitchToBrowse={() => setTabPersisted("browse")}
+                onRegisterAll={() => setShowRegister(true)}
+                onRegisterOne={(s) => {
+                  // Open the unified detail drawer with a synthetic registry
+                  // entry so the user gets the same Register / Manage-links /
+                  // Remove action surface as a registered skill — the two
+                  // operations are now distinct buttons, not a radio group.
+                  const synthetic: RegistryEntry = registry.find(
+                    (r) => r.name === s.name,
+                  ) ?? {
+                    name: s.name,
+                    description: s.target ?? s.linkPath,
+                    path: s.linkPath,
+                    source: { source: "user" },
+                  };
+                  setSelected(synthetic);
+                }}
+                onSelectIntegrated={(e) => setSelected(e)}
+              />
+            )}
+          </div>
+        )}
 
-      {selected &&
-        (() => {
-          const isRegistered = registry.some((r) => r.name === selected.name);
-          const installations = installed.filter(
-            (i) => i.name === selected.name,
-          );
-          return (
-            <SkillDetailDrawer
-              entry={selected}
-              installed={installed}
-              registryRoot={registryRoot}
-              isRegistered={isRegistered}
-              defaultInstallAgents={
-                settings.defaultInstallAgents.length > 0
-                  ? settings.defaultInstallAgents
-                  : undefined
-              }
-              onClose={() => setSelected(null)}
-              onChanged={async (msg) => {
-                flash(msg);
-                await refresh();
-              }}
-              onUninstalled={(name) => {
-                flashWithAction(`Uninstalled ${name}`, "Undo", () =>
-                  undoUninstall(name),
-                );
-                void refresh();
-              }}
-              onManageLinks={() => {
-                setManageLinksTarget({
-                  name: selected.name,
-                  installations,
-                });
-                setSelected(null);
-              }}
-              onResolveConflicts={() => {
-                const conflicts = installations.filter(
-                  (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
-                );
-                if (conflicts.length === 0) return;
-                setConflictTarget({ name: selected.name, conflicts });
-                setSelected(null);
-              }}
-              onRegister={
-                isRegistered
-                  ? undefined
-                  : async () => {
-                      const results = await window.skillsBank.migrate([
-                        {
-                          name: selected.name,
-                          action: { type: "adopt", name: selected.name },
-                        },
-                      ]);
-                      const r = results[0]!;
-                      flash(r.message);
-                      if (r.ok) {
-                        void window.skillsBank.rebuildIndex();
-                        setSelected(null);
+        {showRegister && (
+          <RegisterModal
+            onClose={async () => {
+              setShowRegister(false);
+              await refresh();
+            }}
+            onFlash={flash}
+          />
+        )}
+
+        {manageLinksTarget && (
+          <ManageLinksModal
+            name={manageLinksTarget.name}
+            installations={manageLinksTarget.installations}
+            onClose={async () => {
+              setManageLinksTarget(null);
+              await refresh();
+            }}
+            onFlash={flash}
+          />
+        )}
+
+        {conflictTarget && (
+          <ConflictResolveModal
+            name={conflictTarget.name}
+            conflicts={conflictTarget.conflicts}
+            onClose={async () => {
+              setConflictTarget(null);
+              await refresh();
+            }}
+            onFlash={flash}
+          />
+        )}
+
+        {showSettings && (
+          <SettingsModal
+            settings={settings}
+            onSave={saveSettings}
+            onClose={() => setShowSettings(false)}
+          />
+        )}
+
+        {showShortcuts && (
+          <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
+        )}
+
+        {conflictModalEntries && (
+          <ConflictResolutionModal
+            conflicts={conflictModalEntries}
+            onClose={() => setConflictModalEntries(null)}
+            onResolve={resolveConflicts}
+          />
+        )}
+
+        {showRepoPicker && (
+          <RepoPickerModal
+            onClose={() => setShowRepoPicker(false)}
+            onPicked={pickRepo}
+            onSignOut={signOut}
+          />
+        )}
+
+        {selected &&
+          (() => {
+            const isRegistered = registry.some((r) => r.name === selected.name);
+            const installations = installed.filter(
+              (i) => i.name === selected.name,
+            );
+            return (
+              <SkillDetailDrawer
+                entry={selected}
+                installed={installed}
+                registryRoot={registryRoot}
+                isRegistered={isRegistered}
+                defaultInstallAgents={
+                  settings.defaultInstallAgents.length > 0
+                    ? settings.defaultInstallAgents
+                    : undefined
+                }
+                onClose={() => setSelected(null)}
+                onChanged={async (msg) => {
+                  flash(msg);
+                  await refresh();
+                }}
+                onUninstalled={(name) => {
+                  flashWithAction(`Uninstalled ${name}`, "Undo", () =>
+                    undoUninstall(name),
+                  );
+                  void refresh();
+                }}
+                onManageLinks={() => {
+                  setManageLinksTarget({
+                    name: selected.name,
+                    installations,
+                  });
+                  setSelected(null);
+                }}
+                onResolveConflicts={() => {
+                  const conflicts = installations.filter(
+                    (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
+                  );
+                  if (conflicts.length === 0) return;
+                  setConflictTarget({ name: selected.name, conflicts });
+                  setSelected(null);
+                }}
+                onRegister={
+                  isRegistered
+                    ? undefined
+                    : async () => {
+                        const results = await window.skillsBank.migrate([
+                          {
+                            name: selected.name,
+                            action: { type: "adopt", name: selected.name },
+                          },
+                        ]);
+                        const r = results[0]!;
+                        flash(r.message);
+                        if (r.ok) {
+                          void window.skillsBank.rebuildIndex();
+                          setSelected(null);
+                        }
+                        await refresh();
                       }
-                      await refresh();
-                    }
-              }
-            />
-          );
-        })()}
+                }
+              />
+            );
+          })()}
 
-      {toast && (
-        <div className="toast" role="status" aria-live="polite">
-          <span>{toast.message}</span>
-          {toast.action && (
-            <button className="toast-action" onClick={toast.action.onClick}>
-              {toast.action.label}
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+        {toast && (
+          <div className="toast" role="status" aria-live="polite">
+            <span>{toast.message}</span>
+            {toast.action && (
+              <button className="toast-action" onClick={toast.action.onClick}>
+                {toast.action.label}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </PersonaProvider>
   );
 }

@@ -4,33 +4,39 @@ The first launch shows a one-time setup screen. The choice you make here decides
 
 ![First-launch setup screen with Quick start and Advanced sections](../images/setup.png)
 
-## The three options
+## The two options
 
-The screen has two sections: **Quick start** and **Advanced**.
+### Use the bundled registry *(recommended for most users)*
 
-### Quick start: Use the bundled registry
+Skills Bank manages a local copy of the curated registry shipped with the app. You get:
 
-The recommended path for most people. Skills Bank manages a local copy of the curated registry shipped with the app. You get:
-
-- The full set of curated skills available to install with one click.
-- A **Sync skills** button that pulls upstream updates while preserving anything you've added.
+- The full set of curated skills, installable with one click.
+- A **Pull updates** button that fetches the latest upstream curated skills while preserving anything you've added or modified.
 - The ability to register your own skills alongside the curated ones.
+- **Export registry** and **Import a registry** in the account menu — move your registry to another machine or back it up as a zip.
 
 No GitHub auth needed.
 
-### Advanced: Connect a GitHub registry
+### Connect your own registry
 
-For users who want the registry to be a GitHub repo of their own. Skills Bank clones your repo into the local registry location and treats its contents as `imported`. From then on:
+For users who want full version control over an independent skill registry they maintain themselves. Skills Bank clones your GitHub repo locally and reads from it. From then on:
 
-- You maintain the repo through your normal git workflow (push, PRs, branching, …).
-- The app's auto-sync is **off** — Skills Bank never overwrites your repo.
-- All other features (install, manage links, register, conflict resolution) work the same.
+- You manage the repo through your normal git workflow (commit, push, PRs, branching, …).
+- The app never auto-syncs — your content is yours.
+- All other features (install, manage links, register, conflict resolution) work exactly the same as with the bundled registry.
+- **Portability is built in** — `git clone` on a new machine reproduces your full registry.
+
+This is not a fork of the app. It's your own repo with a `skills/` directory; the app just reads from it.
 
 You'll be sent through GitHub's OAuth flow to grant repo read access. The app then asks you to pick a repo whose root contains a `skills/` directory.
 
-### Advanced: Self-host
+---
 
-For users who want to fork the entire app. See [self-host.md](../self-host.md) for the build instructions.
+*Want to fork the entire app and ship your own build?* See [self-host.md](../self-host.md). Self-hosting is a developer path, not a runtime option on this screen.
+
+---
+
+See [personas.md](../personas.md) for a full feature-by-feature comparison.
 
 ## Switching later
 

@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from "react";
-import type { AgentId, InstalledSkill, MigrationResult } from "@skills-bank/core";
+import type {
+  AgentId,
+  InstalledSkill,
+  RegistrationResult,
+} from "@skills-bank/core";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
@@ -47,7 +51,7 @@ interface Props {
 type Phase =
   | { kind: "plan" }
   | { kind: "applying" }
-  | { kind: "result"; result: MigrationResult };
+  | { kind: "result"; result: RegistrationResult };
 
 /**
  * Standalone modal: pick which agent directories the skill is linked
@@ -163,7 +167,12 @@ export function ManageLinksModal({
 
   return (
     <div style={overlay}>
-      <div style={modal} role="dialog" aria-modal="true" aria-label="Manage agent links">
+      <div
+        style={modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Manage agent links"
+      >
         <h2 style={{ marginTop: 0 }}>Manage agent links — {name}</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
           Pick which agent directories the skill is linked from. Already-checked
