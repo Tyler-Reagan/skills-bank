@@ -362,13 +362,24 @@ export function App(): React.ReactElement {
   }, []);
 
   // Quick tag editing from card affordances (X to remove, "+ tag" to
-   // add). Drawer's full edit flow stays available; this skips it for
-   // single-edit speed.
+  // add). Drawer's full edit flow stays available; this skips it for
+  // single-edit speed.
+  //
+  // Optimistic: paint the new tags into local state before the IPC
+  // round-trip + registry rebuild resolves. Background refresh picks
+  // up any source/publishState changes (e.g. auto-protect after
+  // editing a canonical skill) without blocking the user's next click.
   const saveCardTags = useCallback(
     async (name: string, next: string[]) => {
+      setRegistry((prev) =>
+        prev.map((e) => (e.name === name ? { ...e, tags: next } : e)),
+      );
       const r = await window.skillsBank.editTags(name, next);
       flash(r.message);
-      if (r.ok) await refresh();
+      // Refresh in the background either way — on success to pick up
+      // source/publishState changes, on failure to roll back the
+      // optimistic paint.
+      void refresh();
     },
     [flash, refresh],
   );

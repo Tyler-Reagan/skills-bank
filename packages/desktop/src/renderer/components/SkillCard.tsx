@@ -304,45 +304,49 @@ function PublishBadge({
       </span>
     );
   }
+  // PROTECTED is sticky: a `user`-tagged skill with a syncedFromCommit
+  // was originally canonical and got saved locally. The badge wins
+  // even if the local copy is dirty, because the protection status is
+  // what the user cares about — Sync skips this skill regardless.
+  if (entry.source.source === "user" && entry.source.syncedFromCommit) {
+    return (
+      <span
+        className="skill-origin-badge protected"
+        title="Protected — Sync will not overwrite this skill"
+      >
+        PROTECTED
+      </span>
+    );
+  }
+  // DRAFT covers any registered skill with uncommitted or unpushed
+  // local changes, regardless of source. Tooltip distinguishes the
+  // implication: canonical drafts may be overwritten by Sync, while
+  // user-authored drafts are just locally uncommitted.
+  if (
+    entry.publishState === "draft" ||
+    entry.publishState === "untracked"
+  ) {
+    const draftTip =
+      entry.source.source === "canonical"
+        ? entry.publishState === "untracked"
+          ? "Local changes not yet committed — Sync may overwrite them. Click Save locally to protect."
+          : "Committed locally but not pushed — Sync may overwrite. Click Save locally to protect."
+        : entry.publishState === "untracked"
+          ? "Uncommitted edits in the local registry"
+          : "Committed locally but not yet pushed";
+    return (
+      <span className="skill-origin-badge draft" title={draftTip}>
+        DRAFT
+      </span>
+    );
+  }
   if (entry.source.source === "user") {
-    // A `user`-tagged skill with a syncedFromCommit was originally
-    // canonical and got saved locally — visually distinct from a
-    // purely user-authored skill, since "Protected" is the actionable
-    // word: Sync skips it. Skills with no syncedFromCommit have no
-    // canonical history to protect from, so they keep YOURS.
-    if (entry.source.syncedFromCommit) {
-      return (
-        <span
-          className="skill-origin-badge protected"
-          title="Protected — Sync will not overwrite this skill"
-        >
-          PROTECTED
-        </span>
-      );
-    }
     return (
       <span
         className="skill-origin-badge user"
         title="Authored locally — not part of the curated registry"
       >
         YOURS
-      </span>
-    );
-  }
-  if (
-    entry.publishState === "draft" ||
-    entry.publishState === "untracked"
-  ) {
-    return (
-      <span
-        className="skill-origin-badge draft"
-        title={
-          entry.publishState === "untracked"
-            ? "Local changes not yet committed — Sync may overwrite them"
-            : "Committed locally but not pushed to upstream"
-        }
-      >
-        DRAFT
       </span>
     );
   }
