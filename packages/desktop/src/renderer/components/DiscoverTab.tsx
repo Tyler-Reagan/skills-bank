@@ -76,6 +76,7 @@ export function DiscoverTab(): React.ReactElement {
   const onBack = () => void window.skillsBank.discoverGoBack();
   const onReload = () => void window.skillsBank.discoverReload();
   const onOpenExternal = () => void window.skillsBank.discoverOpenExternal();
+  const onOpenTerminal = () => void window.skillsBank.discoverOpenTerminal();
 
   const isError = status.kind === "error";
   const isLoading = status.kind === "loading";
@@ -112,6 +113,14 @@ export function DiscoverTab(): React.ReactElement {
           aria-label={isError ? "Offline" : "Online"}
           title={isError ? "Offline or load failed" : "Connected"}
         />
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={onOpenTerminal}
+          title="Open a terminal to run install commands (e.g. npx skillsadd ...)"
+        >
+          Open Terminal ↗
+        </button>
         <button
           type="button"
           className="btn ghost"

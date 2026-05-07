@@ -71,6 +71,7 @@ const api = {
   discoverGoBack: () => ipcRenderer.invoke(IPC.discoverGoBack),
   discoverReload: () => ipcRenderer.invoke(IPC.discoverReload),
   discoverOpenExternal: () => ipcRenderer.invoke(IPC.discoverOpenExternal),
+  discoverOpenTerminal: () => ipcRenderer.invoke(IPC.discoverOpenTerminal),
   onDiscoverStatus: (cb: (status: DiscoverStatus) => void) => {
     const listener = (_e: unknown, status: DiscoverStatus) => cb(status);
     ipcRenderer.on(IPC.discoverStatus, listener);

@@ -62,6 +62,7 @@ export const IPC = {
   discoverGoBack: "discover:goBack",
   discoverReload: "discover:reload",
   discoverOpenExternal: "discover:openExternal",
+  discoverOpenTerminal: "discover:openTerminal",
   discoverStatus: "discover:status",
 } as const;
 
@@ -210,6 +211,7 @@ interface SkillsBankAPI {
   discoverGoBack(): Promise<void>;
   discoverReload(): Promise<void>;
   discoverOpenExternal(): Promise<void>;
+  discoverOpenTerminal(): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
 }
 

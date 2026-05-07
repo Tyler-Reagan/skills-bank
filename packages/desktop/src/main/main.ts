@@ -10,6 +10,7 @@ import {
 // cleanly under Node's ESM loader (NodeNext module resolution).
 import electronUpdater from "electron-updater";
 const { autoUpdater } = electronUpdater;
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -324,6 +325,52 @@ ipcMain.handle(IPC.discoverReload, () => {
 
 ipcMain.handle(IPC.discoverOpenExternal, async () => {
   await shell.openExternal(discoverCurrentUrl);
+});
+
+ipcMain.handle(IPC.discoverOpenTerminal, async () => {
+  // Detached spawn so the terminal process outlives our app session and
+  // doesn't block on stdio. Cwd is the registry root if known so the user
+  // lands somewhere skill-relevant; otherwise the process default.
+  const cwd = registryRoot ?? undefined;
+  try {
+    if (process.platform === "darwin") {
+      // `open -a Terminal <path>` opens the system terminal at that dir.
+      const args = ["-a", "Terminal"];
+      if (cwd) args.push(cwd);
+      spawn("open", args, { detached: true, stdio: "ignore" }).unref();
+    } else if (process.platform === "win32") {
+      // `start ""` consumes the title arg so the path isn't taken as one.
+      // Falls back to cmd if Windows Terminal isn't installed.
+      const command = cwd
+        ? `start "" wt.exe -d "${cwd}" || start "" cmd.exe /K cd /D "${cwd}"`
+        : `start "" wt.exe || start "" cmd.exe`;
+      spawn("cmd.exe", ["/c", command], { detached: true, stdio: "ignore" }).unref();
+    } else {
+      // Linux best-effort. Most distros ship `x-terminal-emulator` (Debian)
+      // or expose one of the common emulators on PATH.
+      const candidates = ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm"];
+      let launched = false;
+      for (const bin of candidates) {
+        try {
+          const child = spawn(bin, cwd ? ["--working-directory", cwd] : [], {
+            detached: true,
+            stdio: "ignore",
+          });
+          child.unref();
+          launched = true;
+          break;
+        } catch {
+          // try next candidate
+        }
+      }
+      if (!launched) {
+        return { ok: false, message: "no terminal emulator found on PATH" };
+      }
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
 });
 
 function createWindow(): void {
