@@ -1,6 +1,6 @@
 {
   "name": "@skills-bank/desktop",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "private": true,
   "type": "module",
   "description": "Desktop manager for skills-bank",
@@ -39,6 +39,7 @@
   "build": {
     "appId": "com.tyler-reagan.skills-bank",
     "productName": "Skills Bank",
+    "artifactName": "Skills-Bank-${version}.${ext}",
     "directories": {
       "output": "dist-electron"
     },

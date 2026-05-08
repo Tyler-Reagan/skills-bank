@@ -61,6 +61,7 @@ jobs:
                --notes ""
           gh release upload "$TAG" \
             packages/desktop/dist-electron/*.dmg \
+            packages/desktop/dist-electron/*.dmg.blockmap \
             --clobber
           if ls packages/desktop/dist-electron/latest-mac.yml 2>/dev/null; then
             gh release upload "$TAG" \
