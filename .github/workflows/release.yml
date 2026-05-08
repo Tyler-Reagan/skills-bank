@@ -48,7 +48,9 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: pnpm exec electron-builder --mac --arm64 --x64 --publish never
+        run: |
+          pnpm exec electron-builder --mac --x64 --publish never
+          pnpm exec electron-builder --mac --arm64 --publish never
       - name: Upload DMGs to GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
