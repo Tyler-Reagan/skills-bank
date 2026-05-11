@@ -61,9 +61,11 @@
     "mac": {
       "target": "dmg",
       "category": "public.app-category.developer-tools",
-      "identity": null,
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "notarize": {
+        "teamId": "${env.APPLE_TEAM_ID}"
+      }
     },
     "dmg": {
       "background": null,

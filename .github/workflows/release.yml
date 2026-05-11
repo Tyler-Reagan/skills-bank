@@ -4,16 +4,16 @@ name: release
 # git push origin v0.2.0`). The Release stays in draft until you manually
 # publish it from the GitHub UI — that's the gate before users see it.
 #
-# Code signing & notarization are scaffolded but dormant. To enable, set
-# the following repository secrets:
+# Code signing & notarization are active. Required repository secrets:
 #   CSC_LINK                       - base64-encoded .p12 cert (Developer ID Application)
 #   CSC_KEY_PASSWORD               - password for the .p12
 #   APPLE_ID                       - Apple ID email
 #   APPLE_APP_SPECIFIC_PASSWORD    - app-specific password generated at appleid.apple.com
 #   APPLE_TEAM_ID                  - 10-char Team ID from developer.apple.com/account
-# Then flip `mac.identity` from null and set `mac.notarize: true` in
-# packages/desktop/package.json. With those in place electron-builder
-# auto-signs and notarizes; no further workflow changes are needed.
+# electron-builder reads these from the environment and handles signing and
+# notarization via notarytool automatically. To disable, set mac.identity: null,
+# mac.hardenedRuntime: false, and remove mac.notarize from
+# packages/desktop/package.json.
 
 on:
   push:
