@@ -154,6 +154,11 @@ function defaultManagedRegistryRoot(): string {
   const root = path.join(app.getPath("userData"), "registry");
   fs.mkdirSync(path.join(root, "skills"), { recursive: true });
   seedManagedRegistryIfEmpty(root);
+  // Run the canon-snapshot + source-marker bootstrap on every boot,
+  // not just on first-launch seed. Existing installs from before M2
+  // have a populated registry but no upstream-canon.json, so canon
+  // attribution would otherwise be false for every bundled skill.
+  ensureManagedCanonAttribution(root);
   return root;
 }
 
@@ -187,25 +192,74 @@ function seedManagedRegistryIfEmpty(root: string): void {
         2,
       ),
     );
-    // M2: snapshot the bundled set as the upstream canon list so
-    // buildRegistryIndex marks seeded skills as canon on the first
-    // load — before the user has run Pull updates. Sync overwrites
-    // this file with the live upstream set on the next pull.
+    // First-launch only: mark each freshly-seeded skill as
+    // source: canonical. The bundled seed doesn't ship per-skill
+    // .skills-bank.json files (those are managed-registry app state,
+    // not upstream content), so without this the seeded skills
+    // default to source: user — falling through to YOURS badges and
+    // disabling drift detection. Safe to write here because the
+    // outer `if (fs.existsSync(indexPath)) return` guarantees we
+    // only run on a brand-new install where files match the seed
+    // byte-for-byte. ensureManagedCanonAttribution (below) does
+    // NOT write source markers for existing installs, since those
+    // could have user-edited content that Sync would later wipe.
     try {
       const seedIdx = JSON.parse(fs.readFileSync(seedIndex, "utf8")) as {
         entries?: Array<{ name?: unknown }>;
       };
-      const names = (seedIdx.entries ?? [])
-        .map((e) => e.name)
-        .filter((n): n is string => typeof n === "string");
-      writeUpstreamCanonNames(root, names, "bundled");
+      const seededAt = new Date().toISOString();
+      for (const e of seedIdx.entries ?? []) {
+        if (typeof e.name !== "string") continue;
+        const skillDir = path.join(root, "skills", e.name);
+        if (!fs.existsSync(skillDir)) continue;
+        writeSkillSource(skillDir, {
+          source: "canonical",
+          syncedAt: seededAt,
+        });
+      }
     } catch (err) {
-      console.error("seed canon snapshot failed:", err);
+      console.error("seed source-marker pass failed:", err);
     }
   } catch (err) {
     // Seed failures are non-fatal — the user can still Pull Updates.
     // Log to stderr so packaged builds with --enable-logging surface it.
     console.error("seedManagedRegistryIfEmpty failed:", err);
+  }
+}
+
+// Bootstrap the canon snapshot on every managed-registry boot.
+//
+// Existing installs from before M2 have a populated registry but no
+// upstream-canon.json — so canon attribution falls to false for every
+// bundled skill, which surfaces as YOURS badges and allows
+// Unregister/Delete on what should be canon-protected content. The
+// snapshot write is idempotent: skipped when the file already exists,
+// so this is a one-shot recovery for users who pre-date M2.
+//
+// Deliberately does NOT write `.skills-bank.json` source markers for
+// existing skills — those could have been user-edited since the
+// original seed, and marking them canonical would cause the next
+// Sync to overwrite the user's changes. First-launch seeding (above)
+// writes the source markers when files are guaranteed fresh.
+function ensureManagedCanonAttribution(root: string): void {
+  const stateDir = path.join(root, ".skills-bank");
+  const snapshotPath = path.join(stateDir, "upstream-canon.json");
+  if (fs.existsSync(snapshotPath)) return;
+
+  const seedDir = path.join(process.resourcesPath, "seed");
+  const seedIndex = path.join(seedDir, "index.json");
+  if (!fs.existsSync(seedIndex)) return;
+
+  try {
+    const seedIdx = JSON.parse(fs.readFileSync(seedIndex, "utf8")) as {
+      entries?: Array<{ name?: unknown }>;
+    };
+    const names = (seedIdx.entries ?? [])
+      .map((e) => e.name)
+      .filter((n): n is string => typeof n === "string");
+    writeUpstreamCanonNames(root, names, "bundled");
+  } catch (err) {
+    console.error("ensureManagedCanonAttribution failed:", err);
   }
 }
 
