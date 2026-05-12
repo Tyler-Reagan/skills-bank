@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": ["skills/**", "docs/meta-schema.json"],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.{ts,mjs,js}"],
+      "project": ["scripts/**/*.{ts,mjs,js}"]
+    },
+    "packages/core": {
+      "project": "src/**/*.ts"
+    },
+    "packages/cli": {
+      "project": "src/**/*.ts"
+    },
+    "packages/desktop": {
+      "entry": ["src/main/main.ts", "src/main/preload.mts", "src/renderer/index.html"],
+      "project": "src/**/*.{ts,tsx,mts}"
+    }
+  }
+}
