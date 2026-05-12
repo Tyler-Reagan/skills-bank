@@ -10,6 +10,7 @@ export * from "./source.js";
 export * from "./sync.js";
 export * from "./agents.js";
 export * from "./canon.js";
+export * from "./delete-unregistered.js";
 export * from "./external.js";
 export * from "./heal.js";
 export * from "./hide.js";

@@ -126,6 +126,13 @@ interface Props {
    * external remain reachable via the drawer's secondary button.
    */
   onInlineRegister?: (group: InstalledGroup) => void;
+  /**
+   * M9b: inline Delete on Unregistered cards. Host opens a
+   * confirmation modal that previews which files would be removed
+   * (real-dirs deleted, symlinks unlinked, external targets left
+   * alone) before calling the underlying delete IPC.
+   */
+  onInlineDelete?: (group: InstalledGroup) => void;
 }
 
 export function InstalledTab({
@@ -139,6 +146,7 @@ export function InstalledTab({
   onRepairBroken,
   onResolveAllConflicts,
   onInlineRegister,
+  onInlineDelete,
 }: Props): React.ReactElement {
   const persona = usePersona();
   const registerTooltip =
@@ -422,21 +430,48 @@ export function InstalledTab({
                     : { kind: "broken-symlink" };
               return (
                 <div key={g.name} className="action-cell">
-                  {onInlineRegister && (
-                    <button
-                      className="btn primary"
-                      onClick={() => onInlineRegister(g)}
-                      title="Adopt this skill into Skills Bank. To register as external (foreign symlinks only), open the card and use the drawer."
+                  {(onInlineRegister || onInlineDelete) && (
+                    <div
                       style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        display: "flex",
                         gap: 6,
-                        fontWeight: 600,
                       }}
                     >
-                      Register
-                    </button>
+                      {onInlineRegister && (
+                        <button
+                          className="btn primary"
+                          onClick={() => onInlineRegister(g)}
+                          title="Adopt this skill into Skills Bank. To register as external (foreign symlinks only), open the card and use the drawer."
+                          style={{
+                            flex: 1,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Register
+                        </button>
+                      )}
+                      {onInlineDelete && (
+                        <button
+                          className="btn danger"
+                          onClick={() => onInlineDelete(g)}
+                          title="Delete this skill's files. Real-directory copies are removed; foreign symlinks are unlinked but their targets are left alone. Prompts for confirmation."
+                          style={{
+                            flex: 1,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   )}
                   <SkillCard
                     entry={entry}

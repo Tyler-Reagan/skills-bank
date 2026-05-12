@@ -17,6 +17,8 @@ const api = {
   deregister: (name: string) => ipcRenderer.invoke(IPC.deregister, name),
   unregister: (name: string, destination: string) =>
     ipcRenderer.invoke(IPC.unregister, name, destination),
+  deleteUnregistered: (name: string) =>
+    ipcRenderer.invoke(IPC.deleteUnregistered, name),
   hide: (name: string) => ipcRenderer.invoke(IPC.hide, name),
   unhide: (name: string) => ipcRenderer.invoke(IPC.unhide, name),
   acceptDrift: (name: string) => ipcRenderer.invoke(IPC.acceptDrift, name),

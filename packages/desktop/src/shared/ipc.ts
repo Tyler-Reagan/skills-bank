@@ -63,6 +63,7 @@ export const IPC = {
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   deregister: "skills:deregister",
   unregister: "skills:unregister",
+  deleteUnregistered: "skills:deleteUnregistered",
   hide: "skills:hide",
   unhide: "skills:unhide",
   acceptDrift: "skills:acceptDrift",
@@ -230,6 +231,17 @@ interface SkillsBankAPI {
     name: string,
     destination: AgentId,
   ): Promise<UnregisterIPCResult>;
+  /**
+   * M9b: delete an unregistered skill's on-disk presence. Refuses
+   * if the skill is still registered (the registered → unregister
+   * → delete ladder is enforced server-side).
+   */
+  deleteUnregistered(name: string): Promise<{
+    ok: boolean;
+    message: string;
+    removedDirs: string[];
+    removedSymlinks: string[];
+  }>;
   hide(name: string): Promise<{ ok: boolean; message: string }>;
   unhide(name: string): Promise<{ ok: boolean; message: string }>;
   acceptDrift(name: string): Promise<{ ok: boolean; message: string }>;

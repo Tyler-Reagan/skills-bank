@@ -27,6 +27,7 @@ import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
+import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import type { AuthStatus, SyncStatus } from "../shared/ipc.js";
 import { PersonaProvider } from "./PersonaContext.js";
 
@@ -821,6 +822,16 @@ export function App(): React.ReactElement {
                   });
                 }}
                 onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
+                onInlineDelete={(group) => {
+                  // M9b: stash the group on deleteTarget so the
+                  // confirmation modal can preview which paths get
+                  // touched. Actual deletion fires only after the
+                  // user confirms.
+                  const mine = installed.filter(
+                    (i) => i.name === group.name,
+                  );
+                  setDeleteTarget({ name: group.name, installations: mine });
+                }}
                 onInlineRegister={(group) => {
                   // Unregistered-section shortcut. Registers the only
                   // installation into the registry — same operation the
@@ -1144,6 +1155,22 @@ export function App(): React.ReactElement {
                 target.sourcePath,
                 decisions,
               );
+              flash(r.message);
+              void window.skillsBank.rebuildIndex();
+              await refresh();
+            }}
+          />
+        )}
+
+        {deleteTarget && (
+          <DeleteUnregisteredConfirm
+            name={deleteTarget.name}
+            installations={deleteTarget.installations}
+            onCancel={() => setDeleteTarget(null)}
+            onConfirm={async () => {
+              const target = deleteTarget;
+              setDeleteTarget(null);
+              const r = await window.skillsBank.deleteUnregistered(target.name);
               flash(r.message);
               void window.skillsBank.rebuildIndex();
               await refresh();

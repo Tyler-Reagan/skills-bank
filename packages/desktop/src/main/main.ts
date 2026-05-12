@@ -23,6 +23,7 @@ import {
   classifySkillByName,
   clearPendingConflicts,
   deleteFromBankSkill,
+  deleteUnregisteredSkill,
   exportSkill,
   exportRegistry,
   fetchCanonicalTarball,
@@ -858,6 +859,37 @@ ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
     return r;
   } catch (err) {
     return { ok: false, message: (err as Error).message };
+  }
+});
+
+// M9b: bottom-of-the-ladder destructive action for unregistered
+// skills. Refuses if the skill is registered — caller must
+// unregister first. Real-dir installations are rm-rf'd; symlinks
+// are unlinked (targets untouched, since they're user-owned).
+ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
+  if (!registryRoot) {
+    return {
+      ok: false,
+      message: NO_ROOT_MSG,
+      removedDirs: [],
+      removedSymlinks: [],
+    };
+  }
+  try {
+    const r = deleteUnregisteredSkill(registryRoot, name);
+    return {
+      ok: r.ok,
+      message: r.message,
+      removedDirs: r.removedDirs,
+      removedSymlinks: r.removedSymlinks,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      message: (err as Error).message,
+      removedDirs: [],
+      removedSymlinks: [],
+    };
   }
 });
 

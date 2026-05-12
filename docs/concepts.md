@@ -20,13 +20,15 @@ Every skill the app knows about sits on four orthogonal axes. Operations and UI 
 
 ### Destructive-action ladder
 
-Three actions form an escalation, with distinct file/recovery semantics:
+Three actions form an escalation, with distinct file/recovery semantics. Each tier physically separates from the next: Delete is only reachable on **unregistered** skills, so the user must Unregister first.
 
-| Action | Files | Agent symlinks | Recovery |
-|---|---|---|---|
-| Remove from agents | untouched | removed | reinstall |
-| [Unregister](flows/unregister.md) | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location | re-register from new location |
-| Delete from Skills Bank | deleted | removed | canon: re-pull; non-canon: gone (modulo export) |
+| Action | Where | Files | Agent symlinks | Recovery |
+|---|---|---|---|---|
+| Manage agent links | Drawer | untouched | added/removed per-agent via checkboxes (untick all = full uninstall) | re-add via the same modal |
+| [Unregister](flows/unregister.md) | Drawer | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location |
+| Delete | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved | symlinks unlinked | canon: re-pull; non-canon: gone (modulo export) |
+
+Canon skills are exempt: Unregister and Delete are prohibited entirely. Use **Hide** instead — see [personas.md](personas.md#canon-protection-hide-instead-of-unregisterdelete).
 
 ## Skill
 
