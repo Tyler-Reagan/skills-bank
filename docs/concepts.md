@@ -2,6 +2,32 @@
 
 The vocabulary the app uses, defined in one place. Skim this once and the rest of the docs (and the UI itself) become a lot more obvious.
 
+## Taxonomy
+
+Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
+
+- **Canon** — derived boolean. A skill is canon iff its name appears in the linked registry repo's upstream — the user's own GitHub repo for power persona, the bundled canonical set for convenience. Mutating canon requires write access to the linked repo; mutating a skill's canon-ness locally is impossible. Resolved dynamically against the active linked repo (not from stale per-skill markers).
+- **Registered** — boolean. The skill has an entry in the local registry index. Mutated freely. Holds local-only metadata (tags, install paths, the Adopted flag).
+- **Adopted** — boolean on each registry entry. When `true`, the skill's files physically live under `<registryRoot>/skills/<name>/`. When `false`, the registry entry tracks an external location and the files stay where they are. Default at register time is the `registerAdopts` setting (default `true`).
+- **Installed** — derived from on-disk scan. A skill is installed if at least one agent dir contains an entry at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.
+
+### Derived rules
+
+- Canon ⇒ registered by default. Unregister and delete of canon skills are prohibited; the user-visible escape is **hide**, scoped per linked-repo.
+- Non-canon + registered + uninstalled is valid. Re-install requires the original source (no upstream to pull from).
+- Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
+- Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
+
+### Destructive-action ladder
+
+Three actions form an escalation, with distinct file/recovery semantics:
+
+| Action | Files | Agent symlinks | Recovery |
+|---|---|---|---|
+| Remove from agents | untouched | removed | reinstall |
+| Unregister | adopted: moved to expulsion dir; non-adopted: untouched | removed | re-register from new location |
+| Delete from Skills Bank | deleted | removed | canon: re-pull; non-canon: gone (modulo export) |
+
 ## Skill
 
 A folder containing instructions (`SKILL.md`) and optional metadata (`meta.json`) that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist.

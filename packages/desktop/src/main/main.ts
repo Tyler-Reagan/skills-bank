@@ -20,6 +20,7 @@ import {
   applyCanonicalSync,
   applyRegistration,
   buildRegistryIndex,
+  classifySkillByName,
   clearPendingConflicts,
   deregisterSkill,
   exportSkill,
@@ -711,9 +712,24 @@ ipcMain.handle(
 
 // Full removal: deletes the registry copy + all agent symlinks. Distinct
 // from uninstall (symlinks only). Refuses if the registry is unset.
+//
+// M1: this is the canonical demonstration of IPC-side classifier gating.
+// We classify the skill against the current registry state and refuse if
+// the capability table says no. With M1's defaults (canon=false) nothing
+// is denied here that wasn't already denied by deregisterSkill's own
+// guards; M5 turns this into the real enforcement point for canon
+// protection.
 ipcMain.handle(IPC.deregister, (_e, name: string) => {
   if (!registryRoot) {
     return { ok: false, message: NO_ROOT_MSG, errors: [] };
+  }
+  const classification = classifySkillByName(registryRoot, name);
+  if (classification && !classification.capabilities.canDeleteFromBank) {
+    return {
+      ok: false,
+      message: `Cannot delete ${name} from this state (${classification.state}).`,
+      errors: [],
+    };
   }
   try {
     const r = deregisterSkill(name, { registryRoot });

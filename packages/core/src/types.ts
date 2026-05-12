@@ -32,6 +32,14 @@ export interface RegistryEntry extends SkillMeta {
    */
   publishState?: PublishState;
   /**
+   * Taxonomy axis: true when the skill's files physically live under
+   * `<registryRoot>/skills/<name>/`. False when the registry entry
+   * tracks an external location (the symlink-mode register path).
+   * Defaults to true for entries built from `<registryRoot>/skills/`
+   * — those are de facto adopted. M3 generalizes the non-adopted case.
+   */
+  adopted?: boolean;
+  /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has
    * SKILL.md. Surface in the UI so users can fix metadata without

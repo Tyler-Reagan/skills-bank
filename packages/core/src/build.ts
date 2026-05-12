@@ -202,6 +202,10 @@ function buildOneEntry(
     ...(meta.author ? { author: meta.author } : {}),
     path: path.relative(registryRoot, skillDir),
     source: readSkillSource(skillDir),
+    // Folders walked from <registryRoot>/skills/ are adopted by
+    // definition — the files live in the bank. M3 introduces the
+    // non-adopted (external) case alongside this.
+    adopted: true,
     ...(warnings.length > 0 ? { warnings } : {}),
   };
 

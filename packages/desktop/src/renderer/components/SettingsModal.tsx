@@ -54,6 +54,18 @@ export interface AppSettings {
   searchDebounceMs: SearchDebounce;
   /** macOS only: which terminal app the Discover tab's "Open Terminal" uses. */
   terminalApp: TerminalApp;
+  /**
+   * Taxonomy axis "Adopted": when registering a skill, move its files
+   * into the bank's `skills/` directory (true, default) vs. record an
+   * external pointer and leave files where they are (false). M3 wires
+   * this into the unified register flow; M1 ships the key.
+   */
+  registerAdopts: boolean;
+  /**
+   * Where to move an adopted skill's files when it's unregistered.
+   * Default `~/.agents/skills/`. M4 consumes this in `unregisterSkill`.
+   */
+  unregisterDestinationAgent: AgentId;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -61,6 +73,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   gridColumns: "auto",
   searchDebounceMs: "off",
   terminalApp: "system",
+  registerAdopts: true,
+  unregisterDestinationAgent: "agents",
 };
 
 interface Props {
