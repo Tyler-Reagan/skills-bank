@@ -4,6 +4,18 @@ A registry of [Claude Code](https://claude.ai/code) skills plus a TypeScript CLI
 
 ![The Registry tab — browse, search, and install curated skills](docs/images/registry.png)
 
+<!--
+README-I18N:SLOT — reserved for a future language selector. When the first
+localized sibling lands (e.g. README.zh.md), uncomment the block below and
+replace this comment with the actual selector. See docs/i18n-readiness.md.
+
+README-I18N:START
+
+**English**
+
+README-I18N:END
+-->
+
 End-user docs live in **[`docs/`](docs/)** — start with [`docs/getting-started.md`](docs/getting-started.md).
 
 ## What's in this repo
@@ -26,7 +38,7 @@ The "registry" is the metadata-tagged collection of skills this app manages. It 
 
 ### Install
 
-Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/skills-bank/releases) — both Apple Silicon (`-arm64.dmg`) and Intel (`-x64.dmg`) builds are published. Open the dmg, drag **Skills Bank** to Applications, then launch from Spotlight. The build is unsigned, so the first launch needs **right-click → Open** to bypass Gatekeeper; subsequent launches are normal double-clicks.
+Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/skills-bank/releases) — both Apple Silicon (`-arm64.dmg`) and Intel (`-x64.dmg`) builds are published. Open the dmg, drag **Skills Bank** to Applications, then launch from Spotlight. Builds are signed with a Developer ID certificate and notarized through Apple, so Gatekeeper opens them without warnings on a normal double-click.
 
 The app auto-updates by polling the Releases feed on launch. Updates to the app and updates to the registry contents are independent — see the user guide for details.
 
@@ -78,8 +90,8 @@ Release builds run on tag push:
 
 ```bash
 # bump packages/desktop/package.json version, commit, then:
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.7.0
+git push origin v0.7.0
 ```
 
 The `release` workflow builds both DMGs and uploads them to a **draft** GitHub Release. Review and publish the draft from the GitHub UI when you're ready for users to see it.

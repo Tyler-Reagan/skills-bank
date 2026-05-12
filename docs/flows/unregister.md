@@ -1,6 +1,6 @@
 # Unregister a skill
 
-You registered a skill into Skills Bank but want to back it out without nuking the files. Unregister is the mid-tier destructive action: it removes the registry entry and (for adopted skills) moves files out to your shared agents directory. Distinct from **Remove from agents** (which only severs symlinks) and **Delete from Skills Bank** (which deletes files).
+You registered a skill into Skills Bank but want to back it out without nuking the files. Unregister is the mid-tier destructive action: it removes the registry entry and (for adopted skills) moves files out to your shared agents directory. Distinct from **Manage agent links** (which only adds or removes symlinks) and **Delete from Skills Bank** (which deletes files).
 
 ## Steps
 

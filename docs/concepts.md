@@ -18,6 +18,45 @@ Every skill the app knows about sits on four orthogonal axes. Operations and UI 
 - Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
 - Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
 
+### Lifecycle
+
+The four axes look orthogonal in isolation, but most skills travel a small set of paths through them. The diagram below shows those paths and the heal-pending side states the app surfaces explicitly.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Unmanaged: discovered on disk
+    [*] --> Canon: shipped / pulled from upstream
+
+    Unmanaged --> External: Register (adopted=false)
+    Unmanaged --> Adopted: Register (adopted=true)
+
+    External --> Unregistered: Unregister
+    Adopted --> Unregistered: Unregister (files → agents dir)
+
+    Unregistered --> [*]: Delete
+    Unregistered --> Adopted: Re-register
+
+    Canon --> Hidden: Hide
+    Hidden --> Canon: Unhide
+
+    Adopted --> CanonDrift: local edit to canon files
+    CanonDrift --> Adopted: Accept local / Take canonical
+
+    Adopted --> FolderMissing: registry folder deleted out-of-band
+    FolderMissing --> [*]: Forget entry
+
+    External --> TargetMissing: external path deleted
+    TargetMissing --> [*]: Forget entry
+
+    note right of CanonDrift
+        Heal states are reachable
+        from any registered axis combo;
+        see flows/heal.md
+    end note
+```
+
+Labels match the in-app vocabulary: nodes are taxonomy positions, transitions are the action buttons that move a skill between them.
+
 ### Destructive-action ladder
 
 Three actions form an escalation, with distinct file/recovery semantics. Each tier physically separates from the next: Delete is only reachable on **unregistered** skills, so the user must Unregister first.
