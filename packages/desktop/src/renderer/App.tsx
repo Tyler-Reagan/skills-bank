@@ -6,11 +6,17 @@ import type {
 } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
 import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js";
-import { InstalledTab } from "./components/InstalledTab.js";
+import {
+  InstalledTab,
+  type InstalledGroup,
+} from "./components/InstalledTab.js";
 import { RegisterModal } from "./components/RegisterModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
-import { InstallConflictModal } from "./components/InstallConflictModal.js";
+import {
+  InstallConflictModal,
+  type InstallConflictError,
+} from "./components/InstallConflictModal.js";
 import { classifyDrawerState } from "./components/skillState.js";
 import { LoginScreen } from "./components/LoginScreen.js";
 import { SplashScreen } from "./components/SplashScreen.js";
@@ -147,7 +153,7 @@ export function App(): React.ReactElement {
   // Cancel from a dedicated modal rather than a vague toast.
   const [installConflict, setInstallConflict] = useState<{
     name: string;
-    errors: import("./components/InstallConflictModal.js").InstallConflictError[];
+    errors: InstallConflictError[];
   } | null>(null);
   // M9b: confirmation target for the inline Delete button on
   // Unregistered cards. Holds the skill name + the installations
@@ -170,7 +176,7 @@ export function App(): React.ReactElement {
   // groups are excluded by the caller because they require source
   // decisions that don't fit a bulk sweep.
   const [resolveAllTarget, setResolveAllTarget] = useState<
-    import("./components/InstalledTab.js").InstalledGroup[] | null
+    InstalledGroup[] | null
   >(null);
   const [resolveAllRunning, setResolveAllRunning] = useState(false);
   // Per-skill error messages from the most recent bulk Resolve-all

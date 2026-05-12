@@ -34,9 +34,9 @@ const ALL_AGENTS: AgentId[] = [
   "agents",
 ];
 
-export type GridColumns = "auto" | "2" | "3" | "4";
-export type SearchDebounce = "off" | "100" | "250";
-export type TerminalApp =
+type GridColumns = "auto" | "2" | "3" | "4";
+type SearchDebounce = "off" | "100" | "250";
+type TerminalApp =
   | "system"
   | "iterm2"
   | "warp"

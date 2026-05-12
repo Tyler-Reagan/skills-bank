@@ -5,11 +5,4 @@
 //
 // Imports from the `./skill-state` subpath (not the package root) so
 // vite doesn't transitively pull in node-only modules like build.ts.
-export {
-  classifyDrawerState,
-  type ClassifyOptions,
-  type DrawerCapabilities,
-  type DrawerState,
-  type DrawerStateClassification,
-  type PrimaryAction,
-} from "@skills-bank/core/skill-state";
+export { classifyDrawerState } from "@skills-bank/core/skill-state";
