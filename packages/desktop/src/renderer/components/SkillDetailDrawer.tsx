@@ -70,6 +70,14 @@ interface Props {
    * severs symlinks).
    */
   onUnregister?: () => Promise<void> | void;
+  /**
+   * M5: canon-only. Tuck the skill out of the default views. Replaces
+   * Unregister/Delete on canon skills (those are prohibited since
+   * canon is upstream-owned).
+   */
+  onHide?: () => Promise<void> | void;
+  /** M5: undo Hide. Only meaningful in the canon-hidden state. */
+  onUnhide?: () => Promise<void> | void;
 }
 
 type ActionState =
@@ -79,6 +87,8 @@ type ActionState =
   | "exporting"
   | "registering"
   | "unregistering"
+  | "hiding"
+  | "unhiding"
   | "deleting";
 
 export function SkillDetailDrawer({
@@ -95,6 +105,8 @@ export function SkillDetailDrawer({
   onRegister,
   defaultInstallAgents,
   onUnregister,
+  onHide,
+  onUnhide,
 }: Props): React.ReactElement {
   const persona = usePersona();
   const [skillMd, setSkillMd] = useState<string | null>(null);
@@ -867,6 +879,47 @@ export function SkillDetailDrawer({
                 </>
               ) : (
                 "Unregister"
+              )}
+            </button>
+          )}
+          {caps.canHide && onHide && (
+            <button
+              className="btn"
+              style={{ gridColumn: "1 / -1" }}
+              disabled={action !== null}
+              onClick={() => {
+                setAction("hiding");
+                void Promise.resolve(onHide()).finally(() => setAction(null));
+              }}
+              title="Tuck this canon skill out of the default views. Installations and metadata are kept; you can unhide from Settings."
+            >
+              {action === "hiding" ? (
+                <>
+                  <span className="spinner inline" /> Hiding…
+                </>
+              ) : (
+                "Hide"
+              )}
+            </button>
+          )}
+          {caps.canUnhide && onUnhide && (
+            <button
+              className="btn primary"
+              style={{ gridColumn: "1 / -1" }}
+              disabled={action !== null}
+              onClick={() => {
+                setAction("unhiding");
+                void Promise.resolve(onUnhide()).finally(() =>
+                  setAction(null),
+                );
+              }}
+            >
+              {action === "unhiding" ? (
+                <>
+                  <span className="spinner inline" /> Unhiding…
+                </>
+              ) : (
+                "Unhide"
               )}
             </button>
           )}

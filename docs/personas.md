@@ -75,3 +75,13 @@ The **canon** axis (see [concepts.md](concepts.md#taxonomy)) is evaluated agains
 - **Your own registry** — canon = skills that are committed and reachable from your repo's upstream branch (publishState `pushed`).
 
 Switching repos drops the previous root's canon snapshot and recomputes against the new one. A skill that was canon under repo A is not automatically canon under repo B; if you want it canonical under B, commit it to B.
+
+#### Canon protection: Hide instead of Unregister/Delete
+
+Canon skills are upstream-owned, so unregistering or deleting one locally would be irrecoverable from the UI. The destructive verbs are disabled on canon — the drawer shows **Hide** instead. Hidden canon skills:
+
+- Drop out of the default Browse view.
+- Keep their installations, tags, and agent links — Hide is a UI dormancy flag, not an uninstall.
+- Are scoped per linked-registry. Switching repos shows that repo's canon fresh, with its own hide list. A skill hidden under repo A is not automatically hidden under repo B.
+
+Manage hidden canon skills via Settings → **Hidden canon skills**. Each row exposes an Unhide button.

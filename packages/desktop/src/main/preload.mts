@@ -16,6 +16,8 @@ const api = {
   deregister: (name: string) => ipcRenderer.invoke(IPC.deregister, name),
   unregister: (name: string, destination: string) =>
     ipcRenderer.invoke(IPC.unregister, name, destination),
+  hide: (name: string) => ipcRenderer.invoke(IPC.hide, name),
+  unhide: (name: string) => ipcRenderer.invoke(IPC.unhide, name),
   clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),
   scan: () => ipcRenderer.invoke(IPC.scan),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),

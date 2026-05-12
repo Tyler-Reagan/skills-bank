@@ -5,6 +5,7 @@ import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { readUpstreamCanonNames } from "./canon.js";
 import { readExternalRegistry } from "./external.js";
+import { readHiddenCanonNames } from "./hide.js";
 import { readSkillMeta } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import type {
@@ -88,6 +89,7 @@ export function buildRegistryIndex(
   // means switching repos always recomputes against the active
   // upstream rather than trusting stale per-skill markers.
   const upstreamCanon = readUpstreamCanonNames(registryRoot);
+  const hiddenCanon = readHiddenCanonNames(registryRoot);
 
   if (fs.existsSync(skillsDir)) {
     for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
@@ -104,6 +106,10 @@ export function buildRegistryIndex(
         const ps = publishStates.get(sk.name);
         if (ps) built.publishState = ps;
         built.canon = upstreamCanon.has(sk.name) || ps === "pushed";
+        // Hide flag is only meaningful for canon entries (non-canon
+        // skills are just unregisterable). Stale entries in the
+        // hidden list for skills that lost canon status get ignored.
+        if (built.canon && hiddenCanon.has(sk.name)) built.hidden = true;
         entries.push(built);
       }
     }

@@ -49,6 +49,14 @@ export interface RegistryEntry extends SkillMeta {
    */
   canon?: boolean;
   /**
+   * M5: user has hidden this canon skill from the default views.
+   * Only meaningful when `canon === true` — hiding non-canon skills
+   * is nonsensical (just unregister them). Hidden skills retain
+   * installations and metadata; this is a UI dormancy flag, not an
+   * uninstall.
+   */
+  hidden?: boolean;
+  /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has
    * SKILL.md. Surface in the UI so users can fix metadata without

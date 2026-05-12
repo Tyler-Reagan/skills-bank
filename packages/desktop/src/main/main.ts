@@ -28,6 +28,7 @@ import {
   fetchCanonicalTarball,
   finalizeSkillsDir,
   getExportInfo,
+  hideCanonSkill,
   installSkill,
   invalidateCanonCache,
   listInstalled,
@@ -40,6 +41,7 @@ import {
   removeBrokenLinks,
   repairBrokenLinks,
   resolveSkillConflicts,
+  unhideCanonSkill,
   unregisterSkill,
   writeSyncDecisions,
   writeUpstreamCanonNames,
@@ -766,6 +768,41 @@ ipcMain.handle(IPC.deregister, (_e, name: string) => {
     };
   } catch (err) {
     return { ok: false, message: (err as Error).message, errors: [] };
+  }
+});
+
+// M5: hide a canon skill from the default views. Canon skills can't
+// be unregistered or deleted from the UI (those would be irrecoverable
+// — the upstream owns them), so Hide is the only canon-side action a
+// non-power user can take.
+ipcMain.handle(IPC.hide, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const index = buildRegistryIndex(registryRoot);
+  const entry = index.entries.find((e) => e.name === name);
+  if (!entry) {
+    return { ok: false, message: `${name} is not in the registry` };
+  }
+  if (entry.canon !== true) {
+    return {
+      ok: false,
+      message: `${name} isn't canon — unregister or delete it instead`,
+    };
+  }
+  try {
+    hideCanonSkill(registryRoot, name);
+    return { ok: true, message: `Hid ${name} from the default views.` };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+ipcMain.handle(IPC.unhide, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    unhideCanonSkill(registryRoot, name);
+    return { ok: true, message: `Unhid ${name}.` };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
   }
 });
 

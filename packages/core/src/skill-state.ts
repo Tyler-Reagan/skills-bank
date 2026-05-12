@@ -25,7 +25,8 @@ export type DrawerState =
   | "unregistered-real"
   | "unregistered-foreign"
   | "unregistered-conflicts"
-  | "unregistered-broken";
+  | "unregistered-broken"
+  | "canon-hidden";
 
 export type PrimaryAction =
   | "install"
@@ -33,7 +34,8 @@ export type PrimaryAction =
   | "register"
   | "resolve-conflicts"
   | "resolve-registration-conflicts"
-  | "repair-broken";
+  | "repair-broken"
+  | "unhide";
 
 export interface DrawerCapabilities {
   canInstall: boolean;
@@ -50,6 +52,15 @@ export interface DrawerCapabilities {
    */
   canUnregister: boolean;
   canRegister: boolean;
+  /**
+   * M5: tuck the skill out of the default views without unregistering
+   * it. Only granted for canon skills the user hasn't already hidden.
+   * Replaces canUnregister/canDeleteFromBank for canon (those are
+   * prohibited by IPC).
+   */
+  canHide: boolean;
+  /** M5: undo Hide. Granted only in the canon-hidden state. */
+  canUnhide: boolean;
   canResolveConflicts: boolean;
   /**
    * Same skill name has multiple non-ours installations across agent
@@ -93,6 +104,8 @@ const NEVER: DrawerCapabilities = {
   canDeleteFromBank: false,
   canUnregister: false,
   canRegister: false,
+  canHide: false,
+  canUnhide: false,
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
   canRepairBroken: false,
@@ -105,6 +118,23 @@ export function classifyDrawerState(
   isRegistered: boolean,
   _options: ClassifyOptions = {},
 ): DrawerStateClassification {
+  // M5: canon + hidden short-circuits to a dedicated state. Hide is
+  // purely a UI dormancy flag — installations and metadata are
+  // preserved — so this state still allows install/remove/etc. but
+  // the primary action is Unhide and Delete/Unregister are gone.
+  if (isRegistered && entry.canon === true && entry.hidden === true) {
+    return applyCanonGate(entry, {
+      state: "canon-hidden",
+      brokenCount: 0,
+      conflictCount: 0,
+      capabilities: {
+        ...NEVER,
+        canRevealInFinder: true,
+        canUnhide: true,
+        primary: "unhide",
+      },
+    });
+  }
   // Only consider installations for THIS skill — the caller may pass
   // the full installed list, the registry view's full list, etc.
   const mine = installed.filter((i) => i.name === entry.name);
@@ -179,7 +209,7 @@ export function classifyDrawerState(
   // because the resolve flow itself may eliminate the broken state.
 
   if (hasConflicts) {
-    return {
+    return applyCanonGate(entry, {
       state: "registered-conflicts",
       brokenCount: broken.length,
       conflictCount: conflicts.length,
@@ -196,11 +226,11 @@ export function classifyDrawerState(
         canRepairBroken: hasBroken,
         primary: "resolve-conflicts",
       },
-    };
+    });
   }
 
   if (hasBroken && hasOurs) {
-    return {
+    return applyCanonGate(entry, {
       state: "registered-mixed-broken",
       brokenCount: broken.length,
       conflictCount: 0,
@@ -215,11 +245,11 @@ export function classifyDrawerState(
         canRepairBroken: true,
         primary: "repair-broken",
       },
-    };
+    });
   }
 
   if (hasBroken) {
-    return {
+    return applyCanonGate(entry, {
       state: "registered-broken",
       brokenCount: broken.length,
       conflictCount: 0,
@@ -233,11 +263,11 @@ export function classifyDrawerState(
         canRepairBroken: true,
         primary: "repair-broken",
       },
-    };
+    });
   }
 
   if (hasOurs) {
-    return {
+    return applyCanonGate(entry, {
       state: "registered-healthy",
       brokenCount: 0,
       conflictCount: 0,
@@ -251,11 +281,11 @@ export function classifyDrawerState(
         canUnregister: true,
         primary: "remove-from-agents",
       },
-    };
+    });
   }
 
   // Registered but no installations of any kind.
-  return {
+  return applyCanonGate(entry, {
     state: "registered-available",
     brokenCount: 0,
     conflictCount: 0,
@@ -270,7 +300,39 @@ export function classifyDrawerState(
       canRepairBroken: false,
       primary: "install",
     },
+  });
+}
+
+/**
+ * Apply canon protection rules to a classification. Canon skills are
+ * upstream-owned: locally unregistering or deleting one is
+ * irrecoverable from the UI, so we strip those capabilities and grant
+ * Hide instead. Mirrored on the IPC side in main.ts so the renderer
+ * can't bypass via direct invoke.
+ *
+ * Non-canon classifications pass through unchanged. The canon-hidden
+ * state takes its own dedicated short-circuit at the top of
+ * classifyDrawerState — it never reaches this wrapper.
+ */
+function applyCanonGate(
+  entry: RegistryEntry,
+  c: DrawerStateClassification,
+): DrawerStateClassification {
+  if (entry.canon !== true) return c;
+  // For registered + canon skills, swap delete/unregister for hide.
+  // Other capabilities (install, remove-from-agents, manage links,
+  // export, reveal) keep working — canon doesn't restrict day-to-day
+  // use, only locally irrecoverable mutations.
+  return {
+    ...c,
+    capabilities: {
+      ...c.capabilities,
+      canDeleteFromBank: false,
+      canUnregister: false,
+      canHide: true,
+    },
   };
 }
+
 
 

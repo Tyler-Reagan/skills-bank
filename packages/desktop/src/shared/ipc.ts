@@ -60,6 +60,8 @@ export const IPC = {
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   deregister: "skills:deregister",
   unregister: "skills:unregister",
+  hide: "skills:hide",
+  unhide: "skills:unhide",
   clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
@@ -215,6 +217,8 @@ interface SkillsBankAPI {
     name: string,
     destination: AgentId,
   ): Promise<UnregisterIPCResult>;
+  hide(name: string): Promise<{ ok: boolean; message: string }>;
+  unhide(name: string): Promise<{ ok: boolean; message: string }>;
   clearPendingConflicts(): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;
   register(

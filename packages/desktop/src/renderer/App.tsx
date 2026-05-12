@@ -722,7 +722,11 @@ export function App(): React.ReactElement {
           >
             {tab === "browse" && (
               <BrowseTab
-                registry={registry}
+                // M5: filter hidden canon entries from the default
+                // Browse view. They remain in `registry` for lookups,
+                // installations, and the Settings → Hidden canon
+                // skills section.
+                registry={registry.filter((e) => !e.hidden)}
                 installed={installed}
                 search={search}
                 setSearch={setSearch}
@@ -1084,6 +1088,15 @@ export function App(): React.ReactElement {
             settings={settings}
             onSave={saveSettings}
             onClose={() => setShowSettings(false)}
+            hiddenCanon={registry
+              .filter((e) => e.hidden)
+              .map((e) => e.name)}
+            onUnhide={async (name) => {
+              const r = await window.skillsBank.unhide(name);
+              flash(r.message);
+              if (r.ok) void window.skillsBank.rebuildIndex();
+              await refresh();
+            }}
           />
         )}
 
@@ -1190,6 +1203,34 @@ export function App(): React.ReactElement {
                           },
                         ]);
                         const r = results[0]!;
+                        flash(r.message);
+                        if (r.ok) {
+                          void window.skillsBank.rebuildIndex();
+                          setSelected(null);
+                        }
+                        await refresh();
+                      }
+                    : undefined
+                }
+                onHide={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canHide
+                    ? async () => {
+                        const r = await window.skillsBank.hide(selected.name);
+                        flash(r.message);
+                        if (r.ok) {
+                          void window.skillsBank.rebuildIndex();
+                          setSelected(null);
+                        }
+                        await refresh();
+                      }
+                    : undefined
+                }
+                onUnhide={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canUnhide
+                    ? async () => {
+                        const r = await window.skillsBank.unhide(selected.name);
                         flash(r.message);
                         if (r.ok) {
                           void window.skillsBank.rebuildIndex();

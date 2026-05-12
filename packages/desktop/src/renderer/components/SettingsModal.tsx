@@ -81,6 +81,14 @@ interface Props {
   settings: AppSettings;
   onSave: (next: AppSettings) => void;
   onClose: () => void;
+  /**
+   * M5: list of canon skill names currently hidden from default
+   * views. The modal renders an Unhide row per name. Empty array
+   * suppresses the section.
+   */
+  hiddenCanon: string[];
+  /** Unhide a name; host refreshes the registry list. */
+  onUnhide: (name: string) => Promise<void> | void;
 }
 
 /**
@@ -92,6 +100,8 @@ export function SettingsModal({
   settings,
   onSave,
   onClose,
+  hiddenCanon,
+  onUnhide,
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
@@ -270,6 +280,46 @@ export function SettingsModal({
             ))}
           </div>
         </section>
+
+        {hiddenCanon.length > 0 && (
+          <section style={section}>
+            <h3 style={sectionTitle}>Hidden canon skills</h3>
+            <p style={hint}>
+              Canon skills you've hidden from the default Browse view.
+              Unhiding restores them everywhere. Their installations
+              and metadata are preserved while hidden — Hide is just a
+              UI dormancy flag.
+            </p>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: "8px 0 0",
+              }}
+            >
+              {hiddenCanon.map((name) => (
+                <li
+                  key={name}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 0",
+                    borderBottom: "1px solid var(--border)",
+                  }}
+                >
+                  <code style={{ fontSize: 13 }}>{name}</code>
+                  <button
+                    className="link-btn"
+                    onClick={() => void onUnhide(name)}
+                  >
+                    Unhide
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <div
           style={{
