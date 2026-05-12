@@ -8,6 +8,7 @@ import {
   type AgentId,
 } from "./agents.js";
 import { getStateDir } from "./paths.js";
+import { writeExternalRegistry } from "./external.js";
 import { listInstalled } from "./installed.js";
 import { readSkillMeta } from "./registry.js";
 import { buildRegistryIndex } from "./build.js";
@@ -96,24 +97,8 @@ export function applyRegistration(
         return { action, ok: true, message: `removed ${entry.linkPath}` };
       }
 
-      case "register-external": {
-        if (entry.kind !== "foreign-symlink" || !entry.target) {
-          return {
-            action,
-            ok: false,
-            message: `cannot register-external: ${entry.name} is ${entry.kind}`,
-          };
-        }
-        registerExternal(opts.registryRoot, entry.name, entry.target);
-        return {
-          action,
-          ok: true,
-          message: `registered ${entry.name} as external (${entry.target})`,
-        };
-      }
-
-      case "adopt": {
-        return adoptIntoRegistry(entry, opts);
+      case "register": {
+        return registerSkill(entry, { ...opts, adopt: action.adopt });
       }
 
       case "setAgents": {
@@ -127,6 +112,30 @@ export function applyRegistration(
       message: String(err instanceof Error ? err.message : err),
     };
   }
+}
+
+/**
+ * Unified register entry point (M3). Routes to the adopt path (move
+ * files into the bank) or the symlink path (record the external
+ * location, leave files in place) based on `opts.adopt`.
+ *
+ * Replaces the prior split between `adoptIntoRegistry` and
+ * `registerExternal` — symlink-mode now works for any source kind, not
+ * just foreign-symlinks. The future in-app editing of adopted skills
+ * is the main consumer of symlink-mode; today's UI exposes it via
+ * the global `settings.registerAdopts` toggle.
+ */
+export interface RegisterSkillOptions extends RegisterOptions {
+  /** False ⇒ symlink-mode (entry.adopted=false). True ⇒ move files. */
+  adopt: boolean;
+}
+
+export function registerSkill(
+  entry: InstalledSkill,
+  opts: RegisterSkillOptions,
+): RegistrationResult {
+  if (opts.adopt) return adoptIntoRegistry(entry, opts);
+  return registerWithoutAdopting(entry, opts);
 }
 
 /**
@@ -228,7 +237,11 @@ function adoptIntoRegistry(
   entry: InstalledSkill,
   opts: RegisterOptions,
 ): RegistrationResult {
-  const action: RegistrationAction = { type: "adopt", name: entry.name };
+  const action: RegistrationAction = {
+    type: "register",
+    name: entry.name,
+    adopt: true,
+  };
 
   // Always resolve the actual on-disk source via realpath so we move
   // the real content (not a one-hop symlink target). Without this, an
@@ -369,34 +382,63 @@ function isSymlink(p: string): boolean {
   }
 }
 
-interface ExternalEntry {
-  name: string;
-  target: string;
-  registeredAt: string;
-}
-
-function externalRegistryPath(registryRoot: string): string {
-  return path.join(getStateDir(registryRoot), "external.json");
-}
-
-function registerExternal(
-  registryRoot: string,
-  name: string,
-  target: string,
-): void {
-  const p = externalRegistryPath(registryRoot);
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  let list: ExternalEntry[] = [];
-  if (fs.existsSync(p)) {
-    try {
-      list = JSON.parse(fs.readFileSync(p, "utf8")) as ExternalEntry[];
-    } catch {
-      list = [];
-    }
+/**
+ * Symlink-mode register: record the source location in external.json
+ * without moving files. Used when `settings.registerAdopts` is off, or
+ * when the user opts out of adoption for a specific register call.
+ *
+ * Refuses for broken-symlink entries (no usable source) and for
+ * `ours` entries (already registered). Foreign-symlink, real-directory
+ * both work — the recorded target is the realpath of the source.
+ */
+function registerWithoutAdopting(
+  entry: InstalledSkill,
+  opts: RegisterSkillOptions,
+): RegistrationResult {
+  const action: RegistrationAction = {
+    type: "register",
+    name: entry.name,
+    adopt: false,
+  };
+  if (entry.kind === "broken-symlink") {
+    return {
+      action,
+      ok: false,
+      message: `cannot register without adopting: ${entry.name} has no usable source (broken symlink)`,
+    };
   }
-  const filtered = list.filter((e) => e.name !== name);
-  filtered.push({ name, target, registeredAt: new Date().toISOString() });
-  fs.writeFileSync(p, JSON.stringify(filtered, null, 2) + "\n");
+  if (entry.kind === "ours") {
+    return {
+      action,
+      ok: false,
+      message: `${entry.name} is already registered`,
+    };
+  }
+  let target: string;
+  try {
+    // Resolve realpath so a chain of symlinks records the actual
+    // source location, not a one-hop intermediary.
+    target = fs.realpathSync(entry.linkPath);
+  } catch (err) {
+    return {
+      action,
+      ok: false,
+      message: `cannot resolve source for ${entry.name}: ${(err as Error).message}`,
+    };
+  }
+  if (!fs.existsSync(target)) {
+    return {
+      action,
+      ok: false,
+      message: `source path missing for ${entry.name}: ${target}`,
+    };
+  }
+  writeExternalRegistry(opts.registryRoot, entry.name, target);
+  return {
+    action,
+    ok: true,
+    message: `registered ${entry.name} (symlink-mode → ${target})`,
+  };
 }
 
 interface RegistrationLogEntry {
@@ -689,16 +731,11 @@ export function resolveSkillConflicts(
   decisions: ConflictResolveDecision[],
 ): ConflictResolveReport {
   const registryDir = path.join(registryRoot, "skills", name);
-  if (!fs.existsSync(registryDir)) {
-    return {
-      applied: [],
-      errors: decisions.map((d) => ({
-        agent: d.agent,
-        action: d.action,
-        message: `${name} is not in the registry; cannot replace with symlinks to it`,
-      })),
-    };
-  }
+  // Only replace-with-symlink needs a registry copy to point at;
+  // delete/keep operate purely on agent-dir entries and are valid for
+  // unregistered skills too. Pre-fail individual replace-with-symlink
+  // decisions if the registry is missing, but let delete/keep proceed.
+  const registryExists = fs.existsSync(registryDir);
 
   const applied: ConflictResolveReport["applied"] = [];
   const errors: ConflictResolveReport["errors"] = [];
@@ -707,6 +744,14 @@ export function resolveSkillConflicts(
     const linkPath = path.join(getAgentSkillsDir(agent), name);
     if (d.action === "keep") {
       applied.push({ agent: d.agent, action: "keep" });
+      continue;
+    }
+    if (d.action === "replace-with-symlink" && !registryExists) {
+      errors.push({
+        agent: d.agent,
+        action: d.action,
+        message: `${name} is not in the registry; cannot replace with a symlink to it`,
+      });
       continue;
     }
     try {

@@ -3,6 +3,10 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
+import { readUpstreamCanonNames } from "./canon.js";
+import { readExternalRegistry } from "./external.js";
+import { hashSkillFolder, readSyncedHash } from "./heal.js";
+import { readHiddenCanonNames } from "./hide.js";
 import { readSkillMeta } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import type {
@@ -79,6 +83,18 @@ export function buildRegistryIndex(
   // Compute publish state for every skill in one batched git pass —
   // cheaper than per-skill git invocations from buildOneEntry.
   const publishStates = computePublishStates(registryRoot);
+  // M6: read the prior persisted index so we can surface missing-
+  // folder entries (registered names that don't exist on disk anymore).
+  // Read happens BEFORE we potentially overwrite below.
+  const priorNames = readPriorIndexNames(registryRoot);
+  // Resolve canon dynamically: union of the upstream snapshot
+  // (convenience persona, written by sync/seed) and skills currently
+  // reachable from the registry's upstream branch (power persona,
+  // publishState === "pushed"). Either path empty is fine; the union
+  // means switching repos always recomputes against the active
+  // upstream rather than trusting stale per-skill markers.
+  const upstreamCanon = readUpstreamCanonNames(registryRoot);
+  const hiddenCanon = readHiddenCanonNames(registryRoot);
 
   if (fs.existsSync(skillsDir)) {
     for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
@@ -94,9 +110,57 @@ export function buildRegistryIndex(
       if (built) {
         const ps = publishStates.get(sk.name);
         if (ps) built.publishState = ps;
+        built.canon = upstreamCanon.has(sk.name) || ps === "pushed";
+        // Hide flag is only meaningful for canon entries (non-canon
+        // skills are just unregisterable). Stale entries in the
+        // hidden list for skills that lost canon status get ignored.
+        if (built.canon && hiddenCanon.has(sk.name)) built.hidden = true;
+        // M6: drift detection for skills that came from a canonical
+        // sync. We persist the post-sync content hash in
+        // .skills-bank-hash; current folder hash != stored hash ⇒ the
+        // user (or some process) edited the canonical copy locally.
+        if (built.source.source === "canonical") {
+          const recorded = readSyncedHash(skillDir);
+          if (recorded) {
+            const live = hashSkillFolder(skillDir);
+            if (live && live !== recorded) built.drift = true;
+          }
+        }
         entries.push(built);
       }
     }
+  }
+
+  // M3: merge in non-adopted (symlink-mode) entries from external.json
+  // so the renderer sees them in the registry view, not just Installed.
+  // Adopted=false means files live at `target`, not under skills/.
+  // Local content (publishState, last-commit) doesn't apply.
+  const adoptedNames = new Set(entries.map((e) => e.name));
+  for (const ext of readExternalRegistry(registryRoot)) {
+    if (adoptedNames.has(ext.name)) continue; // adopted wins on name collision
+    const built = buildExternalEntry(ext, opts);
+    if (built) {
+      built.canon = upstreamCanon.has(ext.name);
+      entries.push(built);
+    }
+  }
+
+  // M6: surface missing adopted entries — names that the prior
+  // persisted index knew about but whose folders are gone now. The
+  // user gets a Heal flow on these instead of having them silently
+  // disappear.
+  const live = new Set(entries.map((e) => e.name));
+  for (const name of priorNames) {
+    if (live.has(name)) continue;
+    entries.push({
+      name,
+      description: "(files missing)",
+      path: `skills/${name}`,
+      source: { source: "user" },
+      adopted: true,
+      missing: true,
+      ...(upstreamCanon.has(name) ? { canon: true } : {}),
+    });
   }
 
   entries.sort((a, b) => a.name.localeCompare(b.name));
@@ -202,6 +266,10 @@ function buildOneEntry(
     ...(meta.author ? { author: meta.author } : {}),
     path: path.relative(registryRoot, skillDir),
     source: readSkillSource(skillDir),
+    // Folders walked from <registryRoot>/skills/ are adopted by
+    // definition — the files live in the bank. M3 introduces the
+    // non-adopted (external) case alongside this.
+    adopted: true,
     ...(warnings.length > 0 ? { warnings } : {}),
   };
 
@@ -211,6 +279,96 @@ function buildOneEntry(
   }
 
   return entry;
+}
+
+/**
+ * Build a RegistryEntry for a non-adopted (external) registration.
+ * The skill's files live at `ext.target`; we read meta from there so
+ * the renderer sees the same description/version/tags as if the
+ * skill had been adopted. `adopted: false` and `path` = absolute
+ * external path so reveal/open-in-finder work without registryRoot
+ * resolution gymnastics.
+ *
+ * M6: if the external target is gone, return a synthetic entry with
+ * `missing: true` so the classifier surfaces an
+ * `external-target-missing` heal state instead of silently dropping
+ * the entry.
+ */
+function buildExternalEntry(
+  ext: import("./external.js").ExternalEntry,
+  opts: BuildIndexOptions,
+): RegistryEntry | null {
+  if (!fs.existsSync(ext.target)) {
+    return {
+      name: ext.name,
+      description: `(external target missing: ${ext.target})`,
+      path: ext.target,
+      source: { source: "user" },
+      adopted: false,
+      missing: true,
+    };
+  }
+  const warnings: string[] = [];
+  let meta: Partial<SkillMeta> = {};
+  const fm = readSkillMeta(ext.target);
+  if (fm) {
+    meta = { ...fm };
+  }
+  if (!meta.name) {
+    warnings.push("missing name (using registered name)");
+    meta.name = ext.name;
+  }
+  if (!meta.description) {
+    warnings.push("missing description");
+    meta.description = "";
+  }
+  const entry: RegistryEntry = {
+    name: meta.name,
+    description: meta.description,
+    ...(meta.tags ? { tags: meta.tags } : {}),
+    ...(meta.version ? { version: meta.version } : {}),
+    ...(meta.author ? { author: meta.author } : {}),
+    // Absolute path for external entries — renderer falls back to
+    // this when composing the reveal-in-finder path.
+    path: ext.target,
+    source: { source: "user" },
+    adopted: false,
+    ...(warnings.length > 0 ? { warnings } : {}),
+  };
+  if (opts.strict && warnings.length > 0) return null;
+  return entry;
+}
+
+/**
+ * Read the names from the persisted `index.json` (last build's
+ * output) without rebuilding. Used by buildRegistryIndex to detect
+ * adopted entries whose folders went missing since the last
+ * successful build. Returns an empty array if no prior index exists
+ * or it can't be parsed.
+ */
+function readPriorIndexNames(registryRoot: string): string[] {
+  const p = path.join(registryRoot, "index.json");
+  if (!fs.existsSync(p)) return [];
+  try {
+    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as {
+      entries?: Array<{ name?: unknown; adopted?: unknown; missing?: unknown }>;
+    };
+    if (!Array.isArray(raw.entries)) return [];
+    return raw.entries
+      .filter(
+        (e) =>
+          typeof e.name === "string" &&
+          // Only adopted entries; non-adopted "missing" surface via
+          // external.json. Don't double-count entries that were
+          // missing in the prior build either — they're authoritative
+          // via the current detection path.
+          e.adopted !== false &&
+          e.missing !== true,
+      )
+      .map((e) => e.name as string);
+  } catch {
+    return [];
+  }
 }
 
 /**

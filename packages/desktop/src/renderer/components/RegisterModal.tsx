@@ -12,6 +12,13 @@ import { Icon } from "./Icon.js";
 interface Props {
   onClose: () => void | Promise<void>;
   onFlash: (msg: string) => void;
+  /**
+   * Whether registrations should move files into the bank (true) or
+   * record the external path (false). Comes from
+   * `settings.registerAdopts`; M3 collapsed the prior per-kind adopt
+   * vs. register-external choice into this single global setting.
+   */
+  registerAdopts: boolean;
 }
 
 type ChoiceMap = Record<string, RegistrationAction>;
@@ -27,7 +34,11 @@ type Phase =
       rebuildMessage: string | null;
     };
 
-export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
+export function RegisterModal({
+  onClose,
+  onFlash,
+  registerAdopts,
+}: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(() => void onClose());
   const [report, setReport] = useState<ScanReport | null>(null);
@@ -49,7 +60,7 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
         if (cancelled) return;
         setReport(r);
         const initial: ChoiceMap = {};
-        for (const e of r.entries) initial[e.name] = defaultAction(e);
+        for (const e of r.entries) initial[e.name] = defaultAction(e, registerAdopts);
         setChoices(initial);
         setPhase({ kind: "plan" });
       })
@@ -155,23 +166,30 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
     if (!report) return;
     const items = report.entries.map((e) => ({
       name: e.name,
-      action: choices[e.name] ?? defaultAction(e),
+      action: choices[e.name] ?? defaultAction(e, registerAdopts),
     }));
     setPhase({ kind: "applying", total: items.length });
     const results = await window.skillsBank.register(items);
-    const adoptedCount = results.filter(
-      (r) => r.ok && r.action.type === "adopt",
+    // Any successful register that adopted files requires a rebuild
+    // so the new skills/<name> folder surfaces with its meta. Non-
+    // adopt (symlink-mode) registrations don't change the on-disk
+    // skills/ tree, but they DO add an external.json entry that
+    // buildRegistryIndex now merges in — rebuild covers both.
+    const registeredCount = results.filter(
+      (r) => r.ok && r.action.type === "register",
     ).length;
     setPhase({
       kind: "results",
       results,
-      rebuilding: adoptedCount > 0,
+      rebuilding: registeredCount > 0,
       rebuildMessage: null,
     });
 
-    // After adopt actions, regenerate index.json so the new skills register
-    // as ours rather than as foreign symlinks on the next scan.
-    if (adoptedCount > 0) {
+    // After register actions, regenerate index.json so the new skills
+    // surface with up-to-date meta. Covers both adopt (new
+    // skills/<name> dir) and symlink-mode (external.json entry that
+    // buildRegistryIndex merges in).
+    if (registeredCount > 0) {
       const r = await window.skillsBank.rebuildIndex();
       setPhase((prev) =>
         prev.kind === "results"
@@ -341,6 +359,7 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
                       [e.name]: actionFor(
                         ev.target.value as RegistrationAction["type"],
                         e,
+                        registerAdopts,
                       ),
                     }))
                   }
@@ -365,16 +384,18 @@ export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
   );
 }
 
-function defaultAction(e: InstalledSkill): RegistrationAction {
+function defaultAction(
+  e: InstalledSkill,
+  registerAdopts: boolean,
+): RegistrationAction {
   switch (e.kind) {
     case "ours":
       return { type: "skip", name: e.name };
     case "broken-symlink":
       return { type: "remove", name: e.name };
     case "foreign-symlink":
-      return { type: "register-external", name: e.name };
     case "real-directory":
-      return { type: "adopt", name: e.name };
+      return { type: "register", name: e.name, adopt: registerAdopts };
   }
 }
 
@@ -383,21 +404,16 @@ function actionsFor(
 ): Array<{ value: RegistrationAction["type"]; label: string }> {
   switch (e.kind) {
     case "ours":
-      return [{ value: "skip", label: "Skip (already integrated)" }];
+      return [{ value: "skip", label: "Skip (already registered)" }];
     case "broken-symlink":
       return [
         { value: "remove", label: "Remove broken symlink" },
         { value: "skip", label: "Skip" },
       ];
     case "foreign-symlink":
-      return [
-        { value: "register-external", label: "Register as external" },
-        { value: "adopt", label: "Adopt into registry (copy)" },
-        { value: "skip", label: "Skip" },
-      ];
     case "real-directory":
       return [
-        { value: "adopt", label: "Adopt into registry (move)" },
+        { value: "register", label: "Register" },
         { value: "skip", label: "Skip" },
       ];
   }
@@ -406,12 +422,11 @@ function actionsFor(
 function actionFor(
   type: RegistrationAction["type"],
   e: InstalledSkill,
+  registerAdopts: boolean,
 ): RegistrationAction {
   switch (type) {
-    case "adopt":
-      return { type: "adopt", name: e.name };
-    case "register-external":
-      return { type: "register-external", name: e.name };
+    case "register":
+      return { type: "register", name: e.name, adopt: registerAdopts };
     case "remove":
       return { type: "remove", name: e.name };
     case "skip":
@@ -427,10 +442,11 @@ function describeName(a: RegistrationAction): string {
   switch (a.type) {
     case "skip":
     case "remove":
-    case "register-external":
       return `${a.type}: ${a.name}`;
-    case "adopt":
-      return `register: ${a.name} → skills/${a.name}`;
+    case "register":
+      return a.adopt
+        ? `register: ${a.name} → skills/${a.name}`
+        : `register: ${a.name} (symlink-mode)`;
     case "setAgents":
       return `set-agents ${a.name} → ${a.agents.length} agent(s)`;
   }

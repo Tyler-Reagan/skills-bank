@@ -32,9 +32,18 @@ interface Props {
   conflicts: InstalledSkill[];
   onClose: () => void | Promise<void>;
   onFlash: (msg: string) => void;
+  /**
+   * When false, hide the "Replace with symlink to registry" action.
+   * Used for the unregistered-conflicts flow where there is no
+   * registry copy yet to symlink to — the user resolves which copy to
+   * keep (delete the others), then registers in a separate step from
+   * the Unregistered section. Default `true` preserves the original
+   * registered-conflicts behavior.
+   */
+  allowReplaceWithSymlink?: boolean;
 }
 
-const ACTIONS: {
+const ALL_ACTIONS: {
   value: ConflictResolveAction;
   label: string;
   description: string;
@@ -72,17 +81,40 @@ export function ConflictResolveModal({
   conflicts,
   onClose,
   onFlash,
+  allowReplaceWithSymlink = true,
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(() => void onClose());
+  // Default per-installation action:
+  //   - Registered case → replace-with-symlink (recommended outcome:
+  //     converge agent dirs onto the registry copy).
+  //   - Unregistered case → keep (non-destructive default; deletion
+  //     must be an explicit per-row choice or the bulk "Delete all"
+  //     button, both of which trigger the orphan-warning path).
+  // The previous unregistered default was delete, which contradicted
+  // the modal's intro copy and silently primed every row for removal.
+  const defaultAction: ConflictResolveAction = allowReplaceWithSymlink
+    ? "replace-with-symlink"
+    : "keep";
+  const ACTIONS = allowReplaceWithSymlink
+    ? ALL_ACTIONS
+    : ALL_ACTIONS.filter((a) => a.value !== "replace-with-symlink");
   const [picks, setPicks] = useState<Record<AgentId, ConflictResolveAction>>(
     () => {
       const initial: Partial<Record<AgentId, ConflictResolveAction>> = {};
-      for (const c of conflicts) initial[c.agent] = "replace-with-symlink";
+      for (const c of conflicts) initial[c.agent] = defaultAction;
       return initial as Record<AgentId, ConflictResolveAction>;
     },
   );
   const [submitting, setSubmitting] = useState(false);
+  // Per-agent error messages surfaced from the most recent Apply.
+  // Keyed by AgentId so each row can show its own failure inline. The
+  // modal stays open after a partial/total failure so the user sees
+  // *why* — closing on failure was the previous behavior and gave the
+  // user a generic "Resolved 0; N failed" toast with no remediation.
+  const [errorMessages, setErrorMessages] = useState<
+    Partial<Record<AgentId, string>>
+  >({});
 
   const decisions = useMemo<ConflictResolveDecision[]>(
     () =>
@@ -93,6 +125,32 @@ export function ConflictResolveModal({
     [conflicts, picks],
   );
 
+  // Action tallies for the live summary line under the picker. The
+  // counts update as the user toggles individual rows.
+  const counts = useMemo(() => {
+    let keep = 0;
+    let del = 0;
+    let replace = 0;
+    for (const d of decisions) {
+      if (d.action === "keep") keep += 1;
+      else if (d.action === "delete") del += 1;
+      else replace += 1;
+    }
+    return { keep, del, replace };
+  }, [decisions]);
+
+  // Two thresholds drive the confirmation gate:
+  //   wouldDeleteAll — every selection is delete. Any bulk delete sweep
+  //     deserves a re-affirmation regardless of orphan risk; the
+  //     "Delete all" button intentionally produces this state.
+  //   wouldOrphan — the stronger case: all-delete AND no registry copy
+  //     survives, so the skill is removed from the machine entirely.
+  // Both states promote the Apply button to a danger-styled "Confirm
+  // delete all"; wouldOrphan adds a stronger warning banner.
+  const wouldDeleteAll =
+    decisions.length > 0 && decisions.every((d) => d.action === "delete");
+  const wouldOrphan = wouldDeleteAll && !allowReplaceWithSymlink;
+
   const setAll = (action: ConflictResolveAction) => {
     const next: Record<AgentId, ConflictResolveAction> = { ...picks };
     for (const c of conflicts) next[c.agent] = action;
@@ -101,16 +159,29 @@ export function ConflictResolveModal({
 
   const apply = async () => {
     setSubmitting(true);
+    setErrorMessages({});
     try {
       const r = await window.skillsBank.resolveSkillConflicts(name, decisions);
       const okCount = r.applied.length;
       const failCount = r.errors.length;
+      if (failCount === 0) {
+        onFlash(
+          `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} for ${name}`,
+        );
+        await onClose();
+        return;
+      }
+      // Partial or total failure — keep the modal open and surface
+      // each agent's error message so the user can adjust their picks
+      // and retry without losing context.
+      const messages: Partial<Record<AgentId, string>> = {};
+      for (const e of r.errors) messages[e.agent] = e.message;
+      setErrorMessages(messages);
       onFlash(
-        failCount === 0
-          ? `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} for ${name}`
-          : `Resolved ${okCount}; ${failCount} failed`,
+        okCount === 0
+          ? `Couldn't resolve ${failCount} conflict${failCount === 1 ? "" : "s"} for ${name}`
+          : `Resolved ${okCount}; ${failCount} failed (see details)`,
       );
-      await onClose();
     } finally {
       setSubmitting(false);
     }
@@ -121,8 +192,9 @@ export function ConflictResolveModal({
       <div style={modal} role="dialog" aria-modal="true">
         <h2 style={{ marginTop: 0 }}>Resolve conflicts — {name}</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          {name} is registered, but some agent directories have stragglers that
-          aren't symlinks to the registry copy. Pick how to handle each.
+          {allowReplaceWithSymlink
+            ? `${name} is registered, but some agent directories have stragglers that aren't symlinks to the registry copy. Pick how to handle each.`
+            : `All copies of ${name} are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`}
         </p>
 
         <div
@@ -133,9 +205,11 @@ export function ConflictResolveModal({
             marginBottom: 12,
           }}
         >
-          <button onClick={() => setAll("replace-with-symlink")}>
-            Replace all with symlinks
-          </button>
+          {allowReplaceWithSymlink && (
+            <button onClick={() => setAll("replace-with-symlink")}>
+              Replace all with symlinks
+            </button>
+          )}
           <button onClick={() => setAll("delete")}>Delete all</button>
           <button onClick={() => setAll("keep")}>Keep all</button>
         </div>
@@ -145,7 +219,7 @@ export function ConflictResolveModal({
             <div
               key={c.agent}
               style={{
-                border: "1px solid var(--border)",
+                border: `1px solid ${errorMessages[c.agent] ? "var(--danger, #d04444)" : "var(--border)"}`,
                 borderRadius: 6,
                 padding: 12,
                 marginBottom: 12,
@@ -174,6 +248,23 @@ export function ConflictResolveModal({
               >
                 {c.linkPath}
               </code>
+              {errorMessages[c.agent] && (
+                <div
+                  role="alert"
+                  style={{
+                    background: "var(--danger-dim, rgba(208, 68, 68, 0.12))",
+                    color: "var(--danger, #d04444)",
+                    border: "1px solid var(--danger, #d04444)",
+                    borderRadius: 4,
+                    padding: "6px 8px",
+                    fontSize: 11,
+                    marginBottom: 8,
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  {errorMessages[c.agent]}
+                </div>
+              )}
               {ACTIONS.map((a) => (
                 <label
                   key={a.value}
@@ -182,9 +273,14 @@ export function ConflictResolveModal({
                     padding: 6,
                     marginBottom: 4,
                     cursor: "pointer",
+                    // Selected-row background distinguishes safe picks
+                    // (keep / replace) from risky picks (delete) so the
+                    // user can scan the selection state at a glance.
                     background:
                       picks[c.agent] === a.value
-                        ? "var(--accent-dim)"
+                        ? a.value === "delete"
+                          ? "var(--danger-dim, rgba(208, 68, 68, 0.18))"
+                          : "var(--accent-dim)"
                         : "transparent",
                     borderRadius: 4,
                   }}
@@ -214,6 +310,56 @@ export function ConflictResolveModal({
           ))}
         </div>
 
+        {/* Live tally — gives the user a single-glance read on what
+            Apply will actually do, complementing the per-row colors. */}
+        <p
+          style={{
+            margin: "8px 0 0",
+            fontSize: 12,
+            color: counts.del > 0 ? "var(--text-2)" : "var(--text-3)",
+          }}
+        >
+          {[
+            counts.keep > 0 ? `Keep ${counts.keep}` : null,
+            counts.del > 0 ? `Delete ${counts.del}` : null,
+            counts.replace > 0 ? `Replace ${counts.replace}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Nothing selected"}
+        </p>
+
+        {wouldDeleteAll && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 10,
+              padding: "10px 12px",
+              background: "var(--danger-dim, rgba(208, 68, 68, 0.12))",
+              border: "1px solid var(--danger, #d04444)",
+              borderRadius: 4,
+              color: "var(--danger, #d04444)",
+              fontSize: 12,
+            }}
+          >
+            {wouldOrphan ? (
+              <>
+                <strong>All copies of {name} will be deleted.</strong> The
+                skill will no longer be on this machine. Re-importing from
+                its source is the only way back.
+              </>
+            ) : (
+              <>
+                <strong>
+                  All {decisions.length} conflicting{" "}
+                  {decisions.length === 1 ? "entry" : "entries"} will be
+                  deleted.
+                </strong>{" "}
+                The registered installation in Skills Bank stays intact.
+              </>
+            )}
+          </div>
+        )}
+
         <div
           style={{
             display: "flex",
@@ -226,7 +372,7 @@ export function ConflictResolveModal({
             Cancel
           </button>
           <button
-            className="primary"
+            className={wouldDeleteAll ? "btn danger" : "primary"}
             onClick={() => void apply()}
             disabled={submitting}
           >
@@ -234,6 +380,10 @@ export function ConflictResolveModal({
               <>
                 <Icon name="check" size="sm" /> Applying…
               </>
+            ) : Object.keys(errorMessages).length > 0 ? (
+              "Retry"
+            ) : wouldDeleteAll ? (
+              "Confirm delete all"
             ) : (
               "Apply"
             )}

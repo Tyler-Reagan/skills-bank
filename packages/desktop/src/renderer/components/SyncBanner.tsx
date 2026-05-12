@@ -7,6 +7,11 @@ interface Props {
   pendingConflicts: number;
   onDismiss: () => void;
   onResolveConflicts: () => void;
+  /**
+   * Stuck-state recovery: clear the pending-conflicts.json so the next
+   * sync starts clean. Surfaced only when there are pending conflicts.
+   */
+  onResetPending?: () => void;
 }
 
 /**
@@ -21,6 +26,7 @@ export function SyncBanner({
   pendingConflicts,
   onDismiss,
   onResolveConflicts,
+  onResetPending,
 }: Props): React.ReactElement | null {
   if (status.kind === "fetching") {
     return (
@@ -100,6 +106,17 @@ export function SyncBanner({
         >
           Resolve
         </button>
+        {onResetPending && (
+          <button
+            className="sync-banner-action"
+            type="button"
+            onClick={onResetPending}
+            title="Discard the pending sync state. Use this if the resolve flow is stuck and you'd rather start fresh on the next Pull Updates."
+            style={{ marginLeft: 4, opacity: 0.85 }}
+          >
+            Reset
+          </button>
+        )}
       </div>
     );
   }

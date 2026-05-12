@@ -76,15 +76,18 @@ async function chooseAction(
   entry: InstalledSkill,
   opts: ImportOptions,
 ): Promise<RegistrationAction> {
+  // M3: the desktop app routes adopt-vs-symlink through settings; the
+  // CLI keeps --adopt-all as the bulk affirmative and defaults
+  // interactive prompts to adopt=true. A future --symlink-mode flag
+  // can flip the default if needed.
   if (opts.adoptAll) {
     if (entry.kind === "ours") return { type: "skip", name: entry.name };
     if (entry.kind === "broken-symlink")
       return { type: "remove", name: entry.name };
-    return { type: "adopt", name: entry.name };
+    return { type: "register", name: entry.name, adopt: true };
   }
 
   if (opts.yes) {
-    // Conservative defaults under --yes without --adopt-all
     if (entry.kind === "broken-symlink")
       return { type: "remove", name: entry.name };
     return { type: "skip", name: entry.name };
@@ -99,7 +102,7 @@ async function chooseAction(
   if (entry.kind === "ours") {
     offer.push([
       "s",
-      "skip (already integrated)",
+      "skip (already registered)",
       () => ({ type: "skip", name: entry.name }),
     ]);
   } else if (entry.kind === "broken-symlink") {
@@ -109,23 +112,16 @@ async function chooseAction(
       () => ({ type: "remove", name: entry.name }),
     ]);
     offer.push(["s", "skip", () => ({ type: "skip", name: entry.name })]);
-  } else if (entry.kind === "foreign-symlink") {
-    offer.push([
-      "a",
-      "adopt into registry (copy)",
-      () => ({ type: "adopt", name: entry.name }),
-    ]);
-    offer.push([
-      "e",
-      "register as external (no copy)",
-      () => ({ type: "register-external", name: entry.name }),
-    ]);
-    offer.push(["s", "skip", () => ({ type: "skip", name: entry.name })]);
   } else {
     offer.push([
       "a",
-      "adopt into registry (move)",
-      () => ({ type: "adopt", name: entry.name }),
+      "register (adopt — move files into bank)",
+      () => ({ type: "register", name: entry.name, adopt: true }),
+    ]);
+    offer.push([
+      "e",
+      "register (symlink-mode — leave files in place)",
+      () => ({ type: "register", name: entry.name, adopt: false }),
     ]);
     offer.push(["s", "skip", () => ({ type: "skip", name: entry.name })]);
   }
@@ -145,10 +141,10 @@ function describe(a: RegistrationAction): string {
       return pc.dim("skip");
     case "remove":
       return pc.red("remove symlink");
-    case "register-external":
-      return pc.yellow("register as external");
-    case "adopt":
-      return pc.green(`adopt → skills/${a.name}`);
+    case "register":
+      return a.adopt
+        ? pc.green(`register → skills/${a.name}`)
+        : pc.yellow(`register (symlink-mode)`);
     case "setAgents":
       return pc.cyan(`set-agents → ${a.agents.length} agent(s)`);
   }

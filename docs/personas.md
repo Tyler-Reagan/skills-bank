@@ -14,7 +14,7 @@ Skills Bank asks you to make a one-time registry choice on first launch. This pa
 | **Registry maintenance** | None required — you can add your own skills alongside curated ones | Full ownership — content, structure, curation |
 | **Already-installed skills** | Show as Not registered in the Installed tab until you Register them | Same |
 | **Tags** | Local only (stored in `meta.json`); preserved across Pull updates | Local only; persist by committing `meta.json` changes |
-| **Portability** | Machine-local; use Export registry to back up or migrate | High — git clone reproduces the full registry on any machine |
+| **Portability** | Machine-local; use Export registry to back up or migrate, or Merge another registry into yours for additive imports | High — `git clone` reproduces the full registry on any machine; Merge into yours for additive imports |
 
 ---
 
@@ -66,3 +66,22 @@ Open the account menu (top-right of the header) at any time:
 - **Your own registry users**: Choose **Choose registry repo…** to switch to a different GitHub repo, or sign out to return to the first-launch screen.
 
 Switching persona does not delete your installed agent-dir symlinks — your agents keep working. Only the app's source-of-truth registry changes.
+
+### Canon is repo-relative
+
+The **canon** axis (see [concepts.md](concepts.md#taxonomy)) is evaluated against whichever registry is currently linked:
+
+- **Bundled registry** — canon = the upstream curated name set, refreshed by Sync and persisted alongside the registry.
+- **Your own registry** — canon = skills that are committed and reachable from your repo's upstream branch (publishState `pushed`).
+
+Switching repos drops the previous root's canon snapshot and recomputes against the new one. A skill that was canon under repo A is not automatically canon under repo B; if you want it canonical under B, commit it to B.
+
+#### Canon protection: Hide instead of Unregister/Delete
+
+Canon skills are upstream-owned, so unregistering or deleting one locally would be irrecoverable from the UI. The destructive verbs are disabled on canon — the drawer shows **Hide** instead. Hidden canon skills:
+
+- Drop out of the default Browse view.
+- Keep their installations, tags, and agent links — Hide is a UI dormancy flag, not an uninstall.
+- Are scoped per linked-registry. Switching repos shows that repo's canon fresh, with its own hide list. A skill hidden under repo A is not automatically hidden under repo B.
+
+Manage hidden canon skills via Settings → **Hidden canon skills**. Each row exposes an Unhide button.

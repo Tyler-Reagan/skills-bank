@@ -213,3 +213,108 @@ function isSymlink(p: string): boolean {
     return false;
   }
 }
+
+export interface DeleteFromBankOptions {
+  registryRoot: string;
+}
+
+export interface DeleteFromBankResult {
+  ok: boolean;
+  name: string;
+  message: string;
+  /** Absolute path that was deleted (when ok). */
+  deletedPath?: string;
+  /** Result of the symlink cleanup pass. */
+  symlinkRemovals?: UninstallTargetResult[];
+  /** Aggregate errors from symlink cleanup + delete. */
+  errors: Array<{ agent?: AgentId; message: string }>;
+}
+
+/**
+ * Full destructive removal of a registered skill: deletes the registry
+ * copy AND removes every agent-dir symlink pointing at it.
+ *
+ * @deprecated for renderer flows — the UI no longer exposes a
+ * registered-skill Delete affordance. Use `unregisterSkill` to drop
+ * the registry entry (adopted: files expel to the configured agents
+ * dir; non-adopted: untouched), then `deleteUnregisteredSkill` from
+ * the Installed tab's Unregistered section to wipe files. This op
+ * stays for CLI / non-UI consumers that still want the original
+ * registered-delete semantic.
+ *
+ * Guards against deleting anything outside `<registryRoot>/skills/` —
+ * the resolved path must live inside the canonical skills directory or
+ * the operation refuses.
+ */
+export function deleteFromBankSkill(
+  name: string,
+  opts: DeleteFromBankOptions,
+): DeleteFromBankResult {
+  const index = buildRegistryIndex(opts.registryRoot);
+  const entry = findEntry(index, name);
+  if (!entry) {
+    return {
+      ok: false,
+      name,
+      message: `no registry entry for ${name}`,
+      errors: [{ message: `no registry entry for ${name}` }],
+    };
+  }
+
+  const skillDir = resolveEntryPath(opts.registryRoot, entry);
+  const skillsRoot = path.resolve(opts.registryRoot, "skills");
+  const rel = path.relative(skillsRoot, skillDir);
+  if (rel.startsWith("..") || path.isAbsolute(rel) || rel === "") {
+    return {
+      ok: false,
+      name,
+      message: `refusing to delete ${skillDir}: outside ${skillsRoot}`,
+      errors: [
+        {
+          message: `refusing to delete ${skillDir}: outside ${skillsRoot}`,
+        },
+      ],
+    };
+  }
+
+  const uninstall = uninstallSkill(name);
+  const errors: Array<{ agent?: AgentId; message: string }> = [
+    ...uninstall.errors,
+  ];
+
+  try {
+    fs.rmSync(skillDir, { recursive: true, force: true });
+  } catch (err) {
+    errors.push({ message: (err as Error).message });
+    return {
+      ok: false,
+      name,
+      message: `delete failed: ${(err as Error).message}`,
+      symlinkRemovals: uninstall.removals,
+      errors,
+    };
+  }
+
+  // Rewrite index.json so subsequent listRegistry calls don't return the
+  // stale entry. Without this the renderer would still see the deleted
+  // skill until the next manual rebuild.
+  buildRegistryIndex(opts.registryRoot, {
+    includeGitInfo: true,
+    writeFile: true,
+  });
+
+  const removedCount = uninstall.removals.filter((r) => r.removed).length;
+  const message =
+    removedCount > 0
+      ? `Deleted ${name} from Skills Bank and removed ${removedCount} symlink(s).`
+      : `Deleted ${name} from Skills Bank.`;
+
+  return {
+    ok: true,
+    name,
+    message,
+    deletedPath: skillDir,
+    symlinkRemovals: uninstall.removals,
+    errors,
+  };
+}

@@ -257,14 +257,22 @@ export function agentsForSkill(
 }
 
 /**
- * Single badge that surfaces a skill's origin:
- *   - YOURS    — not in the registry, OR registered but locally authored.
- *   - IMPORTED — registered with `source: imported` (power-persona repo
- *                replacement).
- *   - (none)   — curated/canonical: the calm default.
+ * Single badge per card, picking the most actionable signal from the
+ * four-axis taxonomy. Priority order (highest wins, mutually exclusive):
  *
- * Tags are local-only — Sync preserves them — so we don't surface
- * uncommitted-edit state on cards.
+ *   1. MISSING  — entry.missing: files gone, Forget heal flow.
+ *   2. DRIFT    — entry.drift: canonical edited locally, Accept heal flow.
+ *   3. CANON    — registered + canon + healthy: Hide is the only path to
+ *                 remove (Unregister/Delete are prohibited).
+ *   4. IMPORTED — registered + non-canon + source: imported. Provenance
+ *                 from a power-persona repo replacement.
+ *   5. EXTERNAL — registered + non-canon + adopted: false. Unregister
+ *                 leaves origin files in place (no file move).
+ *   6. YOURS    — registered + non-canon + adopted + source: user, OR
+ *                 unregistered. User-mutable; safe from Sync overwrites.
+ *
+ * Each badge communicates something that changes what the user can or
+ * should do — no badges for communication's sake.
  */
 function PublishBadge({
   entry,
@@ -273,13 +281,43 @@ function PublishBadge({
   entry: RegistryEntry;
   isRegistered: boolean;
 }): React.ReactElement | null {
+  if (entry.missing) {
+    return (
+      <span
+        className="skill-state-badge missing"
+        title="Files are gone. Open the drawer to forget this entry."
+      >
+        MISSING
+      </span>
+    );
+  }
+  if (entry.drift) {
+    return (
+      <span
+        className="skill-state-badge drift"
+        title="Local edits diverged from the synced canonical copy. Accept-local or re-sync via the drawer."
+      >
+        DRIFT
+      </span>
+    );
+  }
   if (!isRegistered) {
     return (
       <span
         className="skill-origin-badge user"
-        title="This skill exists in an agent directory but isn't in the registry"
+        title="Exists in an agent dir but isn't in the registry. Register from the Installed tab."
       >
         YOURS
+      </span>
+    );
+  }
+  if (entry.canon) {
+    return (
+      <span
+        className="skill-origin-badge canon"
+        title="Part of the linked registry's upstream. Unregister and Delete are unavailable — use Hide to tuck it out of the default views."
+      >
+        CANON
       </span>
     );
   }
@@ -287,9 +325,19 @@ function PublishBadge({
     return (
       <span
         className="skill-origin-badge imported"
-        title="Imported from an external registry repo"
+        title="Imported from a power-persona registry-repo replacement"
       >
         IMPORTED
+      </span>
+    );
+  }
+  if (entry.adopted === false) {
+    return (
+      <span
+        className="skill-origin-badge external"
+        title="Files live outside Skills Bank. Unregister drops the entry; origin files are not moved."
+      >
+        EXTERNAL
       </span>
     );
   }
@@ -297,7 +345,7 @@ function PublishBadge({
     return (
       <span
         className="skill-origin-badge user"
-        title="Authored locally — not part of the curated registry"
+        title="Authored locally. Safe from Sync overwrites."
       >
         YOURS
       </span>

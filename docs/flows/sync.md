@@ -21,6 +21,8 @@ Sync is **upsert**:
 - **Never touched** — skills with `source: "user"` or `source: "imported"`. Anything you authored or brought in stays exactly as it was.
 - **Removed** — canonical skills that disappear from upstream are deleted locally. Your local-authored skills are never deleted by sync.
 
+Sync also refreshes the **canon snapshot**: the set of names the upstream registry currently considers canonical. The app uses this to decide which skills are protected from unregister/delete in the UI. Switching to a different registry replaces the snapshot — canon is always evaluated against the active linked repo, never carried over from a previous one.
+
 ## When to sync
 
 There's no schedule — sync is manual. Run it when:
@@ -37,3 +39,12 @@ These are independent paths:
 - **Registry** updates only when you click Sync.
 
 You can update one without the other.
+
+## Importing a registry from elsewhere
+
+Two modes (account menu):
+
+- **Import a registry (replace)…** — point the app at a different folder; the active registry root is swapped. Use when you're switching to a different upstream entirely or restoring from a fresh `git clone`.
+- **Merge a registry into mine…** — additive. Scans the picked folder's `skills/`, adds non-colliding entries to your active registry, and surfaces collisions through the same modal Sync uses (default: keep yours). Imported skills are marked `source: imported` — they don't become canon under your active registry.
+
+Both modes accept any folder with a `skills/` subdirectory. The merge path is the right fit when you want to bring a handful of skills from another registry (say, a coworker's export) into your active set without rebasing your whole layout.

@@ -6,6 +6,7 @@ import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
 import { usePersona } from "../PersonaContext.js";
+import { classifyDrawerState } from "./skillState.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
 
@@ -15,8 +16,6 @@ interface Props {
   registryRoot: string | null;
   onClose: () => void;
   onChanged: (msg: string) => void | Promise<void>;
-  /** Called specifically after a successful uninstall so the host can offer Undo. */
-  onUninstalled?: (name: string) => void;
   /** Open the dedicated "Manage agent links" modal for this skill. */
   onManageLinks?: () => void;
   /**
@@ -25,6 +24,18 @@ interface Props {
    * duplicates after CLI installs). Only relevant when isRegistered.
    */
   onResolveConflicts?: () => void;
+  /**
+   * Surfaces an install-time conflict (foreign symlink blocking the
+   * install). Host opens the InstallConflictModal so the user can pick
+   * Force / Resolve / Cancel.
+   */
+  onInstallConflict?: (payload: {
+    name: string;
+    errors: Array<{
+      agent: import("@skills-bank/core").AgentId;
+      message: string;
+    }>;
+  }) => void;
   /**
    * When true, the entry is a real registry-managed skill: tag editing,
    * install/uninstall, and Markdown loading from the registry path all
@@ -36,6 +47,9 @@ interface Props {
   /**
    * Trigger registration into the registry for a not-yet-registered
    * entry. Required when isRegistered is false; ignored otherwise.
+   * Whether files move into the bank or stay at their origin is
+   * controlled by `settings.registerAdopts` (M3 collapsed the prior
+   * adopt vs. register-as-external split into one action).
    */
   onRegister?: () => Promise<void> | void;
   /**
@@ -43,14 +57,54 @@ interface Props {
    * install broadcasts to every existing agent dir (legacy behavior).
    */
   defaultInstallAgents?: import("@skills-bank/core").AgentId[];
+  /**
+   * M4: mid-tier destructive action. For adopted skills, moves files
+   * to the configured agents dir. For non-adopted, drops the entry
+   * with origin files untouched. Distinct from Delete from Skills
+   * Bank (which destroys files) and Remove from agents (which only
+   * severs symlinks).
+   */
+  onUnregister?: () => Promise<void> | void;
+  /**
+   * M5: canon-only. Tuck the skill out of the default views. Replaces
+   * Unregister/Delete on canon skills (those are prohibited since
+   * canon is upstream-owned).
+   */
+  onHide?: () => Promise<void> | void;
+  /** M5: undo Hide. Only meaningful in the canon-hidden state. */
+  onUnhide?: () => Promise<void> | void;
+  /**
+   * Canon-drift heal — keep-mine arm. Clears the canonical marker
+   * so future syncs leave the skill alone. Only meaningful in the
+   * canon-drift state.
+   */
+  onAcceptDrift?: () => Promise<void> | void;
+  /**
+   * Canon-drift heal — take-canonical arm. Re-snapshots the current
+   * on-disk hash as the canonical baseline; drift clears, source
+   * stays canonical, Sync still owns the skill. Use when drift
+   * surfaced spuriously and the current state is acceptable.
+   */
+  onTakeCanonical?: () => Promise<void> | void;
+  /**
+   * M6: missing-entry heal. Forget the registry/external record.
+   * Only meaningful in registry-folder-missing and
+   * external-target-missing.
+   */
+  onForgetMissing?: () => Promise<void> | void;
 }
 
 type ActionState =
   | null
   | "installing"
-  | "uninstalling"
   | "exporting"
-  | "registering";
+  | "registering"
+  | "unregistering"
+  | "hiding"
+  | "unhiding"
+  | "accepting-drift"
+  | "taking-canonical"
+  | "forgetting";
 
 export function SkillDetailDrawer({
   entry,
@@ -58,12 +112,18 @@ export function SkillDetailDrawer({
   registryRoot,
   onClose,
   onChanged,
-  onUninstalled,
   onManageLinks,
   onResolveConflicts,
+  onInstallConflict,
   isRegistered,
   onRegister,
   defaultInstallAgents,
+  onUnregister,
+  onHide,
+  onUnhide,
+  onAcceptDrift,
+  onTakeCanonical,
+  onForgetMissing,
 }: Props): React.ReactElement {
   const persona = usePersona();
   const [skillMd, setSkillMd] = useState<string | null>(null);
@@ -112,27 +172,6 @@ export function SkillDetailDrawer({
     return () => window.clearTimeout(id);
   }, []);
 
-  const isInstalled = installed.some(
-    (i) => i.name === entry.name && i.kind === "ours",
-  );
-  const brokenInstallations = installed.filter(
-    (i) => i.name === entry.name && i.kind === "broken-symlink",
-  );
-  const hasBrokenLinks = brokenInstallations.length > 0;
-  // Non-ours, non-broken stragglers for a REGISTERED skill = duplicates
-  // / stale external links that need conflict resolution. Only
-  // meaningful when the skill is in the registry; for purely
-  // not-registered skills these would be the only installations.
-  const conflictInstallations =
-    isRegistered && isInstalled
-      ? installed.filter(
-          (i) =>
-            i.name === entry.name &&
-            i.kind !== "ours" &&
-            i.kind !== "broken-symlink",
-        )
-      : [];
-  const hasConflicts = conflictInstallations.length > 0;
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
     | { kind: "running" }
@@ -142,6 +181,11 @@ export function SkillDetailDrawer({
         reasons: string[];
       }
   >({ kind: "idle" });
+  // Single source of truth for which actions are valid in this state.
+  // Replaces the previous scatter of isRegistered/isInstalled/hasConflicts
+  // /hasBrokenLinks conditionals across the action block. See plan §7b.
+  const classification = classifyDrawerState(entry, installed, isRegistered);
+  const caps = classification.capabilities;
 
   const repairOrRemoveBroken = async () => {
     setRepairState({ kind: "running" });
@@ -208,20 +252,18 @@ export function SkillDetailDrawer({
         false,
         defaultInstallAgents,
       );
-      await onChanged(r.message);
-    } finally {
-      setAction(null);
-    }
-  };
-  const uninstall = async () => {
-    setAction("uninstalling");
-    try {
-      const r = await window.skillsBank.uninstall(entry.name);
-      if (r.ok && onUninstalled) {
-        onUninstalled(entry.name);
-      } else {
-        await onChanged(r.message);
+      // "refusing to overwrite without force" comes from installSkill
+      // when a non-symlink or foreign symlink blocks the target path.
+      // Surface the structured errors so the host can open the
+      // InstallConflictModal instead of dropping a vague toast.
+      const forceErrors = (r.errors ?? []).filter((e) =>
+        /refusing to overwrite without force/i.test(e.message),
+      );
+      if (!r.ok && forceErrors.length > 0 && onInstallConflict) {
+        onInstallConflict({ name: entry.name, errors: forceErrors });
+        return;
       }
+      await onChanged(r.message);
     } finally {
       setAction(null);
     }
@@ -523,10 +565,16 @@ export function SkillDetailDrawer({
         </div>
 
         <div className="drawer-actions">
-          {/* For not-registered entries, the only useful primary action is
-              moving them into the registry. install/uninstall don't apply
-              because there's no registry copy to symlink to yet. */}
-          {!isRegistered && onRegister && (
+          {/* Action block is gated by classifyDrawerState. Each button
+              has both a capability flag (should it appear?) and a
+              primary marker (should it be styled as the primary call to
+              action?). The primary action renders first, regardless of
+              category, so the user's eye lands on the right move for
+              the current state. See skillState.ts for the table. */}
+
+          {/* Register — primary for unregistered states with adoptable
+              source. The persona hint stays with this affordance. */}
+          {caps.canRegister && onRegister && (
             <>
               <button
                 className="btn primary"
@@ -548,109 +596,385 @@ export function SkillDetailDrawer({
               </button>
               <p className="drawer-action-hint">
                 {persona === "power"
-                  ? "Files move into your repo's skills/ directory. Commit to persist."
-                  : "Files move to the app's local registry. Safe from Pull updates; linkable across agents."}
+                  ? "Files move into your repo's skills/ directory unless you turn off adoption in Settings. Commit to persist."
+                  : "Files move to the app's local registry unless you turn off adoption in Settings. Safe from Pull updates; linkable across agents."}
               </p>
             </>
           )}
-          {isRegistered &&
-            (isInstalled ? (
+
+          {/* Canon-drift two-arm heal. Both clear the badge; they
+              differ in what happens on future syncs. Side-by-side
+              presentation so the user can see both choices without
+              hunting through a submenu. */}
+          {caps.canAcceptDrift && onAcceptDrift && (
+            <>
               <button
-                className="btn danger"
+                className="btn warn"
                 disabled={action !== null}
-                onClick={() => void uninstall()}
+                onClick={() => {
+                  setAction("accepting-drift");
+                  void Promise.resolve(onAcceptDrift()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title="Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
               >
-                {action === "uninstalling" ? (
+                {action === "accepting-drift" ? (
                   <>
-                    <span className="spinner inline" /> Uninstalling…
+                    <span className="spinner inline" /> Accepting…
                   </>
                 ) : (
-                  "Uninstall"
+                  "Accept local changes"
                 )}
               </button>
-            ) : (
+              {caps.canTakeCanonical && onTakeCanonical && (
+                <button
+                  className="btn"
+                  disabled={action !== null}
+                  onClick={() => {
+                    setAction("taking-canonical");
+                    void Promise.resolve(onTakeCanonical()).finally(() =>
+                      setAction(null),
+                    );
+                  }}
+                  title="Re-baseline the current on-disk state as canonical. Drift clears; the skill stays under Sync, which can still overwrite on the next pull."
+                >
+                  {action === "taking-canonical" ? (
+                    <>
+                      <span className="spinner inline" /> Re-baselining…
+                    </>
+                  ) : (
+                    "Take canonical"
+                  )}
+                </button>
+              )}
+              <p className="drawer-action-hint">
+                This canonical skill differs from its synced baseline.
+                <strong> Accept local changes</strong> detaches from
+                Sync — your edits stay, sync stops overwriting.
+                <strong> Take canonical</strong> re-baselines the
+                current state as the new synced version — drift
+                clears, Sync still owns the skill.
+              </p>
+            </>
+          )}
+          {caps.canForgetMissing && onForgetMissing && (
+            <>
               <button
-                className="btn primary"
+                className="btn warn"
                 disabled={action !== null}
-                onClick={() => void install()}
+                onClick={() => {
+                  setAction("forgetting");
+                  void Promise.resolve(onForgetMissing()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title="Remove the registry entry for this skill. Files are already gone — nothing else to do."
               >
-                {action === "installing" ? (
+                {action === "forgetting" ? (
                   <>
-                    <span className="spinner inline" /> Installing…
+                    <span className="spinner inline" /> Forgetting…
                   </>
                 ) : (
-                  "Install"
+                  "Forget this entry"
                 )}
               </button>
-            ))}
-          {/* Manage agent links — available for any skill regardless of
-              registration state. Distinct from Register: this only adjusts
-              symlinks across agent dirs. */}
-          {onManageLinks && (
-            <button
-              className="btn"
-              disabled={action !== null}
-              onClick={onManageLinks}
-            >
-              Manage agent links
-            </button>
+              <p className="drawer-action-hint">
+                The files for this skill are gone. Forgetting drops the
+                registry record so the skill stops appearing.
+              </p>
+            </>
           )}
-          {/* Conflict resolution for registered skills with non-ours
-              stragglers in other agent dirs (e.g. duplicate real-dir
-              from a prior CLI install). Distinct from broken-link
-              repair: these are intact alternative installations that
-              the user must explicitly choose how to reconcile. */}
-          {hasConflicts && onResolveConflicts && (
-            <button
-              className="btn warn"
-              disabled={action !== null}
-              onClick={onResolveConflicts}
-              title={`${conflictInstallations.length} agent dir(s) have duplicate or stale entries for this skill`}
-            >
-              Resolve conflicts ({conflictInstallations.length})
-            </button>
-          )}
-          {/* Two-step repair-or-delete for broken symlinks. First click
-              tries to find a usable source elsewhere (other agent dirs or
-              the registry) and repoints. Anything that can't be repaired
-              comes back as a confirm prompt before deletion. */}
-          {hasBrokenLinks && (
+
+          {/* Repair broken — primary in *-broken states. Two-step:
+              first try repair, then prompt delete for unrepairable. */}
+          {caps.canRepairBroken && caps.primary === "repair-broken" && (
             <button
               className="btn warn"
               disabled={action !== null || repairState.kind === "running"}
               onClick={() => void repairOrRemoveBroken()}
-              title={`${brokenInstallations.length} broken symlink(s) for this skill`}
+              title="Try to repoint broken symlinks at a usable source. Unrepairable links can be deleted in the next step."
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
             >
               {repairState.kind === "running" ? (
                 <>
                   <span className="spinner inline" /> Repairing…
                 </>
               ) : (
-                `Fix broken link${brokenInstallations.length === 1 ? "" : "s"}`
+                <>
+                  <Icon name="alert-triangle" size="sm" />
+                  Fix broken link
+                  {classification.brokenCount === 1 ? "" : "s"} (
+                  {classification.brokenCount})
+                </>
               )}
             </button>
           )}
-          <button
-            className="btn"
-            disabled={action !== null}
-            onClick={() => void exportSkill()}
-          >
-            {action === "exporting" ? (
-              <>
-                <span className="spinner inline" /> Exporting…
-              </>
-            ) : (
-              "Export"
+
+          {/* Resolve registration conflicts — primary for unregistered
+              skills with multiple non-ours installations. Routes through
+              ConflictResolveModal in its level-pure mode (delete/keep
+              only) so this Needs-attention action does not silently
+              also register the skill. After resolution the card lands
+              in Unregistered for the separate Register step. */}
+          {caps.canResolveRegistrationConflicts &&
+            caps.primary === "resolve-registration-conflicts" &&
+            onResolveConflicts && (
+              <button
+                className="btn warn"
+                disabled={action !== null}
+                onClick={onResolveConflicts}
+                title={`This skill name appears in ${classification.conflictCount + classification.brokenCount} agent dir(s) with different sources. Pick which copy to keep; the rest will be deleted.`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+              >
+                <Icon name="alert-triangle" size="sm" />
+                Resolve{" "}
+                {classification.conflictCount + classification.brokenCount}{" "}
+                conflict
+                {classification.conflictCount + classification.brokenCount ===
+                1
+                  ? ""
+                  : "s"}
+              </button>
             )}
-          </button>
-          <button
-            className="btn ghost"
-            style={{ gridColumn: "1 / -1" }}
-            onClick={reveal}
-            disabled={!absPath}
-          >
-            Reveal in Finder
-          </button>
+
+          {/* Resolve conflicts — primary when stragglers exist alongside
+              a registered skill. The InstallConflictModal handles the
+              gate-time variant; this one handles already-installed +
+              stragglers. */}
+          {caps.canResolveConflicts &&
+            caps.primary === "resolve-conflicts" &&
+            onResolveConflicts && (
+              <button
+                className="btn warn"
+                disabled={action !== null}
+                onClick={onResolveConflicts}
+                title={`${classification.conflictCount} agent dir(s) have duplicate or stale entries for this skill`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+              >
+                <Icon name="alert-triangle" size="sm" />
+                Resolve {classification.conflictCount} conflict
+                {classification.conflictCount === 1 ? "" : "s"}
+              </button>
+            )}
+
+          {/* Attention/management separator — renders only when the
+              primary is an in-flight attention action AND at least one
+              management button is visible. Makes the drawer read
+              fix → manage → destroy. For unregistered-conflicts /
+              unregistered-broken the management group is empty (only
+              Reveal alongside the primary), so this is suppressed. */}
+          {[
+            "repair-broken",
+            "resolve-conflicts",
+            "resolve-registration-conflicts",
+          ].includes(caps.primary) &&
+            (caps.canManageLinks || caps.canExport) && (
+              <div
+                role="separator"
+                aria-hidden="true"
+                style={{
+                  gridColumn: "1 / -1",
+                  height: 1,
+                  background: "var(--border)",
+                  margin: "8px 0 4px",
+                }}
+              />
+            )}
+
+          {/* Install — primary in registered-available; also the only
+              path to a "reinstall fixes broken links" in registered-broken.
+              In registered-conflicts it appears as a secondary and routes
+              through InstallConflictModal. */}
+          {caps.canInstall && (
+            <button
+              className={caps.primary === "install" ? "btn primary" : "btn"}
+              disabled={action !== null}
+              onClick={() => void install()}
+              title={
+                classification.state === "registered-broken"
+                  ? "Recreates the agent-dir symlinks, replacing any broken ones with fresh links to the Skills Bank copy."
+                  : classification.state === "registered-conflicts"
+                    ? "Install where possible; agents with conflicting entries will prompt you to resolve."
+                    : "Link this skill into your agent directories."
+              }
+            >
+              {action === "installing" ? (
+                <>
+                  <span className="spinner inline" /> Installing…
+                </>
+              ) : classification.state === "registered-broken" ? (
+                "Reinstall (fixes broken links)"
+              ) : classification.state === "registered-conflicts" ? (
+                "Install (will prompt for conflicts)"
+              ) : (
+                "Install"
+              )}
+            </button>
+          )}
+
+          {/* Manage agent links — the single entry point for any
+              agent-link change. Subsumes the prior "Remove from
+              agents" and "Choose agents…" buttons: the modal lets
+              the user tick or untick each agent dir individually, and
+              unticking all is equivalent to a bulk uninstall. */}
+          {caps.canManageLinks && onManageLinks && (
+            <button
+              className="btn"
+              disabled={action !== null}
+              onClick={onManageLinks}
+              title="Add or remove agent-dir symlinks for this skill. Unchecking all is equivalent to removing the skill from every agent."
+            >
+              Manage agent links
+            </button>
+          )}
+
+          {/* Secondary repair button — appears only in mixed-broken
+              where Repair is primary but Install was hidden; this
+              keeps the action discoverable alongside Remove. */}
+          {caps.canRepairBroken && caps.primary !== "repair-broken" && (
+            <button
+              className="btn warn"
+              disabled={action !== null || repairState.kind === "running"}
+              onClick={() => void repairOrRemoveBroken()}
+              title={`${classification.brokenCount} broken symlink(s) for this skill`}
+            >
+              {repairState.kind === "running" ? (
+                <>
+                  <span className="spinner inline" /> Repairing…
+                </>
+              ) : (
+                `Fix broken link${classification.brokenCount === 1 ? "" : "s"}`
+              )}
+            </button>
+          )}
+
+          {/* Secondary resolve button — placeholder; today every state
+              that allows Resolve also has it as the primary, so this
+              branch is unreachable. Kept for future symmetry. */}
+          {caps.canResolveConflicts &&
+            caps.primary !== "resolve-conflicts" &&
+            onResolveConflicts && (
+              <button
+                className="btn warn"
+                disabled={action !== null}
+                onClick={onResolveConflicts}
+              >
+                Resolve conflicts ({classification.conflictCount})
+              </button>
+            )}
+
+          {caps.canExport && (
+            <button
+              className="btn"
+              disabled={action !== null}
+              onClick={() => void exportSkill()}
+            >
+              {action === "exporting" ? (
+                <>
+                  <span className="spinner inline" /> Exporting…
+                </>
+              ) : (
+                "Export"
+              )}
+            </button>
+          )}
+
+          {caps.canRevealInFinder && (
+            <button
+              className="btn ghost"
+              style={{ gridColumn: "1 / -1" }}
+              onClick={reveal}
+              disabled={!absPath}
+            >
+              Reveal in Finder
+            </button>
+          )}
+          {caps.canUnregister && onUnregister && (
+            <>
+              <button
+                className="btn"
+                style={{ gridColumn: "1 / -1" }}
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("unregistering");
+                  void Promise.resolve(onUnregister()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title="Remove from the registry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry."
+              >
+                {action === "unregistering" ? (
+                  <>
+                    <span className="spinner inline" /> Unregistering…
+                  </>
+                ) : (
+                  "Unregister"
+                )}
+              </button>
+              <p className="drawer-action-hint">
+                {entry.adopted === false
+                  ? "Drops the registry entry. Your external files stay where they are."
+                  : "Files move to your shared agents directory. You can then Delete them from the Unregistered section."}
+              </p>
+            </>
+          )}
+          {caps.canHide && onHide && (
+            <button
+              className="btn"
+              style={{ gridColumn: "1 / -1" }}
+              disabled={action !== null}
+              onClick={() => {
+                setAction("hiding");
+                void Promise.resolve(onHide()).finally(() => setAction(null));
+              }}
+              title="Tuck this canon skill out of the default views. Installations and metadata are kept; you can unhide from Settings."
+            >
+              {action === "hiding" ? (
+                <>
+                  <span className="spinner inline" /> Hiding…
+                </>
+              ) : (
+                "Hide"
+              )}
+            </button>
+          )}
+          {caps.canUnhide && onUnhide && (
+            <button
+              className="btn primary"
+              style={{ gridColumn: "1 / -1" }}
+              disabled={action !== null}
+              onClick={() => {
+                setAction("unhiding");
+                void Promise.resolve(onUnhide()).finally(() =>
+                  setAction(null),
+                );
+              }}
+            >
+              {action === "unhiding" ? (
+                <>
+                  <span className="spinner inline" /> Unhiding…
+                </>
+              ) : (
+                "Unhide"
+              )}
+            </button>
+          )}
         </div>
       </aside>
       {repairState.kind === "confirm-delete" && (

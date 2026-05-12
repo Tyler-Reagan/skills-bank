@@ -20,12 +20,22 @@ import {
   applyCanonicalSync,
   applyRegistration,
   buildRegistryIndex,
+  classifySkillByName,
+  clearPendingConflicts,
+  deleteFromBankSkill,
+  deleteUnregisteredSkill,
   exportSkill,
   exportRegistry,
   fetchCanonicalTarball,
+  acceptDriftKeepLocal,
+  acceptDriftTakeCanonical,
   finalizeSkillsDir,
+  forgetMissingEntry,
   getExportInfo,
+  hideCanonSkill,
   installSkill,
+  invalidateCanonCache,
+  mergeImportRegistry,
   listInstalled,
   readLastSyncReport,
   readPendingConflicts,
@@ -36,7 +46,10 @@ import {
   removeBrokenLinks,
   repairBrokenLinks,
   resolveSkillConflicts,
+  unhideCanonSkill,
+  unregisterSkill,
   writeSyncDecisions,
+  writeUpstreamCanonNames,
   AGENTS,
   getAgentSkillsDir,
   type AgentId,
@@ -141,7 +154,114 @@ function isValidRegistryRoot(candidate: string): {
 function defaultManagedRegistryRoot(): string {
   const root = path.join(app.getPath("userData"), "registry");
   fs.mkdirSync(path.join(root, "skills"), { recursive: true });
+  seedManagedRegistryIfEmpty(root);
+  // Run the canon-snapshot + source-marker bootstrap on every boot,
+  // not just on first-launch seed. Existing installs from before M2
+  // have a populated registry but no upstream-canon.json, so canon
+  // attribution would otherwise be false for every bundled skill.
+  ensureManagedCanonAttribution(root);
   return root;
+}
+
+// Packaged builds bundle the canonical skills/ + index.json at
+// process.resourcesPath/seed/. On first launch the managed registry is
+// empty, so without seeding the user has to hit Pull Updates before
+// anything appears. Copy the seed in once; never overwrite existing
+// content. Idempotent — the index.json presence check makes re-entry
+// a no-op even if the user deleted individual skills.
+function seedManagedRegistryIfEmpty(root: string): void {
+  const indexPath = path.join(root, "index.json");
+  if (fs.existsSync(indexPath)) return;
+
+  const seedDir = path.join(process.resourcesPath, "seed");
+  const seedSkills = path.join(seedDir, "skills");
+  const seedIndex = path.join(seedDir, "index.json");
+  if (!fs.existsSync(seedSkills) || !fs.existsSync(seedIndex)) return;
+
+  try {
+    fs.cpSync(seedSkills, path.join(root, "skills"), {
+      recursive: true,
+      force: false,
+      errorOnExist: false,
+    });
+    fs.copyFileSync(seedIndex, indexPath);
+    fs.writeFileSync(
+      path.join(root, ".seeded"),
+      JSON.stringify(
+        { version: app.getVersion(), seededAt: new Date().toISOString() },
+        null,
+        2,
+      ),
+    );
+    // First-launch only: mark each freshly-seeded skill as
+    // source: canonical. The bundled seed doesn't ship per-skill
+    // .skills-bank.json files (those are managed-registry app state,
+    // not upstream content), so without this the seeded skills
+    // default to source: user — falling through to YOURS badges and
+    // disabling drift detection. Safe to write here because the
+    // outer `if (fs.existsSync(indexPath)) return` guarantees we
+    // only run on a brand-new install where files match the seed
+    // byte-for-byte. ensureManagedCanonAttribution (below) does
+    // NOT write source markers for existing installs, since those
+    // could have user-edited content that Sync would later wipe.
+    try {
+      const seedIdx = JSON.parse(fs.readFileSync(seedIndex, "utf8")) as {
+        entries?: Array<{ name?: unknown }>;
+      };
+      const seededAt = new Date().toISOString();
+      for (const e of seedIdx.entries ?? []) {
+        if (typeof e.name !== "string") continue;
+        const skillDir = path.join(root, "skills", e.name);
+        if (!fs.existsSync(skillDir)) continue;
+        writeSkillSource(skillDir, {
+          source: "canonical",
+          syncedAt: seededAt,
+        });
+      }
+    } catch (err) {
+      console.error("seed source-marker pass failed:", err);
+    }
+  } catch (err) {
+    // Seed failures are non-fatal — the user can still Pull Updates.
+    // Log to stderr so packaged builds with --enable-logging surface it.
+    console.error("seedManagedRegistryIfEmpty failed:", err);
+  }
+}
+
+// Bootstrap the canon snapshot on every managed-registry boot.
+//
+// Existing installs from before M2 have a populated registry but no
+// upstream-canon.json — so canon attribution falls to false for every
+// bundled skill, which surfaces as YOURS badges and allows
+// Unregister/Delete on what should be canon-protected content. The
+// snapshot write is idempotent: skipped when the file already exists,
+// so this is a one-shot recovery for users who pre-date M2.
+//
+// Deliberately does NOT write `.skills-bank.json` source markers for
+// existing skills — those could have been user-edited since the
+// original seed, and marking them canonical would cause the next
+// Sync to overwrite the user's changes. First-launch seeding (above)
+// writes the source markers when files are guaranteed fresh.
+function ensureManagedCanonAttribution(root: string): void {
+  const stateDir = path.join(root, ".skills-bank");
+  const snapshotPath = path.join(stateDir, "upstream-canon.json");
+  if (fs.existsSync(snapshotPath)) return;
+
+  const seedDir = path.join(process.resourcesPath, "seed");
+  const seedIndex = path.join(seedDir, "index.json");
+  if (!fs.existsSync(seedIndex)) return;
+
+  try {
+    const seedIdx = JSON.parse(fs.readFileSync(seedIndex, "utf8")) as {
+      entries?: Array<{ name?: unknown }>;
+    };
+    const names = (seedIdx.entries ?? [])
+      .map((e) => e.name)
+      .filter((n): n is string => typeof n === "string");
+    writeUpstreamCanonNames(root, names, "bundled");
+  } catch (err) {
+    console.error("ensureManagedCanonAttribution failed:", err);
+  }
 }
 
 function resolveBootRegistryRoot(): string {
@@ -448,8 +568,12 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
     template.push({ label: "Using bundled registry", enabled: false });
     template.push({ type: "separator" });
     template.push({
-      label: "Import a registry…",
+      label: "Import a registry (replace)…",
       click: () => send("changeRegistry"),
+    });
+    template.push({
+      label: "Merge a registry into mine…",
+      click: () => send("mergeRegistry"),
     });
     template.push({
       label: "Export registry…",
@@ -550,8 +674,15 @@ function buildAppMenu(): Menu {
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1100,
-    height: 720,
+    // 1280x860 fits three 320px-min cards comfortably with the gutter,
+    // and gives the action buttons room to align on the Needs-attention
+    // section without horizontal scroll. The 1100x720 default forced a
+    // 2-column grid that broke alignment for users with longer skill
+    // descriptions.
+    width: 1280,
+    height: 860,
+    minWidth: 880,
+    minHeight: 600,
     icon: iconPng,
     webPreferences: {
       preload: path.join(__dirname, "..", "main", "preload.mjs"),
@@ -606,6 +737,10 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
     };
   }
   registryRoot = candidate;
+  // M2: drop cached upstream-canon for the previous root so the next
+  // index build classifies skills against the new root's own upstream
+  // snapshot (or absence of one), not the old repo's set.
+  invalidateCanonCache();
   writeConfig({ registryRoot: candidate, persona });
   return { ok: true, message: `registry set to ${candidate}`, registryRoot };
 });
@@ -629,7 +764,7 @@ ipcMain.handle(IPC.listInstalled, () => {
 ipcMain.handle(
   IPC.install,
   (_e, name: string, force?: boolean, agents?: AgentId[]) => {
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, errors: [] };
     try {
       const r = installSkill(name, {
         registryRoot,
@@ -641,32 +776,300 @@ ipcMain.handle(
         return {
           ok: true,
           message: `installed ${name} for ${wrote.length} agent(s)`,
+          errors: r.errors,
         };
       }
       if (r.installs.length > 0) {
-        return { ok: true, message: `${name} already installed` };
+        return {
+          ok: true,
+          message: `${name} already installed`,
+          errors: r.errors,
+        };
       }
       return {
         ok: false,
         message: r.errors[0]?.message ?? `nothing installed for ${name}`,
+        errors: r.errors,
       };
     } catch (err) {
-      return { ok: false, message: (err as Error).message };
+      return { ok: false, message: (err as Error).message, errors: [] };
     }
   },
 );
 
-// Uninstall doesn't need the registry — it just removes the symlink at
-// ~/.claude/skills/<name>. Leave it functional even with no registry.
-ipcMain.handle(IPC.uninstall, (_e, name: string) => {
+// Full removal: deletes the registry copy + all agent symlinks. Distinct
+// from uninstall (symlinks only). Refuses if the registry is unset.
+//
+// M1: this is the canonical demonstration of IPC-side classifier gating.
+// We classify the skill against the current registry state and refuse if
+// the capability table says no. With M1's defaults (canon=false) nothing
+// is denied here that wasn't already denied by deregisterSkill's own
+// guards; M5 turns this into the real enforcement point for canon
+// protection.
+ipcMain.handle(IPC.deregister, (_e, name: string) => {
+  if (!registryRoot) {
+    return { ok: false, message: NO_ROOT_MSG, errors: [] };
+  }
+  const classification = classifySkillByName(registryRoot, name);
+  if (classification && !classification.capabilities.canDeleteFromBank) {
+    return {
+      ok: false,
+      message: `Cannot delete ${name} from this state (${classification.state}).`,
+      errors: [],
+    };
+  }
   try {
-    const r = uninstallSkill(name);
+    const r = deleteFromBankSkill(name, { registryRoot });
+    const removedSymlinkCount =
+      r.symlinkRemovals?.filter((s) => s.removed).length ?? 0;
+    return {
+      ok: r.ok,
+      message: r.message,
+      deletedPath: r.deletedPath,
+      removedSymlinkCount,
+      errors: r.errors,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message, errors: [] };
+  }
+});
+
+// M5: hide a canon skill from the default views. Canon skills can't
+// be unregistered or deleted from the UI (those would be irrecoverable
+// — the upstream owns them), so Hide is the only canon-side action a
+// non-power user can take.
+ipcMain.handle(IPC.hide, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const index = buildRegistryIndex(registryRoot);
+  const entry = index.entries.find((e) => e.name === name);
+  if (!entry) {
+    return { ok: false, message: `${name} is not in the registry` };
+  }
+  if (entry.canon !== true) {
+    return {
+      ok: false,
+      message: `${name} isn't canon — unregister or delete it instead`,
+    };
+  }
+  try {
+    hideCanonSkill(registryRoot, name);
+    return { ok: true, message: `Hid ${name} from the default views.` };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+ipcMain.handle(IPC.unhide, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    unhideCanonSkill(registryRoot, name);
+    return { ok: true, message: `Unhid ${name}.` };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+// M6: canon-drift heal — keep local edits, clear the canonical
+// marker. After this, the skill is `source: user` and sync stops
+// trying to overwrite it.
+ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const index = buildRegistryIndex(registryRoot);
+  const entry = index.entries.find((e) => e.name === name);
+  if (!entry) return { ok: false, message: `${name} is not in the registry` };
+  if (entry.adopted === false) {
+    return {
+      ok: false,
+      message: `${name} isn't adopted — drift doesn't apply`,
+    };
+  }
+  const skillDir = path.join(registryRoot, entry.path);
+  try {
+    acceptDriftKeepLocal(skillDir);
+    buildRegistryIndex(registryRoot, {
+      includeGitInfo: true,
+      writeFile: true,
+    });
     return {
       ok: true,
-      message: r.removed ? `removed ${name}` : `${name} not installed`,
+      message: `Kept local edits to ${name}; future syncs will leave it alone.`,
     };
   } catch (err) {
     return { ok: false, message: (err as Error).message };
+  }
+});
+
+// Canon-drift heal — take-canonical arm. Re-snapshots the current
+// hash so drift clears; source stays canonical so Sync continues to
+// own the skill. Distinct from acceptDrift (which detaches from
+// Sync). Use this when drift surfaced spuriously and the current
+// post-sync state is acceptable.
+ipcMain.handle(IPC.takeCanonical, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const index = buildRegistryIndex(registryRoot);
+  const entry = index.entries.find((e) => e.name === name);
+  if (!entry) return { ok: false, message: `${name} is not in the registry` };
+  if (entry.adopted === false) {
+    return {
+      ok: false,
+      message: `${name} isn't adopted — drift doesn't apply`,
+    };
+  }
+  const skillDir = path.join(registryRoot, entry.path);
+  try {
+    acceptDriftTakeCanonical(skillDir);
+    buildRegistryIndex(registryRoot, {
+      includeGitInfo: true,
+      writeFile: true,
+    });
+    return {
+      ok: true,
+      message: `Re-baselined ${name} as canonical; drift cleared.`,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+// M6: missing-entry heal — drop the registry record. For non-
+// adopted (external), removes the external.json row. For adopted,
+// the entry naturally drops on the next index build (folder was
+// gone); we trigger that rebuild here.
+ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    const r = forgetMissingEntry(registryRoot, name);
+    buildRegistryIndex(registryRoot, {
+      includeGitInfo: true,
+      writeFile: true,
+    });
+    return r;
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+// M9b: bottom-of-the-ladder destructive action for unregistered
+// skills. Refuses if the skill is registered — caller must
+// unregister first. Real-dir installations are rm-rf'd; symlinks
+// are unlinked (targets untouched, since they're user-owned).
+ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
+  if (!registryRoot) {
+    return {
+      ok: false,
+      message: NO_ROOT_MSG,
+      removedDirs: [],
+      removedSymlinks: [],
+    };
+  }
+  try {
+    const r = deleteUnregisteredSkill(registryRoot, name);
+    return {
+      ok: r.ok,
+      message: r.message,
+      removedDirs: r.removedDirs,
+      removedSymlinks: r.removedSymlinks,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      message: (err as Error).message,
+      removedDirs: [],
+      removedSymlinks: [],
+    };
+  }
+});
+
+// M4: mid-tier destructive action. Moves adopted files to the
+// configured agents dir (default ~/.agents/skills/) and removes the
+// registry entry. Non-adopted skills just lose the entry; origin
+// files untouched.
+ipcMain.handle(
+  IPC.unregister,
+  (_e, name: string, destination: AgentId) => {
+    if (!registryRoot) {
+      return {
+        ok: false,
+        message: NO_ROOT_MSG,
+        wasAdopted: false,
+        errors: [],
+      };
+    }
+    const classification = classifySkillByName(registryRoot, name);
+    if (classification && !classification.capabilities.canUnregister) {
+      return {
+        ok: false,
+        message: `Cannot unregister ${name} from this state (${classification.state}).`,
+        wasAdopted: false,
+        errors: [],
+      };
+    }
+    try {
+      const r = unregisterSkill(name, { registryRoot, destination });
+      return {
+        ok: r.ok,
+        message: r.message,
+        destinationPath: r.destinationPath,
+        wasAdopted: r.wasAdopted,
+        errors: r.errors,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: (err as Error).message,
+        wasAdopted: false,
+        errors: [],
+      };
+    }
+  },
+);
+
+// Stuck-state recovery: drop the pending-conflicts.json state file so
+// the next sync attempt starts clean. Idempotent — fine to call when no
+// pending file exists.
+ipcMain.handle(IPC.clearPendingConflicts, () => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    const r = clearPendingConflicts(registryRoot);
+    return {
+      ok: true,
+      message: r.removed
+        ? "Cleared pending sync state."
+        : "No pending sync state to clear.",
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+// Uninstall doesn't need the registry — it just removes symlinks at
+// each agent dir. Leave it functional even with no registry.
+// M7: optional agents array restricts the operation to a subset; the
+// rest of the agent dirs keep their symlinks. Empty/missing array
+// keeps the legacy "remove from every agent dir" behavior.
+ipcMain.handle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
+  try {
+    const r = uninstallSkill(
+      name,
+      agents && agents.length > 0 ? { agents } : {},
+    );
+    const removedCount = r.removals.filter((x) => x.removed).length;
+    const keptCount = r.errors.length;
+    const message =
+      keptCount === 0
+        ? r.removed
+          ? `Removed ${name} from ${removedCount} agent dir(s).`
+          : `${name} not installed`
+        : `Removed from ${removedCount} agent(s); ${keptCount} kept (not symlinks)`;
+    return {
+      ok: true,
+      message,
+      errors: r.errors,
+      removedCount,
+      keptCount,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message, errors: [] };
   }
 });
 
@@ -873,6 +1276,9 @@ ipcMain.handle(IPC.importRegistry, async () => {
     .readdirSync(skillsDir)
     .filter((e) => fs.statSync(path.join(skillsDir, e)).isDirectory()).length;
   registryRoot = candidate;
+  // M2: same reason as setRegistryRoot — flush canon cache so the new
+  // root's index build doesn't see the prior root's snapshot.
+  invalidateCanonCache();
   writeConfig({ registryRoot: candidate, persona });
   return {
     ok: true,
@@ -881,6 +1287,87 @@ ipcMain.handle(IPC.importRegistry, async () => {
     skillCount,
   };
 });
+
+// M8: merge mode — additive import that keeps the active registry
+// and adds skills from a picked folder. Collisions return as
+// ConflictEntry[] for the renderer to resolve via the existing
+// sync-conflict modal; the renderer calls importRegistryMergeApply
+// with the user's decisions to finalize.
+ipcMain.handle(IPC.importRegistryMerge, async () => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const win = BrowserWindow.getFocusedWindow();
+  const result = await dialog.showOpenDialog(win ?? undefined!, {
+    title: "Merge a registry into yours",
+    message:
+      "Pick a folder containing a skills/ subdirectory. Non-colliding entries are added directly; collisions will prompt for keep/use-theirs/rename.",
+    properties: ["openDirectory"],
+    defaultPath: app.getPath("home"),
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return { ok: false, message: "cancelled" };
+  }
+  const sourcePath = result.filePaths[0]!;
+  if (!fs.existsSync(path.join(sourcePath, "skills"))) {
+    return {
+      ok: false,
+      message: `No skills/ directory found in ${sourcePath}.`,
+    };
+  }
+  try {
+    const report = mergeImportRegistry(registryRoot, sourcePath);
+    return {
+      ok: true,
+      message: summarizeMerge(report),
+      sourcePath,
+      report,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+ipcMain.handle(
+  IPC.importRegistryMergeApply,
+  (_e, sourcePath: string, decisions: SyncDecisions) => {
+    if (!registryRoot)
+      return {
+        ok: false,
+        message: NO_ROOT_MSG,
+        report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
+      };
+    try {
+      const report = mergeImportRegistry(
+        registryRoot,
+        sourcePath,
+        decisions,
+      );
+      return {
+        ok: true,
+        message: summarizeMerge(report),
+        report,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: (err as Error).message,
+        report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
+      };
+    }
+  },
+);
+
+function summarizeMerge(report: import("@skills-bank/core").MergeImportReport): string {
+  const parts: string[] = [];
+  if (report.imported.length > 0)
+    parts.push(`${report.imported.length} imported`);
+  if (report.keptMine.length > 0)
+    parts.push(`${report.keptMine.length} kept yours`);
+  if (report.renamed.length > 0)
+    parts.push(`${report.renamed.length} renamed`);
+  if (report.conflicts.length > 0)
+    parts.push(`${report.conflicts.length} need attention`);
+  return parts.join(", ") || "no changes";
+}
 
 // Read up to 8 KB of SKILL.md text, with a "…(truncated)" marker when
 // the file is bigger. Pulled out so the readSkillMd IPC can reuse it
@@ -1270,6 +1757,7 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
     fs.mkdirSync(localSkillsDir, { recursive: true });
 
     const importedAt = new Date().toISOString();
+    const importedNames: string[] = [];
     let count = 0;
     for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
       if (!ent.isDirectory()) continue;
@@ -1281,9 +1769,10 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
         syncedFromCommit: fetched.commitSha,
         syncedAt: importedAt,
       });
+      importedNames.push(ent.name);
       count++;
     }
-    // Clear M2 sync state so any prior canonical state doesn't leak in.
+    // Clear sync state so any prior canonical state doesn't leak in.
     const stateDir = path.join(registryRoot, ".skills-bank");
     for (const f of [
       "last-sync.json",
@@ -1293,6 +1782,11 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
       const p = path.join(stateDir, f);
       if (fs.existsSync(p)) fs.unlinkSync(p);
     }
+    // Snapshot the imported set as the canon source for this repo so
+    // buildRegistryIndex marks them canon immediately. The imported
+    // tarball doesn't include `.git`, so publishState would be
+    // "unknown" otherwise.
+    writeUpstreamCanonNames(registryRoot, importedNames, "imported");
     return {
       ok: true,
       message: `imported ${count} skill(s) from ${fullName}`,

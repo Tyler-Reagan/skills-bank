@@ -32,6 +32,46 @@ export interface RegistryEntry extends SkillMeta {
    */
   publishState?: PublishState;
   /**
+   * Taxonomy axis: true when the skill's files physically live under
+   * `<registryRoot>/skills/<name>/`. False when the registry entry
+   * tracks an external location (the symlink-mode register path).
+   * Defaults to true for entries built from `<registryRoot>/skills/`
+   * — those are de facto adopted. M3 generalizes the non-adopted case.
+   */
+  adopted?: boolean;
+  /**
+   * Taxonomy axis: true when this skill's name appears in the active
+   * linked registry's upstream — for convenience persona, the bundled
+   * canonical name set (persisted at sync/seed time); for power
+   * persona, the registry git repo (publishState === "pushed").
+   * Computed dynamically by `buildRegistryIndex` so a repo switch
+   * recomputes canon without stale-marker drift.
+   */
+  canon?: boolean;
+  /**
+   * M5: user has hidden this canon skill from the default views.
+   * Only meaningful when `canon === true` — hiding non-canon skills
+   * is nonsensical (just unregister them). Hidden skills retain
+   * installations and metadata; this is a UI dormancy flag, not an
+   * uninstall.
+   */
+  hidden?: boolean;
+  /**
+   * M6 heal axis: the skill is registered but its files are missing
+   * on disk. Set when the prior persisted index had this name but
+   * `<registryRoot>/skills/<name>/` is gone (adopted case) or when
+   * the external entry's target path is gone. The classifier emits
+   * `registry-folder-missing` / `external-target-missing` based on
+   * the entry's `adopted` flag.
+   */
+  missing?: boolean;
+  /**
+   * M6 heal axis: the local content has drifted from the recorded
+   * synced-commit hash. Only meaningful when `source: "canonical"`.
+   * The classifier emits the `canon-drift` state when true.
+   */
+  drift?: boolean;
+  /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has
    * SKILL.md. Surface in the UI so users can fix metadata without
@@ -101,8 +141,18 @@ export interface FinalizeResult {
 export type RegistrationAction =
   | { type: "skip"; name: string }
   | { type: "remove"; name: string }
-  | { type: "adopt"; name: string }
-  | { type: "register-external"; name: string }
+  | {
+      type: "register";
+      name: string;
+      /**
+       * True ⇒ move files into `<registryRoot>/skills/<name>` (the
+       * Adopted=true axis). False ⇒ record the external path and leave
+       * files in place (Adopted=false). The renderer derives this from
+       * `settings.registerAdopts`; M3 collapsed the prior `adopt` and
+       * `register-external` action variants into this single shape.
+       */
+      adopt: boolean;
+    }
   | {
       type: "setAgents";
       name: string;

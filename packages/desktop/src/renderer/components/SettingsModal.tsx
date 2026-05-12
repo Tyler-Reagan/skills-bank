@@ -54,6 +54,18 @@ export interface AppSettings {
   searchDebounceMs: SearchDebounce;
   /** macOS only: which terminal app the Discover tab's "Open Terminal" uses. */
   terminalApp: TerminalApp;
+  /**
+   * Taxonomy axis "Adopted": when registering a skill, move its files
+   * into the bank's `skills/` directory (true, default) vs. record an
+   * external pointer and leave files where they are (false). M3 wires
+   * this into the unified register flow; M1 ships the key.
+   */
+  registerAdopts: boolean;
+  /**
+   * Where to move an adopted skill's files when it's unregistered.
+   * Default `~/.agents/skills/`. M4 consumes this in `unregisterSkill`.
+   */
+  unregisterDestinationAgent: AgentId;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -61,12 +73,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
   gridColumns: "auto",
   searchDebounceMs: "off",
   terminalApp: "system",
+  registerAdopts: true,
+  unregisterDestinationAgent: "agents",
 };
 
 interface Props {
   settings: AppSettings;
   onSave: (next: AppSettings) => void;
   onClose: () => void;
+  /**
+   * M5: list of canon skill names currently hidden from default
+   * views. The modal renders an Unhide row per name. Empty array
+   * suppresses the section.
+   */
+  hiddenCanon: string[];
+  /** Unhide a name; host refreshes the registry list. */
+  onUnhide: (name: string) => Promise<void> | void;
 }
 
 /**
@@ -78,6 +100,8 @@ export function SettingsModal({
   settings,
   onSave,
   onClose,
+  hiddenCanon,
+  onUnhide,
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
@@ -101,6 +125,59 @@ export function SettingsModal({
     <div style={overlay}>
       <div style={modal} role="dialog" aria-modal="true" aria-label="Settings">
         <h2 style={{ marginTop: 0 }}>Settings</h2>
+
+        <section style={section}>
+          <h3 style={sectionTitle}>Registration</h3>
+          <p style={hint}>
+            When you register a skill, move its files into Skills Bank
+            (recommended). With this off, the registry just records the
+            skill's external location and leaves files where they are —
+            useful for skills you actively edit in their own git repo.
+          </p>
+          <label style={{ ...checkboxRow, marginTop: 8 }}>
+            <input
+              type="checkbox"
+              checked={draft.registerAdopts}
+              onChange={() =>
+                setDraft((prev) => ({
+                  ...prev,
+                  registerAdopts: !prev.registerAdopts,
+                }))
+              }
+            />
+            <strong>Move files into Skills Bank on Register</strong>
+          </label>
+        </section>
+
+        <section style={section}>
+          <h3 style={sectionTitle}>Unregister destination</h3>
+          <p style={hint}>
+            When you unregister an adopted skill, its files move out of
+            Skills Bank into the agent dir picked here. The default,
+            <code style={{ marginLeft: 4, marginRight: 4 }}>~/.agents/skills/</code>,
+            is the shared location all agents can read. Non-adopted
+            (symlink-mode) skills aren't moved — their origin files
+            stay in place.
+          </p>
+          <div style={radioRow}>
+            {ALL_AGENTS.map((id) => (
+              <label key={id} style={radioOption}>
+                <input
+                  type="radio"
+                  name="unregister-dest"
+                  checked={draft.unregisterDestinationAgent === id}
+                  onChange={() =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      unregisterDestinationAgent: id,
+                    }))
+                  }
+                />
+                <span>{AGENT_LABELS[id]}</span>
+              </label>
+            ))}
+          </div>
+        </section>
 
         <section style={section}>
           <h3 style={sectionTitle}>Default install agents</h3>
@@ -203,6 +280,46 @@ export function SettingsModal({
             ))}
           </div>
         </section>
+
+        {hiddenCanon.length > 0 && (
+          <section style={section}>
+            <h3 style={sectionTitle}>Hidden canon skills</h3>
+            <p style={hint}>
+              Canon skills you've hidden from the default Browse view.
+              Unhiding restores them everywhere. Their installations
+              and metadata are preserved while hidden — Hide is just a
+              UI dormancy flag.
+            </p>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: "8px 0 0",
+              }}
+            >
+              {hiddenCanon.map((name) => (
+                <li
+                  key={name}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 0",
+                    borderBottom: "1px solid var(--border)",
+                  }}
+                >
+                  <code style={{ fontSize: 13 }}>{name}</code>
+                  <button
+                    className="link-btn"
+                    onClick={() => void onUnhide(name)}
+                  >
+                    Unhide
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <div
           style={{

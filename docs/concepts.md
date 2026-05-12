@@ -2,6 +2,34 @@
 
 The vocabulary the app uses, defined in one place. Skim this once and the rest of the docs (and the UI itself) become a lot more obvious.
 
+## Taxonomy
+
+Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
+
+- **Canon** — derived boolean. A skill is canon iff its name appears in the linked registry repo's upstream — the user's own GitHub repo for power persona, the bundled canonical set for convenience. Mutating canon requires write access to the linked repo; mutating a skill's canon-ness locally is impossible. Resolved dynamically against the active linked repo (not from stale per-skill markers).
+- **Registered** — boolean. The skill has an entry in the local registry index. Mutated freely. Holds local-only metadata (tags, install paths, the Adopted flag).
+- **Adopted** — boolean on each registry entry. When `true`, the skill's files physically live under `<registryRoot>/skills/<name>/`. When `false`, the registry entry tracks an external location and the files stay where they are. Default at register time is the `registerAdopts` setting (default `true`).
+- **Installed** — derived from on-disk scan. A skill is installed if at least one agent dir contains an entry at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.
+
+### Derived rules
+
+- Canon ⇒ registered by default. Unregister and delete of canon skills are prohibited; the user-visible escape is **hide**, scoped per linked-repo.
+- Non-canon + registered + uninstalled is valid. Re-install requires the original source (no upstream to pull from).
+- Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
+- Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
+
+### Destructive-action ladder
+
+Three actions form an escalation, with distinct file/recovery semantics. Each tier physically separates from the next: Delete is only reachable on **unregistered** skills, so the user must Unregister first.
+
+| Action | Where | Files | Agent symlinks | Recovery |
+|---|---|---|---|---|
+| Manage agent links | Drawer | untouched | added/removed per-agent via checkboxes (untick all = full uninstall) | re-add via the same modal |
+| [Unregister](flows/unregister.md) | Drawer | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location |
+| Delete | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved | symlinks unlinked | canon: re-pull; non-canon: gone (modulo export) |
+
+Canon skills are exempt: Unregister and Delete are prohibited entirely. Use **Hide** instead — see [personas.md](personas.md#canon-protection-hide-instead-of-unregisterdelete).
+
 ## Skill
 
 A folder containing instructions (`SKILL.md`) and optional metadata (`meta.json`) that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist.
@@ -56,9 +84,16 @@ Tags are a local-only dimension. You can add or remove tags on any skill — inc
 
 ### Card badges
 
-- **`YOURS`** — skill isn't in the registry, or is registered with `source: user`.
-- **`IMPORTED`** — registry skill from a power-persona repo replacement.
-- *(no badge)* — curated/canonical: the calm default.
+Each card surfaces a single badge — the most actionable signal from the taxonomy. Badges only appear when they communicate something that changes what you can or should do; non-actionable axes (hidden, adopted) have no badge.
+
+Priority order, highest first:
+
+- **`MISSING`** *(danger)* — files are gone. Open the drawer to **Forget this entry**.
+- **`DRIFT`** *(warn)* — canonical local copy diverged from the synced commit. **Accept local changes** clears the canonical marker so Sync stops trying to overwrite.
+- **`CANON`** *(calm)* — part of the linked registry's upstream set. Unregister and Delete are prohibited; use **Hide** to tuck it out of the default views.
+- **`IMPORTED`** *(muted, dashed)* — non-canon, registered with `source: imported` (power-persona repo replacement).
+- **`EXTERNAL`** *(accent, dashed)* — non-canon, registered with `adopted: false`. Files live outside Skills Bank; Unregister leaves origin files in place.
+- **`YOURS`** *(accent)* — non-canon, user-authored, OR not in the registry. User-mutable; safe from Sync overwrites.
 
 ## Installation kind
 
@@ -80,7 +115,16 @@ A one-click pull of upstream registry updates. Sync is **upsert**: canonical ski
 
 ## Register
 
-The act of moving an "installed but unmanaged" skill into the registry. The files relocate to `<repo>/skills/<name>/`, the original agent-dir entry becomes a symlink, and the skill picks up registry metadata.
+The act of adding an "installed but unmanaged" skill to the registry. What happens to the files depends on the **Adopted** axis, controlled by the `Move files into Skills Bank on Register` setting:
+
+- **Adopted (default)** — files relocate to `<repo>/skills/<name>/`, the original agent-dir entry becomes a symlink pointing at the new registry location.
+- **Not adopted** — the registry records the external path and leaves files where they are. Useful when a skill is actively maintained in its own git repo.
+
+Either way the skill picks up registry metadata (tags, description, source marker).
+
+## Adopt
+
+A taxonomy axis on each registry entry. True when the skill's files physically live under `<repo>/skills/<name>/`; false when the entry tracks an external path. Set at register time from the global `Move files into Skills Bank on Register` setting. M4's unregister behavior diverges based on this flag — adopted skills get moved out to the shared agents dir; non-adopted skills leave their origin files alone.
 
 ## Finalize
 

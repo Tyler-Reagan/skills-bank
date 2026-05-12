@@ -9,6 +9,7 @@ import type {
   ExportResult,
   FinalizeResult,
   InstalledSkill,
+  MergeImportReport,
   RegistrationAction,
   RegistrationResult,
   RegistryEntry,
@@ -55,9 +56,20 @@ export const IPC = {
   openSelfHostDocs: "system:openSelfHostDocs",
   exportRegistry: "skills:exportRegistry",
   importRegistry: "skills:importRegistry",
+  importRegistryMerge: "skills:importRegistryMerge",
+  importRegistryMergeApply: "skills:importRegistryMergeApply",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
+  deregister: "skills:deregister",
+  unregister: "skills:unregister",
+  deleteUnregistered: "skills:deleteUnregistered",
+  hide: "skills:hide",
+  unhide: "skills:unhide",
+  acceptDrift: "skills:acceptDrift",
+  takeCanonical: "skills:takeCanonical",
+  forgetMissing: "skills:forgetMissing",
+  clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
   discoverHideSync: "discover:hideSync",
@@ -136,6 +148,7 @@ export interface HeaderMenuContext {
 
 export type HeaderMenuAction =
   | "changeRegistry"
+  | "mergeRegistry"
   | "exportRegistry"
   | "openSettings"
   | "openShortcuts"
@@ -153,6 +166,51 @@ export type UpdateStatus =
   | { kind: "error"; message: string }
   | { kind: "disabled"; reason: string };
 
+export interface InstallIPCError {
+  agent: AgentId;
+  message: string;
+}
+
+export interface InstallIPCResult {
+  ok: boolean;
+  message: string;
+  /**
+   * Per-agent failures from the underlying installSkill. Surfaced so the
+   * renderer can detect "needs --force" conflicts and offer a retry path
+   * without parsing the toast message.
+   */
+  errors?: InstallIPCError[];
+}
+
+export interface UninstallIPCResult {
+  ok: boolean;
+  message: string;
+  /** Per-agent failures (e.g. real-directory that we refuse to delete). */
+  errors?: InstallIPCError[];
+  /** Number of symlinks actually removed. */
+  removedCount?: number;
+  /** Number of agent dirs we deliberately left alone (real dirs). */
+  keptCount?: number;
+}
+
+export interface DeregisterIPCResult {
+  ok: boolean;
+  message: string;
+  deletedPath?: string;
+  removedSymlinkCount?: number;
+  errors?: Array<{ agent?: AgentId; message: string }>;
+}
+
+export interface UnregisterIPCResult {
+  ok: boolean;
+  message: string;
+  /** Where adopted files were moved to. Absent for non-adopted skills. */
+  destinationPath?: string;
+  /** True when the unregistered skill was previously adopted. */
+  wasAdopted: boolean;
+  errors?: Array<{ agent?: AgentId; message: string }>;
+}
+
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
   listInstalled(): Promise<InstalledSkill[]>;
@@ -160,8 +218,37 @@ interface SkillsBankAPI {
     name: string,
     force?: boolean,
     agents?: AgentId[],
-  ): Promise<{ ok: boolean; message: string }>;
-  uninstall(name: string): Promise<{ ok: boolean; message: string }>;
+  ): Promise<InstallIPCResult>;
+  /**
+   * Remove the skill's symlinks from agent dirs. With no `agents`
+   * arg, removes from every agent dir that has the skill (default,
+   * unchanged from pre-M7). Pass an explicit list to target a
+   * subset — surfaced as the "Choose agents…" affordance in the
+   * detail drawer.
+   */
+  uninstall(name: string, agents?: AgentId[]): Promise<UninstallIPCResult>;
+  deregister(name: string): Promise<DeregisterIPCResult>;
+  unregister(
+    name: string,
+    destination: AgentId,
+  ): Promise<UnregisterIPCResult>;
+  /**
+   * M9b: delete an unregistered skill's on-disk presence. Refuses
+   * if the skill is still registered (the registered → unregister
+   * → delete ladder is enforced server-side).
+   */
+  deleteUnregistered(name: string): Promise<{
+    ok: boolean;
+    message: string;
+    removedDirs: string[];
+    removedSymlinks: string[];
+  }>;
+  hide(name: string): Promise<{ ok: boolean; message: string }>;
+  unhide(name: string): Promise<{ ok: boolean; message: string }>;
+  acceptDrift(name: string): Promise<{ ok: boolean; message: string }>;
+  takeCanonical(name: string): Promise<{ ok: boolean; message: string }>;
+  forgetMissing(name: string): Promise<{ ok: boolean; message: string }>;
+  clearPendingConflicts(): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;
   register(
     items: Array<{ name: string; action: RegistrationAction }>,
@@ -227,6 +314,31 @@ interface SkillsBankAPI {
     registryRoot: string | null;
     skillCount?: number;
   }>;
+  /**
+   * M8: open a folder picker, scan its skills/ dir, attempt to merge
+   * into the active registry. Returns the merge report; if it
+   * contains conflicts, the renderer routes them through
+   * ConflictResolutionModal and calls importRegistryMergeApply with
+   * the user's decisions.
+   */
+  importRegistryMerge(): Promise<
+    | { ok: false; message: string }
+    | {
+        ok: true;
+        message: string;
+        sourcePath: string;
+        report: MergeImportReport;
+      }
+  >;
+  /**
+   * M8: resolve a prior import-merge's queued conflicts with the
+   * user's decisions. The active registry is the destination; the
+   * `sourcePath` is the folder picked in the original merge call.
+   */
+  importRegistryMergeApply(
+    sourcePath: string,
+    decisions: SyncDecisions,
+  ): Promise<{ ok: boolean; message: string; report: MergeImportReport }>;
   repairBrokenLinks(name: string): Promise<BrokenLinkRepairReport>;
   removeBrokenLinks(
     name: string,
