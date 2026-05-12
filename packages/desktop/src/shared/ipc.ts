@@ -62,6 +62,8 @@ export const IPC = {
   unregister: "skills:unregister",
   hide: "skills:hide",
   unhide: "skills:unhide",
+  acceptDrift: "skills:acceptDrift",
+  forgetMissing: "skills:forgetMissing",
   clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
@@ -219,6 +221,8 @@ interface SkillsBankAPI {
   ): Promise<UnregisterIPCResult>;
   hide(name: string): Promise<{ ok: boolean; message: string }>;
   unhide(name: string): Promise<{ ok: boolean; message: string }>;
+  acceptDrift(name: string): Promise<{ ok: boolean; message: string }>;
+  forgetMissing(name: string): Promise<{ ok: boolean; message: string }>;
   clearPendingConflicts(): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;
   register(

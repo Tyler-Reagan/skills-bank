@@ -57,6 +57,21 @@ export interface RegistryEntry extends SkillMeta {
    */
   hidden?: boolean;
   /**
+   * M6 heal axis: the skill is registered but its files are missing
+   * on disk. Set when the prior persisted index had this name but
+   * `<registryRoot>/skills/<name>/` is gone (adopted case) or when
+   * the external entry's target path is gone. The classifier emits
+   * `registry-folder-missing` / `external-target-missing` based on
+   * the entry's `adopted` flag.
+   */
+  missing?: boolean;
+  /**
+   * M6 heal axis: the local content has drifted from the recorded
+   * synced-commit hash. Only meaningful when `source: "canonical"`.
+   * The classifier emits the `canon-drift` state when true.
+   */
+  drift?: boolean;
+  /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has
    * SKILL.md. Surface in the UI so users can fix metadata without

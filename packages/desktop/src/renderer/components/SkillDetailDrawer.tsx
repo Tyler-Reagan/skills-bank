@@ -78,6 +78,18 @@ interface Props {
   onHide?: () => Promise<void> | void;
   /** M5: undo Hide. Only meaningful in the canon-hidden state. */
   onUnhide?: () => Promise<void> | void;
+  /**
+   * M6: canon-drift heal. Accept local edits — clears the canonical
+   * marker so future syncs leave the skill alone. Only meaningful in
+   * the canon-drift state.
+   */
+  onAcceptDrift?: () => Promise<void> | void;
+  /**
+   * M6: missing-entry heal. Forget the registry/external record.
+   * Only meaningful in registry-folder-missing and
+   * external-target-missing.
+   */
+  onForgetMissing?: () => Promise<void> | void;
 }
 
 type ActionState =
@@ -89,6 +101,8 @@ type ActionState =
   | "unregistering"
   | "hiding"
   | "unhiding"
+  | "accepting-drift"
+  | "forgetting"
   | "deleting";
 
 export function SkillDetailDrawer({
@@ -107,6 +121,8 @@ export function SkillDetailDrawer({
   onUnregister,
   onHide,
   onUnhide,
+  onAcceptDrift,
+  onForgetMissing,
 }: Props): React.ReactElement {
   const persona = usePersona();
   const [skillMd, setSkillMd] = useState<string | null>(null);
@@ -619,6 +635,65 @@ export function SkillDetailDrawer({
                 {persona === "power"
                   ? "Files move into your repo's skills/ directory unless you turn off adoption in Settings. Commit to persist."
                   : "Files move to the app's local registry unless you turn off adoption in Settings. Safe from Pull updates; linkable across agents."}
+              </p>
+            </>
+          )}
+
+          {/* M6 heal primaries — accept-drift / forget-missing.
+              Single-option flows: present one action with explanatory
+              copy rather than burying the choice. */}
+          {caps.canAcceptDrift && onAcceptDrift && (
+            <>
+              <button
+                className="btn warn"
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("accepting-drift");
+                  void Promise.resolve(onAcceptDrift()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title="Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
+              >
+                {action === "accepting-drift" ? (
+                  <>
+                    <span className="spinner inline" /> Accepting…
+                  </>
+                ) : (
+                  "Accept local changes"
+                )}
+              </button>
+              <p className="drawer-action-hint">
+                This canonical skill has been edited locally. Accepting
+                clears the canonical marker — sync will leave it alone
+                going forward.
+              </p>
+            </>
+          )}
+          {caps.canForgetMissing && onForgetMissing && (
+            <>
+              <button
+                className="btn warn"
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("forgetting");
+                  void Promise.resolve(onForgetMissing()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title="Remove the registry entry for this skill. Files are already gone — nothing else to do."
+              >
+                {action === "forgetting" ? (
+                  <>
+                    <span className="spinner inline" /> Forgetting…
+                  </>
+                ) : (
+                  "Forget this entry"
+                )}
+              </button>
+              <p className="drawer-action-hint">
+                The files for this skill are gone. Forgetting drops the
+                registry record so the skill stops appearing.
               </p>
             </>
           )}

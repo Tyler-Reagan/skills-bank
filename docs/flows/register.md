@@ -29,7 +29,7 @@ The reverse direction — backing a skill out of the registry — is the [Unregi
 
 ## What if the same name is already registered?
 
-If you click Register on a skill whose name is already in the registry (typically because the skill is registered AND has stragglers in other agent dirs), the app routes you to the **conflict resolution** flow instead. See [resolve-conflicts.md](resolve-conflicts.md).
+If you click Register on a skill whose name is already in the registry (typically because the skill is registered AND has stragglers in other agent dirs), the app routes you to the conflict-resolution heal flow instead. See [heal.md](heal.md).
 
 ## Why register?
 

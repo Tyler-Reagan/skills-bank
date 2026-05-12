@@ -4,7 +4,7 @@ Common problems and how to recover. If you hit something not on this list, open 
 
 ## "Skill is registered but I see Uninstall instead of Resolve conflicts"
 
-You may be on an older version where this was a bug. Update to the latest build via the GitHub Releases page. If you're already up to date, the drawer will show **Resolve conflicts (N)** when there are stragglers — see [flows/resolve-conflicts.md](flows/resolve-conflicts.md).
+You may be on an older version where this was a bug. Update to the latest build via the GitHub Releases page. If you're already up to date, the drawer will show **Resolve conflicts (N)** when there are stragglers — see [flows/heal.md](flows/heal.md).
 
 ## "The Registry tab is empty"
 

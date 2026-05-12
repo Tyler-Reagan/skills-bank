@@ -26,7 +26,9 @@ import {
   exportSkill,
   exportRegistry,
   fetchCanonicalTarball,
+  acceptDriftKeepLocal,
   finalizeSkillsDir,
+  forgetMissingEntry,
   getExportInfo,
   hideCanonSkill,
   installSkill,
@@ -801,6 +803,54 @@ ipcMain.handle(IPC.unhide, (_e, name: string) => {
   try {
     unhideCanonSkill(registryRoot, name);
     return { ok: true, message: `Unhid ${name}.` };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+// M6: canon-drift heal — keep local edits, clear the canonical
+// marker. After this, the skill is `source: user` and sync stops
+// trying to overwrite it.
+ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const index = buildRegistryIndex(registryRoot);
+  const entry = index.entries.find((e) => e.name === name);
+  if (!entry) return { ok: false, message: `${name} is not in the registry` };
+  if (entry.adopted === false) {
+    return {
+      ok: false,
+      message: `${name} isn't adopted — drift doesn't apply`,
+    };
+  }
+  const skillDir = path.join(registryRoot, entry.path);
+  try {
+    acceptDriftKeepLocal(skillDir);
+    buildRegistryIndex(registryRoot, {
+      includeGitInfo: true,
+      writeFile: true,
+    });
+    return {
+      ok: true,
+      message: `Kept local edits to ${name}; future syncs will leave it alone.`,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+// M6: missing-entry heal — drop the registry record. For non-
+// adopted (external), removes the external.json row. For adopted,
+// the entry naturally drops on the next index build (folder was
+// gone); we trigger that rebuild here.
+ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    const r = forgetMissingEntry(registryRoot, name);
+    buildRegistryIndex(registryRoot, {
+      includeGitInfo: true,
+      writeFile: true,
+    });
+    return r;
   } catch (err) {
     return { ok: false, message: (err as Error).message };
   }

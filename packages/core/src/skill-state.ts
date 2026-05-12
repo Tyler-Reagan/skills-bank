@@ -26,7 +26,11 @@ export type DrawerState =
   | "unregistered-foreign"
   | "unregistered-conflicts"
   | "unregistered-broken"
-  | "canon-hidden";
+  | "canon-hidden"
+  // M6 heal states:
+  | "canon-drift"
+  | "registry-folder-missing"
+  | "external-target-missing";
 
 export type PrimaryAction =
   | "install"
@@ -35,7 +39,10 @@ export type PrimaryAction =
   | "resolve-conflicts"
   | "resolve-registration-conflicts"
   | "repair-broken"
-  | "unhide";
+  | "unhide"
+  // M6:
+  | "accept-drift"
+  | "forget-missing";
 
 export interface DrawerCapabilities {
   canInstall: boolean;
@@ -61,6 +68,20 @@ export interface DrawerCapabilities {
   canHide: boolean;
   /** M5: undo Hide. Granted only in the canon-hidden state. */
   canUnhide: boolean;
+  /**
+   * M6: canon-drift heal — accept the local edits as user-authored.
+   * Clears the source: canonical marker so future syncs leave the
+   * skill alone. The only sensible "single option" today; a future
+   * take-canonical adds the other arm.
+   */
+  canAcceptDrift: boolean;
+  /**
+   * M6: forget a missing entry — drop the registry/external record.
+   * For adopted missing: the entry naturally drops on next index
+   * build (folder was gone), so the action is mostly UI cleanup. For
+   * non-adopted missing: removes the external.json row.
+   */
+  canForgetMissing: boolean;
   canResolveConflicts: boolean;
   /**
    * Same skill name has multiple non-ours installations across agent
@@ -106,6 +127,8 @@ const NEVER: DrawerCapabilities = {
   canRegister: false,
   canHide: false,
   canUnhide: false,
+  canAcceptDrift: false,
+  canForgetMissing: false,
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
   canRepairBroken: false,
@@ -134,6 +157,46 @@ export function classifyDrawerState(
         primary: "unhide",
       },
     });
+  }
+
+  // M6: missing files. Adopted vs. external split is just the
+  // user-facing copy; the heal flow is the same single-option
+  // "Forget this entry" today (M6-pragmatic — repoint/refetch are
+  // future work).
+  if (isRegistered && entry.missing === true) {
+    return {
+      state:
+        entry.adopted === false
+          ? "external-target-missing"
+          : "registry-folder-missing",
+      brokenCount: 0,
+      conflictCount: 0,
+      capabilities: {
+        ...NEVER,
+        canRevealInFinder: true,
+        canForgetMissing: true,
+        primary: "forget-missing",
+      },
+    };
+  }
+
+  // M6: canon-drift. Local copy of a canonical skill has been edited
+  // since the last sync. The single recoverable heal action today is
+  // "accept local changes" (clear the canonical marker so sync stops
+  // trying to overwrite). Take-canonical is future work.
+  if (isRegistered && entry.drift === true) {
+    return {
+      state: "canon-drift",
+      brokenCount: 0,
+      conflictCount: 0,
+      capabilities: {
+        ...NEVER,
+        canRevealInFinder: true,
+        canAcceptDrift: true,
+        canExport: true,
+        primary: "accept-drift",
+      },
+    };
   }
   // Only consider installations for THIS skill — the caller may pass
   // the full installed list, the registry view's full list, etc.

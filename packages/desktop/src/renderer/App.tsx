@@ -1212,6 +1212,38 @@ export function App(): React.ReactElement {
                       }
                     : undefined
                 }
+                onAcceptDrift={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canAcceptDrift
+                    ? async () => {
+                        const r = await window.skillsBank.acceptDrift(
+                          selected.name,
+                        );
+                        flash(r.message);
+                        if (r.ok) {
+                          void window.skillsBank.rebuildIndex();
+                          setSelected(null);
+                        }
+                        await refresh();
+                      }
+                    : undefined
+                }
+                onForgetMissing={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canForgetMissing
+                    ? async () => {
+                        const r = await window.skillsBank.forgetMissing(
+                          selected.name,
+                        );
+                        flash(r.message);
+                        if (r.ok) {
+                          void window.skillsBank.rebuildIndex();
+                          setSelected(null);
+                        }
+                        await refresh();
+                      }
+                    : undefined
+                }
                 onHide={
                   classifyDrawerState(selected, installed, isRegistered)
                     .capabilities.canHide

@@ -36,7 +36,7 @@ Click any card to open its detail drawer:
 - [`flows/register.md`](flows/register.md) — Bring an externally-installed skill under Skills Bank's management.
 - [`flows/unregister.md`](flows/unregister.md) — Back a skill out of the registry without deleting files.
 - [`flows/manage-links.md`](flows/manage-links.md) — Add or drop a skill from individual agent dirs.
-- [`flows/resolve-conflicts.md`](flows/resolve-conflicts.md) — Clean up duplicate copies in other agent dirs.
+- [`flows/heal.md`](flows/heal.md) — Recover from any bad state (conflicts, broken links, missing files, canon drift).
 - [`flows/sync.md`](flows/sync.md) — Pull upstream registry updates (convenience persona).
 - [`flows/login.md`](flows/login.md) — The first-launch persona choice and how to switch later.
 

@@ -18,6 +18,9 @@ const api = {
     ipcRenderer.invoke(IPC.unregister, name, destination),
   hide: (name: string) => ipcRenderer.invoke(IPC.hide, name),
   unhide: (name: string) => ipcRenderer.invoke(IPC.unhide, name),
+  acceptDrift: (name: string) => ipcRenderer.invoke(IPC.acceptDrift, name),
+  forgetMissing: (name: string) =>
+    ipcRenderer.invoke(IPC.forgetMissing, name),
   clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),
   scan: () => ipcRenderer.invoke(IPC.scan),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),

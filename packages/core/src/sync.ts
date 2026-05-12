@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import * as tar from "tar";
 import { writeUpstreamCanonNames } from "./canon.js";
+import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import { getStateDir } from "./paths.js";
 import {
   readSkillSource,
@@ -272,6 +273,10 @@ export async function applyCanonicalSync(
       syncedFromCommit: commitSha,
       syncedAt,
     });
+    // M6: snapshot content hash so future builds can detect local
+    // edits to canonical copies (the canon-drift heal state).
+    const h = hashSkillFolder(localPath);
+    if (h) writeSyncedHash(localPath, h);
     upserted.push(name);
   }
 

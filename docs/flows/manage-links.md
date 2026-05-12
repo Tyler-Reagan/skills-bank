@@ -22,4 +22,4 @@ If you find yourself ticking the same agents over and over, set them as defaults
 
 ## Why the conflict rows?
 
-A conflict means there's already a real folder or foreign symlink at that path. Skills Bank refuses to silently overwrite it — that's how you avoid losing work that another tool placed there. Resolve the conflict first ([resolve-conflicts.md](resolve-conflicts.md)) and the row becomes editable.
+A conflict means there's already a real folder or foreign symlink at that path. Skills Bank refuses to silently overwrite it — that's how you avoid losing work that another tool placed there. Resolve the conflict first ([heal.md](heal.md)) and the row becomes editable.
