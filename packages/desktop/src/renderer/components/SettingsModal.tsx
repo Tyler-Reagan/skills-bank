@@ -117,6 +117,29 @@ export function SettingsModal({
         <h2 style={{ marginTop: 0 }}>Settings</h2>
 
         <section style={section}>
+          <h3 style={sectionTitle}>Registration</h3>
+          <p style={hint}>
+            When you register a skill, move its files into Skills Bank
+            (recommended). With this off, the registry just records the
+            skill's external location and leaves files where they are —
+            useful for skills you actively edit in their own git repo.
+          </p>
+          <label style={{ ...checkboxRow, marginTop: 8 }}>
+            <input
+              type="checkbox"
+              checked={draft.registerAdopts}
+              onChange={() =>
+                setDraft((prev) => ({
+                  ...prev,
+                  registerAdopts: !prev.registerAdopts,
+                }))
+              }
+            />
+            <strong>Move files into Skills Bank on Register</strong>
+          </label>
+        </section>
+
+        <section style={section}>
           <h3 style={sectionTitle}>Default install agents</h3>
           <p style={hint}>
             When you install a skill from the Registry tab, link it into these

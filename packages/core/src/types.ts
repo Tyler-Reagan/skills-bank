@@ -118,8 +118,18 @@ export interface FinalizeResult {
 export type RegistrationAction =
   | { type: "skip"; name: string }
   | { type: "remove"; name: string }
-  | { type: "adopt"; name: string }
-  | { type: "register-external"; name: string }
+  | {
+      type: "register";
+      name: string;
+      /**
+       * True ⇒ move files into `<registryRoot>/skills/<name>` (the
+       * Adopted=true axis). False ⇒ record the external path and leave
+       * files in place (Adopted=false). The renderer derives this from
+       * `settings.registerAdopts`; M3 collapsed the prior `adopt` and
+       * `register-external` action variants into this single shape.
+       */
+      adopt: boolean;
+    }
   | {
       type: "setAgents";
       name: string;

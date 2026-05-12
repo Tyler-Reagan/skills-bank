@@ -43,12 +43,6 @@ export interface DrawerCapabilities {
   canRevealInFinder: boolean;
   canDeleteFromBank: boolean;
   canRegister: boolean;
-  /**
-   * Foreign-symlink only: record the symlink target without moving
-   * files into the bank. Mirrors RegisterModal's "Register as external"
-   * option. M3 collapses this into the unified register flow.
-   */
-  canRegisterAsExternal: boolean;
   canResolveConflicts: boolean;
   /**
    * Same skill name has multiple non-ours installations across agent
@@ -91,7 +85,6 @@ const NEVER: DrawerCapabilities = {
   canRevealInFinder: false,
   canDeleteFromBank: false,
   canRegister: false,
-  canRegisterAsExternal: false,
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
   canRepairBroken: false,
@@ -123,7 +116,6 @@ export function classifyDrawerState(
     // can't be registered — they're a dead symlink, repair-or-delete.
     if (hasConflicts) {
       const hasRealDir = conflicts.some((c) => c.kind === "real-directory");
-      const onlyForeign = conflicts.every((c) => c.kind === "foreign-symlink");
       // Multi-installation across ANY kinds (real-dir + foreign,
       // real-dir + broken, two foreign, etc.) is a registration
       // conflict: the user has more than one on-disk copy of this
@@ -143,10 +135,9 @@ export function classifyDrawerState(
           },
         };
       }
-      // Single-installation unregistered. Register-as-external is only
-      // meaningful when the installation is a foreign symlink; for a
-      // real directory it's nonsensical (there's nothing external to
-      // track — the files live in the agent dir already).
+      // Single-installation unregistered. Register is the single
+      // primary; M3 unified adopt vs. symlink-mode behind the global
+      // `registerAdopts` setting, so no per-skill split here.
       return {
         state: hasRealDir ? "unregistered-real" : "unregistered-foreign",
         brokenCount: broken.length,
@@ -155,7 +146,6 @@ export function classifyDrawerState(
           ...NEVER,
           canRevealInFinder: true,
           canRegister: true,
-          canRegisterAsExternal: onlyForeign,
           primary: "register",
         },
       };

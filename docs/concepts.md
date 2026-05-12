@@ -106,7 +106,16 @@ A one-click pull of upstream registry updates. Sync is **upsert**: canonical ski
 
 ## Register
 
-The act of moving an "installed but unmanaged" skill into the registry. The files relocate to `<repo>/skills/<name>/`, the original agent-dir entry becomes a symlink, and the skill picks up registry metadata.
+The act of adding an "installed but unmanaged" skill to the registry. What happens to the files depends on the **Adopted** axis, controlled by the `Move files into Skills Bank on Register` setting:
+
+- **Adopted (default)** — files relocate to `<repo>/skills/<name>/`, the original agent-dir entry becomes a symlink pointing at the new registry location.
+- **Not adopted** — the registry records the external path and leaves files where they are. Useful when a skill is actively maintained in its own git repo.
+
+Either way the skill picks up registry metadata (tags, description, source marker).
+
+## Adopt
+
+A taxonomy axis on each registry entry. True when the skill's files physically live under `<repo>/skills/<name>/`; false when the entry tracks an external path. Set at register time from the global `Move files into Skills Bank on Register` setting. M4's unregister behavior diverges based on this flag — adopted skills get moved out to the shared agents dir; non-adopted skills leave their origin files alone.
 
 ## Finalize
 

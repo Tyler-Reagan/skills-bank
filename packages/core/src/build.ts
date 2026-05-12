@@ -4,6 +4,7 @@ import { execSync } from "node:child_process";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { readUpstreamCanonNames } from "./canon.js";
+import { readExternalRegistry } from "./external.js";
 import { readSkillMeta } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import type {
@@ -105,6 +106,20 @@ export function buildRegistryIndex(
         built.canon = upstreamCanon.has(sk.name) || ps === "pushed";
         entries.push(built);
       }
+    }
+  }
+
+  // M3: merge in non-adopted (symlink-mode) entries from external.json
+  // so the renderer sees them in the registry view, not just Installed.
+  // Adopted=false means files live at `target`, not under skills/.
+  // Local content (publishState, last-commit) doesn't apply.
+  const adoptedNames = new Set(entries.map((e) => e.name));
+  for (const ext of readExternalRegistry(registryRoot)) {
+    if (adoptedNames.has(ext.name)) continue; // adopted wins on name collision
+    const built = buildExternalEntry(ext, opts);
+    if (built) {
+      built.canon = upstreamCanon.has(ext.name);
+      entries.push(built);
     }
   }
 
@@ -223,6 +238,54 @@ function buildOneEntry(
     if (lastCommit) entry.lastCommit = lastCommit;
   }
 
+  return entry;
+}
+
+/**
+ * Build a RegistryEntry for a non-adopted (external) registration.
+ * The skill's files live at `ext.target`; we read meta from there so
+ * the renderer sees the same description/version/tags as if the
+ * skill had been adopted. `adopted: false` and `path` = absolute
+ * external path so reveal/open-in-finder work without registryRoot
+ * resolution gymnastics.
+ *
+ * Returns null if the external path is gone — that's a heal state
+ * (`external-target-missing`) M6 surfaces explicitly; for now the
+ * entry simply doesn't appear in the index.
+ */
+function buildExternalEntry(
+  ext: import("./external.js").ExternalEntry,
+  opts: BuildIndexOptions,
+): RegistryEntry | null {
+  if (!fs.existsSync(ext.target)) return null;
+  const warnings: string[] = [];
+  let meta: Partial<SkillMeta> = {};
+  const fm = readSkillMeta(ext.target);
+  if (fm) {
+    meta = { ...fm };
+  }
+  if (!meta.name) {
+    warnings.push("missing name (using registered name)");
+    meta.name = ext.name;
+  }
+  if (!meta.description) {
+    warnings.push("missing description");
+    meta.description = "";
+  }
+  const entry: RegistryEntry = {
+    name: meta.name,
+    description: meta.description,
+    ...(meta.tags ? { tags: meta.tags } : {}),
+    ...(meta.version ? { version: meta.version } : {}),
+    ...(meta.author ? { author: meta.author } : {}),
+    // Absolute path for external entries — renderer falls back to
+    // this when composing the reveal-in-finder path.
+    path: ext.target,
+    source: { source: "user" },
+    adopted: false,
+    ...(warnings.length > 0 ? { warnings } : {}),
+  };
+  if (opts.strict && warnings.length > 0) return null;
   return entry;
 }
 

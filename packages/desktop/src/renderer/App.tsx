@@ -782,16 +782,21 @@ export function App(): React.ReactElement {
                 }}
                 onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
                 onInlineRegister={(group) => {
-                  // Unregistered-section shortcut. Adopts the only
+                  // Unregistered-section shortcut. Registers the only
                   // installation into the registry — same operation the
                   // drawer's onRegister performs. Single-installation is
                   // guaranteed by the partition (multi-install lives in
                   // Needs attention), so there is no "which copy" ambiguity.
+                  // adopt-vs-symlink mode follows the global setting.
                   void (async () => {
                     const results = await window.skillsBank.register([
                       {
                         name: group.name,
-                        action: { type: "adopt", name: group.name },
+                        action: {
+                          type: "register",
+                          name: group.name,
+                          adopt: settings.registerAdopts,
+                        },
                       },
                     ]);
                     const r = results[0]!;
@@ -834,6 +839,7 @@ export function App(): React.ReactElement {
               await refresh();
             }}
             onFlash={flash}
+            registerAdopts={settings.registerAdopts}
           />
         )}
 
@@ -1162,39 +1168,23 @@ export function App(): React.ReactElement {
                 }}
                 onRegister={
                   // Only wire the callback when the classifier says the
-                  // state is actually adoptable — covers the
+                  // state is actually registerable — covers the
                   // unregistered-broken edge case where there's no
                   // usable source on disk and Register would fail with
-                  // a confusing error.
+                  // a confusing error. Whether files move into the
+                  // bank or stay at origin follows the global
+                  // `registerAdopts` setting (M3 unified the two
+                  // paths into a single op).
                   classifyDrawerState(selected, installed, isRegistered)
                     .capabilities.canRegister
                     ? async () => {
                         const results = await window.skillsBank.register([
                           {
                             name: selected.name,
-                            action: { type: "adopt", name: selected.name },
-                          },
-                        ]);
-                        const r = results[0]!;
-                        flash(r.message);
-                        if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
-                          setSelected(null);
-                        }
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onRegisterAsExternal={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canRegisterAsExternal
-                    ? async () => {
-                        const results = await window.skillsBank.register([
-                          {
-                            name: selected.name,
                             action: {
-                              type: "register-external",
+                              type: "register",
                               name: selected.name,
+                              adopt: settings.registerAdopts,
                             },
                           },
                         ]);

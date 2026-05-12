@@ -52,16 +52,11 @@ interface Props {
   /**
    * Trigger registration into the registry for a not-yet-registered
    * entry. Required when isRegistered is false; ignored otherwise.
+   * Whether files move into the bank or stay at their origin is
+   * controlled by `settings.registerAdopts` (M3 collapsed the prior
+   * adopt vs. register-as-external split into one action).
    */
   onRegister?: () => Promise<void> | void;
-  /**
-   * Foreign-symlink-only alternative to onRegister: record the
-   * symlink target in external.json rather than copying files into
-   * the Bank. Mirrors RegisterModal's "Register as external" option
-   * so the per-skill drawer presents the same choices the bulk flow
-   * exposes.
-   */
-  onRegisterAsExternal?: () => Promise<void> | void;
   /**
    * Optional override of which agent dirs to install into. When omitted,
    * install broadcasts to every existing agent dir (legacy behavior).
@@ -89,7 +84,6 @@ export function SkillDetailDrawer({
   onInstallConflict,
   isRegistered,
   onRegister,
-  onRegisterAsExternal,
   defaultInstallAgents,
 }: Props): React.ReactElement {
   const persona = usePersona();
@@ -599,29 +593,10 @@ export function SkillDetailDrawer({
                   "Register in registry"
                 )}
               </button>
-              {/* Register as external — only for foreign-symlink case
-                  per the classifier. Matches the kind-specific options
-                  RegisterModal already exposes in its bulk dropdown, so
-                  the side panel and the bulk flow stay in sync. */}
-              {caps.canRegisterAsExternal && onRegisterAsExternal && (
-                <button
-                  className="btn"
-                  disabled={action !== null}
-                  onClick={() => {
-                    setAction("registering");
-                    void Promise.resolve(onRegisterAsExternal()).finally(() =>
-                      setAction(null),
-                    );
-                  }}
-                  title="Track this skill's external symlink target in external.json — files stay where they are, no copy into the Bank."
-                >
-                  Register as external
-                </button>
-              )}
               <p className="drawer-action-hint">
                 {persona === "power"
-                  ? "Files move into your repo's skills/ directory. Commit to persist."
-                  : "Files move to the app's local registry. Safe from Pull updates; linkable across agents."}
+                  ? "Files move into your repo's skills/ directory unless you turn off adoption in Settings. Commit to persist."
+                  : "Files move to the app's local registry unless you turn off adoption in Settings. Safe from Pull updates; linkable across agents."}
               </p>
             </>
           )}
