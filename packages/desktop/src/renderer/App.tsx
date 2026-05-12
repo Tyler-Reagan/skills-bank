@@ -27,7 +27,6 @@ import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
-import { UninstallAgentPicker } from "./components/UninstallAgentPicker.js";
 import type { AuthStatus, SyncStatus } from "../shared/ipc.js";
 import { PersonaProvider } from "./PersonaContext.js";
 
@@ -149,10 +148,10 @@ export function App(): React.ReactElement {
     name: string;
     errors: import("./components/InstallConflictModal.js").InstallConflictError[];
   } | null>(null);
-  // M7: per-agent uninstall picker. Surfaces when the user clicks
-  // "Choose agents…" next to Remove from agents. The default
-  // Remove from agents button still hits every agent.
-  const [uninstallPickerTarget, setUninstallPickerTarget] = useState<{
+  // M9b: confirmation target for the inline Delete button on
+  // Unregistered cards. Holds the skill name + the installations
+  // that would be removed so the modal can preview them.
+  const [deleteTarget, setDeleteTarget] = useState<{
     name: string;
     installations: InstalledSkill[];
   } | null>(null);
@@ -600,24 +599,6 @@ export function App(): React.ReactElement {
     sync,
   ]);
 
-  const undoUninstall = useCallback(
-    (name: string, agentsBefore?: import("@skills-bank/core").AgentId[]) => {
-      void (async () => {
-        const r = await window.skillsBank.install(
-          name,
-          false,
-          // Re-install only into the agents the skill was linked into
-          // before — avoids broadcasting to dirs the user never opted
-          // into.
-          agentsBefore && agentsBefore.length > 0 ? agentsBefore : undefined,
-        );
-        flash(r.message);
-        await refresh();
-      })();
-    },
-    [refresh, flash],
-  );
-
   const rebuild = useCallback(async () => {
     setRebuilding(true);
     try {
@@ -757,7 +738,7 @@ export function App(): React.ReactElement {
               showRegister ||
               !!manageLinksTarget ||
               !!conflictTarget ||
-              !!uninstallPickerTarget ||
+              !!deleteTarget ||
               !!mergeConflictTarget ||
               showSettings ||
               showShortcuts ||
@@ -1170,24 +1151,6 @@ export function App(): React.ReactElement {
           />
         )}
 
-        {uninstallPickerTarget && (
-          <UninstallAgentPicker
-            name={uninstallPickerTarget.name}
-            installations={uninstallPickerTarget.installations}
-            onClose={() => setUninstallPickerTarget(null)}
-            onApply={async (agents) => {
-              const target = uninstallPickerTarget;
-              setUninstallPickerTarget(null);
-              const r = await window.skillsBank.uninstall(
-                target.name,
-                agents,
-              );
-              flash(r.message);
-              await refresh();
-            }}
-          />
-        )}
-
         {showSettings && (
           <SettingsModal
             settings={settings}
@@ -1246,14 +1209,6 @@ export function App(): React.ReactElement {
                 onChanged={async (msg) => {
                   flash(msg);
                   await refresh();
-                }}
-                onUninstalled={(name, agentsBefore) => {
-                  flashWithAction(
-                    `Removed ${name} from ${agentsBefore.length} agent dir(s).`,
-                    "Undo",
-                    () => undoUninstall(name, agentsBefore),
-                  );
-                  void refresh();
                 }}
                 onInstallConflict={(payload) => setInstallConflict(payload)}
                 onManageLinks={() => {
@@ -1317,16 +1272,6 @@ export function App(): React.ReactElement {
                       }
                     : undefined
                 }
-                onChooseAgentsToUninstall={() => {
-                  const ours = installed.filter(
-                    (i) => i.name === selected.name && i.kind === "ours",
-                  );
-                  if (ours.length === 0) return;
-                  setUninstallPickerTarget({
-                    name: selected.name,
-                    installations: ours,
-                  });
-                }}
                 onAcceptDrift={
                   classifyDrawerState(selected, installed, isRegistered)
                     .capabilities.canAcceptDrift

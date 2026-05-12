@@ -16,11 +16,6 @@ interface Props {
   registryRoot: string | null;
   onClose: () => void;
   onChanged: (msg: string) => void | Promise<void>;
-  /** Called specifically after a successful uninstall so the host can offer Undo. */
-  onUninstalled?: (
-    name: string,
-    agentsBefore: import("@skills-bank/core").AgentId[],
-  ) => void;
   /** Open the dedicated "Manage agent links" modal for this skill. */
   onManageLinks?: () => void;
   /**
@@ -90,26 +85,18 @@ interface Props {
    * external-target-missing.
    */
   onForgetMissing?: () => Promise<void> | void;
-  /**
-   * M7: open the per-agent picker so the user can uninstall from a
-   * subset of agent dirs instead of all of them. Default Remove
-   * from agents still hits everything.
-   */
-  onChooseAgentsToUninstall?: () => void;
 }
 
 type ActionState =
   | null
   | "installing"
-  | "uninstalling"
   | "exporting"
   | "registering"
   | "unregistering"
   | "hiding"
   | "unhiding"
   | "accepting-drift"
-  | "forgetting"
-  | "deleting";
+  | "forgetting";
 
 export function SkillDetailDrawer({
   entry,
@@ -117,7 +104,6 @@ export function SkillDetailDrawer({
   registryRoot,
   onClose,
   onChanged,
-  onUninstalled,
   onManageLinks,
   onResolveConflicts,
   onInstallConflict,
@@ -129,7 +115,6 @@ export function SkillDetailDrawer({
   onUnhide,
   onAcceptDrift,
   onForgetMissing,
-  onChooseAgentsToUninstall,
 }: Props): React.ReactElement {
   const persona = usePersona();
   const [skillMd, setSkillMd] = useState<string | null>(null);
@@ -187,11 +172,6 @@ export function SkillDetailDrawer({
         reasons: string[];
       }
   >({ kind: "idle" });
-  const [showDeleteFromBankConfirm, setShowDeleteFromBankConfirm] =
-    useState(false);
-  const linkedAgentCount = installed.filter(
-    (i) => i.name === entry.name && i.kind === "ours",
-  ).length;
   // Single source of truth for which actions are valid in this state.
   // Replaces the previous scatter of isRegistered/isInstalled/hasConflicts
   // /hasBrokenLinks conditionals across the action block. See plan §7b.
@@ -274,39 +254,6 @@ export function SkillDetailDrawer({
         onInstallConflict({ name: entry.name, errors: forceErrors });
         return;
       }
-      await onChanged(r.message);
-    } finally {
-      setAction(null);
-    }
-  };
-  const uninstall = async () => {
-    // Capture the agents this skill is currently linked into BEFORE the
-    // IPC fires, so the undo toast can re-install to the same set
-    // rather than the default broadcast.
-    const agentsBefore = installed
-      .filter((i) => i.name === entry.name && i.kind === "ours")
-      .map((i) => i.agent);
-    setAction("uninstalling");
-    try {
-      const r = await window.skillsBank.uninstall(entry.name);
-      if (r.ok && onUninstalled) {
-        await onChanged(r.message);
-        onUninstalled(entry.name, agentsBefore);
-      } else {
-        await onChanged(r.message);
-      }
-    } finally {
-      setAction(null);
-    }
-  };
-  const deleteFromBank = async () => {
-    setAction("deleting");
-    try {
-      // Close the drawer BEFORE the IPC resolves so React never renders
-      // a frame where `entry` references a deleted registry name.
-      const name = entry.name;
-      onClose();
-      const r = await window.skillsBank.deregister(name);
       await onChanged(r.message);
     } finally {
       setAction(null);
@@ -849,48 +796,17 @@ export function SkillDetailDrawer({
             </button>
           )}
 
-          {/* Remove from agents — primary in registered-healthy,
-              secondary in registered-conflicts / registered-mixed-broken.
-              M7: when the skill is linked into more than one agent,
-              expose a per-agent picker next to the bulk-remove button
-              so the user can target a subset. */}
-          {caps.canRemoveFromAgents && (
-            <button
-              className="btn"
-              disabled={action !== null}
-              onClick={() => void uninstall()}
-              title="Stop linking this skill into your agent directories. The skill stays in Skills Bank — re-add it any time."
-            >
-              {action === "uninstalling" ? (
-                <>
-                  <span className="spinner inline" /> Removing…
-                </>
-              ) : (
-                "Remove from agents"
-              )}
-            </button>
-          )}
-          {caps.canRemoveFromAgents &&
-            linkedAgentCount > 1 &&
-            onChooseAgentsToUninstall && (
-              <button
-                className="btn ghost"
-                disabled={action !== null}
-                onClick={onChooseAgentsToUninstall}
-                title="Pick specific agent dirs to remove from. The skill stays in the others."
-              >
-                Choose agents…
-              </button>
-            )}
-
-          {/* Manage agent links — only meaningful when there's a
-              registry target to link to. Hidden for unregistered skills
-              and for registered-broken (no working source to relink). */}
+          {/* Manage agent links — the single entry point for any
+              agent-link change. Subsumes the prior "Remove from
+              agents" and "Choose agents…" buttons: the modal lets
+              the user tick or untick each agent dir individually, and
+              unticking all is equivalent to a bulk uninstall. */}
           {caps.canManageLinks && onManageLinks && (
             <button
               className="btn"
               disabled={action !== null}
               onClick={onManageLinks}
+              title="Add or remove agent-dir symlinks for this skill. Unchecking all is equivalent to removing the skill from every agent."
             >
               Manage agent links
             </button>
@@ -1020,49 +936,6 @@ export function SkillDetailDrawer({
               )}
             </button>
           )}
-          {caps.canDeleteFromBank && (
-            <>
-              {/* Separator carries the "danger zone" boundary so the button
-                  itself can stay visually consistent with the others (no
-                  double border, no off-center label). 12px above / 4px
-                  below tracks the 8dp rhythm used elsewhere in the drawer
-                  while giving the danger button room to breathe. */}
-              <div
-                role="separator"
-                aria-hidden="true"
-                style={{
-                  gridColumn: "1 / -1",
-                  height: 1,
-                  background: "var(--border)",
-                  margin: "12px 0 4px",
-                }}
-              />
-              <button
-                className="btn danger"
-                style={{
-                  gridColumn: "1 / -1",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                }}
-                disabled={action !== null}
-                onClick={() => setShowDeleteFromBankConfirm(true)}
-                title="Permanently delete the skill's files from Skills Bank. Symlinks in agent directories are removed too. Re-importing is the only way back."
-              >
-                {action === "deleting" ? (
-                  <>
-                    <span className="spinner inline" /> Deleting…
-                  </>
-                ) : (
-                  <>
-                    <Icon name="alert-triangle" size="sm" /> Delete from Skills
-                    Bank
-                  </>
-                )}
-              </button>
-            </>
-          )}
         </div>
       </aside>
       {repairState.kind === "confirm-delete" && (
@@ -1132,88 +1005,6 @@ export function SkillDetailDrawer({
                 onClick={() => void confirmDeleteBroken()}
               >
                 Delete broken link{repairState.agents.length === 1 ? "" : "s"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showDeleteFromBankConfirm && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "var(--scrim)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1100,
-          }}
-        >
-          <div
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border-hi)",
-              borderRadius: 8,
-              padding: 24,
-              width: 480,
-              maxWidth: "90vw",
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>
-              Delete {entry.name} from Skills Bank?
-            </h3>
-            <p style={{ color: "var(--text-2)", fontSize: 13, margin: 0 }}>
-              The skill's files will be deleted from Skills Bank.
-            </p>
-            <p
-              style={{
-                color: "var(--text-2)",
-                fontSize: 13,
-                marginTop: 4,
-                marginBottom: 0,
-              }}
-            >
-              {linkedAgentCount} symlink
-              {linkedAgentCount === 1 ? "" : "s"} in agent director
-              {linkedAgentCount === 1 ? "y" : "ies"} will also be removed.
-            </p>
-            <p
-              style={{
-                color: "var(--text-3)",
-                fontSize: 12,
-                marginTop: 8,
-                fontStyle: "italic",
-              }}
-            >
-              You'll need to re-import the skill from GitHub or your source to
-              get it back.
-            </p>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 8,
-                marginTop: 16,
-              }}
-            >
-              <button
-                className="btn"
-                onClick={() => setShowDeleteFromBankConfirm(false)}
-                disabled={action === "deleting"}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn danger"
-                onClick={() => {
-                  setShowDeleteFromBankConfirm(false);
-                  void deleteFromBank();
-                }}
-                disabled={action === "deleting"}
-              >
-                Delete skill
               </button>
             </div>
           </div>
