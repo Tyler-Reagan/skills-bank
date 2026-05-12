@@ -14,7 +14,7 @@ Skills Bank asks you to make a one-time registry choice on first launch. This pa
 | **Registry maintenance** | None required — you can add your own skills alongside curated ones | Full ownership — content, structure, curation |
 | **Already-installed skills** | Show as Not registered in the Installed tab until you Register them | Same |
 | **Tags** | Local only (stored in `meta.json`); preserved across Pull updates | Local only; persist by committing `meta.json` changes |
-| **Portability** | Machine-local; use Export registry to back up or migrate | High — git clone reproduces the full registry on any machine |
+| **Portability** | Machine-local; use Export registry to back up or migrate, or Merge another registry into yours for additive imports | High — `git clone` reproduces the full registry on any machine; Merge into yours for additive imports |
 
 ---
 

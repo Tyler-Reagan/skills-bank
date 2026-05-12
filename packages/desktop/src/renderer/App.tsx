@@ -156,6 +156,15 @@ export function App(): React.ReactElement {
     name: string;
     installations: InstalledSkill[];
   } | null>(null);
+  // M8: pending merge-import conflicts. When non-null, the sync-style
+  // ConflictResolutionModal renders against this list. priorReport
+  // carries the partial-progress numbers (imported / kept-mine /
+  // renamed) so the post-resolve toast aggregates correctly.
+  const [mergeConflictTarget, setMergeConflictTarget] = useState<{
+    sourcePath: string;
+    conflicts: import("@skills-bank/core").ConflictEntry[];
+    priorReport: import("@skills-bank/core").MergeImportReport;
+  } | null>(null);
   // Bulk "Resolve all" confirmation list. Each entry's conflicts will
   // be replaced with symlinks to the registry copy. Broken-symlink
   // groups are excluded by the caller because they require source
@@ -495,6 +504,31 @@ export function App(): React.ReactElement {
     }
   }, [refresh, flash, authStatus]);
 
+  // M8: additive import. Pops a folder picker, runs the merge,
+  // surfaces collisions through the sync-conflict modal. Default
+  // decision per the taxonomy plan is keep-mine (handled inside the
+  // modal).
+  const mergeRegistry = useCallback(async () => {
+    const r = await window.skillsBank.importRegistryMerge();
+    if (!r.ok) {
+      if (r.message !== "cancelled") {
+        flash(`Couldn't merge: ${r.message}`);
+      }
+      return;
+    }
+    if (r.report.conflicts.length === 0) {
+      flash(r.message);
+      void window.skillsBank.rebuildIndex();
+      await refresh();
+      return;
+    }
+    setMergeConflictTarget({
+      sourcePath: r.sourcePath,
+      conflicts: r.report.conflicts,
+      priorReport: r.report,
+    });
+  }, [flash, refresh]);
+
   const exportRegistry = useCallback(async () => {
     const r = await window.skillsBank.exportRegistry();
     if (!r.ok && r.message !== "export cancelled") {
@@ -534,6 +568,9 @@ export function App(): React.ReactElement {
         case "changeRegistry":
           void changeRegistry();
           break;
+        case "mergeRegistry":
+          void mergeRegistry();
+          break;
         case "exportRegistry":
           void exportRegistry();
           break;
@@ -554,7 +591,14 @@ export function App(): React.ReactElement {
           break;
       }
     });
-  }, [changeRegistry, exportRegistry, signOut, onRefreshClick, sync]);
+  }, [
+    changeRegistry,
+    mergeRegistry,
+    exportRegistry,
+    signOut,
+    onRefreshClick,
+    sync,
+  ]);
 
   const undoUninstall = useCallback(
     (name: string, agentsBefore?: import("@skills-bank/core").AgentId[]) => {
@@ -714,6 +758,7 @@ export function App(): React.ReactElement {
               !!manageLinksTarget ||
               !!conflictTarget ||
               !!uninstallPickerTarget ||
+              !!mergeConflictTarget ||
               showSettings ||
               showShortcuts ||
               !!conflictModalEntries ||
@@ -1088,6 +1133,39 @@ export function App(): React.ReactElement {
                 allowReplaceWithSymlink: true,
               });
               setInstallConflict(null);
+            }}
+          />
+        )}
+
+        {mergeConflictTarget && (
+          <ConflictResolutionModal
+            conflicts={mergeConflictTarget.conflicts}
+            onClose={() => {
+              const prior = mergeConflictTarget.priorReport;
+              setMergeConflictTarget(null);
+              const parts: string[] = [];
+              if (prior.imported.length > 0)
+                parts.push(`${prior.imported.length} imported`);
+              if (prior.renamed.length > 0)
+                parts.push(`${prior.renamed.length} renamed`);
+              if (prior.keptMine.length > 0)
+                parts.push(`${prior.keptMine.length} kept yours`);
+              flash(
+                `Merge cancelled${parts.length > 0 ? ` (${parts.join(", ")})` : ""}.`,
+              );
+              void window.skillsBank.rebuildIndex();
+              void refresh();
+            }}
+            onResolve={async (decisions) => {
+              const target = mergeConflictTarget;
+              setMergeConflictTarget(null);
+              const r = await window.skillsBank.importRegistryMergeApply(
+                target.sourcePath,
+                decisions,
+              );
+              flash(r.message);
+              void window.skillsBank.rebuildIndex();
+              await refresh();
             }}
           />
         )}

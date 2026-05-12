@@ -70,6 +70,9 @@ const api = {
   openSelfHostDocs: () => ipcRenderer.invoke(IPC.openSelfHostDocs),
   exportRegistry: () => ipcRenderer.invoke(IPC.exportRegistry),
   importRegistry: () => ipcRenderer.invoke(IPC.importRegistry),
+  importRegistryMerge: () => ipcRenderer.invoke(IPC.importRegistryMerge),
+  importRegistryMergeApply: (sourcePath: string, decisions: unknown) =>
+    ipcRenderer.invoke(IPC.importRegistryMergeApply, sourcePath, decisions),
   repairBrokenLinks: (name: string) =>
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>

@@ -13,6 +13,7 @@ export * from "./canon.js";
 export * from "./external.js";
 export * from "./heal.js";
 export * from "./hide.js";
+export * from "./merge.js";
 export * from "./skill-state.js";
 export * from "./skill-state-server.js";
 export * from "./unregister.js";

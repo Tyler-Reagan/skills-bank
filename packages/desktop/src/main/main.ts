@@ -33,6 +33,7 @@ import {
   hideCanonSkill,
   installSkill,
   invalidateCanonCache,
+  mergeImportRegistry,
   listInstalled,
   readLastSyncReport,
   readPendingConflicts,
@@ -511,8 +512,12 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
     template.push({ label: "Using bundled registry", enabled: false });
     template.push({ type: "separator" });
     template.push({
-      label: "Import a registry…",
+      label: "Import a registry (replace)…",
       click: () => send("changeRegistry"),
+    });
+    template.push({
+      label: "Merge a registry into mine…",
+      click: () => send("mergeRegistry"),
     });
     template.push({
       label: "Export registry…",
@@ -1163,6 +1168,87 @@ ipcMain.handle(IPC.importRegistry, async () => {
     skillCount,
   };
 });
+
+// M8: merge mode — additive import that keeps the active registry
+// and adds skills from a picked folder. Collisions return as
+// ConflictEntry[] for the renderer to resolve via the existing
+// sync-conflict modal; the renderer calls importRegistryMergeApply
+// with the user's decisions to finalize.
+ipcMain.handle(IPC.importRegistryMerge, async () => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const win = BrowserWindow.getFocusedWindow();
+  const result = await dialog.showOpenDialog(win ?? undefined!, {
+    title: "Merge a registry into yours",
+    message:
+      "Pick a folder containing a skills/ subdirectory. Non-colliding entries are added directly; collisions will prompt for keep/use-theirs/rename.",
+    properties: ["openDirectory"],
+    defaultPath: app.getPath("home"),
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return { ok: false, message: "cancelled" };
+  }
+  const sourcePath = result.filePaths[0]!;
+  if (!fs.existsSync(path.join(sourcePath, "skills"))) {
+    return {
+      ok: false,
+      message: `No skills/ directory found in ${sourcePath}.`,
+    };
+  }
+  try {
+    const report = mergeImportRegistry(registryRoot, sourcePath);
+    return {
+      ok: true,
+      message: summarizeMerge(report),
+      sourcePath,
+      report,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+ipcMain.handle(
+  IPC.importRegistryMergeApply,
+  (_e, sourcePath: string, decisions: SyncDecisions) => {
+    if (!registryRoot)
+      return {
+        ok: false,
+        message: NO_ROOT_MSG,
+        report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
+      };
+    try {
+      const report = mergeImportRegistry(
+        registryRoot,
+        sourcePath,
+        decisions,
+      );
+      return {
+        ok: true,
+        message: summarizeMerge(report),
+        report,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: (err as Error).message,
+        report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
+      };
+    }
+  },
+);
+
+function summarizeMerge(report: import("@skills-bank/core").MergeImportReport): string {
+  const parts: string[] = [];
+  if (report.imported.length > 0)
+    parts.push(`${report.imported.length} imported`);
+  if (report.keptMine.length > 0)
+    parts.push(`${report.keptMine.length} kept yours`);
+  if (report.renamed.length > 0)
+    parts.push(`${report.renamed.length} renamed`);
+  if (report.conflicts.length > 0)
+    parts.push(`${report.conflicts.length} need attention`);
+  return parts.join(", ") || "no changes";
+}
 
 // Read up to 8 KB of SKILL.md text, with a "…(truncated)" marker when
 // the file is bigger. Pulled out so the readSkillMd IPC can reuse it

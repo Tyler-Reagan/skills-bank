@@ -39,3 +39,12 @@ These are independent paths:
 - **Registry** updates only when you click Sync.
 
 You can update one without the other.
+
+## Importing a registry from elsewhere
+
+Two modes (account menu):
+
+- **Import a registry (replace)…** — point the app at a different folder; the active registry root is swapped. Use when you're switching to a different upstream entirely or restoring from a fresh `git clone`.
+- **Merge a registry into mine…** — additive. Scans the picked folder's `skills/`, adds non-colliding entries to your active registry, and surfaces collisions through the same modal Sync uses (default: keep yours). Imported skills are marked `source: imported` — they don't become canon under your active registry.
+
+Both modes accept any folder with a `skills/` subdirectory. The merge path is the right fit when you want to bring a handful of skills from another registry (say, a coworker's export) into your active set without rebasing your whole layout.
