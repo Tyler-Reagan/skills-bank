@@ -569,14 +569,7 @@ function CustomSkillsDirs({
         <span className="custom-skills-dirs-title">
           <strong>Custom directories</strong>
           <InfoTooltip
-            text={
-              "Point the Installed tab at any folder on your machine that " +
-              "holds skill subfolders (each child folder is treated like a " +
-              "skill). Useful when your skills live outside the known " +
-              "agent dirs — e.g. ~/dev/my-skills/. Skills found here " +
-              "appear alongside agent-dir skills and can be Registered " +
-              "into the bank from the drawer."
-            }
+            text="Scan any folder of skill subfolders alongside the known agent dirs."
             label="What are custom directories?"
           />
         </span>
