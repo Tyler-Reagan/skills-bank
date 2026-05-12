@@ -81,7 +81,16 @@ export const IPC = {
   discoverStatus: "discover:status",
   showHeaderMenu: "header:showMenu",
   headerMenuAction: "header:action",
+  pickCustomSkillsDir: "skills:pickCustomSkillsDir",
 } as const;
+
+interface PickCustomSkillsDirResult {
+  ok: boolean;
+  /** Absolute path the user chose. Absent when ok=false. */
+  path?: string;
+  /** Human-readable reason. "canceled" when the user dismissed the picker. */
+  message: string;
+}
 
 export type Persona = "convenience" | "power";
 
@@ -213,7 +222,20 @@ interface UnregisterIPCResult {
 
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
-  listInstalled(): Promise<InstalledSkill[]>;
+  /**
+   * Scan agent dirs (and optionally user-defined custom dirs) for
+   * installed skills. Custom dirs are absolute paths; non-existent
+   * entries and entries that duplicate a known agent dir are skipped.
+   */
+  listInstalled(customDirs?: string[]): Promise<InstalledSkill[]>;
+  /**
+   * Open a directory picker so the user can choose a personal skills
+   * folder to add to the Installed-tab scan list. Returns
+   * `{ ok: false, message: "canceled" }` if the user dismissed the
+   * picker. Persistence of the chosen path lives in the renderer's
+   * AppSettings; this IPC only resolves the picker dialog.
+   */
+  pickCustomSkillsDir(): Promise<PickCustomSkillsDirResult>;
   install(
     name: string,
     force?: boolean,

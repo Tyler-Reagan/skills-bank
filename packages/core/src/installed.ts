@@ -21,6 +21,17 @@ export interface ListInstalledOptions {
    * AGENTS whose skills dir exists on disk.
    */
   agents?: AgentDef[];
+  /**
+   * Additional absolute directories to scan, beyond the known agent
+   * dirs. Used when the user has pointed the app at a personal skills
+   * folder (e.g. `~/dev/my-skills/`). Entries found here get
+   * `customDir` set to the originating path; `agent` falls back to
+   * `"agents"` as a generic AgentId placeholder.
+   *
+   * Non-existent paths and paths that duplicate a known agent dir are
+   * silently skipped to keep the renderer call site simple.
+   */
+  customDirs?: string[];
 }
 
 export function listInstalled(
@@ -39,14 +50,48 @@ export function listInstalled(
 
   const agents = opts.agents ?? AGENTS;
   const out: InstalledSkill[] = [];
+
+  // Build the list of scan locations. Custom dirs are normalized,
+  // de-duplicated, and stripped of any path that already matches a
+  // known agent dir — the agent-dir scan owns those.
+  const knownAgentDirs = new Set(
+    AGENTS.map((a) => path.resolve(getAgentSkillsDir(a))),
+  );
+  const customScans = new Map<string, string>(); // resolved → original
+  for (const raw of opts.customDirs ?? []) {
+    if (!raw) continue;
+    const resolved = path.resolve(raw);
+    if (knownAgentDirs.has(resolved)) continue;
+    if (!customScans.has(resolved)) customScans.set(resolved, raw);
+  }
+
   for (const agent of agents) {
     const skillsDir = getAgentSkillsDir(agent);
-    if (!fs.existsSync(skillsDir)) continue;
+    scanDir(skillsDir, { agent: agent.id });
+  }
+  for (const [resolved, original] of customScans) {
+    scanDir(resolved, { agent: "agents", customDir: original });
+  }
+
+  // Sort by name then agent, with custom-dir entries grouped after
+  // their agent peers via a secondary key on customDir.
+  return out.sort(
+    (a, b) =>
+      a.name.localeCompare(b.name) ||
+      a.agent.localeCompare(b.agent) ||
+      (a.customDir ?? "").localeCompare(b.customDir ?? ""),
+  );
+
+  function scanDir(
+    skillsDir: string,
+    origin: { agent: InstalledSkill["agent"]; customDir?: string },
+  ): void {
+    if (!fs.existsSync(skillsDir)) return;
     let names: string[];
     try {
       names = fs.readdirSync(skillsDir);
     } catch {
-      continue;
+      return;
     }
     for (const name of names) {
       const linkPath = path.join(skillsDir, name);
@@ -80,7 +125,8 @@ export function listInstalled(
         else kind = "foreign-symlink";
         out.push({
           name,
-          agent: agent.id,
+          agent: origin.agent,
+          ...(origin.customDir ? { customDir: origin.customDir } : {}),
           linkPath,
           // `target` is the literal one-hop link target — useful for
           // showing the user what their symlink actually points at, even
@@ -92,7 +138,8 @@ export function listInstalled(
       } else if (stat.isDirectory()) {
         out.push({
           name,
-          agent: agent.id,
+          agent: origin.agent,
+          ...(origin.customDir ? { customDir: origin.customDir } : {}),
           linkPath,
           target: null,
           kind: "real-directory",
@@ -100,8 +147,4 @@ export function listInstalled(
       }
     }
   }
-  // Sort by name then agent for stable ordering.
-  return out.sort(
-    (a, b) => a.name.localeCompare(b.name) || a.agent.localeCompare(b.agent),
-  );
 }

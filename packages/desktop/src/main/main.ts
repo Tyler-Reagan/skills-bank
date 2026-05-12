@@ -762,11 +762,30 @@ ipcMain.handle(IPC.listRegistry, () => {
   return buildRegistryIndex(registryRoot, { writeFile: true }).entries;
 });
 
-ipcMain.handle(IPC.listInstalled, () => {
+ipcMain.handle(IPC.listInstalled, (_e, customDirs?: string[]) => {
+  const dirs = Array.isArray(customDirs)
+    ? customDirs.filter((s): s is string => typeof s === "string")
+    : undefined;
   if (!registryRoot)
-    return listInstalled("", { index: { generatedAt: "", entries: [] } });
+    return listInstalled("", {
+      index: { generatedAt: "", entries: [] },
+      customDirs: dirs,
+    });
   const index = buildRegistryIndex(registryRoot);
-  return listInstalled(registryRoot, { index });
+  return listInstalled(registryRoot, { index, customDirs: dirs });
+});
+
+ipcMain.handle(IPC.pickCustomSkillsDir, async () => {
+  const win = BrowserWindow.getFocusedWindow();
+  const result = await dialog.showOpenDialog(win ?? undefined!, {
+    title: "Add a skills directory to the Installed tab",
+    properties: ["openDirectory"],
+    defaultPath: app.getPath("home"),
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return { ok: false, message: "canceled" };
+  }
+  return { ok: true, path: result.filePaths[0], message: "ok" };
 });
 
 ipcMain.handle(

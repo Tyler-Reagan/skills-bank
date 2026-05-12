@@ -365,7 +365,7 @@ export function App(): React.ReactElement {
       }
       const [r, i] = await Promise.all([
         window.skillsBank.listRegistry(),
-        window.skillsBank.listInstalled(),
+        window.skillsBank.listInstalled(settings.customSkillsDirs),
       ]);
       setRegistry(r);
       setInstalled(i);
@@ -377,7 +377,33 @@ export function App(): React.ReactElement {
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [settings.customSkillsDirs]);
+
+  const addCustomSkillsDir = useCallback(async () => {
+    const r = await window.skillsBank.pickCustomSkillsDir();
+    if (!r.ok || !r.path) return; // user canceled
+    const chosen = r.path;
+    if (settings.customSkillsDirs.includes(chosen)) {
+      setToast({ message: "That directory is already in the scan list." });
+      return;
+    }
+    saveSettings({
+      ...settings,
+      customSkillsDirs: [...settings.customSkillsDirs, chosen],
+    });
+    void refresh();
+  }, [settings, saveSettings, refresh]);
+
+  const removeCustomSkillsDir = useCallback(
+    (path: string) => {
+      saveSettings({
+        ...settings,
+        customSkillsDirs: settings.customSkillsDirs.filter((p) => p !== path),
+      });
+      void refresh();
+    },
+    [settings, saveSettings, refresh],
+  );
 
   const onRefreshClick = useCallback(async () => {
     const { registryCount, installedCount } = await refresh();
@@ -787,6 +813,9 @@ export function App(): React.ReactElement {
               <InstalledTab
                 installed={installed}
                 registry={registry}
+                customSkillsDirs={settings.customSkillsDirs}
+                onAddCustomSkillsDir={addCustomSkillsDir}
+                onRemoveCustomSkillsDir={removeCustomSkillsDir}
                 onSwitchToBrowse={() => setTabPersisted("browse")}
                 onRegisterAll={() => setShowRegister(true)}
                 onRegisterOne={(s) => {
