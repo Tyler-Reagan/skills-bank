@@ -3,6 +3,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
+import { readUpstreamCanonNames } from "./canon.js";
 import { readSkillMeta } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import type {
@@ -79,6 +80,13 @@ export function buildRegistryIndex(
   // Compute publish state for every skill in one batched git pass —
   // cheaper than per-skill git invocations from buildOneEntry.
   const publishStates = computePublishStates(registryRoot);
+  // Resolve canon dynamically: union of the upstream snapshot
+  // (convenience persona, written by sync/seed) and skills currently
+  // reachable from the registry's upstream branch (power persona,
+  // publishState === "pushed"). Either path empty is fine; the union
+  // means switching repos always recomputes against the active
+  // upstream rather than trusting stale per-skill markers.
+  const upstreamCanon = readUpstreamCanonNames(registryRoot);
 
   if (fs.existsSync(skillsDir)) {
     for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
@@ -94,6 +102,7 @@ export function buildRegistryIndex(
       if (built) {
         const ps = publishStates.get(sk.name);
         if (ps) built.publishState = ps;
+        built.canon = upstreamCanon.has(sk.name) || ps === "pushed";
         entries.push(built);
       }
     }

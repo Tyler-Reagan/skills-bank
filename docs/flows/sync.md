@@ -21,6 +21,8 @@ Sync is **upsert**:
 - **Never touched** — skills with `source: "user"` or `source: "imported"`. Anything you authored or brought in stays exactly as it was.
 - **Removed** — canonical skills that disappear from upstream are deleted locally. Your local-authored skills are never deleted by sync.
 
+Sync also refreshes the **canon snapshot**: the set of names the upstream registry currently considers canonical. The app uses this to decide which skills are protected from unregister/delete in the UI. Switching to a different registry replaces the snapshot — canon is always evaluated against the active linked repo, never carried over from a previous one.
+
 ## When to sync
 
 There's no schedule — sync is manual. Run it when:

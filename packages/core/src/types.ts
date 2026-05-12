@@ -40,6 +40,15 @@ export interface RegistryEntry extends SkillMeta {
    */
   adopted?: boolean;
   /**
+   * Taxonomy axis: true when this skill's name appears in the active
+   * linked registry's upstream — for convenience persona, the bundled
+   * canonical name set (persisted at sync/seed time); for power
+   * persona, the registry git repo (publishState === "pushed").
+   * Computed dynamically by `buildRegistryIndex` so a repo switch
+   * recomputes canon without stale-marker drift.
+   */
+  canon?: boolean;
+  /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has
    * SKILL.md. Surface in the UI so users can fix metadata without

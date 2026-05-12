@@ -29,6 +29,7 @@ import {
   finalizeSkillsDir,
   getExportInfo,
   installSkill,
+  invalidateCanonCache,
   listInstalled,
   readLastSyncReport,
   readPendingConflicts,
@@ -40,6 +41,7 @@ import {
   repairBrokenLinks,
   resolveSkillConflicts,
   writeSyncDecisions,
+  writeUpstreamCanonNames,
   AGENTS,
   getAgentSkillsDir,
   type AgentId,
@@ -178,6 +180,21 @@ function seedManagedRegistryIfEmpty(root: string): void {
         2,
       ),
     );
+    // M2: snapshot the bundled set as the upstream canon list so
+    // buildRegistryIndex marks seeded skills as canon on the first
+    // load — before the user has run Pull updates. Sync overwrites
+    // this file with the live upstream set on the next pull.
+    try {
+      const seedIdx = JSON.parse(fs.readFileSync(seedIndex, "utf8")) as {
+        entries?: Array<{ name?: unknown }>;
+      };
+      const names = (seedIdx.entries ?? [])
+        .map((e) => e.name)
+        .filter((n): n is string => typeof n === "string");
+      writeUpstreamCanonNames(root, names, "bundled");
+    } catch (err) {
+      console.error("seed canon snapshot failed:", err);
+    }
   } catch (err) {
     // Seed failures are non-fatal — the user can still Pull Updates.
     // Log to stderr so packaged builds with --enable-logging surface it.
@@ -654,6 +671,10 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
     };
   }
   registryRoot = candidate;
+  // M2: drop cached upstream-canon for the previous root so the next
+  // index build classifies skills against the new root's own upstream
+  // snapshot (or absence of one), not the old repo's set.
+  invalidateCanonCache();
   writeConfig({ registryRoot: candidate, persona });
   return { ok: true, message: `registry set to ${candidate}`, registryRoot };
 });
@@ -993,6 +1014,9 @@ ipcMain.handle(IPC.importRegistry, async () => {
     .readdirSync(skillsDir)
     .filter((e) => fs.statSync(path.join(skillsDir, e)).isDirectory()).length;
   registryRoot = candidate;
+  // M2: same reason as setRegistryRoot — flush canon cache so the new
+  // root's index build doesn't see the prior root's snapshot.
+  invalidateCanonCache();
   writeConfig({ registryRoot: candidate, persona });
   return {
     ok: true,
@@ -1390,6 +1414,7 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
     fs.mkdirSync(localSkillsDir, { recursive: true });
 
     const importedAt = new Date().toISOString();
+    const importedNames: string[] = [];
     let count = 0;
     for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
       if (!ent.isDirectory()) continue;
@@ -1401,9 +1426,10 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
         syncedFromCommit: fetched.commitSha,
         syncedAt: importedAt,
       });
+      importedNames.push(ent.name);
       count++;
     }
-    // Clear M2 sync state so any prior canonical state doesn't leak in.
+    // Clear sync state so any prior canonical state doesn't leak in.
     const stateDir = path.join(registryRoot, ".skills-bank");
     for (const f of [
       "last-sync.json",
@@ -1413,6 +1439,11 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
       const p = path.join(stateDir, f);
       if (fs.existsSync(p)) fs.unlinkSync(p);
     }
+    // Snapshot the imported set as the canon source for this repo so
+    // buildRegistryIndex marks them canon immediately. The imported
+    // tarball doesn't include `.git`, so publishState would be
+    // "unknown" otherwise.
+    writeUpstreamCanonNames(registryRoot, importedNames, "imported");
     return {
       ok: true,
       message: `imported ${count} skill(s) from ${fullName}`,

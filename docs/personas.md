@@ -66,3 +66,12 @@ Open the account menu (top-right of the header) at any time:
 - **Your own registry users**: Choose **Choose registry repo…** to switch to a different GitHub repo, or sign out to return to the first-launch screen.
 
 Switching persona does not delete your installed agent-dir symlinks — your agents keep working. Only the app's source-of-truth registry changes.
+
+### Canon is repo-relative
+
+The **canon** axis (see [concepts.md](concepts.md#taxonomy)) is evaluated against whichever registry is currently linked:
+
+- **Bundled registry** — canon = the upstream curated name set, refreshed by Sync and persisted alongside the registry.
+- **Your own registry** — canon = skills that are committed and reachable from your repo's upstream branch (publishState `pushed`).
+
+Switching repos drops the previous root's canon snapshot and recomputes against the new one. A skill that was canon under repo A is not automatically canon under repo B; if you want it canonical under B, commit it to B.

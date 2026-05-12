@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import * as tar from "tar";
+import { writeUpstreamCanonNames } from "./canon.js";
 import { getStateDir } from "./paths.js";
 import {
   readSkillSource,
@@ -301,6 +302,17 @@ export async function applyCanonicalSync(
   fs.writeFileSync(
     path.join(stateDir, "last-sync.json"),
     JSON.stringify(report, null, 2) + "\n",
+  );
+
+  // M2: snapshot the canonical name set so buildRegistryIndex can
+  // populate RegistryEntry.canon without re-fetching upstream on every
+  // call. canonicalNames is the authoritative upstream set for this
+  // sync — every name we just considered, regardless of which arm of
+  // the conflict resolver each took.
+  writeUpstreamCanonNames(
+    registryRoot,
+    [...canonicalNames],
+    "synced",
   );
   if (conflicts.length > 0) {
     fs.writeFileSync(
