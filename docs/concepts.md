@@ -44,24 +44,24 @@ flowchart LR
     Done([End]):::terminal
 
     %% Lifecycle ladder
-    Start  -->|"discovered on agent disk"|     Unmanaged
-    Start  -->|"shipped canon or Sync pull"|   Registered
-    Unmanaged    -->|"Register"|              Registered
-    Registered   -->|"Unregister"|            Unregistered
-    Unregistered -->|"Re-register"|           Registered
-    Unregistered -->|"Delete"|                Done
+    Start -->|"discovered on agent disk"| Unmanaged
+    Start -->|"shipped canon or Sync pull"| Registered
+    Unmanaged -->|"Register"| Registered
+    Registered -->|"Unregister"| Unregistered
+    Unregistered -->|"Re-register"| Registered
+    Unregistered -->|"Delete"| Done
 
     %% Canon-only attribute toggle
-    Registered -->|"Hide (canon only)"|   Hidden
-    Hidden     -->|"Unhide"|              Registered
+    Registered -->|"Hide (canon only)"| Hidden
+    Hidden -->|"Unhide"| Registered
 
     %% Heal-pending side states — see flows/heal.md
-    Registered  -->|"local edit to canon files"|     CanonDrift
-    CanonDrift  -->|"Accept local / Take canonical"| Registered
-    Registered  -->|"registry folder deleted"|       FolderMissing
-    FolderMissing -->|"Forget entry"|                Done
-    Registered  -->|"external path deleted"|         TargetMissing
-    TargetMissing -->|"Forget entry"|                Done
+    Registered -->|"local edit to canon files"| CanonDrift
+    CanonDrift -->|"Accept local / Take canonical"| Registered
+    Registered -->|"registry folder deleted"| FolderMissing
+    FolderMissing -->|"Forget entry"| Done
+    Registered -->|"external path deleted"| TargetMissing
+    TargetMissing -->|"Forget entry"| Done
 
     class CanonDrift,FolderMissing,TargetMissing heal
 ```
