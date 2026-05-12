@@ -94,8 +94,20 @@ export type InstalledKind =
 
 export interface InstalledSkill {
   name: string;
-  /** Stable id of the agent dir this entry was discovered in. */
+  /**
+   * Stable id of the agent dir this entry was discovered in. For
+   * scans that landed in a user-defined custom directory rather than a
+   * known agent dir, this falls back to `"agents"` and `customDir` is
+   * set; consumers that distinguish the two should check `customDir`
+   * first.
+   */
   agent: import("./agents.js").AgentId;
+  /**
+   * When set, the entry was discovered inside this user-defined custom
+   * skills directory rather than one of the known agent dirs.
+   * Absolute path to the parent directory (not to the skill itself).
+   */
+  customDir?: string;
   /** Absolute path of `<agent-dir>/<name>` itself. */
   linkPath: string;
   /** Absolute resolved target if it's a symlink, else null. */

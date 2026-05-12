@@ -97,6 +97,16 @@ function kindRank(k: InstalledSkill["kind"]): number {
 interface Props {
   installed: InstalledSkill[];
   registry: RegistryEntry[];
+  /**
+   * User-defined custom skills directories that the Installed tab
+   * scans alongside the known agent dirs. Surfaced inline (not in
+   * Settings) since the feature is scoped to this tab.
+   */
+  customSkillsDirs: string[];
+  /** Open the directory picker; on confirm, append to customSkillsDirs. */
+  onAddCustomSkillsDir: () => void;
+  /** Remove a custom dir from the persisted list. */
+  onRemoveCustomSkillsDir: (path: string) => void;
   onSwitchToBrowse: () => void;
   onRegisterAll: () => void;
   onRegisterOne: (entry: InstalledSkill) => void;
@@ -138,6 +148,9 @@ interface Props {
 export function InstalledTab({
   installed,
   registry,
+  customSkillsDirs,
+  onAddCustomSkillsDir,
+  onRemoveCustomSkillsDir,
   onSwitchToBrowse,
   onRegisterAll,
   onRegisterOne,
@@ -153,26 +166,37 @@ export function InstalledTab({
     persona === "power" ? REGISTER_TOOLTIP_POWER : REGISTER_TOOLTIP_CONVENIENCE;
   if (installed.length === 0) {
     return (
-      <div className="empty-state">
-        <strong>Nothing installed yet.</strong>
-        <p>
-          Install skills from the Registry tab, or scan for pre-existing
-          entries.
-        </p>
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            justifyContent: "center",
-            marginTop: 16,
-          }}
-        >
-          <button className="btn primary" onClick={onSwitchToBrowse}>
-            Browse registry
-          </button>
-          <button className="btn" onClick={onRegisterAll}>
-            Scan for existing skills
-          </button>
+      <div>
+        <CustomSkillsDirs
+          dirs={customSkillsDirs}
+          onAdd={onAddCustomSkillsDir}
+          onRemove={onRemoveCustomSkillsDir}
+        />
+        <div className="empty-state">
+          <strong>Nothing installed yet.</strong>
+          <p>
+            Install skills from the Registry tab, or scan for pre-existing
+            entries.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              justifyContent: "center",
+              marginTop: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <button className="btn primary" onClick={onSwitchToBrowse}>
+              Browse registry
+            </button>
+            <button className="btn" onClick={onRegisterAll}>
+              Scan for existing skills
+            </button>
+            <button className="btn" onClick={onAddCustomSkillsDir}>
+              Add a skills directory…
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -224,6 +248,11 @@ export function InstalledTab({
 
   return (
     <div>
+      <CustomSkillsDirs
+        dirs={customSkillsDirs}
+        onAdd={onAddCustomSkillsDir}
+        onRemove={onRemoveCustomSkillsDir}
+      />
       <div className="tab-intro">
         <span className="tab-intro-heading">
           <strong>Installed</strong>
@@ -520,5 +549,51 @@ export function InstalledTab({
         </section>
       )}
     </div>
+  );
+}
+
+interface CustomSkillsDirsProps {
+  dirs: string[];
+  onAdd: () => void;
+  onRemove: (path: string) => void;
+}
+
+function CustomSkillsDirs({
+  dirs,
+  onAdd,
+  onRemove,
+}: CustomSkillsDirsProps): React.ReactElement {
+  return (
+    <section className="custom-skills-dirs">
+      <header className="custom-skills-dirs-header">
+        <span className="custom-skills-dirs-title">
+          <strong>Custom directories</strong>
+          <InfoTooltip
+            text="Scan any folder of skill subfolders alongside the known agent dirs."
+            label="What are custom directories?"
+          />
+        </span>
+        <button className="btn" onClick={onAdd}>
+          Add a skills directory…
+        </button>
+      </header>
+      {dirs.length > 0 && (
+        <ul className="custom-skills-dirs-list">
+          {dirs.map((dir) => (
+            <li key={dir} className="custom-skills-dir-chip">
+              <code title={dir}>{dir}</code>
+              <button
+                className="btn-icon"
+                aria-label={`Remove ${dir}`}
+                title={`Remove ${dir} from the scan list`}
+                onClick={() => onRemove(dir)}
+              >
+                <Icon name="x" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

@@ -9,7 +9,9 @@ import {
 
 const api = {
   listRegistry: () => ipcRenderer.invoke(IPC.listRegistry),
-  listInstalled: () => ipcRenderer.invoke(IPC.listInstalled),
+  listInstalled: (customDirs?: string[]) =>
+    ipcRenderer.invoke(IPC.listInstalled, customDirs),
+  pickCustomSkillsDir: () => ipcRenderer.invoke(IPC.pickCustomSkillsDir),
   install: (name: string, force?: boolean, agents?: unknown) =>
     ipcRenderer.invoke(IPC.install, name, force, agents),
   uninstall: (name: string, agents?: unknown) =>
@@ -22,10 +24,8 @@ const api = {
   hide: (name: string) => ipcRenderer.invoke(IPC.hide, name),
   unhide: (name: string) => ipcRenderer.invoke(IPC.unhide, name),
   acceptDrift: (name: string) => ipcRenderer.invoke(IPC.acceptDrift, name),
-  takeCanonical: (name: string) =>
-    ipcRenderer.invoke(IPC.takeCanonical, name),
-  forgetMissing: (name: string) =>
-    ipcRenderer.invoke(IPC.forgetMissing, name),
+  takeCanonical: (name: string) => ipcRenderer.invoke(IPC.takeCanonical, name),
+  forgetMissing: (name: string) => ipcRenderer.invoke(IPC.forgetMissing, name),
   clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),
   scan: () => ipcRenderer.invoke(IPC.scan),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),
@@ -83,7 +83,8 @@ const api = {
     ipcRenderer.invoke(IPC.removeBrokenLinks, name, agents),
   resolveSkillConflicts: (name: string, decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveSkillConflicts, name, decisions),
-  discoverShow: (bounds: Bounds) => ipcRenderer.invoke(IPC.discoverShow, bounds),
+  discoverShow: (bounds: Bounds) =>
+    ipcRenderer.invoke(IPC.discoverShow, bounds),
   discoverHide: () => ipcRenderer.invoke(IPC.discoverHide),
   discoverHideSync: () => ipcRenderer.sendSync(IPC.discoverHideSync),
   discoverSetBounds: (bounds: Bounds) =>

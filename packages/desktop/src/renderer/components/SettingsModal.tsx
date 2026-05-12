@@ -66,6 +66,14 @@ export interface AppSettings {
    * Default `~/.agents/skills/`. M4 consumes this in `unregisterSkill`.
    */
   unregisterDestinationAgent: AgentId;
+  /**
+   * User-defined custom skills directories that the Installed tab
+   * scans in addition to the known agent dirs. Absolute paths. Empty
+   * by default. Managed entirely from the Installed tab — this setting
+   * is intentionally not surfaced in the Settings modal because it's
+   * scoped to that tab's UX.
+   */
+  customSkillsDirs: string[];
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -75,6 +83,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   terminalApp: "system",
   registerAdopts: true,
   unregisterDestinationAgent: "agents",
+  customSkillsDirs: [],
 };
 
 interface Props {
