@@ -344,6 +344,20 @@ export function readPendingConflicts(
   }
 }
 
+/**
+ * Best-effort delete of the pending-conflicts state file. Used by the
+ * stuck-state recovery action in the UI when a prior sync left
+ * decisions half-applied.
+ */
+export function clearPendingConflicts(registryRoot: string): {
+  removed: boolean;
+} {
+  const p = path.join(getStateDir(registryRoot), "pending-conflicts.json");
+  if (!fs.existsSync(p)) return { removed: false };
+  fs.unlinkSync(p);
+  return { removed: true };
+}
+
 export function readSyncDecisions(registryRoot: string): SyncDecisions {
   const p = path.join(getStateDir(registryRoot), "sync-decisions.json");
   if (!fs.existsSync(p)) return {};

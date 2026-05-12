@@ -426,6 +426,32 @@ input, select { font-family: inherit; color: inherit; }
 }
 :root[data-density="compact"] .skill-status-chip { font-size: 10px; }
 
+/* ── Action grid cell (Needs-attention + Unregistered) ─ */
+/*
+ * Each cell pairs an action button on top with a SkillCard below. The
+ * grid stretches all cells in a row to the row's tallest item, but
+ * the inner SkillCard doesn't fill the cell on its own (its CSS uses
+ * `flex: 0 1 auto`). Setting flex:1 on the SkillCard inside the cell
+ * makes short-content cards stretch to match their row neighbors so
+ * the grid reads as a clean grid, not staggered tiles. Shared between
+ * Needs-attention (warn button) and Unregistered (primary button)
+ * sections so vertical alignment matches across both tiers.
+ */
+.action-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+.action-cell > .skill-card {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.action-cell > .btn {
+  flex: 0 0 auto;
+}
+
 /* ── Skill card ──────────────────────────────────────── */
 .skill-card {
   display: flex;

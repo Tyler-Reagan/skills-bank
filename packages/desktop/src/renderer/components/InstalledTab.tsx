@@ -2,7 +2,9 @@ import React from "react";
 import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
+import { Icon } from "./Icon.js";
 import { usePersona } from "../PersonaContext.js";
+import { classifyDrawerState } from "./skillState.js";
 
 const INSTALLED_TOOLTIP =
   "Every skill linked into any agent directory on this machine — registered " +
@@ -17,7 +19,7 @@ const REGISTER_TOOLTIP_POWER =
   "Moves files into your GitHub repo's skills/ directory. Commit and push " +
   "to persist across machines and share with others.";
 
-interface InstalledGroup {
+export interface InstalledGroup {
   name: string;
   agents: AgentId[];
   representative: InstalledSkill;
@@ -99,6 +101,31 @@ interface Props {
   onRegisterAll: () => void;
   onRegisterOne: (entry: InstalledSkill) => void;
   onSelectIntegrated: (entry: RegistryEntry) => void;
+  /**
+   * Open the conflict-resolve modal for a group whose registered skill
+   * has non-ours stragglers (real-dir duplicate, foreign symlink). Lets
+   * the user resolve without drilling into the drawer first.
+   */
+  onResolveConflicts?: (group: InstalledGroup) => void;
+  /**
+   * Trigger the two-step repair-or-delete flow for broken symlinks
+   * inline from the Needs-attention section.
+   */
+  onRepairBroken?: (group: InstalledGroup) => void;
+  /**
+   * Bulk-resolve every conflict group in Needs-attention by replacing
+   * stragglers with symlinks to the registry copy. Broken-symlink
+   * groups are skipped (they need source decisions). Host shows a
+   * confirm modal listing the skills before applying.
+   */
+  onResolveAllConflicts?: (groups: InstalledGroup[]) => void;
+  /**
+   * Inline shortcut for the Unregistered section's per-card primary
+   * action. Adopts the single non-ours installation into the registry
+   * (the common path). Foreign-symlink alternatives like Register-as-
+   * external remain reachable via the drawer's secondary button.
+   */
+  onInlineRegister?: (group: InstalledGroup) => void;
 }
 
 export function InstalledTab({
@@ -108,6 +135,10 @@ export function InstalledTab({
   onRegisterAll,
   onRegisterOne,
   onSelectIntegrated,
+  onResolveConflicts,
+  onRepairBroken,
+  onResolveAllConflicts,
+  onInlineRegister,
 }: Props): React.ReactElement {
   const persona = usePersona();
   const registerTooltip =
@@ -143,8 +174,45 @@ export function InstalledTab({
   // Dedupe across agent dirs: a skill linked from both .claude and .cursor
   // shows once with two agent chips, not twice.
   const groups = aggregateByName(installed);
-  const integrated = groups.filter((g) => g.kind === "ours");
-  const unintegrated = groups.filter((g) => g.kind !== "ours");
+  // Drive section membership from the same classifier the cards and
+  // drawer use. This guarantees that every Needs-attention card has a
+  // matching inline-button case (no card can land here with a primary
+  // we don't render), and the boundary between "needs attention" and
+  // "not registered" matches the classifier's notion of which actions
+  // resolve the issue.
+  const NEEDS_ATTENTION_PRIMARIES = new Set([
+    "repair-broken",
+    "resolve-conflicts",
+    "resolve-registration-conflicts",
+  ]);
+  const classified = groups.map((g) => {
+    const registryHit = registryByName.get(g.name);
+    const entry: RegistryEntry = registryHit ?? {
+      name: g.name,
+      description: g.representative.target ?? g.representative.linkPath,
+      path: g.representative.linkPath,
+      source: { source: "user" },
+    };
+    return {
+      g,
+      classification: classifyDrawerState(entry, installed, !!registryHit),
+      entry,
+      registryHit,
+    };
+  });
+  const needsAttention = classified.filter((c) =>
+    NEEDS_ATTENTION_PRIMARIES.has(c.classification.capabilities.primary),
+  );
+  const integrated = classified.filter(
+    (c) =>
+      c.g.kind === "ours" &&
+      !NEEDS_ATTENTION_PRIMARIES.has(c.classification.capabilities.primary),
+  );
+  const unintegrated = classified.filter(
+    (c) =>
+      c.g.kind !== "ours" &&
+      !NEEDS_ATTENTION_PRIMARIES.has(c.classification.capabilities.primary),
+  );
 
   return (
     <div>
@@ -168,18 +236,163 @@ export function InstalledTab({
           {unintegrated.length > 0 && (
             <>
               <span>·</span>
-              <span>{unintegrated.length} not registered</span>
+              <span>{unintegrated.length} unregistered</span>
+            </>
+          )}
+          {needsAttention.length > 0 && (
+            <>
+              <span>·</span>
+              <span style={{ color: "var(--warn, var(--text-2))" }}>
+                {needsAttention.length} need
+                {needsAttention.length === 1 ? "s" : ""} attention
+              </span>
             </>
           )}
         </span>
       </div>
+      {needsAttention.length > 0 &&
+        (() => {
+          // Bulk-resolve only applies to registered conflicts (the
+          // primary the existing ConflictResolveModal can handle). It
+          // skips broken-symlink groups (need source decisions) and
+          // unregistered-conflicts groups (need per-installation
+          // registration choices, not per-agent replace/delete/keep).
+          const bulkResolvable = needsAttention
+            .filter(
+              (c) =>
+                c.classification.capabilities.primary === "resolve-conflicts",
+            )
+            .map((c) => c.g);
+          return (
+            <section>
+              <header className="section-header">
+                <div>
+                  <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span
+                      style={{
+                        color: "var(--warn, #f59e0b)",
+                        display: "inline-flex",
+                      }}
+                      aria-hidden="true"
+                    >
+                      <Icon name="alert-triangle" size="sm" />
+                    </span>
+                    Needs attention{" "}
+                    <span className="count">({needsAttention.length})</span>
+                  </h2>
+                  <p>
+                    Conflicts or broken links that block the skill from working
+                    cleanly. The action button on each card resolves it
+                    inline — no drawer detour.
+                  </p>
+                </div>
+                {bulkResolvable.length > 1 && onResolveAllConflicts && (
+                  <button
+                    className="btn warn"
+                    onClick={() => onResolveAllConflicts(bulkResolvable)}
+                    title={`Replace duplicates with symlinks to Skills Bank for ${bulkResolvable.length} skills in one step.`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Icon name="alert-triangle" size="sm" />
+                    Resolve all ({bulkResolvable.length})
+                  </button>
+                )}
+              </header>
+              <div className="skills-grid">
+                {needsAttention.map((c, i) => {
+                  const { g, classification, entry, registryHit } = c;
+                  const s = g.representative;
+                  const status: CardStatus =
+                    g.kind === "foreign-symlink"
+                      ? { kind: "external", targetLabel: s.target ?? "" }
+                      : g.kind === "real-directory"
+                        ? { kind: "real-directory" }
+                        : g.kind === "broken-symlink"
+                          ? { kind: "broken-symlink" }
+                          : { kind: "installed" };
+                  const onCardClick = () => {
+                    if (registryHit) onSelectIntegrated(registryHit);
+                    else onRegisterOne(s);
+                  };
+                  const prim = classification.capabilities.primary;
+                  let inlineLabel: string | null = null;
+                  let inlineHandler: (() => void) | null = null;
+                  if (prim === "repair-broken" && onRepairBroken) {
+                    const n = classification.brokenCount;
+                    inlineLabel = `Repair broken link${n === 1 ? "" : "s"} (${n})`;
+                    inlineHandler = () => onRepairBroken(g);
+                  } else if (prim === "resolve-conflicts" && onResolveConflicts) {
+                    const n = classification.conflictCount;
+                    inlineLabel = `Resolve ${n} conflict${n === 1 ? "" : "s"}`;
+                    inlineHandler = () => onResolveConflicts(g);
+                  } else if (
+                    prim === "resolve-registration-conflicts" &&
+                    onResolveConflicts
+                  ) {
+                    // Multi-install unregistered: route to ConflictResolveModal
+                    // in its level-pure mode (delete/keep only, no
+                    // replace-with-symlink, no adopt). After resolving,
+                    // the card lands in Unregistered where the separate
+                    // Register step lives. App.tsx's onResolveConflicts
+                    // derives the modal mode from registry membership.
+                    const totalInstalls =
+                      classification.conflictCount +
+                      classification.brokenCount;
+                    inlineLabel = `Resolve ${totalInstalls} conflict${totalInstalls === 1 ? "" : "s"}`;
+                    inlineHandler = () => onResolveConflicts(g);
+                  }
+                  const inlineEnabled =
+                    inlineLabel !== null && inlineHandler !== null;
+                  const isBroken = prim === "repair-broken";
+                  return (
+                    <div key={g.name} className="action-cell">
+                      {inlineEnabled && inlineHandler && (
+                        <button
+                          className="btn warn"
+                          onClick={inlineHandler}
+                          title={
+                            isBroken
+                              ? "Try to find a usable source elsewhere; otherwise prompt to delete."
+                              : `${classification.conflictCount} agent dir(s) have duplicate or stale entries — pick how to handle each.`
+                          }
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            fontWeight: 600,
+                          }}
+                        >
+                          <Icon name="alert-triangle" size="sm" />
+                          {inlineLabel}
+                        </button>
+                      )}
+                      <SkillCard
+                        entry={entry}
+                        status={status}
+                        onSelect={onCardClick}
+                        index={i}
+                        agents={g.agents}
+                        isRegistered={registryHit !== undefined}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })()}
       {unintegrated.length > 0 && (
         <section>
           <header className="section-header">
             <div>
               <h2 className="section-heading-with-info">
                 <span>
-                  Not registered{" "}
+                  Unregistered{" "}
                   <span className="count">({unintegrated.length})</span>
                 </span>
                 <InfoTooltip
@@ -198,15 +411,9 @@ export function InstalledTab({
             </button>
           </header>
           <div className="skills-grid">
-            {unintegrated.map((g, i) => {
+            {unintegrated.map((c, i) => {
+              const { g, entry, registryHit } = c;
               const s = g.representative;
-              const registryHit = registryByName.get(g.name);
-              const entry: RegistryEntry = registryHit ?? {
-                name: g.name,
-                description: s.target ?? s.linkPath,
-                path: s.linkPath,
-                source: { source: "user" },
-              };
               const status: CardStatus =
                 g.kind === "foreign-symlink"
                   ? { kind: "external", targetLabel: s.target ?? "" }
@@ -214,15 +421,32 @@ export function InstalledTab({
                     ? { kind: "real-directory" }
                     : { kind: "broken-symlink" };
               return (
-                <SkillCard
-                  key={g.name}
-                  entry={entry}
-                  status={status}
-                  onSelect={() => onRegisterOne(s)}
-                  index={i}
-                  agents={g.agents}
-                  isRegistered={registryHit !== undefined}
-                />
+                <div key={g.name} className="action-cell">
+                  {onInlineRegister && (
+                    <button
+                      className="btn primary"
+                      onClick={() => onInlineRegister(g)}
+                      title="Adopt this skill into Skills Bank. To register as external (foreign symlinks only), open the card and use the drawer."
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Register
+                    </button>
+                  )}
+                  <SkillCard
+                    entry={entry}
+                    status={status}
+                    onSelect={() => onRegisterOne(s)}
+                    index={i}
+                    agents={g.agents}
+                    isRegistered={registryHit !== undefined}
+                  />
+                </div>
               );
             })}
           </div>
@@ -240,7 +464,8 @@ export function InstalledTab({
             </div>
           </header>
           <div className="skills-grid">
-            {integrated.map((g, i) => {
+            {integrated.map((c, i) => {
+              const { g } = c;
               const entry = registryByName.get(g.name);
               if (!entry) return null;
               return (

@@ -10,6 +10,8 @@ import { InstalledTab } from "./components/InstalledTab.js";
 import { RegisterModal } from "./components/RegisterModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
+import { InstallConflictModal } from "./components/InstallConflictModal.js";
+import { classifyDrawerState } from "./components/skillState.js";
 import { LoginScreen } from "./components/LoginScreen.js";
 import { SplashScreen } from "./components/SplashScreen.js";
 import { ManageLinksModal } from "./components/ManageLinksModal.js";
@@ -129,7 +131,38 @@ export function App(): React.ReactElement {
   const [conflictTarget, setConflictTarget] = useState<{
     name: string;
     conflicts: InstalledSkill[];
+    /**
+     * False when resolving conflicts for an unregistered skill — hides
+     * the "Replace with symlink to registry" action (no registry copy
+     * to point at) and switches the default per-installation pick to
+     * delete. After this resolution the skill lands in Unregistered;
+     * the Register step is separate, preserving level-pure flow.
+     */
+    allowReplaceWithSymlink: boolean;
   } | null>(null);
+  // Surfaced when installSkill fails because something already exists at
+  // an agent's link path. The user picks Force / Resolve per-agent /
+  // Cancel from a dedicated modal rather than a vague toast.
+  const [installConflict, setInstallConflict] = useState<{
+    name: string;
+    errors: import("./components/InstallConflictModal.js").InstallConflictError[];
+  } | null>(null);
+  // Bulk "Resolve all" confirmation list. Each entry's conflicts will
+  // be replaced with symlinks to the registry copy. Broken-symlink
+  // groups are excluded by the caller because they require source
+  // decisions that don't fit a bulk sweep.
+  const [resolveAllTarget, setResolveAllTarget] = useState<
+    import("./components/InstalledTab.js").InstalledGroup[] | null
+  >(null);
+  const [resolveAllRunning, setResolveAllRunning] = useState(false);
+  // Per-skill error messages from the most recent bulk Resolve-all
+  // attempt. When non-null, the bulk confirm modal stays open and
+  // shows these inline so the user can see *why* — replacing the
+  // previous "close + vague toast" behavior that hid failure reasons.
+  const [resolveAllErrors, setResolveAllErrors] = useState<Record<
+    string,
+    string[]
+  > | null>(null);
   const [settings, setSettingsState] = useState<AppSettings>(readSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -167,6 +200,36 @@ export function App(): React.ReactElement {
   // agent dirs counts once. The toast computed by refresh() uses the
   // same expression; keep them in sync via this single derivation.
   const uniqueInstalledCount = new Set(installed.map((i) => i.name)).size;
+
+  // Overlay reconciliation: if a skill referenced by an open drawer or
+  // modal disappears from installed/registry after refresh() (e.g. the
+  // user deleted it from the Bank in another flow), drop the stale
+  // reference so the overlay closes cleanly. Derived-validation, not
+  // derived-state.
+  useEffect(() => {
+    if (selected && !registry.some((r) => r.name === selected.name)) {
+      setSelected(null);
+    }
+    if (
+      conflictTarget &&
+      !installed.some((i) => i.name === conflictTarget.name)
+    ) {
+      setConflictTarget(null);
+    }
+    if (
+      installConflict &&
+      !registry.some((r) => r.name === installConflict.name)
+    ) {
+      setInstallConflict(null);
+    }
+    if (
+      manageLinksTarget &&
+      !installed.some((i) => i.name === manageLinksTarget.name)
+    ) {
+      setManageLinksTarget(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- overlays are inputs to validate, not deps
+  }, [installed, registry]);
 
   // Apply the active theme to <html data-theme="…"> so CSS-variable
   // overrides flow through every component.
@@ -485,9 +548,16 @@ export function App(): React.ReactElement {
   }, [changeRegistry, exportRegistry, signOut, onRefreshClick, sync]);
 
   const undoUninstall = useCallback(
-    (name: string) => {
+    (name: string, agentsBefore?: import("@skills-bank/core").AgentId[]) => {
       void (async () => {
-        const r = await window.skillsBank.install(name, false);
+        const r = await window.skillsBank.install(
+          name,
+          false,
+          // Re-install only into the agents the skill was linked into
+          // before — avoids broadcasting to dirs the user never opted
+          // into.
+          agentsBefore && agentsBefore.length > 0 ? agentsBefore : undefined,
+        );
         flash(r.message);
         await refresh();
       })();
@@ -613,6 +683,14 @@ export function App(): React.ReactElement {
           pendingConflicts={pendingConflicts}
           onDismiss={() => setSyncStatus({ kind: "idle" })}
           onResolveConflicts={() => void openConflictModal()}
+          onResetPending={() => {
+            void (async () => {
+              const r = await window.skillsBank.clearPendingConflicts();
+              flash(r.message);
+              setPendingConflicts(0);
+              await refresh();
+            })();
+          }}
         />
         <Tabs
           active={tab}
@@ -680,6 +758,70 @@ export function App(): React.ReactElement {
                   setSelected(synthetic);
                 }}
                 onSelectIntegrated={(e) => setSelected(e)}
+                onResolveConflicts={(g) => {
+                  // Level routing: a registered skill resolves via the
+                  // replace/delete/keep flow; an unregistered skill
+                  // (multi-install) resolves via delete/keep ONLY so the
+                  // act of resolving doesn't also register (level pollution).
+                  // Broken installations are excluded for registered (they
+                  // have a dedicated Repair flow) but included for
+                  // unregistered (the user picks a canonical and removes
+                  // dead siblings in the same pass).
+                  const isRegistered = registry.some((r) => r.name === g.name);
+                  const conflicts = isRegistered
+                    ? g.conflicts.filter(
+                        (c) =>
+                          c.kind !== "ours" && c.kind !== "broken-symlink",
+                      )
+                    : g.conflicts.filter((c) => c.kind !== "ours");
+                  setConflictTarget({
+                    name: g.name,
+                    conflicts,
+                    allowReplaceWithSymlink: isRegistered,
+                  });
+                }}
+                onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
+                onInlineRegister={(group) => {
+                  // Unregistered-section shortcut. Adopts the only
+                  // installation into the registry — same operation the
+                  // drawer's onRegister performs. Single-installation is
+                  // guaranteed by the partition (multi-install lives in
+                  // Needs attention), so there is no "which copy" ambiguity.
+                  void (async () => {
+                    const results = await window.skillsBank.register([
+                      {
+                        name: group.name,
+                        action: { type: "adopt", name: group.name },
+                      },
+                    ]);
+                    const r = results[0]!;
+                    flash(r.message);
+                    if (r.ok) void window.skillsBank.rebuildIndex();
+                    await refresh();
+                  })();
+                }}
+                onRepairBroken={(g) => {
+                  void (async () => {
+                    const report = await window.skillsBank.repairBrokenLinks(
+                      g.name,
+                    );
+                    if (report.unrepairable.length === 0) {
+                      flash(
+                        report.repaired.length > 0
+                          ? `Repaired ${report.repaired.length} broken link(s) for ${g.name}`
+                          : `No broken links for ${g.name}`,
+                      );
+                      await refresh();
+                      return;
+                    }
+                    // Hand off to the drawer's existing two-step confirm
+                    // flow by selecting the entry — the drawer surfaces
+                    // the "Couldn't repair" dialog with delete option.
+                    const entry = registry.find((r) => r.name === g.name);
+                    if (entry) setSelected(entry);
+                    else flash(`Some links couldn't be repaired for ${g.name}`);
+                  })();
+                }}
               />
             )}
           </div>
@@ -711,11 +853,222 @@ export function App(): React.ReactElement {
           <ConflictResolveModal
             name={conflictTarget.name}
             conflicts={conflictTarget.conflicts}
+            allowReplaceWithSymlink={conflictTarget.allowReplaceWithSymlink}
             onClose={async () => {
               setConflictTarget(null);
               await refresh();
             }}
             onFlash={flash}
+          />
+        )}
+
+        {resolveAllTarget && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "var(--scrim)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1100,
+            }}
+          >
+            <div
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border-hi)",
+                borderRadius: 8,
+                padding: 24,
+                width: 520,
+                maxWidth: "90vw",
+              }}
+            >
+              <h3 style={{ marginTop: 0 }}>
+                Resolve all conflicts ({resolveAllTarget.length})?
+              </h3>
+              <p style={{ color: "var(--text-2)", fontSize: 13 }}>
+                For each skill below, every duplicate or stale agent-dir
+                entry will be replaced with a symlink to the Skills Bank
+                copy. This is the same as picking "Replace with symlink"
+                for each conflict.
+              </p>
+              <ul
+                style={{
+                  margin: "8px 0 12px",
+                  padding: "8px 12px",
+                  background: "var(--surface-hi)",
+                  borderRadius: 4,
+                  fontSize: 12,
+                  color: "var(--text-2)",
+                  listStyle: "none",
+                  maxHeight: 200,
+                  overflowY: "auto",
+                }}
+              >
+                {resolveAllTarget.map((g) => {
+                  const skillErrors = resolveAllErrors?.[g.name];
+                  return (
+                    <li key={g.name} style={{ padding: "3px 0" }}>
+                      <code
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          color: skillErrors ? "var(--danger, #d04444)" : "var(--text-1)",
+                        }}
+                      >
+                        {g.name}
+                      </code>{" "}
+                      <span style={{ color: "var(--text-3)" }}>
+                        — {g.conflicts.length} conflict
+                        {g.conflicts.length === 1 ? "" : "s"}
+                      </span>
+                      {skillErrors && (
+                        <ul
+                          style={{
+                            margin: "4px 0 0 12px",
+                            padding: 0,
+                            listStyle: "none",
+                            color: "var(--danger, #d04444)",
+                            fontSize: 11,
+                            fontFamily: "var(--font-mono)",
+                          }}
+                        >
+                          {skillErrors.map((m, i) => (
+                            <li key={i} style={{ padding: "1px 0" }}>
+                              · {m}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 8,
+                }}
+              >
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setResolveAllTarget(null);
+                    setResolveAllErrors(null);
+                  }}
+                  disabled={resolveAllRunning}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn warn"
+                  disabled={resolveAllRunning}
+                  onClick={() => {
+                    void (async () => {
+                      setResolveAllRunning(true);
+                      setResolveAllErrors(null);
+                      let okCount = 0;
+                      let failCount = 0;
+                      const errs: Record<string, string[]> = {};
+                      for (const g of resolveAllTarget) {
+                        const decisions = g.conflicts.map((c) => ({
+                          agent: c.agent,
+                          action: "replace-with-symlink" as const,
+                        }));
+                        try {
+                          const r =
+                            await window.skillsBank.resolveSkillConflicts(
+                              g.name,
+                              decisions,
+                            );
+                          okCount += r.applied.length;
+                          failCount += r.errors.length;
+                          if (r.errors.length > 0) {
+                            errs[g.name] = r.errors.map(
+                              (e) => `${e.agent}: ${e.message}`,
+                            );
+                          }
+                        } catch (err) {
+                          failCount += 1;
+                          errs[g.name] = [(err as Error).message];
+                        }
+                      }
+                      setResolveAllRunning(false);
+                      if (failCount === 0) {
+                        // Total success — close, toast, and refresh.
+                        setResolveAllTarget(null);
+                        flash(
+                          `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} across ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}.`,
+                        );
+                        await refresh();
+                      } else {
+                        // Keep the modal open so per-skill errors stay
+                        // visible. The user can dismiss explicitly via
+                        // Cancel or hit Retry after addressing the
+                        // underlying issue (e.g. registry copy missing).
+                        setResolveAllErrors(errs);
+                        flash(
+                          okCount === 0
+                            ? `Couldn't resolve ${failCount} conflict${failCount === 1 ? "" : "s"} (see details)`
+                            : `Resolved ${okCount}; ${failCount} failed (see details)`,
+                        );
+                        await refresh();
+                      }
+                    })();
+                  }}
+                >
+                  {resolveAllRunning ? (
+                    <>
+                      <span className="spinner inline" /> Resolving…
+                    </>
+                  ) : resolveAllErrors ? (
+                    "Retry"
+                  ) : (
+                    `Resolve ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}`
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {installConflict && (
+          <InstallConflictModal
+            name={installConflict.name}
+            errors={installConflict.errors}
+            onClose={() => setInstallConflict(null)}
+            onForce={async () => {
+              const r = await window.skillsBank.install(
+                installConflict.name,
+                true,
+              );
+              flash(r.message);
+              setInstallConflict(null);
+              await refresh();
+            }}
+            onResolve={() => {
+              // Hand off to ConflictResolveModal using the current
+              // installed snapshot for the same name. The user picks
+              // per-agent actions there.
+              const conflicts = installed.filter(
+                (i) =>
+                  i.name === installConflict.name &&
+                  i.kind !== "ours" &&
+                  i.kind !== "broken-symlink",
+              );
+              // Force-install conflicts only occur for registered skills
+              // (force-install is a registered-level action), so the
+              // resolution always allows the symlink-to-registry path.
+              setConflictTarget({
+                name: installConflict.name,
+                conflicts,
+                allowReplaceWithSymlink: true,
+              });
+              setInstallConflict(null);
+            }}
           />
         )}
 
@@ -769,12 +1122,15 @@ export function App(): React.ReactElement {
                   flash(msg);
                   await refresh();
                 }}
-                onUninstalled={(name) => {
-                  flashWithAction(`Uninstalled ${name}`, "Undo", () =>
-                    undoUninstall(name),
+                onUninstalled={(name, agentsBefore) => {
+                  flashWithAction(
+                    `Removed ${name} from ${agentsBefore.length} agent dir(s).`,
+                    "Undo",
+                    () => undoUninstall(name, agentsBefore),
                   );
                   void refresh();
                 }}
+                onInstallConflict={(payload) => setInstallConflict(payload)}
                 onManageLinks={() => {
                   setManageLinksTarget({
                     name: selected.name,
@@ -783,17 +1139,36 @@ export function App(): React.ReactElement {
                   setSelected(null);
                 }}
                 onResolveConflicts={() => {
-                  const conflicts = installations.filter(
-                    (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
+                  // Same level-pure routing as the InstalledTab path:
+                  // unregistered skills get delete/keep only, including
+                  // broken stragglers; registered skills get the full
+                  // three-action picker excluding broken (Repair handles those).
+                  const isRegistered = registry.some(
+                    (r) => r.name === selected.name,
                   );
+                  const conflicts = isRegistered
+                    ? installations.filter(
+                        (i) =>
+                          i.kind !== "ours" && i.kind !== "broken-symlink",
+                      )
+                    : installations.filter((i) => i.kind !== "ours");
                   if (conflicts.length === 0) return;
-                  setConflictTarget({ name: selected.name, conflicts });
+                  setConflictTarget({
+                    name: selected.name,
+                    conflicts,
+                    allowReplaceWithSymlink: isRegistered,
+                  });
                   setSelected(null);
                 }}
                 onRegister={
-                  isRegistered
-                    ? undefined
-                    : async () => {
+                  // Only wire the callback when the classifier says the
+                  // state is actually adoptable — covers the
+                  // unregistered-broken edge case where there's no
+                  // usable source on disk and Register would fail with
+                  // a confusing error.
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canRegister
+                    ? async () => {
                         const results = await window.skillsBank.register([
                           {
                             name: selected.name,
@@ -808,6 +1183,30 @@ export function App(): React.ReactElement {
                         }
                         await refresh();
                       }
+                    : undefined
+                }
+                onRegisterAsExternal={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canRegisterAsExternal
+                    ? async () => {
+                        const results = await window.skillsBank.register([
+                          {
+                            name: selected.name,
+                            action: {
+                              type: "register-external",
+                              name: selected.name,
+                            },
+                          },
+                        ]);
+                        const r = results[0]!;
+                        flash(r.message);
+                        if (r.ok) {
+                          void window.skillsBank.rebuildIndex();
+                          setSelected(null);
+                        }
+                        await refresh();
+                      }
+                    : undefined
                 }
               />
             );

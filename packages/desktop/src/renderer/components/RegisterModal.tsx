@@ -27,7 +27,10 @@ type Phase =
       rebuildMessage: string | null;
     };
 
-export function RegisterModal({ onClose, onFlash }: Props): React.ReactElement {
+export function RegisterModal({
+  onClose,
+  onFlash,
+}: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(() => void onClose());
   const [report, setReport] = useState<ScanReport | null>(null);

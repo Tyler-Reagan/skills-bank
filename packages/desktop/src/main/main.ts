@@ -20,6 +20,8 @@ import {
   applyCanonicalSync,
   applyRegistration,
   buildRegistryIndex,
+  clearPendingConflicts,
+  deregisterSkill,
   exportSkill,
   exportRegistry,
   fetchCanonicalTarball,
@@ -141,7 +143,45 @@ function isValidRegistryRoot(candidate: string): {
 function defaultManagedRegistryRoot(): string {
   const root = path.join(app.getPath("userData"), "registry");
   fs.mkdirSync(path.join(root, "skills"), { recursive: true });
+  seedManagedRegistryIfEmpty(root);
   return root;
+}
+
+// Packaged builds bundle the canonical skills/ + index.json at
+// process.resourcesPath/seed/. On first launch the managed registry is
+// empty, so without seeding the user has to hit Pull Updates before
+// anything appears. Copy the seed in once; never overwrite existing
+// content. Idempotent — the index.json presence check makes re-entry
+// a no-op even if the user deleted individual skills.
+function seedManagedRegistryIfEmpty(root: string): void {
+  const indexPath = path.join(root, "index.json");
+  if (fs.existsSync(indexPath)) return;
+
+  const seedDir = path.join(process.resourcesPath, "seed");
+  const seedSkills = path.join(seedDir, "skills");
+  const seedIndex = path.join(seedDir, "index.json");
+  if (!fs.existsSync(seedSkills) || !fs.existsSync(seedIndex)) return;
+
+  try {
+    fs.cpSync(seedSkills, path.join(root, "skills"), {
+      recursive: true,
+      force: false,
+      errorOnExist: false,
+    });
+    fs.copyFileSync(seedIndex, indexPath);
+    fs.writeFileSync(
+      path.join(root, ".seeded"),
+      JSON.stringify(
+        { version: app.getVersion(), seededAt: new Date().toISOString() },
+        null,
+        2,
+      ),
+    );
+  } catch (err) {
+    // Seed failures are non-fatal — the user can still Pull Updates.
+    // Log to stderr so packaged builds with --enable-logging surface it.
+    console.error("seedManagedRegistryIfEmpty failed:", err);
+  }
 }
 
 function resolveBootRegistryRoot(): string {
@@ -550,8 +590,15 @@ function buildAppMenu(): Menu {
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1100,
-    height: 720,
+    // 1280x860 fits three 320px-min cards comfortably with the gutter,
+    // and gives the action buttons room to align on the Needs-attention
+    // section without horizontal scroll. The 1100x720 default forced a
+    // 2-column grid that broke alignment for users with longer skill
+    // descriptions.
+    width: 1280,
+    height: 860,
+    minWidth: 880,
+    minHeight: 600,
     icon: iconPng,
     webPreferences: {
       preload: path.join(__dirname, "..", "main", "preload.mjs"),
@@ -629,7 +676,7 @@ ipcMain.handle(IPC.listInstalled, () => {
 ipcMain.handle(
   IPC.install,
   (_e, name: string, force?: boolean, agents?: AgentId[]) => {
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, errors: [] };
     try {
       const r = installSkill(name, {
         registryRoot,
@@ -641,32 +688,89 @@ ipcMain.handle(
         return {
           ok: true,
           message: `installed ${name} for ${wrote.length} agent(s)`,
+          errors: r.errors,
         };
       }
       if (r.installs.length > 0) {
-        return { ok: true, message: `${name} already installed` };
+        return {
+          ok: true,
+          message: `${name} already installed`,
+          errors: r.errors,
+        };
       }
       return {
         ok: false,
         message: r.errors[0]?.message ?? `nothing installed for ${name}`,
+        errors: r.errors,
       };
     } catch (err) {
-      return { ok: false, message: (err as Error).message };
+      return { ok: false, message: (err as Error).message, errors: [] };
     }
   },
 );
+
+// Full removal: deletes the registry copy + all agent symlinks. Distinct
+// from uninstall (symlinks only). Refuses if the registry is unset.
+ipcMain.handle(IPC.deregister, (_e, name: string) => {
+  if (!registryRoot) {
+    return { ok: false, message: NO_ROOT_MSG, errors: [] };
+  }
+  try {
+    const r = deregisterSkill(name, { registryRoot });
+    const removedSymlinkCount =
+      r.symlinkRemovals?.filter((s) => s.removed).length ?? 0;
+    return {
+      ok: r.ok,
+      message: r.message,
+      deletedPath: r.deletedPath,
+      removedSymlinkCount,
+      errors: r.errors,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message, errors: [] };
+  }
+});
+
+// Stuck-state recovery: drop the pending-conflicts.json state file so
+// the next sync attempt starts clean. Idempotent — fine to call when no
+// pending file exists.
+ipcMain.handle(IPC.clearPendingConflicts, () => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    const r = clearPendingConflicts(registryRoot);
+    return {
+      ok: true,
+      message: r.removed
+        ? "Cleared pending sync state."
+        : "No pending sync state to clear.",
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
 
 // Uninstall doesn't need the registry — it just removes the symlink at
 // ~/.claude/skills/<name>. Leave it functional even with no registry.
 ipcMain.handle(IPC.uninstall, (_e, name: string) => {
   try {
     const r = uninstallSkill(name);
+    const removedCount = r.removals.filter((x) => x.removed).length;
+    const keptCount = r.errors.length;
+    const message =
+      keptCount === 0
+        ? r.removed
+          ? `Removed ${name} from ${removedCount} agent dir(s).`
+          : `${name} not installed`
+        : `Removed from ${removedCount} agent(s); ${keptCount} kept (not symlinks)`;
     return {
       ok: true,
-      message: r.removed ? `removed ${name}` : `${name} not installed`,
+      message,
+      errors: r.errors,
+      removedCount,
+      keptCount,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return { ok: false, message: (err as Error).message, errors: [] };
   }
 });
 

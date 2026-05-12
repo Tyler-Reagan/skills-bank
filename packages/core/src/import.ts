@@ -689,16 +689,11 @@ export function resolveSkillConflicts(
   decisions: ConflictResolveDecision[],
 ): ConflictResolveReport {
   const registryDir = path.join(registryRoot, "skills", name);
-  if (!fs.existsSync(registryDir)) {
-    return {
-      applied: [],
-      errors: decisions.map((d) => ({
-        agent: d.agent,
-        action: d.action,
-        message: `${name} is not in the registry; cannot replace with symlinks to it`,
-      })),
-    };
-  }
+  // Only replace-with-symlink needs a registry copy to point at;
+  // delete/keep operate purely on agent-dir entries and are valid for
+  // unregistered skills too. Pre-fail individual replace-with-symlink
+  // decisions if the registry is missing, but let delete/keep proceed.
+  const registryExists = fs.existsSync(registryDir);
 
   const applied: ConflictResolveReport["applied"] = [];
   const errors: ConflictResolveReport["errors"] = [];
@@ -707,6 +702,14 @@ export function resolveSkillConflicts(
     const linkPath = path.join(getAgentSkillsDir(agent), name);
     if (d.action === "keep") {
       applied.push({ agent: d.agent, action: "keep" });
+      continue;
+    }
+    if (d.action === "replace-with-symlink" && !registryExists) {
+      errors.push({
+        agent: d.agent,
+        action: d.action,
+        message: `${name} is not in the registry; cannot replace with a symlink to it`,
+      });
       continue;
     }
     try {

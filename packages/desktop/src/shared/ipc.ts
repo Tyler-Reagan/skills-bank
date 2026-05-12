@@ -58,6 +58,8 @@ export const IPC = {
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
+  deregister: "skills:deregister",
+  clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
   discoverHideSync: "discover:hideSync",
@@ -153,6 +155,41 @@ export type UpdateStatus =
   | { kind: "error"; message: string }
   | { kind: "disabled"; reason: string };
 
+export interface InstallIPCError {
+  agent: AgentId;
+  message: string;
+}
+
+export interface InstallIPCResult {
+  ok: boolean;
+  message: string;
+  /**
+   * Per-agent failures from the underlying installSkill. Surfaced so the
+   * renderer can detect "needs --force" conflicts and offer a retry path
+   * without parsing the toast message.
+   */
+  errors?: InstallIPCError[];
+}
+
+export interface UninstallIPCResult {
+  ok: boolean;
+  message: string;
+  /** Per-agent failures (e.g. real-directory that we refuse to delete). */
+  errors?: InstallIPCError[];
+  /** Number of symlinks actually removed. */
+  removedCount?: number;
+  /** Number of agent dirs we deliberately left alone (real dirs). */
+  keptCount?: number;
+}
+
+export interface DeregisterIPCResult {
+  ok: boolean;
+  message: string;
+  deletedPath?: string;
+  removedSymlinkCount?: number;
+  errors?: Array<{ agent?: AgentId; message: string }>;
+}
+
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
   listInstalled(): Promise<InstalledSkill[]>;
@@ -160,8 +197,10 @@ interface SkillsBankAPI {
     name: string,
     force?: boolean,
     agents?: AgentId[],
-  ): Promise<{ ok: boolean; message: string }>;
-  uninstall(name: string): Promise<{ ok: boolean; message: string }>;
+  ): Promise<InstallIPCResult>;
+  uninstall(name: string): Promise<UninstallIPCResult>;
+  deregister(name: string): Promise<DeregisterIPCResult>;
+  clearPendingConflicts(): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;
   register(
     items: Array<{ name: string; action: RegistrationAction }>,

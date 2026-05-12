@@ -54,6 +54,14 @@
       {
         "from": "../../docs",
         "to": "docs"
+      },
+      {
+        "from": "../../skills",
+        "to": "seed/skills"
+      },
+      {
+        "from": "../../index.json",
+        "to": "seed/index.json"
       }
     ],
     "asar": true,
