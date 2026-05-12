@@ -9,7 +9,7 @@ import React from "react";
  * Sizes are CSS tokens (--icon-sm/-md/-lg/-xl) by default; pass a
  * pixel number to override. stroke-width matches Lucide defaults.
  */
-export type IconName =
+type IconName =
   | "check"
   | "x"
   | "refresh"

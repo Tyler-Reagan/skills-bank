@@ -166,12 +166,12 @@ export type UpdateStatus =
   | { kind: "error"; message: string }
   | { kind: "disabled"; reason: string };
 
-export interface InstallIPCError {
+interface InstallIPCError {
   agent: AgentId;
   message: string;
 }
 
-export interface InstallIPCResult {
+interface InstallIPCResult {
   ok: boolean;
   message: string;
   /**
@@ -182,7 +182,7 @@ export interface InstallIPCResult {
   errors?: InstallIPCError[];
 }
 
-export interface UninstallIPCResult {
+interface UninstallIPCResult {
   ok: boolean;
   message: string;
   /** Per-agent failures (e.g. real-directory that we refuse to delete). */
@@ -193,7 +193,7 @@ export interface UninstallIPCResult {
   keptCount?: number;
 }
 
-export interface DeregisterIPCResult {
+interface DeregisterIPCResult {
   ok: boolean;
   message: string;
   deletedPath?: string;
@@ -201,7 +201,7 @@ export interface DeregisterIPCResult {
   errors?: Array<{ agent?: AgentId; message: string }>;
 }
 
-export interface UnregisterIPCResult {
+interface UnregisterIPCResult {
   ok: boolean;
   message: string;
   /** Where adopted files were moved to. Absent for non-adopted skills. */
