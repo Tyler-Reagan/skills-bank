@@ -6,16 +6,16 @@ Every heal flow is the user's call — Skills Bank never auto-deletes content th
 
 ## The bad states
 
-| State | Trigger | Primary heal |
-|---|---|---|
-| **registered-conflicts** | Registered skill has a duplicate copy (real dir or foreign symlink) in another agent dir. | Resolve conflicts modal (per-row choices). |
-| **registered-broken** | Registered skill has at least one broken symlink and no working `ours` copy. | Try repair (find a usable source); fall back to delete-broken. |
-| **registered-mixed-broken** | Registered + working symlinks AND broken symlinks. | Repair the broken ones; the working ones stay. |
-| **unregistered-conflicts** | Multiple non-`ours` copies of the same skill name exist across agents (registration ambiguous). | Pick the canonical copy via the registration-conflict modal, then register. |
-| **unregistered-broken** | Only broken-symlink copies exist for this name. Dead reference. | Delete the broken link. |
-| **canon-drift** | Local copy of a canonical skill differs from the synced baseline. | Two arms, both clear the badge: **Accept local changes** detaches from Sync (skill becomes user-authored, sync stops overwriting); **Take canonical** re-baselines the current state as the new synced version (drift clears, sync still owns the skill and can overwrite on the next pull). |
-| **registry-folder-missing** | Adopted entry's `<repo>/skills/<name>/` folder is gone on disk. | **Forget this entry** — drops the registry record. |
-| **external-target-missing** | Non-adopted (symlink-mode) entry's external path is gone. | **Forget this entry** — drops the external.json row. (Repointing the target is future work.) |
+| State                       | Trigger                                                                                         | Primary heal                                                                                                                                                                                                                                                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **registered-conflicts**    | Registered skill has a duplicate copy (real dir or foreign symlink) in another agent dir.       | Resolve conflicts modal (per-row choices).                                                                                                                                                                                                                                                   |
+| **registered-broken**       | Registered skill has at least one broken symlink and no working `ours` copy.                    | Try repair (find a usable source); fall back to delete-broken.                                                                                                                                                                                                                               |
+| **registered-mixed-broken** | Registered + working symlinks AND broken symlinks.                                              | Repair the broken ones; the working ones stay.                                                                                                                                                                                                                                               |
+| **unregistered-conflicts**  | Multiple non-`ours` copies of the same skill name exist across agents (registration ambiguous). | Pick the canonical copy via the registration-conflict modal, then register.                                                                                                                                                                                                                  |
+| **unregistered-broken**     | Only broken-symlink copies exist for this name. Dead reference.                                 | Delete the broken link.                                                                                                                                                                                                                                                                      |
+| **canon-drift**             | Local copy of a canonical skill differs from the synced baseline.                               | Two arms, both clear the badge: **Accept local changes** detaches from Sync (skill becomes user-authored, sync stops overwriting); **Take canonical** re-baselines the current state as the new synced version (drift clears, sync still owns the skill and can overwrite on the next pull). |
+| **registry-folder-missing** | Adopted entry's `<repo>/skills/<name>/` folder is gone on disk.                                 | **Forget this entry** — drops the registry record.                                                                                                                                                                                                                                           |
+| **external-target-missing** | Non-adopted (symlink-mode) entry's external path is gone.                                       | **Forget this entry** — drops the external.json row. (Repointing the target is future work.)                                                                                                                                                                                                 |
 
 ## How heal flows are surfaced
 
@@ -37,9 +37,9 @@ Clicking **Resolve conflicts** opens a per-agent modal. Each row shows what's cu
 
 ### Canon drift — surfaced through the drawer
 
-The drawer for a `canon-drift` skill replaces the usual destructive area with two heal buttons — **Accept local changes** and **Take canonical** — under explanatory copy. The card carries the `DRIFT` badge. Both buttons clear the badge; the difference is *which copy survives*: Accept local detaches the skill from Sync (becomes user-authored), while Take canonical re-baselines the synced hash so Sync still owns the skill and the next pull may overwrite the local edits.
+The drawer for a `canon-drift` skill replaces the usual destructive area with two heal buttons — **Accept local changes** and **Take canonical** — under explanatory copy. The card carries the `DRIFT` badge. Both buttons clear the badge; the difference is _which copy survives_: Accept local detaches the skill from Sync (becomes user-authored), while Take canonical re-baselines the synced hash so Sync still owns the skill and the next pull may overwrite the local edits.
 
-*Screenshot deferred — capture by editing a canonical skill's `SKILL.md` in the app's data dir (`~/Library/Application Support/@skills-bank/desktop/registry/skills/<name>/`) and refreshing the Registry tab.*
+_Screenshot deferred — capture by editing a canonical skill's `SKILL.md` in the app's data dir (`~/Library/Application Support/@skills-bank/desktop/registry/skills/<name>/`) and refreshing the Registry tab._
 
 ## Why not auto-resolve?
 

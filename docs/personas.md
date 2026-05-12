@@ -4,17 +4,17 @@ Skills Bank asks you to make a one-time registry choice on first launch. This pa
 
 ## Quick comparison
 
-| | Bundled registry | Your own registry |
-|---|---|---|
-| **What the registry is** | Curated skill set bundled with and managed by this app | A GitHub repo you own and maintain independently |
-| **Who maintains it** | Upstream (you pull updates) | You (via git push, PRs, branches) |
-| **Where skills live on disk** | `~/Library/Application Support/Skills Bank/registry/skills/<name>/` | Wherever your repo is cloned |
-| **Pull updates** | One-click via the Pull updates header button | Not applicable — you push changes directly |
-| **Registering an unmanaged skill** | Moves files into the app's local registry; never overwritten by Pull updates | Moves files into your repo's `skills/` directory; commit to persist |
-| **Registry maintenance** | None required — you can add your own skills alongside curated ones | Full ownership — content, structure, curation |
-| **Already-installed skills** | Show as Not registered in the Installed tab until you Register them | Same |
-| **Tags** | Local only (stored in `meta.json`); preserved across Pull updates | Local only; persist by committing `meta.json` changes |
-| **Portability** | Machine-local; use Export registry to back up or migrate, or Merge another registry into yours for additive imports | High — `git clone` reproduces the full registry on any machine; Merge into yours for additive imports |
+|                                    | Bundled registry                                                                                                    | Your own registry                                                                                     |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **What the registry is**           | Curated skill set bundled with and managed by this app                                                              | A GitHub repo you own and maintain independently                                                      |
+| **Who maintains it**               | Upstream (you pull updates)                                                                                         | You (via git push, PRs, branches)                                                                     |
+| **Where skills live on disk**      | `~/Library/Application Support/Skills Bank/registry/skills/<name>/`                                                 | Wherever your repo is cloned                                                                          |
+| **Pull updates**                   | One-click via the Pull updates header button                                                                        | Not applicable — you push changes directly                                                            |
+| **Registering an unmanaged skill** | Moves files into the app's local registry; never overwritten by Pull updates                                        | Moves files into your repo's `skills/` directory; commit to persist                                   |
+| **Registry maintenance**           | None required — you can add your own skills alongside curated ones                                                  | Full ownership — content, structure, curation                                                         |
+| **Already-installed skills**       | Show as Not registered in the Installed tab until you Register them                                                 | Same                                                                                                  |
+| **Tags**                           | Local only (stored in `meta.json`); preserved across Pull updates                                                   | Local only; persist by committing `meta.json` changes                                                 |
+| **Portability**                    | Machine-local; use Export registry to back up or migrate, or Merge another registry into yours for additive imports | High — `git clone` reproduces the full registry on any machine; Merge into yours for additive imports |
 
 ---
 

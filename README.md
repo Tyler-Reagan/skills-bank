@@ -42,9 +42,9 @@ On first launch, pick a persona:
 
 ![First-launch setup screen with Quick start and Advanced sections](docs/images/setup.png)
 
-- **Use the bundled registry** *(quick start)* — Browse the curated skills shipped with the app, pull updates with one click, add your own alongside. No GitHub required.
-- **Connect a GitHub registry** *(advanced)* — Point at a GitHub repo you own. The app clones it locally and never auto-syncs — you manage content through your normal git workflow.
-- **Self-host** *(advanced)* — Fork the app + registry and ship your own build. See [`docs/self-host.md`](docs/self-host.md).
+- **Use the bundled registry** _(quick start)_ — Browse the curated skills shipped with the app, pull updates with one click, add your own alongside. No GitHub required.
+- **Connect a GitHub registry** _(advanced)_ — Point at a GitHub repo you own. The app clones it locally and never auto-syncs — you manage content through your normal git workflow.
+- **Self-host** _(advanced)_ — Fork the app + registry and ship your own build. See [`docs/self-host.md`](docs/self-host.md).
 
 You can switch later from the account menu. Defaults for which agent directories an Install action targets live in **Settings…**.
 
@@ -64,13 +64,13 @@ node packages/cli/dist/index.js export <name>      # raw .md (standalone) or .zi
 
 ## What's in this repo
 
-| Path | Purpose |
-|---|---|
-| [`skills/`](skills/) | The registry — one folder per skill containing `SKILL.md` and (optionally) `meta.json`. |
-| [`packages/core`](packages/core) | Shared TypeScript library: registry IO, install/uninstall, sync, registration. |
-| [`packages/cli`](packages/cli) | The `skills-bank` CLI. |
-| [`packages/desktop`](packages/desktop) | Electron + React + Vite desktop app. |
-| [`docs/`](docs/) | User-facing documentation. `meta-schema.json` defines the `meta.json` schema. |
+| Path                                   | Purpose                                                                                 |
+| -------------------------------------- | --------------------------------------------------------------------------------------- |
+| [`skills/`](skills/)                   | The registry — one folder per skill containing `SKILL.md` and (optionally) `meta.json`. |
+| [`packages/core`](packages/core)       | Shared TypeScript library: registry IO, install/uninstall, sync, registration.          |
+| [`packages/cli`](packages/cli)         | The `skills-bank` CLI.                                                                  |
+| [`packages/desktop`](packages/desktop) | Electron + React + Vite desktop app.                                                    |
+| [`docs/`](docs/)                       | User-facing documentation. `meta-schema.json` defines the `meta.json` schema.           |
 
 ## Authoring a registry skill
 
@@ -143,12 +143,12 @@ The `release` workflow signs, notarizes, and uploads both DMGs to a **draft** Gi
 
 ## Documentation
 
-| Topic | File |
-|---|---|
-| Getting started (5 min) | [`docs/getting-started.md`](docs/getting-started.md) |
-| Taxonomy and vocabulary | [`docs/concepts.md`](docs/concepts.md) |
-| End-to-end user guide | [`docs/user-guide.md`](docs/user-guide.md) |
-| Personas (bundled vs your-own) | [`docs/personas.md`](docs/personas.md) |
-| Heal flows | [`docs/flows/heal.md`](docs/flows/heal.md) |
-| Troubleshooting | [`docs/troubleshooting.md`](docs/troubleshooting.md) |
-| Self-hosting | [`docs/self-host.md`](docs/self-host.md) |
+| Topic                          | File                                                 |
+| ------------------------------ | ---------------------------------------------------- |
+| Getting started (5 min)        | [`docs/getting-started.md`](docs/getting-started.md) |
+| Taxonomy and vocabulary        | [`docs/concepts.md`](docs/concepts.md)               |
+| End-to-end user guide          | [`docs/user-guide.md`](docs/user-guide.md)           |
+| Personas (bundled vs your-own) | [`docs/personas.md`](docs/personas.md)               |
+| Heal flows                     | [`docs/flows/heal.md`](docs/flows/heal.md)           |
+| Troubleshooting                | [`docs/troubleshooting.md`](docs/troubleshooting.md) |
+| Self-hosting                   | [`docs/self-host.md`](docs/self-host.md)             |

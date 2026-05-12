@@ -1,0 +1,20 @@
+# Dependencies & build output
+node_modules/
+dist/
+dist-electron/
+dist-main/
+*.tsbuildinfo
+
+# Lockfiles
+pnpm-lock.yaml
+package-lock.json
+
+# Generated registry index (rebuilt by `pnpm build:index`)
+index.json
+
+# App-managed local state (gitignored anyway, but be explicit)
+.skills-bank/
+
+# Hand-tuned assets not authored as code
+packages/desktop/build/icon.svg
+docs/meta-schema.json

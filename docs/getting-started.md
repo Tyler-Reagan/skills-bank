@@ -19,7 +19,7 @@ You'll see a one-time setup screen with two sections.
 
 ![First-launch setup screen with Quick start and Advanced sections](images/setup.png)
 
-**Use the bundled registry** *(recommended for most users)*
+**Use the bundled registry** _(recommended for most users)_
 Browse and install the curated skill set shipped with this app. Pull updates with one click. Add your own skills alongside, and export the registry to back it up or move it to another machine. No GitHub required.
 
 **Connect your own registry**

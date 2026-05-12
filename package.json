@@ -23,7 +23,8 @@
     "desktop:reset": "tsx scripts/reset-desktop-config.ts",
     "desktop:reset:hard": "tsx scripts/reset-desktop-config.ts --hard",
     "docs:check": "node scripts/check-doc-links.mjs",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache"
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,md,mdx,json,yml,yaml}\" --cache",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,md,mdx,json,yml,yaml}\" --cache"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

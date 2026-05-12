@@ -13,11 +13,11 @@ This page is an index. Pick whichever doc matches what you're trying to do.
 
 The desktop app is organized into three tabs in the header:
 
-| Tab | What it shows |
-|---|---|
-| **Registry** ([`flows/install.md`](flows/install.md)) | Curated skills you can install with one click. |
+| Tab                                                      | What it shows                                                             |
+| -------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Registry** ([`flows/install.md`](flows/install.md))    | Curated skills you can install with one click.                            |
 | **Installed** ([`flows/register.md`](flows/register.md)) | Skills currently linked into your agents — both registered and unmanaged. |
-| **Discover** | The wider [skills.sh](https://skills.sh/) ecosystem, embedded. |
+| **Discover**                                             | The wider [skills.sh](https://skills.sh/) ecosystem, embedded.            |
 
 <table>
 <tr>
