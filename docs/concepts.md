@@ -84,9 +84,16 @@ Tags are a local-only dimension. You can add or remove tags on any skill — inc
 
 ### Card badges
 
-- **`YOURS`** — skill isn't in the registry, or is registered with `source: user`.
-- **`IMPORTED`** — registry skill from a power-persona repo replacement.
-- *(no badge)* — curated/canonical: the calm default.
+Each card surfaces a single badge — the most actionable signal from the taxonomy. Badges only appear when they communicate something that changes what you can or should do; non-actionable axes (hidden, adopted) have no badge.
+
+Priority order, highest first:
+
+- **`MISSING`** *(danger)* — files are gone. Open the drawer to **Forget this entry**.
+- **`DRIFT`** *(warn)* — canonical local copy diverged from the synced commit. **Accept local changes** clears the canonical marker so Sync stops trying to overwrite.
+- **`CANON`** *(calm)* — part of the linked registry's upstream set. Unregister and Delete are prohibited; use **Hide** to tuck it out of the default views.
+- **`IMPORTED`** *(muted, dashed)* — non-canon, registered with `source: imported` (power-persona repo replacement).
+- **`EXTERNAL`** *(accent, dashed)* — non-canon, registered with `adopted: false`. Files live outside Skills Bank; Unregister leaves origin files in place.
+- **`YOURS`** *(accent)* — non-canon, user-authored, OR not in the registry. User-mutable; safe from Sync overwrites.
 
 ## Installation kind
 
