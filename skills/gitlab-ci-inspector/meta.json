@@ -1,0 +1,4 @@
+{
+  "name": "gitlab-ci-inspector",
+  "description": "Inspect GitLab CI/CD job results, fetch job logs, and diagnose pipeline failures. Use when the user shares a GitLab job URL, pipeline URL, asks about CI/CD job output, wants to check why a pipeline failed, or needs to review build/deploy logs."
+}
