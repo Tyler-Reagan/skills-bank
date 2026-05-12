@@ -231,16 +231,16 @@ export interface DeleteFromBankResult {
 }
 
 /**
- * Full destructive removal: deletes the registry copy of a skill AND
- * removes every agent-dir symlink pointing at it. The bottom of the
- * destructive-action ladder (Remove from agents → Unregister →
- * Delete from Skills Bank). Recovery for canon skills is a re-pull;
- * non-canon skills are gone (modulo export).
+ * Full destructive removal of a registered skill: deletes the registry
+ * copy AND removes every agent-dir symlink pointing at it.
  *
- * Renamed from `deregisterSkill` in M4 so the verb matches the
- * semantics. The escalation-mid-tier "unregister" lives in
- * unregister.ts and moves files to the configured agents dir rather
- * than deleting them.
+ * @deprecated for renderer flows — the UI no longer exposes a
+ * registered-skill Delete affordance. Use `unregisterSkill` to drop
+ * the registry entry (adopted: files expel to the configured agents
+ * dir; non-adopted: untouched), then `deleteUnregisteredSkill` from
+ * the Installed tab's Unregistered section to wipe files. This op
+ * stays for CLI / non-UI consumers that still want the original
+ * registered-delete semantic.
  *
  * Guards against deleting anything outside `<registryRoot>/skills/` —
  * the resolved path must live inside the canonical skills directory or

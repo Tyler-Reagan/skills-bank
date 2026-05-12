@@ -750,9 +750,7 @@ export function SkillDetailDrawer({
             "resolve-conflicts",
             "resolve-registration-conflicts",
           ].includes(caps.primary) &&
-            (caps.canRemoveFromAgents ||
-              caps.canManageLinks ||
-              caps.canExport) && (
+            (caps.canManageLinks || caps.canExport) && (
               <div
                 role="separator"
                 aria-hidden="true"
@@ -874,26 +872,33 @@ export function SkillDetailDrawer({
             </button>
           )}
           {caps.canUnregister && onUnregister && (
-            <button
-              className="btn"
-              style={{ gridColumn: "1 / -1" }}
-              disabled={action !== null}
-              onClick={() => {
-                setAction("unregistering");
-                void Promise.resolve(onUnregister()).finally(() =>
-                  setAction(null),
-                );
-              }}
-              title="Remove from the registry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry."
-            >
-              {action === "unregistering" ? (
-                <>
-                  <span className="spinner inline" /> Unregistering…
-                </>
-              ) : (
-                "Unregister"
-              )}
-            </button>
+            <>
+              <button
+                className="btn"
+                style={{ gridColumn: "1 / -1" }}
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("unregistering");
+                  void Promise.resolve(onUnregister()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title="Remove from the registry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry."
+              >
+                {action === "unregistering" ? (
+                  <>
+                    <span className="spinner inline" /> Unregistering…
+                  </>
+                ) : (
+                  "Unregister"
+                )}
+              </button>
+              <p className="drawer-action-hint">
+                {entry.adopted === false
+                  ? "Drops the registry entry. Your external files stay where they are."
+                  : "Files move to your shared agents directory. You can then Delete them from the Unregistered section."}
+              </p>
+            </>
           )}
           {caps.canHide && onHide && (
             <button

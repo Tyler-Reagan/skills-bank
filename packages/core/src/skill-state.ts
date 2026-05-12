@@ -34,7 +34,7 @@ export type DrawerState =
 
 export type PrimaryAction =
   | "install"
-  | "remove-from-agents"
+  | "manage-links"
   | "register"
   | "resolve-conflicts"
   | "resolve-registration-conflicts"
@@ -46,10 +46,17 @@ export type PrimaryAction =
 
 export interface DrawerCapabilities {
   canInstall: boolean;
-  canRemoveFromAgents: boolean;
   canManageLinks: boolean;
   canExport: boolean;
   canRevealInFinder: boolean;
+  /**
+   * @deprecated since M9b — the UI no longer renders Delete from
+   * Skills Bank on registered skills. Deletion routes through
+   * Unregister first, then the inline Delete on Unregistered cards
+   * (`deleteUnregisteredSkill`). Kept in the capability surface for
+   * non-UI consumers (CLI / IPC enforcement layer) that may still
+   * consult the classifier for the registered-delete semantic.
+   */
   canDeleteFromBank: boolean;
   /**
    * Mid-tier destructive action (M4). Move adopted files to the
@@ -118,7 +125,6 @@ export interface ClassifyOptions {
 
 const NEVER: DrawerCapabilities = {
   canInstall: false,
-  canRemoveFromAgents: false,
   canManageLinks: false,
   canExport: false,
   canRevealInFinder: false,
@@ -279,7 +285,6 @@ export function classifyDrawerState(
       capabilities: {
         ...NEVER,
         canInstall: true, // secondary; will route to InstallConflictModal
-        canRemoveFromAgents: hasOurs,
         canManageLinks: true,
         canExport: true,
         canRevealInFinder: true,
@@ -299,7 +304,6 @@ export function classifyDrawerState(
       conflictCount: 0,
       capabilities: {
         ...NEVER,
-        canRemoveFromAgents: true,
         canManageLinks: true,
         canExport: true,
         canRevealInFinder: true,
@@ -336,13 +340,12 @@ export function classifyDrawerState(
       conflictCount: 0,
       capabilities: {
         ...NEVER,
-        canRemoveFromAgents: true,
         canManageLinks: true,
         canExport: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
         canUnregister: true,
-        primary: "remove-from-agents",
+        primary: "manage-links",
       },
     });
   }
