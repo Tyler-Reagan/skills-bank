@@ -18,17 +18,76 @@ Every skill the app knows about sits on four orthogonal axes. Operations and UI 
 - Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
 - Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
 
+### Lifecycle
+
+The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder: **Unmanaged → Registered → Unregistered → Deleted**. Canon, Adopted, External, and Hidden are _attributes_ of the Registered position, not separate lifecycle states. The diagram below shows that ladder and pulls the heal-pending states (highlighted) out as side arms so the recovery actions are visible.
+
+```mermaid
+---
+config:
+  theme: base
+  flowchart:
+    nodeSpacing: 55
+    rankSpacing: 85
+    curve: basis
+---
+flowchart LR
+    %% Lifecycle ladder; heal-pending states branch off Registered.
+    %% Dagre layout (Mermaid default). ELK was tried but drops arrowheads
+    %% in GitHub's Mermaid build, so we stick with dagre and lean on
+    %% flowchart LR + spacing to keep labels readable.
+
+    classDef heal fill:#fef3c7,stroke:#d97706,color:#92400e,stroke-width:1.5px
+    classDef terminal fill:#0f172a,stroke:#94a3b8,color:#f1f5f9
+    classDef state fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+
+    Start([Start]):::terminal
+    Done([End]):::terminal
+    Unmanaged:::state
+    Registered:::state
+    Unregistered:::state
+    Hidden:::state
+
+    %% Lifecycle ladder
+    Start -->|"discovered on agent disk"| Unmanaged
+    Start -->|"shipped canon or Sync pull"| Registered
+    Unmanaged -->|"Register"| Registered
+    Registered -->|"Unregister"| Unregistered
+    Unregistered -->|"Re-register"| Registered
+    Unregistered -->|"Delete"| Done
+
+    %% Canon-only attribute toggle
+    Registered -->|"Hide (canon only)"| Hidden
+    Hidden -->|"Unhide"| Registered
+
+    %% Heal-pending side states — see flows/heal.md
+    Registered -->|"local edit to canon files"| CanonDrift
+    CanonDrift -->|"Accept local / Take canonical"| Registered
+    Registered -->|"registry folder deleted"| FolderMissing
+    FolderMissing -->|"Forget entry"| Done
+    Registered -->|"external path deleted"| TargetMissing
+    TargetMissing -->|"Forget entry"| Done
+
+    class CanonDrift,FolderMissing,TargetMissing heal
+
+    linkStyle default stroke:#94a3b8,stroke-width:1.5px,fill:none
+```
+
+Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — _whether_ a Registered skill is canon, adopted, or external — are read off the [Source](#source) and [card badges](#card-badges) sections.
+
 ### Destructive-action ladder
 
 Three actions form an escalation, with distinct file/recovery semantics. Each tier physically separates from the next: Delete is only reachable on **unregistered** skills, so the user must Unregister first.
 
-| Action | Where | Files | Agent symlinks | Recovery |
-|---|---|---|---|---|
-| Manage agent links | Drawer | untouched | added/removed per-agent via checkboxes (untick all = full uninstall) | re-add via the same modal |
-| [Unregister](flows/unregister.md) | Drawer | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location |
-| Delete | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved | symlinks unlinked | canon: re-pull; non-canon: gone (modulo export) |
+| Action                            | Where                                                                               | Files                                                               | Agent symlinks                                                          | Recovery                                        |
+| --------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------- |
+| Manage agent links                | Drawer                                                                              | untouched                                                           | added/removed per-agent via checkboxes (untick all = full uninstall)    | re-add via the same modal                       |
+| [Unregister](flows/unregister.md) | Drawer                                                                              | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location                   |
+| Delete                            | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                       | canon: re-pull; non-canon: gone (modulo export) |
 
 Canon skills are exempt: Unregister and Delete are prohibited entirely. Use **Hide** instead — see [personas.md](personas.md#canon-protection-hide-instead-of-unregisterdelete).
+
+![Detail drawer for a non-canon, user-authored skill — Unregister is available as the mid-tier action; the YOURS badge sits on the card behind the drawer](images/skill-detail-yours.png)
 
 ## Skill
 
@@ -38,16 +97,16 @@ A folder containing instructions (`SKILL.md`) and optional metadata (`meta.json`
 
 Every supported AI agent reads skills from a fixed directory under your home folder:
 
-| Agent | Directory |
-|---|---|
-| Claude Code | `~/.claude/skills/` |
-| Cursor | `~/.cursor/skills/` |
-| Gemini | `~/.gemini/skills/` |
-| GitHub Copilot | `~/.copilot/skills/` |
-| Continue | `~/.continue/skills/` |
-| Cline | `~/.cline/skills/` |
-| OpenAI Codex | `~/.codex/skills/` |
-| Shared (any) | `~/.agents/skills/` |
+| Agent          | Directory             |
+| -------------- | --------------------- |
+| Claude Code    | `~/.claude/skills/`   |
+| Cursor         | `~/.cursor/skills/`   |
+| Gemini         | `~/.gemini/skills/`   |
+| GitHub Copilot | `~/.copilot/skills/`  |
+| Continue       | `~/.continue/skills/` |
+| Cline          | `~/.cline/skills/`    |
+| OpenAI Codex   | `~/.codex/skills/`    |
+| Shared (any)   | `~/.agents/skills/`   |
 
 Skills Bank scans every one of these. If a directory doesn't exist on your machine, it's just skipped — no error, no prompt.
 
@@ -70,7 +129,7 @@ Persona is persisted. You can switch via the account menu in the header. See [pe
 
 ## Source
 
-Each registry skill carries a `source` marker that records *where it came from*:
+Each registry skill carries a `source` marker that records _where it came from_:
 
 - **`canonical`** — Pulled from the upstream registry by Sync.
 - **`user`** — Authored locally on this machine.
@@ -88,12 +147,12 @@ Each card surfaces a single badge — the most actionable signal from the taxono
 
 Priority order, highest first:
 
-- **`MISSING`** *(danger)* — files are gone. Open the drawer to **Forget this entry**.
-- **`DRIFT`** *(warn)* — canonical local copy diverged from the synced commit. **Accept local changes** clears the canonical marker so Sync stops trying to overwrite.
-- **`CANON`** *(calm)* — part of the linked registry's upstream set. Unregister and Delete are prohibited; use **Hide** to tuck it out of the default views.
-- **`IMPORTED`** *(muted, dashed)* — non-canon, registered with `source: imported` (power-persona repo replacement).
-- **`EXTERNAL`** *(accent, dashed)* — non-canon, registered with `adopted: false`. Files live outside Skills Bank; Unregister leaves origin files in place.
-- **`YOURS`** *(accent)* — non-canon, user-authored, OR not in the registry. User-mutable; safe from Sync overwrites.
+- **`MISSING`** _(danger)_ — files are gone. Open the drawer to **Forget this entry**.
+- **`DRIFT`** _(warn)_ — canonical local copy diverged from the synced commit. **Accept local changes** clears the canonical marker so Sync stops trying to overwrite.
+- **`CANON`** _(calm)_ — part of the linked registry's upstream set. Unregister and Delete are prohibited; use **Hide** to tuck it out of the default views.
+- **`IMPORTED`** _(muted, dashed)_ — non-canon, registered with `source: imported` (power-persona repo replacement).
+- **`EXTERNAL`** _(accent, dashed)_ — non-canon, registered with `adopted: false`. Files live outside Skills Bank; Unregister leaves origin files in place.
+- **`YOURS`** _(accent)_ — non-canon, user-authored, OR not in the registry. User-mutable; safe from Sync overwrites.
 
 ## Installation kind
 

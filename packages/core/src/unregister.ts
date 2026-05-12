@@ -1,11 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import {
-  AGENTS,
-  getAgentSkillsDir,
-  type AgentId,
-} from "./agents.js";
+import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
 import { invalidateCanonCache } from "./canon.js";
 import {
   readExternalRegistry,

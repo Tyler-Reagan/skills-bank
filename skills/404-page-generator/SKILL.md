@@ -16,6 +16,7 @@ Guides 404 error page design for UX, conversion recovery, and brand consistency.
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for brand voice, key pages, and Section 12 (Visual Identity).
 
 Identify:
+
 1. **Site structure**: Key pages to link (homepage, popular pages, search)
 2. **Brand tone**: Friendly, professional, playful
 3. **Conversion goal**: Recover lost visitors, drive to key pages
@@ -30,13 +31,13 @@ Identify:
 
 ### Navigation and Redirection
 
-| Element | Purpose |
-|---------|---------|
-| **Site navigation** | Header/footer so users know they're still on your site |
-| **Search** | Help users find what they need |
-| **Popular pages** | Links to homepage, features, pricing, blog |
-| **Similar URLs** | Suggest corrections for common typos |
-| **Avoid auto-redirect** | Unless confident of user intent |
+| Element                 | Purpose                                                |
+| ----------------------- | ------------------------------------------------------ |
+| **Site navigation**     | Header/footer so users know they're still on your site |
+| **Search**              | Help users find what they need                         |
+| **Popular pages**       | Links to homepage, features, pricing, blog             |
+| **Similar URLs**        | Suggest corrections for common typos                   |
+| **Avoid auto-redirect** | Unless confident of user intent                        |
 
 ### Design and Branding
 
@@ -47,6 +48,7 @@ Identify:
 ### Conversion Opportunities
 
 404 pages can drive conversions by:
+
 - Showcasing popular products or features
 - Featuring testimonials or social proof
 - Offering special promotions or value

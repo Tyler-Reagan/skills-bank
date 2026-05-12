@@ -16,6 +16,7 @@ Guides footer design for SEO, UX, and conversion. Footers provide secondary navi
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for key pages and audience.
 
 Identify:
+
 1. **Site type**: Marketing, e-commerce, SaaS, blog
 2. **Footer goals**: Navigation, lead capture, trust, legal
 3. **Platform**: Web, mobile, both
@@ -44,13 +45,13 @@ Identify:
 
 ## SEO Best Practices
 
-| Practice | Purpose |
-|----------|---------|
-| **Strategic linking** | Link to important pages; avoid link bloat |
-| **Descriptive anchor text** | Target keywords; avoid "Click here" |
-| **Text links** | Prefer text over images for crawlers |
-| **No dead ends** | Ensure pages link to other content |
-| **Semantic HTML** | `<footer>`, proper landmark roles |
+| Practice                    | Purpose                                   |
+| --------------------------- | ----------------------------------------- |
+| **Strategic linking**       | Link to important pages; avoid link bloat |
+| **Descriptive anchor text** | Target keywords; avoid "Click here"       |
+| **Text links**              | Prefer text over images for crawlers      |
+| **No dead ends**            | Ensure pages link to other content        |
+| **Semantic HTML**           | `<footer>`, proper landmark roles         |
 
 ### Link Strategy
 
@@ -74,11 +75,11 @@ Identify:
 
 ### Accessibility
 
-| Requirement | Practice |
-|-------------|----------|
-| **Contrast** | 4.5:1 for link text |
-| **Touch targets** | >=44x44px on mobile |
-| **Keyboard** | Full keyboard navigation |
+| Requirement        | Practice                                 |
+| ------------------ | ---------------------------------------- |
+| **Contrast**       | 4.5:1 for link text                      |
+| **Touch targets**  | >=44x44px on mobile                      |
+| **Keyboard**       | Full keyboard navigation                 |
 | **Screen readers** | Proper heading hierarchy, landmark roles |
 
 ## Output Format

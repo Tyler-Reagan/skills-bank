@@ -16,6 +16,7 @@ Guides signup and login page structure, domain choice, modal vs dedicated page, 
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for product, audience, and offers.
 
 Identify:
+
 1. **Goal**: Account creation, trial, paid signup
 2. **Discounts**: Student, annual, promo code—apply at signup?
 3. **Auth**: Self-built vs third-party (Auth0, Clerk, etc.)
@@ -23,20 +24,20 @@ Identify:
 
 ## Domain & URL
 
-| Option | Use |
-|--------|-----|
-| **Main domain** | /signup, /login, /auth; simple; common for SaaS |
-| **Subdomain** | auth.example.com; Universal Login pattern; credentials not cross-origin; requires Cookie domain config for cross-subdomain session |
-| **Third-party** | Redirect to Auth0, Clerk, etc.; provider hosts auth |
+| Option          | Use                                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Main domain** | /signup, /login, /auth; simple; common for SaaS                                                                                    |
+| **Subdomain**   | auth.example.com; Universal Login pattern; credentials not cross-origin; requires Cookie domain config for cross-subdomain session |
+| **Third-party** | Redirect to Auth0, Clerk, etc.; provider hosts auth                                                                                |
 
 **Paths**: /signup, /login, /register, /auth; keep short and consistent.
 
 ## Modal vs Dedicated Page
 
-| Approach | Use |
-|----------|-----|
+| Approach           | Use                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
 | **Dedicated page** | Account creation; discount verification; student verification; higher-quality leads; fewer fake emails |
-| **Modal / popup** | Lightweight lead capture; newsletter; quick demo request; lower quality, higher volume |
+| **Modal / popup**  | Lightweight lead capture; newsletter; quick demo request; lower quality, higher volume                 |
 
 **When discount applies at signup** (e.g., student 30% off): Use **dedicated page**—user needs space for verification, discount display, and form. Modal can work for simple email-only capture; avoid for full account + verification flows.
 
@@ -44,24 +45,24 @@ Identify:
 
 ## Page Structure
 
-| Section | Purpose |
-|---------|---------|
-| **Headline** | Value-focused; "Start free" or "Students: 30% off today, 15% off ongoing" |
-| **Trust signals** | SSL, payment logos, privacy, customer logos; see **trust-badges-generator** |
-| **Media** | Product screenshot, short video, or demo GIF above fold; reinforces value |
-| **Form** | Minimal fields; email first; social login (Google, GitHub) reduces friction |
-| **Discount block** | Student discount, annual discount, promo code; verification entry when applicable |
-| **Privacy / Terms** | Links; compliance |
+| Section             | Purpose                                                                           |
+| ------------------- | --------------------------------------------------------------------------------- |
+| **Headline**        | Value-focused; "Start free" or "Students: 30% off today, 15% off ongoing"         |
+| **Trust signals**   | SSL, payment logos, privacy, customer logos; see **trust-badges-generator**       |
+| **Media**           | Product screenshot, short video, or demo GIF above fold; reinforces value         |
+| **Form**            | Minimal fields; email first; social login (Google, GitHub) reduces friction       |
+| **Discount block**  | Student discount, annual discount, promo code; verification entry when applicable |
+| **Privacy / Terms** | Links; compliance                                                                 |
 
 ## Discount Integration
 
 ### Student / Education (education-program)
 
-| Element | Placement |
-|---------|-----------|
-| **Headline or subhead** | "Students: 30% off today, 15% off ongoing" |
-| **Verification** | .edu, SheerID, UNiDAYS; verify at signup to apply discount |
-| **Eligibility** | Brief eligibility; link to full terms |
+| Element                 | Placement                                                  |
+| ----------------------- | ---------------------------------------------------------- |
+| **Headline or subhead** | "Students: 30% off today, 15% off ongoing"                 |
+| **Verification**        | .edu, SheerID, UNiDAYS; verify at signup to apply discount |
+| **Eligibility**         | Brief eligibility; link to full terms                      |
 
 **P0 placement**: When student discount applies at registration, signup page is primary; pricing page and homepage banner are P1.
 
@@ -79,10 +80,10 @@ Identify:
 
 ## SEO
 
-| Page | Meta | Reason |
-|------|------|--------|
-| **Login** | `noindex, nofollow` | No search value; security risk; indexed login pages can confuse users |
-| **Signup** | `noindex, follow` | Block from SERP; allow crawl of links (Privacy, Terms) |
+| Page       | Meta                | Reason                                                                |
+| ---------- | ------------------- | --------------------------------------------------------------------- |
+| **Login**  | `noindex, nofollow` | No search value; security risk; indexed login pages can confuse users |
+| **Signup** | `noindex, follow`   | Block from SERP; allow crawl of links (Privacy, Terms)                |
 
 **Implementation**: Use `<meta name="robots" content="noindex">` or `X-Robots-Tag` header. robots.txt does not prevent indexing—crawlers must access the page to read the directive. See **indexing** for full noindex page-type list.
 

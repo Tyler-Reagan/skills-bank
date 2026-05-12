@@ -16,6 +16,7 @@ Guides content strategy for SEO: topic clusters, pillar pages, cluster articles,
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for product, audience, and proof points.
 
 Identify:
+
 1. **Keywords**: From keyword research — see **keyword-research** for discovery and clustering
 2. **Existing content**: What already exists
 3. **Resources**: Content capacity, tools
@@ -41,29 +42,29 @@ Cluster 6-12 (subtopics)
 
 ### Pillar Page
 
-| Attribute | Guideline |
-|-----------|-----------|
-| **Length** | 2,000-5,000+ words; comprehensive guide |
-| **Keyword** | Broad head term with search volume |
-| **Role** | Hub; links to all cluster articles; targets primary topic |
-| **Conversion** | Link to product/feature pages where relevant |
+| Attribute      | Guideline                                                 |
+| -------------- | --------------------------------------------------------- |
+| **Length**     | 2,000-5,000+ words; comprehensive guide                   |
+| **Keyword**    | Broad head term with search volume                        |
+| **Role**       | Hub; links to all cluster articles; targets primary topic |
+| **Conversion** | Link to product/feature pages where relevant              |
 
 ### Cluster Articles
 
-| Attribute | Guideline |
-|-----------|-----------|
-| **Count** | 6-12 articles per pillar (minimum 6 for authority) |
-| **Length** | 800-2,500 words each; focused on one subtopic |
-| **Keyword** | Long-tail, specific intent per article |
-| **Links** | Each cluster links to pillar; pillar links back; related clusters link to each other |
+| Attribute   | Guideline                                                                            |
+| ----------- | ------------------------------------------------------------------------------------ |
+| **Count**   | 6-12 articles per pillar (minimum 6 for authority)                                   |
+| **Length**  | 800-2,500 words each; focused on one subtopic                                        |
+| **Keyword** | Long-tail, specific intent per article                                               |
+| **Links**   | Each cluster links to pillar; pillar links back; related clusters link to each other |
 
 ### Internal Linking Model
 
-| Link type | Purpose |
-|-----------|---------|
-| **Pillar to Cluster** | Hub distributes authority; users discover subtopics |
-| **Cluster to Pillar** | Signals relationship; passes equity to hub |
-| **Cluster to Cluster** | Related subtopics; strengthens topical coverage |
+| Link type              | Purpose                                             |
+| ---------------------- | --------------------------------------------------- |
+| **Pillar to Cluster**  | Hub distributes authority; users discover subtopics |
+| **Cluster to Pillar**  | Signals relationship; passes equity to hub          |
+| **Cluster to Cluster** | Related subtopics; strengthens topical coverage     |
 
 ### Structure and Content Equally Important
 
@@ -94,17 +95,17 @@ Cluster 6-12 (subtopics)
 
 ## Content Types
 
-| Type | Use | SEO Fit |
-|------|-----|---------|
-| **How-to guides** | Informational intent; high share potential | High -> matches search intent |
-| **Comparisons** | Commercial intent; "X vs Y" | High |
-| **List posts** | "Top 10," "Best X" | High |
-| **Glossaries** | Definition queries; internal link hub | High |
-| **Tools/calculators** | Linkable assets; engagement | High |
-| **Case studies** | Proof; conversion support | Medium -> supports conversion |
-| **Funding / PR** | Funding rounds, acquisitions | Low -> brand/PR, not search-driven |
-| **Product updates** | Feature launches, release notes | Low -> internal audience |
-| **News / Trending** | Industry news, hot topics | Medium -> quick spikes, short shelf life |
+| Type                  | Use                                        | SEO Fit                                  |
+| --------------------- | ------------------------------------------ | ---------------------------------------- |
+| **How-to guides**     | Informational intent; high share potential | High -> matches search intent            |
+| **Comparisons**       | Commercial intent; "X vs Y"                | High                                     |
+| **List posts**        | "Top 10," "Best X"                         | High                                     |
+| **Glossaries**        | Definition queries; internal link hub      | High                                     |
+| **Tools/calculators** | Linkable assets; engagement                | High                                     |
+| **Case studies**      | Proof; conversion support                  | Medium -> supports conversion            |
+| **Funding / PR**      | Funding rounds, acquisitions               | Low -> brand/PR, not search-driven       |
+| **Product updates**   | Feature launches, release notes            | Low -> internal audience                 |
+| **News / Trending**   | Industry news, hot topics                  | Medium -> quick spikes, short shelf life |
 
 ### Evergreen vs Timely Content Mix
 

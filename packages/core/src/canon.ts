@@ -47,7 +47,9 @@ export function readUpstreamCanonNames(registryRoot: string): Set<string> {
   let names = new Set<string>();
   if (fs.existsSync(p)) {
     try {
-      const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<UpstreamCanonFile>;
+      const raw = JSON.parse(
+        fs.readFileSync(p, "utf8"),
+      ) as Partial<UpstreamCanonFile>;
       if (Array.isArray(raw.names)) {
         names = new Set(
           raw.names.filter((n): n is string => typeof n === "string"),

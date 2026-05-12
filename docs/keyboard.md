@@ -2,13 +2,13 @@
 
 A small set of shortcuts for keyboard-heavy workflows. The same list is available in-app from the account menu → **Keyboard shortcuts…**.
 
-| Keys | What it does |
-|---|---|
-| `⌘ K` or `/` | Focus the Registry search bar |
-| `Esc` | Close the open dialog or drawer |
-| `←` / `→` | Move between Registry / Installed tabs (when a tab strip is focused) |
-| `Enter` or `Space` | Open the focused skill card's detail drawer |
-| `Tab` / `Shift+Tab` | Move focus through cards and controls |
+| Keys                | What it does                                                         |
+| ------------------- | -------------------------------------------------------------------- |
+| `⌘ K` or `/`        | Focus the Registry search bar                                        |
+| `Esc`               | Close the open dialog or drawer                                      |
+| `←` / `→`           | Move between Registry / Installed tabs (when a tab strip is focused) |
+| `Enter` or `Space`  | Open the focused skill card's detail drawer                          |
+| `Tab` / `Shift+Tab` | Move focus through cards and controls                                |
 
 ## Notes
 

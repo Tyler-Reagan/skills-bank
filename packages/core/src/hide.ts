@@ -27,7 +27,9 @@ export function readHiddenCanonNames(registryRoot: string): Set<string> {
   const p = path.join(getStateDir(registryRoot), HIDDEN_CANON_FILE);
   if (!fs.existsSync(p)) return new Set();
   try {
-    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<HiddenCanonFile>;
+    const raw = JSON.parse(
+      fs.readFileSync(p, "utf8"),
+    ) as Partial<HiddenCanonFile>;
     if (!Array.isArray(raw.names)) return new Set();
     return new Set(raw.names.filter((n): n is string => typeof n === "string"));
   } catch {

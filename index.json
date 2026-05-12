@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T19:48:17.228Z",
+  "generatedAt": "2026-05-12T21:12:41.095Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -10,11 +10,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "api-page-generator",
@@ -24,11 +22,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "brand-visual-generator",
@@ -38,11 +34,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "branding",
@@ -52,11 +46,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "carousel",
@@ -66,11 +58,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "competitor-research",
@@ -80,11 +70,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "content-optimization",
@@ -94,11 +82,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "content-strategy",
@@ -108,11 +94,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "core-web-vitals",
@@ -122,11 +106,20 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
+    },
+    {
+      "name": "create-readme",
+      "description": "Create a README.md file for the project",
+      "path": "skills/create-readme",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "d3-viz",
@@ -135,11 +128,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "d5ef26ff962851f34bb2edac1967d2360befb0cb",
-        "date": "2026-05-06 09:47:55 -0700",
-        "message": "format: ran prettier formatter repo-wide"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "docs-page-generator",
@@ -149,11 +140,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "electron",
@@ -162,11 +151,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "favicon-generator",
@@ -176,11 +163,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "find-skills",
@@ -189,11 +174,20 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
+    },
+    {
+      "name": "fix-knip-unused-exports",
+      "description": "|",
+      "path": "skills/fix-knip-unused-exports",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "footer-generator",
@@ -203,11 +197,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "frontend-design",
@@ -216,11 +208,42 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
+    },
+    {
+      "name": "gitlab-ci-inspector",
+      "description": "Inspect GitLab CI/CD job results, fetch job logs, and diagnose pipeline failures. Use when the user shares a GitLab job URL, pipeline URL, asks about CI/CD job output, wants to check why a pipeline failed, or needs to review build/deploy logs.",
+      "path": "skills/gitlab-ci-inspector",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
+    },
+    {
+      "name": "gitlab-ci-patterns",
+      "description": "Build GitLab CI/CD pipelines with multi-stage workflows, caching, and distributed runners for scalable automation. Use when implementing GitLab CI/CD, optimizing pipeline performance, or setting up automated testing and deployment.",
+      "path": "skills/gitlab-ci-patterns",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
+    },
+    {
+      "name": "gitlab-mr-writing",
+      "description": "Author GitLab merge request descriptions and technical reviewer guides for large-scale engineering changes. Use when the user asks to write an MR description, merge request body, PR description, technical reviewer summary, or reviewer guide — especially for refactors, architecture changes, or multi-package merges.",
+      "path": "skills/gitlab-mr-writing",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "hero-generator",
@@ -230,11 +253,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "homepage-generator",
@@ -244,11 +265,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "impeccable",
@@ -260,11 +279,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6b39eaa886dc651a7c1e6bc937db4739f91ce89d",
-        "date": "2026-05-06 20:13:47 -0700",
-        "message": "chore(skills): edit tags impeccable"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "landing-page-generator",
@@ -274,11 +291,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "logo-generator",
@@ -288,11 +303,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "mcp-builder",
@@ -301,11 +314,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "mermaid-diagrams",
@@ -314,11 +325,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "naming-analyzer",
@@ -327,11 +336,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
-        "date": "2026-05-06 17:27:20 -0700",
-        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "next-best-practices",
@@ -340,26 +347,20 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
-      "name": "polish-patterns",
-      "description": "Copy-ready React+TypeScript implementations of UI polish patterns — token-driven theming with light/dark + density toggles, focus-return modal hooks, skeleton loaders, toast-with-undo, inline ARIA validation, drawer motion, first-run setup, and a small Icon component. A launchpad of concrete code that complements ui-ux-pro-max's design rules; pair the two when you have a rule to satisfy and want a working starting point.",
-      "version": "0.1.0",
-      "author": "Tyler-Reagan",
-      "path": "skills/polish-patterns",
+      "name": "obsidian-cli",
+      "description": "Interact with Obsidian vaults using the Obsidian CLI to read, create, search, and manage notes, tasks, properties, and more. Also supports plugin and theme development with commands to reload plugins, run JavaScript, capture errors, take screenshots, and inspect the DOM. Use when the user asks to interact with their Obsidian vault, manage notes, search vault content, perform vault operations from the command line, or develop and debug Obsidian plugins and themes.",
+      "path": "skills/obsidian-cli",
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "f81a70da800d4243bf03218d625503f5e0287337",
-        "date": "2026-05-06 20:09:32 -0700",
-        "message": "chore(skills): edit tags polish-patterns"
-      }
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "pr-description",
@@ -368,11 +369,20 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
+    },
+    {
+      "name": "prd-development",
+      "description": "Build a structured PRD that connects problem, users, solution, and success criteria. Use when turning discovery notes into an engineering-ready document for a major initiative.",
+      "path": "skills/prd-development",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "pretty-mermaid",
@@ -381,11 +391,20 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
+    },
+    {
+      "name": "problem-statement",
+      "description": "Write a user-centered problem statement with who is blocked, what they are trying to do, why it matters, and how it feels. Use when framing discovery, prioritization, or a PRD.",
+      "path": "skills/problem-statement",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "react-components",
@@ -394,11 +413,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "d5ef26ff962851f34bb2edac1967d2360befb0cb",
-        "date": "2026-05-06 09:47:55 -0700",
-        "message": "format: ran prettier formatter repo-wide"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "react-state-management",
@@ -407,24 +424,20 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
-      "name": "readme-i18n",
-      "description": "Use when the user wants to translate a repository README, make a repo multilingual, localize docs, add a language switcher, internationalize the README, or update localized README variants in a GitHub-style repository.",
-      "path": "skills/readme-i18n",
+      "name": "roadmap-planning",
+      "description": "Plan a strategic roadmap across prioritization, epic definition, stakeholder alignment, and sequencing. Use when turning strategy into a release plan that teams can execute.",
+      "path": "skills/roadmap-planning",
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
-        "date": "2026-05-06 17:27:20 -0700",
-        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
-      }
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "seo-strategy",
@@ -434,11 +447,20 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
+    },
+    {
+      "name": "shadcn",
+      "description": "Manages shadcn components and projects — adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples. Applies when working with shadcn/ui, component registries, presets, --preset codes, or any project with a components.json file. Also triggers for \"shadcn init\", \"create an app with --preset\", or \"switch to --preset\".",
+      "path": "skills/shadcn",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "signup-login-page-generator",
@@ -448,11 +470,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "specs-code-cleanup",
@@ -461,11 +481,20 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
-        "date": "2026-05-06 17:27:20 -0700",
-        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
+    },
+    {
+      "name": "terraform-plan-summary",
+      "description": "Parses noisy Terraform or GitLab CI job logs and produces a concise impact summary (add/change/destroy counts, per-resource actions, grouped repetitive changes, key attribute diffs, warnings). Use when summarizing terraform plan output, CI plan jobs, long job logs, or when the user asks what a plan would change.",
+      "path": "skills/terraform-plan-summary",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "theme-factory",
@@ -474,11 +503,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "typescript-mcp-server-generator",
@@ -487,11 +514,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "typescript-react-reviewer",
@@ -500,11 +525,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "ui-ux-pro-max",
@@ -513,11 +536,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "user-personas",
@@ -526,11 +547,31 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
-        "date": "2026-05-06 17:27:20 -0700",
-        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
+    },
+    {
+      "name": "user-story",
+      "description": "Create user stories with Mike Cohn format and Gherkin acceptance criteria. Use when turning user needs into development-ready work with clear outcomes and testable conditions.",
+      "path": "skills/user-story",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
+    },
+    {
+      "name": "user-story-mapping",
+      "description": "Create a user story map that lays out activities, steps, tasks, and release slices. Use when planning a workflow, backlog, or MVP around the user journey.",
+      "path": "skills/user-story-mapping",
+      "source": {
+        "source": "user"
+      },
+      "adopted": true,
+      "publishState": "draft",
+      "canon": false
     },
     {
       "name": "vercel-react-best-practices",
@@ -541,11 +582,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "vite",
@@ -556,11 +595,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "web-design-guidelines",
@@ -571,11 +608,9 @@
       "source": {
         "source": "user"
       },
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      }
+      "adopted": true,
+      "publishState": "pushed",
+      "canon": true
     }
   ]
 }

@@ -16,6 +16,7 @@ Guides hero section design for conversion and first impressions. The hero is whe
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for value proposition, audience, and Section 12 (Visual Identity).
 
 Identify:
+
 1. **Page type**: Homepage, landing, product, pricing
 2. **Primary goal**: Signup, trial, purchase, learn more
 3. **Platform**: Web, mobile, both
@@ -36,22 +37,22 @@ Identify:
 
 Hero is a **Spotlight layout**—single focus, primary element with secondary around it. Choose layout by content balance and conversion goal.
 
-| Layout | Structure | Best for |
-|--------|-----------|----------|
-| **Split (50/50)** | Text left, visual right (or vice versa); equal weight | Product, SaaS; clear value + demo |
-| **Split (75/25)** | Text dominant; smaller image column | Copy-heavy; trust-first |
-| **Split (25/75 "Signpost")** | Small image beside primary content | Minimal visual; emphasis on headline |
-| **Centered** | Text + CTA centered; visual full-width or stacked | Brand, landing; single CTA |
-| **Full-width image** | Image background; overlay text | Emotional; lifestyle, brand |
+| Layout                       | Structure                                             | Best for                             |
+| ---------------------------- | ----------------------------------------------------- | ------------------------------------ |
+| **Split (50/50)**            | Text left, visual right (or vice versa); equal weight | Product, SaaS; clear value + demo    |
+| **Split (75/25)**            | Text dominant; smaller image column                   | Copy-heavy; trust-first              |
+| **Split (25/75 "Signpost")** | Small image beside primary content                    | Minimal visual; emphasis on headline |
+| **Centered**                 | Text + CTA centered; visual full-width or stacked     | Brand, landing; single CTA           |
+| **Full-width image**         | Image background; overlay text                        | Emotional; lifestyle, brand          |
 
 **Responsive**: Split layouts stack vertically on mobile (text above image); centered maintains center. Mobile-first; ensure CTA above fold on small screens.
 
 ## Alignment
 
-| Axis | Options | Use |
-|------|---------|-----|
-| **Horizontal** | Left, center, right | Left align for text-heavy; center for minimal |
-| **Vertical** | Top, center, bottom | Center for full-viewport hero; top for short hero |
+| Axis           | Options             | Use                                               |
+| -------------- | ------------------- | ------------------------------------------------- |
+| **Horizontal** | Left, center, right | Left align for text-heavy; center for minimal     |
+| **Vertical**   | Top, center, bottom | Center for full-viewport hero; top for short hero |
 
 ## Best Practices
 
@@ -94,14 +95,14 @@ The hero must answer three questions within 3 seconds: **What is this?** **Why s
 
 ### Accessibility
 
-| Requirement | Practice |
-|-------------|----------|
-| **Contrast** | Text over images: >=4.5:1; use overlay if needed |
-| **Touch targets** | CTA >=44x44px |
-| **Keyboard** | CTA keyboard-accessible; visible focus indicator |
-| **Screen readers** | Proper heading order; image alt text; `aria-label` for icon-only buttons |
-| **Reduced motion** | Respect `prefers-reduced-motion` for animations |
-| **Interaction** | CTA has `cursor-pointer`; hover uses color/opacity (not scale) to avoid layout shift |
+| Requirement        | Practice                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| **Contrast**       | Text over images: >=4.5:1; use overlay if needed                                     |
+| **Touch targets**  | CTA >=44x44px                                                                        |
+| **Keyboard**       | CTA keyboard-accessible; visible focus indicator                                     |
+| **Screen readers** | Proper heading order; image alt text; `aria-label` for icon-only buttons             |
+| **Reduced motion** | Respect `prefers-reduced-motion` for animations                                      |
+| **Interaction**    | CTA has `cursor-pointer`; hover uses color/opacity (not scale) to avoid layout shift |
 
 ## Testing
 

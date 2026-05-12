@@ -811,8 +811,7 @@ export function App(): React.ReactElement {
                   const isRegistered = registry.some((r) => r.name === g.name);
                   const conflicts = isRegistered
                     ? g.conflicts.filter(
-                        (c) =>
-                          c.kind !== "ours" && c.kind !== "broken-symlink",
+                        (c) => c.kind !== "ours" && c.kind !== "broken-symlink",
                       )
                     : g.conflicts.filter((c) => c.kind !== "ours");
                   setConflictTarget({
@@ -827,9 +826,7 @@ export function App(): React.ReactElement {
                   // confirmation modal can preview which paths get
                   // touched. Actual deletion fires only after the
                   // user confirms.
-                  const mine = installed.filter(
-                    (i) => i.name === group.name,
-                  );
+                  const mine = installed.filter((i) => i.name === group.name);
                   setDeleteTarget({ name: group.name, installations: mine });
                 }}
                 onInlineRegister={(group) => {
@@ -947,10 +944,9 @@ export function App(): React.ReactElement {
                 Resolve all conflicts ({resolveAllTarget.length})?
               </h3>
               <p style={{ color: "var(--text-2)", fontSize: 13 }}>
-                For each skill below, every duplicate or stale agent-dir
-                entry will be replaced with a symlink to the Skills Bank
-                copy. This is the same as picking "Replace with symlink"
-                for each conflict.
+                For each skill below, every duplicate or stale agent-dir entry
+                will be replaced with a symlink to the Skills Bank copy. This is
+                the same as picking "Replace with symlink" for each conflict.
               </p>
               <ul
                 style={{
@@ -972,7 +968,9 @@ export function App(): React.ReactElement {
                       <code
                         style={{
                           fontFamily: "var(--font-mono)",
-                          color: skillErrors ? "var(--danger, #d04444)" : "var(--text-1)",
+                          color: skillErrors
+                            ? "var(--danger, #d04444)"
+                            : "var(--text-1)",
                         }}
                       >
                         {g.name}
@@ -1183,9 +1181,7 @@ export function App(): React.ReactElement {
             settings={settings}
             onSave={saveSettings}
             onClose={() => setShowSettings(false)}
-            hiddenCanon={registry
-              .filter((e) => e.hidden)
-              .map((e) => e.name)}
+            hiddenCanon={registry.filter((e) => e.hidden).map((e) => e.name)}
             onUnhide={async (name) => {
               const r = await window.skillsBank.unhide(name);
               flash(r.message);
@@ -1255,8 +1251,7 @@ export function App(): React.ReactElement {
                   );
                   const conflicts = isRegistered
                     ? installations.filter(
-                        (i) =>
-                          i.kind !== "ours" && i.kind !== "broken-symlink",
+                        (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
                       )
                     : installations.filter((i) => i.kind !== "ours");
                   if (conflicts.length === 0) return;
@@ -1388,8 +1383,9 @@ export function App(): React.ReactElement {
                           // Surface once per machine — subsequent
                           // unregistrations just toast the move.
                           const hinted =
-                            localStorage.getItem(LS_KEYS.unregisterHintShown) ===
-                            "1";
+                            localStorage.getItem(
+                              LS_KEYS.unregisterHintShown,
+                            ) === "1";
                           if (!hinted) {
                             flash(
                               `${r.message} — change the destination in Settings → Unregister destination.`,

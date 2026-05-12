@@ -1,0 +1,4 @@
+{
+  "name": "gitlab-mr-writing",
+  "description": "Author GitLab merge request descriptions and technical reviewer guides for large-scale engineering changes. Use when the user asks to write an MR description, merge request body, PR description, technical reviewer summary, or reviewer guide — especially for refactors, architecture changes, or multi-package merges."
+}

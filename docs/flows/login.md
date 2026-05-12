@@ -6,7 +6,7 @@ The first launch shows a one-time setup screen. The choice you make here decides
 
 ## The two options
 
-### Use the bundled registry *(recommended for most users)*
+### Use the bundled registry _(recommended for most users)_
 
 Skills Bank manages a local copy of the curated registry shipped with the app. You get:
 
@@ -32,7 +32,7 @@ You'll be sent through GitHub's OAuth flow to grant repo read access. The app th
 
 ---
 
-*Want to fork the entire app and ship your own build?* See [self-host.md](../self-host.md). Self-hosting is a developer path, not a runtime option on this screen.
+_Want to fork the entire app and ship your own build?_ See [self-host.md](../self-host.md). Self-hosting is a developer path, not a runtime option on this screen.
 
 ---
 

@@ -1,6 +1,6 @@
 # Unregister a skill
 
-You registered a skill into Skills Bank but want to back it out without nuking the files. Unregister is the mid-tier destructive action: it removes the registry entry and (for adopted skills) moves files out to your shared agents directory. Distinct from **Remove from agents** (which only severs symlinks) and **Delete from Skills Bank** (which deletes files).
+You registered a skill into Skills Bank but want to back it out without nuking the files. Unregister is the mid-tier destructive action: it removes the registry entry and (for adopted skills) moves files out to your shared agents directory. Distinct from **Manage agent links** (which only adds or removes symlinks) and **Delete from Skills Bank** (which deletes files).
 
 ## Steps
 
@@ -17,13 +17,15 @@ Settings → **Unregister destination**. Defaults to **Agents (shared)** which m
 
 ## Why unregister vs. delete?
 
-| Action | Where | Files | Recovery |
-|---|---|---|---|
-| Manage agent links | Drawer | untouched | re-add via the same modal |
-| **Unregister** | Drawer | adopted: moved to expulsion dir; non-adopted: untouched | re-register from new location |
-| Delete | Installed tab → Unregistered section | files removed (symlink targets preserved) | canon: re-pull; non-canon: gone (modulo export) |
+| Action             | Where                                | Files                                                   | Recovery                                        |
+| ------------------ | ------------------------------------ | ------------------------------------------------------- | ----------------------------------------------- |
+| Manage agent links | Drawer                               | untouched                                               | re-add via the same modal                       |
+| **Unregister**     | Drawer                               | adopted: moved to expulsion dir; non-adopted: untouched | re-register from new location                   |
+| Delete             | Installed tab → Unregistered section | files removed (symlink targets preserved)               | canon: re-pull; non-canon: gone (modulo export) |
 
 Use Unregister when you want to stop Skills Bank from managing a skill but keep the files around — either to hand the skill off to another tool, edit it directly outside of Skills Bank, or audit it before deletion. Delete is the bottom of the ladder and requires unregistration first; once unregistered, the skill appears in **Installed → Unregistered** with an inline **Delete** button (confirmation required).
+
+![Detail drawer for an unregistered skill — Register and Delete are inline; the drawer no longer shows the registry-managed action set](../images/skill-detail-unregistered.png)
 
 ## Canon skills
 

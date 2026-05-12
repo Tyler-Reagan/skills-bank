@@ -14,10 +14,11 @@ If you only want a different registry (not a different app), you don't need self
 
 ## Steps
 
-1. **Fork the repo.** Click *Fork* on https://github.com/Tyler-Reagan/skills-bank. Use a name that's distinct from `skills-bank` if you plan to distribute.
+1. **Fork the repo.** Click _Fork_ on https://github.com/Tyler-Reagan/skills-bank. Use a name that's distinct from `skills-bank` if you plan to distribute.
 
 2. **Update `electron-builder` publish config** to point at your fork.
    In `packages/desktop/package.json`, change:
+
    ```json
    "publish": {
      "provider": "github",
@@ -26,13 +27,16 @@ If you only want a different registry (not a different app), you don't need self
      "releaseType": "draft"
    }
    ```
+
    to your fork's `owner` / `repo`.
 
 3. **Update the canonical sync source** in `packages/desktop/src/main/main.ts`:
+
    ```ts
    const CANONICAL_OWNER = "Tyler-Reagan";
    const CANONICAL_REPO = "skills-bank";
    ```
+
    Replace with your fork.
 
 4. **(Optional) Register a new GitHub OAuth App** for the auth flow if you want users of your fork to authenticate against a different application identity. See `packages/desktop/src/main/auth-config.ts` for the steps. If you skip this, the Authenticate button on the LoginScreen will be disabled in your build.

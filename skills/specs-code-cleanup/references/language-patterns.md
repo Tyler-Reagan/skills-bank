@@ -4,11 +4,11 @@ Reference for language-specific formatter commands, import ordering, and search 
 
 ## Formatters & Linters
 
-| Language | Format | Lint |
-|----------|--------|------|
-| Java | `./mvnw spotless:apply` | `./mvnw checkstyle:check spotless:check` |
-| TypeScript | `npm run format` / `npx prettier --write` | `npm run lint` / `npx eslint --fix` |
-| Python | `black .` / `ruff format` | `ruff check . && black --check .` |
+| Language   | Format                                    | Lint                                     |
+| ---------- | ----------------------------------------- | ---------------------------------------- |
+| Java       | `./mvnw spotless:apply`                   | `./mvnw checkstyle:check spotless:check` |
+| TypeScript | `npm run format` / `npx prettier --write` | `npm run lint` / `npx eslint --fix`      |
+| Python     | `black .` / `ruff format`                 | `ruff check . && black --check .`        |
 
 ## Import Ordering
 

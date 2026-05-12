@@ -34,7 +34,9 @@ export async function finalizeCommand(opts: FinalizeCmdOptions): Promise<void> {
   }
   console.log();
 
-  const unregistered = report.entries.filter((e) => e.kind === "real-directory");
+  const unregistered = report.entries.filter(
+    (e) => e.kind === "real-directory",
+  );
   if (unregistered.length > 0) {
     console.log(
       pc.red(

@@ -60,8 +60,8 @@ export function DeleteUnregisteredConfirm({
           <Icon name="alert-triangle" size="sm" /> Delete {name}?
         </h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          This removes {name}'s presence from your agent directories. The
-          skill must already be unregistered.
+          This removes {name}'s presence from your agent directories. The skill
+          must already be unregistered.
         </p>
 
         {realDirs.length > 0 && (
@@ -71,8 +71,7 @@ export function DeleteUnregisteredConfirm({
               {realDirs.map((i) => (
                 <li key={i.linkPath}>
                   <strong>{AGENT_LABELS[i.agent]}</strong>{" "}
-                  <code>{i.linkPath}</code>{" "}
-                  <span style={badge}>folder</span>
+                  <code>{i.linkPath}</code> <span style={badge}>folder</span>
                 </li>
               ))}
             </ul>
@@ -99,16 +98,16 @@ export function DeleteUnregisteredConfirm({
               ))}
             </ul>
             <p style={hint}>
-              Symlink targets are user-owned (often your own git repos)
-                and are <strong>not</strong> deleted.
+              Symlink targets are user-owned (often your own git repos) and are{" "}
+              <strong>not</strong> deleted.
             </p>
           </section>
         )}
 
         {realDirs.length === 0 && symlinks.length === 0 && (
           <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
-            Nothing to delete — {name} has no on-disk presence in any
-            agent directory.
+            Nothing to delete — {name} has no on-disk presence in any agent
+            directory.
           </p>
         )}
 
@@ -120,11 +119,7 @@ export function DeleteUnregisteredConfirm({
             marginTop: 16,
           }}
         >
-          <button
-            className="btn"
-            onClick={onCancel}
-            disabled={submitting}
-          >
+          <button className="btn" onClick={onCancel} disabled={submitting}>
             Cancel
           </button>
           <button

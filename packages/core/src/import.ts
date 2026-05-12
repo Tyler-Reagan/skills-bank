@@ -450,7 +450,10 @@ interface RegistrationLogEntry {
   linkPath: string;
 }
 
-function recordRegistration(registryRoot: string, entry: RegistrationLogEntry): void {
+function recordRegistration(
+  registryRoot: string,
+  entry: RegistrationLogEntry,
+): void {
   const dir = getStateDir(registryRoot);
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(

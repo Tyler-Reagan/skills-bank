@@ -19,11 +19,11 @@ Guides optimization of Core Web Vitals (CWV)—Google's user experience metrics 
 
 ## Target Thresholds (75th percentile, field data)
 
-| Metric | Target | Good | Needs Improvement | Poor |
-|--------|--------|------|-------------------|------|
-| **LCP** | ≤2.5s | ≤2.5s | 2.5–4.0s | >4.0s |
-| **INP** | ≤200ms | ≤200ms | 200–500ms | >500ms |
-| **CLS** | <0.1 | ≤0.1 | 0.1–0.25 | >0.25 |
+| Metric  | Target | Good   | Needs Improvement | Poor   |
+| ------- | ------ | ------ | ----------------- | ------ |
+| **LCP** | ≤2.5s  | ≤2.5s  | 2.5–4.0s          | >4.0s  |
+| **INP** | ≤200ms | ≤200ms | 200–500ms         | >500ms |
+| **CLS** | <0.1   | ≤0.1   | 0.1–0.25          | >0.25  |
 
 **Source**: [Google Page Experience](https://developers.google.com/search/docs/appearance/page-experience)
 
@@ -32,6 +32,7 @@ Guides optimization of Core Web Vitals (CWV)—Google's user experience metrics 
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for site URL.
 
 Identify:
+
 1. **Tools**: GSC Core Web Vitals report, PageSpeed Insights, Chrome DevTools
 2. **Metrics**: Which metric is failing (LCP, INP, CLS)
 3. **Page type**: Hero, article, product, list—LCP candidate differs
@@ -40,13 +41,13 @@ Identify:
 
 LCP measures the time until the largest content element (image, video, or text block) is visible.
 
-| Cause | Fix |
-|-------|-----|
-| **Slow server response** | Reduce TTFB; use CDN; optimize server |
-| **Render-blocking resources** | Defer non-critical CSS/JS; inline critical CSS |
-| **Large images** | WebP/AVIF; compress; `width`/`height` to prevent CLS; see **image-optimization** |
-| **Client-side rendering** | SSR/SSG for above-fold content; see **rendering-strategies** |
-| **Third-party scripts** | Load async; defer non-critical |
+| Cause                         | Fix                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| **Slow server response**      | Reduce TTFB; use CDN; optimize server                                            |
+| **Render-blocking resources** | Defer non-critical CSS/JS; inline critical CSS                                   |
+| **Large images**              | WebP/AVIF; compress; `width`/`height` to prevent CLS; see **image-optimization** |
+| **Client-side rendering**     | SSR/SSG for above-fold content; see **rendering-strategies**                     |
+| **Third-party scripts**       | Load async; defer non-critical                                                   |
 
 **LCP candidates**: Hero image, large text block, video poster. Ensure above-fold images use `loading="eager"` (default); never lazy-load LCP.
 
@@ -54,33 +55,33 @@ LCP measures the time until the largest content element (image, video, or text b
 
 INP measures responsiveness—time from user interaction to next paint. Replaced FID in March 2024.
 
-| Cause | Fix |
-|-------|-----|
-| **Long-running JS** | Break tasks >50ms; use `requestIdleCallback`; Web Workers |
-| **Heavy event handlers** | Debounce/throttle; defer non-critical work |
-| **Main thread blocking** | Reduce third-party scripts; defer non-critical JS |
-| **Layout thrashing** | Batch DOM reads/writes; avoid forced reflows |
+| Cause                    | Fix                                                       |
+| ------------------------ | --------------------------------------------------------- |
+| **Long-running JS**      | Break tasks >50ms; use `requestIdleCallback`; Web Workers |
+| **Heavy event handlers** | Debounce/throttle; defer non-critical work                |
+| **Main thread blocking** | Reduce third-party scripts; defer non-critical JS         |
+| **Layout thrashing**     | Batch DOM reads/writes; avoid forced reflows              |
 
 ## CLS Optimization
 
 CLS measures unexpected layout shifts.
 
-| Cause | Fix |
-|-------|-----|
-| **Images without dimensions** | Always set `width` and `height` attributes |
-| **Dynamic content** | Reserve space for ads, embeds; use `min-height` |
-| **Web fonts** | `font-display: optional` or `swap`; preload critical fonts |
-| **Animations** | Use `transform` instead of `top`/`left`/`width` |
+| Cause                         | Fix                                                        |
+| ----------------------------- | ---------------------------------------------------------- |
+| **Images without dimensions** | Always set `width` and `height` attributes                 |
+| **Dynamic content**           | Reserve space for ads, embeds; use `min-height`            |
+| **Web fonts**                 | `font-display: optional` or `swap`; preload critical fonts |
+| **Animations**                | Use `transform` instead of `top`/`left`/`width`            |
 
 **Reserve space**: For images, ads, embeds—define dimensions before load. Avoid inserting content above existing content without reserved space.
 
 ## Tools & Monitoring
 
-| Tool | Use |
-|------|-----|
-| **GSC** | Core Web Vitals report; URL grouping; field data |
-| **PageSpeed Insights** | Lab + field data; mobile + desktop |
-| **Chrome DevTools** | Performance panel; LCP element; layout shift overlay |
+| Tool                   | Use                                                  |
+| ---------------------- | ---------------------------------------------------- |
+| **GSC**                | Core Web Vitals report; URL grouping; field data     |
+| **PageSpeed Insights** | Lab + field data; mobile + desktop                   |
+| **Chrome DevTools**    | Performance panel; LCP element; layout shift overlay |
 
 ## Output Format
 

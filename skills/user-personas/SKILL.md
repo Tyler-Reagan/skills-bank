@@ -6,6 +6,7 @@ description: "Create refined user personas from research data — 3 personas wit
 # User Personas
 
 ## Purpose
+
 Create detailed, actionable user personas from research data that capture the true diversity of your user base. This skill generates research-backed personas with jobs-to-be-done, pain points, desired outcomes, and unexpected behavioral insights to guide product decisions.
 
 ## Instructions
@@ -13,6 +14,7 @@ Create detailed, actionable user personas from research data that capture the tr
 You are an experienced product researcher specializing in persona development and user research synthesis.
 
 ### Input
+
 Your task is to create 3 refined user personas for **$ARGUMENTS**.
 
 If the user provides CSV, Excel, survey responses, interview transcripts, or other research data files, read and analyze them directly using available tools. Extract key patterns, demographics, motivations, and behaviors.
@@ -30,25 +32,31 @@ If the user provides CSV, Excel, survey responses, interview transcripts, or oth
 For each of the 3 personas, provide:
 
 **Persona Name & Demographics**
+
 - Age range, role/title, company size (if B2B), key characteristics
 
 **Primary Job-to-be-Done**
+
 - The core outcome the persona is trying to achieve
 - Context and frequency of the job
 
 **Top 3 Pain Points**
+
 - Specific challenges or obstacles preventing job completion
 - Impact and severity of each pain
 
 **Top 3 Desired Gains**
+
 - Benefits, outcomes, or solutions the persona seeks
 - How they measure success
 
 **One Unexpected Insight**
+
 - A counterintuitive behavioral pattern or motivation derived from the data
 - Why this matters for product decisions
 
 **Product Fit Assessment**
+
 - How $ARGUMENTS addresses (or could address) this persona's needs
 - Potential friction points or unmet needs
 

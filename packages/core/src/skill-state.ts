@@ -413,6 +413,3 @@ function applyCanonGate(
     },
   };
 }
-
-
-

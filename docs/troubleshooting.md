@@ -58,7 +58,7 @@ For packaged-app users without a checkout, manually delete `~/Library/Applicatio
 
 ## "Sync conflict modal keeps appearing for the same skill"
 
-Decisions are remembered per-skill. If the modal reappears, the upstream version of the skill changed again after your last decision — that's a *new* conflict, not a stale one. Pick again; the new decision sticks until upstream changes once more.
+Decisions are remembered per-skill. If the modal reappears, the upstream version of the skill changed again after your last decision — that's a _new_ conflict, not a stale one. Pick again; the new decision sticks until upstream changes once more.
 
 ## Reporting a bug
 

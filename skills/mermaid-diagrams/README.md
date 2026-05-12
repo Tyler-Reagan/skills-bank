@@ -20,6 +20,7 @@ Use this skill when you need to:
 ### Trigger Phrases
 
 The skill activates when you mention:
+
 - "diagram", "visualize", "model", "map out", "show the flow"
 - "architecture diagram", "class diagram", "sequence diagram", "flowchart"
 - "database schema", "ERD", "entity relationship"
@@ -239,6 +240,7 @@ For comprehensive syntax and advanced features, see:
 ## Support
 
 For questions, syntax help, or advanced features, refer to:
+
 - SKILL.md for quick reference
 - Reference files in `references/` for detailed syntax
 - [Mermaid official docs](https://mermaid.js.org) for latest features

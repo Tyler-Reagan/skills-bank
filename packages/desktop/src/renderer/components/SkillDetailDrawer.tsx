@@ -650,11 +650,11 @@ export function SkillDetailDrawer({
               )}
               <p className="drawer-action-hint">
                 This canonical skill differs from its synced baseline.
-                <strong> Accept local changes</strong> detaches from
-                Sync — your edits stay, sync stops overwriting.
-                <strong> Take canonical</strong> re-baselines the
-                current state as the new synced version — drift
-                clears, Sync still owns the skill.
+                <strong> Accept local changes</strong> detaches from Sync — your
+                edits stay, sync stops overwriting.
+                <strong> Take canonical</strong> re-baselines the current state
+                as the new synced version — drift clears, Sync still owns the
+                skill.
               </p>
             </>
           )}
@@ -680,8 +680,8 @@ export function SkillDetailDrawer({
                 )}
               </button>
               <p className="drawer-action-hint">
-                The files for this skill are gone. Forgetting drops the
-                registry record so the skill stops appearing.
+                The files for this skill are gone. Forgetting drops the registry
+                record so the skill stops appearing.
               </p>
             </>
           )}
@@ -741,8 +741,7 @@ export function SkillDetailDrawer({
                 Resolve{" "}
                 {classification.conflictCount + classification.brokenCount}{" "}
                 conflict
-                {classification.conflictCount + classification.brokenCount ===
-                1
+                {classification.conflictCount + classification.brokenCount === 1
                   ? ""
                   : "s"}
               </button>
@@ -961,9 +960,7 @@ export function SkillDetailDrawer({
               disabled={action !== null}
               onClick={() => {
                 setAction("unhiding");
-                void Promise.resolve(onUnhide()).finally(() =>
-                  setAction(null),
-                );
+                void Promise.resolve(onUnhide()).finally(() => setAction(null));
               }}
             >
               {action === "unhiding" ? (
