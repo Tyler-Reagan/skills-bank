@@ -20,42 +20,41 @@ Every skill the app knows about sits on four orthogonal axes. Operations and UI 
 
 ### Lifecycle
 
-The four axes look orthogonal in isolation, but most skills travel a small set of paths through them. The diagram below shows those paths and the heal-pending side states the app surfaces explicitly.
+The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder: **Unmanaged → Registered → Unregistered → Deleted**. Canon, Adopted, External, and Hidden are *attributes* of the Registered position, not separate lifecycle states. The diagram below shows that ladder and pulls the heal-pending states (highlighted) out as side arms so the recovery actions are visible.
 
 ```mermaid
+---
+config:
+  theme: base
+---
 stateDiagram-v2
-    [*] --> Unmanaged: discovered on disk
-    [*] --> Canon: shipped / pulled from upstream
-
-    Unmanaged --> External: Register (adopted=false)
-    Unmanaged --> Adopted: Register (adopted=true)
-
-    External --> Unregistered: Unregister
-    Adopted --> Unregistered: Unregister (files → agents dir)
-
+    %% Lifecycle ladder
+    [*] --> Unmanaged: discovered on agent disk
+    [*] --> Registered: shipped canon or Sync pull
+    Unmanaged --> Registered: Register (adopted true or false)
+    Registered --> Unregistered: Unregister
+    Unregistered --> Registered: Re-register
     Unregistered --> [*]: Delete
-    Unregistered --> Adopted: Re-register
 
-    Canon --> Hidden: Hide
-    Hidden --> Canon: Unhide
+    %% Canon-only attribute toggle
+    Registered --> Hidden: Hide (canon only)
+    Hidden --> Registered: Unhide
 
-    Adopted --> CanonDrift: local edit to canon files
-    CanonDrift --> Adopted: Accept local / Take canonical
+    %% Heal-pending side states — see flows/heal.md
+    Registered --> CanonDrift: local edit to canon files
+    CanonDrift --> Registered: Accept local or Take canonical
 
-    Adopted --> FolderMissing: registry folder deleted out-of-band
+    Registered --> FolderMissing: registry folder deleted
     FolderMissing --> [*]: Forget entry
 
-    External --> TargetMissing: external path deleted
+    Registered --> TargetMissing: external path deleted
     TargetMissing --> [*]: Forget entry
 
-    note right of CanonDrift
-        Heal states are reachable
-        from any registered axis combo;
-        see flows/heal.md
-    end note
+    classDef heal fill:#fef3c7,stroke:#d97706,color:#92400e
+    class CanonDrift,FolderMissing,TargetMissing heal
 ```
 
-Labels match the in-app vocabulary: nodes are taxonomy positions, transitions are the action buttons that move a skill between them.
+Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — *whether* a Registered skill is canon, adopted, or external — are read off the [Source](#source) and [card badges](#card-badges) sections.
 
 ### Destructive-action ladder
 

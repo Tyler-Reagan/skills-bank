@@ -12,18 +12,6 @@ A registry, CLI, and desktop app for managing [Claude Code](https://claude.ai/co
 
 </div>
 
-<!--
-README-I18N:SLOT — reserved for a future language selector. When the first
-localized sibling lands (e.g. README.zh.md), uncomment the block below and
-replace this comment with the actual selector. See docs/i18n-readiness.md.
-
-README-I18N:START
-
-**English**
-
-README-I18N:END
--->
-
 ![The Registry tab — browse, search, and install curated skills](docs/images/registry.png)
 
 A **skill** is a folder of instructions (`SKILL.md` + optional `meta.json`) that an AI agent reads at runtime to pick up a specialized capability. Skills Bank is the layer that keeps your skill collection organized, in sync across every agent directory on disk, and recoverable when things drift.
