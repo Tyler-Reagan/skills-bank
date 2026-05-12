@@ -87,6 +87,8 @@ Three actions form an escalation, with distinct file/recovery semantics. Each ti
 
 Canon skills are exempt: Unregister and Delete are prohibited entirely. Use **Hide** instead — see [personas.md](personas.md#canon-protection-hide-instead-of-unregisterdelete).
 
+![Detail drawer for a non-canon, user-authored skill — Unregister is available as the mid-tier action; the YOURS badge sits on the card behind the drawer](images/skill-detail-yours.png)
+
 ## Skill
 
 A folder containing instructions (`SKILL.md`) and optional metadata (`meta.json`) that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist.

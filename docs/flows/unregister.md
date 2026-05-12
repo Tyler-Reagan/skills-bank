@@ -25,6 +25,8 @@ Settings → **Unregister destination**. Defaults to **Agents (shared)** which m
 
 Use Unregister when you want to stop Skills Bank from managing a skill but keep the files around — either to hand the skill off to another tool, edit it directly outside of Skills Bank, or audit it before deletion. Delete is the bottom of the ladder and requires unregistration first; once unregistered, the skill appears in **Installed → Unregistered** with an inline **Delete** button (confirmation required).
 
+![Detail drawer for an unregistered skill — Register and Delete are inline; the drawer no longer shows the registry-managed action set](../images/skill-detail-unregistered.png)
+
 ## Canon skills
 
 Unregistering a canon skill is prohibited (M5). Canon = your linked registry's upstream set. You can **hide** canon skills you don't want surfaced — see [personas.md](../personas.md#canon-is-repo-relative).

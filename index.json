@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-12T20:13:19.322Z",
+  "generatedAt": "2026-05-12T21:12:41.095Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -11,11 +11,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -28,11 +23,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -45,11 +35,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -62,11 +47,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -79,11 +59,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -96,11 +71,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -113,11 +83,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -130,11 +95,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -147,11 +107,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -163,7 +118,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -174,11 +129,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "d5ef26ff962851f34bb2edac1967d2360befb0cb",
-        "date": "2026-05-06 09:47:55 -0700",
-        "message": "format: ran prettier formatter repo-wide"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -191,11 +141,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -207,11 +152,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -224,11 +164,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -240,11 +175,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -256,7 +186,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -268,11 +198,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -284,11 +209,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -300,7 +220,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -311,7 +231,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -322,7 +242,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -334,11 +254,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -351,11 +266,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -370,11 +280,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6b39eaa886dc651a7c1e6bc937db4739f91ce89d",
-        "date": "2026-05-06 20:13:47 -0700",
-        "message": "chore(skills): edit tags impeccable"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -387,11 +292,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -404,11 +304,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -420,11 +315,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -436,11 +326,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -452,11 +337,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
-        "date": "2026-05-06 17:27:20 -0700",
-        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -468,11 +348,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -484,7 +359,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -495,11 +370,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -511,7 +381,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -522,11 +392,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -538,7 +403,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -549,11 +414,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "d5ef26ff962851f34bb2edac1967d2360befb0cb",
-        "date": "2026-05-06 09:47:55 -0700",
-        "message": "format: ran prettier formatter repo-wide"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -565,11 +425,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -581,7 +436,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -593,13 +448,8 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
-      "publishState": "pushed",
-      "canon": true
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "shadcn",
@@ -609,7 +459,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -621,11 +471,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -637,11 +482,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
-        "date": "2026-05-06 17:27:20 -0700",
-        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -653,7 +493,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -664,11 +504,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -680,11 +515,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -696,11 +526,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -712,11 +537,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -728,11 +548,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "9ff00b796f9eb40021e2fa840648f3d98cdb8c5b",
-        "date": "2026-05-06 17:27:20 -0700",
-        "message": "added new skills to registry: - naming-analyzer - readme-i18n - specs-code-cleanup - user-personas"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -744,7 +559,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -755,7 +570,7 @@
         "source": "user"
       },
       "adopted": true,
-      "publishState": "untracked",
+      "publishState": "draft",
       "canon": false
     },
     {
@@ -768,11 +583,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -786,11 +596,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     },
@@ -804,11 +609,6 @@
         "source": "user"
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
-      },
       "publishState": "pushed",
       "canon": true
     }
