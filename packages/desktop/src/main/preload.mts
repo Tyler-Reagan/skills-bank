@@ -22,6 +22,8 @@ const api = {
   hide: (name: string) => ipcRenderer.invoke(IPC.hide, name),
   unhide: (name: string) => ipcRenderer.invoke(IPC.unhide, name),
   acceptDrift: (name: string) => ipcRenderer.invoke(IPC.acceptDrift, name),
+  takeCanonical: (name: string) =>
+    ipcRenderer.invoke(IPC.takeCanonical, name),
   forgetMissing: (name: string) =>
     ipcRenderer.invoke(IPC.forgetMissing, name),
   clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),

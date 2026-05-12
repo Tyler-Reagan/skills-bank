@@ -67,6 +67,7 @@ export const IPC = {
   hide: "skills:hide",
   unhide: "skills:unhide",
   acceptDrift: "skills:acceptDrift",
+  takeCanonical: "skills:takeCanonical",
   forgetMissing: "skills:forgetMissing",
   clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
@@ -245,6 +246,7 @@ interface SkillsBankAPI {
   hide(name: string): Promise<{ ok: boolean; message: string }>;
   unhide(name: string): Promise<{ ok: boolean; message: string }>;
   acceptDrift(name: string): Promise<{ ok: boolean; message: string }>;
+  takeCanonical(name: string): Promise<{ ok: boolean; message: string }>;
   forgetMissing(name: string): Promise<{ ok: boolean; message: string }>;
   clearPendingConflicts(): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;

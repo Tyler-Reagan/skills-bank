@@ -41,10 +41,15 @@ export function hashSkillFolder(skillDir: string): string | null {
     }
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const ent of entries) {
-      // Skip the .skills-bank.json sidecar — it's app-state, not skill
-      // content. Including it would make every sync mark the skill
-      // drifted (syncedAt timestamp changes each pull).
+      // Skip the app-state sidecars — `.skills-bank.json` (source +
+      // syncedAt timestamps) and `.skills-bank-hash` (the recorded
+      // post-sync hash itself). Including either makes drift fire
+      // spuriously: `.skills-bank.json` because syncedAt changes per
+      // pull; `.skills-bank-hash` because sync writes it AFTER
+      // computing the hash, so the next build's walk sees the hash
+      // file in-tree and the comparison never matches.
       if (ent.name === ".skills-bank.json") continue;
+      if (ent.name === ".skills-bank-hash") continue;
       const abs = path.join(dir, ent.name);
       const r = rel ? `${rel}/${ent.name}` : ent.name;
       if (ent.isSymbolicLink()) {
@@ -120,6 +125,25 @@ export function acceptDriftKeepLocal(skillDir: string): void {
       // ignore
     }
   }
+}
+
+/**
+ * Heal action — take-canonical on a canon-drift state. The user
+ * acknowledges that the current on-disk content is the canonical
+ * baseline going forward: re-snapshot the hash so the next build
+ * sees no drift. Source marker stays `canonical` — Sync still owns
+ * the skill and would still overwrite on the next pull.
+ *
+ * Distinct from acceptDriftKeepLocal (which flips source to user
+ * and detaches from Sync entirely). Use this when the drift
+ * indicator surfaced after a sync but the post-sync state is what
+ * you want — clearing the indicator without reclassifying the skill.
+ */
+export function acceptDriftTakeCanonical(skillDir: string): void {
+  const src = readSkillSource(skillDir);
+  if (src.source !== "canonical") return;
+  const h = hashSkillFolder(skillDir);
+  if (h) writeSyncedHash(skillDir, h);
 }
 
 /**

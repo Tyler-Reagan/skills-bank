@@ -28,6 +28,7 @@ import {
   exportRegistry,
   fetchCanonicalTarball,
   acceptDriftKeepLocal,
+  acceptDriftTakeCanonical,
   finalizeSkillsDir,
   forgetMissingEntry,
   getExportInfo,
@@ -892,6 +893,38 @@ ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
     return {
       ok: true,
       message: `Kept local edits to ${name}; future syncs will leave it alone.`,
+    };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+});
+
+// Canon-drift heal — take-canonical arm. Re-snapshots the current
+// hash so drift clears; source stays canonical so Sync continues to
+// own the skill. Distinct from acceptDrift (which detaches from
+// Sync). Use this when drift surfaced spuriously and the current
+// post-sync state is acceptable.
+ipcMain.handle(IPC.takeCanonical, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const index = buildRegistryIndex(registryRoot);
+  const entry = index.entries.find((e) => e.name === name);
+  if (!entry) return { ok: false, message: `${name} is not in the registry` };
+  if (entry.adopted === false) {
+    return {
+      ok: false,
+      message: `${name} isn't adopted — drift doesn't apply`,
+    };
+  }
+  const skillDir = path.join(registryRoot, entry.path);
+  try {
+    acceptDriftTakeCanonical(skillDir);
+    buildRegistryIndex(registryRoot, {
+      includeGitInfo: true,
+      writeFile: true,
+    });
+    return {
+      ok: true,
+      message: `Re-baselined ${name} as canonical; drift cleared.`,
     };
   } catch (err) {
     return { ok: false, message: (err as Error).message };

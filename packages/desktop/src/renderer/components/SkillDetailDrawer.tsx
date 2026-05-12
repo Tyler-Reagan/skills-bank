@@ -74,11 +74,18 @@ interface Props {
   /** M5: undo Hide. Only meaningful in the canon-hidden state. */
   onUnhide?: () => Promise<void> | void;
   /**
-   * M6: canon-drift heal. Accept local edits — clears the canonical
-   * marker so future syncs leave the skill alone. Only meaningful in
-   * the canon-drift state.
+   * Canon-drift heal — keep-mine arm. Clears the canonical marker
+   * so future syncs leave the skill alone. Only meaningful in the
+   * canon-drift state.
    */
   onAcceptDrift?: () => Promise<void> | void;
+  /**
+   * Canon-drift heal — take-canonical arm. Re-snapshots the current
+   * on-disk hash as the canonical baseline; drift clears, source
+   * stays canonical, Sync still owns the skill. Use when drift
+   * surfaced spuriously and the current state is acceptable.
+   */
+  onTakeCanonical?: () => Promise<void> | void;
   /**
    * M6: missing-entry heal. Forget the registry/external record.
    * Only meaningful in registry-folder-missing and
@@ -96,6 +103,7 @@ type ActionState =
   | "hiding"
   | "unhiding"
   | "accepting-drift"
+  | "taking-canonical"
   | "forgetting";
 
 export function SkillDetailDrawer({
@@ -114,6 +122,7 @@ export function SkillDetailDrawer({
   onHide,
   onUnhide,
   onAcceptDrift,
+  onTakeCanonical,
   onForgetMissing,
 }: Props): React.ReactElement {
   const persona = usePersona();
@@ -593,9 +602,10 @@ export function SkillDetailDrawer({
             </>
           )}
 
-          {/* M6 heal primaries — accept-drift / forget-missing.
-              Single-option flows: present one action with explanatory
-              copy rather than burying the choice. */}
+          {/* Canon-drift two-arm heal. Both clear the badge; they
+              differ in what happens on future syncs. Side-by-side
+              presentation so the user can see both choices without
+              hunting through a submenu. */}
           {caps.canAcceptDrift && onAcceptDrift && (
             <>
               <button
@@ -617,10 +627,34 @@ export function SkillDetailDrawer({
                   "Accept local changes"
                 )}
               </button>
+              {caps.canTakeCanonical && onTakeCanonical && (
+                <button
+                  className="btn"
+                  disabled={action !== null}
+                  onClick={() => {
+                    setAction("taking-canonical");
+                    void Promise.resolve(onTakeCanonical()).finally(() =>
+                      setAction(null),
+                    );
+                  }}
+                  title="Re-baseline the current on-disk state as canonical. Drift clears; the skill stays under Sync, which can still overwrite on the next pull."
+                >
+                  {action === "taking-canonical" ? (
+                    <>
+                      <span className="spinner inline" /> Re-baselining…
+                    </>
+                  ) : (
+                    "Take canonical"
+                  )}
+                </button>
+              )}
               <p className="drawer-action-hint">
-                This canonical skill has been edited locally. Accepting
-                clears the canonical marker — sync will leave it alone
-                going forward.
+                This canonical skill differs from its synced baseline.
+                <strong> Accept local changes</strong> detaches from
+                Sync — your edits stay, sync stops overwriting.
+                <strong> Take canonical</strong> re-baselines the
+                current state as the new synced version — drift
+                clears, Sync still owns the skill.
               </p>
             </>
           )}

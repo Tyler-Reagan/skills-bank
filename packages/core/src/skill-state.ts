@@ -76,12 +76,18 @@ export interface DrawerCapabilities {
   /** M5: undo Hide. Granted only in the canon-hidden state. */
   canUnhide: boolean;
   /**
-   * M6: canon-drift heal — accept the local edits as user-authored.
+   * Canon-drift heal — accept the local edits as user-authored.
    * Clears the source: canonical marker so future syncs leave the
-   * skill alone. The only sensible "single option" today; a future
-   * take-canonical adds the other arm.
+   * skill alone.
    */
   canAcceptDrift: boolean;
+  /**
+   * Canon-drift heal — take the current (post-sync) on-disk state
+   * as the canonical baseline. Re-snapshots the synced hash so the
+   * next build sees no drift; source marker stays canonical and
+   * Sync continues to own the skill.
+   */
+  canTakeCanonical: boolean;
   /**
    * M6: forget a missing entry — drop the registry/external record.
    * For adopted missing: the entry naturally drops on next index
@@ -134,6 +140,7 @@ const NEVER: DrawerCapabilities = {
   canHide: false,
   canUnhide: false,
   canAcceptDrift: false,
+  canTakeCanonical: false,
   canForgetMissing: false,
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
@@ -186,10 +193,16 @@ export function classifyDrawerState(
     };
   }
 
-  // M6: canon-drift. Local copy of a canonical skill has been edited
-  // since the last sync. The single recoverable heal action today is
-  // "accept local changes" (clear the canonical marker so sync stops
-  // trying to overwrite). Take-canonical is future work.
+  // Canon-drift. Local copy of a canonical skill has been edited
+  // since the last sync. Two recoverable heal arms:
+  //   - Accept local changes (canAcceptDrift): clear the canonical
+  //     marker so the skill becomes user-authored; Sync stops
+  //     trying to overwrite it.
+  //   - Take canonical (canTakeCanonical): re-snapshot the current
+  //     on-disk hash as the new synced baseline. Source marker stays
+  //     canonical; Sync still owns the skill. Use this when drift
+  //     surfaced spuriously (e.g. branch-divergence noise) and the
+  //     current state is acceptable as canonical going forward.
   if (isRegistered && entry.drift === true) {
     return {
       state: "canon-drift",
@@ -199,6 +212,7 @@ export function classifyDrawerState(
         ...NEVER,
         canRevealInFinder: true,
         canAcceptDrift: true,
+        canTakeCanonical: true,
         canExport: true,
         primary: "accept-drift",
       },

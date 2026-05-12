@@ -1315,6 +1315,22 @@ export function App(): React.ReactElement {
                       }
                     : undefined
                 }
+                onTakeCanonical={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canTakeCanonical
+                    ? async () => {
+                        const r = await window.skillsBank.takeCanonical(
+                          selected.name,
+                        );
+                        flash(r.message);
+                        if (r.ok) {
+                          void window.skillsBank.rebuildIndex();
+                          setSelected(null);
+                        }
+                        await refresh();
+                      }
+                    : undefined
+                }
                 onForgetMissing={
                   classifyDrawerState(selected, installed, isRegistered)
                     .capabilities.canForgetMissing
