@@ -6,7 +6,10 @@ import type {
 } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
 import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js";
-import { InstalledTab, type InstalledGroup } from "./components/InstalledTab.js";
+import {
+  InstalledTab,
+  type InstalledGroup,
+} from "./components/InstalledTab.js";
 import { RegisterModal } from "./components/RegisterModal.js";
 import { Header, type Density, type Theme } from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
