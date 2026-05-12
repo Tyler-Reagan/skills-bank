@@ -22,7 +22,7 @@ import {
   buildRegistryIndex,
   classifySkillByName,
   clearPendingConflicts,
-  deregisterSkill,
+  deleteFromBankSkill,
   exportSkill,
   exportRegistry,
   fetchCanonicalTarball,
@@ -40,6 +40,7 @@ import {
   removeBrokenLinks,
   repairBrokenLinks,
   resolveSkillConflicts,
+  unregisterSkill,
   writeSyncDecisions,
   writeUpstreamCanonNames,
   AGENTS,
@@ -753,7 +754,7 @@ ipcMain.handle(IPC.deregister, (_e, name: string) => {
     };
   }
   try {
-    const r = deregisterSkill(name, { registryRoot });
+    const r = deleteFromBankSkill(name, { registryRoot });
     const removedSymlinkCount =
       r.symlinkRemovals?.filter((s) => s.removed).length ?? 0;
     return {
@@ -767,6 +768,50 @@ ipcMain.handle(IPC.deregister, (_e, name: string) => {
     return { ok: false, message: (err as Error).message, errors: [] };
   }
 });
+
+// M4: mid-tier destructive action. Moves adopted files to the
+// configured agents dir (default ~/.agents/skills/) and removes the
+// registry entry. Non-adopted skills just lose the entry; origin
+// files untouched.
+ipcMain.handle(
+  IPC.unregister,
+  (_e, name: string, destination: AgentId) => {
+    if (!registryRoot) {
+      return {
+        ok: false,
+        message: NO_ROOT_MSG,
+        wasAdopted: false,
+        errors: [],
+      };
+    }
+    const classification = classifySkillByName(registryRoot, name);
+    if (classification && !classification.capabilities.canUnregister) {
+      return {
+        ok: false,
+        message: `Cannot unregister ${name} from this state (${classification.state}).`,
+        wasAdopted: false,
+        errors: [],
+      };
+    }
+    try {
+      const r = unregisterSkill(name, { registryRoot, destination });
+      return {
+        ok: r.ok,
+        message: r.message,
+        destinationPath: r.destinationPath,
+        wasAdopted: r.wasAdopted,
+        errors: r.errors,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: (err as Error).message,
+        wasAdopted: false,
+        errors: [],
+      };
+    }
+  },
+);
 
 // Stuck-state recovery: drop the pending-conflicts.json state file so
 // the next sync attempt starts clean. Idempotent — fine to call when no

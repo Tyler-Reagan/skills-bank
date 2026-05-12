@@ -25,7 +25,7 @@ Three actions form an escalation, with distinct file/recovery semantics:
 | Action | Files | Agent symlinks | Recovery |
 |---|---|---|---|
 | Remove from agents | untouched | removed | reinstall |
-| Unregister | adopted: moved to expulsion dir; non-adopted: untouched | removed | re-register from new location |
+| [Unregister](flows/unregister.md) | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location | re-register from new location |
 | Delete from Skills Bank | deleted | removed | canon: re-pull; non-canon: gone (modulo export) |
 
 ## Skill

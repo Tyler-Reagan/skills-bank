@@ -62,6 +62,14 @@ interface Props {
    * install broadcasts to every existing agent dir (legacy behavior).
    */
   defaultInstallAgents?: import("@skills-bank/core").AgentId[];
+  /**
+   * M4: mid-tier destructive action. For adopted skills, moves files
+   * to the configured agents dir. For non-adopted, drops the entry
+   * with origin files untouched. Distinct from Delete from Skills
+   * Bank (which destroys files) and Remove from agents (which only
+   * severs symlinks).
+   */
+  onUnregister?: () => Promise<void> | void;
 }
 
 type ActionState =
@@ -70,6 +78,7 @@ type ActionState =
   | "uninstalling"
   | "exporting"
   | "registering"
+  | "unregistering"
   | "deleting";
 
 export function SkillDetailDrawer({
@@ -85,6 +94,7 @@ export function SkillDetailDrawer({
   isRegistered,
   onRegister,
   defaultInstallAgents,
+  onUnregister,
 }: Props): React.ReactElement {
   const persona = usePersona();
   const [skillMd, setSkillMd] = useState<string | null>(null);
@@ -836,6 +846,28 @@ export function SkillDetailDrawer({
               disabled={!absPath}
             >
               Reveal in Finder
+            </button>
+          )}
+          {caps.canUnregister && onUnregister && (
+            <button
+              className="btn"
+              style={{ gridColumn: "1 / -1" }}
+              disabled={action !== null}
+              onClick={() => {
+                setAction("unregistering");
+                void Promise.resolve(onUnregister()).finally(() =>
+                  setAction(null),
+                );
+              }}
+              title="Remove from the registry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry."
+            >
+              {action === "unregistering" ? (
+                <>
+                  <span className="spinner inline" /> Unregistering…
+                </>
+              ) : (
+                "Unregister"
+              )}
             </button>
           )}
           {caps.canDeleteFromBank && (

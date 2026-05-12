@@ -42,6 +42,13 @@ export interface DrawerCapabilities {
   canExport: boolean;
   canRevealInFinder: boolean;
   canDeleteFromBank: boolean;
+  /**
+   * Mid-tier destructive action (M4). Move adopted files to the
+   * configured agents dir (or drop the entry, for non-adopted), then
+   * remove the registry entry. Co-varies with canDeleteFromBank in
+   * M4; M5 may tighten further for canon protection.
+   */
+  canUnregister: boolean;
   canRegister: boolean;
   canResolveConflicts: boolean;
   /**
@@ -84,6 +91,7 @@ const NEVER: DrawerCapabilities = {
   canExport: false,
   canRevealInFinder: false,
   canDeleteFromBank: false,
+  canUnregister: false,
   canRegister: false,
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
@@ -183,6 +191,7 @@ export function classifyDrawerState(
         canExport: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
+        canUnregister: true,
         canResolveConflicts: true,
         canRepairBroken: hasBroken,
         primary: "resolve-conflicts",
@@ -202,6 +211,7 @@ export function classifyDrawerState(
         canExport: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
+        canUnregister: true,
         canRepairBroken: true,
         primary: "repair-broken",
       },
@@ -219,6 +229,7 @@ export function classifyDrawerState(
         canExport: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
+        canUnregister: true,
         canRepairBroken: true,
         primary: "repair-broken",
       },
@@ -237,6 +248,7 @@ export function classifyDrawerState(
         canExport: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
+        canUnregister: true,
         primary: "remove-from-agents",
       },
     };
@@ -254,6 +266,7 @@ export function classifyDrawerState(
       canExport: true,
       canRevealInFinder: true,
       canDeleteFromBank: true,
+      canUnregister: true,
       canRepairBroken: false,
       primary: "install",
     },

@@ -214,11 +214,11 @@ function isSymlink(p: string): boolean {
   }
 }
 
-export interface DeregisterOptions {
+export interface DeleteFromBankOptions {
   registryRoot: string;
 }
 
-export interface DeregisterResult {
+export interface DeleteFromBankResult {
   ok: boolean;
   name: string;
   message: string;
@@ -231,19 +231,25 @@ export interface DeregisterResult {
 }
 
 /**
- * Full removal: deletes the registry copy of a skill AND removes every
- * agent-dir symlink pointing at it. Distinct from uninstallSkill which
- * only severs the symlinks. Used by the user-facing "Delete from Skills
- * Bank" action.
+ * Full destructive removal: deletes the registry copy of a skill AND
+ * removes every agent-dir symlink pointing at it. The bottom of the
+ * destructive-action ladder (Remove from agents → Unregister →
+ * Delete from Skills Bank). Recovery for canon skills is a re-pull;
+ * non-canon skills are gone (modulo export).
+ *
+ * Renamed from `deregisterSkill` in M4 so the verb matches the
+ * semantics. The escalation-mid-tier "unregister" lives in
+ * unregister.ts and moves files to the configured agents dir rather
+ * than deleting them.
  *
  * Guards against deleting anything outside `<registryRoot>/skills/` —
  * the resolved path must live inside the canonical skills directory or
  * the operation refuses.
  */
-export function deregisterSkill(
+export function deleteFromBankSkill(
   name: string,
-  opts: DeregisterOptions,
-): DeregisterResult {
+  opts: DeleteFromBankOptions,
+): DeleteFromBankResult {
   const index = buildRegistryIndex(opts.registryRoot);
   const entry = findEntry(index, name);
   if (!entry) {

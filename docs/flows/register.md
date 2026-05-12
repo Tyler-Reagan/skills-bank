@@ -20,10 +20,12 @@ Use **Register all** in the section header to make individual selections for eve
 
 Skills Bank tracks an **Adopted** axis per registry entry:
 
-- **Adopted** — files live under `<repo>/skills/<name>/`. The bank owns the files. Unregistering moves them to your shared agents directory (see [unregister.md](unregister.md)).
+- **Adopted** — files live under `<repo>/skills/<name>/`. The bank owns the files. Unregistering moves them to your shared agents directory.
 - **Not adopted** — files live wherever you registered from. The bank just tracks the external path. Unregistering removes the index entry but leaves origin files untouched.
 
 The choice is controlled globally by the `Move files into Skills Bank on Register` setting. Existing `register-external` entries from before M3 load forward as `adopted: false` registered entries with no migration step.
+
+The reverse direction — backing a skill out of the registry — is the [Unregister flow](unregister.md). It's distinct from **Delete from Skills Bank**, which destroys files outright.
 
 ## What if the same name is already registered?
 

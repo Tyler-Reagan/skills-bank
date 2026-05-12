@@ -14,6 +14,8 @@ const api = {
     ipcRenderer.invoke(IPC.install, name, force, agents),
   uninstall: (name: string) => ipcRenderer.invoke(IPC.uninstall, name),
   deregister: (name: string) => ipcRenderer.invoke(IPC.deregister, name),
+  unregister: (name: string, destination: string) =>
+    ipcRenderer.invoke(IPC.unregister, name, destination),
   clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),
   scan: () => ipcRenderer.invoke(IPC.scan),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),

@@ -59,6 +59,7 @@ export const IPC = {
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   deregister: "skills:deregister",
+  unregister: "skills:unregister",
   clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
@@ -190,6 +191,16 @@ export interface DeregisterIPCResult {
   errors?: Array<{ agent?: AgentId; message: string }>;
 }
 
+export interface UnregisterIPCResult {
+  ok: boolean;
+  message: string;
+  /** Where adopted files were moved to. Absent for non-adopted skills. */
+  destinationPath?: string;
+  /** True when the unregistered skill was previously adopted. */
+  wasAdopted: boolean;
+  errors?: Array<{ agent?: AgentId; message: string }>;
+}
+
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
   listInstalled(): Promise<InstalledSkill[]>;
@@ -200,6 +211,10 @@ interface SkillsBankAPI {
   ): Promise<InstallIPCResult>;
   uninstall(name: string): Promise<UninstallIPCResult>;
   deregister(name: string): Promise<DeregisterIPCResult>;
+  unregister(
+    name: string,
+    destination: AgentId,
+  ): Promise<UnregisterIPCResult>;
   clearPendingConflicts(): Promise<{ ok: boolean; message: string }>;
   scan(): Promise<ScanReport>;
   register(

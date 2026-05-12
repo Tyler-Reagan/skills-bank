@@ -38,6 +38,7 @@ const LS_KEYS = {
   density: "skills-bank.density",
   installedOnly: "skills-bank.installedOnly",
   settings: "skills-bank.settings",
+  unregisterHintShown: "skills-bank.unregisterHintShown",
 };
 
 function readSettings(): AppSettings {
@@ -1190,6 +1191,47 @@ export function App(): React.ReactElement {
                         ]);
                         const r = results[0]!;
                         flash(r.message);
+                        if (r.ok) {
+                          void window.skillsBank.rebuildIndex();
+                          setSelected(null);
+                        }
+                        await refresh();
+                      }
+                    : undefined
+                }
+                onUnregister={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canUnregister
+                    ? async () => {
+                        const r = await window.skillsBank.unregister(
+                          selected.name,
+                          settings.unregisterDestinationAgent,
+                        );
+                        if (r.ok && r.wasAdopted) {
+                          // First-run hint about the destination setting.
+                          // Surface once per machine — subsequent
+                          // unregistrations just toast the move.
+                          const hinted =
+                            localStorage.getItem(LS_KEYS.unregisterHintShown) ===
+                            "1";
+                          if (!hinted) {
+                            flash(
+                              `${r.message} — change the destination in Settings → Unregister destination.`,
+                            );
+                            try {
+                              localStorage.setItem(
+                                LS_KEYS.unregisterHintShown,
+                                "1",
+                              );
+                            } catch {
+                              // ignore
+                            }
+                          } else {
+                            flash(r.message);
+                          }
+                        } else {
+                          flash(r.message);
+                        }
                         if (r.ok) {
                           void window.skillsBank.rebuildIndex();
                           setSelected(null);

@@ -140,6 +140,36 @@ export function SettingsModal({
         </section>
 
         <section style={section}>
+          <h3 style={sectionTitle}>Unregister destination</h3>
+          <p style={hint}>
+            When you unregister an adopted skill, its files move out of
+            Skills Bank into the agent dir picked here. The default,
+            <code style={{ marginLeft: 4, marginRight: 4 }}>~/.agents/skills/</code>,
+            is the shared location all agents can read. Non-adopted
+            (symlink-mode) skills aren't moved — their origin files
+            stay in place.
+          </p>
+          <div style={radioRow}>
+            {ALL_AGENTS.map((id) => (
+              <label key={id} style={radioOption}>
+                <input
+                  type="radio"
+                  name="unregister-dest"
+                  checked={draft.unregisterDestinationAgent === id}
+                  onChange={() =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      unregisterDestinationAgent: id,
+                    }))
+                  }
+                />
+                <span>{AGENT_LABELS[id]}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <section style={section}>
           <h3 style={sectionTitle}>Default install agents</h3>
           <p style={hint}>
             When you install a skill from the Registry tab, link it into these
