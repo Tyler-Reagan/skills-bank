@@ -918,11 +918,17 @@ ipcMain.handle(IPC.clearPendingConflicts, () => {
   }
 });
 
-// Uninstall doesn't need the registry — it just removes the symlink at
-// ~/.claude/skills/<name>. Leave it functional even with no registry.
-ipcMain.handle(IPC.uninstall, (_e, name: string) => {
+// Uninstall doesn't need the registry — it just removes symlinks at
+// each agent dir. Leave it functional even with no registry.
+// M7: optional agents array restricts the operation to a subset; the
+// rest of the agent dirs keep their symlinks. Empty/missing array
+// keeps the legacy "remove from every agent dir" behavior.
+ipcMain.handle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
   try {
-    const r = uninstallSkill(name);
+    const r = uninstallSkill(
+      name,
+      agents && agents.length > 0 ? { agents } : {},
+    );
     const removedCount = r.removals.filter((x) => x.removed).length;
     const keptCount = r.errors.length;
     const message =

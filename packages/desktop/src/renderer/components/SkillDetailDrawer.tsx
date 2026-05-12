@@ -90,6 +90,12 @@ interface Props {
    * external-target-missing.
    */
   onForgetMissing?: () => Promise<void> | void;
+  /**
+   * M7: open the per-agent picker so the user can uninstall from a
+   * subset of agent dirs instead of all of them. Default Remove
+   * from agents still hits everything.
+   */
+  onChooseAgentsToUninstall?: () => void;
 }
 
 type ActionState =
@@ -123,6 +129,7 @@ export function SkillDetailDrawer({
   onUnhide,
   onAcceptDrift,
   onForgetMissing,
+  onChooseAgentsToUninstall,
 }: Props): React.ReactElement {
   const persona = usePersona();
   const [skillMd, setSkillMd] = useState<string | null>(null);
@@ -843,7 +850,10 @@ export function SkillDetailDrawer({
           )}
 
           {/* Remove from agents — primary in registered-healthy,
-              secondary in registered-conflicts / registered-mixed-broken. */}
+              secondary in registered-conflicts / registered-mixed-broken.
+              M7: when the skill is linked into more than one agent,
+              expose a per-agent picker next to the bulk-remove button
+              so the user can target a subset. */}
           {caps.canRemoveFromAgents && (
             <button
               className="btn"
@@ -860,6 +870,18 @@ export function SkillDetailDrawer({
               )}
             </button>
           )}
+          {caps.canRemoveFromAgents &&
+            linkedAgentCount > 1 &&
+            onChooseAgentsToUninstall && (
+              <button
+                className="btn ghost"
+                disabled={action !== null}
+                onClick={onChooseAgentsToUninstall}
+                title="Pick specific agent dirs to remove from. The skill stays in the others."
+              >
+                Choose agents…
+              </button>
+            )}
 
           {/* Manage agent links — only meaningful when there's a
               registry target to link to. Hidden for unregistered skills

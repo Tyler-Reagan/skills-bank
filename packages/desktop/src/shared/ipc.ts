@@ -213,7 +213,14 @@ interface SkillsBankAPI {
     force?: boolean,
     agents?: AgentId[],
   ): Promise<InstallIPCResult>;
-  uninstall(name: string): Promise<UninstallIPCResult>;
+  /**
+   * Remove the skill's symlinks from agent dirs. With no `agents`
+   * arg, removes from every agent dir that has the skill (default,
+   * unchanged from pre-M7). Pass an explicit list to target a
+   * subset — surfaced as the "Choose agents…" affordance in the
+   * detail drawer.
+   */
+  uninstall(name: string, agents?: AgentId[]): Promise<UninstallIPCResult>;
   deregister(name: string): Promise<DeregisterIPCResult>;
   unregister(
     name: string,

@@ -27,6 +27,7 @@ import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
+import { UninstallAgentPicker } from "./components/UninstallAgentPicker.js";
 import type { AuthStatus, SyncStatus } from "../shared/ipc.js";
 import { PersonaProvider } from "./PersonaContext.js";
 
@@ -147,6 +148,13 @@ export function App(): React.ReactElement {
   const [installConflict, setInstallConflict] = useState<{
     name: string;
     errors: import("./components/InstallConflictModal.js").InstallConflictError[];
+  } | null>(null);
+  // M7: per-agent uninstall picker. Surfaces when the user clicks
+  // "Choose agents…" next to Remove from agents. The default
+  // Remove from agents button still hits every agent.
+  const [uninstallPickerTarget, setUninstallPickerTarget] = useState<{
+    name: string;
+    installations: InstalledSkill[];
   } | null>(null);
   // Bulk "Resolve all" confirmation list. Each entry's conflicts will
   // be replaced with symlinks to the registry copy. Broken-symlink
@@ -705,6 +713,7 @@ export function App(): React.ReactElement {
               showRegister ||
               !!manageLinksTarget ||
               !!conflictTarget ||
+              !!uninstallPickerTarget ||
               showSettings ||
               showShortcuts ||
               !!conflictModalEntries ||
@@ -1083,6 +1092,24 @@ export function App(): React.ReactElement {
           />
         )}
 
+        {uninstallPickerTarget && (
+          <UninstallAgentPicker
+            name={uninstallPickerTarget.name}
+            installations={uninstallPickerTarget.installations}
+            onClose={() => setUninstallPickerTarget(null)}
+            onApply={async (agents) => {
+              const target = uninstallPickerTarget;
+              setUninstallPickerTarget(null);
+              const r = await window.skillsBank.uninstall(
+                target.name,
+                agents,
+              );
+              flash(r.message);
+              await refresh();
+            }}
+          />
+        )}
+
         {showSettings && (
           <SettingsModal
             settings={settings}
@@ -1212,6 +1239,16 @@ export function App(): React.ReactElement {
                       }
                     : undefined
                 }
+                onChooseAgentsToUninstall={() => {
+                  const ours = installed.filter(
+                    (i) => i.name === selected.name && i.kind === "ours",
+                  );
+                  if (ours.length === 0) return;
+                  setUninstallPickerTarget({
+                    name: selected.name,
+                    installations: ours,
+                  });
+                }}
                 onAcceptDrift={
                   classifyDrawerState(selected, installed, isRegistered)
                     .capabilities.canAcceptDrift

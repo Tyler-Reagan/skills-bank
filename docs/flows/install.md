@@ -37,4 +37,8 @@ Both symlinks point at the same source folder. Edits to the registry copy are im
 
 ## Uninstall
 
-Open the drawer for an installed skill → **Uninstall**. The symlinks are removed; the registry copy is left untouched. Reinstall any time without losing changes.
+Open the drawer for an installed skill → **Remove from agents**. The symlinks are removed; the registry copy is left untouched. Reinstall any time without losing changes.
+
+### Selective uninstall
+
+When a skill is linked into more than one agent dir, a secondary **Choose agents…** button appears next to **Remove from agents**. It opens a per-agent picker so you can drop the skill from a subset of agents while keeping it in the others. The default Remove from agents button still hits every linked agent — the picker is opt-in for the precise case.

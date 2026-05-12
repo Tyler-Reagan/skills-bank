@@ -12,7 +12,8 @@ const api = {
   listInstalled: () => ipcRenderer.invoke(IPC.listInstalled),
   install: (name: string, force?: boolean, agents?: unknown) =>
     ipcRenderer.invoke(IPC.install, name, force, agents),
-  uninstall: (name: string) => ipcRenderer.invoke(IPC.uninstall, name),
+  uninstall: (name: string, agents?: unknown) =>
+    ipcRenderer.invoke(IPC.uninstall, name, agents),
   deregister: (name: string) => ipcRenderer.invoke(IPC.deregister, name),
   unregister: (name: string, destination: string) =>
     ipcRenderer.invoke(IPC.unregister, name, destination),
