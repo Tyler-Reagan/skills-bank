@@ -26,31 +26,43 @@ The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder:
 ---
 config:
   theme: base
+  layout: elk
+  flowchart:
+    nodeSpacing: 60
+    rankSpacing: 90
+    curve: basis
 ---
-stateDiagram-v2
+flowchart LR
+    %% Lifecycle ladder. Heal-pending states (yellow) branch off Registered.
+    %% Rendered LR with ELK so the many transitions off Registered don't
+    %% collide on label placement.
+
+    classDef heal fill:#fef3c7,stroke:#d97706,color:#92400e,stroke-width:1.5px
+    classDef terminal fill:#0f172a,stroke:#0f172a,color:#fff
+
+    Start([Start]):::terminal
+    Done([End]):::terminal
+
     %% Lifecycle ladder
-    [*] --> Unmanaged: discovered on agent disk
-    [*] --> Registered: shipped canon or Sync pull
-    Unmanaged --> Registered: Register (adopted true or false)
-    Registered --> Unregistered: Unregister
-    Unregistered --> Registered: Re-register
-    Unregistered --> [*]: Delete
+    Start  -->|"discovered on agent disk"|     Unmanaged
+    Start  -->|"shipped canon or Sync pull"|   Registered
+    Unmanaged    -->|"Register"|              Registered
+    Registered   -->|"Unregister"|            Unregistered
+    Unregistered -->|"Re-register"|           Registered
+    Unregistered -->|"Delete"|                Done
 
     %% Canon-only attribute toggle
-    Registered --> Hidden: Hide (canon only)
-    Hidden --> Registered: Unhide
+    Registered -->|"Hide (canon only)"|   Hidden
+    Hidden     -->|"Unhide"|              Registered
 
     %% Heal-pending side states — see flows/heal.md
-    Registered --> CanonDrift: local edit to canon files
-    CanonDrift --> Registered: Accept local or Take canonical
+    Registered  -->|"local edit to canon files"|     CanonDrift
+    CanonDrift  -->|"Accept local / Take canonical"| Registered
+    Registered  -->|"registry folder deleted"|       FolderMissing
+    FolderMissing -->|"Forget entry"|                Done
+    Registered  -->|"external path deleted"|         TargetMissing
+    TargetMissing -->|"Forget entry"|                Done
 
-    Registered --> FolderMissing: registry folder deleted
-    FolderMissing --> [*]: Forget entry
-
-    Registered --> TargetMissing: external path deleted
-    TargetMissing --> [*]: Forget entry
-
-    classDef heal fill:#fef3c7,stroke:#d97706,color:#92400e
     class CanonDrift,FolderMissing,TargetMissing heal
 ```
 
