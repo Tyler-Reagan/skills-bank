@@ -60,7 +60,8 @@ export function RegisterModal({
         if (cancelled) return;
         setReport(r);
         const initial: ChoiceMap = {};
-        for (const e of r.entries) initial[e.name] = defaultAction(e, registerAdopts);
+        for (const e of r.entries)
+          initial[e.name] = defaultAction(e, registerAdopts);
         setChoices(initial);
         setPhase({ kind: "plan" });
       })
@@ -468,8 +469,14 @@ function FinalizeCallout(props: {
   onAfter: () => void | Promise<void>;
   hasUnregistered: boolean;
 }): React.ReactElement {
-  const { report, finalizing, setFinalizing, onFlash, onAfter, hasUnregistered } =
-    props;
+  const {
+    report,
+    finalizing,
+    setFinalizing,
+    onFlash,
+    onAfter,
+    hasUnregistered,
+  } = props;
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const target = report.topLevelSymlinks[0]?.resolvedTarget;

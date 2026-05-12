@@ -13,10 +13,7 @@
       }
     },
     "typography": {
-      "display": [
-        "Space Grotesk",
-        "sans-serif"
-      ],
+      "display": ["Space Grotesk", "sans-serif"],
       "icons": "Material Symbols Outlined"
     },
     "spacing": {

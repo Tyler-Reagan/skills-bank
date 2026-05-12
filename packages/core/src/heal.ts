@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { readExternalRegistry, removeExternalRegistryEntry } from "./external.js";
+import {
+  readExternalRegistry,
+  removeExternalRegistryEntry,
+} from "./external.js";
 import { readSkillSource, writeSkillSource } from "./source.js";
 
 /**

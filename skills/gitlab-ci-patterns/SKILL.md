@@ -246,7 +246,6 @@ trigger-child:
     strategy: depend
 ```
 
-
 ## Best Practices
 
 1. **Use specific image tags** (node:20, not node:latest)

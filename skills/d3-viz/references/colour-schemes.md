@@ -7,12 +7,13 @@ Comprehensive guide to colour selection in data visualisation with d3.js.
 ### Category10 (default)
 
 ```javascript
-d3.schemeCategory10
+d3.schemeCategory10;
 // ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
 //  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 ```
 
 **Characteristics:**
+
 - 10 distinct colours
 - Good colour-blind accessibility
 - Default choice for most categorical data
@@ -23,10 +24,11 @@ d3.schemeCategory10
 ### Tableau10
 
 ```javascript
-d3.schemeTableau10
+d3.schemeTableau10;
 ```
 
 **Characteristics:**
+
 - 10 colours optimised for data visualisation
 - Professional appearance
 - Excellent distinguishability
@@ -36,11 +38,12 @@ d3.schemeTableau10
 ### Accent
 
 ```javascript
-d3.schemeAccent
+d3.schemeAccent;
 // 8 colours with high saturation
 ```
 
 **Characteristics:**
+
 - Bright, vibrant colours
 - High contrast
 - Modern aesthetic
@@ -50,11 +53,12 @@ d3.schemeAccent
 ### Dark2
 
 ```javascript
-d3.schemeDark2
+d3.schemeDark2;
 // 8 darker, muted colours
 ```
 
 **Characteristics:**
+
 - Subdued palette
 - Professional appearance
 - Good for dark backgrounds
@@ -64,11 +68,12 @@ d3.schemeDark2
 ### Paired
 
 ```javascript
-d3.schemePaired
+d3.schemePaired;
 // 12 colours in pairs of similar hues
 ```
 
 **Characteristics:**
+
 - Pairs of light and dark variants
 - Useful for nested categories
 - 12 distinct colours
@@ -78,11 +83,12 @@ d3.schemePaired
 ### Pastel1 & Pastel2
 
 ```javascript
-d3.schemePastel1 // 9 colours
-d3.schemePastel2 // 8 colours
+d3.schemePastel1; // 9 colours
+d3.schemePastel2; // 8 colours
 ```
 
 **Characteristics:**
+
 - Soft, low-saturation colours
 - Gentle appearance
 - Good for large areas
@@ -92,12 +98,13 @@ d3.schemePastel2 // 8 colours
 ### Set1, Set2, Set3
 
 ```javascript
-d3.schemeSet1 // 9 colours - vivid
-d3.schemeSet2 // 8 colours - muted
-d3.schemeSet3 // 12 colours - pastel
+d3.schemeSet1; // 9 colours - vivid
+d3.schemeSet2; // 8 colours - muted
+d3.schemeSet3; // 12 colours - pastel
 ```
 
 **Characteristics:**
+
 - Set1: High saturation, maximum distinction
 - Set2: Professional, balanced
 - Set3: Subtle, many categories
@@ -111,12 +118,14 @@ Sequential schemes map continuous data from low to high values using a single hu
 ### Single-hue sequential
 
 **Blues:**
+
 ```javascript
-d3.interpolateBlues
-d3.schemeBlues[9] // 9-step discrete version
+d3.interpolateBlues;
+d3.schemeBlues[9]; // 9-step discrete version
 ```
 
 **Other single-hue options:**
+
 - `d3.interpolateGreens` / `d3.schemeGreens`
 - `d3.interpolateOranges` / `d3.schemeOranges`
 - `d3.interpolatePurples` / `d3.schemePurples`
@@ -124,6 +133,7 @@ d3.schemeBlues[9] // 9-step discrete version
 - `d3.interpolateGreys` / `d3.schemeGreys`
 
 **Use cases:**
+
 - Simple heat maps
 - Choropleth maps
 - Density plots
@@ -132,11 +142,13 @@ d3.schemeBlues[9] // 9-step discrete version
 ### Multi-hue sequential
 
 **Viridis (recommended):**
+
 ```javascript
-d3.interpolateViridis
+d3.interpolateViridis;
 ```
 
 **Characteristics:**
+
 - Perceptually uniform
 - Colour-blind friendly
 - Print-safe
@@ -144,19 +156,22 @@ d3.interpolateViridis
 - Monotonically increasing perceived lightness
 
 **Other perceptually-uniform options:**
+
 - `d3.interpolatePlasma` - Purple to yellow
 - `d3.interpolateInferno` - Black to white through red/orange
 - `d3.interpolateMagma` - Black to white through purple
 - `d3.interpolateCividis` - Colour-blind optimised
 
 **Colour-blind accessible:**
+
 ```javascript
-d3.interpolateTurbo // Rainbow-like but perceptually uniform
-d3.interpolateCool  // Cyan to magenta
-d3.interpolateWarm  // Orange to yellow
+d3.interpolateTurbo; // Rainbow-like but perceptually uniform
+d3.interpolateCool; // Cyan to magenta
+d3.interpolateWarm; // Orange to yellow
 ```
 
 **Use cases:**
+
 - Scientific visualisation
 - Medical imaging
 - Any high-precision data visualisation
@@ -165,18 +180,21 @@ d3.interpolateWarm  // Orange to yellow
 ### Traditional sequential
 
 **Yellow-Orange-Red:**
+
 ```javascript
-d3.interpolateYlOrRd
-d3.schemeYlOrRd[9]
+d3.interpolateYlOrRd;
+d3.schemeYlOrRd[9];
 ```
 
 **Yellow-Green-Blue:**
+
 ```javascript
-d3.interpolateYlGnBu
-d3.schemeYlGnBu[9]
+d3.interpolateYlGnBu;
+d3.schemeYlGnBu[9];
 ```
 
 **Other multi-hue:**
+
 - `d3.interpolateBuGn` - Blue to green
 - `d3.interpolateBuPu` - Blue to purple
 - `d3.interpolateGnBu` - Green to blue
@@ -197,11 +215,12 @@ Diverging schemes highlight deviations from a central value using two distinct h
 ### Red-Blue (temperature)
 
 ```javascript
-d3.interpolateRdBu
-d3.schemeRdBu[11]
+d3.interpolateRdBu;
+d3.schemeRdBu[11];
 ```
 
 **Characteristics:**
+
 - Intuitive temperature metaphor
 - Strong contrast
 - Clear positive/negative distinction
@@ -211,11 +230,12 @@ d3.schemeRdBu[11]
 ### Red-Yellow-Blue
 
 ```javascript
-d3.interpolateRdYlBu
-d3.schemeRdYlBu[11]
+d3.interpolateRdYlBu;
+d3.schemeRdYlBu[11];
 ```
 
 **Characteristics:**
+
 - Three-colour gradient
 - Softer transition through yellow
 - More visual steps
@@ -225,16 +245,19 @@ d3.schemeRdYlBu[11]
 ### Other diverging schemes
 
 **Traffic light:**
+
 ```javascript
-d3.interpolateRdYlGn // Red (bad) to green (good)
+d3.interpolateRdYlGn; // Red (bad) to green (good)
 ```
 
 **Spectral (rainbow):**
+
 ```javascript
-d3.interpolateSpectral // Full spectrum
+d3.interpolateSpectral; // Full spectrum
 ```
 
 **Other options:**
+
 - `d3.interpolateBrBG` - Brown to blue-green
 - `d3.interpolatePiYG` - Pink to yellow-green
 - `d3.interpolatePRGn` - Purple to green
@@ -255,37 +278,38 @@ d3.interpolateSpectral // Full spectrum
 ### Recommended colour-blind safe schemes
 
 **Categorical:**
+
 ```javascript
 // Okabe-Ito palette (colour-blind safe)
 const okabePalette = [
-  '#E69F00', // Orange
-  '#56B4E9', // Sky blue
-  '#009E73', // Bluish green
-  '#F0E442', // Yellow
-  '#0072B2', // Blue
-  '#D55E00', // Vermillion
-  '#CC79A7', // Reddish purple
-  '#000000'  // Black
+  "#E69F00", // Orange
+  "#56B4E9", // Sky blue
+  "#009E73", // Bluish green
+  "#F0E442", // Yellow
+  "#0072B2", // Blue
+  "#D55E00", // Vermillion
+  "#CC79A7", // Reddish purple
+  "#000000", // Black
 ];
 
-const colourScale = d3.scaleOrdinal()
-  .domain(categories)
-  .range(okabePalette);
+const colourScale = d3.scaleOrdinal().domain(categories).range(okabePalette);
 ```
 
 **Sequential:**
+
 ```javascript
 // Use Viridis, Cividis, or Blues
-d3.interpolateViridis  // Best overall
-d3.interpolateCividis  // Optimised for CVD
-d3.interpolateBlues    // Simple, safe
+d3.interpolateViridis; // Best overall
+d3.interpolateCividis; // Optimised for CVD
+d3.interpolateBlues; // Simple, safe
 ```
 
 **Diverging:**
+
 ```javascript
 // Use blue-orange instead of red-green
-d3.interpolateBrBG
-d3.interpolatePuOr
+d3.interpolateBrBG;
+d3.interpolatePuOr;
 ```
 
 ## Custom colour palettes
@@ -293,18 +317,20 @@ d3.interpolatePuOr
 ### Creating custom sequential
 
 ```javascript
-const customSequential = d3.scaleLinear()
+const customSequential = d3
+  .scaleLinear()
   .domain([0, 100])
-  .range(['#e8f4f8', '#006d9c']) // Light to dark blue
+  .range(["#e8f4f8", "#006d9c"]) // Light to dark blue
   .interpolate(d3.interpolateLab); // Perceptually uniform
 ```
 
 ### Creating custom diverging
 
 ```javascript
-const customDiverging = d3.scaleLinear()
+const customDiverging = d3
+  .scaleLinear()
   .domain([0, 50, 100])
-  .range(['#ca0020', '#f7f7f7', '#0571b0']) // Red, grey, blue
+  .range(["#ca0020", "#f7f7f7", "#0571b0"]) // Red, grey, blue
   .interpolate(d3.interpolateLab);
 ```
 
@@ -313,16 +339,14 @@ const customDiverging = d3.scaleLinear()
 ```javascript
 // Brand colours
 const brandPalette = [
-  '#FF6B6B', // Primary red
-  '#4ECDC4', // Secondary teal
-  '#45B7D1', // Tertiary blue
-  '#FFA07A', // Accent coral
-  '#98D8C8'  // Accent mint
+  "#FF6B6B", // Primary red
+  "#4ECDC4", // Secondary teal
+  "#45B7D1", // Tertiary blue
+  "#FFA07A", // Accent coral
+  "#98D8C8", // Accent mint
 ];
 
-const colourScale = d3.scaleOrdinal()
-  .domain(categories)
-  .range(brandPalette);
+const colourScale = d3.scaleOrdinal().domain(categories).range(brandPalette);
 ```
 
 ## Semantic colour associations
@@ -330,26 +354,31 @@ const colourScale = d3.scaleOrdinal()
 ### Universal colour meanings
 
 **Red:**
+
 - Danger, error, negative
 - High temperature
 - Debt, loss
 
 **Green:**
+
 - Success, positive
 - Growth, vegetation
 - Profit, gain
 
 **Blue:**
+
 - Trust, calm
 - Water, cold
 - Information, neutral
 
 **Yellow/Orange:**
+
 - Warning, caution
 - Energy, warmth
 - Attention
 
 **Grey:**
+
 - Neutral, inactive
 - Missing data
 - Background
@@ -357,29 +386,33 @@ const colourScale = d3.scaleOrdinal()
 ### Context-specific palettes
 
 **Financial:**
+
 ```javascript
 const financialColours = {
-  profit: '#27ae60',
-  loss: '#e74c3c',
-  neutral: '#95a5a6',
-  highlight: '#3498db'
+  profit: "#27ae60",
+  loss: "#e74c3c",
+  neutral: "#95a5a6",
+  highlight: "#3498db",
 };
 ```
 
 **Temperature:**
+
 ```javascript
-const temperatureScale = d3.scaleSequential(d3.interpolateRdYlBu)
+const temperatureScale = d3
+  .scaleSequential(d3.interpolateRdYlBu)
   .domain([40, -10]); // Hot to cold (reversed)
 ```
 
 **Traffic/Status:**
+
 ```javascript
 const statusColours = {
-  success: '#27ae60',
-  warning: '#f39c12',
-  error: '#e74c3c',
-  info: '#3498db',
-  neutral: '#95a5a6'
+  success: "#27ae60",
+  warning: "#f39c12",
+  error: "#e74c3c",
+  info: "#3498db",
+  neutral: "#95a5a6",
 };
 ```
 
@@ -392,14 +425,15 @@ Ensure sufficient contrast between colours and backgrounds:
 ```javascript
 // Good contrast example
 const highContrast = {
-  background: '#ffffff',
-  text: '#2c3e50',
-  primary: '#3498db',
-  secondary: '#e74c3c'
+  background: "#ffffff",
+  text: "#2c3e50",
+  primary: "#3498db",
+  secondary: "#e74c3c",
 };
 ```
 
 **WCAG guidelines:**
+
 - Normal text: 4.5:1 minimum
 - Large text: 3:1 minimum
 - UI components: 3:1 minimum
@@ -410,7 +444,7 @@ Never rely solely on colour to convey information:
 
 ```javascript
 // Add patterns or shapes
-const symbols = ['circle', 'square', 'triangle', 'diamond'];
+const symbols = ["circle", "square", "triangle", "diamond"];
 
 // Add text labels
 // Use line styles (solid, dashed, dotted)
@@ -420,6 +454,7 @@ const symbols = ['circle', 'square', 'triangle', 'diamond'];
 ### Testing
 
 Test visualisations for colour blindness:
+
 - Chrome DevTools (Rendering > Emulate vision deficiencies)
 - Colour Oracle (free desktop application)
 - Coblis (online simulator)
@@ -431,18 +466,18 @@ Test visualisations for colour blindness:
 ```javascript
 // Guardian style
 const guardianPalette = [
-  '#005689', // Guardian blue
-  '#c70000', // Guardian red
-  '#7d0068', // Guardian pink
-  '#951c75', // Guardian purple
+  "#005689", // Guardian blue
+  "#c70000", // Guardian red
+  "#7d0068", // Guardian pink
+  "#951c75", // Guardian purple
 ];
 
 // FT style
 const ftPalette = [
-  '#0f5499', // FT blue
-  '#990f3d', // FT red
-  '#593380', // FT purple
-  '#262a33', // FT black
+  "#0f5499", // FT blue
+  "#990f3d", // FT red
+  "#593380", // FT purple
+  "#262a33", // FT black
 ];
 ```
 
@@ -451,10 +486,10 @@ const ftPalette = [
 ```javascript
 // Nature journal style
 const naturePalette = [
-  '#0071b2', // Blue
-  '#d55e00', // Vermillion
-  '#009e73', // Green
-  '#f0e442', // Yellow
+  "#0071b2", // Blue
+  "#d55e00", // Vermillion
+  "#009e73", // Green
+  "#f0e442", // Yellow
 ];
 
 // Use Viridis for continuous data
@@ -466,11 +501,11 @@ const scientificScale = d3.scaleSequential(d3.interpolateViridis);
 ```javascript
 // Professional, conservative
 const corporatePalette = [
-  '#003f5c', // Dark blue
-  '#58508d', // Purple
-  '#bc5090', // Magenta
-  '#ff6361', // Coral
-  '#ffa600'  // Orange
+  "#003f5c", // Dark blue
+  "#58508d", // Purple
+  "#bc5090", // Magenta
+  "#ff6361", // Coral
+  "#ffa600", // Orange
 ];
 ```
 
@@ -483,15 +518,15 @@ function selectColourScheme(data) {
   const extent = d3.extent(data);
   const hasNegative = extent[0] < 0;
   const hasPositive = extent[1] > 0;
-  
+
   if (hasNegative && hasPositive) {
     // Diverging: data crosses zero
-    return d3.scaleSequentialSymlog(d3.interpolateRdBu)
+    return d3
+      .scaleSequentialSymlog(d3.interpolateRdBu)
       .domain([extent[0], 0, extent[1]]);
   } else {
     // Sequential: all positive or all negative
-    return d3.scaleSequential(d3.interpolateViridis)
-      .domain(extent);
+    return d3.scaleSequential(d3.interpolateViridis).domain(extent);
   }
 }
 ```
@@ -501,14 +536,15 @@ function selectColourScheme(data) {
 ```javascript
 function selectCategoricalScheme(categories) {
   const n = categories.length;
-  
+
   if (n <= 10) {
     return d3.scaleOrdinal(d3.schemeTableau10);
   } else if (n <= 12) {
     return d3.scaleOrdinal(d3.schemePaired);
   } else {
     // For many categories, use sequential with quantize
-    return d3.scaleQuantize()
+    return d3
+      .scaleQuantize()
       .domain([0, n - 1])
       .range(d3.quantize(d3.interpolateRainbow, n));
   }
@@ -557,6 +593,7 @@ function selectCategoricalScheme(categories) {
 - **Colour-blind safe (diverging):** `d3.interpolatePuOr` or `d3.interpolateBrBG`
 
 **Always remember:**
+
 1. Test for colour-blindness
 2. Ensure sufficient contrast
 3. Use semantic colours appropriately

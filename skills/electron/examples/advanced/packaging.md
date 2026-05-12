@@ -2,7 +2,6 @@
 
 **官方文档**: https://www.electronjs.org/zh/docs/latest/,
 
-
 ## Instructions
 
 This example demonstrates how to package Electron applications for distribution.
@@ -90,12 +89,7 @@ npx @electron-forge/cli import
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "main.js",
-      "preload.js",
-      "renderer/**/*",
-      "package.json"
-    ],
+    "files": ["main.js", "preload.js", "renderer/**/*", "package.json"],
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"

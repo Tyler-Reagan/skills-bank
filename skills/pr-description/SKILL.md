@@ -45,7 +45,7 @@ If `origin/master` doesn't exist, substitute `origin/main`.
 3. Classify each matched issue:
    - **Closes** — the commit message directly implements what the issue describes (same milestone tag, or verb match like "add", "implement", "fix")
    - **Related** — the issue is adjacent or partially addressed but not fully resolved
-   - **Follow-on** — the issue was created *after* the branch's first commit (i.e. filed *during* this PR's work as future tracking). Use `gh issue view N --json createdAt` to confirm if needed.
+   - **Follow-on** — the issue was created _after_ the branch's first commit (i.e. filed _during_ this PR's work as future tracking). Use `gh issue view N --json createdAt` to confirm if needed.
    - **Unrelated** — skip entirely
 
 ### Step 3 — Group commits into logical sections
@@ -93,11 +93,11 @@ Omit any section that has no entries (e.g. if there are no follow-on issues, dro
 
 ## Linkage syntax rules
 
-| Relationship | Syntax | Effect on merge |
-|---|---|---|
-| This PR fully resolves the issue | `Closes #N` | Issue auto-closes when PR merges |
-| Partial / adjacent work | `Related to #N` | Links but does not close |
-| Issue was opened *as part of* this PR (future work) | `#N — title` under Follow-on | No auto-close; just a reference |
+| Relationship                                        | Syntax                       | Effect on merge                  |
+| --------------------------------------------------- | ---------------------------- | -------------------------------- |
+| This PR fully resolves the issue                    | `Closes #N`                  | Issue auto-closes when PR merges |
+| Partial / adjacent work                             | `Related to #N`              | Links but does not close         |
+| Issue was opened _as part of_ this PR (future work) | `#N — title` under Follow-on | No auto-close; just a reference  |
 
 `Fixes #N` and `Resolves #N` are aliases for `Closes #N` — use `Closes` for consistency.
 

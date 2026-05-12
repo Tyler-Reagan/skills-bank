@@ -13,22 +13,22 @@ Guides carousel (slider) layout design for sequential content display. Carousels
 
 ## When to Use Carousel
 
-| Use carousel when | Use grid/list when |
-|-------------------|---------------------|
-| **Limited space** | Full catalog visible |
-| One focus at a time; rotation desired | Browse, compare many items |
+| Use carousel when                             | Use grid/list when              |
+| --------------------------------------------- | ------------------------------- |
+| **Limited space**                             | Full catalog visible            |
+| One focus at a time; rotation desired         | Browse, compare many items      |
 | Testimonials, quotes, logos, featured gallery | Products, templates, blog index |
-| Above fold; hero or section highlight | Full listing; discovery |
+| Above fold; hero or section highlight         | Full listing; discovery         |
 
 See **grid** for equal-hierarchy display; **list** for text-heavy scan; **masonry** for varying-height gallery.
 
 ## Carousel vs Grid vs List vs Masonry
 
-| Layout | Structure | Best for |
-|--------|-----------|----------|
-| **Grid** | Equal rows and columns; all visible | Products, templates, features |
-| **List** | Single column; stacked | Blog index, docs, search results |
-| **Masonry** | Columns; varying heights | Pinterest-style gallery |
+| Layout       | Structure                            | Best for                            |
+| ------------ | ------------------------------------ | ----------------------------------- |
+| **Grid**     | Equal rows and columns; all visible  | Products, templates, features       |
+| **List**     | Single column; stacked               | Blog index, docs, search results    |
+| **Masonry**  | Columns; varying heights             | Pinterest-style gallery             |
 | **Carousel** | Slides; one/few visible; swipe/click | Testimonials, logos, featured items |
 
 ## Best Practices
@@ -52,12 +52,12 @@ See **grid** for equal-hierarchy display; **list** for text-heavy scan; **masonr
 
 ## Use Cases
 
-| Use case | Format | Page Skill |
-|----------|--------|------------|
-| **Testimonials** | Quote carousel; multiple testimonials | **testimonials-generator** |
-| **Showcase / Gallery** | Featured items; rotation | **showcase-page-generator** |
-| **Press logos** | "As Seen In" logo strip or quote carousel | **press-coverage-page-generator** |
-| **Community** | Banner carousel below hero | **community-forum** |
+| Use case               | Format                                    | Page Skill                        |
+| ---------------------- | ----------------------------------------- | --------------------------------- |
+| **Testimonials**       | Quote carousel; multiple testimonials     | **testimonials-generator**        |
+| **Showcase / Gallery** | Featured items; rotation                  | **showcase-page-generator**       |
+| **Press logos**        | "As Seen In" logo strip or quote carousel | **press-coverage-page-generator** |
+| **Community**          | Banner carousel below hero                | **community-forum**               |
 
 ## Related Skills
 

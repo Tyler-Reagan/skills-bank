@@ -135,8 +135,12 @@ function summarize(
   if (dirs.length > 0)
     parts.push(`${dirs.length} folder${dirs.length === 1 ? "" : "s"} deleted`);
   if (links.length > 0)
-    parts.push(`${links.length} symlink${links.length === 1 ? "" : "s"} removed`);
+    parts.push(
+      `${links.length} symlink${links.length === 1 ? "" : "s"} removed`,
+    );
   if (errors.length > 0)
     parts.push(`${errors.length} error${errors.length === 1 ? "" : "s"}`);
-  return parts.length > 0 ? `${name}: ${parts.join(", ")}` : `${name}: nothing to delete`;
+  return parts.length > 0
+    ? `${name}: ${parts.join(", ")}`
+    : `${name}: nothing to delete`;
 }

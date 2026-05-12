@@ -23,7 +23,10 @@ interface Props {
   terminalApp?: string;
 }
 
-export function DiscoverTab({ modalOpen, terminalApp }: Props): React.ReactElement {
+export function DiscoverTab({
+  modalOpen,
+  terminalApp,
+}: Props): React.ReactElement {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [status, setStatus] = useState<DiscoverStatus>({
     kind: "loading",
@@ -111,7 +114,8 @@ export function DiscoverTab({ modalOpen, terminalApp }: Props): React.ReactEleme
   const onBack = () => void window.skillsBank.discoverGoBack();
   const onReload = () => void window.skillsBank.discoverReload();
   const onOpenExternal = () => void window.skillsBank.discoverOpenExternal();
-  const onOpenTerminal = () => void window.skillsBank.discoverOpenTerminal(terminalApp);
+  const onOpenTerminal = () =>
+    void window.skillsBank.discoverOpenTerminal(terminalApp);
 
   const isError = status.kind === "error";
   const isLoading = status.kind === "loading";

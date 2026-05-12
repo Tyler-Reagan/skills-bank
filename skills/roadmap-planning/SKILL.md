@@ -15,8 +15,8 @@ scenarios:
 estimated_time: "45-90 min"
 ---
 
-
 ## Purpose
+
 Guide product managers through strategic roadmap planning by orchestrating prioritization, epic definition, stakeholder alignment, and release sequencing skills into a structured process. Use this to move from disconnected feature requests to a cohesive, outcome-driven roadmap that aligns stakeholders, sequences work logically, and communicates strategic intent—avoiding "feature factory" roadmaps that lack strategic narrative or customer-centric framing.
 
 This is not a Gantt chart—it's a strategic communication tool that shows what you're building, why it matters, and how it ladders up to business outcomes.
@@ -26,6 +26,7 @@ This is not a Gantt chart—it's a strategic communication tool that shows what 
 ### What is Strategic Roadmap Planning?
 
 Roadmap planning is the process of:
+
 1. **Gathering inputs** — Customer problems, business goals, technical constraints
 2. **Defining initiatives** — Epics with clear hypotheses and success metrics
 3. **Prioritizing** — Rank initiatives by impact, effort, strategic fit
@@ -35,41 +36,49 @@ Roadmap planning is the process of:
 ### Types of Roadmaps
 
 **Now/Next/Later Roadmap:**
+
 - **Now:** Current quarter (committed)
 - **Next:** Following quarter (high confidence)
 - **Later:** Future exploration (low confidence)
 - **Best for:** Agile teams, uncertainty, continuous discovery
 
 **Theme-Based Roadmap:**
+
 - Organize by strategic themes (e.g., "Retention," "Enterprise Expansion," "Mobile Experience")
 - **Best for:** Communicating to execs, showing strategic intent
 
 **Timeline Roadmap (Quarters):**
+
 - Q1: Epics A, B; Q2: Epics C, D; Q3: Epics E, F
 - **Best for:** Resource planning, stakeholder communication
 
 **Feature-Based Roadmap (Anti-Pattern):**
+
 - Lists features without context (e.g., "Dark mode," "SSO," "Advanced reporting")
 - **Why it fails:** No strategic narrative, no customer problems framed
 
 ### Why This Works
+
 - **Outcome-driven:** Ties initiatives to business/customer outcomes
 - **Stakeholder alignment:** Transparent process reduces political friction
 - **Strategic clarity:** Shows not just "what" but "why"
 - **Flexible:** Adapts as you learn from discovery/delivery
 
 ### Anti-Patterns (What This Is NOT)
+
 - **Not a commitment:** Roadmaps are strategic plans, not contracts
 - **Not a feature list:** Roadmaps frame problems, not just solutions
 - **Not waterfall:** Roadmaps evolve quarterly based on learning
 
 ### When to Use This
+
 - Annual or quarterly planning cycles
 - After product strategy session (translate strategy to roadmap)
 - Onboarding new stakeholders (align on direction)
 - Reframing existing roadmap (shift from feature-driven to outcome-driven)
 
 ### When NOT to Use This
+
 - For tactical sprint planning (use backlog instead)
 - When strategy is unclear (run product-strategy-session first)
 - When stakeholders expect date commitments (address expectations first)
@@ -81,6 +90,7 @@ Roadmap planning is the process of:
 When running this workflow as a guided conversation, use [`workshop-facilitation`](../workshop-facilitation/SKILL.md) as the interaction protocol.
 
 It defines:
+
 - session heads-up + entry mode (Guided, Context dump, Best guess)
 - one-question turns with plain-language prompts
 - progress labels (for example, Context Qx/8 and Scoring Qx/5)
@@ -105,6 +115,7 @@ This workflow orchestrates **5 phases** over **1-2 weeks**, using multiple compo
 ### Activities
 
 **1. Review Business Goals (OKRs, Strategic Initiatives)**
+
 - **Source:** Company OKRs, exec strategy memos, board decks
 - **Questions:**
   - What are the company's top 3 priorities this year?
@@ -113,6 +124,7 @@ This workflow orchestrates **5 phases** over **1-2 weeks**, using multiple compo
 - **Output:** 3-5 business outcomes to optimize for
 
 **2. Review Customer Problems (Discovery Insights)**
+
 - **Source:** Discovery interviews, support tickets, NPS feedback, churn surveys
 - **Use:** Insights from `skills/discovery-process/SKILL.md` (if recently completed)
 - **Questions:**
@@ -122,6 +134,7 @@ This workflow orchestrates **5 phases** over **1-2 weeks**, using multiple compo
 - **Output:** 3-5 validated customer problems
 
 **3. Review Technical Constraints & Opportunities**
+
 - **Source:** Engineering leadership, tech debt assessments
 - **Questions:**
   - Are there technical blockers? (scaling, performance, security)
@@ -130,6 +143,7 @@ This workflow orchestrates **5 phases** over **1-2 weeks**, using multiple compo
 - **Output:** List of technical investments required
 
 **4. Review Stakeholder Requests**
+
 - **Source:** Sales, marketing, customer success, execs
 - **Questions:**
   - What are sales asking for? (enterprise features, integrations)
@@ -153,6 +167,7 @@ This workflow orchestrates **5 phases** over **1-2 weeks**, using multiple compo
 ### Activities
 
 **1. Define Epic Hypotheses**
+
 - **Use:** `skills/epic-hypothesis/SKILL.md` (component)
 - **For each initiative:** Write hypothesis statement
 - **Format:** "We believe that [building X] for [persona] will achieve [outcome] because [assumption]."
@@ -183,6 +198,7 @@ Target: 5% → 20%
 ```
 
 **2. Estimate Effort (T-Shirt Sizing)**
+
 - **Participants:** PM + engineering lead
 - **Duration:** 90 minutes
 - **Method:**
@@ -193,6 +209,7 @@ Target: 5% → 20%
 - **Output:** Effort estimate per epic
 
 **3. Map to Business Outcomes**
+
 - **For each epic:** Tag with primary business outcome
 - **Example:**
   - Epic 1 (Guided Onboarding) → Retention
@@ -213,25 +230,28 @@ Target: 5% → 20%
 ### Activities
 
 **1. Choose Prioritization Framework**
+
 - **Use:** `skills/prioritization-advisor/SKILL.md` (interactive)
 - **Participants:** PM
 - **Duration:** 30 minutes
 - **Output:** Recommended framework (RICE, ICE, Value/Effort, etc.)
 
 **2. Score Epics**
+
 - **Participants:** PM, engineering lead, product leadership
 - **Duration:** 120 minutes
 - **Method:** Apply framework to all epics
 - **Example (RICE scoring):**
 
-| Epic | Reach | Impact | Confidence | Effort | RICE Score |
-|------|-------|--------|------------|--------|------------|
-| Guided Onboarding | 10,000 users | 3 (massive) | 80% | 1 month | 24,000 |
-| Enterprise SSO | 500 users | 3 (massive) | 90% | 2 months | 675 |
-| Mobile Workflows | 5,000 users | 2 (high) | 60% | 3 months | 2,000 |
-| Advanced Reporting | 2,000 users | 2 (high) | 50% | 2 months | 1,000 |
+| Epic               | Reach        | Impact      | Confidence | Effort   | RICE Score |
+| ------------------ | ------------ | ----------- | ---------- | -------- | ---------- |
+| Guided Onboarding  | 10,000 users | 3 (massive) | 80%        | 1 month  | 24,000     |
+| Enterprise SSO     | 500 users    | 3 (massive) | 90%        | 2 months | 675        |
+| Mobile Workflows   | 5,000 users  | 2 (high)    | 60%        | 3 months | 2,000      |
+| Advanced Reporting | 2,000 users  | 2 (high)    | 50%        | 2 months | 1,000      |
 
 **3. Adjust for Strategic Fit**
+
 - **Review scores:** Do they align with business goals?
 - **Strategic overrides:** Promote epics that align with strategic bets (even if score is lower)
 - **Example:** Enterprise SSO scores lower, but it's critical for enterprise expansion strategy → boost priority
@@ -250,12 +270,14 @@ Target: 5% → 20%
 ### Activities
 
 **1. Map Dependencies**
+
 - **Questions:**
   - Does Epic B depend on Epic A? (e.g., "Advanced Reporting" requires "Data Pipeline Upgrade")
   - Are there technical blockers? (e.g., "Mobile App" requires "API Redesign")
 - **Output:** Dependency graph (Epic A → Epic B → Epic C)
 
 **2. Sequence by Quarter (or Release)**
+
 - **Now (Q1):** Top 3-5 epics, no dependencies
 - **Next (Q2):** Next 3-5 epics, may depend on Q1 completion
 - **Later (Q3+):** Remaining epics, lower confidence
@@ -303,6 +325,7 @@ LATER (Future):
 ```
 
 **3. Validate with Engineering**
+
 - **Participants:** PM + engineering lead
 - **Questions:**
   - Is sequencing realistic? (capacity, dependencies)
@@ -325,6 +348,7 @@ LATER (Future):
 ### Activities
 
 **1. Create Roadmap Presentation**
+
 - **Format:** 30-45 min presentation
 - **Structure:**
   - **Slide 1:** Strategic context (business goals, customer problems)
@@ -336,6 +360,7 @@ LATER (Future):
 - **Duration:** 2-3 hours to prepare
 
 **2. Present to Stakeholders**
+
 - **Audience:** Execs, product leadership, engineering, sales, marketing, CS
 - **Duration:** 45 min presentation + 15 min Q&A
 - **Focus:**
@@ -344,6 +369,7 @@ LATER (Future):
   - Flexibility: "This roadmap is a plan, not a commitment; we'll adjust as we learn"
 
 **3. Gather Feedback**
+
 - **Questions to ask:**
   - Do these priorities align with business goals?
   - Are we missing critical customer problems?
@@ -352,11 +378,13 @@ LATER (Future):
 - **Output:** List of feedback, concerns, questions
 
 **4. Refine Roadmap**
+
 - **Based on feedback:** Adjust priorities, add missing epics, clarify dependencies
 - **Duration:** 1-2 days
 - **Output:** Final roadmap v1.0
 
 **5. Publish Roadmap**
+
 - **Internal:** Share with team (Confluence, Notion, Productboard, etc.)
 - **External (Optional):** Public roadmap for customers (use Now/Next/Later format)
 - **Format:** Visual roadmap + narrative doc
@@ -404,6 +432,7 @@ Week 2:
 ```
 
 **Total Time Investment:**
+
 - **Fast track:** 1 week (existing epics, quick alignment)
 - **Typical:** 1.5-2 weeks (define epics, stakeholder review)
 
@@ -424,6 +453,7 @@ Later: Mobile workflows (DAU lift)
 ## Common Pitfalls
 
 ### Pitfall 1: Feature-Driven Roadmap (No Outcomes)
+
 **Symptom:** Roadmap lists features ("Dark mode," "SSO," "Advanced filters") with no context
 
 **Consequence:** No strategic clarity, stakeholders don't understand "why"
@@ -433,6 +463,7 @@ Later: Mobile workflows (DAU lift)
 ---
 
 ### Pitfall 2: Prioritizing by HiPPO (Highest Paid Person's Opinion)
+
 **Symptom:** Execs dictate roadmap, no data-driven prioritization
 
 **Consequence:** Build wrong things, ignore customer problems
@@ -442,6 +473,7 @@ Later: Mobile workflows (DAU lift)
 ---
 
 ### Pitfall 3: Roadmap as Commitment (Waterfall Thinking)
+
 **Symptom:** Roadmap treated as contract, no flexibility to adjust
 
 **Consequence:** Can't pivot when you learn new information
@@ -451,6 +483,7 @@ Later: Mobile workflows (DAU lift)
 ---
 
 ### Pitfall 4: No Dependencies Mapped
+
 **Symptom:** Sequence epics without checking technical dependencies
 
 **Consequence:** Q2 epic blocked because Q1 dependency didn't finish
@@ -460,6 +493,7 @@ Later: Mobile workflows (DAU lift)
 ---
 
 ### Pitfall 5: Solo PM Roadmap (No Stakeholder Input)
+
 **Symptom:** PM creates roadmap alone, presents finished plan
 
 **Consequence:** No buy-in, stakeholders feel excluded
@@ -473,28 +507,35 @@ Later: Mobile workflows (DAU lift)
 ### Related Skills (Orchestrated by This Workflow)
 
 **Phase 2:**
+
 - `skills/epic-hypothesis/SKILL.md` (component)
 
 **Phase 3:**
+
 - `skills/prioritization-advisor/SKILL.md` (interactive)
 
 **Phase 4:**
+
 - (Dependencies mapped manually, no specific skill)
 
 **Phase 5:**
+
 - (Presentation created manually, no specific skill)
 
 **Optional/Related:**
+
 - `skills/product-strategy-session/SKILL.md` (workflow) — Run before roadmap planning to establish strategy
 - `skills/discovery-process/SKILL.md` (workflow) — Provides customer problem inputs for Phase 1
 - `skills/user-story-mapping-workshop/SKILL.md` (interactive) — For complex epics requiring release planning
 
 ### External Frameworks
-- Bruce McCarthy, *Product Roadmaps Relaunched* (2017) — Outcome-driven roadmaps
-- C. Todd Lombardo, *Product Roadmaps Relaunched* (2017) — Now/Next/Later framework
+
+- Bruce McCarthy, _Product Roadmaps Relaunched_ (2017) — Outcome-driven roadmaps
+- C. Todd Lombardo, _Product Roadmaps Relaunched_ (2017) — Now/Next/Later framework
 - Intercom, "RICE Prioritization" (2016) — Prioritization framework
 
 ### Dean's Work
+
 - [If Dean has roadmap planning resources, link here]
 
 ---

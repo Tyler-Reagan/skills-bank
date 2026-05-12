@@ -19,6 +19,7 @@ Guides visual identity for consistent brand presentation. Companies with consist
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read Section 12 (Visual Identity) for colors, typography, spacing. See **branding** for brand strategy and visual identity strategy layer.
 
 Identify:
+
 1. **Scope**: New brand, audit, or component design
 2. **Touchpoints**: Web, print, social, product UI, **slides** (PowerPoint, Google Slides, Keynote), **documents** (Word, Google Docs, PDF reports)
 3. **Existing assets**: Logo, style guide, design files
@@ -116,32 +117,32 @@ For AI/SaaS products, consider these visual trends and brand archetypes; adopt, 
 
 ### Visual Trends
 
-| Trend | Signal |
-|-------|--------|
-| **Off-white / beige** | Trust, restraint, premium without gloss |
-| **Organic gradients** | Distinctiveness; add grain, texture |
-| **Digital impressionism** | Mood over literal; suggestive, not descriptive |
-| **Lomo / imperfect** | Exploratory, human creativity |
-| **Contemporary realism** | Precision, reliability, mastery |
-| **Sketch / scribble** | Human thought, exploration over certainty |
-| **Non-brand academia** | Authority; work speaks for itself |
-| **Technical illustrations** | Rigor, engineering depth |
-| **Quirky cuteness** | Approachability; counter doomsday narratives |
-| **Morphing objects** | Emergence, systems that learn |
-| **Futuristic surrealism** | Gateway to new worlds |
-| **Outer space** | Exploration, unknown |
-| **ASCII / pixels** | Retro, playful, technical |
-| **Generative art** | Algorithmic, living system |
+| Trend                       | Signal                                         |
+| --------------------------- | ---------------------------------------------- |
+| **Off-white / beige**       | Trust, restraint, premium without gloss        |
+| **Organic gradients**       | Distinctiveness; add grain, texture            |
+| **Digital impressionism**   | Mood over literal; suggestive, not descriptive |
+| **Lomo / imperfect**        | Exploratory, human creativity                  |
+| **Contemporary realism**    | Precision, reliability, mastery                |
+| **Sketch / scribble**       | Human thought, exploration over certainty      |
+| **Non-brand academia**      | Authority; work speaks for itself              |
+| **Technical illustrations** | Rigor, engineering depth                       |
+| **Quirky cuteness**         | Approachability; counter doomsday narratives   |
+| **Morphing objects**        | Emergence, systems that learn                  |
+| **Futuristic surrealism**   | Gateway to new worlds                          |
+| **Outer space**             | Exploration, unknown                           |
+| **ASCII / pixels**          | Retro, playful, technical                      |
+| **Generative art**          | Algorithmic, living system                     |
 
 ### Brand Archetypes
 
-| Archetype | Tone | Visual |
-|-----------|------|--------|
-| **Likeable Leaders** | Seriousness, stability, trust | Muted greys, warm beiges; impressionistic |
-| **Gentle Humanists** | People before tech | Hand-drawn, everyday moments, nature |
-| **Nerdy Idealists** | Engineering culture | Unpolished, quirky, non-branded |
-| **Bold Builders** | Groundbreaking, transformative | Dark palettes, space references |
-| **Utopian Dreamers** | What becomes possible | Retrofuturistic, surreal worlds |
+| Archetype            | Tone                           | Visual                                    |
+| -------------------- | ------------------------------ | ----------------------------------------- |
+| **Likeable Leaders** | Seriousness, stability, trust  | Muted greys, warm beiges; impressionistic |
+| **Gentle Humanists** | People before tech             | Hand-drawn, everyday moments, nature      |
+| **Nerdy Idealists**  | Engineering culture            | Unpolished, quirky, non-branded           |
+| **Bold Builders**    | Groundbreaking, transformative | Dark palettes, space references           |
+| **Utopian Dreamers** | What becomes possible          | Retrofuturistic, surreal worlds           |
 
 ## Product Marketing Context (Section 12)
 
@@ -162,7 +163,7 @@ When creating or updating `.cursor/project-context.md`, add:
 When the user asks for **deck or document** branding—not only websites:
 
 - **Slide master**: Background color from token; title font = display/heading token; body = body token; default title/body sizes aligned to type scale from **branding** / Section 12.
-- **Theme colors**: Map primary, secondary, background, text, and one accent to the presentation app's theme (PowerPoint *Design → Variants*, Google Slides *Theme*, Keynote *Document* settings) so shapes and charts inherit palette.
+- **Theme colors**: Map primary, secondary, background, text, and one accent to the presentation app's theme (PowerPoint _Design → Variants_, Google Slides _Theme_, Keynote _Document_ settings) so shapes and charts inherit palette.
 - **Charts & shapes**: Cycle accents in a fixed order (e.g. primary → secondary → tertiary) instead of random colors; keeps decks on-brand.
 - **Documents**: Same fonts and heading hierarchy as web where possible; specify paragraph style names (Title, Heading 1–3, Normal) with point sizes and colors.
 

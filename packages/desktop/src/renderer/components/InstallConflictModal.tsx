@@ -62,9 +62,10 @@ export function InstallConflictModal({
           <Icon name="alert-triangle" size="sm" /> Install conflict — {name}
         </h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          Something already exists at {errors.length === 1 ? "this path" : "these paths"}.
-          Forcing replaces existing symlinks with one pointing at the Skills Bank copy.
-          Resolving lets you pick per-agent (replace, delete, or keep).
+          Something already exists at{" "}
+          {errors.length === 1 ? "this path" : "these paths"}. Forcing replaces
+          existing symlinks with one pointing at the Skills Bank copy. Resolving
+          lets you pick per-agent (replace, delete, or keep).
         </p>
 
         <ul

@@ -16,20 +16,21 @@ Guides documentation site structure, navigation, and content organization. Typic
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for product, audience, and use cases.
 
 Identify:
+
 1. **Product type**: Software, API, hardware, service
 2. **Audience**: End users, developers, admins
 3. **Content sources**: Markdown, MDX, Git, CMS
-4. **Subdomain**: docs.*, help.*, or path (/docs)
+4. **Subdomain**: docs._, help._, or path (/docs)
 
 ## Documentation Structure
 
-| Section | Purpose | Typical Content |
-|---------|---------|-----------------|
-| **Getting Started** | Onboarding, first steps | Quick start, installation, first task |
-| **Guides / Tutorials** | Step-by-step learning | How-to articles, workflows |
-| **Concepts** | Background, architecture | Key concepts, glossary links |
-| **API Reference** | Endpoint docs | Auth, request/response, examples; part of docs, not separate page |
-| **Troubleshooting** | Problem solving | FAQ, common errors, support links |
+| Section                | Purpose                  | Typical Content                                                   |
+| ---------------------- | ------------------------ | ----------------------------------------------------------------- |
+| **Getting Started**    | Onboarding, first steps  | Quick start, installation, first task                             |
+| **Guides / Tutorials** | Step-by-step learning    | How-to articles, workflows                                        |
+| **Concepts**           | Background, architecture | Key concepts, glossary links                                      |
+| **API Reference**      | Endpoint docs            | Auth, request/response, examples; part of docs, not separate page |
+| **Troubleshooting**    | Problem solving          | FAQ, common errors, support links                                 |
 
 ## Best Practices
 

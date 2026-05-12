@@ -13,12 +13,12 @@ Guides homepage content, structure, and conversion optimization.
 
 ## Homepage Role & Purpose
 
-| Role | Priority | Notes |
-|------|----------|-------|
-| **Conversion** | Primary | Homepage is a trust machine and conversion engine—not a sales pitch. Most visitors (70–80%) are first-time; they need clarity, credibility, and orientation within 3–5 seconds. Convert through trust-building and guided exploration, not aggressive selling. |
-| **Brand** | Primary | First impression, credibility test, orientation center. Answers: Who are you? What do you offer? Why should I care? Brand voice and differentiation live here—see **branding**. |
-| **Branded keywords SEO** | Required | Primary SEO goal: rank for brand name so people can find you in SERPs. Branded searches indicate high intent and familiarity; they convert better than non-branded. |
-| **Broad/non-branded SEO** | Secondary | Homepage is not the main SEO traffic driver—blog, product pages, and category pages typically carry that. A well-optimized homepage can rank for related non-branded terms as a bonus; do not sacrifice UX or conversion for broad keyword stuffing. |
+| Role                      | Priority  | Notes                                                                                                                                                                                                                                                          |
+| ------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Conversion**            | Primary   | Homepage is a trust machine and conversion engine—not a sales pitch. Most visitors (70–80%) are first-time; they need clarity, credibility, and orientation within 3–5 seconds. Convert through trust-building and guided exploration, not aggressive selling. |
+| **Brand**                 | Primary   | First impression, credibility test, orientation center. Answers: Who are you? What do you offer? Why should I care? Brand voice and differentiation live here—see **branding**.                                                                                |
+| **Branded keywords SEO**  | Required  | Primary SEO goal: rank for brand name so people can find you in SERPs. Branded searches indicate high intent and familiarity; they convert better than non-branded.                                                                                            |
+| **Broad/non-branded SEO** | Secondary | Homepage is not the main SEO traffic driver—blog, product pages, and category pages typically carry that. A well-optimized homepage can rank for related non-branded terms as a bonus; do not sacrifice UX or conversion for broad keyword stuffing.           |
 
 **Principle**: SEO and CRO work together. Good homepage SEO aligns with user needs; conversion optimization ensures attracted traffic converts. See **landing-page-generator** for single-goal campaign pages (homepage is multi-purpose).
 
@@ -27,20 +27,21 @@ Guides homepage content, structure, and conversion optimization.
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for product, audience, and value proposition. See **branding** for brand strategy, positioning, differentiation.
 
 Identify:
+
 1. **Primary goal**: Sign up, demo, purchase, learn more
 2. **Audience**: Cold visitors, returning, specific segment
 3. **Traffic source**: Organic, paid, referral
 
 ## Homepage Structure
 
-| Section | Purpose |
-|---------|---------|
-| **Hero** | Value proposition, primary CTA, above the fold |
-| **Social proof** | Logos, testimonials, metrics; "As Seen In" (press coverage) when applicable; see **customer-stories-page-generator** for case study snippets |
-| **Features/Benefits** | What it does, why it matters |
-| **Use cases** | Who it's for, how they use it |
-| **Objection handling** | FAQ, guarantees, comparisons |
-| **Final CTA** | Repeat primary action |
+| Section                | Purpose                                                                                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hero**               | Value proposition, primary CTA, above the fold                                                                                               |
+| **Social proof**       | Logos, testimonials, metrics; "As Seen In" (press coverage) when applicable; see **customer-stories-page-generator** for case study snippets |
+| **Features/Benefits**  | What it does, why it matters                                                                                                                 |
+| **Use cases**          | Who it's for, how they use it                                                                                                                |
+| **Objection handling** | FAQ, guarantees, comparisons                                                                                                                 |
+| **Final CTA**          | Repeat primary action                                                                                                                        |
 
 ### Common Modules (from website-structure)
 

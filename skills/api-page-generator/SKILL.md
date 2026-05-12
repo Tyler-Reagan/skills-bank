@@ -16,6 +16,7 @@ Guides the API introduction page →typically at `/api` →that overviews the AP
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for product and developer use cases.
 
 Identify:
+
 1. **API type**: REST, GraphQL, etc.
 2. **Audience**: Developers (integration) vs. decision makers (evaluation)
 3. **Docs location**: Where API documentation lives (e.g. `/docs`, `/api/reference`, external)
@@ -23,7 +24,7 @@ Identify:
 ## Page Role
 
 - **API page** (`/api`): Introduction, overview, value prop, CTA to docs or signup
-- **API documentation**: Lives in docs (docs.*) → API Reference section with endpoint reference, auth, examples
+- **API documentation**: Lives in docs (docs.\*) → API Reference section with endpoint reference, auth, examples
 
 ## Best Practices
 

@@ -17,6 +17,7 @@ diagramType
 ```
 
 **Key principles:**
+
 - First line declares diagram type (e.g., `classDiagram`, `sequenceDiagram`, `flowchart`)
 - Use `%%` for comments
 - Line breaks and indentation improve readability but aren't required
@@ -62,6 +63,7 @@ diagramType
 ## Quick Start Examples
 
 ### Class Diagram (Domain Model)
+
 ```mermaid
 classDiagram
     Title -- Genre
@@ -82,6 +84,7 @@ classDiagram
 ```
 
 ### Sequence Diagram (API Flow)
+
 ```mermaid
 sequenceDiagram
     participant User
@@ -99,6 +102,7 @@ sequenceDiagram
 ```
 
 ### Flowchart (User Journey)
+
 ```mermaid
 flowchart TD
     Start([User visits site]) --> Auth{Authenticated?}
@@ -112,6 +116,7 @@ flowchart TD
 ```
 
 ### ERD (Database Schema)
+
 ```mermaid
 erDiagram
     USER ||--o{ ORDER : places
@@ -173,21 +178,25 @@ flowchart LR
 **Available themes:** default, forest, dark, neutral, base
 
 **Layout options:**
+
 - `layout: dagre` (default) - Classic balanced layout
 - `layout: elk` - Advanced layout for complex diagrams (requires integration)
 
 **Look options:**
+
 - `look: classic` - Traditional Mermaid style
 - `look: handDrawn` - Sketch-like appearance
 
 ## Exporting and Rendering
 
 **Native support in:**
+
 - GitHub/GitLab - Automatically renders in Markdown
 - VS Code - With Markdown Mermaid extension
 - Notion, Obsidian, Confluence - Built-in support
 
 **Export options:**
+
 - [Mermaid Live Editor](https://mermaid.live) - Online editor with PNG/SVG export
 - Mermaid CLI - `npm install -g @mermaid-js/mermaid-cli` then `mmdc -i input.mmd -o output.png`
 - Docker - `docker run --rm -v $(pwd):/data minlag/mermaid-cli -i /data/input.mmd -o /data/output.png`
@@ -202,6 +211,7 @@ flowchart LR
 ## When to Create Diagrams
 
 **Always diagram when:**
+
 - Starting new projects or features
 - Documenting complex systems
 - Explaining architecture decisions
@@ -210,6 +220,7 @@ flowchart LR
 - Onboarding new team members
 
 **Use diagrams to:**
+
 - Align stakeholders on technical decisions
 - Document domain models collaboratively
 - Visualize data flows and system interactions

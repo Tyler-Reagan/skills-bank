@@ -26,19 +26,20 @@ Guides brand strategy: purpose, values, positioning, storytelling, voice, and vi
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read Sections 2 (Positioning), 3 (Value Proposition), 8 (Brand & Voice), 12 (Visual Identity).
 
 Identify:
+
 1. **Scope**: New brand, audit, or alignment
 2. **Touchpoints**: Website, social, product UI, directories, content
 3. **Existing assets**: Brand guide, logo, style guide
 
 ## Brand Strategy Pillars
 
-| Pillar | Purpose |
-|--------|---------|
-| **Brand purpose** | Why the brand exists beyond profit; one sentence |
-| **Brand values** | 4–5 core values; what you stand for; differentiators |
-| **Target audience** | Who you serve; ICP; jobs to be done |
-| **Positioning** | For [customer] who [need], our [product] is a [category] that [benefit]. Unlike [competitor], we [differentiator] because [reasons] |
-| **Differentiation** | Why you, not alternatives; concrete, not vague |
+| Pillar              | Purpose                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Brand purpose**   | Why the brand exists beyond profit; one sentence                                                                                    |
+| **Brand values**    | 4–5 core values; what you stand for; differentiators                                                                                |
+| **Target audience** | Who you serve; ICP; jobs to be done                                                                                                 |
+| **Positioning**     | For [customer] who [need], our [product] is a [category] that [benefit]. Unlike [competitor], we [differentiator] because [reasons] |
+| **Differentiation** | Why you, not alternatives; concrete, not vague                                                                                      |
 
 ## Brand Storytelling
 
@@ -50,13 +51,13 @@ Identify:
 
 ### Hero's Journey (Customer as Hero)
 
-| Element | Content |
-|---------|---------|
-| **Hero** | Your customer; their needs, wants, context |
-| **Problem** | What they face; how they solve it now |
-| **Inciting insight** | Reframing that creates urgency |
-| **Brand's role** | Guide, tool, or partner—not hero; how you enable resolution |
-| **Transformation** | What better future looks like; proof (case studies, testimonials) |
+| Element              | Content                                                           |
+| -------------------- | ----------------------------------------------------------------- |
+| **Hero**             | Your customer; their needs, wants, context                        |
+| **Problem**          | What they face; how they solve it now                             |
+| **Inciting insight** | Reframing that creates urgency                                    |
+| **Brand's role**     | Guide, tool, or partner—not hero; how you enable resolution       |
+| **Transformation**   | What better future looks like; proof (case studies, testimonials) |
 
 ### Brand Narrative Arc
 
@@ -67,43 +68,43 @@ Identify:
 
 ### Brand Archetypes (12 Types)
 
-| Archetype | Tone | Example |
-|-----------|------|---------|
-| **Creator** | Innovative, imaginative | Adobe |
-| **Caregiver** | Nurturing, supportive | Johnson & Johnson |
-| **Ruler** | Authoritative, premium | Mercedes-Benz |
-| **Innocent** | Simple, optimistic | Coca-Cola |
-| **Sage** | Wise, knowledgeable | Google |
-| **Explorer** | Adventurous, independent | Patagonia |
-| **Outlaw** | Rebellious, disruptive | Harley-Davidson |
-| **Magician** | Transformative, visionary | Disney |
-| **Hero** | Courageous, determined | Nike |
-| **Lover** | Passionate, sensual | Chanel |
-| **Jester** | Playful, fun | M&M's |
-| **Everyman** | Relatable, down-to-earth | IKEA |
+| Archetype     | Tone                      | Example           |
+| ------------- | ------------------------- | ----------------- |
+| **Creator**   | Innovative, imaginative   | Adobe             |
+| **Caregiver** | Nurturing, supportive     | Johnson & Johnson |
+| **Ruler**     | Authoritative, premium    | Mercedes-Benz     |
+| **Innocent**  | Simple, optimistic        | Coca-Cola         |
+| **Sage**      | Wise, knowledgeable       | Google            |
+| **Explorer**  | Adventurous, independent  | Patagonia         |
+| **Outlaw**    | Rebellious, disruptive    | Harley-Davidson   |
+| **Magician**  | Transformative, visionary | Disney            |
+| **Hero**      | Courageous, determined    | Nike              |
+| **Lover**     | Passionate, sensual       | Chanel            |
+| **Jester**    | Playful, fun              | M&M's             |
+| **Everyman**  | Relatable, down-to-earth  | IKEA              |
 
 Align archetype to customer personality; strengthens storytelling.
 
 ## Brand Voice & Tone
 
-| Element | Definition | Example |
-|---------|------------|---------|
-| **Voice** | Brand personality; consistent across touchpoints | Professional / Friendly / Technical / Bold |
-| **Tone** | How you say it; adapts to context | Confident but not arrogant; helpful; concise |
-| **Avoid** | Buzzwords, terms to never use | "streamline," "revolutionize," "synergy" |
-| **Preferred** | Terms to use consistently | "audit" not "analysis"; "customer" not "user" |
+| Element       | Definition                                       | Example                                       |
+| ------------- | ------------------------------------------------ | --------------------------------------------- |
+| **Voice**     | Brand personality; consistent across touchpoints | Professional / Friendly / Technical / Bold    |
+| **Tone**      | How you say it; adapts to context                | Confident but not arrogant; helpful; concise  |
+| **Avoid**     | Buzzwords, terms to never use                    | "streamline," "revolutionize," "synergy"      |
+| **Preferred** | Terms to use consistently                        | "audit" not "analysis"; "customer" not "user" |
 
 **Product marketing context Section 8**: Document voice, tone, avoid, preferred terms. See **project-context** template.
 
 ## Brand Visual Identity (Strategy Layer)
 
-| Element | Strategy | Implementation |
-|---------|----------|-----------------|
-| **Colors** | Primary, secondary, CTA; industry mapping | **brand-visual-generator** |
-| **Typography** | Display + body; hierarchy; pairing | **brand-visual-generator** |
-| **Logo** | Variants, clear space, minimum size | **logo-generator** |
-| **Imagery** | Tone, subject matter, visual mood | Brand guidelines |
-| **Consistency** | Same identity across web, social, product | All touchpoints |
+| Element         | Strategy                                  | Implementation             |
+| --------------- | ----------------------------------------- | -------------------------- |
+| **Colors**      | Primary, secondary, CTA; industry mapping | **brand-visual-generator** |
+| **Typography**  | Display + body; hierarchy; pairing        | **brand-visual-generator** |
+| **Logo**        | Variants, clear space, minimum size       | **logo-generator**         |
+| **Imagery**     | Tone, subject matter, visual mood         | Brand guidelines           |
+| **Consistency** | Same identity across web, social, product | All touchpoints            |
 
 For full visual specs (fonts, HEX, spacing), see **brand-visual-generator**. For logo placement and implementation, see **logo-generator**.
 
@@ -124,12 +125,12 @@ Single source of truth. Include:
 
 When the user needs **actionable specs** (not only strategy)—for web, slides, or print—produce a **token table** the team can paste into a design system, media kit, or slide master. Align with **brand-visual-generator** for full web/CSS detail.
 
-| Token category | What to document | Example fields |
-|----------------|------------------|----------------|
-| **Colors** | Named roles + values for light/dark if applicable | Primary `#______`, text primary `#______`, background `#______`, accent 1–3, CTA, border, error/success |
-| **Typography** | Family, weight, size scale, line-height | Display / H1–H3 / body / caption; web-safe or system fallbacks |
-| **Spacing** | Base unit and scale | e.g. 8px base; section gaps; logo clear space in `em` or `px` |
-| **Non-text accents** | Charts, shapes, dividers | Rotate accent colors; avoid arbitrary one-off hues outside palette |
+| Token category       | What to document                                  | Example fields                                                                                          |
+| -------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Colors**           | Named roles + values for light/dark if applicable | Primary `#______`, text primary `#______`, background `#______`, accent 1–3, CTA, border, error/success |
+| **Typography**       | Family, weight, size scale, line-height           | Display / H1–H3 / body / caption; web-safe or system fallbacks                                          |
+| **Spacing**          | Base unit and scale                               | e.g. 8px base; section gaps; logo clear space in `em` or `px`                                           |
+| **Non-text accents** | Charts, shapes, dividers                          | Rotate accent colors; avoid arbitrary one-off hues outside palette                                      |
 
 **Applying tokens across surfaces**
 

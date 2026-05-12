@@ -7,6 +7,7 @@ license: Complete terms in LICENSE.txt
 ## When to use this skill
 
 Use this skill whenever the user wants to:
+
 - Build cross-platform desktop applications with Electron
 - Understand Electron architecture (main process, renderer process, preload)
 - Implement IPC (Inter-Process Communication) between processes
@@ -85,7 +86,6 @@ This skill is organized to match the Electron official documentation structure (
    - `templates/renderer-process.md` - Renderer process template
    - `templates/package-json.md` - package.json template
 
-
 ### Doc mapping (one-to-one with official documentation)
 
 - `examples/` → https://www.electronjs.org/zh/docs/latest/
@@ -95,35 +95,36 @@ This skill is organized to match the Electron official documentation structure (
 
 ```javascript
 // main.js
-const { app, BrowserWindow, ipcMain } = require('electron')
-const path = require('path')
+const { app, BrowserWindow, ipcMain } = require("electron");
+const path = require("path");
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 800, height: 600,
+    width: 800,
+    height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: false,  // Security: always disable
-      contextIsolation: true    // Security: always enable
-    }
-  })
-  win.loadFile('index.html')
+      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false, // Security: always disable
+      contextIsolation: true, // Security: always enable
+    },
+  });
+  win.loadFile("index.html");
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(createWindow);
 
 // IPC handler example
-ipcMain.handle('get-data', async () => {
-  return { message: 'Hello from main process' }
-})
+ipcMain.handle("get-data", async () => {
+  return { message: "Hello from main process" };
+});
 ```
 
 ```javascript
 // preload.js
-const { contextBridge, ipcRenderer } = require('electron')
-contextBridge.exposeInMainWorld('api', {
-  getData: () => ipcRenderer.invoke('get-data')
-})
+const { contextBridge, ipcRenderer } = require("electron");
+contextBridge.exposeInMainWorld("api", {
+  getData: () => ipcRenderer.invoke("get-data"),
+});
 ```
 
 ## API Reference (`api/`)

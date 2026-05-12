@@ -130,9 +130,9 @@ export function SettingsModal({
           <h3 style={sectionTitle}>Registration</h3>
           <p style={hint}>
             When you register a skill, move its files into Skills Bank
-            (recommended). With this off, the registry just records the
-            skill's external location and leaves files where they are —
-            useful for skills you actively edit in their own git repo.
+            (recommended). With this off, the registry just records the skill's
+            external location and leaves files where they are — useful for
+            skills you actively edit in their own git repo.
           </p>
           <label style={{ ...checkboxRow, marginTop: 8 }}>
             <input
@@ -152,12 +152,14 @@ export function SettingsModal({
         <section style={section}>
           <h3 style={sectionTitle}>Unregister destination</h3>
           <p style={hint}>
-            When you unregister an adopted skill, its files move out of
-            Skills Bank into the agent dir picked here. The default,
-            <code style={{ marginLeft: 4, marginRight: 4 }}>~/.agents/skills/</code>,
-            is the shared location all agents can read. Non-adopted
-            (symlink-mode) skills aren't moved — their origin files
-            stay in place.
+            When you unregister an adopted skill, its files move out of Skills
+            Bank into the agent dir picked here. The default,
+            <code style={{ marginLeft: 4, marginRight: 4 }}>
+              ~/.agents/skills/
+            </code>
+            , is the shared location all agents can read. Non-adopted
+            (symlink-mode) skills aren't moved — their origin files stay in
+            place.
           </p>
           <div style={radioRow}>
             {ALL_AGENTS.map((id) => (
@@ -285,10 +287,9 @@ export function SettingsModal({
           <section style={section}>
             <h3 style={sectionTitle}>Hidden canon skills</h3>
             <p style={hint}>
-              Canon skills you've hidden from the default Browse view.
-              Unhiding restores them everywhere. Their installations
-              and metadata are preserved while hidden — Hide is just a
-              UI dormancy flag.
+              Canon skills you've hidden from the default Browse view. Unhiding
+              restores them everywhere. Their installations and metadata are
+              preserved while hidden — Hide is just a UI dormancy flag.
             </p>
             <ul
               style={{

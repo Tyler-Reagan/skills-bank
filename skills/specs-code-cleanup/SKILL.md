@@ -22,10 +22,10 @@ Performs post-review cosmetic cleanup to make code production-ready. This is the
 
 ## Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `--lang` | No | `java`, `spring`, `typescript`, `nestjs`, `react`, `python`, `general` |
-| `--task` | Yes | Path to task file |
+| Argument | Required | Description                                                            |
+| -------- | -------- | ---------------------------------------------------------------------- |
+| `--lang` | No       | `java`, `spring`, `typescript`, `nestjs`, `react`, `python`, `general` |
+| `--task` | Yes      | Path to task file                                                      |
 
 ## Best Practices
 
@@ -45,11 +45,11 @@ See `references/language-patterns.md` for language-specific formatter commands, 
    - `--lang` (optional): Target language/framework
    - `--task` (required): Task ID or file path
    - `--spec` (optional): Spec folder path (used with task ID)
-   
+
    **Support two formats**:
    - Format 1 (direct path): `--task=docs/specs/001-feature/tasks/TASK-001.md`
    - Format 2 (spec+task): `--spec=docs/specs/001-feature --task=TASK-001`
-   
+
    If Format 2 is used, construct the task file path as: `{spec}/tasks/{task}.md`
 
 2. Read the task file. Verify:
@@ -68,6 +68,7 @@ See `references/language-patterns.md` for language-specific formatter commands, 
 ### Phase 3: Technical Debt Removal
 
 Search files for temporary/debug artifacts with Grep:
+
 - `console.log`, `System.out.println`, `print(`, `// DEBUG:`, `// temp`, `// hack`
 - Resolved `TODO`/`FIXME` comments (keep unresolved ones)
 
@@ -106,7 +107,6 @@ Review context for each finding. Remove confirmed debt and document what was rem
    - Add a `## Cleanup Summary` section to the task file
    - Check any remaining boxes in the DoD section
    - Hooks automatically update status to `completed` and set `completed_date` + `cleanup_date`
-   
 2. Append `## Cleanup Summary` to task file with:
    - Files cleaned
    - Changes made
@@ -122,6 +122,7 @@ Review context for each finding. Remove confirmed debt and document what was rem
 ```
 
 Actions:
+
 1. Verify TASK-001 status is `reviewed`
 2. Files: `UserController.java`, `UserService.java`, `UserRepository.java`
 3. Remove 5 `System.out.println` and 2 resolved TODOs
@@ -136,6 +137,7 @@ Actions:
 ```
 
 Actions:
+
 1. Verify TASK-003 status is `reviewed`
 2. Files: `Dashboard.tsx`, `useDashboard.ts`, `Dashboard.test.tsx`
 3. Remove 8 `console.log` statements

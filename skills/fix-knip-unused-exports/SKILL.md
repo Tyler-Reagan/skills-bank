@@ -28,6 +28,7 @@ npm run knip
 ```
 
 Output looks like:
+
 ```
 Unused exports (3)
 ::error file=packages/foo/src/bar.ts,line=42,title=Unused exports::myFunction
@@ -43,15 +44,16 @@ rg "myFunction"
 
 Determine which category it falls into:
 
-| Category | Callers | Fix |
-|----------|---------|-----|
-| **Test-only export** | Used in same file + test files only | Extract to new file |
-| **Dead barrel re-export** | Re-exported from `index.ts`, but production code imports via relative paths or other subpaths instead | Remove the re-export from the barrel |
-| **Internally-only-used export** | Used only within the same file, not by tests or other files | Remove the `export` keyword |
-| **Dead code** | No callers anywhere | Delete the export |
-| **Production consumer exists** | Used by non-test code in another file | Not a knip issue -- investigate further |
+| Category                        | Callers                                                                                               | Fix                                     |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **Test-only export**            | Used in same file + test files only                                                                   | Extract to new file                     |
+| **Dead barrel re-export**       | Re-exported from `index.ts`, but production code imports via relative paths or other subpaths instead | Remove the re-export from the barrel    |
+| **Internally-only-used export** | Used only within the same file, not by tests or other files                                           | Remove the `export` keyword             |
+| **Dead code**                   | No callers anywhere                                                                                   | Delete the export                       |
+| **Production consumer exists**  | Used by non-test code in another file                                                                 | Not a knip issue -- investigate further |
 
 **Important**: When grepping, exclude test files to identify production consumers:
+
 ```bash
 rg "myFunction" --glob '!**/*.test.*'
 ```
@@ -65,27 +67,33 @@ When a function is exported solely for test access but is also used internally i
 Before writing code, answer these questions:
 
 **a) What moves to the new file?**
+
 - The flagged export function/class/const
 - All private helper functions it depends on
 - All private constants/types it depends on
 
 **b) Are any helpers shared with functions staying behind?**
+
 - If yes, the helper must be exported from the new file, and the original file imports it
 - This means the new file will have 2+ exports (which is fine for any filename-match-export lint rule)
 
 **c) Will the new file have exactly one exported function?**
+
 - If your project enforces a `filename-match-export` lint rule, the file MUST be named after that export: `myFunction.ts`
 - If the file has 2+ function exports, the name is flexible
 
 **d) Does a test file with a matching name exist?**
+
 - If `bar.ts` stays and `bar.test.ts` exists, the test must still import something from `./bar` (if your project enforces a `test-imports-source` rule)
 - If `bar.ts` is deleted (everything moved out), that rule typically only applies when the matching source file exists
 
 **e) Any circular dependency risk?**
+
 - Draw the import graph: new file -> original file -> new file is circular
 - Fix: move the shared dependency to the new file or a third file
 
 **f) Does it export a constant?**
+
 - If your project enforces a `constants-file-organization` lint rule, exported constants must live in a file named `constants.ts`
 - If the extracted function depends on a constant that other functions in the original file also use, do NOT export the constant from the new file. Instead, call the function (e.g., replace `BUDGET[effort]` with `getBudget(effort)`) to avoid needing a separate `constants.ts`
 
@@ -95,9 +103,11 @@ Create the new file in the same directory:
 
 ```typescript
 // myFunction.ts (new file)
-import { SomeType } from '../types';
+import { SomeType } from "../types";
 
-function privateHelper(): void { /* ... */ }
+function privateHelper(): void {
+  /* ... */
+}
 
 export function myFunction(): SomeType {
   return privateHelper();
@@ -108,7 +118,7 @@ Update the original file to import from the new file:
 
 ```typescript
 // bar.ts (original file, updated)
-import { myFunction } from './myFunction';
+import { myFunction } from "./myFunction";
 
 function otherFunction() {
   const result = myFunction(); // Now imports from new file
@@ -119,7 +129,7 @@ Update test files to import from the new file:
 
 ```typescript
 // bar.test.ts (updated)
-import { myFunction } from './myFunction';
+import { myFunction } from "./myFunction";
 // If bar.ts still exists, you may need to also import something from './bar'
 // to satisfy any test-imports-source rule
 ```
@@ -133,6 +143,7 @@ Example: suppose `throwMappedError` was first extracted alongside `mapResponseFa
 ## Fix: Dead Barrel Re-Exports (Remove from index.ts)
 
 When a barrel `index.ts` re-exports something, but no production code imports it through the barrel. This happens when:
+
 - Production code within the same package uses relative imports (e.g., `import { x } from './source'`) instead of the barrel
 - Production code in other packages imports directly from a subpath (e.g., `@scope/pkg/feature/handlers`) instead of the barrel
 - The re-export was added speculatively but never consumed
@@ -140,6 +151,7 @@ When a barrel `index.ts` re-exports something, but no production code imports it
 ### How to Identify
 
 Grep excluding test files. If the only hits are:
+
 - The barrel `index.ts` itself
 - Source files using relative imports within the same package
 - Test files
@@ -151,6 +163,7 @@ Then the barrel re-export is unused. Simply remove it from `index.ts`.
 If a test in another package imports the symbol through the barrel (e.g., `import { x } from '@scope/pkg/feature'`), you need to provide an alternative import path after removing the barrel re-export:
 
 1. Add a **subpath export** in the source package's `package.json`:
+
    ```json
    {
      "exports": {
@@ -162,7 +175,7 @@ If a test in another package imports the symbol through the barrel (e.g., `impor
 
 2. Update the test to import from the new subpath:
    ```typescript
-   import { doSomething } from '@scope/pkg/feature/doSomething';
+   import { doSomething } from "@scope/pkg/feature/doSomething";
    ```
 
 This pattern follows typical subpath-export conventions used in monorepos.

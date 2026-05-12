@@ -7,7 +7,10 @@ interface Props {
   showSync: boolean;
 }
 
-export function HeaderMenu({ authStatus, showSync }: Props): React.ReactElement {
+export function HeaderMenu({
+  authStatus,
+  showSync,
+}: Props): React.ReactElement {
   const isPower = authStatus?.persona === "power";
   const user = authStatus?.user ?? null;
 

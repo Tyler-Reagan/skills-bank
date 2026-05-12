@@ -23,6 +23,7 @@ Guides on-page content optimization: word count, heading keywords, keyword densi
 **Check for project context first:** If `.claude/project-context.md` or `.cursor/project-context.md` exists, read it for target keywords and content type.
 
 Identify:
+
 1. **Content type**: Article, guide, listicle, pillar, news
 2. **Target keyword**: Primary and secondary
 3. **Competitors**: Top 10 average length and structure — see **competitor-research**
@@ -37,12 +38,12 @@ Identify:
 
 For **article** word count by type (news, how-to, listicle, pillar, etc.), see **article-content**. Generic ranges:
 
-| Content type | Word count | Notes |
-|--------------|-------------|-------|
-| **News / announcements** | 300–600 | Time-sensitive; concise |
-| **Standard articles / how-tos** | 1,000–1,500 | Single topic; actionable |
-| **Listicles / guides** | 1,200–2,000 | "Top 10," "Best X" |
-| **Pillar / cornerstone** | 2,000–3,500+ | Comprehensive; cluster hub |
+| Content type                    | Word count   | Notes                      |
+| ------------------------------- | ------------ | -------------------------- |
+| **News / announcements**        | 300–600      | Time-sensitive; concise    |
+| **Standard articles / how-tos** | 1,000–1,500  | Single topic; actionable   |
+| **Listicles / guides**          | 1,200–2,000  | "Top 10," "Best X"         |
+| **Pillar / cornerstone**        | 2,000–3,500+ | Comprehensive; cluster hub |
 
 ### Strategy
 
@@ -69,12 +70,12 @@ For **article** word count by type (news, how-to, listicle, pillar, etc.), see *
 
 ### Best Practices
 
-| Practice | Purpose |
-|----------|---------|
-| **Descriptive H2s** | Search engines understand context; users scan |
-| **Answer-first** | Place direct answer in first 40–50 words after H2 for Featured Snippets; see **featured-snippet** |
-| **Keyword variation** | Use related terms; avoid repeating exact phrase in every H2 |
-| **Logical flow** | H2s outline the article; support topical authority |
+| Practice              | Purpose                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| **Descriptive H2s**   | Search engines understand context; users scan                                                     |
+| **Answer-first**      | Place direct answer in first 40–50 words after H2 for Featured Snippets; see **featured-snippet** |
+| **Keyword variation** | Use related terms; avoid repeating exact phrase in every H2                                       |
+| **Logical flow**      | H2s outline the article; support topical authority                                                |
 
 ---
 
@@ -82,10 +83,10 @@ For **article** word count by type (news, how-to, listicle, pillar, etc.), see *
 
 ### Definitions
 
-| Term | Meaning |
-|------|---------|
-| **Keyword density** | (Keyword count / Total words) × 100; a metric, not a ranking factor |
-| **Keyword stuffing** | Excessive, unnatural repetition to manipulate rankings; black-hat |
+| Term                 | Meaning                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| **Keyword density**  | (Keyword count / Total words) × 100; a metric, not a ranking factor |
+| **Keyword stuffing** | Excessive, unnatural repetition to manipulate rankings; black-hat   |
 
 ### Current Guidance
 
@@ -107,20 +108,20 @@ For **article** word count by type (news, how-to, listicle, pillar, etc.), see *
 
 ### Images
 
-| Practice | Purpose |
-|----------|---------|
+| Practice                      | Purpose                                                                                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | **Alt, file names, captions** | See **image-optimization** for full image SEO (alt, format, responsive, lazy loading, image sitemap, LCP, captions for Featured Snippets) |
-| **Original over stock** | Unique images signal E-E-A-T — see **eeat-signals** |
+| **Original over stock**       | Unique images signal E-E-A-T — see **eeat-signals**                                                                                       |
 
 **Content placement**: Put images near relevant text; captions support snippet thumbnails. See **image-optimization** for captions; **featured-snippet** for snippet context.
 
 ### Video
 
-| Practice | Purpose |
-|----------|---------|
-| **Embed + metadata** | VideoObject schema, video sitemap, thumbnail; see **video-optimization** |
-| **YouTube** | Google prioritizes YouTube in search; GEO citation; see **youtube-seo**, **generative-engine-optimization** |
-| **Featured Snippet (video)** | Video schema; timestamps/chapters; see **featured-snippet** |
+| Practice                     | Purpose                                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Embed + metadata**         | VideoObject schema, video sitemap, thumbnail; see **video-optimization**                                    |
+| **YouTube**                  | Google prioritizes YouTube in search; GEO citation; see **youtube-seo**, **generative-engine-optimization** |
+| **Featured Snippet (video)** | Video schema; timestamps/chapters; see **featured-snippet**                                                 |
 
 ### Tables
 
@@ -132,12 +133,13 @@ For **article** word count by type (news, how-to, listicle, pillar, etc.), see *
 
 ### Lists: Ordered vs Unordered
 
-| Type | Use case | SEO / Snippet |
-|------|----------|---------------|
-| **Ordered (`<ol>`)** | Steps, rankings, sequences, "Top 10" | List snippets (~19% of Featured Snippets); how-to; see **featured-snippet** |
-| **Unordered (`<ul>`)** | Non-sequential items, features, options | Bullet snippets; definitions, options |
+| Type                   | Use case                                | SEO / Snippet                                                               |
+| ---------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
+| **Ordered (`<ol>`)**   | Steps, rankings, sequences, "Top 10"    | List snippets (~19% of Featured Snippets); how-to; see **featured-snippet** |
+| **Unordered (`<ul>`)** | Non-sequential items, features, options | Bullet snippets; definitions, options                                       |
 
 **Best practices**:
+
 - Use semantic `<ol>` and `<ul>`; avoid divs styled as lists
 - **Answer-first**: For snippet targets, put the direct answer in the first 40–50 words after the heading
 - **Concise items**: List items should be scannable; expand in body if needed

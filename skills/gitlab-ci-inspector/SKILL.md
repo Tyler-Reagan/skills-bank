@@ -11,11 +11,11 @@ Fetch and analyze GitLab CI/CD job logs and pipeline status. Accepts job URLs, p
 
 Extract identifiers from whatever the user provides:
 
-| Input format | Example | Extract |
-|---|---|---|
-| Job URL | `https://gitlab.com/group/project/-/jobs/123` | project path + job ID |
-| Pipeline URL | `https://gitlab.com/group/project/-/pipelines/456` | project path + pipeline ID (then list jobs) |
-| Project + job name + ref | `group/cloud/api-service`, `deploy_dev`, `main` | search pipelines for matching job |
+| Input format             | Example                                            | Extract                                     |
+| ------------------------ | -------------------------------------------------- | ------------------------------------------- |
+| Job URL                  | `https://gitlab.com/group/project/-/jobs/123`      | project path + job ID                       |
+| Pipeline URL             | `https://gitlab.com/group/project/-/pipelines/456` | project path + pipeline ID (then list jobs) |
+| Project + job name + ref | `group/cloud/api-service`, `deploy_dev`, `main`    | search pipelines for matching job           |
 
 **URL parsing patterns:**
 
@@ -47,6 +47,7 @@ curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
 ```
 
 If no token exists, guide the user:
+
 1. Go to https://gitlab.com/-/user_settings/personal_access_tokens
 2. Create a token with `read_api` scope
 3. `export GITLAB_TOKEN=glpat-...` (or add to shell profile)
@@ -121,14 +122,14 @@ Present findings as:
 
 ## Common Error Patterns
 
-| Log pattern | Likely cause |
-|---|---|
-| `Error: Unsupported Terraform Core version` | CI `TERRAFORM_VERSION` doesn't match `required_version` |
-| `Waiting for rollout to finish: 0 replicas Ready` | Pod crash, image pull failure, or scheduling issue |
-| `ImagePullBackOff` / `ErrImagePull` | Image doesn't exist in registry or auth failure |
-| `AccessDeniedException` | Wrong IAM role/profile or missing permissions |
-| `exit code 1` (docker build) | Dockerfile build failure — check lines above |
-| `denied: Your authorization token has expired` | ECR login expired mid-push |
+| Log pattern                                       | Likely cause                                            |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| `Error: Unsupported Terraform Core version`       | CI `TERRAFORM_VERSION` doesn't match `required_version` |
+| `Waiting for rollout to finish: 0 replicas Ready` | Pod crash, image pull failure, or scheduling issue      |
+| `ImagePullBackOff` / `ErrImagePull`               | Image doesn't exist in registry or auth failure         |
+| `AccessDeniedException`                           | Wrong IAM role/profile or missing permissions           |
+| `exit code 1` (docker build)                      | Dockerfile build failure — check lines above            |
+| `denied: Your authorization token has expired`    | ECR login expired mid-push                              |
 
 ## Artifacts
 

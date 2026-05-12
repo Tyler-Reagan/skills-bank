@@ -290,8 +290,8 @@ export function InstalledTab({
                   </h2>
                   <p>
                     Conflicts or broken links that block the skill from working
-                    cleanly. The action button on each card resolves it
-                    inline — no drawer detour.
+                    cleanly. The action button on each card resolves it inline —
+                    no drawer detour.
                   </p>
                 </div>
                 {bulkResolvable.length > 1 && onResolveAllConflicts && (
@@ -333,7 +333,10 @@ export function InstalledTab({
                     const n = classification.brokenCount;
                     inlineLabel = `Repair broken link${n === 1 ? "" : "s"} (${n})`;
                     inlineHandler = () => onRepairBroken(g);
-                  } else if (prim === "resolve-conflicts" && onResolveConflicts) {
+                  } else if (
+                    prim === "resolve-conflicts" &&
+                    onResolveConflicts
+                  ) {
                     const n = classification.conflictCount;
                     inlineLabel = `Resolve ${n} conflict${n === 1 ? "" : "s"}`;
                     inlineHandler = () => onResolveConflicts(g);
@@ -348,8 +351,7 @@ export function InstalledTab({
                     // Register step lives. App.tsx's onResolveConflicts
                     // derives the modal mode from registry membership.
                     const totalInstalls =
-                      classification.conflictCount +
-                      classification.brokenCount;
+                      classification.conflictCount + classification.brokenCount;
                     inlineLabel = `Resolve ${totalInstalls} conflict${totalInstalls === 1 ? "" : "s"}`;
                     inlineHandler = () => onResolveConflicts(g);
                   }

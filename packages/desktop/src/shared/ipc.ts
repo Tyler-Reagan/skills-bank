@@ -228,10 +228,7 @@ interface SkillsBankAPI {
    */
   uninstall(name: string, agents?: AgentId[]): Promise<UninstallIPCResult>;
   deregister(name: string): Promise<DeregisterIPCResult>;
-  unregister(
-    name: string,
-    destination: AgentId,
-  ): Promise<UnregisterIPCResult>;
+  unregister(name: string, destination: AgentId): Promise<UnregisterIPCResult>;
   /**
    * M9b: delete an unregistered skill's on-disk presence. Refuses
    * if the skill is still registered (the registered → unregister
@@ -356,7 +353,9 @@ interface SkillsBankAPI {
   discoverGoBack(): Promise<void>;
   discoverReload(): Promise<void>;
   discoverOpenExternal(): Promise<void>;
-  discoverOpenTerminal(terminalApp?: string): Promise<{ ok: boolean; message?: string }>;
+  discoverOpenTerminal(
+    terminalApp?: string,
+  ): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
   showHeaderMenu(context: HeaderMenuContext): Promise<void>;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;

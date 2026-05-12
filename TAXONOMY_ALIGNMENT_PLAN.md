@@ -14,6 +14,7 @@ Four orthogonal axes describe every skill the app knows about. Operations and UI
 - **Installed** — derived from on-disk scan. A skill is installed if at least one agent dir contains a folder or symlink at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.
 
 Derived semantics:
+
 - Canon ⇒ registered by default; unregister/delete of a canon skill is prohibited. The user-visible escape is **hide**, recorded per registry root.
 - Non-canon + registered + uninstalled is a valid state. Re-install requires the original source (no upstream to pull from).
 - Registered + has broken/conflicting installations ⇒ heal flow.
@@ -21,11 +22,11 @@ Derived semantics:
 
 Three destructive verbs form an escalation ladder:
 
-| Action | Files | Agent symlinks | Recovery |
-|---|---|---|---|
-| Remove from agents (existing uninstall) | untouched | removed (selectable per-agent in M7) | reinstall |
-| Unregister (new in M4) | adopted: moved to expulsion dir; non-adopted: untouched | removed | re-register from new location |
-| Delete from Skills Bank (existing deregister, renamed in M4) | deleted | removed | canon: re-pull; non-canon: gone (modulo export) |
+| Action                                                       | Files                                                   | Agent symlinks                       | Recovery                                        |
+| ------------------------------------------------------------ | ------------------------------------------------------- | ------------------------------------ | ----------------------------------------------- |
+| Remove from agents (existing uninstall)                      | untouched                                               | removed (selectable per-agent in M7) | reinstall                                       |
+| Unregister (new in M4)                                       | adopted: moved to expulsion dir; non-adopted: untouched | removed                              | re-register from new location                   |
+| Delete from Skills Bank (existing deregister, renamed in M4) | deleted                                                 | removed                              | canon: re-pull; non-canon: gone (modulo export) |
 
 ## Decisions locked
 

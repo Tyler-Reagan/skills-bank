@@ -4,102 +4,102 @@
 
 ```javascript
 // main.js
-const { app, BrowserWindow } = require('electron')
-const path = require('path')
+const { app, BrowserWindow } = require("electron");
+const path = require("path");
 
-let mainWindow
+let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
-      nodeIntegration: false
-    }
-  })
+      nodeIntegration: false,
+    },
+  });
 
-  mainWindow.loadFile('index.html')
-  
+  mainWindow.loadFile("index.html");
+
   // Open DevTools in development
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools()
+  if (process.env.NODE_ENV === "development") {
+    mainWindow.webContents.openDevTools();
   }
-  
-  mainWindow.on('closed', () => {
-    mainWindow = null
-  })
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 app.whenReady().then(() => {
-  createWindow()
+  createWindow();
 
-  app.on('activate', () => {
+  app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
+      createWindow();
     }
-  })
-})
+  });
+});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
   }
-})
+});
 ```
 
 ## With IPC Setup
 
 ```javascript
 // main.js
-const { app, BrowserWindow, ipcMain } = require('electron')
-const path = require('path')
+const { app, BrowserWindow, ipcMain } = require("electron");
+const path = require("path");
 
-let mainWindow
+let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
-      nodeIntegration: false
-    }
-  })
+      nodeIntegration: false,
+    },
+  });
 
-  mainWindow.loadFile('index.html')
-  
-  mainWindow.on('closed', () => {
-    mainWindow = null
-  })
+  mainWindow.loadFile("index.html");
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 // IPC Handlers
-ipcMain.handle('get-app-version', () => {
-  return app.getVersion()
-})
+ipcMain.handle("get-app-version", () => {
+  return app.getVersion();
+});
 
-ipcMain.on('window-minimize', () => {
+ipcMain.on("window-minimize", () => {
   if (mainWindow) {
-    mainWindow.minimize()
+    mainWindow.minimize();
   }
-})
+});
 
 app.whenReady().then(() => {
-  createWindow()
-})
+  createWindow();
+});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
   }
-})
+});
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow()
+    createWindow();
   }
-})
+});
 ```

@@ -488,12 +488,17 @@ ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
   try {
     if (process.platform === "darwin") {
       const appName =
-        terminalApp === "iterm2"    ? "iTerm" :
-        terminalApp === "warp"      ? "Warp" :
-        terminalApp === "hyper"     ? "Hyper" :
-        terminalApp === "alacritty" ? "Alacritty" :
-        terminalApp === "kitty"     ? "kitty" :
-        "Terminal";
+        terminalApp === "iterm2"
+          ? "iTerm"
+          : terminalApp === "warp"
+            ? "Warp"
+            : terminalApp === "hyper"
+              ? "Hyper"
+              : terminalApp === "alacritty"
+                ? "Alacritty"
+                : terminalApp === "kitty"
+                  ? "kitty"
+                  : "Terminal";
       const args = ["-a", appName];
       if (cwd) args.push(cwd);
       spawn("open", args, { detached: true, stdio: "ignore" }).unref();
@@ -557,7 +562,10 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
 
   if (ctx.persona === "power") {
     if (ctx.user) {
-      template.push({ label: `Signed in as ${ctx.user.login}`, enabled: false });
+      template.push({
+        label: `Signed in as ${ctx.user.login}`,
+        enabled: false,
+      });
       template.push({ type: "separator" });
     }
     template.push({
@@ -984,45 +992,42 @@ ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
 // configured agents dir (default ~/.agents/skills/) and removes the
 // registry entry. Non-adopted skills just lose the entry; origin
 // files untouched.
-ipcMain.handle(
-  IPC.unregister,
-  (_e, name: string, destination: AgentId) => {
-    if (!registryRoot) {
-      return {
-        ok: false,
-        message: NO_ROOT_MSG,
-        wasAdopted: false,
-        errors: [],
-      };
-    }
-    const classification = classifySkillByName(registryRoot, name);
-    if (classification && !classification.capabilities.canUnregister) {
-      return {
-        ok: false,
-        message: `Cannot unregister ${name} from this state (${classification.state}).`,
-        wasAdopted: false,
-        errors: [],
-      };
-    }
-    try {
-      const r = unregisterSkill(name, { registryRoot, destination });
-      return {
-        ok: r.ok,
-        message: r.message,
-        destinationPath: r.destinationPath,
-        wasAdopted: r.wasAdopted,
-        errors: r.errors,
-      };
-    } catch (err) {
-      return {
-        ok: false,
-        message: (err as Error).message,
-        wasAdopted: false,
-        errors: [],
-      };
-    }
-  },
-);
+ipcMain.handle(IPC.unregister, (_e, name: string, destination: AgentId) => {
+  if (!registryRoot) {
+    return {
+      ok: false,
+      message: NO_ROOT_MSG,
+      wasAdopted: false,
+      errors: [],
+    };
+  }
+  const classification = classifySkillByName(registryRoot, name);
+  if (classification && !classification.capabilities.canUnregister) {
+    return {
+      ok: false,
+      message: `Cannot unregister ${name} from this state (${classification.state}).`,
+      wasAdopted: false,
+      errors: [],
+    };
+  }
+  try {
+    const r = unregisterSkill(name, { registryRoot, destination });
+    return {
+      ok: r.ok,
+      message: r.message,
+      destinationPath: r.destinationPath,
+      wasAdopted: r.wasAdopted,
+      errors: r.errors,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      message: (err as Error).message,
+      wasAdopted: false,
+      errors: [],
+    };
+  }
+});
 
 // Stuck-state recovery: drop the pending-conflicts.json state file so
 // the next sync attempt starts clean. Idempotent — fine to call when no
@@ -1336,11 +1341,7 @@ ipcMain.handle(
         report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
       };
     try {
-      const report = mergeImportRegistry(
-        registryRoot,
-        sourcePath,
-        decisions,
-      );
+      const report = mergeImportRegistry(registryRoot, sourcePath, decisions);
       return {
         ok: true,
         message: summarizeMerge(report),
@@ -1356,14 +1357,15 @@ ipcMain.handle(
   },
 );
 
-function summarizeMerge(report: import("@skills-bank/core").MergeImportReport): string {
+function summarizeMerge(
+  report: import("@skills-bank/core").MergeImportReport,
+): string {
   const parts: string[] = [];
   if (report.imported.length > 0)
     parts.push(`${report.imported.length} imported`);
   if (report.keptMine.length > 0)
     parts.push(`${report.keptMine.length} kept yours`);
-  if (report.renamed.length > 0)
-    parts.push(`${report.renamed.length} renamed`);
+  if (report.renamed.length > 0) parts.push(`${report.renamed.length} renamed`);
   if (report.conflicts.length > 0)
     parts.push(`${report.conflicts.length} need attention`);
   return parts.join(", ") || "no changes";

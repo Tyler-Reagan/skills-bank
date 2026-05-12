@@ -18,6 +18,7 @@ Guides logo placement and implementation for brand recall and navigation. Logo p
 **Brand guidelines source**: Logo usage rules (clear space, minimum sizes, variants) come from **branding** (strategy), **brand-visual-generator** (visual specs), or media kit. Ensure alignment before implementation.
 
 Identify:
+
 1. **Context**: Header, footer, standalone
 2. **Platform**: Web, mobile, both
 3. **Brand guidelines**: Size, clear space, variants (from brand-visual-generator or media kit)
@@ -69,14 +70,14 @@ For AI/SaaS products, [Alignify AI Logo Guide](https://alignify.co/insights/ai-l
 
 ### Design Trends
 
-*Examples are illustrative; no endorsement implied.*
+_Examples are illustrative; no endorsement implied._
 
-| Style | Use Case | Examples |
-|-------|----------|----------|
-| **Hexagon** | Technical platforms, enterprise AI | Common in AI logos (e.g. OpenAI) |
-| **Rotation/swirl** | Generative AI, creative tools | E.g. DeepMind, Stability AI |
-| **Minimalist robot** | Assistants, chatbots | E.g. Jasper, Replika |
-| **Emoji/symbol** | Consumer, friendly AI | E.g. Hugging Face, Zoom AI |
+| Style                | Use Case                           | Examples                         |
+| -------------------- | ---------------------------------- | -------------------------------- |
+| **Hexagon**          | Technical platforms, enterprise AI | Common in AI logos (e.g. OpenAI) |
+| **Rotation/swirl**   | Generative AI, creative tools      | E.g. DeepMind, Stability AI      |
+| **Minimalist robot** | Assistants, chatbots               | E.g. Jasper, Replika             |
+| **Emoji/symbol**     | Consumer, friendly AI              | E.g. Hugging Face, Zoom AI       |
 
 ### Design Process
 
@@ -101,11 +102,11 @@ For AI/SaaS products, [Alignify AI Logo Guide](https://alignify.co/insights/ai-l
 
 ## Accessibility
 
-| Requirement | Practice |
-|-------------|----------|
-| **Alt text** | Descriptive; company name |
-| **Contrast** | Logo visible against background |
-| **Focus** | Link receives visible focus state |
+| Requirement       | Practice                            |
+| ----------------- | ----------------------------------- |
+| **Alt text**      | Descriptive; company name           |
+| **Contrast**      | Logo visible against background     |
+| **Focus**         | Link receives visible focus state   |
 | **Touch targets** | Adequate size on mobile (>=44x44px) |
 
 ## Output Format

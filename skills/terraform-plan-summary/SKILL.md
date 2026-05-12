@@ -28,7 +28,7 @@ CI jobs may run several `terraform plan` invocations sequentially. Treat each bl
 
 For each subsection, capture:
 
-- Outcome: **`No changes.`** / **equivalent** *or* the **`Plan: X to add, Y to change, Z to destroy.`** line (exact counts).
+- Outcome: **`No changes.`** / **equivalent** _or_ the **`Plan: X to add, Y to change, Z to destroy.`** line (exact counts).
 - Whether **`terraform plan`** failed (`Error:` / non-zero would appear in log).
 
 ## Step 3: Extract resource-level actions
@@ -46,12 +46,12 @@ Parse `<address>` (e.g. `module.apps["runs-server"].kubernetes_deployment_v1.app
 
 **Classify**:
 
-| Phrase | User-facing label |
-|--------|-------------------|
-| will be created | add |
-| will be destroyed | destroy |
-| will be updated in-place | change (in-place) |
-| must be replaced | replace (destroy + create) |
+| Phrase                   | User-facing label          |
+| ------------------------ | -------------------------- |
+| will be created          | add                        |
+| will be destroyed        | destroy                    |
+| will be updated in-place | change (in-place)          |
+| must be replaced         | replace (destroy + create) |
 
 ## Step 4: Group repetitive resources
 
@@ -83,7 +83,8 @@ Use this structure (omit empty sections):
 ## Terraform plan summary
 
 ### <Section label> (from CI echo or working directory context)
-- **Plan**: X add, Y change, Z destroy — *or* **No changes.**
+
+- **Plan**: X add, Y change, Z destroy — _or_ **No changes.**
 - **Adds** (count): …
 - **Changes** (count): … grouped …
 - **Destroys / replaces** (count): …
@@ -92,6 +93,7 @@ Use this structure (omit empty sections):
 - **Errors**: …
 
 ### <Next section>
+
 …
 ```
 

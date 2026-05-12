@@ -314,11 +314,7 @@ export async function applyCanonicalSync(
   // call. canonicalNames is the authoritative upstream set for this
   // sync — every name we just considered, regardless of which arm of
   // the conflict resolver each took.
-  writeUpstreamCanonNames(
-    registryRoot,
-    [...canonicalNames],
-    "synced",
-  );
+  writeUpstreamCanonNames(registryRoot, [...canonicalNames], "synced");
   if (conflicts.length > 0) {
     fs.writeFileSync(
       path.join(stateDir, "pending-conflicts.json"),

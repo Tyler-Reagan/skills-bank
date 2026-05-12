@@ -343,9 +343,9 @@ export function ConflictResolveModal({
           >
             {wouldOrphan ? (
               <>
-                <strong>All copies of {name} will be deleted.</strong> The
-                skill will no longer be on this machine. Re-importing from
-                its source is the only way back.
+                <strong>All copies of {name} will be deleted.</strong> The skill
+                will no longer be on this machine. Re-importing from its source
+                is the only way back.
               </>
             ) : (
               <>

@@ -7,12 +7,14 @@ Electron app module API for application lifecycle management.
 ### app Methods
 
 **Lifecycle:**
+
 - `app.whenReady()` - Returns Promise when app is ready
 - `app.quit()` - Quit the application
 - `app.exit(exitCode)` - Exit immediately
 - `app.relaunch([options])` - Relaunch the app
 
 **Window Management:**
+
 - `app.getPath(name)` - Get system path
 - `app.setPath(name, path)` - Set system path
 - `app.getVersion()` - Get app version
@@ -20,6 +22,7 @@ Electron app module API for application lifecycle management.
 - `app.setName(name)` - Set app name
 
 **Platform:**
+
 - `app.getLocale()` - Get locale
 - `app.getLocaleCountryCode()` - Get country code
 - `app.isReady()` - Check if app is ready
@@ -38,38 +41,38 @@ Electron app module API for application lifecycle management.
 ### Example: Basic Usage
 
 ```javascript
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow } = require("electron");
 
 app.whenReady().then(() => {
-  createWindow()
-})
+  createWindow();
+});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
   }
-})
+});
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow()
+    createWindow();
   }
-})
+});
 ```
 
 ### Example: Single Instance
 
 ```javascript
-const { app } = require('electron')
+const { app } = require("electron");
 
-const gotTheLock = app.requestSingleInstanceLock()
+const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  app.quit()
+  app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on("second-instance", () => {
     // Focus existing window
-  })
+  });
 }
 ```
 

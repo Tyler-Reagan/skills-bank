@@ -74,11 +74,11 @@ Understands naming conventions for JavaScript, TypeScript, Python, Java, Go, and
 
 Issues are categorized by impact:
 
-| Severity | Description | Example |
-|----------|-------------|---------|
-| **Critical** | Misleading names that could cause bugs | `getUser()` that also modifies data |
-| **Major** | Unclear names requiring mental effort to understand | `proc(data)` instead of `processApiResponse(response)` |
-| **Minor** | Convention violations that affect consistency | `API_url` instead of `API_URL` |
+| Severity     | Description                                         | Example                                                |
+| ------------ | --------------------------------------------------- | ------------------------------------------------------ |
+| **Critical** | Misleading names that could cause bugs              | `getUser()` that also modifies data                    |
+| **Major**    | Unclear names requiring mental effort to understand | `proc(data)` instead of `processApiResponse(response)` |
+| **Minor**    | Convention violations that affect consistency       | `API_url` instead of `API_URL`                         |
 
 ### Boolean Naming Guidance
 
@@ -95,14 +95,16 @@ Identifies unnamed numeric literals and suggests meaningful constant names:
 
 ```javascript
 // Before
-if (age > 18) { }
+if (age > 18) {
+}
 setTimeout(callback, 3600000);
 
 // After
 const LEGAL_AGE = 18;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
-if (age > LEGAL_AGE) { }
+if (age > LEGAL_AGE) {
+}
 setTimeout(callback, ONE_HOUR_IN_MS);
 ```
 
@@ -113,29 +115,35 @@ Can generate refactoring scripts to apply naming changes across the codebase whi
 ## Usage Examples
 
 **Analyze a single file:**
+
 ```
 @naming-analyzer UserService.js
 ```
 
 **Analyze an entire directory:**
+
 ```
 @naming-analyzer src/
 ```
 
 **Show naming conventions reference:**
+
 ```
 @naming-analyzer --conventions
 ```
 
 **Analyze and suggest fixes for all issues:**
+
 ```
 @naming-analyzer --fix-all
 ```
 
 **General invocation:**
+
 ```
 @naming-analyzer
 ```
+
 Then provide the code or file path when prompted.
 
 ## Output
@@ -156,6 +164,7 @@ The skill produces a detailed markdown report containing:
 ### Issue Details
 
 Each issue includes:
+
 - **Current**: The existing name
 - **Issue**: Description of the problem
 - **Severity**: Critical, Major, or Minor
@@ -165,6 +174,7 @@ Each issue includes:
 ### Suggested Renaming
 
 Prioritized list of all recommended changes:
+
 - High Priority: Misleading or critical issues
 - Medium Priority: Clarity improvements
 - Low Priority: Convention fixes
@@ -192,6 +202,7 @@ Prioritized list of all recommended changes:
 ### Acceptable Abbreviations
 
 Some abbreviations are well-known and acceptable:
+
 - `html`, `api`, `url`, `id`, `db`, `io`, `ui`
 - `min`, `max`, `src`, `dest`, `config`, `env`
 - `req`, `res` (in HTTP context)
