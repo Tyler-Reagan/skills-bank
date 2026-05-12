@@ -26,22 +26,27 @@ The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder:
 ---
 config:
   theme: base
-  layout: elk
   flowchart:
-    nodeSpacing: 60
-    rankSpacing: 90
+    nodeSpacing: 55
+    rankSpacing: 85
     curve: basis
 ---
 flowchart LR
-    %% Lifecycle ladder. Heal-pending states (yellow) branch off Registered.
-    %% Rendered LR with ELK so the many transitions off Registered don't
-    %% collide on label placement.
+    %% Lifecycle ladder; heal-pending states branch off Registered.
+    %% Dagre layout (Mermaid default). ELK was tried but drops arrowheads
+    %% in GitHub's Mermaid build, so we stick with dagre and lean on
+    %% flowchart LR + spacing to keep labels readable.
 
     classDef heal fill:#fef3c7,stroke:#d97706,color:#92400e,stroke-width:1.5px
-    classDef terminal fill:#0f172a,stroke:#0f172a,color:#fff
+    classDef terminal fill:#0f172a,stroke:#94a3b8,color:#f1f5f9
+    classDef state fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
 
     Start([Start]):::terminal
     Done([End]):::terminal
+    Unmanaged:::state
+    Registered:::state
+    Unregistered:::state
+    Hidden:::state
 
     %% Lifecycle ladder
     Start -->|"discovered on agent disk"| Unmanaged
@@ -64,6 +69,8 @@ flowchart LR
     TargetMissing -->|"Forget entry"| Done
 
     class CanonDrift,FolderMissing,TargetMissing heal
+
+    linkStyle default stroke:#94a3b8,stroke-width:1.5px,fill:none
 ```
 
 Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — *whether* a Registered skill is canon, adopted, or external — are read off the [Source](#source) and [card badges](#card-badges) sections.
