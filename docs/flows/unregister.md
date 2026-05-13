@@ -21,7 +21,7 @@ Settings → **Unregister destination**. Defaults to **Agents (shared)** which m
 | ------------------ | ------------------------------------ | ------------------------------------------------------- | ----------------------------------------------- |
 | Manage agent links | Drawer                               | untouched                                               | re-add via the same modal                       |
 | **Unregister**     | Drawer                               | adopted: moved to expulsion dir; non-adopted: untouched | re-register from new location                   |
-| Delete             | Installed tab → Unregistered section | files removed (symlink targets preserved)               | canon: re-pull; non-canon: gone (modulo export) |
+| Delete             | Installed tab → Unregistered section | files removed (symlink targets preserved)               | bundled: re-pull; yours: gone (modulo export) |
 
 Use Unregister when you want to stop Skills Bank from managing a skill but keep the files around — either to hand the skill off to another tool, edit it directly outside of Skills Bank, or audit it before deletion. Delete is the bottom of the ladder and requires unregistration first; once unregistered, the skill appears in **Installed → Unregistered** with an inline **Delete** button (confirmation required).
 
@@ -29,4 +29,4 @@ Use Unregister when you want to stop Skills Bank from managing a skill but keep 
 
 ## Canon skills
 
-Unregistering a canon skill is prohibited. Canon = your linked registry's upstream set. You can **hide** canon skills you don't want surfaced — see [personas.md](../personas.md#canon-is-repo-relative).
+Unregistering a bundled skill is prohibited — the upstream owns it. Use **Dismiss from registry view** instead to keep the skill installed but out of the default Browse surface — see [personas.md](../personas.md#canon-is-repo-relative).

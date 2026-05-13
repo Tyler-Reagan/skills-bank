@@ -38,15 +38,15 @@ Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/ski
 > [!NOTE]
 > Builds are signed with a Developer ID certificate and notarized through Apple — Gatekeeper opens them on a normal double-click. The app auto-updates by polling the Releases feed on launch.
 
-On first launch, pick a persona:
+On first launch the app boots straight into the Registry tab on top of a bundled curated skill set — no persona-choice screen, no `git clone` prerequisite.
 
-![First-launch setup screen with Quick start and Advanced sections](docs/images/setup.png)
+![The Registry tab — the default view on first launch](docs/images/registry.png)
 
-- **Use the bundled registry** _(quick start)_ — Browse the curated skills shipped with the app, pull updates with one click, add your own alongside. No GitHub required.
-- **Connect a GitHub registry** _(advanced)_ — Point at a GitHub repo you own. The app clones it locally and never auto-syncs — you manage content through your normal git workflow.
-- **Self-host** _(advanced)_ — Fork the app + registry and ship your own build. See [`docs/self-host.md`](docs/self-host.md).
+- **Use the bundled registry** _(the default; nothing to do)_ — Browse the curated skills shipped with the app, pull updates with one click via Sync, add your own alongside.
+- **Link a GitHub repo** _(coming soon)_ — Back your registry with a GitHub repo you own. Entry-points are staged in the account menu and Settings → Registry source with a "Coming soon" label that links to [`docs/plans/03-github-backed-mode.md`](docs/plans/03-github-backed-mode.md).
+- **Self-host** _(developer path)_ — Fork the app + registry and ship your own build. See [`docs/self-host.md`](docs/self-host.md).
 
-You can switch later from the account menu. Defaults for which agent directories an Install action targets live in **Settings…**.
+Defaults for which agent directories an Install action targets live in **Settings…**.
 
 ### CLI
 

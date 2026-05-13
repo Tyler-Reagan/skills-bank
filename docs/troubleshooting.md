@@ -16,18 +16,18 @@ A few causes:
 
 If the **Refresh** button is showing in the empty state, click it. The app re-reads the registry from disk.
 
-## "A skill in the Installed tab shows 'Source missing'"
+## "A skill shows a MISSING badge"
 
 The skill's symlink resolves into the registry, but the registry copy isn't on disk. Usually means:
 
 - The registry got moved or deleted out from under the app.
-- A power-persona repo switch removed the skill.
+- A GitHub-linked registry switch removed the skill (when Bundle 3 lands).
 
-Recovery: open the drawer → **Repair…**. The repair flow lets you either re-link the skill to a present registry copy or remove the broken symlinks.
+Recovery: open the drawer → **Fix broken link(s)**. The repair flow either re-links the skill to a present registry copy or removes the broken symlinks.
 
 ## "Reveal in Finder does nothing"
 
-The button is hidden when the path it would open doesn't exist (e.g. for synthetic placeholder cards). If you expect a file but the button is missing, the underlying path is broken — see "Source missing" above.
+The button is disabled when the path it would open doesn't exist (e.g. for synthetic placeholder cards). If you expect a file but the button is greyed out, the underlying path is broken — see the MISSING-badge section above.
 
 ## "I authorized GitHub but no repos show up"
 

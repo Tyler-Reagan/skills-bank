@@ -37,7 +37,7 @@ Click any card to open its detail drawer:
 - [`flows/unregister.md`](flows/unregister.md) — Back a skill out of the registry without deleting files.
 - [`flows/manage-links.md`](flows/manage-links.md) — Add or drop a skill from individual agent dirs.
 - [`flows/heal.md`](flows/heal.md) — Recover from any bad state (conflicts, broken links, missing files, canon drift).
-- [`flows/sync.md`](flows/sync.md) — Pull upstream registry updates (convenience persona).
+- [`flows/sync.md`](flows/sync.md) — Pull upstream registry updates (local-bundled).
 - [`flows/login.md`](flows/login.md) — The first-launch persona choice and how to switch later.
 
 ### Managing canon skills
@@ -56,6 +56,6 @@ Canon skills (those that come from your linked registry's upstream) can't be unr
 These are independent paths:
 
 - **App updates** arrive via auto-update. The app polls the GitHub Releases feed on launch; when a new version downloads in the background, a "Restart" toast lets you apply it.
-- **Registry updates** (convenience persona) arrive via the Sync button. They never trigger an app restart.
+- **Registry updates** (local-bundled) arrive via the Sync button. They never trigger an app restart.
 
 You can update one without the other.

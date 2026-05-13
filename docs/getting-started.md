@@ -15,19 +15,13 @@ The app auto-updates by polling the GitHub Releases feed on launch — when a ne
 
 ## First launch
 
-You'll see a one-time setup screen with two sections.
+The app boots straight into the Registry tab on top of the bundled curated skill set. No persona choice, no `git clone` prerequisite — your registry is ready to use as soon as the window opens.
 
-![First-launch setup screen with Quick start and Advanced sections](images/setup.png)
+![The Registry tab — the default view on first launch](images/registry.png)
 
-**Use the bundled registry** _(recommended for most users)_
-Browse and install the curated skill set shipped with this app. Sync skills with one click. Add your own skills alongside, and export the registry to back it up or move it to another machine. No GitHub required.
-
-**Connect your own registry**
-Point the app at a GitHub repo you own and maintain as your skill registry. The app clones it locally and never auto-syncs it — manage content through your normal git workflow. Not a fork of this app — just your own repo with a `skills/` directory.
+If you want to back your registry with a GitHub repo so it follows you across machines, look for **Link a GitHub repo… (Coming soon)** in the account menu or Settings → Registry source. That feature is on the way — see [docs/plans/03-github-backed-mode.md](plans/03-github-backed-mode.md) for the full plan.
 
 Want to fork the entire app and ship your own build? See [self-host.md](self-host.md).
-
-You can change your mind later via the account menu in the header. See [personas.md](personas.md) for a detailed feature comparison by registry choice.
 
 ## Use a skill in Claude Code
 

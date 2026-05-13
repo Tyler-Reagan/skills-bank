@@ -37,5 +37,5 @@ Registering buys you:
 
 - **Cross-agent linking** — once registered, install into any other agent dir with one click.
 - **Metadata** — tags, descriptions, warnings, validation.
-- **Sync safety** (convenience persona) — your `user`-sourced skills are never overwritten by upstream sync.
+- **Sync safety** (local-bundled) — skills with `source: yours` are never overwritten by upstream sync.
 - **Portability** — committing the registry to git lets you reproduce the same setup on another machine.

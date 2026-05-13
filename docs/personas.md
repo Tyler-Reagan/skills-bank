@@ -21,7 +21,7 @@ Skills Bank asks you to make a one-time registry choice on first launch. This pa
 
 ---
 
-## Bundled registry (convenience persona)
+## Bundled registry (local-bundled — the default)
 
 **What the registry is.** The curated skill set shipped with this app. It lives under `~/Library/Application Support/Skills Bank/registry/` — a folder the app manages for you. You never need to know it's there.
 
@@ -41,7 +41,7 @@ Skills Bank asks you to make a one-time registry choice on first launch. This pa
 
 ---
 
-## Your own registry (power persona)
+## Your own registry (GitHub-linked — coming soon)
 
 **What the registry is.** A GitHub repo you own, cloned locally by the app. The app reads from the clone; you manage the repo's contents through your normal git workflow. The app never rewrites or auto-syncs your repo.
 
