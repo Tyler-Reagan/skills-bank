@@ -315,8 +315,7 @@ function resolveBootPersona(): Persona | null {
 
 let persona: Persona | null = resolveBootPersona();
 
-let dismissedUpdateVersion: string | null =
-  readConfig().dismissedUpdateVersion;
+let dismissedUpdateVersion: string | null = readConfig().dismissedUpdateVersion;
 
 // Writes the current in-memory app config triple. Use this instead of calling
 // writeConfig({...}) at sites that only mutate one field, so we don't lose
@@ -1545,7 +1544,11 @@ autoUpdater.autoInstallOnAppQuit = false;
 // info — no version/notes — so we cache the last `update-available` info
 // and attach it to every downstream broadcast. This keeps the modal's notes
 // + version stable as the user watches the progress bar.
-let lastUpdateInfo: { version: string; releaseNotes: string | null; releaseName: string | null } | null = null;
+let lastUpdateInfo: {
+  version: string;
+  releaseNotes: string | null;
+  releaseName: string | null;
+} | null = null;
 
 function broadcastUpdateStatus(status: UpdateStatus): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -1657,14 +1660,11 @@ ipcMain.handle(IPC.quitAndInstallUpdate, () => {
   autoUpdater.quitAndInstall();
 });
 
-ipcMain.handle(
-  IPC.setDismissedUpdateVersion,
-  (_e, version: string | null) => {
-    dismissedUpdateVersion =
-      typeof version === "string" && version.length > 0 ? version : null;
-    persistConfig();
-  },
-);
+ipcMain.handle(IPC.setDismissedUpdateVersion, (_e, version: string | null) => {
+  dismissedUpdateVersion =
+    typeof version === "string" && version.length > 0 ? version : null;
+  persistConfig();
+});
 
 // ─── Canonical registry sync (M2) ───────────────────────────────────────────
 //
