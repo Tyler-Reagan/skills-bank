@@ -64,10 +64,14 @@ import {
   type DiscoverStatus,
   type HeaderMenuAction,
   type HeaderMenuContext,
+  type SkillDiffFile,
+  type SkillDiffRequest,
+  type SkillDiffResult,
   type SyncStatus,
   type UpdateStatus,
   type UserRepo,
 } from "../shared/ipc.js";
+import { createPatch, diffLines } from "diff";
 import {
   cancelDeviceFlow,
   clearStoredToken,
@@ -828,6 +832,159 @@ ipcMain.handle(IPC.pickCustomSkillsDir, async () => {
   }
   return { ok: true, path: result.filePaths[0], message: "ok" };
 });
+
+// Per-file unified diff between two skill folders. Reusable across
+// sync-collision and (future) drift-drawer surfaces — both render via
+// the same DiffViewer renderer component.
+ipcMain.handle(
+  IPC.getSkillDiff,
+  async (_e, req: SkillDiffRequest): Promise<SkillDiffResult> => {
+    const files = computeFolderDiff(req.leftPath, req.rightPath);
+    return {
+      leftLabel: req.leftLabel,
+      rightLabel: req.rightLabel,
+      files,
+    };
+  },
+);
+
+// 1 MB per-file cap. Files past this size or with binary content
+// (NUL byte in the first 8 KB) are reported as `binary` with no
+// diff body — keeps the renderer responsive and the IPC channel
+// from blowing up on large fixture files.
+const DIFF_BYTE_BUDGET = 1024 * 1024;
+
+function looksBinary(buf: Buffer): boolean {
+  const head = buf.subarray(0, Math.min(buf.length, 8192));
+  for (let i = 0; i < head.length; i++) {
+    if (head[i] === 0) return true;
+  }
+  return false;
+}
+
+function readTextIfSmall(p: string): { kind: "text" | "binary"; body: string } {
+  const stat = fs.statSync(p);
+  if (stat.size > DIFF_BYTE_BUDGET) return { kind: "binary", body: "" };
+  const buf = fs.readFileSync(p);
+  if (looksBinary(buf)) return { kind: "binary", body: "" };
+  return { kind: "text", body: buf.toString("utf8") };
+}
+
+function walkFiles(root: string): string[] {
+  if (!fs.existsSync(root)) return [];
+  const out: string[] = [];
+  function visit(rel: string): void {
+    const abs = path.join(root, rel);
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(abs, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const ent of entries) {
+      // Skip app-state sidecars — they're metadata the user didn't
+      // author and would surface as noise in every diff.
+      if (ent.name === ".skills-bank.json") continue;
+      if (ent.name === ".skills-bank-hash") continue;
+      const r = rel ? `${rel}/${ent.name}` : ent.name;
+      if (ent.isDirectory()) visit(r);
+      else if (ent.isFile()) out.push(r);
+    }
+  }
+  visit("");
+  out.sort();
+  return out;
+}
+
+function computeFolderDiff(leftRoot: string, rightRoot: string): SkillDiffFile[] {
+  const leftFiles = new Set(walkFiles(leftRoot));
+  const rightFiles = new Set(walkFiles(rightRoot));
+  const allPaths = new Set<string>([...leftFiles, ...rightFiles]);
+  const sorted = [...allPaths].sort();
+  const out: SkillDiffFile[] = [];
+
+  for (const rel of sorted) {
+    const inLeft = leftFiles.has(rel);
+    const inRight = rightFiles.has(rel);
+    const leftAbs = path.join(leftRoot, rel);
+    const rightAbs = path.join(rightRoot, rel);
+
+    if (inLeft && inRight) {
+      const left = readTextIfSmall(leftAbs);
+      const right = readTextIfSmall(rightAbs);
+      if (left.kind === "binary" || right.kind === "binary") {
+        if (left.body === right.body) continue; // both binary-and-skipped, treat as same
+        out.push({
+          path: rel,
+          added: 0,
+          removed: 0,
+          unifiedDiff: "",
+          status: "binary",
+        });
+        continue;
+      }
+      if (left.body === right.body) continue;
+      let added = 0;
+      let removed = 0;
+      for (const part of diffLines(left.body, right.body)) {
+        const lines = part.count ?? part.value.split("\n").length - 1;
+        if (part.added) added += lines;
+        else if (part.removed) removed += lines;
+      }
+      const unifiedDiff = createPatch(rel, left.body, right.body, "", "");
+      out.push({
+        path: rel,
+        added,
+        removed,
+        unifiedDiff,
+        status: "modified",
+      });
+    } else if (inLeft) {
+      const left = readTextIfSmall(leftAbs);
+      if (left.kind === "binary") {
+        out.push({
+          path: rel,
+          added: 0,
+          removed: 0,
+          unifiedDiff: "",
+          status: "left-only",
+        });
+        continue;
+      }
+      const removed = left.body.split("\n").length;
+      const unifiedDiff = createPatch(rel, left.body, "", "", "");
+      out.push({
+        path: rel,
+        added: 0,
+        removed,
+        unifiedDiff,
+        status: "left-only",
+      });
+    } else {
+      const right = readTextIfSmall(rightAbs);
+      if (right.kind === "binary") {
+        out.push({
+          path: rel,
+          added: 0,
+          removed: 0,
+          unifiedDiff: "",
+          status: "right-only",
+        });
+        continue;
+      }
+      const added = right.body.split("\n").length;
+      const unifiedDiff = createPatch(rel, "", right.body, "", "");
+      out.push({
+        path: rel,
+        added,
+        removed: 0,
+        unifiedDiff,
+        status: "right-only",
+      });
+    }
+  }
+  return out;
+}
 
 ipcMain.handle(
   IPC.install,

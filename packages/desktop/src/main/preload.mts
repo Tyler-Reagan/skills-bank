@@ -12,6 +12,7 @@ const api = {
   listInstalled: (customDirs?: string[]) =>
     ipcRenderer.invoke(IPC.listInstalled, customDirs),
   pickCustomSkillsDir: () => ipcRenderer.invoke(IPC.pickCustomSkillsDir),
+  getSkillDiff: (req: unknown) => ipcRenderer.invoke(IPC.getSkillDiff, req),
   install: (name: string, force?: boolean, agents?: unknown) =>
     ipcRenderer.invoke(IPC.install, name, force, agents),
   uninstall: (name: string, agents?: unknown) =>
