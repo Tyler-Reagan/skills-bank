@@ -7,11 +7,11 @@ The **Sync skills** button in the header pulls the latest curated skills from up
 1. Click **Sync skills** in the header.
 2. The app fetches the upstream registry index, computes a diff against your local copy, and applies it.
 3. A toast summarizes what changed: `N added · N updated · N skipped`.
-4. If there are name collisions (same skill name, different content for `canonical` and your local `user`/`imported` skill), a **Resolve sync conflicts** modal opens. Pick one of:
+4. If there are name collisions (same skill name, different content for `bundled` and your local `yours` skill), a **Resolve sync collisions** modal opens. Pick one of:
    - **Keep mine** — your local copy wins. The upstream version is discarded.
    - **Take upstream** — the upstream version wins. Your local copy is overwritten.
    - **Rename mine to `<name>-local`** — both are kept; your local one is renamed.
-5. The app remembers your decision per-skill, so the same conflict doesn't reappear on future syncs.
+5. The app remembers your decision per-skill, so the same collision doesn't reappear on future syncs.
 
 ## What sync touches
 

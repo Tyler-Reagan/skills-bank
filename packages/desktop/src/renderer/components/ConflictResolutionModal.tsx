@@ -19,19 +19,19 @@ const ACTIONS: { value: ConflictAction; label: string; description: string }[] =
       value: "keep-mine",
       label: "Keep mine",
       description:
-        "Skip the canonical version. Your skill stays; it won't be re-prompted.",
+        "Skip the bundled version. Your skill stays; it won't be re-prompted.",
     },
     {
       value: "use-canonical",
-      label: "Use canonical (replaces mine)",
+      label: "Use bundled (replaces mine)",
       description:
-        "Overwrite your version with the canonical one. Your changes are lost.",
+        "Overwrite your version with the bundled one. Your changes are lost.",
     },
     {
       value: "rename-mine",
       label: "Rename mine to <name>-local",
       description:
-        "Move your version to a new name and accept canonical at the original. Both survive.",
+        "Move your version to a new name and accept bundled at the original. Both survive.",
     },
   ];
 
@@ -72,13 +72,14 @@ export function ConflictResolutionModal({
         style={modal}
         role="dialog"
         aria-modal="true"
-        aria-label="Resolve sync conflicts"
+        aria-label="Resolve sync collisions"
       >
-        <h2 style={{ marginTop: 0 }}>Resolve sync conflicts</h2>
+        <h2 style={{ marginTop: 0 }}>Resolve sync collisions</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} have name
-          collisions between your local registry and canonical. Pick an action
-          for each. Your choice is remembered for future syncs.
+          Sync collision: {conflicts.length} skill
+          {conflicts.length === 1 ? "" : "s"} have name conflicts between your
+          local registry and the upstream bundled set. Pick an action for each.
+          Your choice is remembered for future syncs.
         </p>
 
         <div style={{ marginTop: 16, maxHeight: "60vh", overflowY: "auto" }}>

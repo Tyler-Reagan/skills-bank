@@ -190,11 +190,15 @@ export function ConflictResolveModal({
   return (
     <div style={overlay}>
       <div style={modal} role="dialog" aria-modal="true">
-        <h2 style={{ marginTop: 0 }}>Resolve conflicts — {name}</h2>
+        <h2 style={{ marginTop: 0 }}>
+          {allowReplaceWithSymlink
+            ? `Resolve install collision — ${name}`
+            : `Resolve tracking ambiguity — ${name}`}
+        </h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
           {allowReplaceWithSymlink
-            ? `${name} is registered, but some agent directories have stragglers that aren't symlinks to the registry copy. Pick how to handle each.`
-            : `All copies of ${name} are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`}
+            ? `Install collision: ${name} is registered, but some agent directories have stragglers that aren't symlinks to the registry copy. Pick how to handle each.`
+            : `Tracking ambiguity: multiple copies of ${name} exist across agent directories — Skills Bank can't tell which one is the real one. All copies are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`}
         </p>
 
         <div
