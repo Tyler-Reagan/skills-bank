@@ -66,6 +66,32 @@ export function ConflictResolutionModal({
     }
   };
 
+  // Bulk-action helpers. Sync collisions following a fresh clone or a
+  // major upstream rewrite can affect every skill at once; per-row
+  // clicking gets hostile fast without these.
+  const setAll = (action: ConflictAction) => {
+    setPicks((prev) => {
+      const next = { ...prev };
+      for (const c of conflicts) next[c.name] = action;
+      return next;
+    });
+  };
+
+  // Live tally of pending actions, so the user can see at a glance what
+  // Apply will actually do without scrolling the list.
+  const counts = (() => {
+    let keep = 0;
+    let use = 0;
+    let rename = 0;
+    for (const c of conflicts) {
+      const a = picks[c.name];
+      if (a === "keep-mine") keep += 1;
+      else if (a === "use-canonical") use += 1;
+      else if (a === "rename-mine") rename += 1;
+    }
+    return { keep, use, rename };
+  })();
+
   return (
     <div style={overlay}>
       <div
@@ -82,7 +108,56 @@ export function ConflictResolutionModal({
           Your choice is remembered for future syncs.
         </p>
 
-        <div style={{ marginTop: 16, maxHeight: "60vh", overflowY: "auto" }}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 6,
+            marginTop: 12,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setAll("keep-mine")}
+            disabled={submitting}
+          >
+            Keep all mine
+          </button>
+          <button
+            type="button"
+            onClick={() => setAll("use-canonical")}
+            disabled={submitting}
+          >
+            Use all bundled
+          </button>
+          <button
+            type="button"
+            onClick={() => setAll("rename-mine")}
+            disabled={submitting}
+          >
+            Rename all to <code>&lt;name&gt;-local</code>
+          </button>
+          <span
+            style={{
+              flex: 1,
+              textAlign: "right",
+              alignSelf: "center",
+              fontSize: 12,
+              color: "var(--text-3)",
+            }}
+            aria-live="polite"
+          >
+            {[
+              counts.keep > 0 ? `Keep ${counts.keep}` : null,
+              counts.use > 0 ? `Use bundled ${counts.use}` : null,
+              counts.rename > 0 ? `Rename ${counts.rename}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Nothing selected"}
+          </span>
+        </div>
+
+        <div style={{ marginTop: 12, maxHeight: "60vh", overflowY: "auto" }}>
           {conflicts.map((c) => (
             <div
               key={c.name}

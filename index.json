@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-12T22:47:22.705Z",
+  "generatedAt": "2026-05-13T20:56:11.880Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -8,7 +8,7 @@
       "version": "1.0.1",
       "path": "skills/404-page-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -20,7 +20,7 @@
       "version": "1.0.1",
       "path": "skills/api-page-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -32,7 +32,7 @@
       "version": "1.4.0",
       "path": "skills/brand-visual-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -44,7 +44,7 @@
       "version": "1.2.0",
       "path": "skills/branding",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -56,7 +56,7 @@
       "version": "1.1.0",
       "path": "skills/carousel",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -68,7 +68,7 @@
       "version": "1.2.1",
       "path": "skills/competitor-research",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -80,7 +80,7 @@
       "version": "1.2.1",
       "path": "skills/content-optimization",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -92,7 +92,7 @@
       "version": "1.1.1",
       "path": "skills/content-strategy",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -104,7 +104,7 @@
       "version": "1.0.1",
       "path": "skills/core-web-vitals",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -115,7 +115,7 @@
       "description": "Create a README.md file for the project",
       "path": "skills/create-readme",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -126,7 +126,7 @@
       "description": "Creating interactive data visualisations using d3.js. This skill should be used when creating custom charts, graphs, network diagrams, geographic visualisations, or any complex SVG-based data visualisation that requires fine-grained control over visual elements, transitions, or interactions. Use this for bespoke visualisations beyond standard charting libraries, whether in React, Vue, Svelte, vanilla JavaScript, or any other environment.",
       "path": "skills/d3-viz",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -138,7 +138,7 @@
       "version": "1.0.1",
       "path": "skills/docs-page-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -149,7 +149,7 @@
       "description": "Build cross-platform desktop applications with Electron, covering main/renderer process architecture, IPC communication, BrowserWindow management, menus, tray icons, packaging, and security best practices. Use when the user asks about Electron, needs to create desktop applications, implement Electron features, or build cross-platform desktop apps.",
       "path": "skills/electron",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -161,7 +161,7 @@
       "version": "1.0.1",
       "path": "skills/favicon-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -172,7 +172,7 @@
       "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
       "path": "skills/find-skills",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -183,7 +183,7 @@
       "description": "|",
       "path": "skills/fix-knip-unused-exports",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -195,7 +195,7 @@
       "version": "1.0.1",
       "path": "skills/footer-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -206,7 +206,7 @@
       "description": "Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.",
       "path": "skills/frontend-design",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -217,7 +217,7 @@
       "description": "Inspect GitLab CI/CD job results, fetch job logs, and diagnose pipeline failures. Use when the user shares a GitLab job URL, pipeline URL, asks about CI/CD job output, wants to check why a pipeline failed, or needs to review build/deploy logs.",
       "path": "skills/gitlab-ci-inspector",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -228,7 +228,7 @@
       "description": "Build GitLab CI/CD pipelines with multi-stage workflows, caching, and distributed runners for scalable automation. Use when implementing GitLab CI/CD, optimizing pipeline performance, or setting up automated testing and deployment.",
       "path": "skills/gitlab-ci-patterns",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -239,7 +239,7 @@
       "description": "Author GitLab merge request descriptions and technical reviewer guides for large-scale engineering changes. Use when the user asks to write an MR description, merge request body, PR description, technical reviewer summary, or reviewer guide — especially for refactors, architecture changes, or multi-package merges.",
       "path": "skills/gitlab-mr-writing",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -251,7 +251,7 @@
       "version": "1.2.1",
       "path": "skills/hero-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -263,7 +263,7 @@
       "version": "1.2.0",
       "path": "skills/homepage-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -277,7 +277,7 @@
       ],
       "path": "skills/impeccable",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -289,7 +289,7 @@
       "version": "1.4.1",
       "path": "skills/landing-page-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -301,7 +301,7 @@
       "version": "1.0.1",
       "path": "skills/logo-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -312,7 +312,7 @@
       "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).",
       "path": "skills/mcp-builder",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -323,7 +323,7 @@
       "description": "Comprehensive guide for creating software diagrams using Mermaid syntax. Use when users need to create, visualize, or document software through diagrams including class diagrams (domain modeling, object-oriented design), sequence diagrams (application flows, API interactions, code execution), flowcharts (processes, algorithms, user journeys), entity relationship diagrams (database schemas), C4 architecture diagrams (system context, containers, components), state diagrams, git graphs, pie charts, gantt charts, or any other diagram type. Triggers include requests to \"diagram\", \"visualize\", \"model\", \"map out\", \"show the flow\", or when explaining system architecture, database design, code structure, or user/application flows.",
       "path": "skills/mermaid-diagrams",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -334,7 +334,7 @@
       "description": "Suggest better variable, function, and class names based on context and conventions.",
       "path": "skills/naming-analyzer",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -345,7 +345,7 @@
       "description": "Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling",
       "path": "skills/next-best-practices",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -356,7 +356,7 @@
       "description": "Interact with Obsidian vaults using the Obsidian CLI to read, create, search, and manage notes, tasks, properties, and more. Also supports plugin and theme development with commands to reload plugins, run JavaScript, capture errors, take screenshots, and inspect the DOM. Use when the user asks to interact with their Obsidian vault, manage notes, search vault content, perform vault operations from the command line, or develop and debug Obsidian plugins and themes.",
       "path": "skills/obsidian-cli",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -367,7 +367,7 @@
       "description": "Generate a GitHub PR description with proper issue linkage syntax. Use when the user asks for a PR description, wants to open a pull request, or says /pr-description. Inspects branch commits and open issues to produce Closes/Related/Follow-on sections automatically.",
       "path": "skills/pr-description",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -378,7 +378,7 @@
       "description": "Build a structured PRD that connects problem, users, solution, and success criteria. Use when turning discovery notes into an engineering-ready document for a major initiative.",
       "path": "skills/prd-development",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -389,7 +389,7 @@
       "description": "|",
       "path": "skills/pretty-mermaid",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -400,7 +400,7 @@
       "description": "Write a user-centered problem statement with who is blocked, what they are trying to do, why it matters, and how it feels. Use when framing discovery, prioritization, or a PRD.",
       "path": "skills/problem-statement",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -411,7 +411,7 @@
       "description": "Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.",
       "path": "skills/react-components",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -422,7 +422,7 @@
       "description": "Master modern React state management with Redux Toolkit, Zustand, Jotai, and React Query. Use when setting up global state, managing server state, or choosing between state management solutions.",
       "path": "skills/react-state-management",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -433,7 +433,7 @@
       "description": "Plan a strategic roadmap across prioritization, epic definition, stakeholder alignment, and sequencing. Use when turning strategy into a release plan that teams can execute.",
       "path": "skills/roadmap-planning",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -445,7 +445,7 @@
       "version": "1.3.0",
       "path": "skills/seo-strategy",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -456,7 +456,7 @@
       "description": "Manages shadcn components and projects — adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples. Applies when working with shadcn/ui, component registries, presets, --preset codes, or any project with a components.json file. Also triggers for \"shadcn init\", \"create an app with --preset\", or \"switch to --preset\".",
       "path": "skills/shadcn",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -468,7 +468,7 @@
       "version": "1.0.1",
       "path": "skills/signup-login-page-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -479,7 +479,7 @@
       "description": "Provides final code cleanup after task review approval. Removes debug logs, temporary comments, dead code, optimizes imports, and improves readability. Use when asked to clean up code, polish, finalize, tidy up, remove technical debt, or prepare code for completion after review. Not for refactoring logic or fixing bugs—focused solely on cosmetic and hygiene cleanup.",
       "path": "skills/specs-code-cleanup",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -490,7 +490,7 @@
       "description": "Parses noisy Terraform or GitLab CI job logs and produces a concise impact summary (add/change/destroy counts, per-resource actions, grouped repetitive changes, key attribute diffs, warnings). Use when summarizing terraform plan output, CI plan jobs, long job logs, or when the user asks what a plan would change.",
       "path": "skills/terraform-plan-summary",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -501,7 +501,7 @@
       "description": "Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors/fonts that you can apply to any artifact that has been creating, or can generate a new theme on-the-fly.",
       "path": "skills/theme-factory",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -512,7 +512,7 @@
       "description": "Generate a complete MCP server project in TypeScript with tools, resources, and proper configuration",
       "path": "skills/typescript-mcp-server-generator",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -523,7 +523,7 @@
       "description": "Expert code reviewer for TypeScript + React 19 applications. Use when reviewing React code, identifying anti-patterns, evaluating state management, or assessing code maintainability. Triggers: code review requests, PR reviews, React architecture evaluation, identifying code smells, TypeScript type safety checks, useEffect abuse detection, state management review.",
       "path": "skills/typescript-react-reviewer",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -534,7 +534,7 @@
       "description": "UI/UX design intelligence for web and mobile. Includes 50+ styles, 161 color palettes, 57 font pairings, 161 product types, 99 UX guidelines, and 25 chart types across 10 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui, and HTML/CSS). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, and check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, and mobile app. Elements: button, modal, navbar, sidebar, card, table, form, and chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, and flat design. Topics: color systems, accessibility, animation, layout, typography, font pairing, spacing, interaction states, shadow, and gradient. Integrations: shadcn/ui MCP for component search and examples.",
       "path": "skills/ui-ux-pro-max",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -545,7 +545,7 @@
       "description": "Create refined user personas from research data — 3 personas with JTBD, pains, gains, and unexpected insights. Use when building personas from survey data, creating user profiles from research, or segmenting users for product decisions.",
       "path": "skills/user-personas",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -556,7 +556,7 @@
       "description": "Create user stories with Mike Cohn format and Gherkin acceptance criteria. Use when turning user needs into development-ready work with clear outcomes and testable conditions.",
       "path": "skills/user-story",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -567,7 +567,7 @@
       "description": "Create a user story map that lays out activities, steps, tasks, and release slices. Use when planning a workflow, backlog, or MVP around the user journey.",
       "path": "skills/user-story-mapping",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -580,7 +580,7 @@
       "author": "vercel",
       "path": "skills/vercel-react-best-practices",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -593,7 +593,7 @@
       "author": "Anthony Fu",
       "path": "skills/vite",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
@@ -606,7 +606,7 @@
       "author": "vercel",
       "path": "skills/web-design-guidelines",
       "source": {
-        "source": "user"
+        "source": "yours"
       },
       "adopted": true,
       "publishState": "pushed",
