@@ -12,7 +12,7 @@ const INSTALLED_TOOLTIP =
 
 const REGISTER_TOOLTIP_CONVENIENCE =
   "Moves files into the app's local registry. The skill becomes cross-agent " +
-  "linkable and is never overwritten by Pull updates. Lives on this machine only — " +
+  "linkable and is never overwritten by Sync skills. Lives on this machine only — " +
   "use Export registry to back it up or move it to another machine.";
 
 const REGISTER_TOOLTIP_POWER =

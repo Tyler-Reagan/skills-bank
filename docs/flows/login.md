@@ -11,7 +11,7 @@ The first launch shows a one-time setup screen. The choice you make here decides
 Skills Bank manages a local copy of the curated registry shipped with the app. You get:
 
 - The full set of curated skills, installable with one click.
-- A **Pull updates** button that fetches the latest upstream curated skills while preserving anything you've added or modified.
+- A **Sync skills** button that fetches the latest upstream curated skills while preserving anything you've added or modified.
 - The ability to register your own skills alongside the curated ones.
 - **Export registry** and **Import a registry** in the account menu — move your registry to another machine or back it up as a zip.
 

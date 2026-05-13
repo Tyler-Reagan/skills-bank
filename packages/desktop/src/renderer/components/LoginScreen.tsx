@@ -149,7 +149,7 @@ export function LoginScreen({
             <strong>Use the bundled registry</strong>
             <span>
               Browse and install the curated skill set shipped with this app.
-              Pull updates with one click. Add your own skills alongside, and
+              Sync skills with one click. Add your own skills alongside, and
               export the registry to back it up or move it to another machine.
               No GitHub required.
             </span>

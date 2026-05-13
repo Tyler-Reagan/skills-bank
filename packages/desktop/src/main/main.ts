@@ -100,6 +100,15 @@ export type Persona = "convenience" | "power";
 interface AppConfig {
   registryRoot: string | null;
   persona: Persona | null;
+  // Version string the user has chosen to skip via the update-notes modal.
+  // Suppresses auto-open of the modal for that specific version only — the
+  // app still auto-checks and auto-downloads, and the user can always
+  // re-summon the modal via the "Check for Updates…" menu item.
+  dismissedUpdateVersion: string | null;
+}
+
+function emptyConfig(): AppConfig {
+  return { registryRoot: null, persona: null, dismissedUpdateVersion: null };
 }
 
 function configFilePath(): string {
@@ -109,7 +118,7 @@ function configFilePath(): string {
 function readConfig(): AppConfig {
   const p = configFilePath();
   try {
-    if (!fs.existsSync(p)) return { registryRoot: null, persona: null };
+    if (!fs.existsSync(p)) return emptyConfig();
     const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<AppConfig>;
     return {
       registryRoot:
@@ -118,9 +127,13 @@ function readConfig(): AppConfig {
         raw.persona === "convenience" || raw.persona === "power"
           ? raw.persona
           : null,
+      dismissedUpdateVersion:
+        typeof raw.dismissedUpdateVersion === "string"
+          ? raw.dismissedUpdateVersion
+          : null,
     };
   } catch {
-    return { registryRoot: null, persona: null };
+    return emptyConfig();
   }
 }
 
@@ -287,13 +300,30 @@ function resolveBootPersona(): Persona | null {
   const stored = readConfig().persona;
   if (stored) return stored;
   if (process.env["SKILLS_BANK_ROOT"]) {
-    writeConfig({ registryRoot, persona: "convenience" });
+    // Boot-time write must use writeConfig directly: module-level
+    // `persona` / `dismissedUpdateVersion` aren't initialized yet, and
+    // `dismissedUpdateVersion` is fresh from disk anyway via readConfig().
+    writeConfig({
+      registryRoot,
+      persona: "convenience",
+      dismissedUpdateVersion: readConfig().dismissedUpdateVersion,
+    });
     return "convenience";
   }
   return null;
 }
 
 let persona: Persona | null = resolveBootPersona();
+
+let dismissedUpdateVersion: string | null =
+  readConfig().dismissedUpdateVersion;
+
+// Writes the current in-memory app config triple. Use this instead of calling
+// writeConfig({...}) at sites that only mutate one field, so we don't lose
+// the others when fields are added.
+function persistConfig(): void {
+  writeConfig({ registryRoot, persona, dismissedUpdateVersion });
+}
 
 // Source PNG used for window/dock icons in dev. Packaged macOS builds use
 // the .icns embedded by electron-builder; Windows uses the .ico.
@@ -591,7 +621,7 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
 
   if (ctx.showSync) {
     template.push({ type: "separator" });
-    template.push({ label: "Pull updates", click: () => send("sync") });
+    template.push({ label: "Sync skills", click: () => send("sync") });
   }
 
   template.push({ type: "separator" });
@@ -599,6 +629,10 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
   template.push({
     label: "Keyboard shortcuts…",
     click: () => send("openShortcuts"),
+  });
+  template.push({
+    label: "Check for app updates",
+    click: () => send("checkForUpdates"),
   });
 
   if (ctx.persona === "power") {
@@ -659,7 +693,7 @@ function buildAppMenu(): Menu {
       label: "View",
       submenu: [
         { label: "Refresh", click: () => send("refresh") },
-        { label: "Pull updates", click: () => send("sync") },
+        { label: "Sync skills", click: () => send("sync") },
         { type: "separator" },
         { role: "toggleDevTools" },
         { type: "separator" },
@@ -721,6 +755,7 @@ ipcMain.handle(IPC.getConfig, () => ({
   configValid: registryRoot !== null,
   isPackaged: app.isPackaged,
   persona,
+  dismissedUpdateVersion,
 }));
 
 ipcMain.handle(IPC.setRegistryRoot, async () => {
@@ -749,7 +784,7 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
   // index build classifies skills against the new root's own upstream
   // snapshot (or absence of one), not the old repo's set.
   invalidateCanonCache();
-  writeConfig({ registryRoot: candidate, persona });
+  persistConfig();
   return { ok: true, message: `registry set to ${candidate}`, registryRoot };
 });
 
@@ -1303,7 +1338,7 @@ ipcMain.handle(IPC.importRegistry, async () => {
   // M2: same reason as setRegistryRoot — flush canon cache so the new
   // root's index build doesn't see the prior root's snapshot.
   invalidateCanonCache();
-  writeConfig({ registryRoot: candidate, persona });
+  persistConfig();
   return {
     ok: true,
     message: `Registry imported — ${skillCount} skill${skillCount === 1 ? "" : "s"} found`,
@@ -1499,13 +1534,43 @@ ipcMain.handle(
 // registryRoot lives in app.getPath("userData")/config.json, which Electron
 // preserves across upgrades.
 
-autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = true;
+// The auto-check on launch surfaces the badge; downloads happen only after
+// the user explicitly clicks "Download & install" in the update-notes modal.
+// Both flags are off so nothing silently consumes bandwidth or installs at
+// quit-time without consent.
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = false;
+
+// The `download-progress` event from electron-updater only carries percent
+// info — no version/notes — so we cache the last `update-available` info
+// and attach it to every downstream broadcast. This keeps the modal's notes
+// + version stable as the user watches the progress bar.
+let lastUpdateInfo: { version: string; releaseNotes: string | null; releaseName: string | null } | null = null;
 
 function broadcastUpdateStatus(status: UpdateStatus): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send(IPC.updateStatus, status);
   }
+}
+
+// electron-updater's `releaseNotes` is `string | { version, note }[] | null`.
+// Strings come from the GitHub release body (the common case for our pipeline);
+// arrays appear in Sparkle-style setups where multiple versions are bundled.
+// Normalize at this boundary so the renderer only ever handles `string | null`.
+function normalizeNotes(
+  raw: string | Array<{ version: string; note: string | null }> | null,
+): string | null {
+  if (typeof raw === "string") return raw;
+  if (Array.isArray(raw)) {
+    const parts = raw
+      .map((r) => {
+        const body = r.note?.trim();
+        return body ? `## v${r.version}\n\n${body}` : null;
+      })
+      .filter((s): s is string => s !== null);
+    return parts.length > 0 ? parts.join("\n\n") : null;
+  }
+  return null;
 }
 
 function wireAutoUpdater(): void {
@@ -1514,7 +1579,12 @@ function wireAutoUpdater(): void {
     broadcastUpdateStatus({ kind: "checking" });
   });
   autoUpdater.on("update-available", (info) => {
-    broadcastUpdateStatus({ kind: "available", version: info.version });
+    lastUpdateInfo = {
+      version: info.version,
+      releaseNotes: normalizeNotes(info.releaseNotes ?? null),
+      releaseName: info.releaseName ?? null,
+    };
+    broadcastUpdateStatus({ kind: "available", ...lastUpdateInfo });
   });
   autoUpdater.on("update-not-available", (info) => {
     broadcastUpdateStatus({
@@ -1523,10 +1593,21 @@ function wireAutoUpdater(): void {
     });
   });
   autoUpdater.on("download-progress", (p) => {
-    broadcastUpdateStatus({ kind: "downloading", percent: p.percent });
+    broadcastUpdateStatus({
+      kind: "downloading",
+      percent: p.percent,
+      version: lastUpdateInfo?.version ?? "",
+      releaseNotes: lastUpdateInfo?.releaseNotes ?? null,
+      releaseName: lastUpdateInfo?.releaseName ?? null,
+    });
   });
   autoUpdater.on("update-downloaded", (info) => {
-    broadcastUpdateStatus({ kind: "downloaded", version: info.version });
+    lastUpdateInfo = {
+      version: info.version,
+      releaseNotes: normalizeNotes(info.releaseNotes ?? null),
+      releaseName: info.releaseName ?? null,
+    };
+    broadcastUpdateStatus({ kind: "downloaded", ...lastUpdateInfo });
   });
   autoUpdater.on("error", (err) => {
     broadcastUpdateStatus({
@@ -1552,10 +1633,38 @@ ipcMain.handle(IPC.checkForUpdates, async () => {
   }
 });
 
+// User-initiated download. We deliberately do not call this from any
+// implicit code path — the boot-time check only surfaces the badge, and
+// the actual bytes flow only after explicit consent in the modal.
+ipcMain.handle(IPC.downloadUpdate, async () => {
+  if (!app.isPackaged) {
+    const reason = "auto-update is disabled in dev (not a packaged build)";
+    broadcastUpdateStatus({ kind: "disabled", reason });
+    return { ok: false, message: reason };
+  }
+  try {
+    await autoUpdater.downloadUpdate();
+    return { ok: true, message: "download started" };
+  } catch (err) {
+    const message = (err as Error).message;
+    broadcastUpdateStatus({ kind: "error", message });
+    return { ok: false, message };
+  }
+});
+
 ipcMain.handle(IPC.quitAndInstallUpdate, () => {
   if (!app.isPackaged) return;
   autoUpdater.quitAndInstall();
 });
+
+ipcMain.handle(
+  IPC.setDismissedUpdateVersion,
+  (_e, version: string | null) => {
+    dismissedUpdateVersion =
+      typeof version === "string" && version.length > 0 ? version : null;
+    persistConfig();
+  },
+);
 
 // ─── Canonical registry sync (M2) ───────────────────────────────────────────
 //
@@ -1665,7 +1774,7 @@ ipcMain.handle(IPC.authStatus, () => buildAuthStatus());
 
 ipcMain.handle(IPC.authSetPersonaConvenience, async () => {
   persona = "convenience";
-  writeConfig({ registryRoot, persona });
+  persistConfig();
   return buildAuthStatus();
 });
 
@@ -1677,7 +1786,7 @@ ipcMain.handle(IPC.authPollDeviceFlow, async (_e, flowId: string) => {
   try {
     await pollDeviceFlow(flowId);
     persona = "power";
-    writeConfig({ registryRoot, persona });
+    persistConfig();
     return await buildAuthStatus();
   } catch (err) {
     if (err instanceof DeviceFlowError) {
@@ -1694,7 +1803,7 @@ ipcMain.handle(IPC.authCancelDeviceFlow, (_e, flowId: string) => {
 ipcMain.handle(IPC.authLogout, async () => {
   clearStoredToken();
   persona = null;
-  writeConfig({ registryRoot, persona });
+  persistConfig();
   return buildAuthStatus();
 });
 

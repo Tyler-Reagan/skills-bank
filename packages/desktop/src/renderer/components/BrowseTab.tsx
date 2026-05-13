@@ -7,7 +7,7 @@ import { SkillsGrid } from "./SkillsGrid.js";
 import { usePersona } from "../PersonaContext.js";
 
 const REGISTRY_TOOLTIP_CONVENIENCE =
-  "Curated skills bundled with this app. Click Pull updates in the header to sync the latest from upstream. " +
+  "Curated skills bundled with this app. Click Sync skills in the header to pull the latest from upstream. " +
   "Skills you install from elsewhere appear in the Installed tab.";
 
 const REGISTRY_TOOLTIP_POWER =
@@ -116,7 +116,7 @@ export function BrowseTab({
         </span>{" "}
         {isPower
           ? "Browse and install skills from your connected registry. Manage content through your git repo — the app never overwrites it."
-          : "Browse and install curated skills. Click Pull updates in the header to pull upstream updates."}{" "}
+          : "Browse and install curated skills. Click Sync skills in the header to pull upstream updates."}{" "}
         Click any card to view its details, then <strong>Install</strong> to
         link it into the agent directories you use (Claude Code, Cursor, etc.).
         <span className="meta-counts">
