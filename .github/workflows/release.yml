@@ -40,7 +40,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - name: Build DMGs
+      - name: Build DMGs + ZIPs (both archs)
         timeout-minutes: 30
         working-directory: packages/desktop
         env:
@@ -49,10 +49,15 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          pnpm exec electron-builder --mac --x64 --publish never
-          pnpm exec electron-builder --mac --arm64 --publish never \
-            --config.artifactName='Skills-Bank-${version}-arm64.${ext}'
+        # Single electron-builder invocation builds both x64 and arm64 in one
+        # pass and writes a single latest-mac.yml that lists both architectures.
+        # electron-updater 6.x picks the right artifact at runtime based on the
+        # running process.arch, so x64 installs get the x64 zip and arm64
+        # installs get the arm64 zip — no separate manifest needed.
+        #
+        # Default artifact naming: x64 → Skills-Bank-${version}.{dmg,zip},
+        # arm64 → Skills-Bank-${version}-arm64.{dmg,zip}.
+        run: pnpm exec electron-builder --mac --x64 --arm64 --publish never
       - name: Upload DMGs to GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
