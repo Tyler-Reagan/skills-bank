@@ -66,7 +66,14 @@ jobs:
           gh release upload "$TAG" \
             packages/desktop/dist-electron/*.dmg \
             packages/desktop/dist-electron/*.dmg.blockmap \
+            packages/desktop/dist-electron/*.zip \
             --clobber
+          # zip blockmaps are produced for delta updates; upload only if present
+          if ls packages/desktop/dist-electron/*.zip.blockmap >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              packages/desktop/dist-electron/*.zip.blockmap \
+              --clobber
+          fi
           if ls packages/desktop/dist-electron/latest-mac.yml 2>/dev/null; then
             gh release upload "$TAG" \
               packages/desktop/dist-electron/latest-mac.yml \

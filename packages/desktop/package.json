@@ -1,6 +1,6 @@
 {
   "name": "@skills-bank/desktop",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "private": true,
   "type": "module",
   "description": "Desktop manager for skills-bank",
@@ -67,7 +67,7 @@
     "asar": true,
     "asarUnpack": [],
     "mac": {
-      "target": "dmg",
+      "target": ["dmg", "zip"],
       "category": "public.app-category.developer-tools",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
