@@ -1,5 +1,8 @@
 # Persona feature comparison
 
+> [!NOTE]
+> **In transition.** The first-launch persona fork is being collapsed in a forthcoming release. Every user will start on the bundled registry by default, with GitHub-linking moving to an opt-in Settings affordance available at any time. Detailed first-launch docs will be refreshed once that work ships.
+
 Skills Bank asks you to make a one-time registry choice on first launch. This page explains what that choice means for each feature you'll use day-to-day.
 
 ## Quick comparison

@@ -10,7 +10,7 @@ Self-hosting transfers maintenance of **both the app binary and the registry** t
 - Your fork's `skills/` directory is the canonical registry that your installed app's "Sync" button pulls from.
 - You opt out of receiving upstream updates from `Tyler-Reagan/skills-bank`.
 
-If you only want a different registry (not a different app), you don't need self-host — pick **Authenticate with GitHub** on the login screen and use the M4 power-persona registry-replacement flow instead.
+If you only want a different registry (not a different app), you don't need self-host — pick **Authenticate with GitHub** on the login screen and use the power-persona registry-replacement flow instead.
 
 ## Steps
 
@@ -52,4 +52,4 @@ If you only want a different registry (not a different app), you don't need self
 - **No automatic upstream updates.** If you want to pick up changes from `Tyler-Reagan/skills-bank`, merge them into your fork manually.
 - **No support.** This is open source; bugs in your fork are yours.
 
-That's it. The rest of the codebase is yours to modify; the M0–M5 milestones in `ROADMAP.md` describe the architecture if you want to extend it.
+That's it. The rest of the codebase is yours to modify.

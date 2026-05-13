@@ -41,8 +41,6 @@ The OAuth scopes the app requests give you read access to repos you can already 
 
 The app polls the GitHub Releases feed once on launch. If you've been running the app for hours and there's a new release, quit and relaunch — the poll runs at startup.
 
-For unsigned builds, macOS Gatekeeper blocks first-launch even after auto-update. Right-click → Open the app once after an update if double-click fails silently.
-
 ## "I want to start fresh"
 
 Two reset scripts wipe local state (developer-oriented, but available to anyone running from source):

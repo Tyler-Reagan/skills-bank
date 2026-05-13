@@ -1,5 +1,8 @@
 # Login and persona
 
+> [!NOTE]
+> **In transition.** The first-launch persona-choice screen is being collapsed in a forthcoming release. The bundled registry will be loaded by default; linking a GitHub repo moves to an opt-in entry in Settings and the account menu. This page describes the current behavior and will be refreshed once that work ships.
+
 The first launch shows a one-time setup screen. The choice you make here decides which features the app exposes — but it's not permanent: you can switch any time from the account menu.
 
 ![First-launch setup screen with Quick start and Advanced sections](../images/setup.png)
@@ -28,7 +31,7 @@ For users who want full version control over an independent skill registry they 
 
 This is not a fork of the app. It's your own repo with a `skills/` directory; the app just reads from it.
 
-You'll be sent through GitHub's OAuth flow to grant repo read access. The app then asks you to pick a repo whose root contains a `skills/` directory.
+You'll go through GitHub's Device Flow — the app shows you a short code, you open github.com and paste it in to grant repo read access. The app then asks you to pick a repo whose root contains a `skills/` directory.
 
 ---
 

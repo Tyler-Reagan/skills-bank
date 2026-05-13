@@ -9,7 +9,7 @@ Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/ski
 - `Skills-Bank-<version>-arm64.dmg` for Apple Silicon Macs
 - `Skills-Bank-<version>.dmg` for Intel Macs
 
-Open the DMG, drag **Skills Bank** to Applications, then launch from Spotlight. The build is unsigned, so the first launch needs **right-click → Open** to bypass macOS Gatekeeper. Subsequent launches are normal double-clicks.
+Open the DMG, drag **Skills Bank** to Applications, then launch from Spotlight. Builds are signed with a Developer ID certificate and notarized through Apple, so Gatekeeper opens them on a normal double-click.
 
 The app auto-updates by polling the GitHub Releases feed on launch — when a new version is downloaded in the background, you'll see a "Restart" toast.
 

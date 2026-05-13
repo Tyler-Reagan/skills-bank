@@ -23,7 +23,7 @@ Every heal flow is the user's call — Skills Bank never auto-deletes content th
 - **Multiple reasonable options**: the drawer opens a modal where the user makes per-row choices. Today this covers registered-conflicts and unregistered-conflicts (per-agent decisions: replace / delete / keep).
 - **Hybrid (try-then-confirm)**: the drawer tries the cheap option first, then prompts if it fails. Today this covers broken symlinks: try to repoint at a usable source; if none, ask whether to delete.
 
-The state-machine that picks which heal applies is `classifyDrawerState` in `@skills-bank/core/skill-state` — same module the IPC handlers consult, so the renderer can't bypass an in-flight bad state.
+The drawer's heal state is resolved by the same module the IPC handlers consult, so the renderer can't bypass an in-flight bad state.
 
 ### Conflicts — surfaced through the drawer
 

@@ -29,4 +29,4 @@ Use Unregister when you want to stop Skills Bank from managing a skill but keep 
 
 ## Canon skills
 
-Unregistering a canon skill is prohibited (M5). Canon = your linked registry's upstream set. You can **hide** canon skills you don't want surfaced — see [personas.md](../personas.md#canon-is-repo-relative).
+Unregistering a canon skill is prohibited. Canon = your linked registry's upstream set. You can **hide** canon skills you don't want surfaced — see [personas.md](../personas.md#canon-is-repo-relative).
