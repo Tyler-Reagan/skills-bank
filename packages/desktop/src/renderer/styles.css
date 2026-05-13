@@ -1954,6 +1954,82 @@ button:disabled {
   gap: var(--s2);
   font-size: 12px;
 }
+
+/* ── ErrorPanel ───────────────────────────────────────────────────── */
+.error-panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 0;
+}
+.error-panel {
+  border: 1px solid var(--danger, #d04444);
+  background: var(--danger-dim, rgba(208, 68, 68, 0.08));
+  border-radius: var(--r);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.error-panel-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.error-panel-icon {
+  color: var(--danger, #d04444);
+  display: inline-flex;
+  margin-top: 2px;
+}
+.error-panel-message {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-1);
+}
+.error-panel-dismiss {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 2px;
+  border-radius: 4px;
+}
+.error-panel-dismiss:hover {
+  color: var(--text-1);
+  background: var(--surface-hi);
+}
+.error-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.error-panel-details {
+  margin: 4px 0 0 0;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+}
+.error-panel-detail-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px;
+  padding: 2px 0;
+}
+.error-panel-detail-row dt {
+  font-weight: 600;
+  color: var(--text-2);
+}
+.error-panel-detail-row dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+
 .diff-viewer-state {
   padding: var(--s2) var(--s3);
   border: 1px solid var(--border);

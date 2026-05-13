@@ -31,10 +31,12 @@ import {
   acceptDriftTakeCanonical,
   finalizeSkillsDir,
   forgetMissingEntry,
+  fromCaught,
   getExportInfo,
   hideCanonSkill,
   installSkill,
   invalidateCanonCache,
+  makeAppError,
   mergeImportRegistry,
   listInstalled,
   readLastSyncReport,
@@ -576,7 +578,7 @@ ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
     }
     return { ok: true };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1017,7 +1019,7 @@ ipcMain.handle(
         errors: r.errors,
       };
     } catch (err) {
-      return { ok: false, message: (err as Error).message, errors: [] };
+      return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error, errors: [] }; })();
     }
   },
 );
@@ -1055,7 +1057,7 @@ ipcMain.handle(IPC.deregister, (_e, name: string) => {
       errors: r.errors,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message, errors: [] };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error, errors: [] }; })();
   }
 });
 
@@ -1080,7 +1082,7 @@ ipcMain.handle(IPC.hide, (_e, name: string) => {
     hideCanonSkill(registryRoot, name);
     return { ok: true, message: `Hid ${name} from the default views.` };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1090,7 +1092,7 @@ ipcMain.handle(IPC.unhide, (_e, name: string) => {
     unhideCanonSkill(registryRoot, name);
     return { ok: true, message: `Unhid ${name}.` };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1120,7 +1122,7 @@ ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
       message: `Kept local edits to ${name}; future syncs will leave it alone.`,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1152,7 +1154,7 @@ ipcMain.handle(IPC.takeCanonical, (_e, name: string) => {
       message: `Re-baselined ${name} as canonical; drift cleared.`,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1170,7 +1172,7 @@ ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
     });
     return r;
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1196,9 +1198,11 @@ ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
       removedSymlinks: r.removedSymlinks,
     };
   } catch (err) {
+    const error = fromCaught("delete-unregistered.unknown", err);
     return {
       ok: false,
-      message: (err as Error).message,
+      message: error.message,
+      error,
       removedDirs: [],
       removedSymlinks: [],
     };
@@ -1209,42 +1213,63 @@ ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
 // configured agents dir (default ~/.agents/skills/) and removes the
 // registry entry. Non-adopted skills just lose the entry; origin
 // files untouched.
-ipcMain.handle(IPC.unregister, (_e, name: string, destination: AgentId) => {
-  if (!registryRoot) {
-    return {
-      ok: false,
-      message: NO_ROOT_MSG,
-      wasAdopted: false,
-      errors: [],
-    };
-  }
-  const classification = classifySkillByName(registryRoot, name);
-  if (classification && !classification.capabilities.canUnregister) {
-    return {
-      ok: false,
-      message: `Cannot unregister ${name} from this state (${classification.state}).`,
-      wasAdopted: false,
-      errors: [],
-    };
-  }
-  try {
-    const r = unregisterSkill(name, { registryRoot, destination });
-    return {
-      ok: r.ok,
-      message: r.message,
-      destinationPath: r.destinationPath,
-      wasAdopted: r.wasAdopted,
-      errors: r.errors,
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      message: (err as Error).message,
-      wasAdopted: false,
-      errors: [],
-    };
-  }
-});
+ipcMain.handle(
+  IPC.unregister,
+  (_e, name: string, destination: AgentId, force?: boolean) => {
+    if (!registryRoot) {
+      const error = makeAppError({
+        code: "config.no-registry-root",
+        message: NO_ROOT_MSG,
+      });
+      return {
+        ok: false,
+        message: NO_ROOT_MSG,
+        wasAdopted: false,
+        errors: [error],
+        error,
+      };
+    }
+    const classification = classifySkillByName(registryRoot, name);
+    if (classification && !classification.capabilities.canUnregister) {
+      const error = makeAppError({
+        code: "unregister.not-allowed-from-state",
+        message: `Cannot unregister ${name} from this state (${classification.state}).`,
+        copyableDetails: { name, state: classification.state },
+      });
+      return {
+        ok: false,
+        message: error.message,
+        wasAdopted: false,
+        errors: [error],
+        error,
+      };
+    }
+    try {
+      const r = unregisterSkill(name, {
+        registryRoot,
+        destination,
+        force: force ?? false,
+      });
+      return {
+        ok: r.ok,
+        message: r.message,
+        destinationPath: r.destinationPath,
+        wasAdopted: r.wasAdopted,
+        errors: r.errors,
+        error: r.error,
+      };
+    } catch (err) {
+      const error = fromCaught("unregister.unknown", err);
+      return {
+        ok: false,
+        message: error.message,
+        wasAdopted: false,
+        errors: [error],
+        error,
+      };
+    }
+  },
+);
 
 // Stuck-state recovery: drop the pending-conflicts.json state file so
 // the next sync attempt starts clean. Idempotent — fine to call when no
@@ -1260,7 +1285,7 @@ ipcMain.handle(IPC.clearPendingConflicts, () => {
         : "No pending sync state to clear.",
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1291,7 +1316,7 @@ ipcMain.handle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
       keptCount,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message, errors: [] };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error, errors: [] }; })();
   }
 });
 
@@ -1368,9 +1393,11 @@ ipcMain.handle(IPC.rebuildIndex, () => {
       entries: index.entries.length,
     };
   } catch (err) {
+    const error = fromCaught("rebuild-index.unknown", err);
     return {
       ok: false,
-      message: (err as Error).message,
+      message: error.message,
+      error,
       entries: 0,
     };
   }
@@ -1437,7 +1464,7 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
       result: r,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1462,7 +1489,7 @@ ipcMain.handle(IPC.exportRegistry, async () => {
       skillCount: r.skillCount,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1544,7 +1571,7 @@ ipcMain.handle(IPC.importRegistryMerge, async () => {
       report,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
 });
 
@@ -1565,9 +1592,11 @@ ipcMain.handle(
         report,
       };
     } catch (err) {
+      const error = fromCaught("merge-import.unknown", err);
       return {
         ok: false,
-        message: (err as Error).message,
+        message: error.message,
+        error,
         report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
       };
     }
@@ -1638,7 +1667,11 @@ ipcMain.handle(IPC.openInFinder, async (_e, absolutePath: string) => {
 
 ipcMain.handle(
   IPC.editTags,
-  (_e, name: string, tags: unknown): { ok: boolean; message: string } => {
+  (
+    _e,
+    name: string,
+    tags: unknown,
+  ): { ok: boolean; message: string; error?: import("@skills-bank/core").AppError } => {
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
     if (!Array.isArray(tags)) {
       return { ok: false, message: "tags must be an array" };
@@ -1670,14 +1703,15 @@ ipcMain.handle(
     try {
       raw = JSON.parse(fs.readFileSync(metaPath, "utf8"));
     } catch (err) {
-      return { ok: false, message: `meta.json: ${(err as Error).message}` };
+      const error = fromCaught("edit-tags.meta-parse-failed", err);
+      return { ok: false, message: `meta.json: ${error.message}`, error };
     }
     if (cleaned.length === 0) delete raw["tags"];
     else raw["tags"] = cleaned;
     try {
       fs.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
     } catch (err) {
-      return { ok: false, message: (err as Error).message };
+      return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
     }
     return {
       ok: true,
@@ -1794,9 +1828,9 @@ ipcMain.handle(IPC.checkForUpdates, async () => {
     await autoUpdater.checkForUpdates();
     return { ok: true, message: "checking for updates" };
   } catch (err) {
-    const message = (err as Error).message;
-    broadcastUpdateStatus({ kind: "error", message });
-    return { ok: false, message };
+    const error = fromCaught("update.check-failed", err);
+    broadcastUpdateStatus({ kind: "error", message: error.message });
+    return { ok: false, message: error.message, error };
   }
 });
 
@@ -1813,9 +1847,9 @@ ipcMain.handle(IPC.downloadUpdate, async () => {
     await autoUpdater.downloadUpdate();
     return { ok: true, message: "download started" };
   } catch (err) {
-    const message = (err as Error).message;
-    broadcastUpdateStatus({ kind: "error", message });
-    return { ok: false, message };
+    const error = fromCaught("update.download-failed", err);
+    broadcastUpdateStatus({ kind: "error", message: error.message });
+    return { ok: false, message: error.message, error };
   }
 });
 
@@ -1848,7 +1882,11 @@ function broadcastSyncStatus(status: SyncStatus): void {
   }
 }
 
-async function runSync(): Promise<{ ok: boolean; message: string }> {
+async function runSync(): Promise<{
+  ok: boolean;
+  message: string;
+  error?: import("@skills-bank/core").AppError;
+}> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     broadcastSyncStatus({ kind: "fetching" });
@@ -1888,9 +1926,9 @@ async function runSync(): Promise<{ ok: boolean; message: string }> {
       fetched.cleanup();
     }
   } catch (err) {
-    const message = (err as Error).message;
-    broadcastSyncStatus({ kind: "error", message });
-    return { ok: false, message };
+    const error = fromCaught("sync.run-failed", err);
+    broadcastSyncStatus({ kind: "error", message: error.message });
+    return { ok: false, message: error.message, error };
   }
 }
 
@@ -1914,7 +1952,7 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
   try {
     writeSyncDecisions(registryRoot, decisions);
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
   return runSync();
 });
@@ -2034,7 +2072,7 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
   try {
     fetched = await fetchCanonicalTarball({ owner, repo, token });
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
   }
   try {
     const skillsDir = path.join(fetched.extractedRoot, "skills");

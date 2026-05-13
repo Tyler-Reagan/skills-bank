@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
@@ -256,9 +256,14 @@ export function SkillDetailDrawer({
       // when a non-symlink or foreign symlink blocks the target path.
       // Surface the structured errors so the host can open the
       // InstallConflictModal instead of dropping a vague toast.
-      const forceErrors = (r.errors ?? []).filter((e) =>
-        /refusing to overwrite without force/i.test(e.message),
-      );
+      const forceErrors = (r.errors ?? [])
+        .filter((e) => /refusing to overwrite without force/i.test(e.message))
+        .map((e) => {
+          const agentDetail = e.copyableDetails?.["agent"];
+          const agent =
+            typeof agentDetail === "string" ? (agentDetail as AgentId) : ("claude" as AgentId);
+          return { agent, message: e.message };
+        });
       if (!r.ok && forceErrors.length > 0 && onInstallConflict) {
         onInstallConflict({ name: entry.name, errors: forceErrors });
         return;

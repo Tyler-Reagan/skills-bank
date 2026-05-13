@@ -35,6 +35,7 @@ import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
 import { GitHubLinkComingSoon } from "./components/ComingSoonDialog.js";
+import { ErrorPanel } from "./components/ErrorPanel.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 import { RegistrySourceProvider } from "./RegistrySourceContext.js";
 
@@ -129,6 +130,20 @@ export function App(): React.ReactElement {
   };
   const [toast, setToast] = useState<ToastShape | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Persistent error surface. Stacks vertically; each entry is
+  // individually dismissable; failures land here (toasts stay for
+  // success confirmation only).
+  const [appErrors, setAppErrors] = useState<
+    Array<{ id: number; error: import("@skills-bank/core").AppError }>
+  >([]);
+  const appErrorIdRef = useRef(0);
+  const pushAppError = (e: import("@skills-bank/core").AppError) => {
+    const id = ++appErrorIdRef.current;
+    setAppErrors((prev) => [...prev, { id, error: e }]);
+  };
+  const dismissAppError = (id: number) => {
+    setAppErrors((prev) => prev.filter((x) => x.id !== id));
+  };
   const [showRegister, setShowRegister] = useState(false);
   // Manage-agent-links is a standalone modal targeting a single skill name.
   // Its target may originate from the registry tab, the installed-registered
@@ -806,6 +821,17 @@ export function App(): React.ReactElement {
           pendingUpdateVersion={pendingUpdateVersion}
           onShowUpdate={openUpdateModal}
         />
+        {appErrors.length > 0 && (
+          <div className="error-panel-stack">
+            {appErrors.map(({ id, error }) => (
+              <ErrorPanel
+                key={id}
+                error={error}
+                onDismiss={() => dismissAppError(id)}
+              />
+            ))}
+          </div>
+        )}
         <SyncBanner
           status={syncStatus}
           pendingConflicts={pendingConflicts}
@@ -1528,6 +1554,12 @@ export function App(): React.ReactElement {
                           } else {
                             flash(r.message);
                           }
+                        } else if (r.error) {
+                          // Structured failure — route to the
+                          // persistent ErrorPanel so the user can
+                          // see details, copy, and (Bundle C) act on
+                          // a suggestedAction.
+                          pushAppError(r.error);
                         } else {
                           flash(r.message);
                         }
