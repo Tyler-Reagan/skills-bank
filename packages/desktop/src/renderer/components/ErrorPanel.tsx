@@ -61,16 +61,19 @@ export function ErrorPanel({
       </div>
 
       <div className="error-panel-actions">
-        {error.suggestedAction && onSuggestedAction && (
-          <button
-            type="button"
-            className="btn primary"
-            onClick={() =>
-              void onSuggestedAction(error.suggestedAction!.kind)
-            }
-          >
-            {error.suggestedAction.label}
-          </button>
+        {(error.suggestedActions ?? []).map((action) =>
+          onSuggestedAction ? (
+            <button
+              key={action.kind}
+              type="button"
+              className={
+                action.tone === "danger" ? "btn danger" : "btn primary"
+              }
+              onClick={() => void onSuggestedAction(action.kind)}
+            >
+              {action.label}
+            </button>
+          ) : null,
         )}
         <button
           type="button"

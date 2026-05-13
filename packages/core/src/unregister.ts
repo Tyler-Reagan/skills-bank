@@ -192,10 +192,18 @@ function unregisterAdopted(
       const error = makeAppError({
         code: "unregister.destination-collision",
         message: `Can't move ${name} to ${destDir} — a folder already exists there.`,
-        suggestedAction: {
-          kind: "pick-destination",
-          label: "Pick another destination…",
-        },
+        suggestedActions: [
+          {
+            kind: "open-unregister-destination-settings",
+            label: "Pick another destination…",
+            tone: "primary",
+          },
+          {
+            kind: "unregister-force-overwrite",
+            label: "Overwrite existing",
+            tone: "danger",
+          },
+        ],
         copyableDetails: { name, destDir, destination: opts.destination },
       });
       return {

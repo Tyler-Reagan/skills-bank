@@ -10,20 +10,28 @@
  * `copyableDetails` is surfaced behind a "Show details" affordance and
  * copied as a structured Markdown block when the user clicks Copy.
  */
+/**
+ * Next-step affordance the renderer can render as a button.
+ * `kind` is a stable id the renderer maps to a handler; `tone`
+ * controls visual treatment (danger for irreversible operations
+ * like force-overwrite).
+ */
+export interface SuggestedAction {
+  kind: string;
+  label: string;
+  tone?: "primary" | "danger";
+}
+
 export interface AppError {
   /** Stable machine-readable identifier — `<verb>.<symptom>`. */
   code: string;
   /** One-line user-facing summary. Always populated. */
   message: string;
   /**
-   * Optional next-step affordance the renderer can render as a
-   * primary button alongside the dismiss action. `kind` is a stable
-   * id the renderer maps to a handler.
+   * Zero or more next-step affordances. Rendered as a row of buttons
+   * in the ErrorPanel beneath the message.
    */
-  suggestedAction?: {
-    kind: string;
-    label: string;
-  };
+  suggestedActions?: SuggestedAction[];
   /**
    * Free-form structured payload — paths, names, agent ids — that
    * survives the message-stringification step. Each value renders as
@@ -48,11 +56,13 @@ export function fromCaught(code: string, err: unknown): AppError {
 export function makeAppError(args: {
   code: string;
   message: string;
-  suggestedAction?: AppError["suggestedAction"];
+  suggestedActions?: SuggestedAction[];
   copyableDetails?: AppError["copyableDetails"];
 }): AppError {
   const out: AppError = { code: args.code, message: args.message };
-  if (args.suggestedAction) out.suggestedAction = args.suggestedAction;
+  if (args.suggestedActions && args.suggestedActions.length > 0) {
+    out.suggestedActions = args.suggestedActions;
+  }
   if (args.copyableDetails) out.copyableDetails = args.copyableDetails;
   return out;
 }

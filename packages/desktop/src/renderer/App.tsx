@@ -144,6 +144,54 @@ export function App(): React.ReactElement {
   const dismissAppError = (id: number) => {
     setAppErrors((prev) => prev.filter((x) => x.id !== id));
   };
+  // Dispatch table for AppError suggestedActions. Each kind maps to a
+  // handler that knows the surrounding context (current settings,
+  // refresh, toast). The handler can dismiss the originating panel.
+  const handleSuggestedAction = async (
+    error: import("@skills-bank/core").AppError,
+    id: number,
+    kind: string,
+  ): Promise<void> => {
+    if (kind === "open-unregister-destination-settings") {
+      dismissAppError(id);
+      setShowSettings(true);
+      flash(
+        "Open Settings → Skills → Unregister destination, pick a new path, save, and retry.",
+      );
+      return;
+    }
+    if (kind === "unregister-force-overwrite") {
+      const name =
+        typeof error.copyableDetails?.["name"] === "string"
+          ? (error.copyableDetails["name"] as string)
+          : null;
+      if (!name) {
+        flash("Couldn't retry — original target name was lost.");
+        return;
+      }
+      const ok = window.confirm(
+        `Overwrite the existing folder at the destination and finish unregistering ${name}? This permanently deletes whatever's there now.`,
+      );
+      if (!ok) return;
+      const r = await window.skillsBank.unregister(
+        name,
+        settings.unregisterDestinationAgent,
+        true,
+      );
+      if (r.ok) {
+        dismissAppError(id);
+        flash(r.message);
+        void window.skillsBank.rebuildIndex();
+        await refresh();
+      } else if (r.error) {
+        dismissAppError(id);
+        pushAppError(r.error);
+      } else {
+        flash(r.message);
+      }
+      return;
+    }
+  };
   const [showRegister, setShowRegister] = useState(false);
   // Manage-agent-links is a standalone modal targeting a single skill name.
   // Its target may originate from the registry tab, the installed-registered
@@ -828,6 +876,9 @@ export function App(): React.ReactElement {
                 key={id}
                 error={error}
                 onDismiss={() => dismissAppError(id)}
+                onSuggestedAction={(kind) =>
+                  handleSuggestedAction(error, id, kind)
+                }
               />
             ))}
           </div>

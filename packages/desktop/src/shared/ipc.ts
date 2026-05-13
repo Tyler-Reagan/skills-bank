@@ -319,7 +319,11 @@ interface SkillsBankAPI {
    */
   uninstall(name: string, agents?: AgentId[]): Promise<UninstallIPCResult>;
   deregister(name: string): Promise<DeregisterIPCResult>;
-  unregister(name: string, destination: AgentId): Promise<UnregisterIPCResult>;
+  unregister(
+    name: string,
+    destination: AgentId,
+    force?: boolean,
+  ): Promise<UnregisterIPCResult>;
   /**
    * M9b: delete an unregistered skill's on-disk presence. Refuses
    * if the skill is still registered (the registered → unregister
