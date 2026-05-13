@@ -995,6 +995,66 @@ export function App(): React.ReactElement {
                   });
                 }}
                 onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
+                onRepairAllBroken={async (gs) => {
+                  // Bulk-repair sweep: iterate the broken-link groups,
+                  // call repairBrokenLinks per skill, accumulate any
+                  // failures, surface a single ErrorPanel at the end
+                  // with each failed skill's AppError. Continue on
+                  // failure rather than aborting.
+                  const failures: Array<{
+                    name: string;
+                    error: import("@skills-bank/core").AppError;
+                  }> = [];
+                  let repaired = 0;
+                  for (const g of gs) {
+                    flash(
+                      `Repairing ${repaired + failures.length + 1} of ${gs.length}…`,
+                    );
+                    try {
+                      const report = await window.skillsBank.repairBrokenLinks(
+                        g.name,
+                      );
+                      if (report.unrepairable.length > 0) {
+                        failures.push({
+                          name: g.name,
+                          error: {
+                            code: "repair-broken.partial-failure",
+                            message: `${g.name}: ${report.unrepairable[0]?.reason ?? "unknown"}`,
+                            copyableDetails: {
+                              name: g.name,
+                              errors: report.unrepairable.map(
+                                (e) => `${e.agent}: ${e.reason}`,
+                              ),
+                            },
+                          },
+                        });
+                      } else {
+                        repaired += 1;
+                      }
+                    } catch (err) {
+                      failures.push({
+                        name: g.name,
+                        error: {
+                          code: "repair-broken.threw",
+                          message:
+                            err instanceof Error ? err.message : String(err),
+                          copyableDetails: { name: g.name },
+                        },
+                      });
+                    }
+                  }
+                  await refresh();
+                  if (failures.length === 0) {
+                    flash(
+                      `Repaired ${repaired} skill${repaired === 1 ? "" : "s"}.`,
+                    );
+                  } else {
+                    flash(
+                      `Repaired ${repaired}; ${failures.length} failed (see error panel).`,
+                    );
+                    for (const f of failures) pushAppError(f.error);
+                  }
+                }}
                 onInlineDelete={(group) => {
                   // M9b: stash the group on deleteTarget so the
                   // confirmation modal can preview which paths get
