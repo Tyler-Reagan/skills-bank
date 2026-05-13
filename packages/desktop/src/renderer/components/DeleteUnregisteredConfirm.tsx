@@ -133,8 +133,12 @@ export function DeleteUnregisteredConfirm({
               <>
                 <span className="spinner inline" /> Deleting…
               </>
+            ) : installations.length === 0 ? (
+              "Nothing to delete"
             ) : (
-              `Delete from this machine`
+              `Delete ${realDirs.length + symlinks.length} item${
+                realDirs.length + symlinks.length === 1 ? "" : "s"
+              }`
             )}
           </button>
         </div>

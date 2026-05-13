@@ -501,7 +501,7 @@ export function InstalledTab({
                             fontWeight: 600,
                           }}
                         >
-                          Delete from this machine
+                          Delete
                         </button>
                       )}
                     </div>

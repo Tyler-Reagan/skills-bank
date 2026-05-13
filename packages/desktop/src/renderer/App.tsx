@@ -836,6 +836,7 @@ export function App(): React.ReactElement {
               !!mergeConflictTarget ||
               showSettings ||
               showShortcuts ||
+              showGitHubLinkComingSoon ||
               !!conflictModalEntries ||
               showRepoPicker ||
               !!selected

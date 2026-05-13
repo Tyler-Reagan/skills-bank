@@ -63,7 +63,7 @@ Skills Bank asks you to make a one-time registry choice on first launch. This pa
 
 ## Switching personas
 
-Open the account menu (top-right of the header) at any time:
+Open the header menu (top-right) at any time:
 
 - **Bundled registry users**: Choose **Import a registry…** to point the app at a different folder, or sign out to return to the first-launch screen and pick "Connect your own registry".
 - **Your own registry users**: Choose **Choose registry repo…** to switch to a different GitHub repo, or sign out to return to the first-launch screen.

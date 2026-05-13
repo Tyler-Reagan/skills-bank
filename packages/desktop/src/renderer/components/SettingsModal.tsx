@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 
 const AGENT_LABELS: Record<AgentId, string> = {
@@ -114,7 +114,21 @@ export function SettingsModal({
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  useInitialFocus(modalRef);
   const [draft, setDraft] = useState<AppSettings>(settings);
+
+  // Belt-and-suspenders Esc: when focus is somewhere in the modal
+  // (the typical case once useInitialFocus runs), the capture-phase
+  // window listener in useEscapeToClose can lose the keydown to a
+  // child element's own handler. Local onKeyDown catches it directly.
+  const onModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    }
+  };
 
   const toggleAgent = (id: AgentId) => {
     setDraft((prev) => {
@@ -132,7 +146,15 @@ export function SettingsModal({
 
   return (
     <div style={overlay}>
-      <div style={modal} role="dialog" aria-modal="true" aria-label="Settings">
+      <div
+        ref={modalRef}
+        style={modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings"
+        tabIndex={-1}
+        onKeyDown={onModalKeyDown}
+      >
         <h2 style={{ marginTop: 0 }}>Settings</h2>
 
         <section style={section}>
