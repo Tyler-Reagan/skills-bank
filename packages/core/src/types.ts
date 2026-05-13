@@ -40,25 +40,25 @@ export interface RegistryEntry extends SkillMeta {
    */
   adopted?: boolean;
   /**
-   * Taxonomy axis: true when this skill's name appears in the active
-   * linked registry's upstream — for convenience persona, the bundled
-   * canonical name set (persisted at sync/seed time); for power
-   * persona, the registry git repo (publishState === "pushed").
-   * Computed dynamically by `buildRegistryIndex` so a repo switch
-   * recomputes canon without stale-marker drift.
+   * Internal-only taxonomy axis: true when this skill's name appears
+   * in the active linked registry's upstream bundled snapshot — local
+   * mode reads from a persisted bundled-name set, GitHub-linked mode
+   * derives from publishState === "pushed". Used purely to gate
+   * destructive-action protection (no UI surface). The user-facing
+   * provenance signal is `source` (`bundled` / `yours`).
    */
   canon?: boolean;
   /**
-   * M5: user has hidden this canon skill from the default views.
-   * Only meaningful when `canon === true` — hiding non-canon skills
-   * is nonsensical (just unregister them). Hidden skills retain
+   * User has dismissed this bundled skill from default views. Only
+   * meaningful when `canon === true` — dismissing non-bundled skills
+   * is nonsensical (just unregister them). Dismissed skills retain
    * installations and metadata; this is a UI dormancy flag, not an
    * uninstall.
    */
   hidden?: boolean;
   /**
-   * M6 heal axis: the skill is registered but its files are missing
-   * on disk. Set when the prior persisted index had this name but
+   * Heal axis: the skill is registered but its files are missing on
+   * disk. Set when the prior persisted index had this name but
    * `<registryRoot>/skills/<name>/` is gone (adopted case) or when
    * the external entry's target path is gone. The classifier emits
    * `registry-folder-missing` / `external-target-missing` based on
@@ -66,9 +66,9 @@ export interface RegistryEntry extends SkillMeta {
    */
   missing?: boolean;
   /**
-   * M6 heal axis: the local content has drifted from the recorded
-   * synced-commit hash. Only meaningful when `source: "canonical"`.
-   * The classifier emits the `canon-drift` state when true.
+   * Heal axis: the local content has drifted from the recorded
+   * synced-commit hash. Only meaningful when `source: "bundled"`.
+   * The classifier emits `bundled-skill-edited` when true.
    */
   drift?: boolean;
   /**

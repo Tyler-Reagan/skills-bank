@@ -257,22 +257,16 @@ export function agentsForSkill(
 }
 
 /**
- * Single badge per card, picking the most actionable signal from the
- * four-axis taxonomy. Priority order (highest wins, mutually exclusive):
+ * Single badge per card. Provenance is the primary signal (bundled vs
+ * yours); actionable state badges (drift, missing) override when present.
+ * Priority order, highest wins:
  *
- *   1. MISSING  — entry.missing: files gone, Forget heal flow.
- *   2. DRIFT    — entry.drift: canonical edited locally, Accept heal flow.
- *   3. CANON    — registered + canon + healthy: Hide is the only path to
- *                 remove (Unregister/Delete are prohibited).
- *   4. IMPORTED — registered + non-canon + source: imported. Provenance
- *                 from a power-persona repo replacement.
- *   5. EXTERNAL — registered + non-canon + adopted: false. Unregister
- *                 leaves origin files in place (no file move).
- *   6. YOURS    — registered + non-canon + adopted + source: user, OR
- *                 unregistered. User-mutable; safe from Sync overwrites.
- *
- * Each badge communicates something that changes what the user can or
- * should do — no badges for communication's sake.
+ *   1. MISSING  — entry.missing: files gone. Open drawer to forget.
+ *   2. DRIFT    — entry.drift: you've edited a bundled skill. Open drawer.
+ *   3. BUNDLED  — source: bundled. Sync owns this; destructive verbs
+ *                 are gated.
+ *   4. YOURS    — source: yours (everything else — authored locally,
+ *                 merged in from another bank, etc.). Safe from Sync.
  */
 function PublishBadge({
   entry,
@@ -285,7 +279,7 @@ function PublishBadge({
     return (
       <span
         className="skill-state-badge missing"
-        title="Files are gone. Open the drawer to forget this entry."
+        title="This skill's files are gone. Open to forget the entry or repoint it."
       >
         MISSING
       </span>
@@ -295,7 +289,7 @@ function PublishBadge({
     return (
       <span
         className="skill-state-badge drift"
-        title="Local edits diverged from the synced canonical copy. Accept-local or re-sync via the drawer."
+        title="You've edited this bundled skill. Open to review your changes."
       >
         DRIFT
       </span>
@@ -304,54 +298,31 @@ function PublishBadge({
   if (!isRegistered) {
     return (
       <span
-        className="skill-origin-badge user"
+        className="skill-origin-badge yours"
         title="Exists in an agent dir but isn't in the registry. Register from the Installed tab."
       >
         YOURS
       </span>
     );
   }
-  if (entry.canon) {
+  if (entry.source.source === "bundled") {
     return (
       <span
-        className="skill-origin-badge canon"
-        title="Part of the linked registry's upstream. Unregister and Delete are unavailable — use Hide to tuck it out of the default views."
+        className="skill-origin-badge bundled"
+        title="Part of the curated set this app ships with. Sync keeps it current."
       >
-        CANON
+        BUNDLED
       </span>
     );
   }
-  if (entry.source.source === "imported") {
-    return (
-      <span
-        className="skill-origin-badge imported"
-        title="Imported from a power-persona registry-repo replacement"
-      >
-        IMPORTED
-      </span>
-    );
-  }
-  if (entry.adopted === false) {
-    return (
-      <span
-        className="skill-origin-badge external"
-        title="Files live outside Skills Bank. Unregister drops the entry; origin files are not moved."
-      >
-        EXTERNAL
-      </span>
-    );
-  }
-  if (entry.source.source === "user") {
-    return (
-      <span
-        className="skill-origin-badge user"
-        title="Authored locally. Safe from Sync overwrites."
-      >
-        YOURS
-      </span>
-    );
-  }
-  return null;
+  return (
+    <span
+      className="skill-origin-badge yours"
+      title="You added this. Sync will never touch it."
+    >
+      YOURS
+    </span>
+  );
 }
 
 function StatusChip({

@@ -73,7 +73,7 @@ flowchart LR
     linkStyle default stroke:#94a3b8,stroke-width:1.5px,fill:none
 ```
 
-Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — _whether_ a Registered skill is canon, adopted, or external — are read off the [Source](#source) and [card badges](#card-badges) sections.
+Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — _whether_ a Registered skill is bundled or yours, adopted or external — are read off the [Source (provenance)](#source-provenance) and [card badges](#card-badges) sections.
 
 ### Destructive-action ladder
 
@@ -127,32 +127,30 @@ Self-hosting (forking the entire app) is a developer path, not a runtime persona
 
 Persona is persisted. You can switch via the account menu in the header. See [personas.md](personas.md) for a full feature comparison.
 
-## Source
+## Source (provenance)
 
-Each registry skill carries a `source` marker that records _where it came from_:
+Provenance is a binary on each registry skill — every skill is either **bundled** (came from the curated set this app ships with) or **yours** (you added it, however it got there). Stored as `source` in a sibling `.skills-bank.json` per skill so the marker doesn't pollute upstream.
 
-- **`canonical`** — Pulled from the upstream registry by Sync.
-- **`user`** — Authored locally on this machine.
-- **`imported`** — Imported from a power-persona repo replacement.
+- **`bundled`** — Part of the curated set the app ships with. Sync keeps it current.
+- **`yours`** — Anything that didn't come from the bundled set — authored locally, merged in from another bank's export, imported from elsewhere. Sync never touches it.
 
-Markers live in a sibling `.skills-bank.json` per skill so they don't pollute upstream.
+> [!NOTE]
+> Internally the code carries an `entry.canon` boolean — "is this name currently in the upstream bundled snapshot?" — used only to gate destructive-action protection. It never surfaces to users; the user-facing signal is provenance (`bundled` / `yours`).
 
 ### Tags are local
 
-Tags are a local-only dimension. You can add or remove tags on any skill — including the curated ones bundled with the app — and Sync will preserve your tag edits on the next pull. No protection step required: Sync reads the existing local tag list before writing the canonical content and splices it back in.
+Tags are a local-only dimension. You can add or remove tags on any skill — including the bundled ones — and Sync will preserve your tag edits on the next pull. No protection step required: Sync reads the existing local tag list before writing the bundled content and splices it back in.
 
 ### Card badges
 
-Each card surfaces a single badge — the most actionable signal from the taxonomy. Badges only appear when they communicate something that changes what you can or should do; non-actionable axes (hidden, adopted) have no badge.
+Each card surfaces a single badge. Provenance is the primary signal; actionable state badges (drift, missing) override when present.
 
 Priority order, highest first:
 
 - **`MISSING`** _(danger)_ — files are gone. Open the drawer to **Forget this entry**.
-- **`DRIFT`** _(warn)_ — canonical local copy diverged from the synced commit. **Accept local changes** clears the canonical marker so Sync stops trying to overwrite.
-- **`CANON`** _(calm)_ — part of the linked registry's upstream set. Unregister and Delete are prohibited; use **Hide** to tuck it out of the default views.
-- **`IMPORTED`** _(muted, dashed)_ — non-canon, registered with `source: imported` (power-persona repo replacement).
-- **`EXTERNAL`** _(accent, dashed)_ — non-canon, registered with `adopted: false`. Files live outside Skills Bank; Unregister leaves origin files in place.
-- **`YOURS`** _(accent)_ — non-canon, user-authored, OR not in the registry. User-mutable; safe from Sync overwrites.
+- **`DRIFT`** _(warn)_ — you've edited a bundled skill. Open the drawer to keep your edits or revert.
+- **`BUNDLED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the bundled-only escape hatch.
+- **`YOURS`** _(accent)_ — you added this. Fully user-mutable; safe from Sync overwrites.
 
 ## Installation kind
 

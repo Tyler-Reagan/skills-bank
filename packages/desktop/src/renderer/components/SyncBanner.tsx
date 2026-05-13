@@ -32,7 +32,7 @@ export function SyncBanner({
     return (
       <div className="sync-banner active" role="status" aria-live="polite">
         <span className="spinner inline" aria-hidden="true" /> Fetching
-        canonical skills…
+        bundled skills…
       </div>
     );
   }

@@ -8,11 +8,11 @@ interface Props {
 }
 
 /**
- * First-launch persona decision. Three paths:
- *   1. Authenticate with GitHub (Device Flow) → power persona
- *   2. Continue without → convenience persona
+ * First-launch registry-source decision. Three paths:
+ *   1. Authenticate with GitHub (Device Flow) → registrySource = "github"
+ *   2. Continue without → registrySource = "local"
  *   3. Self-host → opens fork-and-build docs in browser; user is expected
- *      to fork and run their own build, so we don't change persona here.
+ *      to fork and run their own build, so we don't change registrySource here.
  */
 export function LoginScreen({
   isAuthConfigured,
@@ -26,7 +26,7 @@ export function LoginScreen({
   const skip = async () => {
     setBusy(true);
     try {
-      const status = await window.skillsBank.authSetPersonaConvenience();
+      const status = await window.skillsBank.authSetRegistrySourceLocal();
       onStatusChanged(status);
     } finally {
       setBusy(false);

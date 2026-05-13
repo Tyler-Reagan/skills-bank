@@ -751,32 +751,21 @@ select {
   text-transform: uppercase;
   flex-shrink: 0;
 }
-.skill-origin-badge.user {
+.skill-origin-badge.yours {
+  /* Accent — the user added this. Distinct from the calmer BUNDLED
+     so the user can scan their own additions at a glance. */
   color: var(--accent);
   background: var(--surface-hi);
   border: 1px solid var(--accent);
 }
-.skill-origin-badge.imported {
-  color: var(--text-2);
-  background: var(--surface-hi);
-  border: 1px dashed var(--border);
-}
-.skill-origin-badge.canon {
-  /* Calm default — canon is the majority case in convenience persona
-     and rendering it as the loudest badge would create visual noise.
-     Subtle border + muted text reads as "in good standing" while
-     still clearly distinguishing from YOURS / EXTERNAL. */
+.skill-origin-badge.bundled {
+  /* Calm default — BUNDLED is the majority case and rendering it as
+     the loudest badge would create visual noise. Muted text + subtle
+     border reads as "in good standing" while still distinguishing
+     from YOURS. */
   color: var(--text-3);
   background: var(--surface-hi);
   border: 1px solid var(--border);
-}
-.skill-origin-badge.external {
-  /* Dashed to convey "tracked externally" (paralleling .imported's
-     dashed style for "not authored here"). Accent foreground so it's
-     readable but doesn't compete with bad-state badges. */
-  color: var(--accent);
-  background: var(--surface-hi);
-  border: 1px dashed var(--accent);
 }
 
 /* Bad-state badges. Loud — they demand a heal action. Same outer

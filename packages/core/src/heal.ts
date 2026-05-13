@@ -8,11 +8,11 @@ import {
 import { readSkillSource, writeSkillSource } from "./source.js";
 
 /**
- * M6 heal helpers. Three new bad states the classifier surfaces:
+ * Heal helpers. Three bad states the classifier surfaces:
  *
- *   - canon-drift           — local copy diverged from synced commit
- *   - registry-folder-missing — name in prior index but skills/<name>/ gone
- *   - external-target-missing — external entry whose target path is gone
+ *   - bundled-skill-edited     — local copy diverged from synced commit
+ *   - registry-folder-missing  — name in prior index but skills/<name>/ gone
+ *   - external-target-missing  — external entry whose target path is gone
  *
  * Heal-action functions live here so the IPC layer doesn't reach
  * into multiple core files for a single user-facing operation.
@@ -87,9 +87,9 @@ export function hashSkillFolder(skillDir: string): string | null {
 }
 
 /**
- * Snapshot of the synced-commit hash recorded with the canonical
- * sync. Stored alongside the `.skills-bank.json` source marker so
- * sync writes can persist the post-sync hash that subsequent builds
+ * Snapshot of the synced-commit hash recorded with the bundled sync.
+ * Stored alongside the `.skills-bank.json` source marker so sync
+ * writes can persist the post-sync hash that subsequent builds
  * compare against.
  */
 const SYNCED_HASH_FILE = ".skills-bank-hash";
@@ -110,14 +110,14 @@ export function writeSyncedHash(skillDir: string, hash: string): void {
 }
 
 /**
- * Heal action — keep-mine on a canon-drift state. Clears the source
- * marker so the skill's `source` becomes "user" going forward and
- * subsequent syncs leave it alone. Idempotent.
+ * Heal action — keep-mine on a bundled-skill-edited state. Clears
+ * the source marker so the skill's `source` becomes "yours" going
+ * forward and subsequent syncs leave it alone. Idempotent.
  */
 export function acceptDriftKeepLocal(skillDir: string): void {
   const src = readSkillSource(skillDir);
-  if (src.source !== "canonical") return;
-  writeSkillSource(skillDir, { source: "user" });
+  if (src.source !== "bundled") return;
+  writeSkillSource(skillDir, { source: "yours" });
   // Drop the synced-hash so the next build doesn't flag this as
   // drift again.
   const hashPath = path.join(skillDir, SYNCED_HASH_FILE);
@@ -131,20 +131,20 @@ export function acceptDriftKeepLocal(skillDir: string): void {
 }
 
 /**
- * Heal action — take-canonical on a canon-drift state. The user
- * acknowledges that the current on-disk content is the canonical
+ * Heal action — revert on a bundled-skill-edited state. The user
+ * acknowledges that the current on-disk content is the bundled
  * baseline going forward: re-snapshot the hash so the next build
- * sees no drift. Source marker stays `canonical` — Sync still owns
+ * sees no drift. Source marker stays `bundled` — Sync still owns
  * the skill and would still overwrite on the next pull.
  *
- * Distinct from acceptDriftKeepLocal (which flips source to user
+ * Distinct from acceptDriftKeepLocal (which flips source to yours
  * and detaches from Sync entirely). Use this when the drift
  * indicator surfaced after a sync but the post-sync state is what
  * you want — clearing the indicator without reclassifying the skill.
  */
 export function acceptDriftTakeCanonical(skillDir: string): void {
   const src = readSkillSource(skillDir);
-  if (src.source !== "canonical") return;
+  if (src.source !== "bundled") return;
   const h = hashSkillFolder(skillDir);
   if (h) writeSyncedHash(skillDir, h);
 }

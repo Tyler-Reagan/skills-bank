@@ -115,11 +115,11 @@ export function buildRegistryIndex(
         // skills are just unregisterable). Stale entries in the
         // hidden list for skills that lost canon status get ignored.
         if (built.canon && hiddenCanon.has(sk.name)) built.hidden = true;
-        // M6: drift detection for skills that came from a canonical
-        // sync. We persist the post-sync content hash in
-        // .skills-bank-hash; current folder hash != stored hash ⇒ the
-        // user (or some process) edited the canonical copy locally.
-        if (built.source.source === "canonical") {
+        // Drift detection for skills that came from a bundled sync.
+        // We persist the post-sync content hash in .skills-bank-hash;
+        // current folder hash != stored hash ⇒ the user (or some
+        // process) edited the bundled copy locally.
+        if (built.source.source === "bundled") {
           const recorded = readSyncedHash(skillDir);
           if (recorded) {
             const live = hashSkillFolder(skillDir);
@@ -156,7 +156,7 @@ export function buildRegistryIndex(
       name,
       description: "(files missing)",
       path: `skills/${name}`,
-      source: { source: "user" },
+      source: { source: "yours" },
       adopted: true,
       missing: true,
       ...(upstreamCanon.has(name) ? { canon: true } : {}),
@@ -303,7 +303,7 @@ function buildExternalEntry(
       name: ext.name,
       description: `(external target missing: ${ext.target})`,
       path: ext.target,
-      source: { source: "user" },
+      source: { source: "yours" },
       adopted: false,
       missing: true,
     };
@@ -331,7 +331,7 @@ function buildExternalEntry(
     // Absolute path for external entries — renderer falls back to
     // this when composing the reveal-in-finder path.
     path: ext.target,
-    source: { source: "user" },
+    source: { source: "yours" },
     adopted: false,
     ...(warnings.length > 0 ? { warnings } : {}),
   };

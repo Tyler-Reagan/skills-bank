@@ -38,12 +38,12 @@ function resolveRenameTarget(skillsDir: string, name: string): string {
 }
 
 /**
- * M8: merge skills from `sourceRoot/skills/` into the active
- * registry. Adds non-colliding names, queues collisions for user
- * decision. Distinct from sync: this is user-initiated, additive,
- * and the imported skills are marked `source: imported` rather than
- * `canonical` — they don't become canon under the active linked
- * registry.
+ * Merge skills from `sourceRoot/skills/` into the active registry.
+ * Adds non-colliding names, queues collisions for user decision.
+ * Distinct from sync: this is user-initiated, additive, and the
+ * merged-in skills are marked `source: yours` — they're functionally
+ * identical to user-authored skills from this point on, and don't
+ * become canon under the active linked registry.
  *
  * Decision shape reuses SyncDecisions so the renderer can route
  * collisions through the existing ConflictResolutionModal. Default
@@ -78,7 +78,7 @@ export function mergeImportRegistry(
       // No collision: copy in, mark imported.
       fs.cpSync(sourcePath, localPath, { recursive: true });
       writeSkillSource(localPath, {
-        source: "imported",
+        source: "yours",
         syncedAt: importedAt,
       });
       const h = hashSkillFolder(localPath);
@@ -104,7 +104,7 @@ export function mergeImportRegistry(
       renamed.push({ name, renamedTo: target });
       fs.cpSync(sourcePath, localPath, { recursive: true });
       writeSkillSource(localPath, {
-        source: "imported",
+        source: "yours",
         syncedAt: importedAt,
       });
       const h = hashSkillFolder(localPath);
@@ -116,7 +116,7 @@ export function mergeImportRegistry(
       fs.rmSync(localPath, { recursive: true, force: true });
       fs.cpSync(sourcePath, localPath, { recursive: true });
       writeSkillSource(localPath, {
-        source: "imported",
+        source: "yours",
         syncedAt: importedAt,
       });
       const h = hashSkillFolder(localPath);

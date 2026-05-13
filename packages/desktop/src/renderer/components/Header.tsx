@@ -15,7 +15,7 @@ interface Props {
   onToggleDensity: () => void;
   syncing: boolean;
   onSync: () => void;
-  /** When false (power persona), the canonical-sync button is hidden. */
+  /** When false (github-linked), the bundled-sync button is hidden. */
   showSync: boolean;
   authStatus: AuthStatus | null;
   /**
@@ -96,11 +96,11 @@ export function Header({
             <button
               className="refresh-btn"
               disabled={syncing}
-              title="Sync canonical skills from upstream into the registry. User-authored skills are not touched. (App updates are separate — they're handled automatically and surfaced as a badge next to the logo when one is ready.)"
+              title="Sync bundled skills from upstream into the registry. Skills you added are not touched. (App updates are separate — they're handled automatically and surfaced as a badge next to the logo when one is ready.)"
               aria-label={
                 syncing
-                  ? "Syncing canonical skills"
-                  : "Sync canonical skills from upstream"
+                  ? "Syncing bundled skills"
+                  : "Sync bundled skills from upstream"
               }
               onClick={onSync}
             >

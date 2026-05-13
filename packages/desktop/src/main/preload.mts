@@ -62,8 +62,8 @@ const api = {
   resolveConflicts: (decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveConflicts, decisions),
   authStatus: () => ipcRenderer.invoke(IPC.authStatus),
-  authSetPersonaConvenience: () =>
-    ipcRenderer.invoke(IPC.authSetPersonaConvenience),
+  authSetRegistrySourceLocal: () =>
+    ipcRenderer.invoke(IPC.authSetRegistrySourceLocal),
   authStartDeviceFlow: () => ipcRenderer.invoke(IPC.authStartDeviceFlow),
   authPollDeviceFlow: (flowId: string) =>
     ipcRenderer.invoke(IPC.authPollDeviceFlow, flowId),

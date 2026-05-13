@@ -47,7 +47,7 @@ export const IPC = {
   resolveConflicts: "registry:resolveConflicts",
   authStatus: "auth:status",
   authIsConfigured: "auth:isConfigured",
-  authSetPersonaConvenience: "auth:setPersonaConvenience",
+  authSetRegistrySourceLocal: "auth:setRegistrySourceLocal",
   authStartDeviceFlow: "auth:startDeviceFlow",
   authPollDeviceFlow: "auth:pollDeviceFlow",
   authCancelDeviceFlow: "auth:cancelDeviceFlow",
@@ -94,10 +94,17 @@ interface PickCustomSkillsDirResult {
   message: string;
 }
 
-export type Persona = "convenience" | "power";
+/**
+ * Internal-only enum. `"local"` ⇒ the user is on the bundled registry
+ * shipped with the app. `"github"` ⇒ they've linked a GitHub repo as
+ * the registry backing store. Replaces the legacy `Persona` enum and
+ * never surfaces to the user (the UI uses "Local bundled" / "Link a
+ * GitHub repo" copy).
+ */
+export type RegistrySource = "local" | "github";
 
 export interface AuthStatus {
-  persona: Persona | null;
+  registrySource: RegistrySource | null;
   isAuthConfigured: boolean;
   user: {
     login: string;
@@ -152,7 +159,7 @@ export type DiscoverStatus =
   | { kind: "error"; url: string; errorCode: number; description: string };
 
 export interface HeaderMenuContext {
-  persona: "convenience" | "power" | null;
+  registrySource: RegistrySource | null;
   user: { login: string } | null;
   showSync: boolean;
 }
@@ -308,7 +315,7 @@ interface SkillsBankAPI {
     registryRoot: string | null;
     configValid: boolean;
     isPackaged: boolean;
-    persona: Persona | null;
+    registrySource: RegistrySource | null;
     dismissedUpdateVersion: string | null;
   }>;
   setRegistryRoot(): Promise<{
@@ -333,7 +340,7 @@ interface SkillsBankAPI {
     decisions: SyncDecisions,
   ): Promise<{ ok: boolean; message: string }>;
   authStatus(): Promise<AuthStatus>;
-  authSetPersonaConvenience(): Promise<AuthStatus>;
+  authSetRegistrySourceLocal(): Promise<AuthStatus>;
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
   authPollDeviceFlow(flowId: string): Promise<AuthStatus>;
   authCancelDeviceFlow(flowId: string): Promise<void>;
