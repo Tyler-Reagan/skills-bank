@@ -103,8 +103,6 @@ const api = {
     ipcRenderer.on(IPC.discoverStatus, listener);
     return () => ipcRenderer.removeListener(IPC.discoverStatus, listener);
   },
-  showHeaderMenu: (context: unknown) =>
-    ipcRenderer.invoke(IPC.showHeaderMenu, context),
   onHeaderMenuAction: (cb: (action: string) => void) => {
     const listener = (_e: unknown, action: string) => cb(action);
     ipcRenderer.on(IPC.headerMenuAction, listener);

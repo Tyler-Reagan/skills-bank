@@ -100,7 +100,6 @@ export const IPC = {
   discoverOpenExternal: "discover:openExternal",
   discoverOpenTerminal: "discover:openTerminal",
   discoverStatus: "discover:status",
-  showHeaderMenu: "header:showMenu",
   headerMenuAction: "header:action",
   pickCustomSkillsDir: "skills:pickCustomSkillsDir",
   getSkillDiff: "skills:getSkillDiff",
@@ -209,12 +208,12 @@ export type DiscoverStatus =
   | { kind: "ready"; url: string; canGoBack: boolean }
   | { kind: "error"; url: string; errorCode: number; description: string };
 
-export interface HeaderMenuContext {
-  registrySource: RegistrySource | null;
-  user: { login: string } | null;
-  showSync: boolean;
-}
-
+/**
+ * Discriminated set of actions the macOS menubar dispatches via the
+ * `headerMenuAction` IPC. The in-app header popup-menu retired with
+ * the Account/Settings decomposition — only the menubar dispatch
+ * path still uses this union.
+ */
 export type HeaderMenuAction =
   | "changeRegistry"
   | "mergeRegistry"
@@ -455,7 +454,6 @@ interface SkillsBankAPI {
     terminalApp?: string,
   ): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
-  showHeaderMenu(context: HeaderMenuContext): Promise<void>;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
 }
 

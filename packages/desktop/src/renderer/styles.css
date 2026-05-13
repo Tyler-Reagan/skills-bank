@@ -1955,6 +1955,43 @@ button:disabled {
   font-size: 12px;
 }
 
+/* ── Header triggers (Account + Settings) ─────────────────────────── */
+.header-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-1);
+}
+.header-trigger:hover {
+  background: var(--surface-hi);
+  border-color: var(--border);
+}
+.header-trigger.account-trigger {
+  background: var(--surface-hi);
+  border-color: var(--border);
+}
+.header-trigger-label {
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.header-trigger-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+.header-trigger.settings-trigger {
+  padding: 6px;
+}
+
 /* ── ErrorPanel ───────────────────────────────────────────────────── */
 .error-panel-stack {
   display: flex;

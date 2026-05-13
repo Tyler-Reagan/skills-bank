@@ -34,8 +34,12 @@ import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
-import { GitHubLinkComingSoon } from "./components/ComingSoonDialog.js";
+import {
+  ComingSoonDialog,
+  GitHubLinkComingSoon,
+} from "./components/ComingSoonDialog.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
+import { AccountModal } from "./components/AccountModal.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 import { RegistrySourceProvider } from "./RegistrySourceContext.js";
 
@@ -254,7 +258,10 @@ export function App(): React.ReactElement {
   const [settings, setSettingsState] = useState<AppSettings>(readSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [showGitHubLinkComingSoon, setShowGitHubLinkComingSoon] =
+    useState(false);
+  const [showPromoteToGitHubComingSoon, setShowPromoteToGitHubComingSoon] =
     useState(false);
   // Auto-update state. `latestUpdateStatus` is a live mirror of the most
   // recent event the main process broadcast; the modal reads it directly
@@ -675,28 +682,37 @@ export function App(): React.ReactElement {
     flash("Signed out");
   }, [flash]);
 
-  // Dispatch actions from the native header menu (popup and macOS menu bar).
+  // Convenience: "Check for updates" routes through the same path
+  // regardless of trigger — re-open the existing update modal if a
+  // live update is known, otherwise kick off a fresh check.
+  const checkForUpdates = useCallback(() => {
+    if (
+      latestUpdateStatus &&
+      (latestUpdateStatus.kind === "available" ||
+        latestUpdateStatus.kind === "downloading" ||
+        latestUpdateStatus.kind === "downloaded")
+    ) {
+      setIsUpdateModalOpen(true);
+    } else {
+      void window.skillsBank.checkForUpdates().then((r) => {
+        flash(r.ok ? "Checking for updates…" : r.message);
+      });
+    }
+  }, [latestUpdateStatus, flash]);
+
+  // macOS menu-bar dispatch. The native menubar still fires a small
+  // set of actions (Settings…, Refresh, Sync skills) — the in-app
+  // header dropdown is gone, but the menubar stays. Filter to the
+  // actions the menubar actually dispatches; ignore the rest.
   useEffect(() => {
     if (!window.skillsBank.onHeaderMenuAction) return;
     return window.skillsBank.onHeaderMenuAction((action) => {
       switch (action) {
-        case "changeRegistry":
-          void changeRegistry();
-          break;
-        case "mergeRegistry":
-          void mergeRegistry();
-          break;
-        case "exportRegistry":
-          void exportRegistry();
-          break;
         case "openSettings":
           setShowSettings(true);
           break;
         case "openShortcuts":
           setShowShortcuts(true);
-          break;
-        case "signOut":
-          void signOut();
           break;
         case "refresh":
           void onRefreshClick();
@@ -704,39 +720,17 @@ export function App(): React.ReactElement {
         case "sync":
           void sync();
           break;
-        case "githubLinkComingSoon":
-          setShowGitHubLinkComingSoon(true);
-          break;
         case "checkForUpdates":
-          // If we already know about a live update, re-open the modal
-          // directly (bypassing dismissal — explicit user gesture).
-          // Otherwise trigger a fresh check; the badge will mount on
-          // the next `update-available` event.
-          if (
-            latestUpdateStatus &&
-            (latestUpdateStatus.kind === "available" ||
-              latestUpdateStatus.kind === "downloading" ||
-              latestUpdateStatus.kind === "downloaded")
-          ) {
-            setIsUpdateModalOpen(true);
-          } else {
-            void window.skillsBank.checkForUpdates().then((r) => {
-              flash(r.ok ? "Checking for updates…" : r.message);
-            });
-          }
+          checkForUpdates();
           break;
+        // Other actions (changeRegistry, mergeRegistry, exportRegistry,
+        // signOut, githubLinkComingSoon) are no longer dispatched from
+        // any surface — the in-app dropdown that fired them is gone
+        // and the menubar doesn't include them. Kept in the union for
+        // back-compat with the IPC shape; the cases are unreachable.
       }
     });
-  }, [
-    changeRegistry,
-    mergeRegistry,
-    exportRegistry,
-    signOut,
-    onRefreshClick,
-    sync,
-    latestUpdateStatus,
-    flash,
-  ]);
+  }, [onRefreshClick, sync, checkForUpdates]);
 
   const rebuild = useCallback(async () => {
     setRebuilding(true);
@@ -822,6 +816,8 @@ export function App(): React.ReactElement {
           onSync={() => undefined}
           showSync={false}
           authStatus={null}
+          onOpenAccount={() => undefined}
+          onOpenSettings={() => undefined}
           pendingUpdateVersion={null}
           onShowUpdate={() => undefined}
         />
@@ -866,6 +862,8 @@ export function App(): React.ReactElement {
           onSync={() => void sync()}
           showSync={authStatus?.registrySource !== "github"}
           authStatus={authStatus}
+          onOpenAccount={() => setShowAccount(true)}
+          onOpenSettings={() => setShowSettings(true)}
           pendingUpdateVersion={pendingUpdateVersion}
           onShowUpdate={openUpdateModal}
         />
@@ -913,7 +911,9 @@ export function App(): React.ReactElement {
               !!mergeConflictTarget ||
               showSettings ||
               showShortcuts ||
+              showAccount ||
               showGitHubLinkComingSoon ||
+              showPromoteToGitHubComingSoon ||
               !!conflictModalEntries ||
               showRepoPicker ||
               !!selected
@@ -1369,9 +1369,56 @@ export function App(): React.ReactElement {
           <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
         )}
 
+        {showAccount && (
+          <AccountModal
+            authStatus={authStatus}
+            appVersion={"dev"}
+            onClose={() => setShowAccount(false)}
+            onChangeRegistry={async () => {
+              setShowAccount(false);
+              await changeRegistry();
+            }}
+            onMergeRegistry={async () => {
+              setShowAccount(false);
+              await mergeRegistry();
+            }}
+            onExportRegistry={async () => {
+              setShowAccount(false);
+              await exportRegistry();
+            }}
+            onSignOut={async () => {
+              setShowAccount(false);
+              await signOut();
+            }}
+            onCheckForUpdates={checkForUpdates}
+            onOpenGitHubLinkComingSoon={() => {
+              setShowAccount(false);
+              setShowGitHubLinkComingSoon(true);
+            }}
+            onOpenPromoteToGitHubComingSoon={() => {
+              setShowAccount(false);
+              setShowPromoteToGitHubComingSoon(true);
+            }}
+          />
+        )}
+
         <GitHubLinkComingSoon
           open={showGitHubLinkComingSoon}
           onClose={() => setShowGitHubLinkComingSoon(false)}
+        />
+
+        <ComingSoonDialog
+          open={showPromoteToGitHubComingSoon}
+          onClose={() => setShowPromoteToGitHubComingSoon(false)}
+          title="Promote local registry to a GitHub repo"
+          summary="A future release will let you push the current state of your local registry — your edits and additions — to a brand-new GitHub repo, then back the app with it going forward."
+          bullets={[
+            "Create a new GitHub repo from your account",
+            "Initial commit captures the current local registry state",
+            "App switches to GitHub-linked mode automatically after promotion",
+            "Available once Link a GitHub repo… ships",
+          ]}
+          planDocPath="docs/plans/03-github-backed-mode.md"
         />
 
         {isUpdateModalOpen &&

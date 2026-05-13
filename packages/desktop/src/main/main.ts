@@ -65,7 +65,6 @@ import {
   type Bounds,
   type DiscoverStatus,
   type HeaderMenuAction,
-  type HeaderMenuContext,
   type SkillDiffFile,
   type SkillDiffRequest,
   type SkillDiffResult,
@@ -582,81 +581,10 @@ ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
   }
 });
 
-// ─── Header native menu ──────────────────────────────────────────────────────
-//
-// The header "Settings" / account button triggers a native Electron popup
-// menu instead of a React popover so it renders above the WebContentsView.
-// Action strings are sent back to the renderer via IPC.headerMenuAction.
-
-ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (!win) return;
-
-  const send = (action: HeaderMenuAction) =>
-    event.sender.send(IPC.headerMenuAction, action);
-
-  const template: MenuItemConstructorOptions[] = [];
-
-  if (ctx.registrySource === "github") {
-    if (ctx.user) {
-      template.push({
-        label: `Signed in as ${ctx.user.login}`,
-        enabled: false,
-      });
-      template.push({ type: "separator" });
-    }
-    template.push({
-      label: "Choose registry repo…",
-      click: () => send("changeRegistry"),
-    });
-  } else {
-    template.push({ label: "Using bundled registry", enabled: false });
-    template.push({ type: "separator" });
-    template.push({
-      label: "Link a GitHub repo… (Coming soon)",
-      click: () => send("githubLinkComingSoon"),
-    });
-    template.push({ type: "separator" });
-    template.push({
-      label: "Import a registry (replace)…",
-      click: () => send("changeRegistry"),
-    });
-    template.push({
-      label: "Merge a registry into mine…",
-      click: () => send("mergeRegistry"),
-    });
-    template.push({
-      label: "Export registry…",
-      click: () => send("exportRegistry"),
-    });
-  }
-
-  if (ctx.showSync) {
-    template.push({ type: "separator" });
-    template.push({ label: "Sync skills", click: () => send("sync") });
-  }
-
-  template.push({ type: "separator" });
-  template.push({ label: "Settings…", click: () => send("openSettings") });
-  template.push({
-    label: "Keyboard shortcuts…",
-    click: () => send("openShortcuts"),
-  });
-  template.push({
-    label: "Check for app updates",
-    click: () => send("checkForUpdates"),
-  });
-
-  if (ctx.registrySource === "github") {
-    template.push({ type: "separator" });
-    template.push({
-      label: "Sign out of GitHub",
-      click: () => send("signOut"),
-    });
-  }
-
-  Menu.buildFromTemplate(template).popup({ window: win });
-});
+// Header native popup-menu retired with the Account/Settings
+// decomposition — the header now renders two React-side triggers
+// (AccountTrigger + SettingsTrigger). The macOS menubar still
+// dispatches via the headerMenuAction IPC, handled below.
 
 // macOS menu bar. Items that affect renderer state send via IPC.headerMenuAction.
 // The menu is built once at launch; registry-source-specific items (e.g. Export) are
