@@ -120,7 +120,7 @@ The registry is **not** the only source of skills you can use. Skills installed 
 
 A one-time decision made on first launch that determines how the app manages your registry:
 
-- **Bundled registry** — Use the curated skill set shipped with this app. Pull updates with one click; add your own skills alongside. Export the registry to back it up or move it to another machine.
+- **Bundled registry** — Use the curated skill set shipped with this app. Sync skills with one click; add your own skills alongside. Export the registry to back it up or move it to another machine.
 - **Your own registry** — Point the app at a GitHub repo you own and maintain. The app clones it locally and never auto-syncs it — you manage content through your normal git workflow.
 
 Self-hosting (forking the entire app) is a developer path, not a runtime persona. See [self-host.md](self-host.md) for details.

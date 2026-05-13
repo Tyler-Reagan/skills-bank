@@ -34,7 +34,8 @@ import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
-import type { AuthStatus, SyncStatus } from "../shared/ipc.js";
+import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
+import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 import { PersonaProvider } from "./PersonaContext.js";
 
 const LS_KEYS = {
@@ -190,6 +191,20 @@ export function App(): React.ReactElement {
   const [settings, setSettingsState] = useState<AppSettings>(readSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  // Auto-update state. `latestUpdateStatus` is a live mirror of the most
+  // recent event the main process broadcast; the modal reads it directly
+  // when open, so a render during `downloading` shows the live progress
+  // bar without us having to snapshot. `isUpdateModalOpen` is a plain
+  // boolean — the modal's content is fully derived from
+  // `latestUpdateStatus`. `dismissedUpdateVersion` is hydrated once at
+  // boot from config.json and gates the badge for that specific version
+  // only; the in-app "Check for app updates" entry bypasses it.
+  const [latestUpdateStatus, setLatestUpdateStatus] =
+    useState<UpdateStatus | null>(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [dismissedUpdateVersion, setDismissedUpdateVersion] = useState<
+    string | null
+  >(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const saveSettings = useCallback((next: AppSettings) => {
     setSettingsState(next);
@@ -416,25 +431,28 @@ export function App(): React.ReactElement {
     void refresh().finally(() => setInitialLoading(false));
   }, [refresh]);
 
-  // Surface auto-updater state. The main process broadcasts via IPC when it
-  // detects/downloads a release. We only act on `downloaded`: nothing else
-  // requires user attention (checking/downloading happen silently in the
-  // background, "not-available" is the boring common case).
+  // Hydrate the user's "Skip this version" choice once at boot. The main
+  // process is the source of truth (persisted alongside registryRoot/persona
+  // in config.json), so this is fire-and-forget.
+  useEffect(() => {
+    void window.skillsBank.getConfig().then((cfg) => {
+      setDismissedUpdateVersion(cfg.dismissedUpdateVersion);
+    });
+  }, []);
+
+  // Mirror every auto-updater event into local state. The boot-time check
+  // only surfaces the badge; no modal auto-open — the user explicitly
+  // opens it from the badge or the in-app Settings dropdown. Errors are
+  // logged but not surfaced (transient network blips happen).
   useEffect(() => {
     if (!window.skillsBank.onUpdateStatus) return;
     return window.skillsBank.onUpdateStatus((status) => {
-      if (status.kind === "downloaded") {
-        flashWithAction(
-          `Update ${status.version} ready — restart to install`,
-          "Restart",
-          () => void window.skillsBank.quitAndInstallUpdate(),
-        );
-      } else if (status.kind === "error") {
-        // Don't spam users for every transient network blip; log only.
+      setLatestUpdateStatus(status);
+      if (status.kind === "error") {
         console.warn("[update] error:", status.message);
       }
     });
-  }, [flashWithAction]);
+  }, []);
 
   // Sync status feed: drives the SyncBanner and the Header sync button.
   // When a sync completes with conflicts, auto-open the resolver modal so
@@ -621,6 +639,24 @@ export function App(): React.ReactElement {
         case "sync":
           void sync();
           break;
+        case "checkForUpdates":
+          // If we already know about a live update, re-open the modal
+          // directly (bypassing dismissal — explicit user gesture).
+          // Otherwise trigger a fresh check; the badge will mount on
+          // the next `update-available` event.
+          if (
+            latestUpdateStatus &&
+            (latestUpdateStatus.kind === "available" ||
+              latestUpdateStatus.kind === "downloading" ||
+              latestUpdateStatus.kind === "downloaded")
+          ) {
+            setIsUpdateModalOpen(true);
+          } else {
+            void window.skillsBank.checkForUpdates().then((r) => {
+              flash(r.ok ? "Checking for updates…" : r.message);
+            });
+          }
+          break;
       }
     });
   }, [
@@ -630,6 +666,8 @@ export function App(): React.ReactElement {
     signOut,
     onRefreshClick,
     sync,
+    latestUpdateStatus,
+    flash,
   ]);
 
   const rebuild = useCallback(async () => {
@@ -677,6 +715,29 @@ export function App(): React.ReactElement {
     );
   }
 
+  // Surface an app-update badge next to the brand whenever the main
+  // process has told us about a release in any of the three active
+  // phases (available / downloading / downloaded) that the user hasn't
+  // actively skipped. `dismissedUpdateVersion` is per-version so a
+  // newer-newer release reappears.
+  const isLiveUpdate =
+    latestUpdateStatus &&
+    (latestUpdateStatus.kind === "available" ||
+      latestUpdateStatus.kind === "downloading" ||
+      latestUpdateStatus.kind === "downloaded");
+  const pendingUpdateVersion: string | null =
+    isLiveUpdate && latestUpdateStatus.version !== dismissedUpdateVersion
+      ? latestUpdateStatus.version
+      : null;
+
+  // Plain functions (not useCallback) — this code lives below early-return
+  // gates above (no authStatus, persona unresolved). A hook here would be a
+  // Rules-of-Hooks violation. None of the consumers memoize, so referential
+  // stability isn't load-bearing.
+  const openUpdateModal = () => {
+    if (isLiveUpdate) setIsUpdateModalOpen(true);
+  };
+
   // Initial loading — skeleton over real chrome.
   if (initialLoading) {
     return (
@@ -692,6 +753,8 @@ export function App(): React.ReactElement {
           onSync={() => undefined}
           showSync={false}
           authStatus={null}
+          pendingUpdateVersion={null}
+          onShowUpdate={() => undefined}
         />
         <Tabs
           active="browse"
@@ -744,6 +807,8 @@ export function App(): React.ReactElement {
           onSync={() => void sync()}
           showSync={authStatus?.persona !== "power"}
           authStatus={authStatus}
+          pendingUpdateVersion={pendingUpdateVersion}
+          onShowUpdate={openUpdateModal}
         />
         <SyncBanner
           status={syncStatus}
@@ -1229,6 +1294,31 @@ export function App(): React.ReactElement {
         {showShortcuts && (
           <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
         )}
+
+        {isUpdateModalOpen &&
+          latestUpdateStatus &&
+          (latestUpdateStatus.kind === "available" ||
+            latestUpdateStatus.kind === "downloading" ||
+            latestUpdateStatus.kind === "downloaded") && (
+            <UpdateNotesModal
+              status={latestUpdateStatus}
+              onClose={() => setIsUpdateModalOpen(false)}
+              onSkip={(version) => {
+                setDismissedUpdateVersion(version);
+                void window.skillsBank.setDismissedUpdateVersion(version);
+                setIsUpdateModalOpen(false);
+              }}
+              onDownload={() => {
+                void window.skillsBank.downloadUpdate().then((r) => {
+                  if (!r.ok) flash(r.message);
+                });
+              }}
+              onRestart={() => {
+                setIsUpdateModalOpen(false);
+                void window.skillsBank.quitAndInstallUpdate();
+              }}
+            />
+          )}
 
         {conflictModalEntries && (
           <ConflictResolutionModal

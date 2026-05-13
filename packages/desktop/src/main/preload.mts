@@ -42,7 +42,10 @@ const api = {
   getConfig: () => ipcRenderer.invoke(IPC.getConfig),
   setRegistryRoot: () => ipcRenderer.invoke(IPC.setRegistryRoot),
   checkForUpdates: () => ipcRenderer.invoke(IPC.checkForUpdates),
+  downloadUpdate: () => ipcRenderer.invoke(IPC.downloadUpdate),
   quitAndInstallUpdate: () => ipcRenderer.invoke(IPC.quitAndInstallUpdate),
+  setDismissedUpdateVersion: (version: string | null) =>
+    ipcRenderer.invoke(IPC.setDismissedUpdateVersion, version),
   onUpdateStatus: (cb: (status: UpdateStatus) => void) => {
     const listener = (_e: unknown, status: UpdateStatus) => cb(status);
     ipcRenderer.on(IPC.updateStatus, listener);

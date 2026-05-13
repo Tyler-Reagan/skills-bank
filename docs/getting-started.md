@@ -20,7 +20,7 @@ You'll see a one-time setup screen with two sections.
 ![First-launch setup screen with Quick start and Advanced sections](images/setup.png)
 
 **Use the bundled registry** _(recommended for most users)_
-Browse and install the curated skill set shipped with this app. Pull updates with one click. Add your own skills alongside, and export the registry to back it up or move it to another machine. No GitHub required.
+Browse and install the curated skill set shipped with this app. Sync skills with one click. Add your own skills alongside, and export the registry to back it up or move it to another machine. No GitHub required.
 
 **Connect your own registry**
 Point the app at a GitHub repo you own and maintain as your skill registry. The app clones it locally and never auto-syncs it — manage content through your normal git workflow. Not a fork of this app — just your own repo with a `skills/` directory.

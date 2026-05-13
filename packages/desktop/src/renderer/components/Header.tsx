@@ -18,6 +18,14 @@ interface Props {
   /** When false (power persona), the canonical-sync button is hidden. */
   showSync: boolean;
   authStatus: AuthStatus | null;
+  /**
+   * Version string of an app update that's been detected. When non-null,
+   * the badge renders next to the brand. Click invokes `onShowUpdate`.
+   * The host decides what "detected" means (typically: latest update
+   * status is `available` or `downloaded`, and not in the dismissed set).
+   */
+  pendingUpdateVersion: string | null;
+  onShowUpdate: () => void;
 }
 
 export function Header({
@@ -31,6 +39,8 @@ export function Header({
   onSync,
   showSync,
   authStatus,
+  pendingUpdateVersion,
+  onShowUpdate,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -39,8 +49,22 @@ export function Header({
     <header className="header">
       <h1 className="visually-hidden">skills-bank</h1>
       <div className="header-inner">
-        <div className="header-brand" aria-hidden="true">
-          skills<span>-</span>bank
+        <div className="header-left">
+          <div className="header-brand" aria-hidden="true">
+            skills<span>-</span>bank
+          </div>
+          {pendingUpdateVersion && (
+            <button
+              type="button"
+              className="update-badge"
+              onClick={onShowUpdate}
+              title={`Skills Bank ${pendingUpdateVersion} is ready. Click to review and install.`}
+              aria-label={`App update ${pendingUpdateVersion} available — open install dialog`}
+            >
+              <Icon name="download" size="sm" />
+              <span>Update {pendingUpdateVersion}</span>
+            </button>
+          )}
         </div>
         <div className="header-stats">
           <button
@@ -72,22 +96,22 @@ export function Header({
             <button
               className="refresh-btn"
               disabled={syncing}
-              title="Pull canonical updates from upstream into the registry. User-authored skills are not touched."
+              title="Sync canonical skills from upstream into the registry. User-authored skills are not touched. (App updates are separate — they're handled automatically and surfaced as a badge next to the logo when one is ready.)"
               aria-label={
                 syncing
-                  ? "Pulling canonical updates"
-                  : "Pull canonical updates from upstream"
+                  ? "Syncing canonical skills"
+                  : "Sync canonical skills from upstream"
               }
               onClick={onSync}
             >
               {syncing ? (
                 <>
                   <span className="spinner inline" aria-hidden="true" />{" "}
-                  Pulling…
+                  Syncing…
                 </>
               ) : (
                 <>
-                  <Icon name="download" size="md" /> Pull updates
+                  <Icon name="download" size="md" /> Sync skills
                 </>
               )}
             </button>

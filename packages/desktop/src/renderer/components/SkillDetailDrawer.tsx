@@ -597,7 +597,7 @@ export function SkillDetailDrawer({
               <p className="drawer-action-hint">
                 {persona === "power"
                   ? "Files move into your repo's skills/ directory unless you turn off adoption in Settings. Commit to persist."
-                  : "Files move to the app's local registry unless you turn off adoption in Settings. Safe from Pull updates; linkable across agents."}
+                  : "Files move to the app's local registry unless you turn off adoption in Settings. Safe from Sync skills; linkable across agents."}
               </p>
             </>
           )}

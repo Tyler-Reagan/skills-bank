@@ -36,8 +36,10 @@ export const IPC = {
   getConfig: "skills:getConfig",
   setRegistryRoot: "skills:setRegistryRoot",
   checkForUpdates: "app:checkForUpdates",
+  downloadUpdate: "app:downloadUpdate",
   quitAndInstallUpdate: "app:quitAndInstallUpdate",
   updateStatus: "app:updateStatus",
+  setDismissedUpdateVersion: "app:setDismissedUpdateVersion",
   syncCanonical: "registry:syncCanonical",
   getSyncReport: "registry:getSyncReport",
   syncStatus: "registry:syncStatus",
@@ -163,15 +165,32 @@ export type HeaderMenuAction =
   | "openShortcuts"
   | "signOut"
   | "refresh"
-  | "sync";
+  | "sync"
+  | "checkForUpdates";
 
 export type UpdateStatus =
   | { kind: "idle" }
   | { kind: "checking" }
-  | { kind: "available"; version: string }
+  | {
+      kind: "available";
+      version: string;
+      releaseNotes: string | null;
+      releaseName: string | null;
+    }
   | { kind: "not-available"; currentVersion: string }
-  | { kind: "downloading"; percent: number }
-  | { kind: "downloaded"; version: string }
+  | {
+      kind: "downloading";
+      percent: number;
+      version: string;
+      releaseNotes: string | null;
+      releaseName: string | null;
+    }
+  | {
+      kind: "downloaded";
+      version: string;
+      releaseNotes: string | null;
+      releaseName: string | null;
+    }
   | { kind: "error"; message: string }
   | { kind: "disabled"; reason: string };
 
@@ -290,6 +309,7 @@ interface SkillsBankAPI {
     configValid: boolean;
     isPackaged: boolean;
     persona: Persona | null;
+    dismissedUpdateVersion: string | null;
   }>;
   setRegistryRoot(): Promise<{
     ok: boolean;
@@ -297,7 +317,9 @@ interface SkillsBankAPI {
     registryRoot: string | null;
   }>;
   checkForUpdates(): Promise<{ ok: boolean; message: string }>;
+  downloadUpdate(): Promise<{ ok: boolean; message: string }>;
   quitAndInstallUpdate(): Promise<void>;
+  setDismissedUpdateVersion(version: string | null): Promise<void>;
   onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
   syncCanonical(): Promise<{ ok: boolean; message: string }>;
   getSyncReport(): Promise<SyncReport | null>;
