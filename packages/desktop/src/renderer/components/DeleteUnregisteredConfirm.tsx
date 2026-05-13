@@ -23,13 +23,14 @@ interface Props {
 }
 
 /**
- * M9b: confirmation modal for the inline Delete on Unregistered
- * cards. Previews exactly what will happen — real-directory copies
- * deleted, symlinks unlinked, external targets explicitly preserved.
+ * Confirmation modal for "Delete from this machine" on Unregistered
+ * cards — the file-destroying bottom rung. Previews exactly what
+ * will happen: real-directory copies deleted, symlinks unlinked,
+ * external targets explicitly preserved.
  *
- * The taxonomy plan deliberately chose the conservative semantic
- * (leave external targets alone) and required this preview so the
- * user understands what "Delete" does for foreign-symlink skills.
+ * The conservative semantic (leave external targets alone) is
+ * deliberate — symlink targets are user-owned and often belong to
+ * other git repos. This modal makes that contract visible.
  */
 export function DeleteUnregisteredConfirm({
   name,
@@ -57,11 +58,12 @@ export function DeleteUnregisteredConfirm({
     <div style={overlay}>
       <div style={modal} role="dialog" aria-modal="true">
         <h2 style={{ marginTop: 0 }}>
-          <Icon name="alert-triangle" size="sm" /> Delete {name}?
+          <Icon name="alert-triangle" size="sm" /> Delete{" "}
+          <code>{name}</code> from this machine?
         </h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          This removes {name}'s presence from your agent directories. The skill
-          must already be unregistered.
+          This permanently deletes the files listed below. This cannot be
+          undone. The skill must already be unregistered.
         </p>
 
         {realDirs.length > 0 && (
@@ -132,7 +134,7 @@ export function DeleteUnregisteredConfirm({
                 <span className="spinner inline" /> Deleting…
               </>
             ) : (
-              "Delete"
+              `Delete from this machine`
             )}
           </button>
         </div>

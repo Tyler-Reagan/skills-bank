@@ -136,6 +136,43 @@ export function SettingsModal({
         <h2 style={{ marginTop: 0 }}>Settings</h2>
 
         <section style={section}>
+          <h3 style={sectionTitle}>Registry source</h3>
+          <p style={hint}>
+            Where your registry lives. Local-bundled (the default) keeps it on
+            this machine. Linking a GitHub repo is on the way — see the plan
+            for details.
+          </p>
+          <div style={{ marginTop: 8 }}>
+            <label
+              style={{
+                display: "block",
+                padding: "6px 0",
+              }}
+            >
+              <input type="radio" checked readOnly />{" "}
+              <strong>Local bundled</strong>{" "}
+              <span style={hint}>
+                — selected. Use Export registry to back it up or move it.
+              </span>
+            </label>
+            <label
+              style={{
+                display: "block",
+                padding: "6px 0",
+                opacity: 0.6,
+              }}
+            >
+              <input type="radio" disabled />{" "}
+              <strong>Link a GitHub repo… (Coming soon)</strong>
+            </label>
+            <p style={{ ...hint, marginTop: 4 }}>
+              Find the full plan in{" "}
+              <code>docs/plans/03-github-backed-mode.md</code> in the repo.
+            </p>
+          </div>
+        </section>
+
+        <section style={section}>
           <h3 style={sectionTitle}>Registration</h3>
           <p style={hint}>
             When you register a skill, move its files into Skills Bank
@@ -294,11 +331,12 @@ export function SettingsModal({
 
         {hiddenCanon.length > 0 && (
           <section style={section}>
-            <h3 style={sectionTitle}>Hidden canon skills</h3>
+            <h3 style={sectionTitle}>Dismissed bundled skills</h3>
             <p style={hint}>
-              Canon skills you've hidden from the default Browse view. Unhiding
-              restores them everywhere. Their installations and metadata are
-              preserved while hidden — Hide is just a UI dormancy flag.
+              Bundled skills you've dismissed from the default Browse view.
+              Unhiding restores them everywhere. Their installations and
+              metadata are preserved while dismissed — this is a UI dormancy
+              flag, not an uninstall.
             </p>
             <ul
               style={{

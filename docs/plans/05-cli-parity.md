@@ -4,7 +4,7 @@ This plan describes the CLI catch-up work needed to make the README's "Same oper
 
 The maintainer's call: the CLI is a less-used surface than the desktop app. UI completeness is the higher-leverage path. Splitting this lets the larger provenance/persona work ship without being blocked on CLI scaffolding.
 
-If you're looking for the active plan, see [`fuzzy-tickling-pine.md`](../fuzzy-tickling-pine.md) (Claude plan file).
+The active PR that staged the parent provenance-reframe / persona-collapse work motivated this split; the CLI catch-up here is the deferred companion.
 
 ## What's in scope when this PR ships
 

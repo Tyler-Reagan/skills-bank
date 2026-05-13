@@ -173,7 +173,8 @@ export type HeaderMenuAction =
   | "signOut"
   | "refresh"
   | "sync"
-  | "checkForUpdates";
+  | "checkForUpdates"
+  | "githubLinkComingSoon";
 
 export type UpdateStatus =
   | { kind: "idle" }

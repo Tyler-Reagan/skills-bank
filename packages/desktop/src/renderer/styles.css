@@ -1938,6 +1938,21 @@ button:disabled {
   padding: var(--s4) var(--gutter) var(--s5);
   gap: var(--s3);
 }
+.discover-callout {
+  padding: var(--s2) var(--s3);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 13px;
+  color: var(--text-2);
+}
+.discover-callout code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 1px 4px;
+  background: var(--surface);
+  border-radius: var(--r-sm);
+}
 .discover-chrome {
   display: flex;
   align-items: center;

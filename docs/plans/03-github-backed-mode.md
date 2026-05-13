@@ -2,7 +2,7 @@
 
 This plan describes the second of two registry-source modes the app supports. The first — **local-bundled**, the default — ships with the app and is fully implemented in the provenance-reframe PR. This mode is a separate future PR; nothing in here is currently functional. The UI surfaces "Coming soon" entry-points (account menu and Settings → Registry source) that link here, so users can see the feature direction.
 
-If you're looking for the active plan, see [`fuzzy-tickling-pine.md`](../fuzzy-tickling-pine.md) (Claude plan file).
+The active PR that staged these entry-points is the provenance-reframe / persona-collapse work; once it merges, look in the repo's recent history for the full context.
 
 ## Why this lives as a separate PR
 

@@ -491,7 +491,7 @@ export function InstalledTab({
                         <button
                           className="btn danger"
                           onClick={() => onInlineDelete(g)}
-                          title="Delete this skill's files. Real-directory copies are removed; foreign symlinks are unlinked but their targets are left alone. Prompts for confirmation."
+                          title="Permanently delete this skill's files from this machine. Real-directory copies are removed; foreign symlinks are unlinked but their targets are left alone. Prompts for confirmation."
                           style={{
                             flex: 1,
                             display: "inline-flex",
@@ -501,7 +501,7 @@ export function InstalledTab({
                             fontWeight: 600,
                           }}
                         >
-                          Delete
+                          Delete from this machine
                         </button>
                       )}
                     </div>

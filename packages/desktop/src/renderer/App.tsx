@@ -28,13 +28,13 @@ import {
 } from "./components/SettingsModal.js";
 import { KeyboardShortcutsOverlay } from "./components/KeyboardShortcutsOverlay.js";
 import { RepoPickerModal } from "./components/RepoPickerModal.js";
-import { SetupScreen } from "./components/SetupScreen.js";
 import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
+import { GitHubLinkComingSoon } from "./components/ComingSoonDialog.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 import { RegistrySourceProvider } from "./RegistrySourceContext.js";
 
@@ -191,6 +191,8 @@ export function App(): React.ReactElement {
   const [settings, setSettingsState] = useState<AppSettings>(readSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showGitHubLinkComingSoon, setShowGitHubLinkComingSoon] =
+    useState(false);
   // Auto-update state. `latestUpdateStatus` is a live mirror of the most
   // recent event the main process broadcast; the modal reads it directly
   // when open, so a render during `downloading` shows the live progress
@@ -639,6 +641,9 @@ export function App(): React.ReactElement {
         case "sync":
           void sync();
           break;
+        case "githubLinkComingSoon":
+          setShowGitHubLinkComingSoon(true);
+          break;
         case "checkForUpdates":
           // If we already know about a live update, re-open the modal
           // directly (bypassing dismissal — explicit user gesture).
@@ -781,16 +786,6 @@ export function App(): React.ReactElement {
     );
   }
 
-  // Config checked, no registry root resolved → show setup.
-  if (configChecked && !registryRoot) {
-    return (
-      <SetupScreen
-        onConfigured={async () => {
-          await refresh();
-        }}
-      />
-    );
-  }
 
   return (
     <RegistrySourceProvider registrySource={authStatus?.registrySource ?? null}>
@@ -1295,6 +1290,11 @@ export function App(): React.ReactElement {
         {showShortcuts && (
           <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
         )}
+
+        <GitHubLinkComingSoon
+          open={showGitHubLinkComingSoon}
+          onClose={() => setShowGitHubLinkComingSoon(false)}
+        />
 
         {isUpdateModalOpen &&
           latestUpdateStatus &&

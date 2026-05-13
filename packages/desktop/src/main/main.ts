@@ -296,26 +296,23 @@ function resolveBootRegistryRoot(): string {
 
 let registryRoot: string = resolveBootRegistryRoot();
 
-// Resolve registry source at boot. If the dev override (SKILLS_BANK_ROOT)
-// is set, silently treat the install as local-bundled — devs running
-// against the bundled repo on disk shouldn't see the LoginScreen. Any
-// explicit stored value wins.
-function resolveBootRegistrySource(): RegistrySource | null {
+// Resolve registry source at boot. Persona-collapse default: every fresh
+// install lands on local-bundled. Stored values are still respected (so a
+// linked GitHub repo persists across launches once Bundle 3 wires up the
+// switching affordance from Settings). The LoginScreen onboarding fork is
+// gone; users opt into github-linked from Settings, not from a first-
+// launch dialog.
+function resolveBootRegistrySource(): RegistrySource {
   const stored = readConfig().registrySource;
   if (stored) return stored;
-  if (process.env["SKILLS_BANK_ROOT"]) {
-    // Boot-time write must use writeConfig directly: module-level
-    // `registrySource` / `dismissedUpdateVersion` aren't initialized
-    // yet, and `dismissedUpdateVersion` is fresh from disk anyway via
-    // readConfig().
-    writeConfig({
-      registryRoot,
-      registrySource: "local",
-      dismissedUpdateVersion: readConfig().dismissedUpdateVersion,
-    });
-    return "local";
-  }
-  return null;
+  // First launch (or post-reset). Default to local-bundled and persist
+  // so the renderer never sees registrySource === null in the boot path.
+  writeConfig({
+    registryRoot,
+    registrySource: "local",
+    dismissedUpdateVersion: readConfig().dismissedUpdateVersion,
+  });
+  return "local";
 }
 
 let registrySource: RegistrySource | null = resolveBootRegistrySource();
@@ -608,6 +605,11 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
     });
   } else {
     template.push({ label: "Using bundled registry", enabled: false });
+    template.push({ type: "separator" });
+    template.push({
+      label: "Link a GitHub repo… (Coming soon)",
+      click: () => send("githubLinkComingSoon"),
+    });
     template.push({ type: "separator" });
     template.push({
       label: "Import a registry (replace)…",

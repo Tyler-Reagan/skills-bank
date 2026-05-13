@@ -916,20 +916,20 @@ export function SkillDetailDrawer({
                     setAction(null),
                   );
                 }}
-                title="Remove from the registry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry."
+                title="Drop the registry entry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry. Use Delete from this machine to destroy files."
               >
                 {action === "unregistering" ? (
                   <>
-                    <span className="spinner inline" /> Unregistering…
+                    <span className="spinner inline" /> Removing…
                   </>
                 ) : (
-                  "Unregister"
+                  "Remove from registry"
                 )}
               </button>
               <p className="drawer-action-hint">
                 {entry.adopted === false
                   ? "Drops the registry entry. Your external files stay where they are."
-                  : "Files move to your shared agents directory. You can then Delete them from the Unregistered section."}
+                  : "Files move to your shared agents directory. You can then choose Delete from this machine in the Unregistered section to remove them."}
               </p>
             </>
           )}
@@ -949,7 +949,7 @@ export function SkillDetailDrawer({
                   <span className="spinner inline" /> Hiding…
                 </>
               ) : (
-                "Hide"
+                "Dismiss from registry view"
               )}
             </button>
           )}
