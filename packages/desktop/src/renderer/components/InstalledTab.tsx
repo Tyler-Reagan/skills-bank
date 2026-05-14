@@ -3,19 +3,19 @@ import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
 import { Icon } from "./Icon.js";
-import { usePersona } from "../PersonaContext.js";
+import { useRegistrySource } from "../RegistrySourceContext.js";
 import { classifyDrawerState } from "./skillState.js";
 
 const INSTALLED_TOOLTIP =
   "Every skill linked into any agent directory on this machine — registered " +
   "in the registry or installed elsewhere.";
 
-const REGISTER_TOOLTIP_CONVENIENCE =
+const REGISTER_TOOLTIP_LOCAL =
   "Moves files into the app's local registry. The skill becomes cross-agent " +
   "linkable and is never overwritten by Sync skills. Lives on this machine only — " +
   "use Export registry to back it up or move it to another machine.";
 
-const REGISTER_TOOLTIP_POWER =
+const REGISTER_TOOLTIP_GITHUB =
   "Moves files into your GitHub repo's skills/ directory. Commit and push " +
   "to persist across machines and share with others.";
 
@@ -161,9 +161,11 @@ export function InstalledTab({
   onInlineRegister,
   onInlineDelete,
 }: Props): React.ReactElement {
-  const persona = usePersona();
+  const registrySource = useRegistrySource();
   const registerTooltip =
-    persona === "power" ? REGISTER_TOOLTIP_POWER : REGISTER_TOOLTIP_CONVENIENCE;
+    registrySource === "github"
+      ? REGISTER_TOOLTIP_GITHUB
+      : REGISTER_TOOLTIP_LOCAL;
   if (installed.length === 0) {
     return (
       <div>
@@ -223,7 +225,7 @@ export function InstalledTab({
       name: g.name,
       description: g.representative.target ?? g.representative.linkPath,
       path: g.representative.linkPath,
-      source: { source: "user" },
+      source: { source: "yours" },
     };
     return {
       g,
@@ -489,7 +491,7 @@ export function InstalledTab({
                         <button
                           className="btn danger"
                           onClick={() => onInlineDelete(g)}
-                          title="Delete this skill's files. Real-directory copies are removed; foreign symlinks are unlinked but their targets are left alone. Prompts for confirmation."
+                          title="Permanently delete this skill's files from this machine. Real-directory copies are removed; foreign symlinks are unlinked but their targets are left alone. Prompts for confirmation."
                           style={{
                             flex: 1,
                             display: "inline-flex",
@@ -499,7 +501,7 @@ export function InstalledTab({
                             fontWeight: 600,
                           }}
                         >
-                          Delete
+                          Delete from this machine
                         </button>
                       )}
                     </div>

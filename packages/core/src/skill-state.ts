@@ -11,10 +11,10 @@ import type { InstalledSkill, RegistryEntry } from "./types.js";
  * no-ops, and which would make the state worse — for both renderer
  * UI gating and IPC-level enforcement.
  *
- * M1 ships the same 9 states the renderer-only classifier had; the
- * `canon` axis is added to the input so future milestones (M5/M6)
- * can introduce `canon-hidden`, `canon-drift`, and related states
- * without another signature change.
+ * State names align with user-facing copy where the state is surfaced
+ * in the drawer (e.g. `bundled-skill-edited` matches the "You've
+ * edited this bundled skill" heading). Internal-only states keep
+ * their composite shape.
  */
 export type DrawerState =
   | "registered-healthy"
@@ -26,9 +26,9 @@ export type DrawerState =
   | "unregistered-foreign"
   | "unregistered-conflicts"
   | "unregistered-broken"
-  | "canon-hidden"
-  // M6 heal states:
-  | "canon-drift"
+  | "bundled-skill-dismissed"
+  // Heal states:
+  | "bundled-skill-edited"
   | "registry-folder-missing"
   | "external-target-missing";
 
@@ -40,7 +40,6 @@ export type PrimaryAction =
   | "resolve-registration-conflicts"
   | "repair-broken"
   | "unhide"
-  // M6:
   | "accept-drift"
   | "forget-missing";
 
@@ -50,48 +49,45 @@ export interface DrawerCapabilities {
   canExport: boolean;
   canRevealInFinder: boolean;
   /**
-   * @deprecated since M9b — the UI no longer renders Delete from
-   * Skills Bank on registered skills. Deletion routes through
-   * Unregister first, then the inline Delete on Unregistered cards
+   * Deletion of registered skills routes through Unregister first,
+   * then the inline Delete on Unregistered cards
    * (`deleteUnregisteredSkill`). Kept in the capability surface for
-   * non-UI consumers (CLI / IPC enforcement layer) that may still
-   * consult the classifier for the registered-delete semantic.
+   * non-UI consumers (CLI / IPC enforcement layer).
    */
   canDeleteFromBank: boolean;
   /**
-   * Mid-tier destructive action (M4). Move adopted files to the
-   * configured agents dir (or drop the entry, for non-adopted), then
-   * remove the registry entry. Co-varies with canDeleteFromBank in
-   * M4; M5 may tighten further for canon protection.
+   * Mid-tier destructive action. Move adopted files to the configured
+   * agents dir (or drop the entry, for non-adopted), then remove the
+   * registry entry. Co-varies with canDeleteFromBank.
    */
   canUnregister: boolean;
   canRegister: boolean;
   /**
-   * M5: tuck the skill out of the default views without unregistering
-   * it. Only granted for canon skills the user hasn't already hidden.
-   * Replaces canUnregister/canDeleteFromBank for canon (those are
-   * prohibited by IPC).
+   * Dismiss the bundled skill from default views without unregistering
+   * it. Only granted for bundled skills (canon) the user hasn't
+   * already dismissed. Replaces canUnregister/canDeleteFromBank for
+   * bundled skills (those are prohibited by IPC).
    */
   canHide: boolean;
-  /** M5: undo Hide. Granted only in the canon-hidden state. */
+  /** Undo Dismiss. Granted only in the bundled-skill-dismissed state. */
   canUnhide: boolean;
   /**
-   * Canon-drift heal — accept the local edits as user-authored.
-   * Clears the source: canonical marker so future syncs leave the
+   * Bundled-skill-edited heal — keep the local edits as the user's
+   * own. Clears the bundled source marker so future syncs leave the
    * skill alone.
    */
   canAcceptDrift: boolean;
   /**
-   * Canon-drift heal — take the current (post-sync) on-disk state
-   * as the canonical baseline. Re-snapshots the synced hash so the
-   * next build sees no drift; source marker stays canonical and
-   * Sync continues to own the skill.
+   * Bundled-skill-edited heal — re-baseline the current on-disk state
+   * as the bundled version. Re-snapshots the synced hash so the next
+   * build sees no drift; source marker stays bundled and Sync
+   * continues to own the skill.
    */
   canTakeCanonical: boolean;
   /**
-   * M6: forget a missing entry — drop the registry/external record.
-   * For adopted missing: the entry naturally drops on next index
-   * build (folder was gone), so the action is mostly UI cleanup. For
+   * Forget a missing entry — drop the registry/external record. For
+   * adopted missing: the entry naturally drops on next index build
+   * (folder was gone), so the action is mostly UI cleanup. For
    * non-adopted missing: removes the external.json row.
    */
   canForgetMissing: boolean;
@@ -116,15 +112,13 @@ export interface DrawerStateClassification {
 }
 
 /**
- * Classifier inputs beyond the original three. `canon` is plumbed
- * through now (M1) and populated by M2's resolution against the
- * linked registry repo. Defaults to false so M1 ships with no
- * behavior change.
+ * Classifier inputs beyond the original three. `canon` is the
+ * internal protection-rule axis — never surfaced to the user.
  */
 export interface ClassifyOptions {
   /**
-   * Whether the skill is canon — its name appears in the linked
-   * registry repo's upstream index. Reserved for M5/M6 states.
+   * Whether the skill is currently in the linked registry's upstream
+   * bundled snapshot. Drives destructive-action protection only.
    */
   canon?: boolean;
 }
@@ -154,13 +148,13 @@ export function classifyDrawerState(
   isRegistered: boolean,
   _options: ClassifyOptions = {},
 ): DrawerStateClassification {
-  // M5: canon + hidden short-circuits to a dedicated state. Hide is
-  // purely a UI dormancy flag — installations and metadata are
+  // Bundled + dismissed short-circuits to a dedicated state. Dismiss
+  // is purely a UI dormancy flag — installations and metadata are
   // preserved — so this state still allows install/remove/etc. but
   // the primary action is Unhide and Delete/Unregister are gone.
   if (isRegistered && entry.canon === true && entry.hidden === true) {
     return applyCanonGate(entry, {
-      state: "canon-hidden",
+      state: "bundled-skill-dismissed",
       brokenCount: 0,
       conflictCount: 0,
       capabilities: {
@@ -172,10 +166,9 @@ export function classifyDrawerState(
     });
   }
 
-  // M6: missing files. Adopted vs. external split is just the
-  // user-facing copy; the heal flow is the same single-option
-  // "Forget this entry" today (M6-pragmatic — repoint/refetch are
-  // future work).
+  // Missing files. Adopted vs. external split is just the user-facing
+  // copy; today's heal flow is the same single-option "Forget this
+  // entry" for both (repoint/refetch are future work).
   if (isRegistered && entry.missing === true) {
     return {
       state:
@@ -193,19 +186,19 @@ export function classifyDrawerState(
     };
   }
 
-  // Canon-drift. Local copy of a canonical skill has been edited
-  // since the last sync. Two recoverable heal arms:
-  //   - Accept local changes (canAcceptDrift): clear the canonical
-  //     marker so the skill becomes user-authored; Sync stops
+  // Bundled-skill-edited. Local copy of a bundled skill has been
+  // edited since the last sync. Two recoverable heal arms:
+  //   - Keep my edits (canAcceptDrift): clear the bundled source
+  //     marker so the skill becomes the user's own; Sync stops
   //     trying to overwrite it.
-  //   - Take canonical (canTakeCanonical): re-snapshot the current
+  //   - Revert to bundled (canTakeCanonical): re-snapshot the current
   //     on-disk hash as the new synced baseline. Source marker stays
-  //     canonical; Sync still owns the skill. Use this when drift
-  //     surfaced spuriously (e.g. branch-divergence noise) and the
-  //     current state is acceptable as canonical going forward.
+  //     bundled; Sync still owns the skill. Use this when drift
+  //     surfaced spuriously and the current state is acceptable as
+  //     bundled going forward.
   if (isRegistered && entry.drift === true) {
     return {
-      state: "canon-drift",
+      state: "bundled-skill-edited",
       brokenCount: 0,
       conflictCount: 0,
       capabilities: {
@@ -240,7 +233,7 @@ export function classifyDrawerState(
       // Multi-installation across ANY kinds (real-dir + foreign,
       // real-dir + broken, two foreign, etc.) is a registration
       // conflict: the user has more than one on-disk copy of this
-      // skill name and needs to pick the canonical one. Route them
+      // skill name and needs to pick the right copy. Route them
       // through RegisterModal where per-kind options live.
       const totalNonOurs = conflicts.length + broken.length;
       if (totalNonOurs > 1) {
@@ -257,8 +250,8 @@ export function classifyDrawerState(
         };
       }
       // Single-installation unregistered. Register is the single
-      // primary; M3 unified adopt vs. symlink-mode behind the global
-      // `registerAdopts` setting, so no per-skill split here.
+      // primary; adopt vs. symlink-mode is controlled by the global
+      // `registerAdopts` setting.
       return {
         state: hasRealDir ? "unregistered-real" : "unregistered-foreign",
         brokenCount: broken.length,

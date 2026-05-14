@@ -11,12 +11,12 @@ export function HeaderMenu({
   authStatus,
   showSync,
 }: Props): React.ReactElement {
-  const isPower = authStatus?.persona === "power";
+  const isGithub = authStatus?.registrySource === "github";
   const user = authStatus?.user ?? null;
 
   const handleClick = () => {
     const context: HeaderMenuContext = {
-      persona: authStatus?.persona ?? null,
+      registrySource: authStatus?.registrySource ?? null,
       user: user ? { login: user.login } : null,
       showSync,
     };
@@ -28,9 +28,9 @@ export function HeaderMenu({
       className="header-menu-trigger"
       type="button"
       onClick={handleClick}
-      title={isPower ? "Account & registry" : "Settings"}
+      title={isGithub ? "Account & registry" : "Settings"}
     >
-      {isPower && user?.avatarUrl ? (
+      {isGithub && user?.avatarUrl ? (
         <img
           src={user.avatarUrl}
           alt=""
@@ -41,7 +41,7 @@ export function HeaderMenu({
         <Icon name="settings" size="md" />
       )}
       <span className="header-menu-label">
-        {isPower ? (user?.login ?? "Account") : "Settings"}
+        {isGithub ? (user?.login ?? "Account") : "Settings"}
       </span>
       <Icon name="chevron-down" size="sm" />
     </button>

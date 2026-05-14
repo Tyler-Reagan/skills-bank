@@ -28,15 +28,15 @@ import {
 } from "./components/SettingsModal.js";
 import { KeyboardShortcutsOverlay } from "./components/KeyboardShortcutsOverlay.js";
 import { RepoPickerModal } from "./components/RepoPickerModal.js";
-import { SetupScreen } from "./components/SetupScreen.js";
 import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
+import { GitHubLinkComingSoon } from "./components/ComingSoonDialog.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
-import { PersonaProvider } from "./PersonaContext.js";
+import { RegistrySourceProvider } from "./RegistrySourceContext.js";
 
 const LS_KEYS = {
   search: "skills-bank.searchQuery",
@@ -191,6 +191,8 @@ export function App(): React.ReactElement {
   const [settings, setSettingsState] = useState<AppSettings>(readSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showGitHubLinkComingSoon, setShowGitHubLinkComingSoon] =
+    useState(false);
   // Auto-update state. `latestUpdateStatus` is a live mirror of the most
   // recent event the main process broadcast; the modal reads it directly
   // when open, so a render during `downloading` shows the live progress
@@ -539,9 +541,9 @@ export function App(): React.ReactElement {
   );
 
   const changeRegistry = useCallback(async () => {
-    // Power-persona users pick a GitHub repo; convenience users import
+    // GitHub-linked users pick a GitHub repo; local-bundled users import
     // a local folder (validated to contain a skills/ subdirectory).
-    if (authStatus?.persona === "power") {
+    if (authStatus?.registrySource === "github") {
       setShowRepoPicker(true);
       return;
     }
@@ -639,6 +641,9 @@ export function App(): React.ReactElement {
         case "sync":
           void sync();
           break;
+        case "githubLinkComingSoon":
+          setShowGitHubLinkComingSoon(true);
+          break;
         case "checkForUpdates":
           // If we already know about a live update, re-open the modal
           // directly (bypassing dismissal — explicit user gesture).
@@ -701,15 +706,16 @@ export function App(): React.ReactElement {
     return <SplashScreen />;
   }
 
-  // Persona unresolved → LoginScreen. Hoisted above the data-skeleton
-  // so we never render the app shell for a not-yet-onboarded user.
-  if (authStatus.persona === null) {
+  // Registry source unresolved → LoginScreen. Hoisted above the
+  // data-skeleton so we never render the app shell for a not-yet-
+  // onboarded user.
+  if (authStatus.registrySource === null) {
     return (
       <LoginScreen
         isAuthConfigured={authStatus.isAuthConfigured}
         onStatusChanged={(s) => {
           setAuthStatus(s);
-          if (s.persona !== null) void refresh();
+          if (s.registrySource !== null) void refresh();
         }}
       />
     );
@@ -780,19 +786,9 @@ export function App(): React.ReactElement {
     );
   }
 
-  // Config checked, no registry root resolved → show setup.
-  if (configChecked && !registryRoot) {
-    return (
-      <SetupScreen
-        onConfigured={async () => {
-          await refresh();
-        }}
-      />
-    );
-  }
 
   return (
-    <PersonaProvider persona={authStatus?.persona ?? null}>
+    <RegistrySourceProvider registrySource={authStatus?.registrySource ?? null}>
       <div className="app">
         <Header
           refreshing={refreshing}
@@ -805,7 +801,7 @@ export function App(): React.ReactElement {
             syncStatus.kind === "fetching" || syncStatus.kind === "applying"
           }
           onSync={() => void sync()}
-          showSync={authStatus?.persona !== "power"}
+          showSync={authStatus?.registrySource !== "github"}
           authStatus={authStatus}
           pendingUpdateVersion={pendingUpdateVersion}
           onShowUpdate={openUpdateModal}
@@ -894,7 +890,7 @@ export function App(): React.ReactElement {
                     name: s.name,
                     description: s.target ?? s.linkPath,
                     path: s.linkPath,
-                    source: { source: "user" },
+                    source: { source: "yours" },
                   };
                   setSelected(synthetic);
                 }}
@@ -1295,6 +1291,11 @@ export function App(): React.ReactElement {
           <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
         )}
 
+        <GitHubLinkComingSoon
+          open={showGitHubLinkComingSoon}
+          onClose={() => setShowGitHubLinkComingSoon(false)}
+        />
+
         {isUpdateModalOpen &&
           latestUpdateStatus &&
           (latestUpdateStatus.kind === "available" ||
@@ -1552,6 +1553,6 @@ export function App(): React.ReactElement {
           </div>
         )}
       </div>
-    </PersonaProvider>
+    </RegistrySourceProvider>
   );
 }

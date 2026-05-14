@@ -237,7 +237,7 @@ export async function applyCanonicalSync(
     if (fs.existsSync(localPath)) {
       preservedTags = readMetaTags(localPath);
       const existingSource = readSkillSource(localPath);
-      if (existingSource.source !== "canonical") {
+      if (existingSource.source !== "bundled") {
         const decision = decisions[name];
         if (decision) {
           // Apply the stored resolution and skip the conflict queue.
@@ -269,12 +269,12 @@ export async function applyCanonicalSync(
       writeMetaTags(localPath, preservedTags);
     }
     writeSkillSource(localPath, {
-      source: "canonical",
+      source: "bundled",
       syncedFromCommit: commitSha,
       syncedAt,
     });
-    // M6: snapshot content hash so future builds can detect local
-    // edits to canonical copies (the canon-drift heal state).
+    // Snapshot content hash so future builds can detect local edits
+    // to bundled copies (the bundled-skill-edited heal state).
     const h = hashSkillFolder(localPath);
     if (h) writeSyncedHash(localPath, h);
     upserted.push(name);
@@ -286,7 +286,7 @@ export async function applyCanonicalSync(
     if (!ent.isDirectory()) continue;
     if (canonicalNames.has(ent.name)) continue;
     const local = path.join(localSkillsDir, ent.name);
-    if (readSkillSource(local).source === "canonical") {
+    if (readSkillSource(local).source === "bundled") {
       orphaned.push(ent.name);
     }
   }

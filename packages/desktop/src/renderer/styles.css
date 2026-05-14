@@ -751,32 +751,21 @@ select {
   text-transform: uppercase;
   flex-shrink: 0;
 }
-.skill-origin-badge.user {
+.skill-origin-badge.yours {
+  /* Accent — the user added this. Distinct from the calmer BUNDLED
+     so the user can scan their own additions at a glance. */
   color: var(--accent);
   background: var(--surface-hi);
   border: 1px solid var(--accent);
 }
-.skill-origin-badge.imported {
-  color: var(--text-2);
-  background: var(--surface-hi);
-  border: 1px dashed var(--border);
-}
-.skill-origin-badge.canon {
-  /* Calm default — canon is the majority case in convenience persona
-     and rendering it as the loudest badge would create visual noise.
-     Subtle border + muted text reads as "in good standing" while
-     still clearly distinguishing from YOURS / EXTERNAL. */
+.skill-origin-badge.bundled {
+  /* Calm default — BUNDLED is the majority case and rendering it as
+     the loudest badge would create visual noise. Muted text + subtle
+     border reads as "in good standing" while still distinguishing
+     from YOURS. */
   color: var(--text-3);
   background: var(--surface-hi);
   border: 1px solid var(--border);
-}
-.skill-origin-badge.external {
-  /* Dashed to convey "tracked externally" (paralleling .imported's
-     dashed style for "not authored here"). Accent foreground so it's
-     readable but doesn't compete with bad-state badges. */
-  color: var(--accent);
-  background: var(--surface-hi);
-  border: 1px dashed var(--accent);
 }
 
 /* Bad-state badges. Loud — they demand a heal action. Same outer
@@ -1948,6 +1937,155 @@ button:disabled {
   margin: 0 auto;
   padding: var(--s4) var(--gutter) var(--s5);
   gap: var(--s3);
+}
+.discover-callout {
+  padding: var(--s2) var(--s3);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* ── Diff viewer (sync-collision modal + future drift drawer) ─── */
+.diff-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  font-size: 12px;
+}
+.diff-viewer-state {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-hi);
+  color: var(--text-2);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.diff-viewer-error {
+  border-color: var(--danger, #d04444);
+  color: var(--danger, #d04444);
+}
+.diff-viewer-empty {
+  color: var(--text-3);
+}
+.diff-viewer-legend {
+  display: flex;
+  gap: var(--s2);
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.diff-legend-swatch {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 0 4px;
+  border-radius: 2px;
+}
+.diff-legend-swatch.added {
+  background: var(--accent-dim, rgba(34, 197, 94, 0.18));
+  color: var(--accent, #22c55e);
+}
+.diff-legend-swatch.removed {
+  background: var(--danger-dim, rgba(208, 68, 68, 0.18));
+  color: var(--danger, #d04444);
+}
+.diff-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.diff-file-row {
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+.diff-file-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+.diff-file-summary:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.diff-file-chev {
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  width: 14px;
+  display: inline-block;
+}
+.diff-file-path {
+  flex: 1;
+  font-family: var(--font-mono);
+  color: var(--text-1);
+}
+.diff-file-counts {
+  display: inline-flex;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.diff-count-added {
+  color: var(--accent, #22c55e);
+}
+.diff-count-removed {
+  color: var(--danger, #d04444);
+}
+.diff-file-status {
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: italic;
+}
+.diff-file-body {
+  margin: 0;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-hi);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre;
+  overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
+}
+.diff-line {
+  display: inline;
+}
+.diff-line.added {
+  background: var(--accent-dim, rgba(34, 197, 94, 0.12));
+  color: var(--accent, #22c55e);
+}
+.diff-line.removed {
+  background: var(--danger-dim, rgba(208, 68, 68, 0.12));
+  color: var(--danger, #d04444);
+}
+.diff-line.hunk {
+  color: var(--text-3);
+}
+.diff-line.header {
+  color: var(--text-3);
+}
+.discover-callout code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 1px 4px;
+  background: var(--surface);
+  border-radius: var(--r-sm);
 }
 .discover-chrome {
   display: flex;

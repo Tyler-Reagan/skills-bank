@@ -64,10 +64,14 @@ import {
   type DiscoverStatus,
   type HeaderMenuAction,
   type HeaderMenuContext,
+  type SkillDiffFile,
+  type SkillDiffRequest,
+  type SkillDiffResult,
   type SyncStatus,
   type UpdateStatus,
   type UserRepo,
 } from "../shared/ipc.js";
+import { createPatch, diffLines } from "diff";
 import {
   cancelDeviceFlow,
   clearStoredToken,
@@ -95,11 +99,11 @@ const __dirname = path.dirname(__filename);
 // Result is exposed to the renderer via IPC.getConfig so it can show the
 // first-run setup screen when nothing resolves to a valid registry.
 
-export type Persona = "convenience" | "power";
+export type RegistrySource = "local" | "github";
 
 interface AppConfig {
   registryRoot: string | null;
-  persona: Persona | null;
+  registrySource: RegistrySource | null;
   // Version string the user has chosen to skip via the update-notes modal.
   // Suppresses auto-open of the modal for that specific version only — the
   // app still auto-checks and auto-downloads, and the user can always
@@ -108,7 +112,11 @@ interface AppConfig {
 }
 
 function emptyConfig(): AppConfig {
-  return { registryRoot: null, persona: null, dismissedUpdateVersion: null };
+  return {
+    registryRoot: null,
+    registrySource: null,
+    dismissedUpdateVersion: null,
+  };
 }
 
 function configFilePath(): string {
@@ -123,9 +131,9 @@ function readConfig(): AppConfig {
     return {
       registryRoot:
         typeof raw.registryRoot === "string" ? raw.registryRoot : null,
-      persona:
-        raw.persona === "convenience" || raw.persona === "power"
-          ? raw.persona
+      registrySource:
+        raw.registrySource === "local" || raw.registrySource === "github"
+          ? raw.registrySource
           : null,
       dismissedUpdateVersion:
         typeof raw.dismissedUpdateVersion === "string"
@@ -143,11 +151,11 @@ function writeConfig(cfg: AppConfig): void {
   fs.writeFileSync(p, JSON.stringify(cfg, null, 2) + "\n");
 }
 
-// Loose validator: accept any existing directory. The persona model treats
-// the registry as a folder of skills, not as a clone of a specific repo, so
-// the strict "package.json name must be skills-bank" check is gone. Folders
-// without a `skills/` subdir simply render as empty until the user adds
-// skills (or a sync populates it).
+// Loose validator: accept any existing directory. The registry is a folder
+// of skills, not a clone of a specific repo, so the strict "package.json
+// name must be skills-bank" check is gone. Folders without a `skills/`
+// subdir simply render as empty until the user adds skills (or a sync
+// populates it).
 function isValidRegistryRoot(candidate: string): {
   ok: boolean;
   reason?: string;
@@ -162,8 +170,8 @@ function isValidRegistryRoot(candidate: string): {
   return { ok: true };
 }
 
-// Default location for the convenience-persona registry: app-managed,
-// survives app upgrades, ready for canonical sync to populate it.
+// Default location for the local-bundled registry: app-managed,
+// survives app upgrades, ready for bundled sync to populate it.
 function defaultManagedRegistryRoot(): string {
   const root = path.join(app.getPath("userData"), "registry");
   fs.mkdirSync(path.join(root, "skills"), { recursive: true });
@@ -207,10 +215,10 @@ function seedManagedRegistryIfEmpty(root: string): void {
       ),
     );
     // First-launch only: mark each freshly-seeded skill as
-    // source: canonical. The bundled seed doesn't ship per-skill
+    // source: bundled. The bundled seed doesn't ship per-skill
     // .skills-bank.json files (those are managed-registry app state,
     // not upstream content), so without this the seeded skills
-    // default to source: user — falling through to YOURS badges and
+    // default to source: yours — falling through to YOURS badges and
     // disabling drift detection. Safe to write here because the
     // outer `if (fs.existsSync(indexPath)) return` guarantees we
     // only run on a brand-new install where files match the seed
@@ -227,7 +235,7 @@ function seedManagedRegistryIfEmpty(root: string): void {
         const skillDir = path.join(root, "skills", e.name);
         if (!fs.existsSync(skillDir)) continue;
         writeSkillSource(skillDir, {
-          source: "canonical",
+          source: "bundled",
           syncedAt: seededAt,
         });
       }
@@ -292,28 +300,26 @@ function resolveBootRegistryRoot(): string {
 
 let registryRoot: string = resolveBootRegistryRoot();
 
-// Resolve persona at boot. If the dev override (SKILLS_BANK_ROOT) is set,
-// silently treat the install as convenience-persona — devs running against
-// the canonical repo on disk shouldn't see the LoginScreen. Any explicit
-// stored persona wins.
-function resolveBootPersona(): Persona | null {
-  const stored = readConfig().persona;
+// Resolve registry source at boot. Persona-collapse default: every fresh
+// install lands on local-bundled. Stored values are still respected (so a
+// linked GitHub repo persists across launches once Bundle 3 wires up the
+// switching affordance from Settings). The LoginScreen onboarding fork is
+// gone; users opt into github-linked from Settings, not from a first-
+// launch dialog.
+function resolveBootRegistrySource(): RegistrySource {
+  const stored = readConfig().registrySource;
   if (stored) return stored;
-  if (process.env["SKILLS_BANK_ROOT"]) {
-    // Boot-time write must use writeConfig directly: module-level
-    // `persona` / `dismissedUpdateVersion` aren't initialized yet, and
-    // `dismissedUpdateVersion` is fresh from disk anyway via readConfig().
-    writeConfig({
-      registryRoot,
-      persona: "convenience",
-      dismissedUpdateVersion: readConfig().dismissedUpdateVersion,
-    });
-    return "convenience";
-  }
-  return null;
+  // First launch (or post-reset). Default to local-bundled and persist
+  // so the renderer never sees registrySource === null in the boot path.
+  writeConfig({
+    registryRoot,
+    registrySource: "local",
+    dismissedUpdateVersion: readConfig().dismissedUpdateVersion,
+  });
+  return "local";
 }
 
-let persona: Persona | null = resolveBootPersona();
+let registrySource: RegistrySource | null = resolveBootRegistrySource();
 
 let dismissedUpdateVersion: string | null = readConfig().dismissedUpdateVersion;
 
@@ -321,7 +327,7 @@ let dismissedUpdateVersion: string | null = readConfig().dismissedUpdateVersion;
 // writeConfig({...}) at sites that only mutate one field, so we don't lose
 // the others when fields are added.
 function persistConfig(): void {
-  writeConfig({ registryRoot, persona, dismissedUpdateVersion });
+  writeConfig({ registryRoot, registrySource, dismissedUpdateVersion });
 }
 
 // Source PNG used for window/dock icons in dev. Packaged macOS builds use
@@ -589,7 +595,7 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
 
   const template: MenuItemConstructorOptions[] = [];
 
-  if (ctx.persona === "power") {
+  if (ctx.registrySource === "github") {
     if (ctx.user) {
       template.push({
         label: `Signed in as ${ctx.user.login}`,
@@ -603,6 +609,11 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
     });
   } else {
     template.push({ label: "Using bundled registry", enabled: false });
+    template.push({ type: "separator" });
+    template.push({
+      label: "Link a GitHub repo… (Coming soon)",
+      click: () => send("githubLinkComingSoon"),
+    });
     template.push({ type: "separator" });
     template.push({
       label: "Import a registry (replace)…",
@@ -634,7 +645,7 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
     click: () => send("checkForUpdates"),
   });
 
-  if (ctx.persona === "power") {
+  if (ctx.registrySource === "github") {
     template.push({ type: "separator" });
     template.push({
       label: "Sign out of GitHub",
@@ -646,7 +657,7 @@ ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
 });
 
 // macOS menu bar. Items that affect renderer state send via IPC.headerMenuAction.
-// The menu is built once at launch; persona-specific items (e.g. Export) are
+// The menu is built once at launch; registry-source-specific items (e.g. Export) are
 // always present but the renderer ignores actions that don't apply to its state.
 function buildAppMenu(): Menu {
   const send = (action: HeaderMenuAction) => {
@@ -753,7 +764,7 @@ ipcMain.handle(IPC.getConfig, () => ({
   registryRoot,
   configValid: registryRoot !== null,
   isPackaged: app.isPackaged,
-  persona,
+  registrySource,
   dismissedUpdateVersion,
 }));
 
@@ -821,6 +832,159 @@ ipcMain.handle(IPC.pickCustomSkillsDir, async () => {
   }
   return { ok: true, path: result.filePaths[0], message: "ok" };
 });
+
+// Per-file unified diff between two skill folders. Reusable across
+// sync-collision and (future) drift-drawer surfaces — both render via
+// the same DiffViewer renderer component.
+ipcMain.handle(
+  IPC.getSkillDiff,
+  async (_e, req: SkillDiffRequest): Promise<SkillDiffResult> => {
+    const files = computeFolderDiff(req.leftPath, req.rightPath);
+    return {
+      leftLabel: req.leftLabel,
+      rightLabel: req.rightLabel,
+      files,
+    };
+  },
+);
+
+// 1 MB per-file cap. Files past this size or with binary content
+// (NUL byte in the first 8 KB) are reported as `binary` with no
+// diff body — keeps the renderer responsive and the IPC channel
+// from blowing up on large fixture files.
+const DIFF_BYTE_BUDGET = 1024 * 1024;
+
+function looksBinary(buf: Buffer): boolean {
+  const head = buf.subarray(0, Math.min(buf.length, 8192));
+  for (let i = 0; i < head.length; i++) {
+    if (head[i] === 0) return true;
+  }
+  return false;
+}
+
+function readTextIfSmall(p: string): { kind: "text" | "binary"; body: string } {
+  const stat = fs.statSync(p);
+  if (stat.size > DIFF_BYTE_BUDGET) return { kind: "binary", body: "" };
+  const buf = fs.readFileSync(p);
+  if (looksBinary(buf)) return { kind: "binary", body: "" };
+  return { kind: "text", body: buf.toString("utf8") };
+}
+
+function walkFiles(root: string): string[] {
+  if (!fs.existsSync(root)) return [];
+  const out: string[] = [];
+  function visit(rel: string): void {
+    const abs = path.join(root, rel);
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(abs, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const ent of entries) {
+      // Skip app-state sidecars — they're metadata the user didn't
+      // author and would surface as noise in every diff.
+      if (ent.name === ".skills-bank.json") continue;
+      if (ent.name === ".skills-bank-hash") continue;
+      const r = rel ? `${rel}/${ent.name}` : ent.name;
+      if (ent.isDirectory()) visit(r);
+      else if (ent.isFile()) out.push(r);
+    }
+  }
+  visit("");
+  out.sort();
+  return out;
+}
+
+function computeFolderDiff(leftRoot: string, rightRoot: string): SkillDiffFile[] {
+  const leftFiles = new Set(walkFiles(leftRoot));
+  const rightFiles = new Set(walkFiles(rightRoot));
+  const allPaths = new Set<string>([...leftFiles, ...rightFiles]);
+  const sorted = [...allPaths].sort();
+  const out: SkillDiffFile[] = [];
+
+  for (const rel of sorted) {
+    const inLeft = leftFiles.has(rel);
+    const inRight = rightFiles.has(rel);
+    const leftAbs = path.join(leftRoot, rel);
+    const rightAbs = path.join(rightRoot, rel);
+
+    if (inLeft && inRight) {
+      const left = readTextIfSmall(leftAbs);
+      const right = readTextIfSmall(rightAbs);
+      if (left.kind === "binary" || right.kind === "binary") {
+        if (left.body === right.body) continue; // both binary-and-skipped, treat as same
+        out.push({
+          path: rel,
+          added: 0,
+          removed: 0,
+          unifiedDiff: "",
+          status: "binary",
+        });
+        continue;
+      }
+      if (left.body === right.body) continue;
+      let added = 0;
+      let removed = 0;
+      for (const part of diffLines(left.body, right.body)) {
+        const lines = part.count ?? part.value.split("\n").length - 1;
+        if (part.added) added += lines;
+        else if (part.removed) removed += lines;
+      }
+      const unifiedDiff = createPatch(rel, left.body, right.body, "", "");
+      out.push({
+        path: rel,
+        added,
+        removed,
+        unifiedDiff,
+        status: "modified",
+      });
+    } else if (inLeft) {
+      const left = readTextIfSmall(leftAbs);
+      if (left.kind === "binary") {
+        out.push({
+          path: rel,
+          added: 0,
+          removed: 0,
+          unifiedDiff: "",
+          status: "left-only",
+        });
+        continue;
+      }
+      const removed = left.body.split("\n").length;
+      const unifiedDiff = createPatch(rel, left.body, "", "", "");
+      out.push({
+        path: rel,
+        added: 0,
+        removed,
+        unifiedDiff,
+        status: "left-only",
+      });
+    } else {
+      const right = readTextIfSmall(rightAbs);
+      if (right.kind === "binary") {
+        out.push({
+          path: rel,
+          added: 0,
+          removed: 0,
+          unifiedDiff: "",
+          status: "right-only",
+        });
+        continue;
+      }
+      const added = right.body.split("\n").length;
+      const unifiedDiff = createPatch(rel, "", right.body, "", "");
+      out.push({
+        path: rel,
+        added,
+        removed: 0,
+        unifiedDiff,
+        status: "right-only",
+      });
+    }
+  }
+  return out;
+}
 
 ipcMain.handle(
   IPC.install,
@@ -1673,10 +1837,10 @@ ipcMain.handle(IPC.setDismissedUpdateVersion, (_e, version: string | null) => {
 // renderer subscribes to `syncStatus` for progress; results are also
 // persisted at <registryRoot>/.skills-bank/last-sync.json.
 //
-// Note: we do not gate this on persona — when M3 ships, the renderer will
-// hide the Sync button for power persona. The handler stays usable so a
-// power user could in principle still run it; nothing here writes outside
-// of the app-managed registry.
+// Note: we do not gate this on registrySource — the renderer hides the
+// Sync button when github-linked. The handler stays usable so a linked
+// user could in principle still run it; nothing here writes outside of
+// the app-managed registry.
 
 function broadcastSyncStatus(status: SyncStatus): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -1755,16 +1919,16 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
   return runSync();
 });
 
-// ─── Auth + persona (M3) ────────────────────────────────────────────────────
+// ─── Auth + registry source ─────────────────────────────────────────────────
 //
-// Persona drives which features the renderer surfaces. Convenience users get
-// the canonical Sync flow (M2/M5); power users get the M4 registry-replace
-// flow. Persona = null means first-launch and the renderer shows LoginScreen.
+// `registrySource` drives which features the renderer surfaces. Local-bundled
+// users get the Sync flow; github-linked users get the registry-replace flow.
+// registrySource = null means first-launch and the renderer shows LoginScreen.
 
 async function buildAuthStatus(): Promise<AuthStatus> {
-  const user = persona === "power" ? await getCurrentUser() : null;
+  const user = registrySource === "github" ? await getCurrentUser() : null;
   return {
-    persona,
+    registrySource,
     isAuthConfigured: isAuthConfigured(),
     user,
   };
@@ -1772,8 +1936,8 @@ async function buildAuthStatus(): Promise<AuthStatus> {
 
 ipcMain.handle(IPC.authStatus, () => buildAuthStatus());
 
-ipcMain.handle(IPC.authSetPersonaConvenience, async () => {
-  persona = "convenience";
+ipcMain.handle(IPC.authSetRegistrySourceLocal, async () => {
+  registrySource = "local";
   persistConfig();
   return buildAuthStatus();
 });
@@ -1785,7 +1949,7 @@ ipcMain.handle(IPC.authStartDeviceFlow, async () => {
 ipcMain.handle(IPC.authPollDeviceFlow, async (_e, flowId: string) => {
   try {
     await pollDeviceFlow(flowId);
-    persona = "power";
+    registrySource = "github";
     persistConfig();
     return await buildAuthStatus();
   } catch (err) {
@@ -1802,7 +1966,7 @@ ipcMain.handle(IPC.authCancelDeviceFlow, (_e, flowId: string) => {
 
 ipcMain.handle(IPC.authLogout, async () => {
   clearStoredToken();
-  persona = null;
+  registrySource = null;
   persistConfig();
   return buildAuthStatus();
 });
@@ -1880,8 +2044,8 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
         message: `${fullName} has no skills/ directory at the repo root`,
       };
     }
-    // Wipe the existing local registry skills/ wholesale; the power
-    // persona is "replace, don't merge."
+    // Wipe the existing local registry skills/ wholesale; github-linked
+    // registry replace is "replace, don't merge."
     const localSkillsDir = path.join(registryRoot, "skills");
     fs.rmSync(localSkillsDir, { recursive: true, force: true });
     fs.mkdirSync(localSkillsDir, { recursive: true });
@@ -1895,14 +2059,14 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
       const dest = path.join(localSkillsDir, ent.name);
       fs.cpSync(src, dest, { recursive: true });
       writeSkillSource(dest, {
-        source: "imported",
+        source: "yours",
         syncedFromCommit: fetched.commitSha,
         syncedAt: importedAt,
       });
       importedNames.push(ent.name);
       count++;
     }
-    // Clear sync state so any prior canonical state doesn't leak in.
+    // Clear sync state so any prior bundled state doesn't leak in.
     const stateDir = path.join(registryRoot, ".skills-bank");
     for (const f of [
       "last-sync.json",

@@ -47,7 +47,7 @@ export const IPC = {
   resolveConflicts: "registry:resolveConflicts",
   authStatus: "auth:status",
   authIsConfigured: "auth:isConfigured",
-  authSetPersonaConvenience: "auth:setPersonaConvenience",
+  authSetRegistrySourceLocal: "auth:setRegistrySourceLocal",
   authStartDeviceFlow: "auth:startDeviceFlow",
   authPollDeviceFlow: "auth:pollDeviceFlow",
   authCancelDeviceFlow: "auth:cancelDeviceFlow",
@@ -84,7 +84,39 @@ export const IPC = {
   showHeaderMenu: "header:showMenu",
   headerMenuAction: "header:action",
   pickCustomSkillsDir: "skills:pickCustomSkillsDir",
+  getSkillDiff: "skills:getSkillDiff",
 } as const;
+
+export interface SkillDiffFile {
+  /** Relative path within the skill folder, e.g. "SKILL.md". */
+  path: string;
+  /** Lines present in right but not in left. */
+  added: number;
+  /** Lines present in left but not in right. */
+  removed: number;
+  /**
+   * Unified-diff body without the surrounding header. Empty string
+   * when both sides are byte-identical (file omitted from the result
+   * in that case).
+   */
+  unifiedDiff: string;
+  status: "modified" | "left-only" | "right-only" | "binary";
+}
+
+export interface SkillDiffResult {
+  /** Human-readable label for the left side (e.g. "Yours"). */
+  leftLabel: string;
+  /** Human-readable label for the right side (e.g. "Bundled"). */
+  rightLabel: string;
+  files: SkillDiffFile[];
+}
+
+export interface SkillDiffRequest {
+  leftPath: string;
+  rightPath: string;
+  leftLabel: string;
+  rightLabel: string;
+}
 
 interface PickCustomSkillsDirResult {
   ok: boolean;
@@ -94,10 +126,17 @@ interface PickCustomSkillsDirResult {
   message: string;
 }
 
-export type Persona = "convenience" | "power";
+/**
+ * Internal-only enum. `"local"` ⇒ the user is on the bundled registry
+ * shipped with the app. `"github"` ⇒ they've linked a GitHub repo as
+ * the registry backing store. Replaces the legacy `Persona` enum and
+ * never surfaces to the user (the UI uses "Local bundled" / "Link a
+ * GitHub repo" copy).
+ */
+export type RegistrySource = "local" | "github";
 
 export interface AuthStatus {
-  persona: Persona | null;
+  registrySource: RegistrySource | null;
   isAuthConfigured: boolean;
   user: {
     login: string;
@@ -152,7 +191,7 @@ export type DiscoverStatus =
   | { kind: "error"; url: string; errorCode: number; description: string };
 
 export interface HeaderMenuContext {
-  persona: "convenience" | "power" | null;
+  registrySource: RegistrySource | null;
   user: { login: string } | null;
   showSync: boolean;
 }
@@ -166,7 +205,8 @@ export type HeaderMenuAction =
   | "signOut"
   | "refresh"
   | "sync"
-  | "checkForUpdates";
+  | "checkForUpdates"
+  | "githubLinkComingSoon";
 
 export type UpdateStatus =
   | { kind: "idle" }
@@ -255,6 +295,16 @@ interface SkillsBankAPI {
    * AppSettings; this IPC only resolves the picker dialog.
    */
   pickCustomSkillsDir(): Promise<PickCustomSkillsDirResult>;
+  /**
+   * Compute a per-file unified diff between two on-disk skill folders.
+   * The two callers today are the sync-collision modal (left = local
+   * registry copy, right = incoming bundled tarball) and — when the
+   * drift drawer rebuild lands — the drift heal flow (left = local
+   * edited copy, right = synced-baseline content fetched at the
+   * recorded commit). Result shape is the same in both cases so the
+   * renderer-side DiffViewer component is reused.
+   */
+  getSkillDiff(req: SkillDiffRequest): Promise<SkillDiffResult>;
   install(
     name: string,
     force?: boolean,
@@ -308,7 +358,7 @@ interface SkillsBankAPI {
     registryRoot: string | null;
     configValid: boolean;
     isPackaged: boolean;
-    persona: Persona | null;
+    registrySource: RegistrySource | null;
     dismissedUpdateVersion: string | null;
   }>;
   setRegistryRoot(): Promise<{
@@ -333,7 +383,7 @@ interface SkillsBankAPI {
     decisions: SyncDecisions,
   ): Promise<{ ok: boolean; message: string }>;
   authStatus(): Promise<AuthStatus>;
-  authSetPersonaConvenience(): Promise<AuthStatus>;
+  authSetRegistrySourceLocal(): Promise<AuthStatus>;
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
   authPollDeviceFlow(flowId: string): Promise<AuthStatus>;
   authCancelDeviceFlow(flowId: string): Promise<void>;

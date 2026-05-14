@@ -1,53 +1,33 @@
-# Login and persona
+# Registry source
 
-The first launch shows a one-time setup screen. The choice you make here decides which features the app exposes — but it's not permanent: you can switch any time from the account menu.
+Skills Bank picks a registry source — the place where your skills physically live — when it launches. As of the provenance-reframe release, that decision is no longer a first-launch fork: every install lands on the bundled registry by default, and linking a GitHub repo is an opt-in mode available later from Settings or the account menu.
 
-![First-launch setup screen with Quick start and Advanced sections](../images/setup.png)
+## Default: Local bundled
 
-## The two options
+On first launch the app materializes a local registry at `~/Library/Application Support/Skills Bank/registry/` and seeds it with the curated bundled skills. You get:
 
-### Use the bundled registry _(recommended for most users)_
-
-Skills Bank manages a local copy of the curated registry shipped with the app. You get:
-
-- The full set of curated skills, installable with one click.
-- A **Sync skills** button that fetches the latest upstream curated skills while preserving anything you've added or modified.
-- The ability to register your own skills alongside the curated ones.
+- The full set of bundled skills, installable with one click.
+- A **Sync skills** button that fetches the latest upstream bundled skills while preserving anything you've added or modified.
+- The ability to register your own skills alongside the bundled ones.
 - **Export registry** and **Import a registry** in the account menu — move your registry to another machine or back it up as a zip.
 
-No GitHub auth needed.
+No GitHub auth required. This is the path the rest of the docs assume unless otherwise noted.
 
-### Connect your own registry
+## Link a GitHub repo (Coming soon)
 
-For users who want full version control over an independent skill registry they maintain themselves. Skills Bank clones your GitHub repo locally and reads from it. From then on:
+A future release will let you back your registry with a GitHub repo you own. Until that lands, the entry-point shows a **Coming soon** label in two places:
 
-- You manage the repo through your normal git workflow (commit, push, PRs, branching, …).
-- The app never auto-syncs — your content is yours.
-- All other features (install, manage links, register, conflict resolution) work exactly the same as with the bundled registry.
-- **Portability is built in** — `git clone` on a new machine reproduces your full registry.
+- Account menu → **Link a GitHub repo… (Coming soon)**
+- Settings → **Registry source** → **Link a GitHub repo… (Coming soon)** radio
 
-This is not a fork of the app. It's your own repo with a `skills/` directory; the app just reads from it.
+Both open a small dialog explaining the feature direction and linking to the full plan at [`docs/plans/03-github-backed-mode.md`](../plans/03-github-backed-mode.md).
 
-You'll be sent through GitHub's OAuth flow to grant repo read access. The app then asks you to pick a repo whose root contains a `skills/` directory.
+## Self-host
 
----
-
-_Want to fork the entire app and ship your own build?_ See [self-host.md](../self-host.md). Self-hosting is a developer path, not a runtime option on this screen.
-
----
-
-See [personas.md](../personas.md) for a full feature-by-feature comparison.
-
-## Switching later
-
-The account menu (top-right of the header) lets you:
-
-- **Sign out of GitHub** — clears the token and persona, sending you back to the LoginScreen.
-- **Choose registry repo…** — power persona only; switch which repo backs the registry.
-- **Settings…** — defaults like which agents an Install action targets.
+Self-hosting is a developer path: fork the app, ship your own build. See [`self-host.md`](../self-host.md). Not a runtime option from the UI.
 
 ## What persists
 
-Persona, GitHub token (if any), and settings are stored in the app's userData folder (`~/Library/Application Support/Skills Bank` on macOS). The registry contents live separately — by default in the same userData area on convenience persona, or in the cloned location on power persona.
+Registry source, GitHub token (if any, once linked-mode lands), and settings are stored in the app's userData folder (`~/Library/Application Support/Skills Bank` on macOS). The registry contents live alongside, under the same userData area.
 
-For developers iterating on the app, `pnpm run desktop:reset` wipes persona and token; `pnpm run desktop:reset:hard` also wipes the registry. See the README for details.
+For developers iterating on the app, `pnpm run desktop:reset` wipes the stored registry-source choice and token; `pnpm run desktop:reset:hard` also wipes the registry. See the README for details.

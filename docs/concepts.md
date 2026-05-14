@@ -6,21 +6,21 @@ The vocabulary the app uses, defined in one place. Skim this once and the rest o
 
 Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
 
-- **Canon** — derived boolean. A skill is canon iff its name appears in the linked registry repo's upstream — the user's own GitHub repo for power persona, the bundled canonical set for convenience. Mutating canon requires write access to the linked repo; mutating a skill's canon-ness locally is impossible. Resolved dynamically against the active linked repo (not from stale per-skill markers).
+- **Source (provenance)** — binary user-facing axis. Either `bundled` (came from the curated set this app ships with) or `yours` (you added it, however it got there). See [Source (provenance)](#source-provenance) below for full surface behavior. The codebase also carries an internal-only `entry.canon` boolean — "is this name currently in the upstream bundled snapshot?" — used only to gate destructive-action protection. It never surfaces to the user.
 - **Registered** — boolean. The skill has an entry in the local registry index. Mutated freely. Holds local-only metadata (tags, install paths, the Adopted flag).
 - **Adopted** — boolean on each registry entry. When `true`, the skill's files physically live under `<registryRoot>/skills/<name>/`. When `false`, the registry entry tracks an external location and the files stay where they are. Default at register time is the `registerAdopts` setting (default `true`).
 - **Installed** — derived from on-disk scan. A skill is installed if at least one agent dir contains an entry at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.
 
 ### Derived rules
 
-- Canon ⇒ registered by default. Unregister and delete of canon skills are prohibited; the user-visible escape is **hide**, scoped per linked-repo.
-- Non-canon + registered + uninstalled is valid. Re-install requires the original source (no upstream to pull from).
+- Bundled skills are registered by default. Unregister and delete of bundled skills are prohibited; the user-visible escape is **Dismiss from registry view**, scoped per linked-registry.
+- A registered but uninstalled `yours` skill is valid. Re-install requires the original source (no upstream to pull from).
 - Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
 - Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
 
 ### Lifecycle
 
-The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder: **Unmanaged → Registered → Unregistered → Deleted**. Canon, Adopted, External, and Hidden are _attributes_ of the Registered position, not separate lifecycle states. The diagram below shows that ladder and pulls the heal-pending states (highlighted) out as side arms so the recovery actions are visible.
+The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder: **Unmanaged → Registered → Unregistered → Deleted**. Provenance (bundled/yours), Adopted, External, and Dismissed are _attributes_ of the Registered position, not separate lifecycle states. The diagram below shows that ladder and pulls the heal-pending states (highlighted) out as side arms so the recovery actions are visible.
 
 ```mermaid
 ---
@@ -73,7 +73,7 @@ flowchart LR
     linkStyle default stroke:#94a3b8,stroke-width:1.5px,fill:none
 ```
 
-Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — _whether_ a Registered skill is canon, adopted, or external — are read off the [Source](#source) and [card badges](#card-badges) sections.
+Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — _whether_ a Registered skill is bundled or yours, adopted or external — are read off the [Source (provenance)](#source-provenance) and [card badges](#card-badges) sections.
 
 ### Destructive-action ladder
 
@@ -83,9 +83,9 @@ Three actions form an escalation, with distinct file/recovery semantics. Each ti
 | --------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------- |
 | Manage agent links                | Drawer                                                                              | untouched                                                           | added/removed per-agent via checkboxes (untick all = full uninstall)    | re-add via the same modal                       |
 | [Unregister](flows/unregister.md) | Drawer                                                                              | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location                   |
-| Delete                            | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                       | canon: re-pull; non-canon: gone (modulo export) |
+| Delete                            | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                       | bundled: re-pull; yours: gone (modulo export) |
 
-Canon skills are exempt: Unregister and Delete are prohibited entirely. Use **Hide** instead — see [personas.md](personas.md#canon-protection-hide-instead-of-unregisterdelete).
+Bundled skills are exempt: Unregister and Delete are prohibited entirely. Use **Dismiss from registry view** instead — see [personas.md](personas.md#canon-protection-hide-instead-of-unregisterdelete).
 
 ![Detail drawer for a non-canon, user-authored skill — Unregister is available as the mid-tier action; the YOURS badge sits on the card behind the drawer](images/skill-detail-yours.png)
 
@@ -127,32 +127,30 @@ Self-hosting (forking the entire app) is a developer path, not a runtime persona
 
 Persona is persisted. You can switch via the account menu in the header. See [personas.md](personas.md) for a full feature comparison.
 
-## Source
+## Source (provenance)
 
-Each registry skill carries a `source` marker that records _where it came from_:
+Provenance is a binary on each registry skill — every skill is either **bundled** (came from the curated set this app ships with) or **yours** (you added it, however it got there). Stored as `source` in a sibling `.skills-bank.json` per skill so the marker doesn't pollute upstream.
 
-- **`canonical`** — Pulled from the upstream registry by Sync.
-- **`user`** — Authored locally on this machine.
-- **`imported`** — Imported from a power-persona repo replacement.
+- **`bundled`** — Part of the curated set the app ships with. Sync keeps it current.
+- **`yours`** — Anything that didn't come from the bundled set — authored locally, merged in from another bank's export, imported from elsewhere. Sync never touches it.
 
-Markers live in a sibling `.skills-bank.json` per skill so they don't pollute upstream.
+> [!NOTE]
+> Internally the code carries an `entry.canon` boolean — "is this name currently in the upstream bundled snapshot?" — used only to gate destructive-action protection. It never surfaces to users; the user-facing signal is provenance (`bundled` / `yours`).
 
 ### Tags are local
 
-Tags are a local-only dimension. You can add or remove tags on any skill — including the curated ones bundled with the app — and Sync will preserve your tag edits on the next pull. No protection step required: Sync reads the existing local tag list before writing the canonical content and splices it back in.
+Tags are a local-only dimension. You can add or remove tags on any skill — including the bundled ones — and Sync will preserve your tag edits on the next pull. No protection step required: Sync reads the existing local tag list before writing the bundled content and splices it back in.
 
 ### Card badges
 
-Each card surfaces a single badge — the most actionable signal from the taxonomy. Badges only appear when they communicate something that changes what you can or should do; non-actionable axes (hidden, adopted) have no badge.
+Each card surfaces a single badge. Provenance is the primary signal; actionable state badges (drift, missing) override when present.
 
 Priority order, highest first:
 
 - **`MISSING`** _(danger)_ — files are gone. Open the drawer to **Forget this entry**.
-- **`DRIFT`** _(warn)_ — canonical local copy diverged from the synced commit. **Accept local changes** clears the canonical marker so Sync stops trying to overwrite.
-- **`CANON`** _(calm)_ — part of the linked registry's upstream set. Unregister and Delete are prohibited; use **Hide** to tuck it out of the default views.
-- **`IMPORTED`** _(muted, dashed)_ — non-canon, registered with `source: imported` (power-persona repo replacement).
-- **`EXTERNAL`** _(accent, dashed)_ — non-canon, registered with `adopted: false`. Files live outside Skills Bank; Unregister leaves origin files in place.
-- **`YOURS`** _(accent)_ — non-canon, user-authored, OR not in the registry. User-mutable; safe from Sync overwrites.
+- **`DRIFT`** _(warn)_ — you've edited a bundled skill. Open the drawer to keep your edits or revert.
+- **`BUNDLED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the bundled-only escape hatch.
+- **`YOURS`** _(accent)_ — you added this. Fully user-mutable; safe from Sync overwrites.
 
 ## Installation kind
 
@@ -168,9 +166,9 @@ The Installed tab uses these to decide which section a skill goes in (Registered
 
 A skill is in conflict when it's registered in Skills Bank **and** has stragglers — a real directory or foreign symlink with the same name in another agent dir. The drawer offers **Resolve conflicts** to clean them up: replace each duplicate with a symlink to the registry copy, keep it separate, or delete it.
 
-## Sync (convenience persona)
+## Sync
 
-A one-click pull of upstream registry updates. Sync is **upsert**: canonical skills refresh, skills you authored or imported are never touched. Name collisions surface a modal — keep yours, take theirs, or rename yours.
+A one-click pull of upstream registry updates. Sync is **upsert**: bundled skills refresh, skills with `source: yours` are never touched. Name collisions surface a modal — keep yours, use bundled, or rename yours.
 
 ## Register
 
@@ -183,7 +181,7 @@ Either way the skill picks up registry metadata (tags, description, source marke
 
 ## Adopt
 
-A taxonomy axis on each registry entry. True when the skill's files physically live under `<repo>/skills/<name>/`; false when the entry tracks an external path. Set at register time from the global `Move files into Skills Bank on Register` setting. M4's unregister behavior diverges based on this flag — adopted skills get moved out to the shared agents dir; non-adopted skills leave their origin files alone.
+A taxonomy axis on each registry entry. True when the skill's files physically live under `<repo>/skills/<name>/`; false when the entry tracks an external path. Set at register time from the global `Move files into Skills Bank on Register` setting. Unregister behavior diverges based on this flag — adopted skills get moved out to the shared agents dir; non-adopted skills leave their origin files alone.
 
 ## Finalize
 

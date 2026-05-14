@@ -4,13 +4,13 @@ import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
 import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
-import { usePersona } from "../PersonaContext.js";
+import { useRegistrySource } from "../RegistrySourceContext.js";
 
-const REGISTRY_TOOLTIP_CONVENIENCE =
+const REGISTRY_TOOLTIP_LOCAL =
   "Curated skills bundled with this app. Click Sync skills in the header to pull the latest from upstream. " +
   "Skills you install from elsewhere appear in the Installed tab.";
 
-const REGISTRY_TOOLTIP_POWER =
+const REGISTRY_TOOLTIP_GITHUB =
   "Skills in your connected GitHub repo. Manage content directly in your repo — " +
   "the app never auto-syncs it. Skills you install from elsewhere appear in the Installed tab.";
 
@@ -46,14 +46,14 @@ export function BrowseTab({
   rebuilding,
   searchInputRef,
 }: Props): React.ReactElement {
-  const persona = usePersona();
-  const isPower = persona === "power";
+  const registrySource = useRegistrySource();
+  const isGithub = registrySource === "github";
 
   if (registry.length === 0) {
     return (
       <div className="empty-state">
         <strong>The registry is empty.</strong>
-        {isPower ? (
+        {isGithub ? (
           <p>
             Add skills to your connected GitHub repo, then click{" "}
             <strong>Refresh</strong> to reload.
@@ -109,12 +109,12 @@ export function BrowseTab({
           <strong>Registry</strong>
           <InfoTooltip
             text={
-              isPower ? REGISTRY_TOOLTIP_POWER : REGISTRY_TOOLTIP_CONVENIENCE
+              isGithub ? REGISTRY_TOOLTIP_GITHUB : REGISTRY_TOOLTIP_LOCAL
             }
             label="What is the registry?"
           />
         </span>{" "}
-        {isPower
+        {isGithub
           ? "Browse and install skills from your connected registry. Manage content through your git repo — the app never overwrites it."
           : "Browse and install curated skills. Click Sync skills in the header to pull upstream updates."}{" "}
         Click any card to view its details, then <strong>Install</strong> to

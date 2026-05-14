@@ -5,7 +5,7 @@ import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
-import { usePersona } from "../PersonaContext.js";
+import { useRegistrySource } from "../RegistrySourceContext.js";
 import { classifyDrawerState } from "./skillState.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
@@ -125,7 +125,7 @@ export function SkillDetailDrawer({
   onTakeCanonical,
   onForgetMissing,
 }: Props): React.ReactElement {
-  const persona = usePersona();
+  const registrySource = useRegistrySource();
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
@@ -573,7 +573,7 @@ export function SkillDetailDrawer({
               the current state. See skillState.ts for the table. */}
 
           {/* Register — primary for unregistered states with adoptable
-              source. The persona hint stays with this affordance. */}
+              source. The registry-source hint stays with this affordance. */}
           {caps.canRegister && onRegister && (
             <>
               <button
@@ -595,7 +595,7 @@ export function SkillDetailDrawer({
                 )}
               </button>
               <p className="drawer-action-hint">
-                {persona === "power"
+                {registrySource === "github"
                   ? "Files move into your repo's skills/ directory unless you turn off adoption in Settings. Commit to persist."
                   : "Files move to the app's local registry unless you turn off adoption in Settings. Safe from Sync skills; linkable across agents."}
               </p>
@@ -916,20 +916,20 @@ export function SkillDetailDrawer({
                     setAction(null),
                   );
                 }}
-                title="Remove from the registry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry."
+                title="Drop the registry entry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry. Use Delete from this machine to destroy files."
               >
                 {action === "unregistering" ? (
                   <>
-                    <span className="spinner inline" /> Unregistering…
+                    <span className="spinner inline" /> Removing…
                   </>
                 ) : (
-                  "Unregister"
+                  "Remove from registry"
                 )}
               </button>
               <p className="drawer-action-hint">
                 {entry.adopted === false
                   ? "Drops the registry entry. Your external files stay where they are."
-                  : "Files move to your shared agents directory. You can then Delete them from the Unregistered section."}
+                  : "Files move to your shared agents directory. You can then choose Delete from this machine in the Unregistered section to remove them."}
               </p>
             </>
           )}
@@ -949,7 +949,7 @@ export function SkillDetailDrawer({
                   <span className="spinner inline" /> Hiding…
                 </>
               ) : (
-                "Hide"
+                "Dismiss from registry view"
               )}
             </button>
           )}

@@ -12,6 +12,7 @@ const api = {
   listInstalled: (customDirs?: string[]) =>
     ipcRenderer.invoke(IPC.listInstalled, customDirs),
   pickCustomSkillsDir: () => ipcRenderer.invoke(IPC.pickCustomSkillsDir),
+  getSkillDiff: (req: unknown) => ipcRenderer.invoke(IPC.getSkillDiff, req),
   install: (name: string, force?: boolean, agents?: unknown) =>
     ipcRenderer.invoke(IPC.install, name, force, agents),
   uninstall: (name: string, agents?: unknown) =>
@@ -62,8 +63,8 @@ const api = {
   resolveConflicts: (decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveConflicts, decisions),
   authStatus: () => ipcRenderer.invoke(IPC.authStatus),
-  authSetPersonaConvenience: () =>
-    ipcRenderer.invoke(IPC.authSetPersonaConvenience),
+  authSetRegistrySourceLocal: () =>
+    ipcRenderer.invoke(IPC.authSetRegistrySourceLocal),
   authStartDeviceFlow: () => ipcRenderer.invoke(IPC.authStartDeviceFlow),
   authPollDeviceFlow: (flowId: string) =>
     ipcRenderer.invoke(IPC.authPollDeviceFlow, flowId),

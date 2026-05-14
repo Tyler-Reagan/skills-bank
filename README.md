@@ -38,15 +38,15 @@ Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/ski
 > [!NOTE]
 > Builds are signed with a Developer ID certificate and notarized through Apple — Gatekeeper opens them on a normal double-click. The app auto-updates by polling the Releases feed on launch.
 
-On first launch, pick a persona:
+On first launch the app boots straight into the Registry tab on top of a bundled curated skill set — no persona-choice screen, no `git clone` prerequisite.
 
-![First-launch setup screen with Quick start and Advanced sections](docs/images/setup.png)
+![The Registry tab — the default view on first launch](docs/images/registry.png)
 
-- **Use the bundled registry** _(quick start)_ — Browse the curated skills shipped with the app, pull updates with one click, add your own alongside. No GitHub required.
-- **Connect a GitHub registry** _(advanced)_ — Point at a GitHub repo you own. The app clones it locally and never auto-syncs — you manage content through your normal git workflow.
-- **Self-host** _(advanced)_ — Fork the app + registry and ship your own build. See [`docs/self-host.md`](docs/self-host.md).
+- **Use the bundled registry** _(the default; nothing to do)_ — Browse the curated skills shipped with the app, pull updates with one click via Sync, add your own alongside.
+- **Link a GitHub repo** _(coming soon)_ — Back your registry with a GitHub repo you own. Entry-points are staged in the account menu and Settings → Registry source with a "Coming soon" label that links to [`docs/plans/03-github-backed-mode.md`](docs/plans/03-github-backed-mode.md).
+- **Self-host** _(developer path)_ — Fork the app + registry and ship your own build. See [`docs/self-host.md`](docs/self-host.md).
 
-You can switch later from the account menu. Defaults for which agent directories an Install action targets live in **Settings…**.
+Defaults for which agent directories an Install action targets live in **Settings…**.
 
 ### CLI
 
@@ -100,12 +100,12 @@ pnpm run desktop:start    # one-shot production build, then launch Electron
 `desktop:dev` keeps the renderer rebuilding on save; quit Electron (`Cmd+Q` and re-run) to pick up changes to the main or preload process.
 
 > [!TIP]
-> Set `SKILLS_BANK_ROOT=/path/to/skills-bank` in your shell to work against the canonical skills folder on disk. The app reads from there directly and silently sets persona = convenience.
+> Set `SKILLS_BANK_ROOT=/path/to/skills-bank` in your shell to work against the cloned skills folder on disk. The app reads from there directly and silently sets `registrySource = "local"`. On a fresh clone, run `pnpm run seed-source-markers` once before launching so Sync doesn't surface a collision for every skill.
 
 Reset local state between test runs:
 
 ```bash
-pnpm run desktop:reset          # clears persona + auth token
+pnpm run desktop:reset          # clears registry source + auth token
 pnpm run desktop:reset:hard     # also wipes the app-managed registry directory
 ```
 
@@ -152,3 +152,26 @@ The `release` workflow signs, notarizes, and uploads both DMGs to a **draft** Gi
 | Heal flows                     | [`docs/flows/heal.md`](docs/flows/heal.md)           |
 | Troubleshooting                | [`docs/troubleshooting.md`](docs/troubleshooting.md) |
 | Self-hosting                   | [`docs/self-host.md`](docs/self-host.md)             |
+
+## Scripts reference
+
+Every root-level `pnpm run` script in one table. Workspace-level scripts (e.g. `pnpm --filter @skills-bank/desktop dev`) are reachable via the `desktop:*` aliases.
+
+| Script                       | Effect                                                                                                                                                                                                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build`                      | Recursive build across every workspace package that defines a `build` script.                                                                                                                                                                  |
+| `typecheck`                  | Recursive `tsc` across `core`, `cli`, and `desktop` (main + renderer projects).                                                                                                                                                                |
+| `validate`                   | Validate every skill's `meta.json` against `docs/meta-schema.json`. Run before `build:index`.                                                                                                                                                  |
+| `build:index`                | Regenerate the root `index.json` registry index from the contents of `skills/`. Required after adding, removing, or editing skill metadata.                                                                                                    |
+| `cli`                        | Convenience alias for `node packages/cli/dist/index.js`. Requires `build` first.                                                                                                                                                               |
+| `desktop:dev`                | Build the main process, watch the renderer with Vite, launch Electron with devtools enabled. Quit and re-run to pick up main/preload changes.                                                                                                  |
+| `desktop:build`              | One-shot production build of the desktop package (main + renderer). No Electron launch.                                                                                                                                                        |
+| `desktop:start`              | `desktop:build` followed by a packaged-mode Electron launch.                                                                                                                                                                                   |
+| `desktop:package:mac`        | Build a notarized DMG for both Apple Silicon and Intel. Output lands in `packages/desktop/dist-electron/`. Workspace also exposes `:arm64` / `:x64` variants.                                                                                   |
+| `desktop:package:win`        | Build a Windows installer. Not exercised in CI or by maintainers — bug reports welcome.                                                                                                                                                        |
+| `desktop:reset`              | Wipe userData state (registry source choice + auth token). Use between manual test runs.                                                                                                                                                       |
+| `desktop:reset:hard`         | Everything `desktop:reset` does, plus wipes the app-managed registry directory.                                                                                                                                                                |
+| `seed-source-markers`        | Write `.skills-bank.json` source markers (`source: bundled`) for every skill in a registry root. Use after `desktop:reset:hard` when running against a `SKILLS_BANK_ROOT`-pointed clone — the seed code path only runs for the app-managed default root. |
+| `docs:check`                 | Walk every `.md` under `docs/` and the README; fail if any link or anchor is unresolved.                                                                                                                                                       |
+| `format` / `format:check`    | Prettier (write / check) over `.{ts,tsx,js,jsx,md,mdx,json,yml,yaml}`. CI uses `format:check`.                                                                                                                                                 |
+| `knip`                       | Dead-code scan: unused exports, files, dependencies. Configuration in `knip.json`.                                                                                                                                                             |
