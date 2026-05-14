@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import { Icon } from "./Icon.js";
 
 const AGENT_LABELS: Record<AgentId, string> = {
   claude: "Claude Code",
@@ -155,7 +156,18 @@ export function SettingsModal({
         tabIndex={-1}
         onKeyDown={onModalKeyDown}
       >
-        <h2 style={{ marginTop: 0 }}>Settings</h2>
+        <div style={modalHeader}>
+          <h2 style={{ margin: 0 }}>Settings</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+            style={closeBtn}
+          >
+            <Icon name="x" size="md" />
+          </button>
+        </div>
         <p style={hint}>
           Preferences for how the app behaves day-to-day. Registry source
           and identity live in <strong>Account</strong> (header chip).
@@ -394,10 +406,29 @@ const modal: React.CSSProperties = {
   border: "1px solid var(--border-hi)",
   borderRadius: 8,
   padding: 24,
-  width: 520,
+  width: 560,
   maxWidth: "90vw",
   maxHeight: "85vh",
   overflowY: "auto",
+  outline: "none",
+};
+const modalHeader: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 8,
+  marginBottom: 4,
+};
+const closeBtn: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  color: "var(--text-3)",
+  padding: 4,
+  borderRadius: 4,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 const section: React.CSSProperties = {
   marginBottom: 24,

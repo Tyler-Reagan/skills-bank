@@ -10,7 +10,12 @@ let listenerInstalled = false;
 function ensureListener(): void {
   if (listenerInstalled) return;
   listenerInstalled = true;
-  window.addEventListener(
+  // Bound on `document` rather than `window` because in the Electron
+  // renderer, keystrokes that occur while focus is on a child element
+  // reliably reach the document but not always the window. Capture
+  // phase fires before any bubble-phase handler that might
+  // stopPropagation.
+  document.addEventListener(
     "keydown",
     (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;

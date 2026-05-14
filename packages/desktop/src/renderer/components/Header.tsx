@@ -49,8 +49,8 @@ export function Header({
   const nextDensity: Density =
     density === "comfortable" ? "compact" : "comfortable";
   const isGithub = authStatus?.registrySource === "github";
-  const accountChipLabel = isGithub
-    ? `@${authStatus?.user?.login ?? "you"}`
+  const sourceChipText = isGithub
+    ? authStatus?.user?.login ?? "linked"
     : "Local bundled";
   return (
     <header className="header">
@@ -149,8 +149,8 @@ export function Header({
             className="header-trigger account-trigger"
             type="button"
             onClick={onOpenAccount}
-            title="Account & registry source"
-            aria-label="Open Account"
+            title={`Account · registry source: ${sourceChipText}`}
+            aria-label={`Open Account (current source: ${sourceChipText})`}
           >
             {isGithub && authStatus?.user?.avatarUrl ? (
               <img
@@ -160,11 +160,11 @@ export function Header({
                 referrerPolicy="no-referrer"
               />
             ) : null}
-            <span className="header-trigger-label">{accountChipLabel}</span>
-            <Icon name="chevron-down" size="sm" />
+            <span className="header-trigger-label">Account</span>
+            <span className="header-trigger-source-chip">{sourceChipText}</span>
           </button>
           <button
-            className="header-trigger settings-trigger icon-btn"
+            className="icon-btn"
             type="button"
             onClick={onOpenSettings}
             title="Settings"

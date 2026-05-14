@@ -404,9 +404,19 @@ select {
   color: var(--accent);
 }
 
+/* Header buttons share one height so the right cluster (theme +
+   density toggles, Sync skills, Refresh, Account chip, Settings
+   gear) reads as a single coherent row. Three button shapes
+   coexist — icon-only, label-with-icon, and chip — but they're
+   all the same height. */
 .refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
   font-size: 12px;
-  padding: var(--s2) var(--s3);
   border: 1px solid var(--border);
   border-radius: var(--r);
   color: var(--text-2);
@@ -419,8 +429,8 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--r);
@@ -1956,25 +1966,28 @@ button:disabled {
 }
 
 /* ── Header triggers (Account + Settings) ─────────────────────────── */
+/* Heights aligned with .icon-btn / .refresh-btn (32px) so the entire
+   header right-side cluster reads as a coherent row. */
 .header-trigger {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--r-sm);
+  height: 32px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
   font-size: 12px;
   cursor: pointer;
-  color: var(--text-1);
+  color: var(--text-2);
+  transition:
+    border-color var(--t) var(--ease),
+    color var(--t) var(--ease);
 }
 .header-trigger:hover {
-  background: var(--surface-hi);
-  border-color: var(--border);
-}
-.header-trigger.account-trigger {
-  background: var(--surface-hi);
-  border-color: var(--border);
+  border-color: var(--border-hi);
+  color: var(--text);
 }
 .header-trigger-label {
   font-weight: 500;
@@ -1983,13 +1996,22 @@ button:disabled {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.header-trigger-avatar {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+.header-trigger-source-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  letter-spacing: 0.02em;
 }
-.header-trigger.settings-trigger {
-  padding: 6px;
+.header-trigger-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
 }
 
 /* ── ErrorPanel ───────────────────────────────────────────────────── */

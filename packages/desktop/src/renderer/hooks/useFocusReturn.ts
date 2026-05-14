@@ -34,7 +34,18 @@ export function useInitialFocus<T extends HTMLElement>(
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-    // Find the first focusable element within the container.
+    // Focus the container itself first so keydown events bubble from
+    // a known location and the capture-phase Escape handler in
+    // useEscapeToClose has a focused element to attribute the event
+    // to. The container must carry tabIndex=-1 to accept programmatic
+    // focus without becoming tab-navigable. After the container is
+    // focused, move focus to the first focusable child so Tab works
+    // naturally — but skip that step if no focusable child exists.
+    try {
+      root.focus({ preventScroll: true });
+    } catch {
+      // ignore
+    }
     const focusable = root.querySelector<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );

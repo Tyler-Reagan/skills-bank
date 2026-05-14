@@ -68,7 +68,18 @@ export function AccountModal({
         tabIndex={-1}
         onKeyDown={onModalKeyDown}
       >
-        <h2 style={{ marginTop: 0 }}>Account</h2>
+        <div style={modalHeader}>
+          <h2 style={{ margin: 0 }}>Account</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+            style={closeBtn}
+          >
+            <Icon name="x" size="md" />
+          </button>
+        </div>
 
         <section style={section}>
           <h3 style={sectionTitle}>Registry source</h3>
@@ -84,7 +95,14 @@ export function AccountModal({
                 : "Bundled set shipped with the app."}
             </span>
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              marginTop: 8,
+            }}
+          >
             <button
               className="btn"
               type="button"
@@ -206,10 +224,31 @@ const modal: React.CSSProperties = {
   border: "1px solid var(--border-hi)",
   borderRadius: 8,
   padding: 24,
-  width: 520,
+  width: 560,
   maxWidth: "90vw",
   maxHeight: "85vh",
   overflowY: "auto",
+  outline: "none",
+};
+
+const modalHeader: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 8,
+  marginBottom: 4,
+};
+
+const closeBtn: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  color: "var(--text-3)",
+  padding: 4,
+  borderRadius: 4,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const section: React.CSSProperties = {
