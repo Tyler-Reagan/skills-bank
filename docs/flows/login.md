@@ -1,6 +1,6 @@
 # Registry source
 
-Skills Bank picks a registry source — the place where your skills physically live — when it launches. As of the provenance-reframe release, that decision is no longer a first-launch fork: every install lands on the bundled registry by default, and linking a GitHub repo is an opt-in mode available later from Settings or the account menu.
+Skills Bank picks a registry source — the place where your skills physically live — when it launches. As of the provenance-reframe release, that decision is no longer a first-launch fork: every install lands on the bundled registry by default, and linking a GitHub repo is an opt-in mode available later from Settings.
 
 ## Default: Local bundled
 
@@ -9,7 +9,7 @@ On first launch the app materializes a local registry at `~/Library/Application 
 - The full set of bundled skills, installable with one click.
 - A **Sync skills** button that fetches the latest upstream bundled skills while preserving anything you've added or modified.
 - The ability to register your own skills alongside the bundled ones.
-- **Export registry** and **Import a registry** in the account menu — move your registry to another machine or back it up as a zip.
+- **Export registry** and **Import a registry** in the header menu — move your registry to another machine or back it up as a zip.
 
 No GitHub auth required. This is the path the rest of the docs assume unless otherwise noted.
 

@@ -1,6 +1,5 @@
 import React from "react";
 import type { AuthStatus } from "../../shared/ipc.js";
-import { HeaderMenu } from "./HeaderMenu.js";
 import { Icon } from "./Icon.js";
 
 export type Theme = "dark" | "light";
@@ -18,6 +17,8 @@ interface Props {
   /** When false (github-linked), the bundled-sync button is hidden. */
   showSync: boolean;
   authStatus: AuthStatus | null;
+  onOpenAccount: () => void;
+  onOpenSettings: () => void;
   /**
    * Version string of an app update that's been detected. When non-null,
    * the badge renders next to the brand. Click invokes `onShowUpdate`.
@@ -39,12 +40,18 @@ export function Header({
   onSync,
   showSync,
   authStatus,
+  onOpenAccount,
+  onOpenSettings,
   pendingUpdateVersion,
   onShowUpdate,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
     density === "comfortable" ? "compact" : "comfortable";
+  const isGithub = authStatus?.registrySource === "github";
+  const sourceChipText = isGithub
+    ? (authStatus?.user?.login ?? "linked")
+    : "Local bundled";
   return (
     <header className="header">
       <h1 className="visually-hidden">skills-bank</h1>
@@ -106,8 +113,7 @@ export function Header({
             >
               {syncing ? (
                 <>
-                  <span className="spinner inline" aria-hidden="true" />{" "}
-                  Syncing…
+                  <span className="spinner inline" aria-hidden="true" /> Syncing
                 </>
               ) : (
                 <>
@@ -130,7 +136,7 @@ export function Header({
             {refreshing ? (
               <>
                 <span className="spinner inline" aria-hidden="true" />{" "}
-                Re-scanning…
+                Re-scanning
               </>
             ) : (
               <>
@@ -138,7 +144,33 @@ export function Header({
               </>
             )}
           </button>
-          <HeaderMenu authStatus={authStatus} showSync={showSync} />
+          <button
+            className="header-trigger account-trigger"
+            type="button"
+            onClick={onOpenAccount}
+            title={`Account · registry source: ${sourceChipText}`}
+            aria-label={`Open Account (current source: ${sourceChipText})`}
+          >
+            {isGithub && authStatus?.user?.avatarUrl ? (
+              <img
+                src={authStatus.user.avatarUrl}
+                alt=""
+                className="header-trigger-avatar"
+                referrerPolicy="no-referrer"
+              />
+            ) : null}
+            <span className="header-trigger-label">Account</span>
+            <span className="header-trigger-source-chip">{sourceChipText}</span>
+          </button>
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={onOpenSettings}
+            title="Settings"
+            aria-label="Open Settings"
+          >
+            <Icon name="settings" size="md" />
+          </button>
         </div>
       </div>
     </header>

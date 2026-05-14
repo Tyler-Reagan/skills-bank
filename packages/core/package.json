@@ -15,6 +15,11 @@
       "types": "./dist/skill-state.d.ts",
       "import": "./dist/skill-state.js",
       "default": "./dist/skill-state.js"
+    },
+    "./agents-data": {
+      "types": "./dist/agents-data.d.ts",
+      "import": "./dist/agents-data.js",
+      "default": "./dist/agents-data.js"
     }
   },
   "scripts": {

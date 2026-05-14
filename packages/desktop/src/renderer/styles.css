@@ -404,9 +404,19 @@ select {
   color: var(--accent);
 }
 
+/* Header buttons share one height so the right cluster (theme +
+   density toggles, Sync skills, Refresh, Account chip, Settings
+   gear) reads as a single coherent row. Three button shapes
+   coexist — icon-only, label-with-icon, and chip — but they're
+   all the same height. */
 .refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
   font-size: 12px;
-  padding: var(--s2) var(--s3);
   border: 1px solid var(--border);
   border-radius: var(--r);
   color: var(--text-2);
@@ -419,8 +429,8 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--r);
@@ -1954,6 +1964,131 @@ button:disabled {
   gap: var(--s2);
   font-size: 12px;
 }
+
+/* ── Header triggers (Account + Settings) ─────────────────────────── */
+/* Heights aligned with .icon-btn / .refresh-btn (32px) so the entire
+   header right-side cluster reads as a coherent row. */
+.header-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-2);
+  transition:
+    border-color var(--t) var(--ease),
+    color var(--t) var(--ease);
+}
+.header-trigger:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+.header-trigger-label {
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.header-trigger-source-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  letter-spacing: 0.02em;
+}
+.header-trigger-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+/* ── ErrorPanel ───────────────────────────────────────────────────── */
+.error-panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 0;
+}
+.error-panel {
+  border: 1px solid var(--danger, #d04444);
+  background: var(--danger-dim, rgba(208, 68, 68, 0.08));
+  border-radius: var(--r);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.error-panel-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.error-panel-icon {
+  color: var(--danger, #d04444);
+  display: inline-flex;
+  margin-top: 2px;
+}
+.error-panel-message {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-1);
+}
+.error-panel-dismiss {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 2px;
+  border-radius: 4px;
+}
+.error-panel-dismiss:hover {
+  color: var(--text-1);
+  background: var(--surface-hi);
+}
+.error-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.error-panel-details {
+  margin: 4px 0 0 0;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+}
+.error-panel-detail-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px;
+  padding: 2px 0;
+}
+.error-panel-detail-row dt {
+  font-weight: 600;
+  color: var(--text-2);
+}
+.error-panel-detail-row dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+
 .diff-viewer-state {
   padding: var(--s2) var(--s3);
   border: 1px solid var(--border);

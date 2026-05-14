@@ -1,5 +1,6 @@
 import type {
   AgentId,
+  AppError,
   BrokenLinkRemoveReport,
   BrokenLinkRepairReport,
   ConflictEntry,
@@ -17,6 +18,24 @@ import type {
   SyncDecisions,
   SyncReport,
 } from "@skills-bank/core";
+
+/**
+ * Common shape for any IPC result that may carry a structured error.
+ * Every renderer-facing IPC handler in `main.ts` now returns this
+ * shape on failure; success returns vary per-handler but include the
+ * same `ok: true` top-level marker.
+ */
+export interface IPCFailureFields {
+  /**
+   * Stable one-line summary. Kept for back-compat with the legacy
+   * toast surface and used as the ErrorPanel header text.
+   */
+  message: string;
+  /** Structured top-level error. Always populated when `ok=false`. */
+  error?: AppError;
+  /** Per-row structured errors for batch operations. */
+  errors?: AppError[];
+}
 
 export const IPC = {
   listRegistry: "skills:listRegistry",
@@ -81,7 +100,6 @@ export const IPC = {
   discoverOpenExternal: "discover:openExternal",
   discoverOpenTerminal: "discover:openTerminal",
   discoverStatus: "discover:status",
-  showHeaderMenu: "header:showMenu",
   headerMenuAction: "header:action",
   pickCustomSkillsDir: "skills:pickCustomSkillsDir",
   getSkillDiff: "skills:getSkillDiff",
@@ -190,12 +208,12 @@ export type DiscoverStatus =
   | { kind: "ready"; url: string; canGoBack: boolean }
   | { kind: "error"; url: string; errorCode: number; description: string };
 
-export interface HeaderMenuContext {
-  registrySource: RegistrySource | null;
-  user: { login: string } | null;
-  showSync: boolean;
-}
-
+/**
+ * Discriminated set of actions the macOS menubar dispatches via the
+ * `headerMenuAction` IPC. The in-app header popup-menu retired with
+ * the Account/Settings decomposition — only the menubar dispatch
+ * path still uses this union.
+ */
 export type HeaderMenuAction =
   | "changeRegistry"
   | "mergeRegistry"
@@ -234,49 +252,30 @@ export type UpdateStatus =
   | { kind: "error"; message: string }
   | { kind: "disabled"; reason: string };
 
-interface InstallIPCError {
-  agent: AgentId;
-  message: string;
+interface InstallIPCResult extends IPCFailureFields {
+  ok: boolean;
 }
 
-interface InstallIPCResult {
+interface UninstallIPCResult extends IPCFailureFields {
   ok: boolean;
-  message: string;
-  /**
-   * Per-agent failures from the underlying installSkill. Surfaced so the
-   * renderer can detect "needs --force" conflicts and offer a retry path
-   * without parsing the toast message.
-   */
-  errors?: InstallIPCError[];
-}
-
-interface UninstallIPCResult {
-  ok: boolean;
-  message: string;
-  /** Per-agent failures (e.g. real-directory that we refuse to delete). */
-  errors?: InstallIPCError[];
   /** Number of symlinks actually removed. */
   removedCount?: number;
   /** Number of agent dirs we deliberately left alone (real dirs). */
   keptCount?: number;
 }
 
-interface DeregisterIPCResult {
+interface DeregisterIPCResult extends IPCFailureFields {
   ok: boolean;
-  message: string;
   deletedPath?: string;
   removedSymlinkCount?: number;
-  errors?: Array<{ agent?: AgentId; message: string }>;
 }
 
-interface UnregisterIPCResult {
+interface UnregisterIPCResult extends IPCFailureFields {
   ok: boolean;
-  message: string;
   /** Where adopted files were moved to. Absent for non-adopted skills. */
   destinationPath?: string;
   /** True when the unregistered skill was previously adopted. */
   wasAdopted: boolean;
-  errors?: Array<{ agent?: AgentId; message: string }>;
 }
 
 interface SkillsBankAPI {
@@ -319,7 +318,11 @@ interface SkillsBankAPI {
    */
   uninstall(name: string, agents?: AgentId[]): Promise<UninstallIPCResult>;
   deregister(name: string): Promise<DeregisterIPCResult>;
-  unregister(name: string, destination: AgentId): Promise<UnregisterIPCResult>;
+  unregister(
+    name: string,
+    destination: AgentId,
+    force?: boolean,
+  ): Promise<UnregisterIPCResult>;
   /**
    * M9b: delete an unregistered skill's on-disk presence. Refuses
    * if the skill is still registered (the registered → unregister
@@ -331,12 +334,26 @@ interface SkillsBankAPI {
     removedDirs: string[];
     removedSymlinks: string[];
   }>;
-  hide(name: string): Promise<{ ok: boolean; message: string }>;
-  unhide(name: string): Promise<{ ok: boolean; message: string }>;
-  acceptDrift(name: string): Promise<{ ok: boolean; message: string }>;
-  takeCanonical(name: string): Promise<{ ok: boolean; message: string }>;
-  forgetMissing(name: string): Promise<{ ok: boolean; message: string }>;
-  clearPendingConflicts(): Promise<{ ok: boolean; message: string }>;
+  hide(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  unhide(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  acceptDrift(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  takeCanonical(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  forgetMissing(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  clearPendingConflicts(): Promise<{
+    ok: boolean;
+    message: string;
+    error?: AppError;
+  }>;
   scan(): Promise<ScanReport>;
   register(
     items: Array<{ name: string; action: RegistrationAction }>,
@@ -353,7 +370,7 @@ interface SkillsBankAPI {
   editTags(
     name: string,
     tags: string[],
-  ): Promise<{ ok: boolean; message: string }>;
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   getConfig(): Promise<{
     registryRoot: string | null;
     configValid: boolean;
@@ -366,12 +383,16 @@ interface SkillsBankAPI {
     message: string;
     registryRoot: string | null;
   }>;
-  checkForUpdates(): Promise<{ ok: boolean; message: string }>;
-  downloadUpdate(): Promise<{ ok: boolean; message: string }>;
+  checkForUpdates(): Promise<{
+    ok: boolean;
+    message: string;
+    error?: AppError;
+  }>;
+  downloadUpdate(): Promise<{ ok: boolean; message: string; error?: AppError }>;
   quitAndInstallUpdate(): Promise<void>;
   setDismissedUpdateVersion(version: string | null): Promise<void>;
   onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
-  syncCanonical(): Promise<{ ok: boolean; message: string }>;
+  syncCanonical(): Promise<{ ok: boolean; message: string; error?: AppError }>;
   getSyncReport(): Promise<SyncReport | null>;
   onSyncStatus(cb: (status: SyncStatus) => void): () => void;
   getPendingConflicts(): Promise<{
@@ -381,7 +402,7 @@ interface SkillsBankAPI {
   } | null>;
   resolveConflicts(
     decisions: SyncDecisions,
-  ): Promise<{ ok: boolean; message: string }>;
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   authStatus(): Promise<AuthStatus>;
   authSetRegistrySourceLocal(): Promise<AuthStatus>;
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
@@ -451,7 +472,6 @@ interface SkillsBankAPI {
     terminalApp?: string,
   ): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
-  showHeaderMenu(context: HeaderMenuContext): Promise<void>;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
 }
 

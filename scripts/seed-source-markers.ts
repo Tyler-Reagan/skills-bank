@@ -62,7 +62,9 @@ function main(): void {
     wrote += 1;
   }
 
-  console.log(`seeded ${wrote} marker(s); skipped ${skipped} (already present)`);
+  console.log(
+    `seeded ${wrote} marker(s); skipped ${skipped} (already present)`,
+  );
   console.log(`registry root: ${root}`);
 }
 

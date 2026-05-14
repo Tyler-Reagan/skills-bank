@@ -129,8 +129,8 @@ export function DiscoverTab({
         role="note"
         aria-label="How discovered skills land in your registry"
       >
-        Anything you install via <code>npx skills add</code> will appear in
-        your registry automatically.
+        Anything you install via <code>npx skills add</code> will appear in your
+        registry automatically.
       </div>
       <div
         className="discover-chrome"

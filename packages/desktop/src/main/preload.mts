@@ -18,8 +18,8 @@ const api = {
   uninstall: (name: string, agents?: unknown) =>
     ipcRenderer.invoke(IPC.uninstall, name, agents),
   deregister: (name: string) => ipcRenderer.invoke(IPC.deregister, name),
-  unregister: (name: string, destination: string) =>
-    ipcRenderer.invoke(IPC.unregister, name, destination),
+  unregister: (name: string, destination: string, force?: boolean) =>
+    ipcRenderer.invoke(IPC.unregister, name, destination, force),
   deleteUnregistered: (name: string) =>
     ipcRenderer.invoke(IPC.deleteUnregistered, name),
   hide: (name: string) => ipcRenderer.invoke(IPC.hide, name),
@@ -103,8 +103,6 @@ const api = {
     ipcRenderer.on(IPC.discoverStatus, listener);
     return () => ipcRenderer.removeListener(IPC.discoverStatus, listener);
   },
-  showHeaderMenu: (context: unknown) =>
-    ipcRenderer.invoke(IPC.showHeaderMenu, context),
   onHeaderMenuAction: (cb: (action: string) => void) => {
     const listener = (_e: unknown, action: string) => cb(action);
     ipcRenderer.on(IPC.headerMenuAction, listener);

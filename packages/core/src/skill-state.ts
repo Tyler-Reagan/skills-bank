@@ -216,9 +216,18 @@ export function classifyDrawerState(
   const mine = installed.filter((i) => i.name === entry.name);
   const ours = mine.filter((i) => i.kind === "ours");
   const broken = mine.filter((i) => i.kind === "broken-symlink");
-  const conflicts = mine.filter(
-    (i) => i.kind === "foreign-symlink" || i.kind === "real-directory",
+  // Foreign-symlinks that resolve to a real-directory in the same
+  // group are collapsed onto that real-directory: they're the same
+  // installation, just linked from multiple agent dirs. This is the
+  // post-unregister steady state (one real-dir at the destination +
+  // N rewritten symlinks pointing at it) and shouldn't read as
+  // ambiguous to the classifier — there's exactly one canonical copy.
+  const realDirs = mine.filter((i) => i.kind === "real-directory");
+  const realDirPaths = new Set(realDirs.map((d) => d.linkPath));
+  const foreignSymlinks = mine.filter(
+    (i) => i.kind === "foreign-symlink" && !realDirPaths.has(i.target ?? ""),
   );
+  const conflicts = [...realDirs, ...foreignSymlinks];
 
   const hasOurs = ours.length > 0;
   const hasBroken = broken.length > 0;

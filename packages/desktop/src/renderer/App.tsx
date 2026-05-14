@@ -1,5 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type {
+  AgentId,
   ConflictEntry,
   InstalledSkill,
   RegistryEntry,
@@ -34,7 +41,14 @@ import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
-import { GitHubLinkComingSoon } from "./components/ComingSoonDialog.js";
+import {
+  ComingSoonDialog,
+  GitHubLinkComingSoon,
+} from "./components/ComingSoonDialog.js";
+import { ErrorPanel } from "./components/ErrorPanel.js";
+import { AccountModal } from "./components/AccountModal.js";
+import { ConfirmDialog } from "./components/ConfirmDialog.js";
+import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 import { RegistrySourceProvider } from "./RegistrySourceContext.js";
 
@@ -129,6 +143,86 @@ export function App(): React.ReactElement {
   };
   const [toast, setToast] = useState<ToastShape | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Persistent error surface. Stacks vertically; each entry is
+  // individually dismissable; failures land here (toasts stay for
+  // success confirmation only).
+  const [appErrors, setAppErrors] = useState<
+    Array<{ id: number; error: import("@skills-bank/core").AppError }>
+  >([]);
+  const appErrorIdRef = useRef(0);
+  const pushAppError = (e: import("@skills-bank/core").AppError) => {
+    const id = ++appErrorIdRef.current;
+    setAppErrors((prev) => [...prev, { id, error: e }]);
+  };
+  const dismissAppError = (id: number) => {
+    setAppErrors((prev) => prev.filter((x) => x.id !== id));
+  };
+  // Typed string-key reader for AppError.copyableDetails. Returns the
+  // value when present and a string; null otherwise.
+  const detailString = (
+    e: import("@skills-bank/core").AppError,
+    key: string,
+  ): string | null => {
+    const v = e.copyableDetails?.[key];
+    return typeof v === "string" ? v : null;
+  };
+  // Destination-collision recovery surfaces (replacing the previous
+  // Settings-redirect + native window.confirm).
+  const [pickDestinationTarget, setPickDestinationTarget] = useState<{
+    errorId: number;
+    name: string;
+    currentDestination: AgentId;
+  } | null>(null);
+  const [overwriteTarget, setOverwriteTarget] = useState<{
+    errorId: number;
+    name: string;
+    destDir: string;
+  } | null>(null);
+  // Mid-sweep state for the bulk Fix-broken-links flow: after we've
+  // tried to repair each skill, the unrepairable subset is shown in a
+  // styled ConfirmDialog that asks whether to drop the dead symlinks.
+  const [bulkRepairPrompt, setBulkRepairPrompt] = useState<{
+    repaired: number;
+    unrepairable: Array<{
+      name: string;
+      entries: Array<{ agent: string; linkPath: string }>;
+    }>;
+  } | null>(null);
+  // Dispatch table for AppError suggestedActions. Each kind maps to a
+  // handler that knows the surrounding context (current settings,
+  // refresh, toast). The handler can dismiss the originating panel.
+  const handleSuggestedAction = async (
+    error: import("@skills-bank/core").AppError,
+    id: number,
+    kind: import("@skills-bank/core").SuggestedActionKind,
+  ): Promise<void> => {
+    if (kind === "open-unregister-destination-settings") {
+      const name = detailString(error, "name");
+      const dest =
+        (detailString(error, "destination") as AgentId | null) ??
+        settings.unregisterDestinationAgent;
+      if (!name) {
+        flash("Couldn't retry — original target name was lost.");
+        return;
+      }
+      setPickDestinationTarget({
+        errorId: id,
+        name,
+        currentDestination: dest,
+      });
+      return;
+    }
+    if (kind === "unregister-force-overwrite") {
+      const name = detailString(error, "name");
+      const destDir = detailString(error, "destDir") ?? "";
+      if (!name) {
+        flash("Couldn't retry — original target name was lost.");
+        return;
+      }
+      setOverwriteTarget({ errorId: id, name, destDir });
+      return;
+    }
+  };
   const [showRegister, setShowRegister] = useState(false);
   // Manage-agent-links is a standalone modal targeting a single skill name.
   // Its target may originate from the registry tab, the installed-registered
@@ -191,7 +285,10 @@ export function App(): React.ReactElement {
   const [settings, setSettingsState] = useState<AppSettings>(readSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [showGitHubLinkComingSoon, setShowGitHubLinkComingSoon] =
+    useState(false);
+  const [showPromoteToGitHubComingSoon, setShowPromoteToGitHubComingSoon] =
     useState(false);
   // Auto-update state. `latestUpdateStatus` is a live mirror of the most
   // recent event the main process broadcast; the modal reads it directly
@@ -237,10 +334,23 @@ export function App(): React.ReactElement {
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
 
+  // One pass to build name→entry / name→set lookups; reused across the
+  // overlay-reconciliation effect, the drawer's freshness sync, and any
+  // per-render `.some(byName)` site. Cheap to build, cheaper than ~7
+  // O(n) scans per render.
+  const registryByName = useMemo(
+    () => new Map(registry.map((e) => [e.name, e] as const)),
+    [registry],
+  );
+  const installedNames = useMemo(
+    () => new Set(installed.map((i) => i.name)),
+    [installed],
+  );
+
   // Tab badge counts — dedupe by skill name so a skill linked into two
   // agent dirs counts once. The toast computed by refresh() uses the
   // same expression; keep them in sync via this single derivation.
-  const uniqueInstalledCount = new Set(installed.map((i) => i.name)).size;
+  const uniqueInstalledCount = installedNames.size;
 
   // Overlay reconciliation: if a skill referenced by an open drawer or
   // modal disappears from installed/registry after refresh() (e.g. the
@@ -248,31 +358,22 @@ export function App(): React.ReactElement {
   // reference so the overlay closes cleanly. Derived-validation, not
   // derived-state.
   useEffect(() => {
-    if (selected && !registry.some((r) => r.name === selected.name)) {
+    if (selected && !registryByName.has(selected.name)) {
       setSelected(null);
     }
-    if (
-      conflictTarget &&
-      !installed.some((i) => i.name === conflictTarget.name)
-    ) {
+    if (conflictTarget && !installedNames.has(conflictTarget.name)) {
       setConflictTarget(null);
     }
-    if (
-      installConflict &&
-      !registry.some((r) => r.name === installConflict.name)
-    ) {
+    if (installConflict && !registryByName.has(installConflict.name)) {
       setInstallConflict(null);
     }
-    if (
-      manageLinksTarget &&
-      !installed.some((i) => i.name === manageLinksTarget.name)
-    ) {
+    if (manageLinksTarget && !installedNames.has(manageLinksTarget.name)) {
       setManageLinksTarget(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- overlays are inputs to validate, not deps
-  }, [installed, registry]);
+  }, [registryByName, installedNames]);
 
-  // Apply the active theme to <html data-theme="…"> so CSS-variable
+  // Apply the active theme to <html data-theme=""> so CSS-variable
   // overrides flow through every component.
   useEffect(() => {
     document.documentElement.dataset["theme"] = theme;
@@ -395,6 +496,28 @@ export function App(): React.ReactElement {
       setRefreshing(false);
     }
   }, [settings.customSkillsDirs]);
+
+  // Common post-action plumbing for unregister retries: dismiss the
+  // originating panel on success, flash, refresh. Failures route the
+  // new structured error back through the panel.
+  const handleUnregisterResult = useCallback(
+    async (
+      errorId: number,
+      r: Awaited<ReturnType<typeof window.skillsBank.unregister>>,
+    ) => {
+      if (r.ok) {
+        dismissAppError(errorId);
+        flash(r.message);
+        await refresh();
+      } else if (r.error) {
+        dismissAppError(errorId);
+        pushAppError(r.error);
+      } else {
+        flash(r.message);
+      }
+    },
+    [flash, refresh],
+  );
 
   const addCustomSkillsDir = useCallback(async () => {
     const r = await window.skillsBank.pickCustomSkillsDir();
@@ -570,7 +693,6 @@ export function App(): React.ReactElement {
     }
     if (r.report.conflicts.length === 0) {
       flash(r.message);
-      void window.skillsBank.rebuildIndex();
       await refresh();
       return;
     }
@@ -612,28 +734,37 @@ export function App(): React.ReactElement {
     flash("Signed out");
   }, [flash]);
 
-  // Dispatch actions from the native header menu (popup and macOS menu bar).
+  // Convenience: "Check for updates" routes through the same path
+  // regardless of trigger — re-open the existing update modal if a
+  // live update is known, otherwise kick off a fresh check.
+  const checkForUpdates = useCallback(() => {
+    if (
+      latestUpdateStatus &&
+      (latestUpdateStatus.kind === "available" ||
+        latestUpdateStatus.kind === "downloading" ||
+        latestUpdateStatus.kind === "downloaded")
+    ) {
+      setIsUpdateModalOpen(true);
+    } else {
+      void window.skillsBank.checkForUpdates().then((r) => {
+        flash(r.ok ? "Checking for updates" : r.message);
+      });
+    }
+  }, [latestUpdateStatus, flash]);
+
+  // macOS menu-bar dispatch. The native menubar still fires a small
+  // set of actions (Settings, Refresh, Sync skills) — the in-app
+  // header dropdown is gone, but the menubar stays. Filter to the
+  // actions the menubar actually dispatches; ignore the rest.
   useEffect(() => {
     if (!window.skillsBank.onHeaderMenuAction) return;
     return window.skillsBank.onHeaderMenuAction((action) => {
       switch (action) {
-        case "changeRegistry":
-          void changeRegistry();
-          break;
-        case "mergeRegistry":
-          void mergeRegistry();
-          break;
-        case "exportRegistry":
-          void exportRegistry();
-          break;
         case "openSettings":
           setShowSettings(true);
           break;
         case "openShortcuts":
           setShowShortcuts(true);
-          break;
-        case "signOut":
-          void signOut();
           break;
         case "refresh":
           void onRefreshClick();
@@ -641,39 +772,17 @@ export function App(): React.ReactElement {
         case "sync":
           void sync();
           break;
-        case "githubLinkComingSoon":
-          setShowGitHubLinkComingSoon(true);
-          break;
         case "checkForUpdates":
-          // If we already know about a live update, re-open the modal
-          // directly (bypassing dismissal — explicit user gesture).
-          // Otherwise trigger a fresh check; the badge will mount on
-          // the next `update-available` event.
-          if (
-            latestUpdateStatus &&
-            (latestUpdateStatus.kind === "available" ||
-              latestUpdateStatus.kind === "downloading" ||
-              latestUpdateStatus.kind === "downloaded")
-          ) {
-            setIsUpdateModalOpen(true);
-          } else {
-            void window.skillsBank.checkForUpdates().then((r) => {
-              flash(r.ok ? "Checking for updates…" : r.message);
-            });
-          }
+          checkForUpdates();
           break;
+        // Other actions (changeRegistry, mergeRegistry, exportRegistry,
+        // signOut, githubLinkComingSoon) are no longer dispatched from
+        // any surface — the in-app dropdown that fired them is gone
+        // and the menubar doesn't include them. Kept in the union for
+        // back-compat with the IPC shape; the cases are unreachable.
       }
     });
-  }, [
-    changeRegistry,
-    mergeRegistry,
-    exportRegistry,
-    signOut,
-    onRefreshClick,
-    sync,
-    latestUpdateStatus,
-    flash,
-  ]);
+  }, [onRefreshClick, sync, checkForUpdates]);
 
   const rebuild = useCallback(async () => {
     setRebuilding(true);
@@ -694,10 +803,10 @@ export function App(): React.ReactElement {
   // the user can hit Register or Manage agent links.
   useEffect(() => {
     if (selected) {
-      const fresh = registry.find((e) => e.name === selected.name);
+      const fresh = registryByName.get(selected.name);
       if (fresh && fresh !== selected) setSelected(fresh);
     }
-  }, [registry, selected]);
+  }, [registryByName, selected]);
 
   // Pre-mount splash: render this until the renderer knows which top-
   // level view to show. Without it, the app skeleton flashes for a beat
@@ -759,6 +868,8 @@ export function App(): React.ReactElement {
           onSync={() => undefined}
           showSync={false}
           authStatus={null}
+          onOpenAccount={() => undefined}
+          onOpenSettings={() => undefined}
           pendingUpdateVersion={null}
           onShowUpdate={() => undefined}
         />
@@ -786,7 +897,6 @@ export function App(): React.ReactElement {
     );
   }
 
-
   return (
     <RegistrySourceProvider registrySource={authStatus?.registrySource ?? null}>
       <div className="app">
@@ -803,9 +913,25 @@ export function App(): React.ReactElement {
           onSync={() => void sync()}
           showSync={authStatus?.registrySource !== "github"}
           authStatus={authStatus}
+          onOpenAccount={() => setShowAccount(true)}
+          onOpenSettings={() => setShowSettings(true)}
           pendingUpdateVersion={pendingUpdateVersion}
           onShowUpdate={openUpdateModal}
         />
+        {appErrors.length > 0 && (
+          <div className="error-panel-stack">
+            {appErrors.map(({ id, error }) => (
+              <ErrorPanel
+                key={id}
+                error={error}
+                onDismiss={() => dismissAppError(id)}
+                onSuggestedAction={(kind) =>
+                  handleSuggestedAction(error, id, kind)
+                }
+              />
+            ))}
+          </div>
+        )}
         <SyncBanner
           status={syncStatus}
           pendingConflicts={pendingConflicts}
@@ -836,8 +962,14 @@ export function App(): React.ReactElement {
               !!mergeConflictTarget ||
               showSettings ||
               showShortcuts ||
+              showAccount ||
+              showGitHubLinkComingSoon ||
+              showPromoteToGitHubComingSoon ||
               !!conflictModalEntries ||
               showRepoPicker ||
+              !!pickDestinationTarget ||
+              !!overwriteTarget ||
+              !!bulkRepairPrompt ||
               !!selected
             }
             terminalApp={settings.terminalApp}
@@ -884,8 +1016,8 @@ export function App(): React.ReactElement {
                   // entry so the user gets the same Register / Manage-links /
                   // Remove action surface as a registered skill — the two
                   // operations are now distinct buttons, not a radio group.
-                  const synthetic: RegistryEntry = registry.find(
-                    (r) => r.name === s.name,
+                  const synthetic: RegistryEntry = registryByName.get(
+                    s.name,
                   ) ?? {
                     name: s.name,
                     description: s.target ?? s.linkPath,
@@ -904,7 +1036,7 @@ export function App(): React.ReactElement {
                   // have a dedicated Repair flow) but included for
                   // unregistered (the user picks a canonical and removes
                   // dead siblings in the same pass).
-                  const isRegistered = registry.some((r) => r.name === g.name);
+                  const isRegistered = registryByName.has(g.name);
                   const conflicts = isRegistered
                     ? g.conflicts.filter(
                         (c) => c.kind !== "ours" && c.kind !== "broken-symlink",
@@ -917,6 +1049,52 @@ export function App(): React.ReactElement {
                   });
                 }}
                 onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
+                onRepairAllBroken={async (gs) => {
+                  // Bulk Fix-broken-link(s) sweep. Mirrors the
+                  // drawer-level onRepairBroken behavior: try repair
+                  // first; for skills whose links can't be repaired
+                  // (registry copy is gone), prompt to remove the
+                  // dead symlinks across all affected skills in a
+                  // single confirm.
+                  type Unrepairable = {
+                    name: string;
+                    entries: Array<{ agent: string; linkPath: string }>;
+                  };
+                  const unrepairableBySkill: Unrepairable[] = [];
+                  let repaired = 0;
+                  for (const g of gs) {
+                    const report = await window.skillsBank.repairBrokenLinks(
+                      g.name,
+                    );
+                    if (report.unrepairable.length > 0) {
+                      unrepairableBySkill.push({
+                        name: g.name,
+                        entries: report.unrepairable.map((e) => ({
+                          agent: e.agent,
+                          linkPath: e.linkPath,
+                        })),
+                      });
+                    } else {
+                      repaired += 1;
+                    }
+                  }
+                  await refresh();
+
+                  if (unrepairableBySkill.length === 0) {
+                    flash(
+                      `Repaired ${repaired} skill${repaired === 1 ? "" : "s"}.`,
+                    );
+                    return;
+                  }
+
+                  // Hand off to the styled ConfirmDialog. The dialog's
+                  // onConfirm runs the removal sweep; cancel surfaces a
+                  // partial-success toast.
+                  setBulkRepairPrompt({
+                    repaired,
+                    unrepairable: unrepairableBySkill,
+                  });
+                }}
                 onInlineDelete={(group) => {
                   // M9b: stash the group on deleteTarget so the
                   // confirmation modal can preview which paths get
@@ -945,7 +1123,6 @@ export function App(): React.ReactElement {
                     ]);
                     const r = results[0]!;
                     flash(r.message);
-                    if (r.ok) void window.skillsBank.rebuildIndex();
                     await refresh();
                   })();
                 }}
@@ -963,12 +1140,24 @@ export function App(): React.ReactElement {
                       await refresh();
                       return;
                     }
-                    // Hand off to the drawer's existing two-step confirm
-                    // flow by selecting the entry — the drawer surfaces
-                    // the "Couldn't repair" dialog with delete option.
-                    const entry = registry.find((r) => r.name === g.name);
-                    if (entry) setSelected(entry);
-                    else flash(`Some links couldn't be repaired for ${g.name}`);
+                    // Route through the same ConfirmDialog the bulk
+                    // sweep uses so the per-card and bulk flows look
+                    // identical. The dialog's onConfirm calls
+                    // removeBrokenLinks for each entry; onCancel
+                    // surfaces a "left unresolved" toast.
+                    await refresh();
+                    setBulkRepairPrompt({
+                      repaired: report.repaired.length > 0 ? 1 : 0,
+                      unrepairable: [
+                        {
+                          name: g.name,
+                          entries: report.unrepairable.map((e) => ({
+                            agent: e.agent,
+                            linkPath: e.linkPath,
+                          })),
+                        },
+                      ],
+                    });
                   })();
                 }}
               />
@@ -1173,7 +1362,7 @@ export function App(): React.ReactElement {
                 >
                   {resolveAllRunning ? (
                     <>
-                      <span className="spinner inline" /> Resolving…
+                      <span className="spinner inline" /> Resolving
                     </>
                   ) : resolveAllErrors ? (
                     "Retry"
@@ -1239,7 +1428,6 @@ export function App(): React.ReactElement {
               flash(
                 `Merge cancelled${parts.length > 0 ? ` (${parts.join(", ")})` : ""}.`,
               );
-              void window.skillsBank.rebuildIndex();
               void refresh();
             }}
             onResolve={async (decisions) => {
@@ -1250,7 +1438,6 @@ export function App(): React.ReactElement {
                 decisions,
               );
               flash(r.message);
-              void window.skillsBank.rebuildIndex();
               await refresh();
             }}
           />
@@ -1266,7 +1453,6 @@ export function App(): React.ReactElement {
               setDeleteTarget(null);
               const r = await window.skillsBank.deleteUnregistered(target.name);
               flash(r.message);
-              void window.skillsBank.rebuildIndex();
               await refresh();
             }}
           />
@@ -1281,7 +1467,6 @@ export function App(): React.ReactElement {
             onUnhide={async (name) => {
               const r = await window.skillsBank.unhide(name);
               flash(r.message);
-              if (r.ok) void window.skillsBank.rebuildIndex();
               await refresh();
             }}
           />
@@ -1291,9 +1476,210 @@ export function App(): React.ReactElement {
           <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
         )}
 
+        {showAccount && (
+          <AccountModal
+            authStatus={authStatus}
+            appVersion={"dev"}
+            onClose={() => setShowAccount(false)}
+            onChangeRegistry={async () => {
+              setShowAccount(false);
+              await changeRegistry();
+            }}
+            onMergeRegistry={async () => {
+              setShowAccount(false);
+              await mergeRegistry();
+            }}
+            onExportRegistry={async () => {
+              setShowAccount(false);
+              await exportRegistry();
+            }}
+            onSignOut={async () => {
+              setShowAccount(false);
+              await signOut();
+            }}
+            onCheckForUpdates={checkForUpdates}
+            onOpenGitHubLinkComingSoon={() => setShowGitHubLinkComingSoon(true)}
+            onOpenPromoteToGitHubComingSoon={() =>
+              setShowPromoteToGitHubComingSoon(true)
+            }
+          />
+        )}
+
         <GitHubLinkComingSoon
           open={showGitHubLinkComingSoon}
           onClose={() => setShowGitHubLinkComingSoon(false)}
+        />
+
+        <ComingSoonDialog
+          open={showPromoteToGitHubComingSoon}
+          onClose={() => setShowPromoteToGitHubComingSoon(false)}
+          title="Promote local registry to a GitHub repo"
+          summary="A future release will let you push the current state of your local registry — your edits and additions — to a brand-new GitHub repo, then back the app with it going forward."
+          bullets={[
+            "Create a new GitHub repo from your account",
+            "Initial commit captures the current local registry state",
+            "App switches to GitHub-linked mode automatically after promotion",
+            "Available after GitHub linking ships",
+          ]}
+        />
+
+        <DestinationPickerDialog
+          open={pickDestinationTarget !== null}
+          skillName={pickDestinationTarget?.name ?? ""}
+          currentDestination={
+            pickDestinationTarget?.currentDestination ??
+            settings.unregisterDestinationAgent
+          }
+          onCancel={() => setPickDestinationTarget(null)}
+          onPick={async (next, persistAsDefault) => {
+            if (!pickDestinationTarget) return;
+            const target = pickDestinationTarget;
+            setPickDestinationTarget(null);
+            if (persistAsDefault) {
+              saveSettings({
+                ...settings,
+                unregisterDestinationAgent: next,
+              });
+            }
+            const r = await window.skillsBank.unregister(target.name, next);
+            await handleUnregisterResult(target.errorId, r);
+          }}
+        />
+
+        <ConfirmDialog
+          open={overwriteTarget !== null}
+          title={`Overwrite existing folder?`}
+          body={
+            <>
+              <p style={{ margin: 0 }}>
+                A folder already exists at{" "}
+                <code>{overwriteTarget?.destDir}</code>. Continuing will
+                permanently delete it and move{" "}
+                <code>{overwriteTarget?.name}</code> in its place.
+              </p>
+              <p
+                style={{
+                  marginTop: 10,
+                  marginBottom: 0,
+                  fontSize: 12,
+                  color: "var(--text-3)",
+                }}
+              >
+                This cannot be undone.
+              </p>
+            </>
+          }
+          confirmLabel="Overwrite and unregister"
+          tone="danger"
+          onCancel={() => setOverwriteTarget(null)}
+          onConfirm={async () => {
+            if (!overwriteTarget) return;
+            const target = overwriteTarget;
+            setOverwriteTarget(null);
+            const r = await window.skillsBank.unregister(
+              target.name,
+              settings.unregisterDestinationAgent,
+              true,
+            );
+            await handleUnregisterResult(target.errorId, r);
+          }}
+        />
+
+        <ConfirmDialog
+          open={bulkRepairPrompt !== null}
+          title="Remove dead symlinks?"
+          body={(() => {
+            if (!bulkRepairPrompt) return null;
+            const { repaired, unrepairable } = bulkRepairPrompt;
+            const totalLinks = unrepairable.reduce(
+              (acc, u) => acc + u.entries.length,
+              0,
+            );
+            return (
+              <>
+                <p style={{ margin: 0 }}>
+                  Repaired {repaired} skill{repaired === 1 ? "" : "s"}.{" "}
+                  {unrepairable.length} skill
+                  {unrepairable.length === 1 ? "" : "s"} couldn't be repaired
+                  because the registry copy is gone.
+                </p>
+                <p
+                  style={{
+                    margin: "10px 0 6px 0",
+                    fontSize: 12,
+                    color: "var(--text-3)",
+                  }}
+                >
+                  Remove the {totalLinks} dead symlink
+                  {totalLinks === 1 ? "" : "s"}? The agent dirs lose the
+                  symlink. Because the registry copy is already gone, these
+                  skills will also disappear from the registry — there are no
+                  source files left to back them.
+                </p>
+                <ul
+                  style={{
+                    margin: "8px 0 0 0",
+                    paddingLeft: 18,
+                    fontSize: 12,
+                    color: "var(--text-2)",
+                    maxHeight: 160,
+                    overflowY: "auto",
+                  }}
+                >
+                  {unrepairable.map((u) => (
+                    <li key={u.name}>
+                      <strong>{u.name}</strong> ({u.entries.length} link
+                      {u.entries.length === 1 ? "" : "s"})
+                    </li>
+                  ))}
+                </ul>
+              </>
+            );
+          })()}
+          confirmLabel="Remove dead links"
+          tone="danger"
+          onCancel={() => {
+            if (!bulkRepairPrompt) return;
+            const { repaired, unrepairable } = bulkRepairPrompt;
+            setBulkRepairPrompt(null);
+            flash(
+              `Repaired ${repaired}; ${unrepairable.length} left unresolved.`,
+            );
+          }}
+          onConfirm={async () => {
+            if (!bulkRepairPrompt) return;
+            const { repaired, unrepairable } = bulkRepairPrompt;
+            setBulkRepairPrompt(null);
+            const results = await Promise.allSettled(
+              unrepairable.map((u) =>
+                window.skillsBank
+                  .removeBrokenLinks(
+                    u.name,
+                    u.entries.map((e) => e.agent) as AgentId[],
+                  )
+                  .then(() => u.name),
+              ),
+            );
+            let removed = 0;
+            results.forEach((r, i) => {
+              if (r.status === "fulfilled") {
+                removed += 1;
+              } else {
+                const name = unrepairable[i]!.name;
+                pushAppError({
+                  code: "remove-broken.threw",
+                  message: `${name}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`,
+                  copyableDetails: { name },
+                });
+              }
+            });
+            await refresh();
+            flash(
+              `Repaired ${repaired}; removed dead links and dropped ${removed} unbacked registry entr${
+                removed === 1 ? "y" : "ies"
+              }.`,
+            );
+          }}
         />
 
         {isUpdateModalOpen &&
@@ -1339,7 +1725,7 @@ export function App(): React.ReactElement {
 
         {selected &&
           (() => {
-            const isRegistered = registry.some((r) => r.name === selected.name);
+            const isRegistered = registryByName.has(selected.name);
             const installations = installed.filter(
               (i) => i.name === selected.name,
             );
@@ -1372,9 +1758,7 @@ export function App(): React.ReactElement {
                   // unregistered skills get delete/keep only, including
                   // broken stragglers; registered skills get the full
                   // three-action picker excluding broken (Repair handles those).
-                  const isRegistered = registry.some(
-                    (r) => r.name === selected.name,
-                  );
+                  const isRegistered = registryByName.has(selected.name);
                   const conflicts = isRegistered
                     ? installations.filter(
                         (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
@@ -1413,7 +1797,6 @@ export function App(): React.ReactElement {
                         const r = results[0]!;
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1429,7 +1812,6 @@ export function App(): React.ReactElement {
                         );
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1445,7 +1827,6 @@ export function App(): React.ReactElement {
                         );
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1461,7 +1842,6 @@ export function App(): React.ReactElement {
                         );
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1475,7 +1855,6 @@ export function App(): React.ReactElement {
                         const r = await window.skillsBank.hide(selected.name);
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1489,7 +1868,6 @@ export function App(): React.ReactElement {
                         const r = await window.skillsBank.unhide(selected.name);
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1500,8 +1878,14 @@ export function App(): React.ReactElement {
                   classifyDrawerState(selected, installed, isRegistered)
                     .capabilities.canUnregister
                     ? async () => {
+                        // Remove-from-registry is a terminating action
+                        // for this surface — close the drawer up-front
+                        // so the result (toast or ErrorPanel) is the
+                        // only thing the user has to read.
+                        const name = selected.name;
+                        setSelected(null);
                         const r = await window.skillsBank.unregister(
-                          selected.name,
+                          name,
                           settings.unregisterDestinationAgent,
                         );
                         if (r.ok && r.wasAdopted) {
@@ -1527,12 +1911,16 @@ export function App(): React.ReactElement {
                           } else {
                             flash(r.message);
                           }
+                        } else if (r.error) {
+                          // Structured failure — route to the
+                          // persistent ErrorPanel so the user can
+                          // see details, copy, and (Bundle C) act on
+                          // a suggestedAction.
+                          pushAppError(r.error);
                         } else {
                           flash(r.message);
                         }
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
-                          setSelected(null);
                         }
                         await refresh();
                       }

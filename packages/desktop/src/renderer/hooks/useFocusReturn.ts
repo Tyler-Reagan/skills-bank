@@ -34,16 +34,18 @@ export function useInitialFocus<T extends HTMLElement>(
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-    // Find the first focusable element within the container.
-    const focusable = root.querySelector<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable) {
-      try {
-        focusable.focus({ preventScroll: true });
-      } catch {
-        // ignore
-      }
+    // Focus the container itself. The container must carry
+    // tabIndex=-1 to accept programmatic focus without becoming
+    // tab-navigable. We deliberately do NOT then move focus to a
+    // child element — auto-grabbing focus on a destructive close
+    // button (e.g. the X) is hostile, and Tab from the container
+    // reaches every interactive child anyway. Esc handling is
+    // independent of which element has focus thanks to the
+    // document-level capture listener in useEscapeToClose.
+    try {
+      root.focus({ preventScroll: true });
+    } catch {
+      // ignore
     }
   }, [containerRef]);
 }

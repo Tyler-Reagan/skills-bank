@@ -1,38 +1,13 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import {
+  AGENT_LABELS,
+  AGENT_PATHS,
+  ALL_AGENT_IDS as ALL_AGENTS,
+} from "../agentDisplay.js";
+import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
-
-const AGENT_LABELS: Record<AgentId, string> = {
-  claude: "Claude Code",
-  cursor: "Cursor",
-  gemini: "Gemini",
-  copilot: "GitHub Copilot",
-  continue: "Continue",
-  cline: "Cline",
-  codex: "OpenAI Codex",
-  agents: "Agents (shared)",
-};
-const AGENT_PATHS: Record<AgentId, string> = {
-  claude: "~/.claude",
-  cursor: "~/.cursor",
-  gemini: "~/.gemini",
-  copilot: "~/.copilot",
-  continue: "~/.continue",
-  cline: "~/.cline",
-  codex: "~/.codex",
-  agents: "~/.agents",
-};
-const ALL_AGENTS: AgentId[] = [
-  "claude",
-  "cursor",
-  "gemini",
-  "copilot",
-  "continue",
-  "cline",
-  "codex",
-  "agents",
-];
+import { Icon } from "./Icon.js";
 
 type GridColumns = "auto" | "2" | "3" | "4";
 type SearchDebounce = "off" | "100" | "250";
@@ -114,6 +89,8 @@ export function SettingsModal({
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  useInitialFocus(modalRef);
   const [draft, setDraft] = useState<AppSettings>(settings);
 
   const toggleAgent = (id: AgentId) => {
@@ -132,46 +109,32 @@ export function SettingsModal({
 
   return (
     <div style={overlay}>
-      <div style={modal} role="dialog" aria-modal="true" aria-label="Settings">
-        <h2 style={{ marginTop: 0 }}>Settings</h2>
+      <div
+        ref={modalRef}
+        style={modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings"
+        tabIndex={-1}
+      >
+        <div style={modalHeader}>
+          <h2 style={{ margin: 0 }}>Settings</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+            style={closeBtn}
+          >
+            <Icon name="x" size="md" />
+          </button>
+        </div>
+        <p style={hint}>
+          Preferences for how the app behaves day-to-day. Registry source and
+          identity live under <strong>Account</strong> settings.
+        </p>
 
-        <section style={section}>
-          <h3 style={sectionTitle}>Registry source</h3>
-          <p style={hint}>
-            Where your registry lives. Local-bundled (the default) keeps it on
-            this machine. Linking a GitHub repo is on the way — see the plan
-            for details.
-          </p>
-          <div style={{ marginTop: 8 }}>
-            <label
-              style={{
-                display: "block",
-                padding: "6px 0",
-              }}
-            >
-              <input type="radio" checked readOnly />{" "}
-              <strong>Local bundled</strong>{" "}
-              <span style={hint}>
-                — selected. Use Export registry to back it up or move it.
-              </span>
-            </label>
-            <label
-              style={{
-                display: "block",
-                padding: "6px 0",
-                opacity: 0.6,
-              }}
-            >
-              <input type="radio" disabled />{" "}
-              <strong>Link a GitHub repo… (Coming soon)</strong>
-            </label>
-            <p style={{ ...hint, marginTop: 4 }}>
-              Find the full plan in{" "}
-              <code>docs/plans/03-github-backed-mode.md</code> in the repo.
-            </p>
-          </div>
-        </section>
-
+        <h3 style={groupHeading}>Skills</h3>
         <section style={section}>
           <h3 style={sectionTitle}>Registration</h3>
           <p style={hint}>
@@ -229,6 +192,7 @@ export function SettingsModal({
 
         <section style={section}>
           <h3 style={sectionTitle}>Default install agents</h3>
+          {/* end of Skills group; Display + Advanced groups follow. */}
           <p style={hint}>
             When you install a skill from the Registry tab, link it into these
             agent directories. Leave all unchecked to broadcast to every agent
@@ -251,6 +215,7 @@ export function SettingsModal({
           </div>
         </section>
 
+        <h3 style={groupHeading}>Display</h3>
         <section style={section}>
           <h3 style={sectionTitle}>Card grid columns</h3>
           <p style={hint}>
@@ -274,6 +239,7 @@ export function SettingsModal({
           </div>
         </section>
 
+        <h3 style={groupHeading}>Advanced</h3>
         <section style={section}>
           <h3 style={sectionTitle}>Search debounce</h3>
           <p style={hint}>
@@ -401,10 +367,29 @@ const modal: React.CSSProperties = {
   border: "1px solid var(--border-hi)",
   borderRadius: 8,
   padding: 24,
-  width: 520,
+  width: 560,
   maxWidth: "90vw",
   maxHeight: "85vh",
   overflowY: "auto",
+  outline: "none",
+};
+const modalHeader: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 8,
+  marginBottom: 4,
+};
+const closeBtn: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  color: "var(--text-3)",
+  padding: 4,
+  borderRadius: 4,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 const section: React.CSSProperties = {
   marginBottom: 24,
@@ -416,6 +401,14 @@ const sectionTitle: React.CSSProperties = {
   fontWeight: 600,
   letterSpacing: "-0.01em",
   margin: "0 0 4px 0",
+};
+const groupHeading: React.CSSProperties = {
+  margin: "20px 0 4px 0",
+  fontSize: 11,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  color: "var(--text-3)",
 };
 const hint: React.CSSProperties = {
   fontSize: 12,

@@ -1,19 +1,9 @@
 import React, { useState } from "react";
-import type { AgentId, InstalledSkill } from "@skills-bank/core";
+import type { InstalledSkill } from "@skills-bank/core";
+import { AGENT_LABELS } from "../agentDisplay.js";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
-
-const AGENT_LABELS: Record<AgentId, string> = {
-  claude: "Claude Code",
-  cursor: "Cursor",
-  gemini: "Gemini",
-  copilot: "GitHub Copilot",
-  continue: "Continue",
-  cline: "Cline",
-  codex: "OpenAI Codex",
-  agents: "Agents (shared)",
-};
 
 interface Props {
   name: string;
@@ -58,8 +48,8 @@ export function DeleteUnregisteredConfirm({
     <div style={overlay}>
       <div style={modal} role="dialog" aria-modal="true">
         <h2 style={{ marginTop: 0 }}>
-          <Icon name="alert-triangle" size="sm" /> Delete{" "}
-          <code>{name}</code> from this machine?
+          <Icon name="alert-triangle" size="sm" /> Delete <code>{name}</code>{" "}
+          from this machine?
         </h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
           This permanently deletes the files listed below. This cannot be
@@ -131,10 +121,14 @@ export function DeleteUnregisteredConfirm({
           >
             {submitting ? (
               <>
-                <span className="spinner inline" /> Deleting…
+                <span className="spinner inline" /> Deleting
               </>
+            ) : installations.length === 0 ? (
+              "Nothing to delete"
             ) : (
-              `Delete from this machine`
+              `Delete ${realDirs.length + symlinks.length} item${
+                realDirs.length + symlinks.length === 1 ? "" : "s"
+              }`
             )}
           </button>
         </div>

@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
 import { invalidateCanonCache } from "./canon.js";
+import { type AppError, fromCaught, makeAppError } from "./errors.js";
 import {
   readExternalRegistry,
   removeExternalRegistryEntry,
@@ -22,6 +23,16 @@ export interface UnregisterOptions {
   destination: AgentId;
 }
 
+export interface UnregisterOpOptions extends UnregisterOptions {
+  /**
+   * When true, an existing folder at the destination is removed
+   * before the move. Routes through the `unregister.destination-collision`
+   * suggestedAction path; default `false` preserves the safer "refuse
+   * and surface a collision error" behavior.
+   */
+  force?: boolean;
+}
+
 export interface UnregisterResult {
   ok: boolean;
   name: string;
@@ -32,8 +43,10 @@ export interface UnregisterResult {
   wasAdopted: boolean;
   /** Symlinks rewritten to point at the new location (adopted). */
   rewrites: UninstallTargetResult[];
-  /** Aggregate errors from the operation. */
-  errors: Array<{ agent?: AgentId; message: string }>;
+  /** Per-row failures, structured. */
+  errors: AppError[];
+  /** Top-level error when `ok=false`. */
+  error?: AppError;
 }
 
 /**
@@ -53,18 +66,24 @@ export interface UnregisterResult {
  */
 export function unregisterSkill(
   name: string,
-  opts: UnregisterOptions,
+  opts: UnregisterOpOptions,
 ): UnregisterResult {
   const index = buildRegistryIndex(opts.registryRoot);
   const entry = index.entries.find((e) => e.name === name);
   if (!entry) {
+    const error = makeAppError({
+      code: "unregister.not-in-registry",
+      message: `${name} is not in the registry`,
+      copyableDetails: { name },
+    });
     return {
       ok: false,
       name,
-      message: `${name} is not in the registry`,
+      message: error.message,
       wasAdopted: false,
       rewrites: [],
-      errors: [{ message: `${name} is not in the registry` }],
+      errors: [error],
+      error,
     };
   }
   const wasAdopted = entry.adopted !== false;
@@ -76,20 +95,26 @@ export function unregisterSkill(
 function unregisterAdopted(
   entry: RegistryEntry,
   name: string,
-  opts: UnregisterOptions,
+  opts: UnregisterOpOptions,
 ): UnregisterResult {
   const skillsRoot = path.resolve(opts.registryRoot, "skills");
   const sourceDir = path.resolve(opts.registryRoot, entry.path);
   // Guard: source must live under registryRoot/skills.
   const rel = path.relative(skillsRoot, sourceDir);
   if (rel.startsWith("..") || path.isAbsolute(rel) || rel === "") {
+    const error = makeAppError({
+      code: "unregister.source-outside-skills-root",
+      message: `refusing to unregister: source ${sourceDir} is outside ${skillsRoot}`,
+      copyableDetails: { sourceDir, skillsRoot },
+    });
     return {
       ok: false,
       name,
-      message: `refusing to unregister: source ${sourceDir} is outside ${skillsRoot}`,
+      message: error.message,
       wasAdopted: true,
       rewrites: [],
-      errors: [{ message: `source outside skills root` }],
+      errors: [error],
+      error,
     };
   }
   if (!fs.existsSync(sourceDir)) {
@@ -116,33 +141,110 @@ function unregisterAdopted(
 
   const destBase = getAgentSkillsDir(opts.destination);
   const destDir = path.join(destBase, name);
-  const errors: Array<{ agent?: AgentId; message: string }> = [];
+  const errors: AppError[] = [];
 
   try {
     fs.mkdirSync(destBase, { recursive: true });
   } catch (err) {
+    const error = makeAppError({
+      code: "unregister.cannot-create-destination",
+      message: `cannot create destination ${destBase}: ${(err as Error).message}`,
+      copyableDetails: { destBase, stack: (err as Error).stack ?? "" },
+    });
     return {
       ok: false,
       name,
-      message: `cannot create destination ${destBase}: ${(err as Error).message}`,
+      message: error.message,
       wasAdopted: true,
       rewrites: [],
-      errors: [{ message: (err as Error).message }],
+      errors: [error],
+      error,
     };
+  }
+
+  // If `destDir` is itself a symlink that points at the source we're
+  // about to move (typical install→register→unregister: the file
+  // originated in agent dir, got adopted into the bank, and the agent
+  // dir kept a symlink to the bank copy), unlink it now. The move
+  // would otherwise see "destination exists" and refuse, surfacing a
+  // spurious collision on the happy path.
+  try {
+    const stat = fs.lstatSync(destDir);
+    if (stat.isSymbolicLink()) {
+      const resolved = (() => {
+        try {
+          return fs.realpathSync(destDir);
+        } catch {
+          return "";
+        }
+      })();
+      if (resolved === sourceDir) {
+        try {
+          fs.unlinkSync(destDir);
+        } catch {
+          // Fall through — the existsSync check below will catch it
+          // and surface a proper collision error.
+        }
+      }
+    }
+  } catch {
+    // destDir doesn't exist — nothing to clean up.
   }
 
   // If the destination already has a folder by this name, refuse —
   // the user has a name collision with something already at the
-  // shared agents dir. They can resolve manually.
+  // shared agents dir. With `force: true`, wipe the existing folder
+  // first (Bundle C's overwrite affordance). Otherwise return a
+  // structured collision error so the renderer can offer the
+  // pick-another-destination flow.
   if (fs.existsSync(destDir)) {
-    return {
-      ok: false,
-      name,
-      message: `destination ${destDir} already exists; resolve manually before unregistering`,
-      wasAdopted: true,
-      rewrites: [],
-      errors: [{ message: `destination collision: ${destDir}` }],
-    };
+    if (opts.force) {
+      try {
+        fs.rmSync(destDir, { recursive: true, force: true });
+      } catch (err) {
+        const error = makeAppError({
+          code: "unregister.force-overwrite-failed",
+          message: `failed to remove existing folder at ${destDir}: ${(err as Error).message}`,
+          copyableDetails: { destDir, stack: (err as Error).stack ?? "" },
+        });
+        return {
+          ok: false,
+          name,
+          message: error.message,
+          wasAdopted: true,
+          rewrites: [],
+          errors: [error],
+          error,
+        };
+      }
+    } else {
+      const error = makeAppError({
+        code: "unregister.destination-collision",
+        message: `Can't move ${name} to ${destDir} — a folder already exists there.`,
+        suggestedActions: [
+          {
+            kind: "open-unregister-destination-settings",
+            label: "Pick another destination",
+            tone: "primary",
+          },
+          {
+            kind: "unregister-force-overwrite",
+            label: "Overwrite existing",
+            tone: "danger",
+          },
+        ],
+        copyableDetails: { name, destDir, destination: opts.destination },
+      });
+      return {
+        ok: false,
+        name,
+        message: error.message,
+        wasAdopted: true,
+        rewrites: [],
+        errors: [error],
+        error,
+      };
+    }
   }
 
   // Cross-device fallback: rename fails with EXDEV if dest is on a
@@ -155,13 +257,15 @@ function unregisterAdopted(
       fs.cpSync(sourceDir, destDir, { recursive: true });
       fs.rmSync(sourceDir, { recursive: true, force: true });
     } else {
+      const error = fromCaught("unregister.move-failed", err);
       return {
         ok: false,
         name,
-        message: `move failed: ${(err as Error).message}`,
+        message: `move failed: ${error.message}`,
         wasAdopted: true,
         rewrites: [],
-        errors: [{ message: (err as Error).message }],
+        errors: [error],
+        error,
       };
     }
   }
@@ -195,7 +299,13 @@ function unregisterAdopted(
         }
         rewrites.push({ agent: agent.id, linkPath, removed: true });
       } catch (err) {
-        errors.push({ agent: agent.id, message: (err as Error).message });
+        errors.push(
+          makeAppError({
+            code: "unregister.rewrite-failed",
+            message: `${agent.id}: ${(err as Error).message}`,
+            copyableDetails: { agent: agent.id, linkPath },
+          }),
+        );
       }
     }
   }
@@ -220,17 +330,23 @@ function unregisterAdopted(
 
 function unregisterExternal(
   name: string,
-  opts: UnregisterOptions,
+  opts: UnregisterOpOptions,
 ): UnregisterResult {
   const entries = readExternalRegistry(opts.registryRoot);
   if (!entries.find((e) => e.name === name)) {
+    const error = makeAppError({
+      code: "unregister.no-external-entry",
+      message: `no external entry for ${name}`,
+      copyableDetails: { name },
+    });
     return {
       ok: false,
       name,
-      message: `no external entry for ${name}`,
+      message: error.message,
       wasAdopted: false,
       rewrites: [],
-      errors: [{ message: `no external entry for ${name}` }],
+      errors: [error],
+      error,
     };
   }
   removeExternalRegistryEntry(opts.registryRoot, name);

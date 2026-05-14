@@ -31,10 +31,12 @@ import {
   acceptDriftTakeCanonical,
   finalizeSkillsDir,
   forgetMissingEntry,
+  fromCaught,
   getExportInfo,
   hideCanonSkill,
   installSkill,
   invalidateCanonCache,
+  makeAppError,
   mergeImportRegistry,
   listInstalled,
   readLastSyncReport,
@@ -63,7 +65,6 @@ import {
   type Bounds,
   type DiscoverStatus,
   type HeaderMenuAction,
-  type HeaderMenuContext,
   type SkillDiffFile,
   type SkillDiffRequest,
   type SkillDiffResult,
@@ -107,7 +108,7 @@ interface AppConfig {
   // Version string the user has chosen to skip via the update-notes modal.
   // Suppresses auto-open of the modal for that specific version only — the
   // app still auto-checks and auto-downloads, and the user can always
-  // re-summon the modal via the "Check for Updates…" menu item.
+  // re-summon the modal via the "Check for Updates" menu item.
   dismissedUpdateVersion: string | null;
 }
 
@@ -576,85 +577,17 @@ ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
     }
     return { ok: true };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
-// ─── Header native menu ──────────────────────────────────────────────────────
-//
-// The header "Settings" / account button triggers a native Electron popup
-// menu instead of a React popover so it renders above the WebContentsView.
-// Action strings are sent back to the renderer via IPC.headerMenuAction.
-
-ipcMain.handle(IPC.showHeaderMenu, (event, ctx: HeaderMenuContext) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (!win) return;
-
-  const send = (action: HeaderMenuAction) =>
-    event.sender.send(IPC.headerMenuAction, action);
-
-  const template: MenuItemConstructorOptions[] = [];
-
-  if (ctx.registrySource === "github") {
-    if (ctx.user) {
-      template.push({
-        label: `Signed in as ${ctx.user.login}`,
-        enabled: false,
-      });
-      template.push({ type: "separator" });
-    }
-    template.push({
-      label: "Choose registry repo…",
-      click: () => send("changeRegistry"),
-    });
-  } else {
-    template.push({ label: "Using bundled registry", enabled: false });
-    template.push({ type: "separator" });
-    template.push({
-      label: "Link a GitHub repo… (Coming soon)",
-      click: () => send("githubLinkComingSoon"),
-    });
-    template.push({ type: "separator" });
-    template.push({
-      label: "Import a registry (replace)…",
-      click: () => send("changeRegistry"),
-    });
-    template.push({
-      label: "Merge a registry into mine…",
-      click: () => send("mergeRegistry"),
-    });
-    template.push({
-      label: "Export registry…",
-      click: () => send("exportRegistry"),
-    });
-  }
-
-  if (ctx.showSync) {
-    template.push({ type: "separator" });
-    template.push({ label: "Sync skills", click: () => send("sync") });
-  }
-
-  template.push({ type: "separator" });
-  template.push({ label: "Settings…", click: () => send("openSettings") });
-  template.push({
-    label: "Keyboard shortcuts…",
-    click: () => send("openShortcuts"),
-  });
-  template.push({
-    label: "Check for app updates",
-    click: () => send("checkForUpdates"),
-  });
-
-  if (ctx.registrySource === "github") {
-    template.push({ type: "separator" });
-    template.push({
-      label: "Sign out of GitHub",
-      click: () => send("signOut"),
-    });
-  }
-
-  Menu.buildFromTemplate(template).popup({ window: win });
-});
+// Header native popup-menu retired with the Account/Settings
+// decomposition — the header now renders two React-side triggers
+// (AccountTrigger + SettingsTrigger). The macOS menubar still
+// dispatches via the headerMenuAction IPC, handled below.
 
 // macOS menu bar. Items that affect renderer state send via IPC.headerMenuAction.
 // The menu is built once at launch; registry-source-specific items (e.g. Export) are
@@ -673,7 +606,7 @@ function buildAppMenu(): Menu {
         { role: "about" },
         { type: "separator" },
         {
-          label: "Settings…",
+          label: "Settings",
           accelerator: "CmdOrCtrl+,",
           click: () => send("openSettings"),
         },
@@ -804,7 +737,12 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
 // requiring the user to remember to rebuild.
 ipcMain.handle(IPC.listRegistry, () => {
   if (!registryRoot) return [];
-  return buildRegistryIndex(registryRoot, { writeFile: true }).entries;
+  // Read path — do not write index.json. The renderer hits this on
+  // every refresh; writing here was producing dozens of disk writes per
+  // session and silently overwriting git info that the explicit
+  // Rebuild-index button had persisted. Mutation handlers and the
+  // explicit rebuildIndex IPC are responsible for writing.
+  return buildRegistryIndex(registryRoot).entries;
 });
 
 ipcMain.handle(IPC.listInstalled, (_e, customDirs?: string[]) => {
@@ -896,7 +834,10 @@ function walkFiles(root: string): string[] {
   return out;
 }
 
-function computeFolderDiff(leftRoot: string, rightRoot: string): SkillDiffFile[] {
+function computeFolderDiff(
+  leftRoot: string,
+  rightRoot: string,
+): SkillDiffFile[] {
   const leftFiles = new Set(walkFiles(leftRoot));
   const rightFiles = new Set(walkFiles(rightRoot));
   const allPaths = new Set<string>([...leftFiles, ...rightFiles]);
@@ -1017,7 +958,10 @@ ipcMain.handle(
         errors: r.errors,
       };
     } catch (err) {
-      return { ok: false, message: (err as Error).message, errors: [] };
+      return (() => {
+        const error = fromCaught("ipc.unknown", err);
+        return { ok: false, message: error.message, error, errors: [] };
+      })();
     }
   },
 );
@@ -1055,7 +999,10 @@ ipcMain.handle(IPC.deregister, (_e, name: string) => {
       errors: r.errors,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message, errors: [] };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error, errors: [] };
+    })();
   }
 });
 
@@ -1080,7 +1027,10 @@ ipcMain.handle(IPC.hide, (_e, name: string) => {
     hideCanonSkill(registryRoot, name);
     return { ok: true, message: `Hid ${name} from the default views.` };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1090,7 +1040,10 @@ ipcMain.handle(IPC.unhide, (_e, name: string) => {
     unhideCanonSkill(registryRoot, name);
     return { ok: true, message: `Unhid ${name}.` };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1120,7 +1073,10 @@ ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
       message: `Kept local edits to ${name}; future syncs will leave it alone.`,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1152,7 +1108,10 @@ ipcMain.handle(IPC.takeCanonical, (_e, name: string) => {
       message: `Re-baselined ${name} as canonical; drift cleared.`,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1170,7 +1129,10 @@ ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
     });
     return r;
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1196,9 +1158,11 @@ ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
       removedSymlinks: r.removedSymlinks,
     };
   } catch (err) {
+    const error = fromCaught("delete-unregistered.unknown", err);
     return {
       ok: false,
-      message: (err as Error).message,
+      message: error.message,
+      error,
       removedDirs: [],
       removedSymlinks: [],
     };
@@ -1209,42 +1173,63 @@ ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
 // configured agents dir (default ~/.agents/skills/) and removes the
 // registry entry. Non-adopted skills just lose the entry; origin
 // files untouched.
-ipcMain.handle(IPC.unregister, (_e, name: string, destination: AgentId) => {
-  if (!registryRoot) {
-    return {
-      ok: false,
-      message: NO_ROOT_MSG,
-      wasAdopted: false,
-      errors: [],
-    };
-  }
-  const classification = classifySkillByName(registryRoot, name);
-  if (classification && !classification.capabilities.canUnregister) {
-    return {
-      ok: false,
-      message: `Cannot unregister ${name} from this state (${classification.state}).`,
-      wasAdopted: false,
-      errors: [],
-    };
-  }
-  try {
-    const r = unregisterSkill(name, { registryRoot, destination });
-    return {
-      ok: r.ok,
-      message: r.message,
-      destinationPath: r.destinationPath,
-      wasAdopted: r.wasAdopted,
-      errors: r.errors,
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      message: (err as Error).message,
-      wasAdopted: false,
-      errors: [],
-    };
-  }
-});
+ipcMain.handle(
+  IPC.unregister,
+  (_e, name: string, destination: AgentId, force?: boolean) => {
+    if (!registryRoot) {
+      const error = makeAppError({
+        code: "config.no-registry-root",
+        message: NO_ROOT_MSG,
+      });
+      return {
+        ok: false,
+        message: NO_ROOT_MSG,
+        wasAdopted: false,
+        errors: [error],
+        error,
+      };
+    }
+    const classification = classifySkillByName(registryRoot, name);
+    if (classification && !classification.capabilities.canUnregister) {
+      const error = makeAppError({
+        code: "unregister.not-allowed-from-state",
+        message: `Cannot unregister ${name} from this state (${classification.state}).`,
+        copyableDetails: { name, state: classification.state },
+      });
+      return {
+        ok: false,
+        message: error.message,
+        wasAdopted: false,
+        errors: [error],
+        error,
+      };
+    }
+    try {
+      const r = unregisterSkill(name, {
+        registryRoot,
+        destination,
+        force: force ?? false,
+      });
+      return {
+        ok: r.ok,
+        message: r.message,
+        destinationPath: r.destinationPath,
+        wasAdopted: r.wasAdopted,
+        errors: r.errors,
+        error: r.error,
+      };
+    } catch (err) {
+      const error = fromCaught("unregister.unknown", err);
+      return {
+        ok: false,
+        message: error.message,
+        wasAdopted: false,
+        errors: [error],
+        error,
+      };
+    }
+  },
+);
 
 // Stuck-state recovery: drop the pending-conflicts.json state file so
 // the next sync attempt starts clean. Idempotent — fine to call when no
@@ -1260,7 +1245,10 @@ ipcMain.handle(IPC.clearPendingConflicts, () => {
         : "No pending sync state to clear.",
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1291,7 +1279,10 @@ ipcMain.handle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
       keptCount,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message, errors: [] };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error, errors: [] };
+    })();
   }
 });
 
@@ -1368,9 +1359,11 @@ ipcMain.handle(IPC.rebuildIndex, () => {
       entries: index.entries.length,
     };
   } catch (err) {
+    const error = fromCaught("rebuild-index.unknown", err);
     return {
       ok: false,
-      message: (err as Error).message,
+      message: error.message,
+      error,
       entries: 0,
     };
   }
@@ -1437,7 +1430,10 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
       result: r,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1462,7 +1458,10 @@ ipcMain.handle(IPC.exportRegistry, async () => {
       skillCount: r.skillCount,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1544,7 +1543,10 @@ ipcMain.handle(IPC.importRegistryMerge, async () => {
       report,
     };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1565,9 +1567,11 @@ ipcMain.handle(
         report,
       };
     } catch (err) {
+      const error = fromCaught("merge-import.unknown", err);
       return {
         ok: false,
-        message: (err as Error).message,
+        message: error.message,
+        error,
         report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
       };
     }
@@ -1588,7 +1592,7 @@ function summarizeMerge(
   return parts.join(", ") || "no changes";
 }
 
-// Read up to 8 KB of SKILL.md text, with a "…(truncated)" marker when
+// Read up to 8 KB of SKILL.md text, with a "(truncated)" marker when
 // the file is bigger. Pulled out so the readSkillMd IPC can reuse it
 // against any candidate path (registry copy or agent dir).
 function readSkillMdText(skillMdPath: string): string | null {
@@ -1599,7 +1603,7 @@ function readSkillMdText(skillMdPath: string): string | null {
     const bytes = fs.readSync(fd, buf, 0, 8192, 0);
     const total = fs.statSync(skillMdPath).size;
     const text = buf.subarray(0, bytes).toString("utf8");
-    return total > bytes ? text + "\n\n…(truncated)" : text;
+    return total > bytes ? text + "\n\n(truncated)" : text;
   } finally {
     fs.closeSync(fd);
   }
@@ -1638,7 +1642,15 @@ ipcMain.handle(IPC.openInFinder, async (_e, absolutePath: string) => {
 
 ipcMain.handle(
   IPC.editTags,
-  (_e, name: string, tags: unknown): { ok: boolean; message: string } => {
+  (
+    _e,
+    name: string,
+    tags: unknown,
+  ): {
+    ok: boolean;
+    message: string;
+    error?: import("@skills-bank/core").AppError;
+  } => {
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
     if (!Array.isArray(tags)) {
       return { ok: false, message: "tags must be an array" };
@@ -1651,7 +1663,7 @@ ipcMain.handle(
       if (trimmed.length > 64) {
         return {
           ok: false,
-          message: `tag "${trimmed.slice(0, 24)}…" exceeds 64 chars`,
+          message: `tag "${trimmed.slice(0, 24)}" exceeds 64 chars`,
         };
       }
       if (cleaned.includes(trimmed)) continue;
@@ -1670,14 +1682,18 @@ ipcMain.handle(
     try {
       raw = JSON.parse(fs.readFileSync(metaPath, "utf8"));
     } catch (err) {
-      return { ok: false, message: `meta.json: ${(err as Error).message}` };
+      const error = fromCaught("edit-tags.meta-parse-failed", err);
+      return { ok: false, message: `meta.json: ${error.message}`, error };
     }
     if (cleaned.length === 0) delete raw["tags"];
     else raw["tags"] = cleaned;
     try {
       fs.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
     } catch (err) {
-      return { ok: false, message: (err as Error).message };
+      return (() => {
+        const error = fromCaught("ipc.unknown", err);
+        return { ok: false, message: error.message, error };
+      })();
     }
     return {
       ok: true,
@@ -1794,9 +1810,9 @@ ipcMain.handle(IPC.checkForUpdates, async () => {
     await autoUpdater.checkForUpdates();
     return { ok: true, message: "checking for updates" };
   } catch (err) {
-    const message = (err as Error).message;
-    broadcastUpdateStatus({ kind: "error", message });
-    return { ok: false, message };
+    const error = fromCaught("update.check-failed", err);
+    broadcastUpdateStatus({ kind: "error", message: error.message });
+    return { ok: false, message: error.message, error };
   }
 });
 
@@ -1813,9 +1829,9 @@ ipcMain.handle(IPC.downloadUpdate, async () => {
     await autoUpdater.downloadUpdate();
     return { ok: true, message: "download started" };
   } catch (err) {
-    const message = (err as Error).message;
-    broadcastUpdateStatus({ kind: "error", message });
-    return { ok: false, message };
+    const error = fromCaught("update.download-failed", err);
+    broadcastUpdateStatus({ kind: "error", message: error.message });
+    return { ok: false, message: error.message, error };
   }
 });
 
@@ -1848,7 +1864,11 @@ function broadcastSyncStatus(status: SyncStatus): void {
   }
 }
 
-async function runSync(): Promise<{ ok: boolean; message: string }> {
+async function runSync(): Promise<{
+  ok: boolean;
+  message: string;
+  error?: import("@skills-bank/core").AppError;
+}> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     broadcastSyncStatus({ kind: "fetching" });
@@ -1888,9 +1908,9 @@ async function runSync(): Promise<{ ok: boolean; message: string }> {
       fetched.cleanup();
     }
   } catch (err) {
-    const message = (err as Error).message;
-    broadcastSyncStatus({ kind: "error", message });
-    return { ok: false, message };
+    const error = fromCaught("sync.run-failed", err);
+    broadcastSyncStatus({ kind: "error", message: error.message });
+    return { ok: false, message: error.message, error };
   }
 }
 
@@ -1914,7 +1934,10 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
   try {
     writeSyncDecisions(registryRoot, decisions);
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
   return runSync();
 });
@@ -2034,7 +2057,10 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
   try {
     fetched = await fetchCanonicalTarball({ owner, repo, token });
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
   try {
     const skillsDir = path.join(fetched.extractedRoot, "skills");

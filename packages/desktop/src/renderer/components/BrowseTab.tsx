@@ -73,7 +73,7 @@ export function BrowseTab({
           >
             {rebuilding ? (
               <>
-                <span className="spinner inline" /> Refreshing…
+                <span className="spinner inline" /> Refreshing
               </>
             ) : (
               "Refresh"
@@ -108,9 +108,7 @@ export function BrowseTab({
         <span className="tab-intro-heading">
           <strong>Registry</strong>
           <InfoTooltip
-            text={
-              isGithub ? REGISTRY_TOOLTIP_GITHUB : REGISTRY_TOOLTIP_LOCAL
-            }
+            text={isGithub ? REGISTRY_TOOLTIP_GITHUB : REGISTRY_TOOLTIP_LOCAL}
             label="What is the registry?"
           />
         </span>{" "}

@@ -31,15 +31,15 @@ export function SyncBanner({
   if (status.kind === "fetching") {
     return (
       <div className="sync-banner active" role="status" aria-live="polite">
-        <span className="spinner inline" aria-hidden="true" /> Fetching
-        bundled skills…
+        <span className="spinner inline" aria-hidden="true" /> Fetching bundled
+        skills
       </div>
     );
   }
   if (status.kind === "applying") {
     return (
       <div className="sync-banner active" role="status" aria-live="polite">
-        <span className="spinner inline" aria-hidden="true" /> Applying upserts…
+        <span className="spinner inline" aria-hidden="true" /> Applying upserts
       </div>
     );
   }

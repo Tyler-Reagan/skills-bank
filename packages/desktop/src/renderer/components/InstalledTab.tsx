@@ -130,6 +130,14 @@ interface Props {
    */
   onResolveAllConflicts?: (groups: InstalledGroup[]) => void;
   /**
+   * Bulk-repair broken symlinks across multiple registered skills.
+   * Receives every group whose primary action is `repair-broken`.
+   * Host iterates the list, calls repairBrokenLinks per skill,
+   * surfaces a progress toast, and routes any failures through
+   * ErrorPanel.
+   */
+  onRepairAllBroken?: (groups: InstalledGroup[]) => void;
+  /**
    * Inline shortcut for the Unregistered section's per-card primary
    * action. Adopts the single non-ours installation into the registry
    * (the common path). Foreign-symlink alternatives like Register-as-
@@ -158,6 +166,7 @@ export function InstalledTab({
   onResolveConflicts,
   onRepairBroken,
   onResolveAllConflicts,
+  onRepairAllBroken,
   onInlineRegister,
   onInlineDelete,
 }: Props): React.ReactElement {
@@ -196,7 +205,7 @@ export function InstalledTab({
               Scan for existing skills
             </button>
             <button className="btn" onClick={onAddCustomSkillsDir}>
-              Add a skills directory…
+              Add a skills directory
             </button>
           </div>
         </div>
@@ -302,6 +311,11 @@ export function InstalledTab({
                 c.classification.capabilities.primary === "resolve-conflicts",
             )
             .map((c) => c.g);
+          const bulkRepairable = needsAttention
+            .filter(
+              (c) => c.classification.capabilities.primary === "repair-broken",
+            )
+            .map((c) => c.g);
           return (
             <section>
               <header className="section-header">
@@ -325,21 +339,38 @@ export function InstalledTab({
                     no drawer detour.
                   </p>
                 </div>
-                {bulkResolvable.length > 1 && onResolveAllConflicts && (
-                  <button
-                    className="btn warn"
-                    onClick={() => onResolveAllConflicts(bulkResolvable)}
-                    title={`Replace duplicates with symlinks to Skills Bank for ${bulkResolvable.length} skills in one step.`}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <Icon name="alert-triangle" size="sm" />
-                    Resolve all ({bulkResolvable.length})
-                  </button>
-                )}
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  {bulkRepairable.length > 1 && onRepairAllBroken && (
+                    <button
+                      className="btn"
+                      onClick={() => onRepairAllBroken(bulkRepairable)}
+                      title={`Re-link the broken symlinks for ${bulkRepairable.length} skills in one step. If a link can't be repaired (the registry copy is gone) you'll be prompted to remove the dead links.`}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <Icon name="broken-link" size="sm" />
+                      Fix broken link(s) ({bulkRepairable.length})
+                    </button>
+                  )}
+                  {bulkResolvable.length > 1 && onResolveAllConflicts && (
+                    <button
+                      className="btn warn"
+                      onClick={() => onResolveAllConflicts(bulkResolvable)}
+                      title={`Replace duplicates with symlinks to Skills Bank for ${bulkResolvable.length} skills in one step.`}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <Icon name="alert-triangle" size="sm" />
+                      Resolve all ({bulkResolvable.length})
+                    </button>
+                  )}
+                </div>
               </header>
               <div className="skills-grid">
                 {needsAttention.map((c, i) => {
@@ -362,7 +393,7 @@ export function InstalledTab({
                   let inlineHandler: (() => void) | null = null;
                   if (prim === "repair-broken" && onRepairBroken) {
                     const n = classification.brokenCount;
-                    inlineLabel = `Repair broken link${n === 1 ? "" : "s"} (${n})`;
+                    inlineLabel = `Fix broken link${n === 1 ? "" : "s"} (${n})`;
                     inlineHandler = () => onRepairBroken(g);
                   } else if (
                     prim === "resolve-conflicts" &&
@@ -501,7 +532,7 @@ export function InstalledTab({
                             fontWeight: 600,
                           }}
                         >
-                          Delete from this machine
+                          Delete
                         </button>
                       )}
                     </div>
@@ -576,7 +607,7 @@ function CustomSkillsDirs({
           />
         </span>
         <button className="btn" onClick={onAdd}>
-          Add a skills directory…
+          Add a skills directory
         </button>
       </header>
       {dirs.length > 0 && (

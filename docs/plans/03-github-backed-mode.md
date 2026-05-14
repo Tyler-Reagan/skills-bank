@@ -26,13 +26,13 @@ The chip is a separate component from the provenance badge (which surfaces `bund
 
 When the registry is GitHub-backed, the header's **Sync skills** button is replaced by **Refresh from git**. The button runs `git pull --ff-only` against the registry repo and surfaces a diff summary (count of changed/added/removed skills) before applying.
 
-On conflict (`pull --ff-only` fails because the local has diverged), the UI punts to a toast: *"Couldn't fast-forward. Resolve in your terminal and try again."* with a link to the registry repo path. We don't try to recreate git's conflict UX inside the app — it's worse than the real one.
+On conflict (`pull --ff-only` fails because the local has diverged), the UI punts to a toast: _"Couldn't fast-forward. Resolve in your terminal and try again."_ with a link to the registry repo path. We don't try to recreate git's conflict UX inside the app — it's worse than the real one.
 
 ### Commit & push toast
 
 After any registry mutation (Register, Unregister, direct edit-in-Finder), if the registry is GitHub-backed and the change isn't yet committed, a one-time toast surfaces:
 
-> *N skills changed, K not yet committed. [Commit & push…]*
+> _N skills changed, K not yet committed. [Commit & push…]_
 
 Clicking opens a small dialog: a message text field (defaulted to a one-line summary derived from the changed skill names) and a push toggle (defaulted on). Shells to `git add` (specific paths only — never `git add -A`), `git commit`, and optionally `git push`.
 
@@ -40,7 +40,7 @@ Don't replace the git CLI; complement it. Power users can still operate in their
 
 ### Track vs Adopt per-skill at Register time
 
-Replaces the global `Move files into Skills Bank on Register` setting *for GitHub-backed users only*. The Register button on a non-registered skill opens a small dialog with two named options:
+Replaces the global `Move files into Skills Bank on Register` setting _for GitHub-backed users only_. The Register button on a non-registered skill opens a small dialog with two named options:
 
 - **Move into my repo (commit-ready)** — files relocate to `<registryRoot>/skills/<name>/`, agent-dir entry rewrites to a symlink, `adopted: true`. Default selection for non-system paths.
 - **Track in place (leave files where they are)** — registry tracks the external path, `adopted: false`. Default selection for paths that already live under another git repo the user controls (heuristic: parent dir or any ancestor is a separate `.git` repo).
@@ -67,7 +67,7 @@ Persisted state expires when the underlying device flow expires (typically ~15 m
 
 ### `finalize` surface promotion
 
-Today's `finalize` (collapse a symlinked top-level agent dir into a real dir of its own) lives buried in `RegisterModal`'s FinalizeCallout. When this PR ships, promote it to a top-level Settings entry in the GitHub-backed section: *"Collapse symlinked agent dirs…"* — gated on `registrySource === "github"` because that's the audience for whom agent-dir layout is most relevant.
+Today's `finalize` (collapse a symlinked top-level agent dir into a real dir of its own) lives buried in `RegisterModal`'s FinalizeCallout. When this PR ships, promote it to a top-level Settings entry in the GitHub-backed section: _"Collapse symlinked agent dirs…"_ — gated on `registrySource === "github"` because that's the audience for whom agent-dir layout is most relevant.
 
 ## Out-of-scope but accommodated
 

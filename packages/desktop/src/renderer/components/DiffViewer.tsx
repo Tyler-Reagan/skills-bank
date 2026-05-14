@@ -18,11 +18,15 @@ interface Props {
   error?: string | null;
 }
 
-export function DiffViewer({ result, loading, error }: Props): React.ReactElement {
+export function DiffViewer({
+  result,
+  loading,
+  error,
+}: Props): React.ReactElement {
   if (loading) {
     return (
       <div className="diff-viewer-state">
-        <span className="spinner inline" /> Computing diff…
+        <span className="spinner inline" /> Computing diff
       </div>
     );
   }
@@ -101,7 +105,11 @@ function DiffFileRow({ file }: { file: SkillDiffFile }): React.ReactElement {
         )}
       </button>
       {expandable && open && (
-        <pre className="diff-file-body" role="region" aria-label={`Diff for ${file.path}`}>
+        <pre
+          className="diff-file-body"
+          role="region"
+          aria-label={`Diff for ${file.path}`}
+        >
           {renderDiffBody(file.unifiedDiff)}
         </pre>
       )}
@@ -121,7 +129,8 @@ function renderDiffBody(unified: string): React.ReactNode {
     if (line.startsWith("+") && !line.startsWith("+++")) cls += " added";
     else if (line.startsWith("-") && !line.startsWith("---")) cls += " removed";
     else if (line.startsWith("@@")) cls += " hunk";
-    else if (line.startsWith("Index:") || line.startsWith("===")) cls += " header";
+    else if (line.startsWith("Index:") || line.startsWith("==="))
+      cls += " header";
     return (
       <span key={i} className={cls}>
         {line}

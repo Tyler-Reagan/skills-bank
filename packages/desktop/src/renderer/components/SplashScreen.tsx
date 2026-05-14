@@ -18,7 +18,7 @@ export function SplashScreen(): React.ReactElement {
           <span className="spinner" />
         </div>
         <div className="splash-title">Skills Bank</div>
-        <div className="splash-subtitle">Loading…</div>
+        <div className="splash-subtitle">Loading</div>
       </div>
     </div>
   );
