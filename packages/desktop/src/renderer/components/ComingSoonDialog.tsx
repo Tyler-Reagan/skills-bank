@@ -39,11 +39,7 @@ export function ComingSoonDialog({
   if (!open) return null;
 
   return (
-    <div
-      style={overlay}
-      onClick={onClose}
-      role="presentation"
-    >
+    <div style={overlay} onClick={onClose} role="presentation">
       <div
         ref={modalRef}
         style={modal}

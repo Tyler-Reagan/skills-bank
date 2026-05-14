@@ -56,13 +56,18 @@ export function ConflictResolutionModal({
   // re-opening a row doesn't refetch. Failures cache too so we don't
   // hammer the IPC if the source path went away.
   const [diffs, setDiffs] = useState<
-    Record<string, { result: SkillDiffResult | null; loading: boolean; error: string | null }>
+    Record<
+      string,
+      { result: SkillDiffResult | null; loading: boolean; error: string | null }
+    >
   >({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [registryRoot, setRegistryRoot] = useState<string | null>(null);
 
   useEffect(() => {
-    void window.skillsBank.getConfig().then((c) => setRegistryRoot(c.registryRoot));
+    void window.skillsBank
+      .getConfig()
+      .then((c) => setRegistryRoot(c.registryRoot));
   }, []);
 
   const toggleDiff = (c: ConflictEntry) => {
@@ -233,7 +238,9 @@ export function ConflictResolutionModal({
                   style={{ fontSize: 11 }}
                   aria-expanded={!!expanded[c.name]}
                 >
-                  {expanded[c.name] ? "Hide diff" : "Show diff (yours → bundled)"}
+                  {expanded[c.name]
+                    ? "Hide diff"
+                    : "Show diff (yours → bundled)"}
                 </button>
               </div>
               {expanded[c.name] && (

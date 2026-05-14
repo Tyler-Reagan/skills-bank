@@ -39,11 +39,7 @@ export function ErrorPanel({
   };
 
   return (
-    <div
-      className="error-panel"
-      role="alert"
-      aria-live="polite"
-    >
+    <div className="error-panel" role="alert" aria-live="polite">
       <div className="error-panel-row">
         <span className="error-panel-icon" aria-hidden="true">
           <Icon name="alert-triangle" size="sm" />
@@ -99,15 +95,15 @@ export function ErrorPanel({
         <dl className="error-panel-details">
           <div className="error-panel-detail-row">
             <dt>code</dt>
-            <dd><code>{error.code}</code></dd>
+            <dd>
+              <code>{error.code}</code>
+            </dd>
           </div>
           {Object.entries(error.copyableDetails ?? {}).map(([k, v]) => (
             <div key={k} className="error-panel-detail-row">
               <dt>{k}</dt>
               <dd>
-                <code>
-                  {Array.isArray(v) ? v.join(", ") : v}
-                </code>
+                <code>{Array.isArray(v) ? v.join(", ") : v}</code>
               </dd>
             </div>
           ))}

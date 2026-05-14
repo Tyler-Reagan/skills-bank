@@ -36,7 +36,7 @@ skills-bank unhide <name>
 
 The `sync` command errors clearly on github-linked installs:
 
-> *Refresh from git is the right command for a GitHub-linked registry — use `skills-bank refresh` instead.*
+> _Refresh from git is the right command for a GitHub-linked registry — use `skills-bank refresh` instead._
 
 ### Rename `sync-installed` → `relink-installed`
 

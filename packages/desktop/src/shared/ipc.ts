@@ -334,12 +334,26 @@ interface SkillsBankAPI {
     removedDirs: string[];
     removedSymlinks: string[];
   }>;
-  hide(name: string): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  unhide(name: string): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  acceptDrift(name: string): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  takeCanonical(name: string): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  forgetMissing(name: string): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  clearPendingConflicts(): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  hide(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  unhide(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  acceptDrift(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  takeCanonical(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  forgetMissing(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  clearPendingConflicts(): Promise<{
+    ok: boolean;
+    message: string;
+    error?: AppError;
+  }>;
   scan(): Promise<ScanReport>;
   register(
     items: Array<{ name: string; action: RegistrationAction }>,
@@ -369,7 +383,11 @@ interface SkillsBankAPI {
     message: string;
     registryRoot: string | null;
   }>;
-  checkForUpdates(): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  checkForUpdates(): Promise<{
+    ok: boolean;
+    message: string;
+    error?: AppError;
+  }>;
   downloadUpdate(): Promise<{ ok: boolean; message: string; error?: AppError }>;
   quitAndInstallUpdate(): Promise<void>;
   setDismissedUpdateVersion(version: string | null): Promise<void>;

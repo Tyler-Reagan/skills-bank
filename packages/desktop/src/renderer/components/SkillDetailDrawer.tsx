@@ -261,7 +261,9 @@ export function SkillDetailDrawer({
         .map((e) => {
           const agentDetail = e.copyableDetails?.["agent"];
           const agent =
-            typeof agentDetail === "string" ? (agentDetail as AgentId) : ("claude" as AgentId);
+            typeof agentDetail === "string"
+              ? (agentDetail as AgentId)
+              : ("claude" as AgentId);
           return { agent, message: e.message };
         });
       if (!r.ok && forceErrors.length > 0 && onInstallConflict) {

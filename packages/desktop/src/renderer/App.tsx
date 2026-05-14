@@ -897,7 +897,6 @@ export function App(): React.ReactElement {
     );
   }
 
-
   return (
     <RegistrySourceProvider registrySource={authStatus?.registrySource ?? null}>
       <div className="app">
@@ -1654,7 +1653,10 @@ export function App(): React.ReactElement {
             const results = await Promise.allSettled(
               unrepairable.map((u) =>
                 window.skillsBank
-                  .removeBrokenLinks(u.name, u.entries.map((e) => e.agent) as AgentId[])
+                  .removeBrokenLinks(
+                    u.name,
+                    u.entries.map((e) => e.agent) as AgentId[],
+                  )
                   .then(() => u.name),
               ),
             );

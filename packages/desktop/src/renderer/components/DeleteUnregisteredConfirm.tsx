@@ -48,8 +48,8 @@ export function DeleteUnregisteredConfirm({
     <div style={overlay}>
       <div style={modal} role="dialog" aria-modal="true">
         <h2 style={{ marginTop: 0 }}>
-          <Icon name="alert-triangle" size="sm" /> Delete{" "}
-          <code>{name}</code> from this machine?
+          <Icon name="alert-triangle" size="sm" /> Delete <code>{name}</code>{" "}
+          from this machine?
         </h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
           This permanently deletes the files listed below. This cannot be

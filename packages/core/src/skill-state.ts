@@ -225,8 +225,7 @@ export function classifyDrawerState(
   const realDirs = mine.filter((i) => i.kind === "real-directory");
   const realDirPaths = new Set(realDirs.map((d) => d.linkPath));
   const foreignSymlinks = mine.filter(
-    (i) =>
-      i.kind === "foreign-symlink" && !realDirPaths.has(i.target ?? ""),
+    (i) => i.kind === "foreign-symlink" && !realDirPaths.has(i.target ?? ""),
   );
   const conflicts = [...realDirs, ...foreignSymlinks];
 

@@ -212,4 +212,3 @@ const persistRow: React.CSSProperties = {
   color: "var(--text-2)",
   cursor: "pointer",
 };
-

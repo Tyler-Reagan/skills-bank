@@ -577,7 +577,10 @@ ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
     }
     return { ok: true };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -831,7 +834,10 @@ function walkFiles(root: string): string[] {
   return out;
 }
 
-function computeFolderDiff(leftRoot: string, rightRoot: string): SkillDiffFile[] {
+function computeFolderDiff(
+  leftRoot: string,
+  rightRoot: string,
+): SkillDiffFile[] {
   const leftFiles = new Set(walkFiles(leftRoot));
   const rightFiles = new Set(walkFiles(rightRoot));
   const allPaths = new Set<string>([...leftFiles, ...rightFiles]);
@@ -952,7 +958,10 @@ ipcMain.handle(
         errors: r.errors,
       };
     } catch (err) {
-      return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error, errors: [] }; })();
+      return (() => {
+        const error = fromCaught("ipc.unknown", err);
+        return { ok: false, message: error.message, error, errors: [] };
+      })();
     }
   },
 );
@@ -990,7 +999,10 @@ ipcMain.handle(IPC.deregister, (_e, name: string) => {
       errors: r.errors,
     };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error, errors: [] }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error, errors: [] };
+    })();
   }
 });
 
@@ -1015,7 +1027,10 @@ ipcMain.handle(IPC.hide, (_e, name: string) => {
     hideCanonSkill(registryRoot, name);
     return { ok: true, message: `Hid ${name} from the default views.` };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1025,7 +1040,10 @@ ipcMain.handle(IPC.unhide, (_e, name: string) => {
     unhideCanonSkill(registryRoot, name);
     return { ok: true, message: `Unhid ${name}.` };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1055,7 +1073,10 @@ ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
       message: `Kept local edits to ${name}; future syncs will leave it alone.`,
     };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1087,7 +1108,10 @@ ipcMain.handle(IPC.takeCanonical, (_e, name: string) => {
       message: `Re-baselined ${name} as canonical; drift cleared.`,
     };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1105,7 +1129,10 @@ ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
     });
     return r;
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1218,7 +1245,10 @@ ipcMain.handle(IPC.clearPendingConflicts, () => {
         : "No pending sync state to clear.",
     };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1249,7 +1279,10 @@ ipcMain.handle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
       keptCount,
     };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error, errors: [] }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error, errors: [] };
+    })();
   }
 });
 
@@ -1397,7 +1430,10 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
       result: r,
     };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1422,7 +1458,10 @@ ipcMain.handle(IPC.exportRegistry, async () => {
       skillCount: r.skillCount,
     };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1504,7 +1543,10 @@ ipcMain.handle(IPC.importRegistryMerge, async () => {
       report,
     };
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
 });
 
@@ -1604,7 +1646,11 @@ ipcMain.handle(
     _e,
     name: string,
     tags: unknown,
-  ): { ok: boolean; message: string; error?: import("@skills-bank/core").AppError } => {
+  ): {
+    ok: boolean;
+    message: string;
+    error?: import("@skills-bank/core").AppError;
+  } => {
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
     if (!Array.isArray(tags)) {
       return { ok: false, message: "tags must be an array" };
@@ -1644,7 +1690,10 @@ ipcMain.handle(
     try {
       fs.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
     } catch (err) {
-      return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+      return (() => {
+        const error = fromCaught("ipc.unknown", err);
+        return { ok: false, message: error.message, error };
+      })();
     }
     return {
       ok: true,
@@ -1885,7 +1934,10 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
   try {
     writeSyncDecisions(registryRoot, decisions);
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
   return runSync();
 });
@@ -2005,7 +2057,10 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
   try {
     fetched = await fetchCanonicalTarball({ owner, repo, token });
   } catch (err) {
-    return (() => { const error = fromCaught("ipc.unknown", err); return { ok: false, message: error.message, error }; })();
+    return (() => {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    })();
   }
   try {
     const skillsDir = path.join(fetched.extractedRoot, "skills");

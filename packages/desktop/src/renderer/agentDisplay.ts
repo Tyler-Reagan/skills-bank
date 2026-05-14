@@ -1,4 +1,8 @@
-import { AGENTS, type AgentDef, type AgentId } from "@skills-bank/core/agents-data";
+import {
+  AGENTS,
+  type AgentDef,
+  type AgentId,
+} from "@skills-bank/core/agents-data";
 
 /** Display label for each agent id. */
 export const AGENT_LABELS: Record<AgentId, string> = Object.fromEntries(

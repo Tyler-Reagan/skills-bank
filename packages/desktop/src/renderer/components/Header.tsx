@@ -50,7 +50,7 @@ export function Header({
     density === "comfortable" ? "compact" : "comfortable";
   const isGithub = authStatus?.registrySource === "github";
   const sourceChipText = isGithub
-    ? authStatus?.user?.login ?? "linked"
+    ? (authStatus?.user?.login ?? "linked")
     : "Local bundled";
   return (
     <header className="header">
@@ -113,8 +113,7 @@ export function Header({
             >
               {syncing ? (
                 <>
-                  <span className="spinner inline" aria-hidden="true" />{" "}
-                  Syncing
+                  <span className="spinner inline" aria-hidden="true" /> Syncing
                 </>
               ) : (
                 <>

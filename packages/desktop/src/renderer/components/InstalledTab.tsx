@@ -313,8 +313,7 @@ export function InstalledTab({
             .map((c) => c.g);
           const bulkRepairable = needsAttention
             .filter(
-              (c) =>
-                c.classification.capabilities.primary === "repair-broken",
+              (c) => c.classification.capabilities.primary === "repair-broken",
             )
             .map((c) => c.g);
           return (
