@@ -1121,12 +1121,24 @@ export function App(): React.ReactElement {
                       await refresh();
                       return;
                     }
-                    // Hand off to the drawer's existing two-step confirm
-                    // flow by selecting the entry — the drawer surfaces
-                    // the "Couldn't repair" dialog with delete option.
-                    const entry = registry.find((r) => r.name === g.name);
-                    if (entry) setSelected(entry);
-                    else flash(`Some links couldn't be repaired for ${g.name}`);
+                    // Route through the same ConfirmDialog the bulk
+                    // sweep uses so the per-card and bulk flows look
+                    // identical. The dialog's onConfirm calls
+                    // removeBrokenLinks for each entry; onCancel
+                    // surfaces a "left unresolved" toast.
+                    await refresh();
+                    setBulkRepairPrompt({
+                      repaired: report.repaired.length > 0 ? 1 : 0,
+                      unrepairable: [
+                        {
+                          name: g.name,
+                          entries: report.unrepairable.map((e) => ({
+                            agent: e.agent,
+                            linkPath: e.linkPath,
+                          })),
+                        },
+                      ],
+                    });
                   })();
                 }}
               />

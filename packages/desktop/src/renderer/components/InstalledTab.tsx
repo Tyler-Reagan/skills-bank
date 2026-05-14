@@ -394,7 +394,7 @@ export function InstalledTab({
                   let inlineHandler: (() => void) | null = null;
                   if (prim === "repair-broken" && onRepairBroken) {
                     const n = classification.brokenCount;
-                    inlineLabel = `Repair broken link${n === 1 ? "" : "s"} (${n})`;
+                    inlineLabel = `Fix broken link${n === 1 ? "" : "s"} (${n})`;
                     inlineHandler = () => onRepairBroken(g);
                   } else if (
                     prim === "resolve-conflicts" &&
