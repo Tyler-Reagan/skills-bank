@@ -131,7 +131,7 @@ export function DeleteUnregisteredConfirm({
           >
             {submitting ? (
               <>
-                <span className="spinner inline" /> Deleting…
+                <span className="spinner inline" /> Deleting
               </>
             ) : installations.length === 0 ? (
               "Nothing to delete"

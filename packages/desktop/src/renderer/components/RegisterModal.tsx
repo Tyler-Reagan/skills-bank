@@ -101,7 +101,7 @@ export function RegisterModal({
     return (
       <div style={overlay}>
         <div style={modal} role="dialog" aria-modal="true">
-          <h2 style={{ marginTop: 0 }}>Scanning for existing skills…</h2>
+          <h2 style={{ marginTop: 0 }}>Scanning for existing skills</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Inspecting <code>~/.claude/skills/</code> and classifying each entry
             as already-integrated, foreign symlink, real directory, or broken
@@ -209,7 +209,7 @@ export function RegisterModal({
     return (
       <div style={overlay}>
         <div style={modal} role="dialog" aria-modal="true">
-          <h2 style={{ marginTop: 0 }}>Registering skills…</h2>
+          <h2 style={{ marginTop: 0 }}>Registering skills</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Applying {phase.total} action{phase.total === 1 ? "" : "s"}. Files
             are being moved/copied — this may take a moment for large skill
@@ -256,7 +256,7 @@ export function RegisterModal({
                 gap: 6,
               }}
             >
-              <span className="spinner inline" /> Rebuilding registry index…
+              <span className="spinner inline" /> Rebuilding registry index
             </p>
           ) : phase.rebuildMessage ? (
             <p style={{ color: "var(--success)", fontSize: 12 }}>
@@ -547,7 +547,7 @@ function FinalizeCallout(props: {
       >
         {finalizing ? (
           <>
-            <span className="spinner inline" /> Finalizing…
+            <span className="spinner inline" /> Finalizing
           </>
         ) : (
           "Finalize"

@@ -195,7 +195,7 @@ export function SkillCard({
                 autoFocus
                 type="text"
                 value={addInput}
-                placeholder="tag…"
+                placeholder="tag"
                 maxLength={64}
                 onChange={(e) => setAddInput(e.target.value)}
                 onKeyDown={(e) => {

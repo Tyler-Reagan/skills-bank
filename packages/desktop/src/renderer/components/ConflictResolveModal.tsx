@@ -382,7 +382,7 @@ export function ConflictResolveModal({
           >
             {submitting ? (
               <>
-                <Icon name="check" size="sm" /> Applying…
+                <Icon name="check" size="sm" /> Applying
               </>
             ) : Object.keys(errorMessages).length > 0 ? (
               "Retry"

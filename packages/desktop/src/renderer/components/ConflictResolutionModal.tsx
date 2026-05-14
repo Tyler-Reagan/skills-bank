@@ -302,7 +302,7 @@ export function ConflictResolutionModal({
             onClick={() => void apply()}
             disabled={submitting}
           >
-            {submitting ? "Applying…" : "Apply & re-sync"}
+            {submitting ? "Applying" : "Apply & re-sync"}
           </button>
         </div>
       </div>

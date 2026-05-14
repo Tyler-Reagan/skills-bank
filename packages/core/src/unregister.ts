@@ -195,7 +195,7 @@ function unregisterAdopted(
         suggestedActions: [
           {
             kind: "open-unregister-destination-settings",
-            label: "Pick another destination…",
+            label: "Pick another destination",
             tone: "primary",
           },
           {

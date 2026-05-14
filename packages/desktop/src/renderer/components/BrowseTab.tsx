@@ -73,7 +73,7 @@ export function BrowseTab({
           >
             {rebuilding ? (
               <>
-                <span className="spinner inline" /> Refreshing…
+                <span className="spinner inline" /> Refreshing
               </>
             ) : (
               "Refresh"

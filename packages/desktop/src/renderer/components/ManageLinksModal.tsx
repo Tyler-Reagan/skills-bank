@@ -115,7 +115,7 @@ export function ManageLinksModal({
     return (
       <div style={overlay}>
         <div style={modal} role="dialog" aria-modal="true">
-          <h2 style={{ marginTop: 0 }}>Updating links for {name}…</h2>
+          <h2 style={{ marginTop: 0 }}>Updating links for {name}</h2>
           <div
             style={{
               display: "flex",

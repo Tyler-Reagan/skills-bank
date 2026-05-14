@@ -342,7 +342,7 @@ export function App(): React.ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- overlays are inputs to validate, not deps
   }, [installed, registry]);
 
-  // Apply the active theme to <html data-theme="…"> so CSS-variable
+  // Apply the active theme to <html data-theme=""> so CSS-variable
   // overrides flow through every component.
   useEffect(() => {
     document.documentElement.dataset["theme"] = theme;
@@ -695,13 +695,13 @@ export function App(): React.ReactElement {
       setIsUpdateModalOpen(true);
     } else {
       void window.skillsBank.checkForUpdates().then((r) => {
-        flash(r.ok ? "Checking for updates…" : r.message);
+        flash(r.ok ? "Checking for updates" : r.message);
       });
     }
   }, [latestUpdateStatus, flash]);
 
   // macOS menu-bar dispatch. The native menubar still fires a small
-  // set of actions (Settings…, Refresh, Sync skills) — the in-app
+  // set of actions (Settings, Refresh, Sync skills) — the in-app
   // header dropdown is gone, but the menubar stays. Filter to the
   // actions the menubar actually dispatches; ignore the rest.
   useEffect(() => {
@@ -1008,7 +1008,7 @@ export function App(): React.ReactElement {
                   let repaired = 0;
                   for (const g of gs) {
                     flash(
-                      `Repairing ${repaired + failures.length + 1} of ${gs.length}…`,
+                      `Repairing ${repaired + failures.length + 1} of ${gs.length}`,
                     );
                     try {
                       const report = await window.skillsBank.repairBrokenLinks(
@@ -1311,7 +1311,7 @@ export function App(): React.ReactElement {
                 >
                   {resolveAllRunning ? (
                     <>
-                      <span className="spinner inline" /> Resolving…
+                      <span className="spinner inline" /> Resolving
                     </>
                   ) : resolveAllErrors ? (
                     "Retry"
@@ -1476,9 +1476,8 @@ export function App(): React.ReactElement {
             "Create a new GitHub repo from your account",
             "Initial commit captures the current local registry state",
             "App switches to GitHub-linked mode automatically after promotion",
-            "Available once Link a GitHub repo… ships",
+            "Available after GitHub linking ships",
           ]}
-          planDocPath="docs/plans/03-github-backed-mode.md"
         />
 
         {isUpdateModalOpen &&

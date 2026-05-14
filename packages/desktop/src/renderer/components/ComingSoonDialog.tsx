@@ -6,8 +6,7 @@ import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 /**
  * Small reusable explainer for features that have UI entry-points
  * staged but aren't wired up yet. Each call site supplies its own
- * title, body, and "read the plan" link target (a docs/plans/*.md
- * path inside the repo).
+ * title, summary, and bulleted future-capabilities list.
  *
  * Matches the inline-CSSProperties modal pattern used by SettingsModal,
  * ConflictResolveModal, and DeleteUnregisteredConfirm — the codebase
@@ -21,10 +20,8 @@ interface Props {
   title: string;
   /** One- or two-sentence summary of what's coming. */
   summary: string;
-  /** Bulleted list of concrete capabilities the future PR will land. */
+  /** Bulleted list of concrete capabilities the future release will land. */
   bullets: string[];
-  /** Repo-relative path to the persisted plan doc. */
-  planDocPath: string;
 }
 
 export function ComingSoonDialog({
@@ -33,7 +30,6 @@ export function ComingSoonDialog({
   title,
   summary,
   bullets,
-  planDocPath,
 }: Props): React.ReactElement | null {
   useFocusReturn();
   useEscapeToClose(onClose);
@@ -50,12 +46,6 @@ export function ComingSoonDialog({
       e.stopPropagation();
       onClose();
     }
-  };
-
-  const openPlanInBrowser = () => {
-    void window.skillsBank.openExternal(
-      `https://github.com/Tyler-Reagan/skills-bank/blob/main/${planDocPath}`,
-    );
   };
 
   return (
@@ -93,18 +83,6 @@ export function ComingSoonDialog({
           ))}
         </ul>
 
-        <p style={planLinkRow}>
-          Full plan:{" "}
-          <button
-            type="button"
-            className="link-btn"
-            onClick={openPlanInBrowser}
-            style={planLinkButton}
-          >
-            <code style={planLinkCode}>{planDocPath}</code>
-          </button>
-        </p>
-
         <div style={footer}>
           <button className="btn primary" type="button" onClick={onClose}>
             Got it
@@ -128,15 +106,14 @@ export function GitHubLinkComingSoon({
       open={open}
       onClose={onClose}
       title="Link a GitHub repo"
-      summary="A future release will let you back your registry with a GitHub repo. Until it ships, this app stores your registry locally — Export registry is the path to back it up or move it."
+      summary="A future release will let you back your registry with a GitHub repo. Until then, this app stores your registry locally — Export registry is the path to back it up or move it."
       bullets={[
         "Publish-state chip on every card (Local / Committed / Pushed)",
         "Refresh from git replaces Sync for github-linked registries",
-        "Commit & push prompt after Register / Unregister / direct edits",
+        "Commit & push prompt after Register, Unregister, or direct edits",
         "Track-vs-Adopt choice per-skill at Register time",
         "Repoint a tracked-externally skill when its folder moves",
       ]}
-      planDocPath="docs/plans/03-github-backed-mode.md"
     />
   );
 }
@@ -208,24 +185,6 @@ const bulletList: React.CSSProperties = {
 
 const bulletItem: React.CSSProperties = {
   marginBottom: 4,
-};
-
-const planLinkRow: React.CSSProperties = {
-  margin: "16px 0 0 0",
-  paddingTop: 12,
-  borderTop: "1px solid var(--border)",
-  fontSize: 12,
-  color: "var(--text-3)",
-};
-
-const planLinkButton: React.CSSProperties = {
-  padding: 0,
-  fontSize: 12,
-};
-
-const planLinkCode: React.CSSProperties = {
-  fontFamily: "var(--font-mono)",
-  fontSize: 12,
 };
 
 const footer: React.CSSProperties = {

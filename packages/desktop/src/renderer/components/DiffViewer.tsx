@@ -22,7 +22,7 @@ export function DiffViewer({ result, loading, error }: Props): React.ReactElemen
   if (loading) {
     return (
       <div className="diff-viewer-state">
-        <span className="spinner inline" /> Computing diff…
+        <span className="spinner inline" /> Computing diff
       </div>
     );
   }

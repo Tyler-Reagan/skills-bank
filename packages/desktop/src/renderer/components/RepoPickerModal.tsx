@@ -82,7 +82,7 @@ export function RepoPickerModal({
         <input
           type="text"
           className="search-input"
-          placeholder="Filter repos…"
+          placeholder="Filter repos"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: "100%", marginTop: 12 }}
@@ -109,7 +109,7 @@ export function RepoPickerModal({
         <div style={{ marginTop: 12, maxHeight: "55vh", overflowY: "auto" }}>
           {repos === null && (
             <p style={{ color: "var(--text-3)", fontSize: 12 }}>
-              <span className="spinner inline" /> Loading your repos…
+              <span className="spinner inline" /> Loading your repos
             </p>
           )}
           {repos !== null && filtered.length === 0 && (
@@ -182,7 +182,7 @@ export function RepoPickerModal({
                     color: "var(--text-3)",
                   }}
                 >
-                  <span className="spinner inline" /> Importing…
+                  <span className="spinner inline" /> Importing
                 </p>
               )}
             </button>

@@ -3,7 +3,7 @@ import React from "react";
 /**
  * Inline SVG icon set, paths borrowed from Lucide
  * (https://lucide.dev — ISC). currentColor stroke means a parent
- * `color: …` controls the visible color, so the same component
+ * `color: ` controls the visible color, so the same component
  * works in any context (status chip, button label, drawer, etc).
  *
  * Sizes are CSS tokens (--icon-sm/-md/-lg/-xl) by default; pass a

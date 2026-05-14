@@ -104,7 +104,7 @@ export function InstallConflictModal({
             Cancel
           </button>
           <button className="btn" onClick={onResolve} disabled={forcing}>
-            Resolve per-agent…
+            Resolve per-agent
           </button>
           <button
             className="btn primary"
@@ -113,7 +113,7 @@ export function InstallConflictModal({
           >
             {forcing ? (
               <>
-                <span className="spinner inline" /> Forcing…
+                <span className="spinner inline" /> Forcing
               </>
             ) : (
               "Force overwrite all"

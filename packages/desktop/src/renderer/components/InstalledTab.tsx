@@ -205,7 +205,7 @@ export function InstalledTab({
               Scan for existing skills
             </button>
             <button className="btn" onClick={onAddCustomSkillsDir}>
-              Add a skills directory…
+              Add a skills directory
             </button>
           </div>
         </div>
@@ -608,7 +608,7 @@ function CustomSkillsDirs({
           />
         </span>
         <button className="btn" onClick={onAdd}>
-          Add a skills directory…
+          Add a skills directory
         </button>
       </header>
       {dirs.length > 0 && (

@@ -114,7 +114,7 @@ export function Header({
               {syncing ? (
                 <>
                   <span className="spinner inline" aria-hidden="true" />{" "}
-                  Syncing…
+                  Syncing
                 </>
               ) : (
                 <>
@@ -137,7 +137,7 @@ export function Header({
             {refreshing ? (
               <>
                 <span className="spinner inline" aria-hidden="true" />{" "}
-                Re-scanning…
+                Re-scanning
               </>
             ) : (
               <>

@@ -93,7 +93,7 @@ export function UpdateNotesModal({
             )}
             {status.kind === "downloading" && (
               <button className="primary" disabled>
-                Downloading…
+                Downloading
               </button>
             )}
             {status.kind === "downloaded" && (

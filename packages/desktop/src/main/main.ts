@@ -108,7 +108,7 @@ interface AppConfig {
   // Version string the user has chosen to skip via the update-notes modal.
   // Suppresses auto-open of the modal for that specific version only — the
   // app still auto-checks and auto-downloads, and the user can always
-  // re-summon the modal via the "Check for Updates…" menu item.
+  // re-summon the modal via the "Check for Updates" menu item.
   dismissedUpdateVersion: string | null;
 }
 
@@ -603,7 +603,7 @@ function buildAppMenu(): Menu {
         { role: "about" },
         { type: "separator" },
         {
-          label: "Settings…",
+          label: "Settings",
           accelerator: "CmdOrCtrl+,",
           click: () => send("openSettings"),
         },
@@ -1545,7 +1545,7 @@ function summarizeMerge(
   return parts.join(", ") || "no changes";
 }
 
-// Read up to 8 KB of SKILL.md text, with a "…(truncated)" marker when
+// Read up to 8 KB of SKILL.md text, with a "(truncated)" marker when
 // the file is bigger. Pulled out so the readSkillMd IPC can reuse it
 // against any candidate path (registry copy or agent dir).
 function readSkillMdText(skillMdPath: string): string | null {
@@ -1556,7 +1556,7 @@ function readSkillMdText(skillMdPath: string): string | null {
     const bytes = fs.readSync(fd, buf, 0, 8192, 0);
     const total = fs.statSync(skillMdPath).size;
     const text = buf.subarray(0, bytes).toString("utf8");
-    return total > bytes ? text + "\n\n…(truncated)" : text;
+    return total > bytes ? text + "\n\n(truncated)" : text;
   } finally {
     fs.closeSync(fd);
   }
@@ -1612,7 +1612,7 @@ ipcMain.handle(
       if (trimmed.length > 64) {
         return {
           ok: false,
-          message: `tag "${trimmed.slice(0, 24)}…" exceeds 64 chars`,
+          message: `tag "${trimmed.slice(0, 24)}" exceeds 64 chars`,
         };
       }
       if (cleaned.includes(trimmed)) continue;

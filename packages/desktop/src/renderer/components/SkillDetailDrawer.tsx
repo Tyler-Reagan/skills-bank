@@ -241,7 +241,7 @@ export function SkillDetailDrawer({
   const isLongDescription = description.length > DESCRIPTION_SOFT_CAP;
   const visibleDescription =
     !descExpanded && isLongDescription
-      ? description.slice(0, DESCRIPTION_SOFT_CAP).trimEnd() + "…"
+      ? description.slice(0, DESCRIPTION_SOFT_CAP).trimEnd()
       : description;
 
   const install = async () => {
@@ -436,7 +436,7 @@ export function SkillDetailDrawer({
                     onClick={() => void saveTags()}
                     disabled={savingTags}
                   >
-                    {savingTags ? "Saving…" : "Save"}
+                    {savingTags ? "Saving" : "Save"}
                   </button>
                 </div>
               )}
@@ -593,7 +593,7 @@ export function SkillDetailDrawer({
               >
                 {action === "registering" ? (
                   <>
-                    <span className="spinner inline" /> Registering…
+                    <span className="spinner inline" /> Registering
                   </>
                 ) : (
                   "Register in registry"
@@ -626,7 +626,7 @@ export function SkillDetailDrawer({
               >
                 {action === "accepting-drift" ? (
                   <>
-                    <span className="spinner inline" /> Accepting…
+                    <span className="spinner inline" /> Accepting
                   </>
                 ) : (
                   "Accept local changes"
@@ -646,7 +646,7 @@ export function SkillDetailDrawer({
                 >
                   {action === "taking-canonical" ? (
                     <>
-                      <span className="spinner inline" /> Re-baselining…
+                      <span className="spinner inline" /> Re-baselining
                     </>
                   ) : (
                     "Take canonical"
@@ -678,7 +678,7 @@ export function SkillDetailDrawer({
               >
                 {action === "forgetting" ? (
                   <>
-                    <span className="spinner inline" /> Forgetting…
+                    <span className="spinner inline" /> Forgetting
                   </>
                 ) : (
                   "Forget this entry"
@@ -708,7 +708,7 @@ export function SkillDetailDrawer({
             >
               {repairState.kind === "running" ? (
                 <>
-                  <span className="spinner inline" /> Repairing…
+                  <span className="spinner inline" /> Repairing
                 </>
               ) : (
                 <>
@@ -820,7 +820,7 @@ export function SkillDetailDrawer({
             >
               {action === "installing" ? (
                 <>
-                  <span className="spinner inline" /> Installing…
+                  <span className="spinner inline" /> Installing
                 </>
               ) : classification.state === "registered-broken" ? (
                 "Reinstall (fixes broken links)"
@@ -834,7 +834,7 @@ export function SkillDetailDrawer({
 
           {/* Manage agent links — the single entry point for any
               agent-link change. Subsumes the prior "Remove from
-              agents" and "Choose agents…" buttons: the modal lets
+              agents" and "Choose agents" buttons: the modal lets
               the user tick or untick each agent dir individually, and
               unticking all is equivalent to a bulk uninstall. */}
           {caps.canManageLinks && onManageLinks && (
@@ -860,7 +860,7 @@ export function SkillDetailDrawer({
             >
               {repairState.kind === "running" ? (
                 <>
-                  <span className="spinner inline" /> Repairing…
+                  <span className="spinner inline" /> Repairing
                 </>
               ) : (
                 `Fix broken link${classification.brokenCount === 1 ? "" : "s"}`
@@ -891,7 +891,7 @@ export function SkillDetailDrawer({
             >
               {action === "exporting" ? (
                 <>
-                  <span className="spinner inline" /> Exporting…
+                  <span className="spinner inline" /> Exporting
                 </>
               ) : (
                 "Export"
@@ -925,7 +925,7 @@ export function SkillDetailDrawer({
               >
                 {action === "unregistering" ? (
                   <>
-                    <span className="spinner inline" /> Removing…
+                    <span className="spinner inline" /> Removing
                   </>
                 ) : (
                   "Remove from registry"
@@ -951,7 +951,7 @@ export function SkillDetailDrawer({
             >
               {action === "hiding" ? (
                 <>
-                  <span className="spinner inline" /> Hiding…
+                  <span className="spinner inline" /> Hiding
                 </>
               ) : (
                 "Dismiss from registry view"
@@ -970,7 +970,7 @@ export function SkillDetailDrawer({
             >
               {action === "unhiding" ? (
                 <>
-                  <span className="spinner inline" /> Unhiding…
+                  <span className="spinner inline" /> Unhiding
                 </>
               ) : (
                 "Unhide"

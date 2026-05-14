@@ -84,8 +84,7 @@ export function AccountModal({
         <section style={section}>
           <h3 style={sectionTitle}>Registry source</h3>
           <p style={hint}>
-            Where your registry lives. Linking a GitHub repo is on the way —
-            see the persisted plan for details.
+            Where your registry lives. Linking a GitHub repo is on the way.
           </p>
           <div style={sourceRow}>
             <span style={sourceChip}>{sourceChipLabel}</span>
@@ -108,7 +107,7 @@ export function AccountModal({
               type="button"
               onClick={onOpenGitHubLinkComingSoon}
             >
-              Link a GitHub repo… (Coming soon)
+              Link a GitHub repo (Coming soon)
             </button>
             {!isGithub && (
               <button
@@ -116,7 +115,7 @@ export function AccountModal({
                 type="button"
                 onClick={onOpenPromoteToGitHubComingSoon}
               >
-                Promote to a GitHub repo… (Coming soon)
+                Promote to a GitHub repo (Coming soon)
               </button>
             )}
           </div>
@@ -128,14 +127,21 @@ export function AccountModal({
             Move your registry to another machine or bring in skills from
             another bank.
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              marginTop: 8,
+            }}
+          >
             {isGithub ? (
               <button
                 className="btn"
                 type="button"
                 onClick={() => void onChangeRegistry()}
               >
-                Choose registry repo…
+                Choose registry repo
               </button>
             ) : (
               <button
@@ -143,7 +149,7 @@ export function AccountModal({
                 type="button"
                 onClick={() => void onChangeRegistry()}
               >
-                Import a registry (replace)…
+                Import a registry (replace)
               </button>
             )}
             {!isGithub && (
@@ -152,7 +158,7 @@ export function AccountModal({
                 type="button"
                 onClick={() => void onMergeRegistry()}
               >
-                Merge a registry into mine…
+                Merge a registry into mine
               </button>
             )}
             <button
@@ -160,7 +166,7 @@ export function AccountModal({
               type="button"
               onClick={() => void onExportRegistry()}
             >
-              Export registry…
+              Export registry
             </button>
           </div>
         </section>
