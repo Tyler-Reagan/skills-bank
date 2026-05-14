@@ -38,16 +38,6 @@ export function ComingSoonDialog({
 
   if (!open) return null;
 
-  // See SettingsModal — local onKeyDown is the belt-and-suspenders
-  // fallback when focus lives inside the modal.
-  const onModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-      onClose();
-    }
-  };
-
   return (
     <div
       style={overlay}
@@ -62,7 +52,6 @@ export function ComingSoonDialog({
         aria-modal="true"
         aria-labelledby="coming-soon-title"
         tabIndex={-1}
-        onKeyDown={onModalKeyDown}
       >
         <h2 id="coming-soon-title" style={titleStyle}>
           <span style={titleIcon} aria-hidden="true">
@@ -71,9 +60,7 @@ export function ComingSoonDialog({
           {title}
         </h2>
 
-        <p style={summaryStyle}>
-          <span style={leadBadge}>Coming soon</span> {summary}
-        </p>
+        <p style={summaryStyle}>{summary}</p>
 
         <ul style={bulletList}>
           {bullets.map((b) => (
@@ -158,21 +145,6 @@ const summaryStyle: React.CSSProperties = {
   fontSize: 13,
   lineHeight: 1.5,
   color: "var(--text-2)",
-};
-
-const leadBadge: React.CSSProperties = {
-  display: "inline-block",
-  padding: "1px 8px",
-  marginRight: 6,
-  borderRadius: 4,
-  background: "var(--surface-hi)",
-  border: "1px solid var(--border)",
-  fontSize: 11,
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  color: "var(--text-2)",
-  verticalAlign: "1px",
 };
 
 const bulletList: React.CSSProperties = {

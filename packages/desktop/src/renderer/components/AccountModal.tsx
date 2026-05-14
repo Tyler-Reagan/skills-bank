@@ -44,14 +44,6 @@ export function AccountModal({
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
 
-  const onModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-      onClose();
-    }
-  };
-
   const isGithub = authStatus?.registrySource === "github";
   const sourceChipLabel = isGithub
     ? `@${authStatus?.user?.login ?? "you"}`
@@ -66,7 +58,6 @@ export function AccountModal({
         aria-modal="true"
         aria-label="Account"
         tabIndex={-1}
-        onKeyDown={onModalKeyDown}
       >
         <div style={modalHeader}>
           <h2 style={{ margin: 0 }}>Account</h2>

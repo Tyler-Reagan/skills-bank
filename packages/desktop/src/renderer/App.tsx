@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type {
+  AgentId,
   ConflictEntry,
   InstalledSkill,
   RegistryEntry,
@@ -996,64 +997,88 @@ export function App(): React.ReactElement {
                 }}
                 onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
                 onRepairAllBroken={async (gs) => {
-                  // Bulk-repair sweep: iterate the broken-link groups,
-                  // call repairBrokenLinks per skill, accumulate any
-                  // failures, surface a single ErrorPanel at the end
-                  // with each failed skill's AppError. Continue on
-                  // failure rather than aborting.
-                  const failures: Array<{
+                  // Bulk Fix-broken-link(s) sweep. Mirrors the
+                  // drawer-level onRepairBroken behavior: try repair
+                  // first; for skills whose links can't be repaired
+                  // (registry copy is gone), prompt to remove the
+                  // dead symlinks across all affected skills in a
+                  // single confirm.
+                  type Unrepairable = {
                     name: string;
-                    error: import("@skills-bank/core").AppError;
-                  }> = [];
+                    entries: Array<{ agent: string; linkPath: string }>;
+                  };
+                  const unrepairableBySkill: Unrepairable[] = [];
                   let repaired = 0;
                   for (const g of gs) {
-                    flash(
-                      `Repairing ${repaired + failures.length + 1} of ${gs.length}`,
+                    const report = await window.skillsBank.repairBrokenLinks(
+                      g.name,
                     );
-                    try {
-                      const report = await window.skillsBank.repairBrokenLinks(
-                        g.name,
-                      );
-                      if (report.unrepairable.length > 0) {
-                        failures.push({
-                          name: g.name,
-                          error: {
-                            code: "repair-broken.partial-failure",
-                            message: `${g.name}: ${report.unrepairable[0]?.reason ?? "unknown"}`,
-                            copyableDetails: {
-                              name: g.name,
-                              errors: report.unrepairable.map(
-                                (e) => `${e.agent}: ${e.reason}`,
-                              ),
-                            },
-                          },
-                        });
-                      } else {
-                        repaired += 1;
-                      }
-                    } catch (err) {
-                      failures.push({
+                    if (report.unrepairable.length > 0) {
+                      unrepairableBySkill.push({
                         name: g.name,
-                        error: {
-                          code: "repair-broken.threw",
-                          message:
-                            err instanceof Error ? err.message : String(err),
-                          copyableDetails: { name: g.name },
-                        },
+                        entries: report.unrepairable.map((e) => ({
+                          agent: e.agent,
+                          linkPath: e.linkPath,
+                        })),
+                      });
+                    } else {
+                      repaired += 1;
+                    }
+                  }
+                  await refresh();
+
+                  if (unrepairableBySkill.length === 0) {
+                    flash(
+                      `Repaired ${repaired} skill${repaired === 1 ? "" : "s"}.`,
+                    );
+                    return;
+                  }
+
+                  const totalLinks = unrepairableBySkill.reduce(
+                    (acc, u) => acc + u.entries.length,
+                    0,
+                  );
+                  const summaryLines = unrepairableBySkill
+                    .map(
+                      (u) =>
+                        `  • ${u.name} (${u.entries.length} link${u.entries.length === 1 ? "" : "s"})`,
+                    )
+                    .join("\n");
+                  const proceed = window.confirm(
+                    `Repaired ${repaired} skill${repaired === 1 ? "" : "s"}.\n\n` +
+                      `${unrepairableBySkill.length} skill${unrepairableBySkill.length === 1 ? "" : "s"} ` +
+                      `couldn't be repaired (the registry copy is gone). Remove the ` +
+                      `${totalLinks} dead symlink${totalLinks === 1 ? "" : "s"}?\n\n${summaryLines}\n\n` +
+                      `The agent dirs lose the symlink; the registry copy is unaffected.`,
+                  );
+                  if (!proceed) {
+                    flash(
+                      `Repaired ${repaired}; ${unrepairableBySkill.length} left unresolved.`,
+                    );
+                    return;
+                  }
+
+                  let removed = 0;
+                  for (const u of unrepairableBySkill) {
+                    const agents = u.entries.map((e) => e.agent) as AgentId[];
+                    try {
+                      await window.skillsBank.removeBrokenLinks(
+                        u.name,
+                        agents,
+                      );
+                      removed += 1;
+                    } catch (err) {
+                      pushAppError({
+                        code: "remove-broken.threw",
+                        message: `${u.name}: ${err instanceof Error ? err.message : String(err)}`,
+                        copyableDetails: { name: u.name },
                       });
                     }
                   }
                   await refresh();
-                  if (failures.length === 0) {
-                    flash(
-                      `Repaired ${repaired} skill${repaired === 1 ? "" : "s"}.`,
-                    );
-                  } else {
-                    flash(
-                      `Repaired ${repaired}; ${failures.length} failed (see error panel).`,
-                    );
-                    for (const f of failures) pushAppError(f.error);
-                  }
+                  flash(
+                    `Repaired ${repaired}; removed dead links for ${removed} skill${removed === 1 ? "" : "s"}.`,
+                  );
                 }}
                 onInlineDelete={(group) => {
                   // M9b: stash the group on deleteTarget so the
@@ -1451,14 +1476,10 @@ export function App(): React.ReactElement {
               await signOut();
             }}
             onCheckForUpdates={checkForUpdates}
-            onOpenGitHubLinkComingSoon={() => {
-              setShowAccount(false);
-              setShowGitHubLinkComingSoon(true);
-            }}
-            onOpenPromoteToGitHubComingSoon={() => {
-              setShowAccount(false);
-              setShowPromoteToGitHubComingSoon(true);
-            }}
+            onOpenGitHubLinkComingSoon={() => setShowGitHubLinkComingSoon(true)}
+            onOpenPromoteToGitHubComingSoon={() =>
+              setShowPromoteToGitHubComingSoon(true)
+            }
           />
         )}
 

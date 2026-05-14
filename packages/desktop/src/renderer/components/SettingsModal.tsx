@@ -119,18 +119,6 @@ export function SettingsModal({
   useInitialFocus(modalRef);
   const [draft, setDraft] = useState<AppSettings>(settings);
 
-  // Belt-and-suspenders Esc: when focus is somewhere in the modal
-  // (the typical case once useInitialFocus runs), the capture-phase
-  // window listener in useEscapeToClose can lose the keydown to a
-  // child element's own handler. Local onKeyDown catches it directly.
-  const onModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-      onClose();
-    }
-  };
-
   const toggleAgent = (id: AgentId) => {
     setDraft((prev) => {
       const set = new Set(prev.defaultInstallAgents);
@@ -154,7 +142,6 @@ export function SettingsModal({
         aria-modal="true"
         aria-label="Settings"
         tabIndex={-1}
-        onKeyDown={onModalKeyDown}
       >
         <div style={modalHeader}>
           <h2 style={{ margin: 0 }}>Settings</h2>
@@ -169,8 +156,8 @@ export function SettingsModal({
           </button>
         </div>
         <p style={hint}>
-          Preferences for how the app behaves day-to-day. Registry source
-          and identity live in <strong>Account</strong> (header chip).
+          Preferences for how the app behaves day-to-day. Registry source and
+          identity live under <strong>Account</strong> settings.
         </p>
 
         <h3 style={groupHeading}>Skills</h3>

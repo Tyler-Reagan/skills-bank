@@ -345,7 +345,7 @@ export function InstalledTab({
                     <button
                       className="btn"
                       onClick={() => onRepairAllBroken(bulkRepairable)}
-                      title={`Re-link the broken symlinks for ${bulkRepairable.length} skills in one step. Skills that can't be re-linked surface their failure in the error panel.`}
+                      title={`Re-link the broken symlinks for ${bulkRepairable.length} skills in one step. If a link can't be repaired (the registry copy is gone) you'll be prompted to remove the dead links.`}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -353,7 +353,7 @@ export function InstalledTab({
                       }}
                     >
                       <Icon name="broken-link" size="sm" />
-                      Repair all ({bulkRepairable.length})
+                      Fix broken link(s) ({bulkRepairable.length})
                     </button>
                   )}
                   {bulkResolvable.length > 1 && onResolveAllConflicts && (
