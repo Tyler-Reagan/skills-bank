@@ -1,7 +1,26 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AGENTS, type AgentId } from "@skills-bank/core";
+import type { AgentId } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { Icon } from "./Icon.js";
+
+// Inlined to keep this file type-only against @skills-bank/core. Pulling
+// AGENTS as a value drags in node:fs/node:child_process through the core
+// barrel and breaks the Vite renderer build. Matches the inline pattern
+// used by DeleteUnregisteredConfirm.tsx.
+const AGENT_OPTIONS: ReadonlyArray<{
+  id: AgentId;
+  label: string;
+  relativePath: string;
+}> = [
+  { id: "claude", label: "Claude Code", relativePath: ".claude/skills" },
+  { id: "cursor", label: "Cursor", relativePath: ".cursor/skills" },
+  { id: "gemini", label: "Gemini", relativePath: ".gemini/skills" },
+  { id: "copilot", label: "GitHub Copilot", relativePath: ".copilot/skills" },
+  { id: "continue", label: "Continue", relativePath: ".continue/skills" },
+  { id: "cline", label: "Cline", relativePath: ".cline/skills" },
+  { id: "codex", label: "OpenAI Codex", relativePath: ".codex/skills" },
+  { id: "agents", label: "Agents (shared)", relativePath: ".agents/skills" },
+];
 
 interface Props {
   open: boolean;
@@ -31,10 +50,10 @@ export function DestinationPickerDialog({
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
   const options = useMemo(
-    () => AGENTS.filter((a) => a.id !== currentDestination),
+    () => AGENT_OPTIONS.filter((a) => a.id !== currentDestination),
     [currentDestination],
   );
-  const firstChoice = options[0]?.id ?? AGENTS[0]!.id;
+  const firstChoice = options[0]?.id ?? AGENT_OPTIONS[0]!.id;
   const [picked, setPicked] = useState<AgentId>(firstChoice);
   const [persist, setPersist] = useState(true);
   const [submitting, setSubmitting] = useState(false);
