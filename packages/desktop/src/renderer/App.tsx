@@ -1617,7 +1617,9 @@ export function App(): React.ReactElement {
                 >
                   Remove the {totalLinks} dead symlink
                   {totalLinks === 1 ? "" : "s"}? The agent dirs lose the
-                  symlink; nothing else is touched.
+                  symlink. Because the registry copy is already gone, these
+                  skills will also disappear from the registry — there are no
+                  source files left to back them.
                 </p>
                 <ul
                   style={{
@@ -1669,8 +1671,8 @@ export function App(): React.ReactElement {
             }
             await refresh();
             flash(
-              `Repaired ${repaired}; removed dead links for ${removed} skill${
-                removed === 1 ? "" : "s"
+              `Repaired ${repaired}; removed dead links and dropped ${removed} unbacked registry entr${
+                removed === 1 ? "y" : "ies"
               }.`,
             );
           }}
