@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type {
   AgentId,
   ConflictEntry,
@@ -338,10 +344,23 @@ export function App(): React.ReactElement {
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
 
+  // One pass to build name→entry / name→set lookups; reused across the
+  // overlay-reconciliation effect, the drawer's freshness sync, and any
+  // per-render `.some(byName)` site. Cheap to build, cheaper than ~7
+  // O(n) scans per render.
+  const registryByName = useMemo(
+    () => new Map(registry.map((e) => [e.name, e] as const)),
+    [registry],
+  );
+  const installedNames = useMemo(
+    () => new Set(installed.map((i) => i.name)),
+    [installed],
+  );
+
   // Tab badge counts — dedupe by skill name so a skill linked into two
   // agent dirs counts once. The toast computed by refresh() uses the
   // same expression; keep them in sync via this single derivation.
-  const uniqueInstalledCount = new Set(installed.map((i) => i.name)).size;
+  const uniqueInstalledCount = installedNames.size;
 
   // Overlay reconciliation: if a skill referenced by an open drawer or
   // modal disappears from installed/registry after refresh() (e.g. the
@@ -349,29 +368,20 @@ export function App(): React.ReactElement {
   // reference so the overlay closes cleanly. Derived-validation, not
   // derived-state.
   useEffect(() => {
-    if (selected && !registry.some((r) => r.name === selected.name)) {
+    if (selected && !registryByName.has(selected.name)) {
       setSelected(null);
     }
-    if (
-      conflictTarget &&
-      !installed.some((i) => i.name === conflictTarget.name)
-    ) {
+    if (conflictTarget && !installedNames.has(conflictTarget.name)) {
       setConflictTarget(null);
     }
-    if (
-      installConflict &&
-      !registry.some((r) => r.name === installConflict.name)
-    ) {
+    if (installConflict && !registryByName.has(installConflict.name)) {
       setInstallConflict(null);
     }
-    if (
-      manageLinksTarget &&
-      !installed.some((i) => i.name === manageLinksTarget.name)
-    ) {
+    if (manageLinksTarget && !installedNames.has(manageLinksTarget.name)) {
       setManageLinksTarget(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- overlays are inputs to validate, not deps
-  }, [installed, registry]);
+  }, [registryByName, installedNames]);
 
   // Apply the active theme to <html data-theme=""> so CSS-variable
   // overrides flow through every component.
@@ -671,7 +681,6 @@ export function App(): React.ReactElement {
     }
     if (r.report.conflicts.length === 0) {
       flash(r.message);
-      void window.skillsBank.rebuildIndex();
       await refresh();
       return;
     }
@@ -782,10 +791,10 @@ export function App(): React.ReactElement {
   // the user can hit Register or Manage agent links.
   useEffect(() => {
     if (selected) {
-      const fresh = registry.find((e) => e.name === selected.name);
+      const fresh = registryByName.get(selected.name);
       if (fresh && fresh !== selected) setSelected(fresh);
     }
-  }, [registry, selected]);
+  }, [registryByName, selected]);
 
   // Pre-mount splash: render this until the renderer knows which top-
   // level view to show. Without it, the app skeleton flashes for a beat
@@ -996,8 +1005,8 @@ export function App(): React.ReactElement {
                   // entry so the user gets the same Register / Manage-links /
                   // Remove action surface as a registered skill — the two
                   // operations are now distinct buttons, not a radio group.
-                  const synthetic: RegistryEntry = registry.find(
-                    (r) => r.name === s.name,
+                  const synthetic: RegistryEntry = registryByName.get(
+                    s.name,
                   ) ?? {
                     name: s.name,
                     description: s.target ?? s.linkPath,
@@ -1016,7 +1025,7 @@ export function App(): React.ReactElement {
                   // have a dedicated Repair flow) but included for
                   // unregistered (the user picks a canonical and removes
                   // dead siblings in the same pass).
-                  const isRegistered = registry.some((r) => r.name === g.name);
+                  const isRegistered = registryByName.has(g.name);
                   const conflicts = isRegistered
                     ? g.conflicts.filter(
                         (c) => c.kind !== "ours" && c.kind !== "broken-symlink",
@@ -1103,7 +1112,6 @@ export function App(): React.ReactElement {
                     ]);
                     const r = results[0]!;
                     flash(r.message);
-                    if (r.ok) void window.skillsBank.rebuildIndex();
                     await refresh();
                   })();
                 }}
@@ -1409,7 +1417,6 @@ export function App(): React.ReactElement {
               flash(
                 `Merge cancelled${parts.length > 0 ? ` (${parts.join(", ")})` : ""}.`,
               );
-              void window.skillsBank.rebuildIndex();
               void refresh();
             }}
             onResolve={async (decisions) => {
@@ -1420,7 +1427,6 @@ export function App(): React.ReactElement {
                 decisions,
               );
               flash(r.message);
-              void window.skillsBank.rebuildIndex();
               await refresh();
             }}
           />
@@ -1436,7 +1442,6 @@ export function App(): React.ReactElement {
               setDeleteTarget(null);
               const r = await window.skillsBank.deleteUnregistered(target.name);
               flash(r.message);
-              void window.skillsBank.rebuildIndex();
               await refresh();
             }}
           />
@@ -1451,7 +1456,6 @@ export function App(): React.ReactElement {
             onUnhide={async (name) => {
               const r = await window.skillsBank.unhide(name);
               flash(r.message);
-              if (r.ok) void window.skillsBank.rebuildIndex();
               await refresh();
             }}
           />
@@ -1530,7 +1534,6 @@ export function App(): React.ReactElement {
             if (r.ok) {
               dismissAppError(target.errorId);
               flash(r.message);
-              void window.skillsBank.rebuildIndex();
               await refresh();
             } else if (r.error) {
               dismissAppError(target.errorId);
@@ -1579,7 +1582,6 @@ export function App(): React.ReactElement {
             if (r.ok) {
               dismissAppError(target.errorId);
               flash(r.message);
-              void window.skillsBank.rebuildIndex();
               await refresh();
             } else if (r.error) {
               dismissAppError(target.errorId);
@@ -1721,7 +1723,7 @@ export function App(): React.ReactElement {
 
         {selected &&
           (() => {
-            const isRegistered = registry.some((r) => r.name === selected.name);
+            const isRegistered = registryByName.has(selected.name);
             const installations = installed.filter(
               (i) => i.name === selected.name,
             );
@@ -1754,9 +1756,7 @@ export function App(): React.ReactElement {
                   // unregistered skills get delete/keep only, including
                   // broken stragglers; registered skills get the full
                   // three-action picker excluding broken (Repair handles those).
-                  const isRegistered = registry.some(
-                    (r) => r.name === selected.name,
-                  );
+                  const isRegistered = registryByName.has(selected.name);
                   const conflicts = isRegistered
                     ? installations.filter(
                         (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
@@ -1795,7 +1795,6 @@ export function App(): React.ReactElement {
                         const r = results[0]!;
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1811,7 +1810,6 @@ export function App(): React.ReactElement {
                         );
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1827,7 +1825,6 @@ export function App(): React.ReactElement {
                         );
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1843,7 +1840,6 @@ export function App(): React.ReactElement {
                         );
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1857,7 +1853,6 @@ export function App(): React.ReactElement {
                         const r = await window.skillsBank.hide(selected.name);
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1871,7 +1866,6 @@ export function App(): React.ReactElement {
                         const r = await window.skillsBank.unhide(selected.name);
                         flash(r.message);
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                           setSelected(null);
                         }
                         await refresh();
@@ -1925,7 +1919,6 @@ export function App(): React.ReactElement {
                           flash(r.message);
                         }
                         if (r.ok) {
-                          void window.skillsBank.rebuildIndex();
                         }
                         await refresh();
                       }

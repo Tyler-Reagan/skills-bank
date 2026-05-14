@@ -734,7 +734,12 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
 // requiring the user to remember to rebuild.
 ipcMain.handle(IPC.listRegistry, () => {
   if (!registryRoot) return [];
-  return buildRegistryIndex(registryRoot, { writeFile: true }).entries;
+  // Read path — do not write index.json. The renderer hits this on
+  // every refresh; writing here was producing dozens of disk writes per
+  // session and silently overwriting git info that the explicit
+  // Rebuild-index button had persisted. Mutation handlers and the
+  // explicit rebuildIndex IPC are responsible for writing.
+  return buildRegistryIndex(registryRoot).entries;
 });
 
 ipcMain.handle(IPC.listInstalled, (_e, customDirs?: string[]) => {
