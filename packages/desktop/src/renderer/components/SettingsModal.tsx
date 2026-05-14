@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
@@ -118,6 +118,19 @@ export function SettingsModal({
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
   const [draft, setDraft] = useState<AppSettings>(settings);
+
+  // See AccountModal — direct listener to ensure Esc actually closes.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.code === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey, { capture: true });
+    return () => document.removeEventListener("keydown", onKey, { capture: true });
+  }, [onClose]);
 
   const toggleAgent = (id: AgentId) => {
     setDraft((prev) => {

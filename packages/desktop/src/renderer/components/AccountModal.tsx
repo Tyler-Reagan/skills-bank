@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import type { AuthStatus } from "../../shared/ipc.js";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
@@ -43,6 +43,25 @@ export function AccountModal({
   useEscapeToClose(onClose);
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
+
+  // Belt-and-suspenders Esc that bypasses useEscapeToClose entirely.
+  // The shared hook is theoretically correct but evidence from
+  // running builds suggests it doesn't fire reliably for this modal —
+  // probably an interaction between the hook's module-level state
+  // and React 18 StrictMode's double-effect behavior. This per-
+  // component listener is the safety net: as long as the document
+  // sees the keydown, this fires.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.code === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey, { capture: true });
+    return () => document.removeEventListener("keydown", onKey, { capture: true });
+  }, [onClose]);
 
   const isGithub = authStatus?.registrySource === "github";
   const sourceChipLabel = isGithub

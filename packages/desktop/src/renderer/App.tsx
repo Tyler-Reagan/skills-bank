@@ -41,6 +41,8 @@ import {
 } from "./components/ComingSoonDialog.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
 import { AccountModal } from "./components/AccountModal.js";
+import { ConfirmDialog } from "./components/ConfirmDialog.js";
+import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 import { RegistrySourceProvider } from "./RegistrySourceContext.js";
 
@@ -149,6 +151,37 @@ export function App(): React.ReactElement {
   const dismissAppError = (id: number) => {
     setAppErrors((prev) => prev.filter((x) => x.id !== id));
   };
+  // Destination-collision recovery surfaces (replacing the previous
+  // Settings-redirect + native window.confirm).
+  //
+  // `pickDestinationTarget`: when non-null, the inline picker is open
+  // and the user is choosing a new destination for the failing
+  // unregister. Carries the original error id so the panel can be
+  // dismissed on success.
+  //
+  // `overwriteTarget`: when non-null, the styled confirm dialog asks
+  // the user to authorize wiping the existing folder. Same `errorId`
+  // contract.
+  const [pickDestinationTarget, setPickDestinationTarget] = useState<{
+    errorId: number;
+    name: string;
+    currentDestination: AgentId;
+  } | null>(null);
+  const [overwriteTarget, setOverwriteTarget] = useState<{
+    errorId: number;
+    name: string;
+    destDir: string;
+  } | null>(null);
+  // Mid-sweep state for the bulk Fix-broken-links flow: after we've
+  // tried to repair each skill, the unrepairable subset is shown in a
+  // styled ConfirmDialog that asks whether to drop the dead symlinks.
+  const [bulkRepairPrompt, setBulkRepairPrompt] = useState<{
+    repaired: number;
+    unrepairable: Array<{
+      name: string;
+      entries: Array<{ agent: string; linkPath: string }>;
+    }>;
+  } | null>(null);
   // Dispatch table for AppError suggestedActions. Each kind maps to a
   // handler that knows the surrounding context (current settings,
   // refresh, toast). The handler can dismiss the originating panel.
@@ -158,11 +191,23 @@ export function App(): React.ReactElement {
     kind: string,
   ): Promise<void> => {
     if (kind === "open-unregister-destination-settings") {
-      dismissAppError(id);
-      setShowSettings(true);
-      flash(
-        "Open Settings → Skills → Unregister destination, pick a new path, save, and retry.",
-      );
+      const name =
+        typeof error.copyableDetails?.["name"] === "string"
+          ? (error.copyableDetails["name"] as string)
+          : null;
+      const dest =
+        typeof error.copyableDetails?.["destination"] === "string"
+          ? (error.copyableDetails["destination"] as AgentId)
+          : settings.unregisterDestinationAgent;
+      if (!name) {
+        flash("Couldn't retry — original target name was lost.");
+        return;
+      }
+      setPickDestinationTarget({
+        errorId: id,
+        name,
+        currentDestination: dest,
+      });
       return;
     }
     if (kind === "unregister-force-overwrite") {
@@ -170,30 +215,15 @@ export function App(): React.ReactElement {
         typeof error.copyableDetails?.["name"] === "string"
           ? (error.copyableDetails["name"] as string)
           : null;
+      const destDir =
+        typeof error.copyableDetails?.["destDir"] === "string"
+          ? (error.copyableDetails["destDir"] as string)
+          : "";
       if (!name) {
         flash("Couldn't retry — original target name was lost.");
         return;
       }
-      const ok = window.confirm(
-        `Overwrite the existing folder at the destination and finish unregistering ${name}? This permanently deletes whatever's there now.`,
-      );
-      if (!ok) return;
-      const r = await window.skillsBank.unregister(
-        name,
-        settings.unregisterDestinationAgent,
-        true,
-      );
-      if (r.ok) {
-        dismissAppError(id);
-        flash(r.message);
-        void window.skillsBank.rebuildIndex();
-        await refresh();
-      } else if (r.error) {
-        dismissAppError(id);
-        pushAppError(r.error);
-      } else {
-        flash(r.message);
-      }
+      setOverwriteTarget({ errorId: id, name, destDir });
       return;
     }
   };
@@ -917,6 +947,9 @@ export function App(): React.ReactElement {
               showPromoteToGitHubComingSoon ||
               !!conflictModalEntries ||
               showRepoPicker ||
+              !!pickDestinationTarget ||
+              !!overwriteTarget ||
+              !!bulkRepairPrompt ||
               !!selected
             }
             terminalApp={settings.terminalApp}
@@ -1034,51 +1067,13 @@ export function App(): React.ReactElement {
                     return;
                   }
 
-                  const totalLinks = unrepairableBySkill.reduce(
-                    (acc, u) => acc + u.entries.length,
-                    0,
-                  );
-                  const summaryLines = unrepairableBySkill
-                    .map(
-                      (u) =>
-                        `  • ${u.name} (${u.entries.length} link${u.entries.length === 1 ? "" : "s"})`,
-                    )
-                    .join("\n");
-                  const proceed = window.confirm(
-                    `Repaired ${repaired} skill${repaired === 1 ? "" : "s"}.\n\n` +
-                      `${unrepairableBySkill.length} skill${unrepairableBySkill.length === 1 ? "" : "s"} ` +
-                      `couldn't be repaired (the registry copy is gone). Remove the ` +
-                      `${totalLinks} dead symlink${totalLinks === 1 ? "" : "s"}?\n\n${summaryLines}\n\n` +
-                      `The agent dirs lose the symlink; the registry copy is unaffected.`,
-                  );
-                  if (!proceed) {
-                    flash(
-                      `Repaired ${repaired}; ${unrepairableBySkill.length} left unresolved.`,
-                    );
-                    return;
-                  }
-
-                  let removed = 0;
-                  for (const u of unrepairableBySkill) {
-                    const agents = u.entries.map((e) => e.agent) as AgentId[];
-                    try {
-                      await window.skillsBank.removeBrokenLinks(
-                        u.name,
-                        agents,
-                      );
-                      removed += 1;
-                    } catch (err) {
-                      pushAppError({
-                        code: "remove-broken.threw",
-                        message: `${u.name}: ${err instanceof Error ? err.message : String(err)}`,
-                        copyableDetails: { name: u.name },
-                      });
-                    }
-                  }
-                  await refresh();
-                  flash(
-                    `Repaired ${repaired}; removed dead links for ${removed} skill${removed === 1 ? "" : "s"}.`,
-                  );
+                  // Hand off to the styled ConfirmDialog. The dialog's
+                  // onConfirm runs the removal sweep; cancel surfaces a
+                  // partial-success toast.
+                  setBulkRepairPrompt({
+                    repaired,
+                    unrepairable: unrepairableBySkill,
+                  });
                 }}
                 onInlineDelete={(group) => {
                   // M9b: stash the group on deleteTarget so the
@@ -1501,6 +1496,174 @@ export function App(): React.ReactElement {
           ]}
         />
 
+        <DestinationPickerDialog
+          open={pickDestinationTarget !== null}
+          skillName={pickDestinationTarget?.name ?? ""}
+          currentDestination={
+            pickDestinationTarget?.currentDestination ??
+            settings.unregisterDestinationAgent
+          }
+          onCancel={() => setPickDestinationTarget(null)}
+          onPick={async (next, persistAsDefault) => {
+            if (!pickDestinationTarget) return;
+            const target = pickDestinationTarget;
+            setPickDestinationTarget(null);
+            if (persistAsDefault) {
+              saveSettings({
+                ...settings,
+                unregisterDestinationAgent: next,
+              });
+            }
+            const r = await window.skillsBank.unregister(target.name, next);
+            if (r.ok) {
+              dismissAppError(target.errorId);
+              flash(r.message);
+              void window.skillsBank.rebuildIndex();
+              await refresh();
+            } else if (r.error) {
+              dismissAppError(target.errorId);
+              pushAppError(r.error);
+            } else {
+              flash(r.message);
+            }
+          }}
+        />
+
+        <ConfirmDialog
+          open={overwriteTarget !== null}
+          title={`Overwrite existing folder?`}
+          body={
+            <>
+              <p style={{ margin: 0 }}>
+                A folder already exists at{" "}
+                <code>{overwriteTarget?.destDir}</code>. Continuing will
+                permanently delete it and move{" "}
+                <code>{overwriteTarget?.name}</code> in its place.
+              </p>
+              <p
+                style={{
+                  marginTop: 10,
+                  marginBottom: 0,
+                  fontSize: 12,
+                  color: "var(--text-3)",
+                }}
+              >
+                This cannot be undone.
+              </p>
+            </>
+          }
+          confirmLabel="Overwrite and unregister"
+          destructive
+          onCancel={() => setOverwriteTarget(null)}
+          onConfirm={async () => {
+            if (!overwriteTarget) return;
+            const target = overwriteTarget;
+            setOverwriteTarget(null);
+            const r = await window.skillsBank.unregister(
+              target.name,
+              settings.unregisterDestinationAgent,
+              true,
+            );
+            if (r.ok) {
+              dismissAppError(target.errorId);
+              flash(r.message);
+              void window.skillsBank.rebuildIndex();
+              await refresh();
+            } else if (r.error) {
+              dismissAppError(target.errorId);
+              pushAppError(r.error);
+            } else {
+              flash(r.message);
+            }
+          }}
+        />
+
+        <ConfirmDialog
+          open={bulkRepairPrompt !== null}
+          title="Remove dead symlinks?"
+          body={(() => {
+            if (!bulkRepairPrompt) return null;
+            const { repaired, unrepairable } = bulkRepairPrompt;
+            const totalLinks = unrepairable.reduce(
+              (acc, u) => acc + u.entries.length,
+              0,
+            );
+            return (
+              <>
+                <p style={{ margin: 0 }}>
+                  Repaired {repaired} skill{repaired === 1 ? "" : "s"}.{" "}
+                  {unrepairable.length} skill
+                  {unrepairable.length === 1 ? "" : "s"} couldn't be repaired
+                  because the registry copy is gone.
+                </p>
+                <p
+                  style={{
+                    margin: "10px 0 6px 0",
+                    fontSize: 12,
+                    color: "var(--text-3)",
+                  }}
+                >
+                  Remove the {totalLinks} dead symlink
+                  {totalLinks === 1 ? "" : "s"}? The agent dirs lose the
+                  symlink; nothing else is touched.
+                </p>
+                <ul
+                  style={{
+                    margin: "8px 0 0 0",
+                    paddingLeft: 18,
+                    fontSize: 12,
+                    color: "var(--text-2)",
+                    maxHeight: 160,
+                    overflowY: "auto",
+                  }}
+                >
+                  {unrepairable.map((u) => (
+                    <li key={u.name}>
+                      <strong>{u.name}</strong> ({u.entries.length} link
+                      {u.entries.length === 1 ? "" : "s"})
+                    </li>
+                  ))}
+                </ul>
+              </>
+            );
+          })()}
+          confirmLabel="Remove dead links"
+          destructive
+          onCancel={() => {
+            if (!bulkRepairPrompt) return;
+            const { repaired, unrepairable } = bulkRepairPrompt;
+            setBulkRepairPrompt(null);
+            flash(
+              `Repaired ${repaired}; ${unrepairable.length} left unresolved.`,
+            );
+          }}
+          onConfirm={async () => {
+            if (!bulkRepairPrompt) return;
+            const { repaired, unrepairable } = bulkRepairPrompt;
+            setBulkRepairPrompt(null);
+            let removed = 0;
+            for (const u of unrepairable) {
+              const agents = u.entries.map((e) => e.agent) as AgentId[];
+              try {
+                await window.skillsBank.removeBrokenLinks(u.name, agents);
+                removed += 1;
+              } catch (err) {
+                pushAppError({
+                  code: "remove-broken.threw",
+                  message: `${u.name}: ${err instanceof Error ? err.message : String(err)}`,
+                  copyableDetails: { name: u.name },
+                });
+              }
+            }
+            await refresh();
+            flash(
+              `Repaired ${repaired}; removed dead links for ${removed} skill${
+                removed === 1 ? "" : "s"
+              }.`,
+            );
+          }}
+        />
+
         {isUpdateModalOpen &&
           latestUpdateStatus &&
           (latestUpdateStatus.kind === "available" ||
@@ -1705,8 +1868,14 @@ export function App(): React.ReactElement {
                   classifyDrawerState(selected, installed, isRegistered)
                     .capabilities.canUnregister
                     ? async () => {
+                        // Remove-from-registry is a terminating action
+                        // for this surface — close the drawer up-front
+                        // so the result (toast or ErrorPanel) is the
+                        // only thing the user has to read.
+                        const name = selected.name;
+                        setSelected(null);
                         const r = await window.skillsBank.unregister(
-                          selected.name,
+                          name,
                           settings.unregisterDestinationAgent,
                         );
                         if (r.ok && r.wasAdopted) {
@@ -1743,7 +1912,6 @@ export function App(): React.ReactElement {
                         }
                         if (r.ok) {
                           void window.skillsBank.rebuildIndex();
-                          setSelected(null);
                         }
                         await refresh();
                       }

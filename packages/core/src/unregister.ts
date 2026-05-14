@@ -162,6 +162,35 @@ function unregisterAdopted(
     };
   }
 
+  // If `destDir` is itself a symlink that points at the source we're
+  // about to move (typical install→register→unregister: the file
+  // originated in agent dir, got adopted into the bank, and the agent
+  // dir kept a symlink to the bank copy), unlink it now. The move
+  // would otherwise see "destination exists" and refuse, surfacing a
+  // spurious collision on the happy path.
+  try {
+    const stat = fs.lstatSync(destDir);
+    if (stat.isSymbolicLink()) {
+      const resolved = (() => {
+        try {
+          return fs.realpathSync(destDir);
+        } catch {
+          return "";
+        }
+      })();
+      if (resolved === sourceDir) {
+        try {
+          fs.unlinkSync(destDir);
+        } catch {
+          // Fall through — the existsSync check below will catch it
+          // and surface a proper collision error.
+        }
+      }
+    }
+  } catch {
+    // destDir doesn't exist — nothing to clean up.
+  }
+
   // If the destination already has a folder by this name, refuse —
   // the user has a name collision with something already at the
   // shared agents dir. With `force: true`, wipe the existing folder
