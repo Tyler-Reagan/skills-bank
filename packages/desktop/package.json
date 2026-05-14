@@ -41,7 +41,7 @@
   "build": {
     "appId": "com.tyler-reagan.skills-bank",
     "productName": "Skills Bank",
-    "artifactName": "Skills-Bank-${version}.${ext}",
+    "artifactName": "Skills-Bank-${version}-${arch}.${ext}",
     "directories": {
       "output": "dist-electron"
     },
