@@ -1,39 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
+import {
+  AGENT_LABELS,
+  AGENT_PATHS,
+  ALL_AGENT_IDS as ALL_AGENTS,
+} from "../agentDisplay.js";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
-
-const AGENT_LABELS: Record<AgentId, string> = {
-  claude: "Claude Code",
-  cursor: "Cursor",
-  gemini: "Gemini",
-  copilot: "GitHub Copilot",
-  continue: "Continue",
-  cline: "Cline",
-  codex: "OpenAI Codex",
-  agents: "Agents (shared)",
-};
-const AGENT_PATHS: Record<AgentId, string> = {
-  claude: "~/.claude",
-  cursor: "~/.cursor",
-  gemini: "~/.gemini",
-  copilot: "~/.copilot",
-  continue: "~/.continue",
-  cline: "~/.cline",
-  codex: "~/.codex",
-  agents: "~/.agents",
-};
-const ALL_AGENTS: AgentId[] = [
-  "claude",
-  "cursor",
-  "gemini",
-  "copilot",
-  "continue",
-  "cline",
-  "codex",
-  "agents",
-];
 
 type GridColumns = "auto" | "2" | "3" | "4";
 type SearchDebounce = "off" | "100" | "250";
@@ -118,19 +92,6 @@ export function SettingsModal({
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
   const [draft, setDraft] = useState<AppSettings>(settings);
-
-  // See AccountModal — direct listener to ensure Esc actually closes.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" || e.code === "Escape") {
-        e.stopPropagation();
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", onKey, { capture: true });
-    return () => document.removeEventListener("keydown", onKey, { capture: true });
-  }, [onClose]);
 
   const toggleAgent = (id: AgentId) => {
     setDraft((prev) => {

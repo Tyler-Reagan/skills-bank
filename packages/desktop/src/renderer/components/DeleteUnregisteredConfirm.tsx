@@ -1,19 +1,9 @@
 import React, { useState } from "react";
-import type { AgentId, InstalledSkill } from "@skills-bank/core";
+import type { InstalledSkill } from "@skills-bank/core";
+import { AGENT_LABELS } from "../agentDisplay.js";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
-
-const AGENT_LABELS: Record<AgentId, string> = {
-  claude: "Claude Code",
-  cursor: "Cursor",
-  gemini: "Gemini",
-  copilot: "GitHub Copilot",
-  continue: "Continue",
-  cline: "Cline",
-  codex: "OpenAI Codex",
-  agents: "Agents (shared)",
-};
 
 interface Props {
   name: string;

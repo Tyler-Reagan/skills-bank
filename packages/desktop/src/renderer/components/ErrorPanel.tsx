@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { AppError } from "@skills-bank/core";
+import type { AppError, SuggestedActionKind } from "@skills-bank/core";
 import { Icon } from "./Icon.js";
 
 /**
@@ -13,7 +13,7 @@ import { Icon } from "./Icon.js";
 interface Props {
   error: AppError;
   /** Click handler for the `suggestedAction.kind`. Caller decides. */
-  onSuggestedAction?: (kind: string) => void | Promise<void>;
+  onSuggestedAction?: (kind: SuggestedActionKind) => void | Promise<void>;
   onDismiss: () => void;
 }
 

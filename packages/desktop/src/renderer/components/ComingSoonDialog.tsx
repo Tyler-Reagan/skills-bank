@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { Icon } from "./Icon.js";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
@@ -32,23 +32,9 @@ export function ComingSoonDialog({
   bullets,
 }: Props): React.ReactElement | null {
   useFocusReturn();
-  useEscapeToClose(onClose);
+  useEscapeToClose(onClose, open);
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
-
-  // See AccountModal — direct listener to ensure Esc actually closes.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" || e.code === "Escape") {
-        e.stopPropagation();
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", onKey, { capture: true });
-    return () => document.removeEventListener("keydown", onKey, { capture: true });
-  }, [onClose, open]);
 
   if (!open) return null;
 

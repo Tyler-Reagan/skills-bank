@@ -157,17 +157,17 @@ export function App(): React.ReactElement {
   const dismissAppError = (id: number) => {
     setAppErrors((prev) => prev.filter((x) => x.id !== id));
   };
+  // Typed string-key reader for AppError.copyableDetails. Returns the
+  // value when present and a string; null otherwise.
+  const detailString = (
+    e: import("@skills-bank/core").AppError,
+    key: string,
+  ): string | null => {
+    const v = e.copyableDetails?.[key];
+    return typeof v === "string" ? v : null;
+  };
   // Destination-collision recovery surfaces (replacing the previous
   // Settings-redirect + native window.confirm).
-  //
-  // `pickDestinationTarget`: when non-null, the inline picker is open
-  // and the user is choosing a new destination for the failing
-  // unregister. Carries the original error id so the panel can be
-  // dismissed on success.
-  //
-  // `overwriteTarget`: when non-null, the styled confirm dialog asks
-  // the user to authorize wiping the existing folder. Same `errorId`
-  // contract.
   const [pickDestinationTarget, setPickDestinationTarget] = useState<{
     errorId: number;
     name: string;
@@ -194,17 +194,13 @@ export function App(): React.ReactElement {
   const handleSuggestedAction = async (
     error: import("@skills-bank/core").AppError,
     id: number,
-    kind: string,
+    kind: import("@skills-bank/core").SuggestedActionKind,
   ): Promise<void> => {
     if (kind === "open-unregister-destination-settings") {
-      const name =
-        typeof error.copyableDetails?.["name"] === "string"
-          ? (error.copyableDetails["name"] as string)
-          : null;
+      const name = detailString(error, "name");
       const dest =
-        typeof error.copyableDetails?.["destination"] === "string"
-          ? (error.copyableDetails["destination"] as AgentId)
-          : settings.unregisterDestinationAgent;
+        (detailString(error, "destination") as AgentId | null) ??
+        settings.unregisterDestinationAgent;
       if (!name) {
         flash("Couldn't retry — original target name was lost.");
         return;
@@ -217,14 +213,8 @@ export function App(): React.ReactElement {
       return;
     }
     if (kind === "unregister-force-overwrite") {
-      const name =
-        typeof error.copyableDetails?.["name"] === "string"
-          ? (error.copyableDetails["name"] as string)
-          : null;
-      const destDir =
-        typeof error.copyableDetails?.["destDir"] === "string"
-          ? (error.copyableDetails["destDir"] as string)
-          : "";
+      const name = detailString(error, "name");
+      const destDir = detailString(error, "destDir") ?? "";
       if (!name) {
         flash("Couldn't retry — original target name was lost.");
         return;
@@ -506,6 +496,28 @@ export function App(): React.ReactElement {
       setRefreshing(false);
     }
   }, [settings.customSkillsDirs]);
+
+  // Common post-action plumbing for unregister retries: dismiss the
+  // originating panel on success, flash, refresh. Failures route the
+  // new structured error back through the panel.
+  const handleUnregisterResult = useCallback(
+    async (
+      errorId: number,
+      r: Awaited<ReturnType<typeof window.skillsBank.unregister>>,
+    ) => {
+      if (r.ok) {
+        dismissAppError(errorId);
+        flash(r.message);
+        await refresh();
+      } else if (r.error) {
+        dismissAppError(errorId);
+        pushAppError(r.error);
+      } else {
+        flash(r.message);
+      }
+    },
+    [flash, refresh],
+  );
 
   const addCustomSkillsDir = useCallback(async () => {
     const r = await window.skillsBank.pickCustomSkillsDir();
@@ -1531,16 +1543,7 @@ export function App(): React.ReactElement {
               });
             }
             const r = await window.skillsBank.unregister(target.name, next);
-            if (r.ok) {
-              dismissAppError(target.errorId);
-              flash(r.message);
-              await refresh();
-            } else if (r.error) {
-              dismissAppError(target.errorId);
-              pushAppError(r.error);
-            } else {
-              flash(r.message);
-            }
+            await handleUnregisterResult(target.errorId, r);
           }}
         />
 
@@ -1568,7 +1571,7 @@ export function App(): React.ReactElement {
             </>
           }
           confirmLabel="Overwrite and unregister"
-          destructive
+          tone="danger"
           onCancel={() => setOverwriteTarget(null)}
           onConfirm={async () => {
             if (!overwriteTarget) return;
@@ -1579,16 +1582,7 @@ export function App(): React.ReactElement {
               settings.unregisterDestinationAgent,
               true,
             );
-            if (r.ok) {
-              dismissAppError(target.errorId);
-              flash(r.message);
-              await refresh();
-            } else if (r.error) {
-              dismissAppError(target.errorId);
-              pushAppError(r.error);
-            } else {
-              flash(r.message);
-            }
+            await handleUnregisterResult(target.errorId, r);
           }}
         />
 
@@ -1644,7 +1638,7 @@ export function App(): React.ReactElement {
             );
           })()}
           confirmLabel="Remove dead links"
-          destructive
+          tone="danger"
           onCancel={() => {
             if (!bulkRepairPrompt) return;
             const { repaired, unrepairable } = bulkRepairPrompt;
@@ -1657,20 +1651,26 @@ export function App(): React.ReactElement {
             if (!bulkRepairPrompt) return;
             const { repaired, unrepairable } = bulkRepairPrompt;
             setBulkRepairPrompt(null);
+            const results = await Promise.allSettled(
+              unrepairable.map((u) =>
+                window.skillsBank
+                  .removeBrokenLinks(u.name, u.entries.map((e) => e.agent) as AgentId[])
+                  .then(() => u.name),
+              ),
+            );
             let removed = 0;
-            for (const u of unrepairable) {
-              const agents = u.entries.map((e) => e.agent) as AgentId[];
-              try {
-                await window.skillsBank.removeBrokenLinks(u.name, agents);
+            results.forEach((r, i) => {
+              if (r.status === "fulfilled") {
                 removed += 1;
-              } catch (err) {
+              } else {
+                const name = unrepairable[i]!.name;
                 pushAppError({
                   code: "remove-broken.threw",
-                  message: `${u.name}: ${err instanceof Error ? err.message : String(err)}`,
-                  copyableDetails: { name: u.name },
+                  message: `${name}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`,
+                  copyableDetails: { name },
                 });
               }
-            }
+            });
             await refresh();
             flash(
               `Repaired ${repaired}; removed dead links and dropped ${removed} unbacked registry entr${

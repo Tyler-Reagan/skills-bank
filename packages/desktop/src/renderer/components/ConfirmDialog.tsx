@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
+import { modal, modalFooter, overlay } from "./modalStyles.js";
 
 interface Props {
   open: boolean;
@@ -10,8 +12,11 @@ interface Props {
   /** Defaults to "Cancel". */
   cancelLabel?: string;
   confirmLabel: string;
-  /** When true, the confirm button is rendered in the danger family. */
-  destructive?: boolean;
+  /**
+   * Visual treatment of the confirm button. Mirrors
+   * `SuggestedAction.tone`. Defaults to `"primary"`.
+   */
+  tone?: "primary" | "danger";
   onCancel: () => void;
   onConfirm: () => void | Promise<void>;
 }
@@ -28,28 +33,15 @@ export function ConfirmDialog({
   body,
   cancelLabel = "Cancel",
   confirmLabel,
-  destructive = false,
+  tone = "primary",
   onCancel,
   onConfirm,
 }: Props): React.ReactElement | null {
   useFocusReturn();
+  useEscapeToClose(onCancel, open);
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" || e.code === "Escape") {
-        e.stopPropagation();
-        e.preventDefault();
-        onCancel();
-      }
-    };
-    document.addEventListener("keydown", onKey, { capture: true });
-    return () =>
-      document.removeEventListener("keydown", onKey, { capture: true });
-  }, [onCancel, open]);
 
   if (!open) return null;
 
@@ -66,7 +58,7 @@ export function ConfirmDialog({
     <div style={overlay} onClick={onCancel} role="presentation">
       <div
         ref={modalRef}
-        style={modal}
+        style={modal()}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -74,7 +66,7 @@ export function ConfirmDialog({
         tabIndex={-1}
       >
         <h2 id="confirm-title" style={titleStyle}>
-          {destructive && (
+          {tone === "danger" && (
             <span style={iconWrap} aria-hidden="true">
               <Icon name="alert-triangle" size="md" />
             </span>
@@ -82,7 +74,7 @@ export function ConfirmDialog({
           {title}
         </h2>
         <div style={bodyStyle}>{body}</div>
-        <div style={footer}>
+        <div style={modalFooter}>
           <button
             className="btn"
             type="button"
@@ -92,7 +84,7 @@ export function ConfirmDialog({
             {cancelLabel}
           </button>
           <button
-            className={destructive ? "btn danger" : "btn primary"}
+            className={tone === "danger" ? "btn danger" : "btn primary"}
             type="button"
             onClick={() => void submit()}
             disabled={submitting}
@@ -110,28 +102,6 @@ export function ConfirmDialog({
     </div>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1100,
-};
-
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 480,
-  maxWidth: "90vw",
-  maxHeight: "85vh",
-  overflowY: "auto",
-  outline: "none",
-};
 
 const titleStyle: React.CSSProperties = {
   margin: 0,
@@ -152,11 +122,4 @@ const bodyStyle: React.CSSProperties = {
   fontSize: 13,
   lineHeight: 1.5,
   color: "var(--text-2)",
-};
-
-const footer: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  marginTop: 20,
 };

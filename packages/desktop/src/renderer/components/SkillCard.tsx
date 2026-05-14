@@ -1,32 +1,7 @@
 import React, { useState } from "react";
 import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import { AGENT_LABELS, AGENT_PATHS } from "../agentDisplay.js";
 import { Icon } from "./Icon.js";
-
-// Renderer-only label + path maps. Don't import AGENTS as a runtime value
-// from @skills-bank/core — that pulls build.ts (and node:child_process)
-// into the renderer bundle. Keep these in sync with
-// packages/core/src/agents.ts.
-const AGENT_LABELS: Record<AgentId, string> = {
-  claude: "Claude Code",
-  cursor: "Cursor",
-  gemini: "Gemini",
-  copilot: "GitHub Copilot",
-  continue: "Continue",
-  cline: "Cline",
-  codex: "OpenAI Codex",
-  agents: "Agents (shared)",
-};
-
-const AGENT_PATHS: Record<AgentId, string> = {
-  claude: "~/.claude",
-  cursor: "~/.cursor",
-  gemini: "~/.gemini",
-  copilot: "~/.copilot",
-  continue: "~/.continue",
-  cline: "~/.cline",
-  codex: "~/.codex",
-  agents: "~/.agents",
-};
 
 function freshness(lastCommit: RegistryEntry["lastCommit"]): {
   label: string;

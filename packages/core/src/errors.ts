@@ -11,13 +11,22 @@
  * copied as a structured Markdown block when the user clicks Copy.
  */
 /**
+ * Stable id strings the renderer maps to a handler. Narrow union so a
+ * typo on either side fails at build instead of silently no-op'ing.
+ * Add new kinds here when you add a new dispatch case in
+ * App.tsx's handleSuggestedAction.
+ */
+export type SuggestedActionKind =
+  | "open-unregister-destination-settings"
+  | "unregister-force-overwrite";
+
+/**
  * Next-step affordance the renderer can render as a button.
- * `kind` is a stable id the renderer maps to a handler; `tone`
- * controls visual treatment (danger for irreversible operations
+ * `tone` controls visual treatment (danger for irreversible operations
  * like force-overwrite).
  */
 export interface SuggestedAction {
-  kind: string;
+  kind: SuggestedActionKind;
   label: string;
   tone?: "primary" | "danger";
 }

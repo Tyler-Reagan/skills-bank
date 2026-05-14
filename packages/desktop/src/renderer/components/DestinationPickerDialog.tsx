@@ -1,26 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
+import { AGENTS } from "../agentDisplay.js";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
+import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
-
-// Inlined to keep this file type-only against @skills-bank/core. Pulling
-// AGENTS as a value drags in node:fs/node:child_process through the core
-// barrel and breaks the Vite renderer build. Matches the inline pattern
-// used by DeleteUnregisteredConfirm.tsx.
-const AGENT_OPTIONS: ReadonlyArray<{
-  id: AgentId;
-  label: string;
-  relativePath: string;
-}> = [
-  { id: "claude", label: "Claude Code", relativePath: ".claude/skills" },
-  { id: "cursor", label: "Cursor", relativePath: ".cursor/skills" },
-  { id: "gemini", label: "Gemini", relativePath: ".gemini/skills" },
-  { id: "copilot", label: "GitHub Copilot", relativePath: ".copilot/skills" },
-  { id: "continue", label: "Continue", relativePath: ".continue/skills" },
-  { id: "cline", label: "Cline", relativePath: ".cline/skills" },
-  { id: "codex", label: "OpenAI Codex", relativePath: ".codex/skills" },
-  { id: "agents", label: "Agents (shared)", relativePath: ".agents/skills" },
-];
+import { modal, modalFooter, overlay } from "./modalStyles.js";
 
 interface Props {
   open: boolean;
@@ -47,13 +31,14 @@ export function DestinationPickerDialog({
   onPick,
 }: Props): React.ReactElement | null {
   useFocusReturn();
+  useEscapeToClose(onCancel, open);
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
   const options = useMemo(
-    () => AGENT_OPTIONS.filter((a) => a.id !== currentDestination),
+    () => AGENTS.filter((a) => a.id !== currentDestination),
     [currentDestination],
   );
-  const firstChoice = options[0]?.id ?? AGENT_OPTIONS[0]!.id;
+  const firstChoice = options[0]?.id ?? AGENTS[0]!.id;
   const [picked, setPicked] = useState<AgentId>(firstChoice);
   const [persist, setPersist] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -61,20 +46,6 @@ export function DestinationPickerDialog({
   useEffect(() => {
     if (open) setPicked(firstChoice);
   }, [open, firstChoice]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" || e.code === "Escape") {
-        e.stopPropagation();
-        e.preventDefault();
-        onCancel();
-      }
-    };
-    document.addEventListener("keydown", onKey, { capture: true });
-    return () =>
-      document.removeEventListener("keydown", onKey, { capture: true });
-  }, [open, onCancel]);
 
   if (!open) return null;
 
@@ -91,7 +62,7 @@ export function DestinationPickerDialog({
     <div style={overlay} onClick={onCancel} role="presentation">
       <div
         ref={modalRef}
-        style={modal}
+        style={modal(520)}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -143,7 +114,7 @@ export function DestinationPickerDialog({
           <span>Use this as my default unregister destination from now on</span>
         </label>
 
-        <div style={footer}>
+        <div style={modalFooter}>
           <button
             className="btn"
             type="button"
@@ -171,28 +142,6 @@ export function DestinationPickerDialog({
     </div>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1100,
-};
-
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 520,
-  maxWidth: "90vw",
-  maxHeight: "85vh",
-  overflowY: "auto",
-  outline: "none",
-};
 
 const titleStyle: React.CSSProperties = {
   margin: 0,
@@ -264,9 +213,3 @@ const persistRow: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const footer: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  marginTop: 20,
-};
