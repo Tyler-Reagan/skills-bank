@@ -115,11 +115,18 @@ export function buildRegistryIndex(
         // skills are just unregisterable). Stale entries in the
         // hidden list for skills that lost canon status get ignored.
         if (built.canon && hiddenCanon.has(sk.name)) built.hidden = true;
-        // Drift detection for skills that came from a bundled sync.
-        // We persist the post-sync content hash in .skills-bank-hash;
-        // current folder hash != stored hash ⇒ the user (or some
-        // process) edited the bundled copy locally.
-        if (built.source.source === "bundled") {
+        // Drift detection for skills with a recorded baseline hash.
+        // Two paths populate `.skills-bank-hash` today: the bundled
+        // sync flow (snapshot at sync time) and the upstream-scanner
+        // stamp (snapshot at scan time). Either way: live folder hash
+        // != stored hash ⇒ the user has edited the skill locally.
+        // The classifier distinguishes which heal flow applies based
+        // on the source marker (`bundled-skill-edited` vs the
+        // upstream-aware `user-edited-with-upstream`).
+        if (
+          built.source.source === "bundled" ||
+          built.source.upstream !== undefined
+        ) {
           const recorded = readSyncedHash(skillDir);
           if (recorded) {
             const live = hashSkillFolder(skillDir);

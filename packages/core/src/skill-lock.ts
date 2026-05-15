@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import {
   readSkillSource,
   UPSTREAM_KIND_GITHUB,
@@ -167,6 +168,17 @@ export function scanAndStampUpstreamFromLock(registryRoot: string): {
     if (!inferred) continue;
     try {
       writeSkillSource(skillDir, { ...base, upstream: inferred });
+      // Capture the on-disk content hash as the user-edit baseline.
+      // The CLI's `skillFolderHash` is a SHA-1 git tree hash (probe
+      // identity); this is the SHA-256 we compare against on every
+      // build to detect post-stamp local edits. We never re-baseline
+      // here even if a stale hash file exists — the scanner runs once
+      // per skill (gated above) so this write is idempotent in
+      // practice. Best-effort: a null hash (folder too large) just
+      // skips baseline-writing; drift detection silently disables
+      // for that skill until it shrinks.
+      const baseline = hashSkillFolder(skillDir);
+      if (baseline) writeSyncedHash(skillDir, baseline);
       stamped++;
     } catch {
       // A failed write isn't fatal — next scan retries.
