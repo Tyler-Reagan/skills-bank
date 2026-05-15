@@ -1,5 +1,5 @@
 import React from "react";
-import type { AuthStatus } from "../../shared/ipc.js";
+import { BUNDLED_REPO, type AuthStatus } from "../../shared/ipc.js";
 import { Icon } from "./Icon.js";
 
 export type Theme = "dark" | "light";
@@ -12,10 +12,14 @@ interface Props {
   onToggleTheme: () => void;
   density: Density;
   onToggleDensity: () => void;
+  /**
+   * Universal upstream-refresh action. Plan 02 retired the separate
+   * "Sync skills" affordance — bundled-default and custom-repo users
+   * both refresh against a GitHub tarball via the same diff-before-apply
+   * path. Falls back to `BUNDLED_REPO` when no repo is linked.
+   */
   syncing: boolean;
   onSync: () => void;
-  /** When false (github-linked), the bundled-sync button is hidden. */
-  showSync: boolean;
   authStatus: AuthStatus | null;
   onOpenAccount: () => void;
   onOpenSettings: () => void;
@@ -38,7 +42,6 @@ export function Header({
   onToggleDensity,
   syncing,
   onSync,
-  showSync,
   authStatus,
   onOpenAccount,
   onOpenSettings,
@@ -48,10 +51,13 @@ export function Header({
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
     density === "comfortable" ? "compact" : "comfortable";
-  const isGithub = authStatus?.registrySource === "github";
-  const sourceChipText = isGithub
-    ? (authStatus?.user?.login ?? "linked")
-    : "Local bundled";
+  const linkedRepo = authStatus?.linkedRepo ?? null;
+  const isBundledDefault =
+    !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
+  const sourceChipText = isBundledDefault
+    ? "Bundled"
+    : linkedRepo!.fullName;
+  const syncTarget = isBundledDefault ? BUNDLED_REPO : linkedRepo!.fullName;
   return (
     <header className="header">
       <h1 className="visually-hidden">skills-bank</h1>
@@ -99,29 +105,29 @@ export function Header({
           >
             <Icon name={theme === "dark" ? "sun" : "moon"} size="md" />
           </button>
-          {showSync && (
-            <button
-              className="refresh-btn"
-              disabled={syncing}
-              title="Sync bundled skills from upstream into the registry. Skills you added are not touched. (App updates are separate — they're handled automatically and surfaced as a badge next to the logo when one is ready.)"
-              aria-label={
-                syncing
-                  ? "Syncing bundled skills"
-                  : "Sync bundled skills from upstream"
-              }
-              onClick={onSync}
-            >
-              {syncing ? (
-                <>
-                  <span className="spinner inline" aria-hidden="true" /> Syncing
-                </>
-              ) : (
-                <>
-                  <Icon name="download" size="md" /> Sync skills
-                </>
-              )}
-            </button>
-          )}
+          <button
+            className="refresh-btn"
+            disabled={syncing}
+            title={`Refresh registry contents from ${syncTarget}. Your local edits and added skills are preserved through the diff-before-apply flow.`}
+            aria-label={
+              syncing
+                ? `Refreshing from ${syncTarget}`
+                : `Refresh from ${syncTarget}`
+            }
+            onClick={onSync}
+          >
+            {syncing ? (
+              <>
+                <span className="spinner inline" aria-hidden="true" />{" "}
+                Refreshing
+              </>
+            ) : (
+              <>
+                <Icon name="download" size="md" /> Refresh from{" "}
+                {isBundledDefault ? "bank" : linkedRepo!.fullName}
+              </>
+            )}
+          </button>
           <button
             className="refresh-btn"
             disabled={refreshing}
@@ -140,7 +146,7 @@ export function Header({
               </>
             ) : (
               <>
-                <Icon name="refresh" size="md" /> Refresh
+                <Icon name="refresh" size="md" /> Rescan
               </>
             )}
           </button>
@@ -148,10 +154,10 @@ export function Header({
             className="header-trigger account-trigger"
             type="button"
             onClick={onOpenAccount}
-            title={`Account · registry source: ${sourceChipText}`}
-            aria-label={`Open Account (current source: ${sourceChipText})`}
+            title={`Account · ${sourceChipText}`}
+            aria-label={`Open Account (${sourceChipText})`}
           >
-            {isGithub && authStatus?.user?.avatarUrl ? (
+            {authStatus?.user?.avatarUrl ? (
               <img
                 src={authStatus.user.avatarUrl}
                 alt=""

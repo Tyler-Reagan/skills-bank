@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { UserRepo } from "../../shared/ipc.js";
+import { BUNDLED_REPO, type UserRepo } from "../../shared/ipc.js";
 import { useFocusReturn } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
@@ -10,12 +10,28 @@ interface Props {
   onSignOut: () => Promise<void>;
 }
 
+// Synthetic entry for the canonical bundled repo. Plan 02 surfaces this
+// as the Recommended row so users who Connect with GitHub can keep the
+// curated set with higher rate limits (5000/hr) without finding it in
+// the list of their own repos.
+const BUNDLED_RECOMMENDATION: UserRepo & { description: string } = {
+  fullName: BUNDLED_REPO,
+  isPrivate: false,
+  defaultBranch: "main",
+  description:
+    "The curated bundled set shipped with the app. Pick this for the public skills bank with higher (5000/hr) rate limits.",
+};
+
 /**
  * Lists the authenticated user's GitHub repos and lets them pick one to
- * use as the registry source. We don't pre-filter by "has skills/" because
- * verifying that across hundreds of repos requires a content API call per
- * repo; instead we validate at pick time and surface the error if the
- * chosen repo lacks a skills/ directory.
+ * use as the registry source. The bundled repo (`Tyler-Reagan/skills-bank`)
+ * is pre-listed as the Recommended row so users who Connect with GitHub
+ * can stay on the curated set rather than only seeing their own repos.
+ *
+ * We don't pre-filter user repos by "has skills/" because verifying that
+ * across hundreds of repos requires a content API call per repo; instead
+ * we validate at pick time and surface the error if the chosen repo lacks
+ * a skills/ directory.
  */
 export function RepoPickerModal({
   onClose,
@@ -42,9 +58,15 @@ export function RepoPickerModal({
 
   const filtered = useMemo(() => {
     if (!repos) return [];
+    // Inject the bundled-recommendation at the top. If the user's
+    // own repo list already contains BUNDLED_REPO (the maintainer's
+    // case), drop the duplicate so it only renders once — with the
+    // Recommended affordance.
+    const withoutDup = repos.filter((r) => r.fullName !== BUNDLED_REPO);
+    const merged = [BUNDLED_RECOMMENDATION, ...withoutDup];
     const q = search.trim().toLowerCase();
-    if (!q) return repos;
-    return repos.filter(
+    if (!q) return merged;
+    return merged.filter(
       (r) =>
         r.fullName.toLowerCase().includes(q) ||
         (r.description ?? "").toLowerCase().includes(q),
@@ -143,6 +165,7 @@ export function RepoPickerModal({
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "baseline",
+                  gap: 8,
                 }}
               >
                 <strong
@@ -150,18 +173,33 @@ export function RepoPickerModal({
                 >
                   {r.fullName}
                 </strong>
-                {r.isPrivate && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      color: "var(--text-3)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    private
-                  </span>
-                )}
+                <span style={{ display: "inline-flex", gap: 6 }}>
+                  {r.fullName === BUNDLED_REPO && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: "var(--accent)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        fontWeight: 700,
+                      }}
+                    >
+                      recommended
+                    </span>
+                  )}
+                  {r.isPrivate && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: "var(--text-3)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      private
+                    </span>
+                  )}
+                </span>
               </div>
               {r.description && (
                 <p

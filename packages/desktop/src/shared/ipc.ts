@@ -153,45 +153,22 @@ interface PickCustomSkillsDirResult {
  * collapses the local/github mode discriminator: every registry is linked
  * to a repo, defaulting to this one. A user is "on the bundled set" when
  * `linkedRepo === null` (fresh install / migrated from legacy local mode)
- * or `linkedRepo.fullName === BUNDLED_REPO`.
+ * or `linkedRepo.fullName === BUNDLED_REPO`. Renderer code checks the
+ * `linkedRepo` field on `AuthStatus` directly; no separate `mode()`
+ * helper, since every relevant branch collapses to "do I have a
+ * non-bundled linkedRepo?"
  */
 export const BUNDLED_REPO = "Tyler-Reagan/skills-bank";
 
 /**
- * Derived registry-mode label. Three states the renderer cares about:
- *   - `bundled-default` — no linked repo, or linked to the bundled default
- *     and unauthenticated. The classic local-bundled experience.
- *   - `bundled-authed` — linked to the bundled default with a valid token.
- *     Same content, higher rate limit (5000/hr vs 60/hr).
- *   - `custom` — linked to a user-picked repo. Always implies authed
- *     (the picker requires auth to enumerate user repos).
- *
- * Compute via `deriveMode(linkedRepo, user)`. The renderer uses this in
- * place of the legacy `registrySource` flag where mode-dependent copy
- * still applies; most call sites collapse to "do I have a linkedRepo?"
- * and don't need the three-way split.
- */
-export type RegistryMode = "bundled-default" | "bundled-authed" | "custom";
-
-export function deriveMode(
-  linkedRepo: LinkedRepoMetadata | null,
-  user: { login: string } | null,
-): RegistryMode {
-  if (!linkedRepo || linkedRepo.fullName === BUNDLED_REPO) {
-    return user ? "bundled-authed" : "bundled-default";
-  }
-  return "custom";
-}
-
-/**
  * Legacy mode discriminator. Kept as a derived alias on `AuthStatus` for
  * one release as a migration safety net per plan 02. New code should
- * branch on `linkedRepo` / `deriveMode` instead. Will be dropped in a
- * follow-up release after the migration has settled.
+ * branch on `linkedRepo` instead. Will be dropped in a follow-up release
+ * after the migration has settled.
  *
  * Mapping today: `"github"` ⇒ `linkedRepo !== null`; `"local"` ⇒
- * `linkedRepo === null`; legacy `null` is no longer emitted (the
- * onboarding split now lives in LoginScreen's two-card path).
+ * `linkedRepo === null`; `null` is emitted only on fresh installs that
+ * haven't completed onboarding (renderer routes to LoginScreen).
  */
 export type RegistrySource = "local" | "github";
 

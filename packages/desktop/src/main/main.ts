@@ -62,6 +62,7 @@ import {
   type SyncDecisions,
 } from "@skills-bank/core";
 import {
+  BUNDLED_REPO,
   IPC,
   type AuthStatus,
   type Bounds,
@@ -327,27 +328,20 @@ function resolveBootRegistryRoot(): string {
 
 let registryRoot: string = resolveBootRegistryRoot();
 
-// Resolve registry source at boot. Persona-collapse default: every fresh
-// install (or post-reset) lands on local-bundled. Stored values are
-// respected, so a linked GitHub repo persists across launches.
+// Resolve registry source at boot. Stored values are respected.
 //
-// Users transition local-bundled → github-linked at runtime via
-// AccountModal's "Connect to GitHub" button, which opens
-// ConnectGithubModal (Device Flow) and chains into RepoPickerModal.
-// The LoginScreen path here is reachable only via authLogout() (which
-// nulls registrySource), used by github-linked users signing out.
-function resolveBootRegistrySource(): RegistrySource {
-  const stored = readConfig().registrySource;
-  if (stored) return stored;
-  // First launch (or post-reset). Default to local-bundled and persist
-  // so the renderer never sees registrySource === null in the boot path.
-  writeConfig({
-    registryRoot,
-    registrySource: "local",
-    dismissedUpdateVersion: readConfig().dismissedUpdateVersion,
-    linkedRepo: null,
-  });
-  return "local";
+// Plan 02 (`github-first-onboarding`): fresh installs no longer auto-
+// coerce to "local". Returning null here triggers the two-card
+// LoginScreen on first launch — the user explicitly picks **Use the
+// public skills bank** (→ "local", linkedRepo stays null) or **Connect
+// with GitHub** (→ Device Flow → RepoPickerModal with the bundled repo
+// pre-listed as Recommended).
+//
+// Existing users — anyone with a config file from v0.10.0 or earlier —
+// already have a persisted value, so the LoginScreen path doesn't fire
+// for them and there's nothing to migrate.
+function resolveBootRegistrySource(): RegistrySource | null {
+  return readConfig().registrySource;
 }
 
 let registrySource: RegistrySource | null = resolveBootRegistrySource();
@@ -2026,21 +2020,28 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
 
 // ─── Auth + registry source ─────────────────────────────────────────────────
 //
-// `registrySource` drives which features the renderer surfaces. Local-bundled
-// users get the Sync flow; github-linked users get the registry-replace flow.
-// registrySource = null means first-launch and the renderer shows LoginScreen.
+// Plan 02: `linkedRepo` is the source of truth; `registrySource` survives
+// as a legacy alias on AuthStatus for one release. `registrySource = null`
+// still means first-launch (renderer shows LoginScreen); "local" means
+// bundled-default; "github" means a repo has been linked (which may be
+// `BUNDLED_REPO` or a user-picked custom).
 
 async function buildAuthStatus(): Promise<AuthStatus> {
   // Identity is independent of registry mode: a token persists across
   // mode switches (and is opportunistically used by local-bundled sync
   // for rate-limit headroom), so `user` reflects token validity, not
-  // current mode. linkedRepo only makes sense under github-linked.
+  // current mode.
   const user = await getCurrentUser();
   return {
     registrySource,
     isAuthConfigured: isAuthConfigured(),
     user,
-    linkedRepo: registrySource === "github" ? linkedRepo : null,
+    // Emit `linkedRepo` unconditionally so the renderer can render the
+    // linked-repo label / last-fetched chrome for any user who's bound
+    // to an explicit repo. Bundled-default users (`linkedRepo: null`)
+    // get the "Bundled (Tyler-Reagan/skills-bank)" label without
+    // last-fetched metadata.
+    linkedRepo,
   };
 }
 
@@ -2258,14 +2259,12 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) =>
 );
 
 ipcMain.handle(IPC.reposRefreshCurrent, async () => {
-  if (!linkedRepo) {
-    return {
-      ok: false,
-      message:
-        "No GitHub repo is linked yet. Use Choose registry repo to pick one.",
-    };
-  }
-  return replaceRegistryWithRepo(linkedRepo.fullName);
+  // Plan 02: Refresh is universal. Bundled-default users (`linkedRepo`
+  // null) fall through to the canonical bundled repo so the same
+  // diff-before-apply path serves every refresh — no separate Sync
+  // code path, no mode conditional in the renderer.
+  const target = linkedRepo?.fullName ?? BUNDLED_REPO;
+  return replaceRegistryWithRepo(target);
 });
 
 ipcMain.handle(IPC.openExternal, async (_e, url: string) => {

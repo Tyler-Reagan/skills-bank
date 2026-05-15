@@ -4,15 +4,13 @@ import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
 import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
-import { useRegistrySource } from "../RegistrySourceContext.js";
 
-const REGISTRY_TOOLTIP_LOCAL =
-  "Curated skills bundled with this app. Click Sync skills in the header to pull the latest from upstream. " +
-  "Skills you install from elsewhere appear in the Installed tab.";
-
-const REGISTRY_TOOLTIP_GITHUB =
-  "Skills in your connected GitHub repo. Manage content directly in your repo — " +
-  "the app never auto-syncs it. Skills you install from elsewhere appear in the Installed tab.";
+const REGISTRY_TOOLTIP =
+  "Skills in your registry — the curated bundled set by default, or a " +
+  "GitHub repo you've linked. Click Refresh from <repo> in the header to " +
+  "pull the latest; your local edits and added skills are preserved through " +
+  "the diff-before-apply flow. Skills you install elsewhere appear in the " +
+  "Installed tab.";
 
 interface Props {
   registry: RegistryEntry[];
@@ -46,25 +44,16 @@ export function BrowseTab({
   rebuilding,
   searchInputRef,
 }: Props): React.ReactElement {
-  const registrySource = useRegistrySource();
-  const isGithub = registrySource === "github";
-
   if (registry.length === 0) {
     return (
       <div className="empty-state">
         <strong>The registry is empty.</strong>
-        {isGithub ? (
-          <p>
-            Add skills to your connected GitHub repo, then click{" "}
-            <strong>Refresh</strong> to reload.
-          </p>
-        ) : (
-          <p>
-            Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
-            <code>meta.json</code> or a <code>SKILL.md</code> with YAML
-            frontmatter.
-          </p>
-        )}
+        <p>
+          Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
+          <code>meta.json</code> or a <code>SKILL.md</code> with YAML
+          frontmatter, or click <strong>Refresh from &lt;repo&gt;</strong> in
+          the header to pull from your linked registry.
+        </p>
         <div style={{ marginTop: 16 }}>
           <button
             className="btn primary"
@@ -73,10 +62,10 @@ export function BrowseTab({
           >
             {rebuilding ? (
               <>
-                <span className="spinner inline" /> Refreshing
+                <span className="spinner inline" /> Rescanning
               </>
             ) : (
-              "Refresh"
+              "Rescan"
             )}
           </button>
         </div>
@@ -108,15 +97,15 @@ export function BrowseTab({
         <span className="tab-intro-heading">
           <strong>Registry</strong>
           <InfoTooltip
-            text={isGithub ? REGISTRY_TOOLTIP_GITHUB : REGISTRY_TOOLTIP_LOCAL}
+            text={REGISTRY_TOOLTIP}
             label="What is the registry?"
           />
         </span>{" "}
-        {isGithub
-          ? "Browse and install skills from your connected registry. Manage content through your git repo — the app never overwrites it."
-          : "Browse and install curated skills. Click Sync skills in the header to pull upstream updates."}{" "}
-        Click any card to view its details, then <strong>Install</strong> to
-        link it into the agent directories you use (Claude Code, Cursor, etc.).
+        Browse and install skills from your registry. Click{" "}
+        <strong>Refresh from &lt;repo&gt;</strong> in the header to pull the
+        latest; your local edits and added skills are preserved. Click any card
+        to view its details, then <strong>Install</strong> to link it into the
+        agent directories you use (Claude Code, Cursor, etc.).
         <span className="meta-counts">
           <span>{registry.length} in registry</span>
           <span>·</span>

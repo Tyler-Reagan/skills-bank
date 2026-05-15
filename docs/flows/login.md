@@ -1,37 +1,42 @@
 # Registry source
 
-Skills Bank picks a registry source — the place where your skills physically live — when it launches. Two modes: **Local bundled** (the default — the curated set shipped with the app) and **GitHub-linked** (the registry mirrors a GitHub repo you own).
+Skills Bank reads its skills from a GitHub repo. By default that's the curated bank shipped with the app — `Tyler-Reagan/skills-bank` — but you can swap in any GitHub repo you own as the source of truth for your registry.
 
-## Default: Local bundled
+There's no separate "local mode" and "github mode" — every registry mirrors a repo. What changes is **which repo** and **whether you're signed in**.
 
-On first launch the app materializes a local registry at `~/Library/Application Support/Skills Bank/registry/` and seeds it with the curated bundled skills. You get:
+## First-launch onboarding
 
-- The full set of bundled skills, installable with one click.
-- A **Sync skills** button that fetches the latest upstream bundled skills while preserving anything you've added or modified.
-- The ability to register your own skills alongside the bundled ones.
-- **Export registry** and **Import a registry** from Account — move your registry to another machine or back it up as a zip.
+On first launch you pick a starting point:
 
-No GitHub auth required. This is the path the rest of the docs assume unless otherwise noted.
+### Use the public skills bank
 
-## GitHub-linked
+The default, low-friction path. The app boots into the Registry tab on top of the bundled curated set — no GitHub account needed.
 
-### What this mode is
+- Refresh re-fetches from `Tyler-Reagan/skills-bank` at the unauthenticated GitHub rate limit (60 requests/hour).
+- All registry operations (install, register, export, merge) work normally.
+- You can sign in later from **Account → Sign in with GitHub** for 5000/hr and private-repo access — no `pnpm reset` required.
 
-A GitHub repo you own becomes the **source of truth for your registry**: both the manifest (which skills exist) and their content (each `SKILL.md`) live in that repo. The Skills Bank app pulls from your repo on demand and renders the resulting registry locally. Think of it as:
+### Connect with GitHub
 
-- **Your repo** = your skill bank (the durable, version-controlled, portable artifact).
-- **Skills Bank app** = the viewer / installer that reads from the repo and wires skills into your agent directories.
+Authenticate via GitHub Device Flow. After signing in you pick a repo:
 
-The app itself never lives in your repo. You install Skills Bank once per machine; your repo holds the content that follows you across machines.
+- **Recommended row**: `Tyler-Reagan/skills-bank` — the same curated bank, now fetched at 5000/hr.
+- **Your repos**: any repo you own, with a `skills/` directory at its root, becomes your registry source of truth.
 
-### When to use it
+Pick the recommended row to stay on the curated bank with higher rate limits, or pick your own repo to host your own registry.
 
-- **Multi-machine continuity.** Same registry on your work laptop, personal laptop, and any future machine — clone, link, done.
-- **Curate your own set.** Pick the bundled skills you want, drop the ones you don't, add your own. Your repo's `skills/` is whatever you choose to put there.
-- **Team / org sharing.** Point teammates at the same repo and they get the same set.
-- **Version-controlled history.** `git log` shows your skill evolution; `git diff` shows what a refresh would change before you apply it.
+## The refresh flow (safe by default)
 
-Stay on **Local bundled** if you don't need any of that — local-bundled is simpler, requires no auth, and syncs the curated set from the app's canonical upstream automatically.
+When you click **Refresh from `<repo>`** (in the header or in Account):
+
+1. Skills Bank downloads a tarball of the linked repo's current commit.
+2. Diffs it against your current local registry.
+3. If any conflicts (you edited a tracked skill locally and the upstream also changed), opens a per-skill resolver where you pick **Keep mine** / **Use repo's** / **Rename mine**. Skills you've authored entirely yourself (`source: yours`) are protected from being silently overwritten.
+4. If no conflicts, applies upstream changes silently with a toast.
+
+This flow is identical whether you're on the bundled default or a custom repo — same modal, same per-skill choices, just pointed at whichever repo is linked.
+
+## Linking your own repo
 
 ### What your repo needs to contain
 
@@ -48,7 +53,7 @@ your-skill-bank-repo/
     └── ...
 ```
 
-That's it. The `skills/` directory at the repo root is the contract. Each subdirectory is one skill, and each skill needs a `SKILL.md`. The app validates this on link and refuses with a clear message if the structure is missing.
+The `skills/` directory at the repo root is the contract. Each subdirectory is one skill, and each skill needs a `SKILL.md`. The app validates this on link and refuses with a clear message if the structure is missing.
 
 Optional extras the app will pick up:
 
@@ -60,18 +65,18 @@ There is **no `index.json` to maintain** — the app generates one locally from 
 
 ### Setting up a new linked repo from scratch
 
-1. **Create a GitHub repo.** Empty, public or private, doesn't matter. Name is up to you (e.g. `my-skills-bank`, `team-skills`).
+1. **Create a GitHub repo.** Empty, public or private, doesn't matter.
 2. **Add a `skills/` directory at the root.**
 3. **Seed at least one skill.** Two easy ways:
    - Copy a skill folder out of this project's [`skills/`](../../skills/) directory and paste it under `skills/` in your repo.
    - Or hand-author a skill: create `skills/my-skill/SKILL.md` with the standard frontmatter and prose.
 4. **Commit and push.**
-5. **In Skills Bank**: first-launch screen → **Connect your own registry** → authenticate via GitHub Device Flow → **Choose registry repo** → pick your repo.
+5. **In Skills Bank**: **Account → Change linked repo** → pick your repo (or **Account → Sign in with GitHub** first if you haven't yet).
 6. The app fetches a tarball of your repo's current commit, replaces the local registry, and you're done.
 
-After that initial link, edits flow as: edit in a normal git clone of your repo → commit → push → **Refresh from `<repo>`** in Skills Bank's Account panel pulls the new state.
+After that initial link, edits flow as: edit in a normal git clone of your repo → commit → push → **Refresh from `<repo>`** pulls the new state.
 
-### What github-linked mode is _not_ (today)
+### What this is _not_ (today)
 
 **The app does not push back to your repo.** It's a read-only consumer. There is no in-app commit / push.
 
@@ -80,29 +85,19 @@ This has two practical consequences:
 - **To add or update skills in your repo, edit them in a git clone of the repo elsewhere on disk**, with your normal git workflow. Then click Refresh in Skills Bank to pull the new state.
 - **Skills you author in-app via Register** (e.g. dragging an external skill into the bank, or adopting a community install) **live in your local app-managed registry, not in your linked repo.** To move them into the repo, copy the skill's folder from `~/Library/Application Support/Skills Bank/registry/skills/<name>/` into your repo's `skills/` directory and commit.
 
-The asymmetry is a deliberate v1 choice — see [`docs/plans/github-mode-coherence.md`](../plans/github-mode-coherence.md) for the reasoning, and [`docs/plans/github-first-onboarding.md`](../plans/github-first-onboarding.md) for the downstream unification that may reframe (but not close) this asymmetry.
+The asymmetry is a deliberate v1 choice — see [`docs/plans/github-mode-coherence.md`](../plans/github-mode-coherence.md) for the reasoning.
 
-### The refresh flow (safe by default)
+## Account panel surfaces
 
-When you click **Refresh from `<repo>`**, Skills Bank:
+The Account panel shows the same surfaces for every user:
 
-1. Downloads a tarball of your repo's current commit.
-2. Diffs it against your current local registry.
-3. If any conflicts (you edited a tracked skill locally and the upstream also changed), opens a per-skill resolver where you pick **Keep mine** / **Use repo's** / **Rename mine**. Skills you've authored entirely yourself (`source: yours`) are protected from being silently overwritten.
-4. If no conflicts, applies upstream changes silently with a toast.
+- **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — what your registry mirrors, plus last-fetched relative time and short commit SHA (once you've refreshed at least once).
+- **Refresh from `<repo>`** — re-fetch the linked repo (primary action).
+- **Change linked repo** — opens the repo picker (secondary; requires sign-in).
+- **Identity row** — `@<login>` chip + **Sign out of GitHub** when signed in; **Sign in with GitHub** + rate-limit hint when not.
+- **Operations** — Import a registry from disk (replace), Merge a registry into mine, Export registry.
 
-The flow is identical to local-bundled Sync — same modal, same per-skill choices — just pointed at your repo instead of the canonical bundled set.
-
-### Account panel surfaces
-
-After linking, the Account panel shows:
-
-- **Linked: github.com/&lt;owner&gt;/&lt;repo&gt;** with last-fetched relative time and short commit SHA.
-- **Refresh from &lt;repo&gt;** — re-fetch the linked repo (primary action).
-- **Choose a different repo** — switch the linked repo (secondary).
-- **Sign out of GitHub** — clears the token and reverts to first-launch state.
-
-The Sync skills header button is hidden in github-linked mode; refresh-from-repo replaces it.
+The header has one universal **Refresh from `<repo>`** button. There's no separate "Sync skills" button — refresh is the same operation regardless of whether the linked repo is the bundled default or a custom repo.
 
 ## Self-host
 
@@ -110,6 +105,6 @@ Self-hosting is a developer path: fork the app, ship your own build. See [`self-
 
 ## What persists
 
-Registry source, GitHub token (if any, once linked-mode lands), and settings are stored in the app's userData folder (`~/Library/Application Support/Skills Bank` on macOS). The registry contents live alongside, under the same userData area.
+The linked repo (if any), GitHub token (if signed in), and settings are stored in the app's userData folder (`~/Library/Application Support/Skills Bank` on macOS). The registry contents live alongside, under the same userData area.
 
-For developers iterating on the app, `pnpm reset` wipes the stored registry-source choice and token; `pnpm reset:hard` also wipes the registry and re-seeds source markers. See the README for details.
+For developers iterating on the app, `pnpm reset` wipes the stored linked-repo choice and token; `pnpm reset:hard` also wipes the registry and re-seeds source markers. See the README for details.

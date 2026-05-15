@@ -12,13 +12,22 @@ interface Props {
 }
 
 /**
- * First-launch registry-source decision. Three paths:
- *   1. Authenticate with GitHub (Device Flow) → registrySource = "github"
- *   2. Continue without → registrySource = "local"
- *   3. Self-host → opens fork-and-build docs in browser; user is expected
- *      to fork and run their own build, so we don't change registrySource here.
+ * First-launch onboarding card. Plan 02 (`github-first-onboarding`)
+ * reframes this as two equal options — no "mode picker" framing,
+ * because there are no modes anymore:
  *
- * On mount we also probe for a persisted in-progress flow from a prior
+ *   1. **Use the public skills bank** (default) — sets linkedRepo=null
+ *      and parks the user in the bundled-default state. No auth needed;
+ *      Refresh pulls from `Tyler-Reagan/skills-bank` at the unauth
+ *      GitHub rate limit (60/hr).
+ *   2. **Connect with GitHub** — Device Flow → RepoPickerModal, with
+ *      `Tyler-Reagan/skills-bank` pre-listed as the Recommended row.
+ *      Pick the bundled repo (same content, 5000/hr) or pick a custom
+ *      repo to host your own registry.
+ *   3. **Self-host** (footnote) — opens fork-and-build docs in the
+ *      browser; doesn't change app state.
+ *
+ * On mount we probe for a persisted in-progress flow from a prior
  * session (the app quit / crashed mid-poll). If present and not yet
  * expired, the user sees a Resume / Start over recovery card instead
  * of the path-picker.
@@ -236,10 +245,9 @@ export function LoginScreen({
         <div className="setup-brand">
           skills<span>-</span>bank
         </div>
-        <h1>How do you want to use skills-bank?</h1>
+        <h1>Welcome to skills-bank</h1>
         <p>
-          Pick a path below. You can change your mind later from the Settings
-          menu.
+          Pick a starting point. You can change your mind later from Account.
         </p>
 
         <div className="login-options">
@@ -249,12 +257,12 @@ export function LoginScreen({
             disabled={busy}
             onClick={() => void skip()}
           >
-            <strong>Use the bundled registry</strong>
+            <strong>Use the public skills bank</strong>
             <span>
-              Browse and install the curated skill set shipped with this app.
-              Sync skills with one click. Add your own skills alongside, and
-              export the registry to back it up or move it to another machine.
-              No GitHub required.
+              Browse and install from the curated{" "}
+              <code>Tyler-Reagan/skills-bank</code> repo. No GitHub account
+              needed. Refresh pulls the latest at the unauthenticated GitHub
+              rate limit (60/hr) — sign in later for 5000/hr.
             </span>
           </button>
 
@@ -264,11 +272,11 @@ export function LoginScreen({
             disabled={!isAuthConfigured || busy}
             onClick={() => void beginAuth()}
           >
-            <strong>Connect your own registry</strong>
+            <strong>Connect with GitHub</strong>
             <span>
-              Point the app at a GitHub repo you own and maintain as your skill
-              registry. Manage content through your normal git workflow
-              (disables auto-sync).
+              Sign in to keep the curated set with higher rate limits, or link
+              a GitHub repo you own as your registry. You'll pick a repo after
+              signing in — the curated bank is pre-listed as Recommended.
             </span>
             {!isAuthConfigured && (
               <em className="login-disabled-note">

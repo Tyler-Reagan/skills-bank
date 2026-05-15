@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import type { AuthStatus } from "../../shared/ipc.js";
+import { BUNDLED_REPO, type AuthStatus } from "../../shared/ipc.js";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
@@ -9,10 +9,11 @@ import { Icon } from "./Icon.js";
  * operations that swap or move the registry as a whole — every
  * setting that asks "who am I and where does my registry live?"
  *
- * Distinct from SettingsModal, which owns "how the app behaves
- * day-to-day" preferences. The two surfaces are reachable from two
- * separate header triggers; there is no longer a native dropdown
- * intermediating between them.
+ * Plan 02 (`github-first-onboarding`) collapsed this surface: no more
+ * mode branching. Every user sees one Registry-source section (linked
+ * repo label, last-fetched chrome, Refresh primary, Change linked
+ * repo secondary) and one Identity row (authed → @login + Sign out,
+ * unauth → Sign in with GitHub).
  */
 interface Props {
   authStatus: AuthStatus | null;
@@ -20,6 +21,7 @@ interface Props {
   onClose: () => void;
   onChangeRegistry: () => void | Promise<void>;
   onRefreshRegistry: () => void | Promise<void>;
+  onImportRegistry: () => void | Promise<void>;
   onMergeRegistry: () => void | Promise<void>;
   onExportRegistry: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
@@ -33,6 +35,7 @@ export function AccountModal({
   onClose,
   onChangeRegistry,
   onRefreshRegistry,
+  onImportRegistry,
   onMergeRegistry,
   onExportRegistry,
   onSignOut,
@@ -44,11 +47,14 @@ export function AccountModal({
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
 
-  const isGithub = authStatus?.registrySource === "github";
+  const user = authStatus?.user ?? null;
   const linkedRepo = authStatus?.linkedRepo ?? null;
-  const sourceChipLabel = isGithub
-    ? `@${authStatus?.user?.login ?? "you"}`
-    : "Local bundled";
+  const isAuthed = Boolean(user);
+  const isBundledDefault =
+    !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
+  const linkedLabel = isBundledDefault
+    ? `Bundled (${BUNDLED_REPO})`
+    : `github.com/${linkedRepo!.fullName}`;
 
   return (
     <div style={overlay}>
@@ -76,57 +82,114 @@ export function AccountModal({
         <section style={section}>
           <h3 style={sectionTitle}>Registry source</h3>
           <p style={hint}>
-            Where your registry lives. Local-bundled users get the curated set
-            shipped with the app. GitHub-linked users mirror a repo of their
-            own.
+            The GitHub repo your registry mirrors. Refresh re-fetches its
+            contents; your local edits and added skills are preserved through
+            the diff-before-apply flow.
           </p>
           <div style={sourceRow}>
-            <span style={sourceChip}>{sourceChipLabel}</span>
-            <span style={{ ...hint, marginLeft: 8 }}>
-              {isGithub
-                ? "Linked to a GitHub repo."
-                : "Bundled set shipped with the app."}
-            </span>
+            <span style={sourceChip}>{linkedLabel}</span>
           </div>
-          {isGithub && linkedRepo && (
+          {linkedRepo && (
             <div style={{ ...hint, marginTop: 8 }}>
-              Linked: <code>github.com/{linkedRepo.fullName}</code>
-              <br />
-              Last fetched: {formatRelativeTime(
-                linkedRepo.lastFetchedAt,
-              )} · <code>{linkedRepo.syncedFromCommit.slice(0, 7)}</code>
+              Last fetched: {formatRelativeTime(linkedRepo.lastFetchedAt)} ·{" "}
+              <code>{linkedRepo.syncedFromCommit.slice(0, 7)}</code>
             </div>
           )}
-          {!isGithub && (
-            <div style={{ marginTop: 10 }}>
-              <button
-                className="btn"
-                type="button"
-                onClick={onConnectGithub}
-                disabled={!authStatus?.isAuthConfigured}
-                title={
-                  authStatus?.isAuthConfigured
-                    ? "Authenticate with GitHub, then pick a repo to back your registry with."
-                    : "GitHub OAuth isn't configured for this build."
-                }
-              >
-                Connect to GitHub
-              </button>
-              {!authStatus?.isAuthConfigured && (
-                <div style={{ ...hint, marginTop: 6, fontSize: 11 }}>
-                  GitHub OAuth Client ID not set. See{" "}
-                  <code>auth-config.ts</code>.
-                </div>
-              )}
+          {!linkedRepo && (
+            <div style={{ ...hint, marginTop: 8 }}>
+              Last fetched: never — click <strong>Refresh</strong> to pull the
+              latest.
             </div>
+          )}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              marginTop: 10,
+            }}
+          >
+            <button
+              className="btn primary"
+              type="button"
+              onClick={() => void onRefreshRegistry()}
+            >
+              Refresh from{" "}
+              {isBundledDefault ? BUNDLED_REPO : linkedRepo!.fullName}
+            </button>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => void onChangeRegistry()}
+              disabled={!isAuthed}
+              title={
+                isAuthed
+                  ? "Pick a different GitHub repo to mirror."
+                  : "Sign in with GitHub to pick a different repo."
+              }
+            >
+              {linkedRepo && !isBundledDefault
+                ? "Choose a different repo"
+                : "Change linked repo"}
+            </button>
+          </div>
+        </section>
+
+        <section style={section}>
+          <h3 style={sectionTitle}>Identity</h3>
+          {isAuthed ? (
+            <>
+              <div style={hint}>
+                Signed in as <strong>@{user!.login}</strong> · 5000 GitHub API
+                requests/hour available for Refresh.
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <button
+                  className="btn danger"
+                  type="button"
+                  onClick={() => void onSignOut()}
+                >
+                  Sign out of GitHub
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={hint}>
+                Not signed in — Refresh uses the unauthenticated GitHub limit
+                (60 requests/hour). Sign in for 5000/hr and access to private
+                repos.
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={onConnectGithub}
+                  disabled={!authStatus?.isAuthConfigured}
+                  title={
+                    authStatus?.isAuthConfigured
+                      ? "Authenticate with GitHub via Device Flow."
+                      : "GitHub OAuth isn't configured for this build."
+                  }
+                >
+                  Sign in with GitHub
+                </button>
+                {!authStatus?.isAuthConfigured && (
+                  <div style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+                    GitHub OAuth Client ID not set. See{" "}
+                    <code>auth-config.ts</code>.
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </section>
 
         <section style={section}>
           <h3 style={sectionTitle}>Registry operations</h3>
           <p style={hint}>
-            Move your registry to another machine or bring in skills from
-            another bank.
+            Move your registry to another machine, bring in skills from another
+            bank, or replace your registry with one from disk.
           </p>
           <div
             style={{
@@ -136,45 +199,20 @@ export function AccountModal({
               marginTop: 8,
             }}
           >
-            {isGithub ? (
-              <>
-                {linkedRepo && (
-                  <button
-                    className="btn primary"
-                    type="button"
-                    onClick={() => void onRefreshRegistry()}
-                  >
-                    Refresh from {linkedRepo.fullName}
-                  </button>
-                )}
-                <button
-                  className="btn"
-                  type="button"
-                  onClick={() => void onChangeRegistry()}
-                >
-                  {linkedRepo
-                    ? "Choose a different repo"
-                    : "Choose registry repo"}
-                </button>
-              </>
-            ) : (
-              <button
-                className="btn"
-                type="button"
-                onClick={() => void onChangeRegistry()}
-              >
-                Import a registry (replace)
-              </button>
-            )}
-            {!isGithub && (
-              <button
-                className="btn"
-                type="button"
-                onClick={() => void onMergeRegistry()}
-              >
-                Merge a registry into mine
-              </button>
-            )}
+            <button
+              className="btn"
+              type="button"
+              onClick={() => void onImportRegistry()}
+            >
+              Import a registry from disk (replace)
+            </button>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => void onMergeRegistry()}
+            >
+              Merge a registry into mine
+            </button>
             <button
               className="btn"
               type="button"
@@ -184,24 +222,6 @@ export function AccountModal({
             </button>
           </div>
         </section>
-
-        {isGithub && (
-          <section style={section}>
-            <h3 style={sectionTitle}>Identity</h3>
-            <div style={hint}>
-              Signed in as <strong>@{authStatus?.user?.login ?? "you"}</strong>
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <button
-                className="btn danger"
-                type="button"
-                onClick={() => void onSignOut()}
-              >
-                Sign out of GitHub
-              </button>
-            </div>
-          </section>
-        )}
 
         <section style={{ ...section, marginTop: 12 }}>
           <h3 style={sectionTitle}>About this app</h3>
