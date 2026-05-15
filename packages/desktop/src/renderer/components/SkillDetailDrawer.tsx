@@ -113,6 +113,18 @@ interface Props {
    */
   showUpstreamActivity?: boolean;
   /**
+   * Stamp a manual upstream pointer onto a skill the scanner
+   * couldn't classify automatically (no matching CLI lock entry,
+   * name collision, or hand-authored skill the user wants to tag).
+   * `null` choice means user clicked "this is mine" → kind: "none".
+   * Renderer refreshes after the call resolves.
+   */
+  onSetManualUpstream?: (
+    choice:
+      | { kind: "github"; repo: string; skillPath: string }
+      | { kind: "none" },
+  ) => Promise<{ ok: boolean; message: string }>;
+  /**
    * M6: missing-entry heal. Forget the registry/external record.
    * Only meaningful in registry-folder-missing and
    * external-target-missing.
@@ -163,6 +175,7 @@ export function SkillDetailDrawer({
   onForgetMissing,
   onRepoint,
   showUpstreamActivity,
+  onSetManualUpstream,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
@@ -173,6 +186,11 @@ export function SkillDetailDrawer({
   const [lastCommit, setLastCommit] = useState<
     import("../../shared/ipc.js").UpstreamLastCommit | null
   >(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerRepo, setPickerRepo] = useState("");
+  const [pickerPath, setPickerPath] = useState("");
+  const [pickerBusy, setPickerBusy] = useState(false);
+  const [pickerError, setPickerError] = useState<string | null>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
   // The drawer slides in from the right (~280ms). Until it lands,
   // its hit area is offscreen — a click on the eventual drawer position
@@ -618,6 +636,146 @@ export function SkillDetailDrawer({
             )}
           </div>
 
+          {/* Manual upstream picker — shown for adopted skills whose
+              `.skills-bank.json` has no `upstream` field. Collapsed
+              disclosure by default; clicking opens a small inline form. */}
+          {isRegistered &&
+            entry.adopted !== false &&
+            !entry.source.upstream &&
+            onSetManualUpstream && (
+              <div className="drawer-section">
+                <h3>Where did this come from?</h3>
+                {!pickerOpen ? (
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={() => {
+                      setPickerOpen(true);
+                      setPickerError(null);
+                    }}
+                  >
+                    Stamp a GitHub upstream or mark as user-authored…
+                  </button>
+                ) : (
+                  <div style={{ marginTop: 6 }}>
+                    <p
+                      style={{
+                        margin: "0 0 8px",
+                        fontSize: 12,
+                        color: "var(--text-3)",
+                      }}
+                    >
+                      Tagging this skill's upstream enables update detection
+                      and the Origin section. Skip with "I authored this" to
+                      stop the scanner from re-classifying on every walk.
+                    </p>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 11,
+                        color: "var(--text-3)",
+                        marginBottom: 2,
+                      }}
+                    >
+                      Repo (owner/name)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="vercel-labs/skills"
+                      value={pickerRepo}
+                      onChange={(e) => setPickerRepo(e.target.value)}
+                      disabled={pickerBusy}
+                      style={{ width: "100%", marginBottom: 8 }}
+                    />
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 11,
+                        color: "var(--text-3)",
+                        marginBottom: 2,
+                      }}
+                    >
+                      Path to SKILL.md within the repo
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="skills/my-skill/SKILL.md"
+                      value={pickerPath}
+                      onChange={(e) => setPickerPath(e.target.value)}
+                      disabled={pickerBusy}
+                      style={{ width: "100%", marginBottom: 8 }}
+                    />
+                    {pickerError && (
+                      <p
+                        style={{
+                          color: "var(--danger)",
+                          fontSize: 12,
+                          margin: "4px 0 8px",
+                        }}
+                        role="alert"
+                      >
+                        {pickerError}
+                      </p>
+                    )}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        className="btn primary"
+                        disabled={
+                          pickerBusy || !pickerRepo.trim() || !pickerPath.trim()
+                        }
+                        onClick={async () => {
+                          setPickerBusy(true);
+                          setPickerError(null);
+                          const r = await onSetManualUpstream({
+                            kind: "github",
+                            repo: pickerRepo.trim(),
+                            skillPath: pickerPath.trim(),
+                          });
+                          if (!r.ok) {
+                            setPickerError(r.message);
+                            setPickerBusy(false);
+                          } else {
+                            setPickerOpen(false);
+                            setPickerBusy(false);
+                          }
+                        }}
+                      >
+                        {pickerBusy ? (
+                          <>
+                            <span className="spinner inline" /> Validating
+                          </>
+                        ) : (
+                          "Stamp"
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={pickerBusy}
+                        onClick={async () => {
+                          setPickerBusy(true);
+                          await onSetManualUpstream({ kind: "none" });
+                          setPickerOpen(false);
+                          setPickerBusy(false);
+                        }}
+                        title="Mark as user-authored; scanner won't try to classify on future walks."
+                      >
+                        I authored this
+                      </button>
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={pickerBusy}
+                        onClick={() => setPickerOpen(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           {entry.source.upstream?.kind === "github" &&
             entry.source.upstream.repo && (
               <div className="drawer-section">

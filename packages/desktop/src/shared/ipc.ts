@@ -111,7 +111,20 @@ export const IPC = {
   upstreamUpdate: "upstream:update",
   upstreamRepoMetadata: "upstream:repoMetadata",
   upstreamLastCommit: "upstream:lastCommit",
+  upstreamSetManual: "upstream:setManual",
 } as const;
+
+/**
+ * Renderer → main payload for `upstream:setManual`. Either:
+ * - Stamp a GitHub upstream (`kind: "github"` + repo + skillPath).
+ *   Validated against `GET /repos/{repo}/contents/{folder}` before
+ *   writing — invalid combos return an error and don't mutate.
+ * - Mark explicitly user-owned (`kind: "none"`). Suppresses the
+ *   scanner from trying to classify on future walks.
+ */
+export type UpstreamManualChoice =
+  | { kind: "github"; repo: string; skillPath: string }
+  | { kind: "none" };
 
 /**
  * Summary returned by `upstream:probe`. The renderer uses this to
@@ -608,6 +621,10 @@ interface SkillsBankAPI {
     repo: string,
     skillPath: string,
   ): Promise<UpstreamLastCommit>;
+  upstreamSetManual(
+    name: string,
+    choice: UpstreamManualChoice,
+  ): Promise<{ ok: boolean; message: string }>;
 }
 
 declare global {

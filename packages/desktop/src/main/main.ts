@@ -55,6 +55,7 @@ import {
   readLastSyncReport,
   readPendingConflicts,
   readSyncDecisions,
+  findFolderHash,
   folderPathFromSkillPath,
   probeRepoTree,
   resolveRegistryRoot,
@@ -90,6 +91,7 @@ import {
   type SyncStatus,
   type UpdateStatus,
   type UpstreamLastCommit,
+  type UpstreamManualChoice,
   type UpstreamProbeResult,
   type UpstreamRepoMetadata,
   type UserRepo,
@@ -759,6 +761,74 @@ async function getLastCommit(
 ipcMain.handle(
   IPC.upstreamLastCommit,
   async (_e, repo: string, skillPath: string) => getLastCommit(repo, skillPath),
+);
+
+/**
+ * Manual upstream picker handler. Stamps the user's choice into the
+ * skill's `.skills-bank.json` after validating (for the github case)
+ * that the supplied repo + path actually resolves on GitHub. Failures
+ * report a clear error rather than writing a bogus marker.
+ */
+async function setManualUpstream(
+  name: string,
+  choice: UpstreamManualChoice,
+): Promise<{ ok: boolean; message: string }> {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const skillDir = path.join(registryRoot, "skills", name);
+  if (!fs.existsSync(skillDir)) {
+    return { ok: false, message: `${name} is not adopted into the registry` };
+  }
+  const existing = readSkillSource(skillDir);
+  if (choice.kind === "none") {
+    writeSkillSource(skillDir, { ...existing, upstream: { kind: "none" } });
+    return { ok: true, message: `Marked ${name} as not from any upstream.` };
+  }
+  if (!choice.repo || !choice.skillPath) {
+    return { ok: false, message: "repo and skillPath are required" };
+  }
+  if (!/^[\w.-]+\/[\w.-]+$/.test(choice.repo)) {
+    return { ok: false, message: `"${choice.repo}" isn't a valid owner/repo` };
+  }
+  // Validate against GitHub: probe the folder. Anything other than
+  // an ok response is treated as "couldn't verify" and rejected.
+  const folder = folderPathFromSkillPath(choice.skillPath);
+  const probe = await probeRepoTree(choice.repo, getStoredToken());
+  if (!probe.ok) {
+    return {
+      ok: false,
+      message: `Couldn't probe ${choice.repo}: ${probe.message}`,
+    };
+  }
+  const folderHash = findFolderHash(probe.tree, folder);
+  if (!folderHash) {
+    return {
+      ok: false,
+      message: `${choice.repo} has no folder at ${folder}`,
+    };
+  }
+  const now = new Date().toISOString();
+  writeSkillSource(skillDir, {
+    ...existing,
+    upstream: {
+      kind: "github",
+      repo: choice.repo,
+      skillPath: choice.skillPath,
+      skillFolderHash: folderHash,
+      installedAt: existing.upstream?.installedAt ?? now,
+      fetchedAt: now,
+    },
+  });
+  // Baseline the current on-disk content so drift detection
+  // disengages until the user actually edits.
+  const baseline = hashSkillFolder(skillDir);
+  if (baseline) writeSyncedHash(skillDir, baseline);
+  return { ok: true, message: `Stamped ${name} as from ${choice.repo}.` };
+}
+
+ipcMain.handle(
+  IPC.upstreamSetManual,
+  async (_e, name: string, choice: UpstreamManualChoice) =>
+    setManualUpstream(name, choice),
 );
 
 // Resolve registry source at boot. Stored values are respected; an

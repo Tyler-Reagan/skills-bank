@@ -1816,6 +1816,15 @@ export function App(): React.ReactElement {
                 showUpstreamActivity={
                   settings.showUpstreamActivity && Boolean(authStatus?.user)
                 }
+                onSetManualUpstream={async (choice) => {
+                  const r = await window.skillsBank.upstreamSetManual(
+                    selected.name,
+                    choice,
+                  );
+                  flash(r.message);
+                  if (r.ok) await refresh();
+                  return r;
+                }}
                 onClose={() => setSelected(null)}
                 onChanged={async (msg) => {
                   flash(msg);
