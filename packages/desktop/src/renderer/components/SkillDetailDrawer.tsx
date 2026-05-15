@@ -86,6 +86,20 @@ interface Props {
    */
   onTakeCanonical?: () => Promise<void> | void;
   /**
+   * Upstream-drift heal — revert arm. Re-fetches from the linked
+   * upstream via `npx skills update`, discarding local edits.
+   * Companion to `onAcceptDrift` in the
+   * `user-edited-with-upstream` heal flow.
+   */
+  onTakeUpstream?: () => Promise<void> | void;
+  /**
+   * Apply an available upstream update in place. Same backend as
+   * `onTakeUpstream` but surfaced in the
+   * `upstream-update-available` state where there's no local
+   * drift to clobber.
+   */
+  onUpdate?: () => Promise<void> | void;
+  /**
    * M6: missing-entry heal. Forget the registry/external record.
    * Only meaningful in registry-folder-missing and
    * external-target-missing.
@@ -109,6 +123,8 @@ type ActionState =
   | "unhiding"
   | "accepting-drift"
   | "taking-canonical"
+  | "taking-upstream"
+  | "updating"
   | "forgetting"
   | "repointing";
 
@@ -129,6 +145,8 @@ export function SkillDetailDrawer({
   onUnhide,
   onAcceptDrift,
   onTakeCanonical,
+  onTakeUpstream,
+  onUpdate,
   onForgetMissing,
   onRepoint,
 }: Props): React.ReactElement {
@@ -535,6 +553,77 @@ export function SkillDetailDrawer({
             )}
           </div>
 
+          {entry.source.upstream?.kind === "github" &&
+            entry.source.upstream.repo && (
+              <div className="drawer-section">
+                <h3>Origin</h3>
+                <div className="drawer-meta-row">
+                  <span className="drawer-meta-key">from</span>
+                  <span className="drawer-meta-value">
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() =>
+                        void window.skillsBank.openExternal(
+                          `https://github.com/${entry.source.upstream!.repo!}`,
+                        )
+                      }
+                      title="Open the source repo on GitHub"
+                    >
+                      github.com/{entry.source.upstream.repo}
+                    </button>
+                  </span>
+                </div>
+                {entry.source.upstream.skillPath && (
+                  <div className="drawer-meta-row">
+                    <span className="drawer-meta-key">path in repo</span>
+                    <span className="drawer-meta-value">
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => {
+                          const repo = entry.source.upstream!.repo!;
+                          const skillPath = entry.source.upstream!.skillPath!;
+                          // Strip the trailing /SKILL.md so the link
+                          // opens the folder view rather than the file.
+                          const folder = skillPath.replace(/\/SKILL\.md$/, "");
+                          void window.skillsBank.openExternal(
+                            `https://github.com/${repo}/tree/HEAD/${folder}`,
+                          );
+                        }}
+                        title="Open the skill's folder on GitHub"
+                      >
+                        {entry.source.upstream.skillPath.replace(
+                          /\/SKILL\.md$/,
+                          "/",
+                        )}
+                      </button>
+                    </span>
+                  </div>
+                )}
+                {entry.source.upstream.skillFolderHash && (
+                  <div className="drawer-meta-row">
+                    <span className="drawer-meta-key">fetched hash</span>
+                    <span className="drawer-meta-value">
+                      <code>
+                        {entry.source.upstream.skillFolderHash.slice(0, 7)}
+                      </code>
+                    </span>
+                  </div>
+                )}
+                {entry.source.upstream.fetchedAt && (
+                  <div className="drawer-meta-row">
+                    <span className="drawer-meta-key">last fetched</span>
+                    <span className="drawer-meta-value">
+                      {new Date(
+                        entry.source.upstream.fetchedAt,
+                      ).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
           <div className="drawer-section">
             <h3>SKILL.md preview</h3>
             {skillMdLoading ? (
@@ -616,10 +705,10 @@ export function SkillDetailDrawer({
             </>
           )}
 
-          {/* Canon-drift two-arm heal. Both clear the badge; they
-              differ in what happens on future syncs. Side-by-side
-              presentation so the user can see both choices without
-              hunting through a submenu. */}
+          {/* Drift heal — fan-out by source axis. The classifier emits
+              `canAcceptDrift` for both bundled-sync drift and upstream-
+              pointer drift; render the sub-arm and hint copy that
+              matches the actual axis on this entry. */}
           {caps.canAcceptDrift && onAcceptDrift && (
             <>
               <button
@@ -631,12 +720,18 @@ export function SkillDetailDrawer({
                     setAction(null),
                   );
                 }}
-                title="Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
+                title={
+                  caps.canTakeUpstream
+                    ? "Keep your local edits and sever the upstream link. Future probes won't surface this skill as having an update available."
+                    : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
+                }
               >
                 {action === "accepting-drift" ? (
                   <>
                     <span className="spinner inline" /> Accepting
                   </>
+                ) : caps.canTakeUpstream ? (
+                  "Keep my edits"
                 ) : (
                   "Accept local changes"
                 )}
@@ -662,13 +757,77 @@ export function SkillDetailDrawer({
                   )}
                 </button>
               )}
+              {caps.canTakeUpstream && onTakeUpstream && (
+                <button
+                  className="btn"
+                  disabled={action !== null}
+                  onClick={() => {
+                    setAction("taking-upstream");
+                    void Promise.resolve(onTakeUpstream()).finally(() =>
+                      setAction(null),
+                    );
+                  }}
+                  title="Discard local edits and re-fetch from upstream via `npx skills update`. Your changes are lost."
+                >
+                  {action === "taking-upstream" ? (
+                    <>
+                      <span className="spinner inline" /> Reverting
+                    </>
+                  ) : (
+                    "Revert to upstream"
+                  )}
+                </button>
+              )}
               <p className="drawer-action-hint">
-                This canonical skill differs from its synced baseline.
-                <strong> Accept local changes</strong> detaches from Sync — your
-                edits stay, sync stops overwriting.
-                <strong> Take canonical</strong> re-baselines the current state
-                as the new synced version — drift clears, Sync still owns the
-                skill.
+                {caps.canTakeUpstream ? (
+                  <>
+                    Your local copy diverges from{" "}
+                    {entry.source.upstream?.repo ?? "the upstream"}.
+                    <strong> Keep my edits</strong> severs the upstream link.
+                    <strong> Revert to upstream</strong> discards your edits and
+                    re-fetches.
+                  </>
+                ) : (
+                  <>
+                    This canonical skill differs from its synced baseline.
+                    <strong> Accept local changes</strong> detaches from Sync —
+                    your edits stay, sync stops overwriting.
+                    <strong> Take canonical</strong> re-baselines the current
+                    state as the new synced version — drift clears, Sync still
+                    owns the skill.
+                  </>
+                )}
+              </p>
+            </>
+          )}
+          {caps.canUpdate && onUpdate && (
+            <>
+              <button
+                className="btn primary"
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("updating");
+                  void Promise.resolve(onUpdate()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title={`Apply the upstream update from ${
+                  entry.source.upstream?.repo ?? "the linked repo"
+                } via \`npx skills update\`.`}
+              >
+                {action === "updating" ? (
+                  <>
+                    <span className="spinner inline" /> Updating
+                  </>
+                ) : (
+                  "Update this skill"
+                )}
+              </button>
+              <p className="drawer-action-hint">
+                A newer version of this skill is available from{" "}
+                <code>{entry.source.upstream?.repo ?? "upstream"}</code>. Local
+                content is unchanged since the last fetch, so the update applies
+                cleanly.
               </p>
             </>
           )}

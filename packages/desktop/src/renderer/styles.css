@@ -801,6 +801,11 @@ select {
   background: var(--danger-dim, rgba(208, 68, 68, 0.12));
   border: 1px solid var(--danger, #d04444);
 }
+.skill-state-badge.update {
+  color: var(--accent, #3b82f6);
+  background: var(--accent-dim, rgba(59, 130, 246, 0.12));
+  border: 1px solid var(--accent, #3b82f6);
+}
 
 /* ── Browse filter row ─── */
 .filter-row {

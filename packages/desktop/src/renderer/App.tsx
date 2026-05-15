@@ -1871,6 +1871,31 @@ export function App(): React.ReactElement {
                       }
                     : undefined
                 }
+                onTakeUpstream={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canTakeUpstream
+                    ? async () => {
+                        const r = await window.skillsBank.upstreamUpdate(
+                          selected.name,
+                        );
+                        flash(r.message);
+                        if (r.ok) setSelected(null);
+                        await refresh();
+                      }
+                    : undefined
+                }
+                onUpdate={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canUpdate
+                    ? async () => {
+                        const r = await window.skillsBank.upstreamUpdate(
+                          selected.name,
+                        );
+                        flash(r.message);
+                        await refresh();
+                      }
+                    : undefined
+                }
                 onForgetMissing={
                   classifyDrawerState(selected, installed, isRegistered)
                     .capabilities.canForgetMissing

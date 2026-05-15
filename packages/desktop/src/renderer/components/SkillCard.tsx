@@ -233,14 +233,16 @@ export function agentsForSkill(
 
 /**
  * Single badge per card. Provenance is the primary signal (bundled vs
- * yours); actionable state badges (drift, missing) override when present.
- * Priority order, highest wins:
+ * yours); actionable state badges (drift, missing, update) override
+ * when present. Priority order, highest wins:
  *
  *   1. MISSING  — entry.missing: files gone. Open drawer to forget.
- *   2. DRIFT    — entry.drift: you've edited a bundled skill. Open drawer.
- *   3. BUNDLED  — source: bundled. Sync owns this; destructive verbs
+ *   2. DRIFT    — entry.drift: you've edited a bundled-or-upstream skill.
+ *   3. UPDATE   — entry.upstreamUpdateAvailable: upstream changed, local
+ *                 content is clean. Open drawer to apply.
+ *   4. BUNDLED  — source: bundled. Sync owns this; destructive verbs
  *                 are gated.
- *   4. YOURS    — source: yours (everything else — authored locally,
+ *   5. YOURS    — source: yours (everything else — authored locally,
  *                 merged in from another bank, etc.). Safe from Sync.
  */
 function PublishBadge({
@@ -264,9 +266,25 @@ function PublishBadge({
     return (
       <span
         className="skill-state-badge drift"
-        title="You've edited this bundled skill. Open to review your changes."
+        title={
+          entry.source.upstream?.kind === "github"
+            ? "You've edited this skill since the last upstream fetch. Open to keep or revert."
+            : "You've edited this bundled skill. Open to review your changes."
+        }
       >
         DRIFT
+      </span>
+    );
+  }
+  if (entry.upstreamUpdateAvailable) {
+    return (
+      <span
+        className="skill-state-badge update"
+        title={`An update is available from ${
+          entry.source.upstream?.repo ?? "upstream"
+        }. Open to apply.`}
+      >
+        UPDATE
       </span>
     );
   }
