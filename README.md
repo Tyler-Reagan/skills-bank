@@ -128,15 +128,57 @@ Output lands in `packages/desktop/dist-electron/`.
 
 ## Cutting a release
 
-Release builds run on tag push:
+Releases are tag-driven. Pushing `vX.Y.Z` to GitHub fires [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds + signs + notarizes both arch DMGs on `macos-15` and uploads them to a **draft** GitHub Release. The release is invisible to auto-update clients and the public Releases page until you click **Publish** in the GitHub UI — that click is the gate that ships to existing installs.
+
+The convention: **feature PRs merge first**, then a standalone `chore(release): bump desktop to X.Y.Z` commit lands directly on `main`, and the tag points at that bump commit. Don't bump version inside a feature PR — it keeps the release commit decoupled from the work it encompasses and makes the history readable. Merge style is a real merge commit (not squash) so the individual bundles in a multi-commit PR stay legible.
+
+Version source of truth is [`packages/desktop/package.json`](packages/desktop/package.json) only. The root `package.json` doesn't carry a public version.
+
+### Steps
+
+1. **Merge the feature PR** via the GitHub UI (or `gh pr merge --merge`).
+2. **Update local main:**
+   ```bash
+   git checkout main && git pull --ff-only
+   ```
+3. **Bump `packages/desktop/package.json`**, then verify nothing else moved and that the full CI-equivalent gauntlet passes:
+   ```bash
+   git diff   # should touch packages/desktop/package.json only
+   pnpm typecheck && pnpm validate && pnpm build:index && pnpm build
+   ```
+4. **Commit and push the bump:**
+   ```bash
+   git commit -am "chore(release): bump desktop to X.Y.Z"
+   git push origin main
+   ```
+   The bump commit body conventionally lists the PRs the release encompasses (see `git log --grep "chore(release)"` for prior examples).
+5. **Tag and push.** The tag must point at a commit already on `origin/main` — the workflow does a fresh checkout of the tag SHA.
+   ```bash
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   ```
+6. **Watch the build** (~15–25 min):
+   ```bash
+   gh run watch
+   ```
+7. **Verify the draft Release.** Once the workflow succeeds, the draft on the Releases page should carry:
+   - `Skills-Bank-X.Y.Z-x64.dmg` + `Skills-Bank-X.Y.Z-arm64.dmg` (and matching `.dmg.blockmap` for delta updates)
+   - `Skills-Bank-X.Y.Z-x64.zip` + `Skills-Bank-X.Y.Z-arm64.zip` (consumed by `electron-updater` at runtime; arch is selected automatically)
+   - `latest-mac.yml` (the auto-update manifest — without this, existing installs won't see the release)
+
+   Download at least one DMG and smoke-test launch locally before publishing.
+8. **Publish from the GitHub UI.** Open the draft, write release notes, click **Publish**. Existing installs poll the Releases feed on launch and will auto-update on next start.
+
+### If the release build fails or ships wrong artifacts
+
+The workflow doesn't auto-clean. Diagnose, push a fix to `main` as a normal commit, then **move the tag forward to the new SHA** and let the workflow re-run:
 
 ```bash
-# bump packages/desktop/package.json, commit, then:
-git tag v0.7.0
-git push origin v0.7.0
+git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z
+git tag vX.Y.Z   && git push origin vX.Y.Z
 ```
 
-The `release` workflow signs, notarizes, and uploads both DMGs to a **draft** GitHub Release. Review and publish from the GitHub UI when ready.
+Delete the partial draft Release from the GitHub UI first if any artifacts uploaded; `gh release upload --clobber` will otherwise reuse the existing draft. The v0.9.0 release hit this exact path — the initial build clobbered x64 outputs with arm64, fixed in [`202b0ba`](https://github.com/Tyler-Reagan/skills-bank/commit/202b0ba), and the tag was moved forward to that SHA.
 
 ## Documentation
 
