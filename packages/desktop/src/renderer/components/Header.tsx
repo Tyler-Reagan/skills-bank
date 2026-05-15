@@ -31,6 +31,13 @@ interface Props {
    */
   pendingUpdateVersion: string | null;
   onShowUpdate: () => void;
+  /**
+   * Count of skills with `upstreamUpdateAvailable === true` from the
+   * latest probe. When non-zero, the header renders an aggregate
+   * badge that opens the UpdatesModal. Click invokes `onShowUpdates`.
+   */
+  pendingSkillUpdates: number;
+  onShowUpdates: () => void;
 }
 
 export function Header({
@@ -47,6 +54,8 @@ export function Header({
   onOpenSettings,
   pendingUpdateVersion,
   onShowUpdate,
+  pendingSkillUpdates,
+  onShowUpdates,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -76,6 +85,23 @@ export function Header({
             >
               <Icon name="download" size="sm" />
               <span>Update {pendingUpdateVersion}</span>
+            </button>
+          )}
+          {pendingSkillUpdates > 0 && (
+            <button
+              type="button"
+              className="updates-badge"
+              onClick={onShowUpdates}
+              title={`${pendingSkillUpdates} skill${
+                pendingSkillUpdates === 1 ? "" : "s"
+              } can be updated from upstream. Click to review.`}
+              aria-label={`${pendingSkillUpdates} skill upstream updates available — open updates modal`}
+            >
+              <Icon name="refresh" size="sm" />
+              <span>
+                {pendingSkillUpdates} update
+                {pendingSkillUpdates === 1 ? "" : "s"}
+              </span>
             </button>
           )}
         </div>

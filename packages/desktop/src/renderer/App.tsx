@@ -44,6 +44,7 @@ import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
 import { ConnectGithubModal } from "./components/ConnectGithubModal.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
 import { AccountModal } from "./components/AccountModal.js";
+import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
@@ -283,6 +284,7 @@ export function App(): React.ReactElement {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [showConnectGithub, setShowConnectGithub] = useState(false);
+  const [showUpdatesModal, setShowUpdatesModal] = useState(false);
   // Auto-update state. `latestUpdateStatus` is a live mirror of the most
   // recent event the main process broadcast; the modal reads it directly
   // when open, so a render during `downloading` shows the live progress
@@ -879,6 +881,13 @@ export function App(): React.ReactElement {
       ? latestUpdateStatus.version
       : null;
 
+  // Skills with an available upstream update — set by the main-process
+  // probe runner via the augmented `listRegistry`. Drives the header
+  // aggregate badge and the UpdatesModal's content.
+  const pendingSkillUpdates = registry.filter(
+    (e) => e.upstreamUpdateAvailable === true,
+  );
+
   // Plain functions (not useCallback) — this code lives below early-return
   // gates above (no authStatus, persona unresolved). A hook here would be a
   // Rules-of-Hooks violation. None of the consumers memoize, so referential
@@ -905,6 +914,8 @@ export function App(): React.ReactElement {
           onOpenSettings={() => undefined}
           pendingUpdateVersion={null}
           onShowUpdate={() => undefined}
+          pendingSkillUpdates={0}
+          onShowUpdates={() => undefined}
         />
         <Tabs
           active="browse"
@@ -948,6 +959,8 @@ export function App(): React.ReactElement {
           onOpenSettings={() => setShowSettings(true)}
           pendingUpdateVersion={pendingUpdateVersion}
           onShowUpdate={openUpdateModal}
+          pendingSkillUpdates={pendingSkillUpdates.length}
+          onShowUpdates={() => setShowUpdatesModal(true)}
         />
         {appErrors.length > 0 && (
           <div className="error-panel-stack">
@@ -1557,6 +1570,27 @@ export function App(): React.ReactElement {
               // path (where RepoPicker should pop) goes through
               // LoginScreen's onStatusChanged, not this handler.
               void refresh();
+            }}
+          />
+        )}
+
+        {showUpdatesModal && (
+          <UpdatesModal
+            entries={pendingSkillUpdates}
+            onClose={() => setShowUpdatesModal(false)}
+            onUpdate={async (name) => {
+              const r = await window.skillsBank.upstreamUpdate(name);
+              flash(r.message);
+              await refresh();
+              return r;
+            }}
+            onView={(entry) => {
+              setShowUpdatesModal(false);
+              setSelected(entry);
+            }}
+            onRefresh={async () => {
+              await window.skillsBank.upstreamProbe();
+              await refresh();
             }}
           />
         )}
