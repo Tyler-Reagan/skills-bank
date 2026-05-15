@@ -328,18 +328,17 @@ function resolveBootRegistryRoot(): string {
 
 let registryRoot: string = resolveBootRegistryRoot();
 
-// Resolve registry source at boot. Stored values are respected.
+// Resolve registry source at boot. Stored values are respected; an
+// absent value signals a fresh install and is returned as null so the
+// renderer can route to the two-card LoginScreen.
 //
-// Plan 02 (`github-first-onboarding`): fresh installs no longer auto-
-// coerce to "local". Returning null here triggers the two-card
-// LoginScreen on first launch — the user explicitly picks **Use the
-// public skills bank** (→ "local", linkedRepo stays null) or **Connect
-// with GitHub** (→ Device Flow → RepoPickerModal with the bundled repo
-// pre-listed as Recommended).
-//
-// Existing users — anyone with a config file from v0.10.0 or earlier —
-// already have a persisted value, so the LoginScreen path doesn't fire
-// for them and there's nothing to migrate.
+// Fresh installs no longer auto-coerce to "local" — the user picks
+// **Use the public skills bank** (→ "local", linkedRepo stays null) or
+// **Connect with GitHub** (→ Device Flow → RepoPickerModal with the
+// bundled repo pre-listed as Recommended). Existing users — anyone
+// with a config file from v0.10.0 or earlier — already have a
+// persisted value, so the LoginScreen path doesn't fire for them and
+// there's nothing to migrate. (See `docs/plans/github-first-onboarding.md`.)
 function resolveBootRegistrySource(): RegistrySource | null {
   return readConfig().registrySource;
 }
@@ -2020,10 +2019,11 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
 
 // ─── Auth + registry source ─────────────────────────────────────────────────
 //
-// Plan 02: `linkedRepo` is the source of truth; `registrySource` survives
-// as a legacy alias on AuthStatus for one release. `registrySource = null`
-// still means first-launch (renderer shows LoginScreen); "local" means
-// bundled-default; "github" means a repo has been linked (which may be
+// `linkedRepo` is the source of truth for which GitHub repo backs the
+// registry; `registrySource` survives as a derived alias on AuthStatus
+// for one release to ease migration. `registrySource = null` means
+// first-launch (renderer shows LoginScreen); "local" means bundled-
+// default; "github" means a repo has been linked (which may be
 // `BUNDLED_REPO` or a user-picked custom).
 
 async function buildAuthStatus(): Promise<AuthStatus> {
@@ -2259,10 +2259,10 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) =>
 );
 
 ipcMain.handle(IPC.reposRefreshCurrent, async () => {
-  // Plan 02: Refresh is universal. Bundled-default users (`linkedRepo`
-  // null) fall through to the canonical bundled repo so the same
-  // diff-before-apply path serves every refresh — no separate Sync
-  // code path, no mode conditional in the renderer.
+  // Refresh is universal: bundled-default users (`linkedRepo` null)
+  // fall through to the canonical bundled repo, so the same diff-
+  // before-apply path serves every refresh — no separate Sync code
+  // path and no mode conditional in the renderer.
   const target = linkedRepo?.fullName ?? BUNDLED_REPO;
   return replaceRegistryWithRepo(target);
 });

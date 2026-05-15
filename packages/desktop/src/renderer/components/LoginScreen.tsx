@@ -12,9 +12,8 @@ interface Props {
 }
 
 /**
- * First-launch onboarding card. Plan 02 (`github-first-onboarding`)
- * reframes this as two equal options — no "mode picker" framing,
- * because there are no modes anymore:
+ * First-launch onboarding card. Two equal options — no "mode picker"
+ * framing, since there are no separate local-vs-github modes:
  *
  *   1. **Use the public skills bank** (default) — sets linkedRepo=null
  *      and parks the user in the bundled-default state. No auth needed;
@@ -30,7 +29,7 @@ interface Props {
  * On mount we probe for a persisted in-progress flow from a prior
  * session (the app quit / crashed mid-poll). If present and not yet
  * expired, the user sees a Resume / Start over recovery card instead
- * of the path-picker.
+ * of the path-picker. (See `docs/plans/github-first-onboarding.md`.)
  */
 export function LoginScreen({
   isAuthConfigured,

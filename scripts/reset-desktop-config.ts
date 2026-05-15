@@ -16,10 +16,10 @@
 // auto-invokes `pnpm reset:seed` to repopulate source markers in the
 // repo's `skills/` directory.
 //
-// Post persona-collapse the next launch always boots into local-bundled
-// mode (the LoginScreen path is reachable only via in-app GitHub sign-
-// out). To exercise github-linked flows from a clean state, run reset
-// then in-app: AccountModal → Connect to GitHub.
+// With no stored linkedRepo and no stored auth, the next launch is
+// treated as a first launch and boots the two-card LoginScreen. Pick
+// "Use the public skills bank" for the unauth bundled-default path,
+// or "Connect with GitHub" to authenticate and choose a repo.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -86,8 +86,8 @@ if (touched === 0) {
 
 console.log(
   hard
-    ? "Reset complete (hard). Next launch boots to local-bundled with a fresh registry — no skills installed, no token."
-    : "Reset complete. Next launch boots to local-bundled — registry contents preserved, token cleared.",
+    ? "Reset complete (hard). Next launch shows the two-card LoginScreen with a fresh registry — no skills installed, no token."
+    : "Reset complete. Next launch shows the two-card LoginScreen — registry contents preserved, token cleared.",
 );
 console.log(
   "Post persona-collapse, boot auto-routes to local-bundled when no source is stored. To switch into github-linked, use AccountModal → Connect to GitHub.",

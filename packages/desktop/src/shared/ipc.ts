@@ -149,22 +149,22 @@ interface PickCustomSkillsDirResult {
 }
 
 /**
- * The canonical bundled-default repo. Plan 02 (`github-first-onboarding`)
- * collapses the local/github mode discriminator: every registry is linked
- * to a repo, defaulting to this one. A user is "on the bundled set" when
- * `linkedRepo === null` (fresh install / migrated from legacy local mode)
- * or `linkedRepo.fullName === BUNDLED_REPO`. Renderer code checks the
- * `linkedRepo` field on `AuthStatus` directly; no separate `mode()`
- * helper, since every relevant branch collapses to "do I have a
- * non-bundled linkedRepo?"
+ * The canonical bundled-default repo. Every registry is linked to a
+ * GitHub repo, and this one is the default — there is no separate
+ * "local mode." A user is "on the bundled set" when `linkedRepo` is
+ * either null (fresh install / migrated from the older local mode) or
+ * equal to `BUNDLED_REPO`. Renderer code checks the `linkedRepo` field
+ * on `AuthStatus` directly; no separate `mode()` helper, since every
+ * relevant branch collapses to "do I have a non-bundled linkedRepo?"
+ * (See `docs/plans/github-first-onboarding.md`.)
  */
 export const BUNDLED_REPO = "Tyler-Reagan/skills-bank";
 
 /**
- * Legacy mode discriminator. Kept as a derived alias on `AuthStatus` for
- * one release as a migration safety net per plan 02. New code should
- * branch on `linkedRepo` instead. Will be dropped in a follow-up release
- * after the migration has settled.
+ * Legacy mode discriminator. Kept as a derived alias on `AuthStatus`
+ * for one release as a migration safety net; new code should branch on
+ * `linkedRepo` instead. Will be dropped in a follow-up release after
+ * the migration has settled.
  *
  * Mapping today: `"github"` ⇒ `linkedRepo !== null`; `"local"` ⇒
  * `linkedRepo === null`; `null` is emitted only on fresh installs that

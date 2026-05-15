@@ -9,11 +9,11 @@ import { Icon } from "./Icon.js";
  * operations that swap or move the registry as a whole — every
  * setting that asks "who am I and where does my registry live?"
  *
- * Plan 02 (`github-first-onboarding`) collapsed this surface: no more
- * mode branching. Every user sees one Registry-source section (linked
- * repo label, last-fetched chrome, Refresh primary, Change linked
- * repo secondary) and one Identity row (authed → @login + Sign out,
- * unauth → Sign in with GitHub).
+ * No more local-vs-github mode branching: every user sees one
+ * Registry-source section (linked repo label, last-fetched chrome,
+ * Refresh primary, Change linked repo secondary) and one Identity row
+ * (authed → @login + Sign out, unauth → Sign in with GitHub).
+ * (See `docs/plans/github-first-onboarding.md`.)
  */
 interface Props {
   authStatus: AuthStatus | null;

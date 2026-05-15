@@ -10,10 +10,10 @@ interface Props {
   onSignOut: () => Promise<void>;
 }
 
-// Synthetic entry for the canonical bundled repo. Plan 02 surfaces this
-// as the Recommended row so users who Connect with GitHub can keep the
-// curated set with higher rate limits (5000/hr) without finding it in
-// the list of their own repos.
+// Synthetic entry for the canonical bundled repo. Surfaced as the
+// Recommended row so users who Connect with GitHub can keep the
+// curated set with higher rate limits (5000/hr) without having to
+// find it in the list of their own repos.
 const BUNDLED_RECOMMENDATION: UserRepo & { description: string } = {
   fullName: BUNDLED_REPO,
   isPrivate: false,

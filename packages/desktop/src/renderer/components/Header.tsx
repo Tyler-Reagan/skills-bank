@@ -13,10 +13,10 @@ interface Props {
   density: Density;
   onToggleDensity: () => void;
   /**
-   * Universal upstream-refresh action. Plan 02 retired the separate
-   * "Sync skills" affordance — bundled-default and custom-repo users
-   * both refresh against a GitHub tarball via the same diff-before-apply
-   * path. Falls back to `BUNDLED_REPO` when no repo is linked.
+   * Universal upstream-refresh action. The separate "Sync skills"
+   * affordance retired — bundled-default and custom-repo users both
+   * refresh against a GitHub tarball via the same diff-before-apply
+   * path, falling back to `BUNDLED_REPO` when no repo is linked.
    */
   syncing: boolean;
   onSync: () => void;

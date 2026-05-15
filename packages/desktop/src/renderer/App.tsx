@@ -656,7 +656,7 @@ export function App(): React.ReactElement {
     [flash, refresh],
   );
 
-  // Plan 02: Change linked repo is universal — always opens RepoPicker.
+  // Change linked repo is universal — always opens RepoPicker.
   // The folder-picker path (Import a registry from disk) is a separate
   // Operations action; see `importRegistryFromDisk` below.
   const changeRegistry = useCallback(async () => {
