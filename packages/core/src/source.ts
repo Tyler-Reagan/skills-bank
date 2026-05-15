@@ -15,35 +15,33 @@ export type SkillOrigin = "bundled" | "yours";
 
 /**
  * Per-skill origin pointer — independent of the registry-level
- * `SkillOrigin`. A skill installed from skills.sh carries
- * `kind: "skills-sh"` plus the package name + version it came from,
- * so the app can probe for newer versions and run an in-place update
- * without losing that lineage. Adoption (moving files from an agent
- * dir into the registry) preserves the pointer; only an explicit
- * Sever upstream action drops it.
+ * `SkillOrigin`. Every skill installed via `npx skills` resolves to a
+ * GitHub repo + a path within it (skills.sh is a discovery aggregator
+ * over many such repos, not a separate package format), so `kind:
+ * "github"` is the only positive identifier we model. `none` is an
+ * explicit "this is mine, stop scanning" stamp set by the manual
+ * upstream picker, distinct from a missing field (which means
+ * "unknown lineage, scanner may try to classify on next walk").
  *
- * `git` is reserved for future skills cloned from arbitrary GitHub
- * repos — no probe/update path is wired for it in this milestone.
- *
- * `none` is an explicit "this is mine, stop scanning" signal from the
- * manual upstream picker, distinct from a missing field (which means
- * "unknown lineage, scanner may try to classify").
+ * Field shape mirrors the `vercel-labs/skills` CLI's `.skill-lock.json`
+ * (version 3) so the fallback origin-capture scanner can copy values
+ * directly without translation.
  */
-export type UpstreamKind = "skills-sh" | "git" | "none";
+export type UpstreamKind = "github" | "none";
 
 export interface UpstreamPointer {
   kind: UpstreamKind;
-  /** skills-sh: npm-package-style identifier the user passes to `npx skills add`. */
-  package?: string;
-  /** skills-sh: semver string of the fetched version. */
-  version?: string;
-  /** git: full repo identifier (e.g. `owner/repo`). Reserved. */
+  /** "owner/repo" — e.g. `vercel-labs/skills`. */
   repo?: string;
-  /** git: branch / tag / commit pinned at fetch time. Reserved. */
-  ref?: string;
-  /** SHA-256 of the skill directory's content at fetch time, for drift detection. */
-  contentHash?: string;
-  /** ISO-8601 timestamp of the last successful fetch. */
+  /** Full clone URL — preserved raw so non-github.com hosts (GitLab, self-hosted) survive the schema. */
+  sourceUrl?: string;
+  /** Path to SKILL.md within the source repo — e.g. `skills/find-skills/SKILL.md`. */
+  skillPath?: string;
+  /** SHA-1 tree hash of the skill folder at last fetch — probe identity. */
+  skillFolderHash?: string;
+  /** ISO-8601 timestamp of first install (immutable). */
+  installedAt?: string;
+  /** ISO-8601 timestamp of the last successful refresh (bumps on update). */
   fetchedAt?: string;
 }
 
@@ -97,15 +95,15 @@ export function readSkillSource(skillDir: string): SkillSource {
 function parseUpstream(raw: unknown): UpstreamPointer | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const r = raw as Partial<UpstreamPointer>;
-  if (r.kind !== "skills-sh" && r.kind !== "git" && r.kind !== "none") {
-    return undefined;
-  }
+  if (r.kind !== "github" && r.kind !== "none") return undefined;
   const out: UpstreamPointer = { kind: r.kind };
-  if (typeof r.package === "string") out.package = r.package;
-  if (typeof r.version === "string") out.version = r.version;
   if (typeof r.repo === "string") out.repo = r.repo;
-  if (typeof r.ref === "string") out.ref = r.ref;
-  if (typeof r.contentHash === "string") out.contentHash = r.contentHash;
+  if (typeof r.sourceUrl === "string") out.sourceUrl = r.sourceUrl;
+  if (typeof r.skillPath === "string") out.skillPath = r.skillPath;
+  if (typeof r.skillFolderHash === "string") {
+    out.skillFolderHash = r.skillFolderHash;
+  }
+  if (typeof r.installedAt === "string") out.installedAt = r.installedAt;
   if (typeof r.fetchedAt === "string") out.fetchedAt = r.fetchedAt;
   return out;
 }
