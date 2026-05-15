@@ -2084,9 +2084,14 @@ ipcMain.handle(IPC.authResumeDeviceFlow, () => {
 });
 
 ipcMain.handle(IPC.authLogout, async () => {
+  // Clear the token only — preserve `registrySource` and `linkedRepo`
+  // so the user stays in the app shell with anonymized identity rather
+  // than being kicked back to LoginScreen. Header Refresh continues to
+  // work against the linked repo at the GitHub unauth rate ceiling
+  // (60/hr), which is enough for public repos. Private-repo refresh
+  // will fail until the user signs in again — surfaced as a clear
+  // error, not a state corruption.
   clearStoredToken();
-  registrySource = null;
-  linkedRepo = null;
   persistConfig();
   return buildAuthStatus();
 });

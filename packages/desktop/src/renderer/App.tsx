@@ -1541,12 +1541,13 @@ export function App(): React.ReactElement {
             onConnected={(status) => {
               setShowConnectGithub(false);
               setAuthStatus(status);
-              // Plan 02 structural fix: registrySource no longer flips
-              // eagerly on Device Flow success — only when a repo is
-              // actually linked. Pop RepoPicker so the user can finish.
-              // Cancelling lands them in local-bundled with a cached
-              // token; no "authed-but-unlinked" interstitial.
-              setShowRepoPicker(true);
+              // Identity update only — `linkedRepo` is preserved. Users
+              // already past onboarding don't need to re-pick a repo
+              // just because they signed back in; the explicit "Change
+              // linked repo" action covers that intent. The first-launch
+              // path (where RepoPicker should pop) goes through
+              // LoginScreen's onStatusChanged, not this handler.
+              void refresh();
             }}
           />
         )}
