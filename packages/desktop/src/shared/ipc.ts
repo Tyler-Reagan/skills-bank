@@ -107,7 +107,24 @@ export const IPC = {
   headerMenuAction: "header:action",
   pickCustomSkillsDir: "skills:pickCustomSkillsDir",
   getSkillDiff: "skills:getSkillDiff",
+  upstreamProbe: "upstream:probe",
 } as const;
+
+/**
+ * Summary returned by `upstream:probe`. The renderer uses this to
+ * surface progress in the UpdatesModal's manual-refresh control;
+ * per-skill update state is surfaced via the augmented
+ * `RegistryEntry.upstreamUpdateAvailable` field on `listRegistry`,
+ * not through this payload.
+ */
+export interface UpstreamProbeResult {
+  /** Number of unique source repos probed (after dedup). */
+  probed: number;
+  /** Number of skills found with a newer upstream hash than recorded. */
+  updates: number;
+  /** ISO-8601 timestamp of completion. */
+  probedAt: string;
+}
 
 export interface SkillDiffFile {
   /** Relative path within the skill folder, e.g. "SKILL.md". */
@@ -552,6 +569,8 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
+  upstreamProbe(): Promise<UpstreamProbeResult>;
+  onUpstreamProbeComplete(cb: () => void): () => void;
 }
 
 declare global {

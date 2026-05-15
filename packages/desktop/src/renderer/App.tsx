@@ -601,6 +601,15 @@ export function App(): React.ReactElement {
     })();
   }, []);
 
+  // Main process completes an upstream probe → re-fetch registry so
+  // the new `upstreamUpdateAvailable` flags surface as card chips.
+  useEffect(() => {
+    if (!window.skillsBank.onUpstreamProbeComplete) return;
+    return window.skillsBank.onUpstreamProbeComplete(() => {
+      void refresh();
+    });
+  }, [refresh]);
+
   // Initial auth/persona snapshot. The LoginScreen is shown until persona
   // resolves to convenience or power.
   useEffect(() => {

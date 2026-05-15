@@ -44,9 +44,12 @@ import {
   readLastSyncReport,
   readPendingConflicts,
   readSyncDecisions,
+  folderPathFromSkillPath,
+  probeRepoTree,
   resolveRegistryRoot,
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
+  type GitTreeEntry,
   uninstallSkill,
   removeBrokenLinks,
   repairBrokenLinks,
@@ -75,6 +78,7 @@ import {
   type SkillDiffResult,
   type SyncStatus,
   type UpdateStatus,
+  type UpstreamProbeResult,
   type UserRepo,
 } from "../shared/ipc.js";
 import { createPatch, diffLines } from "diff";
@@ -336,6 +340,139 @@ let registryRoot: string = resolveBootRegistryRoot();
 // explicit Rebuild via the `rebuildIndex` IPC. Silent no-op when the
 // CLI isn't installed.
 scanAndStampUpstreamFromLock(registryRoot);
+
+// ─── Upstream probe ─────────────────────────────────────────────────────────
+//
+// Periodic detection of upstream changes for skills with a `github`
+// upstream pointer. Probes are per-repo (one GitHub Git Trees fetch
+// covers every skill from that repo) and gated by a 5-minute TTL
+// cache so a burst of `upstream:probe` invocations doesn't hammer
+// the user's rate limit. Run at boot (after a brief warmup delay to
+// let the renderer paint) and every 6h thereafter; surfaced to the
+// renderer as `entry.upstreamUpdateAvailable` on `listRegistry`.
+//
+// Auth is the user's plan-02 OAuth token (5000/hr authenticated).
+// Unauthed users still see probes attempt against the unauth ceiling
+// (60/hr per IP) — usable for a small set of public repos, fragile
+// beyond that. AccountModal's "Sign in for 5000/hr" affordance is
+// the documented escape hatch.
+
+interface RepoProbeCacheEntry {
+  rootSha: string;
+  folderHashes: Map<string, string>;
+  fetchedAt: number;
+}
+
+interface SkillProbeResult {
+  latestHash: string;
+  probedAt: number;
+}
+
+const repoProbeCache = new Map<string, RepoProbeCacheEntry>();
+const probedUpdates = new Map<string, SkillProbeResult>();
+
+const PROBE_CACHE_TTL_MS = 5 * 60 * 1000;
+const PROBE_CADENCE_MS = 6 * 60 * 60 * 1000;
+const PROBE_BOOT_DELAY_MS = 5 * 1000;
+
+let probeInFlight: Promise<UpstreamProbeResult> | null = null;
+
+async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
+  if (probeInFlight) return probeInFlight;
+  probeInFlight = (async () => {
+    const probedAt = new Date().toISOString();
+    if (!registryRoot) return { probed: 0, updates: 0, probedAt };
+    let index;
+    try {
+      index = buildRegistryIndex(registryRoot);
+    } catch (err) {
+      console.warn("upstream probe: failed to read registry:", err);
+      return { probed: 0, updates: 0, probedAt };
+    }
+    const candidates = index.entries.filter(
+      (e) =>
+        e.source.upstream?.kind === "github" &&
+        typeof e.source.upstream.repo === "string" &&
+        typeof e.source.upstream.skillPath === "string" &&
+        typeof e.source.upstream.skillFolderHash === "string",
+    );
+    if (candidates.length === 0) {
+      return { probed: 0, updates: 0, probedAt };
+    }
+    const byRepo = new Map<string, typeof candidates>();
+    for (const e of candidates) {
+      const repo = e.source.upstream!.repo!;
+      const bucket = byRepo.get(repo);
+      if (bucket) bucket.push(e);
+      else byRepo.set(repo, [e]);
+    }
+    const token = getStoredToken();
+    let updates = 0;
+    for (const [repo, skills] of byRepo) {
+      let cache = repoProbeCache.get(repo);
+      const now = Date.now();
+      if (!cache || now - cache.fetchedAt > PROBE_CACHE_TTL_MS) {
+        const res = await probeRepoTree(repo, token);
+        if (!res.ok) {
+          console.warn(
+            `upstream probe: ${repo} failed (${res.status}): ${res.message}`,
+          );
+          continue;
+        }
+        const folderHashes = buildFolderHashMap(res.tree);
+        cache = { rootSha: res.rootSha, folderHashes, fetchedAt: now };
+        repoProbeCache.set(repo, cache);
+      }
+      for (const skill of skills) {
+        const upstream = skill.source.upstream!;
+        const folderPath = folderPathFromSkillPath(upstream.skillPath!);
+        const currentHash = cache.folderHashes.get(folderPath);
+        if (currentHash && currentHash !== upstream.skillFolderHash) {
+          probedUpdates.set(skill.name, {
+            latestHash: currentHash,
+            probedAt: now,
+          });
+          updates++;
+        } else {
+          probedUpdates.delete(skill.name);
+        }
+      }
+    }
+    notifyProbeComplete();
+    return { probed: byRepo.size, updates, probedAt };
+  })();
+  try {
+    return await probeInFlight;
+  } finally {
+    probeInFlight = null;
+  }
+}
+
+function buildFolderHashMap(tree: GitTreeEntry[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const entry of tree) {
+    if (entry.type === "tree") m.set(entry.path, entry.sha);
+  }
+  return m;
+}
+
+function notifyProbeComplete(): void {
+  const wins = BrowserWindow.getAllWindows();
+  for (const win of wins) {
+    if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, "complete");
+  }
+}
+
+function augmentWithProbedUpdates<T extends { name: string }>(
+  entries: T[],
+): T[] {
+  if (probedUpdates.size === 0) return entries;
+  return entries.map((e) =>
+    probedUpdates.has(e.name) ? { ...e, upstreamUpdateAvailable: true } : e,
+  );
+}
+
+ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
 
 // Resolve registry source at boot. Stored values are respected; an
 // absent value signals a fresh install and is returned as null so the
@@ -780,7 +917,7 @@ ipcMain.handle(IPC.listRegistry, () => {
   // session and silently overwriting git info that the explicit
   // Rebuild-index button had persisted. Mutation handlers and the
   // explicit rebuildIndex IPC are responsible for writing.
-  return buildRegistryIndex(registryRoot).entries;
+  return augmentWithProbedUpdates(buildRegistryIndex(registryRoot).entries);
 });
 
 ipcMain.handle(IPC.listInstalled, (_e, customDirs?: string[]) => {
@@ -2381,6 +2518,15 @@ void app.whenReady().then(() => {
     // Fire-and-forget: any error broadcasts to the renderer via the error event.
     void autoUpdater.checkForUpdates();
   }
+  // Upstream probe: fire once shortly after the renderer paints, then
+  // every 6h. Per-repo 5-min TTL cache absorbs back-pressure from
+  // user-explicit `upstream:probe` invocations between scheduled runs.
+  setTimeout(() => {
+    void runUpstreamProbe();
+  }, PROBE_BOOT_DELAY_MS);
+  setInterval(() => {
+    void runUpstreamProbe();
+  }, PROBE_CADENCE_MS);
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
