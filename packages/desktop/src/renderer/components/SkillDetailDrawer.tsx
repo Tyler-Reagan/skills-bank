@@ -9,6 +9,11 @@ import { classifyDrawerState } from "./skillState.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
 
+function formatStarCount(stars: number): string {
+  if (stars >= 1000) return `${(stars / 1000).toFixed(stars >= 10000 ? 0 : 1)}k`;
+  return String(stars);
+}
+
 interface Props {
   entry: RegistryEntry;
   installed: InstalledSkill[];
@@ -153,6 +158,9 @@ export function SkillDetailDrawer({
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
+  const [repoMeta, setRepoMeta] = useState<
+    import("../../shared/ipc.js").UpstreamRepoMetadata | null
+  >(null);
   const drawerRef = useRef<HTMLElement | null>(null);
   // The drawer slides in from the right (~280ms). Until it lands,
   // its hit area is offscreen — a click on the eventual drawer position
@@ -195,6 +203,30 @@ export function SkillDetailDrawer({
     const id = window.setTimeout(() => setOverlayReady(true), 300);
     return () => window.clearTimeout(id);
   }, []);
+
+  // Fetch source-repo metadata (stars, description) when an Origin
+  // section is visible. Main process caches per-repo with a 15-min
+  // TTL so consecutive drawer opens for skills from the same repo
+  // don't re-hit GitHub. Result `null` until the fetch resolves;
+  // the drawer omits the stars chip and description when fields
+  // are null.
+  const upstreamRepo = entry.source.upstream?.repo;
+  useEffect(() => {
+    setRepoMeta(null);
+    if (!upstreamRepo) return;
+    let cancelled = false;
+    void window.skillsBank
+      .upstreamRepoMetadata(upstreamRepo)
+      .then((m) => {
+        if (!cancelled) setRepoMeta(m);
+      })
+      .catch(() => {
+        // Errors degrade to no enrichment.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [upstreamRepo]);
 
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
@@ -572,8 +604,32 @@ export function SkillDetailDrawer({
                     >
                       github.com/{entry.source.upstream.repo}
                     </button>
+                    {repoMeta?.stars !== null &&
+                      repoMeta?.stars !== undefined && (
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            fontSize: 11,
+                            color: "var(--text-3)",
+                          }}
+                          title={`${repoMeta.stars} stars on GitHub`}
+                        >
+                          ★ {formatStarCount(repoMeta.stars)}
+                        </span>
+                      )}
                   </span>
                 </div>
+                {repoMeta?.description && (
+                  <div className="drawer-meta-row">
+                    <span className="drawer-meta-key">about</span>
+                    <span
+                      className="drawer-meta-value"
+                      style={{ fontStyle: "italic" }}
+                    >
+                      {repoMeta.description}
+                    </span>
+                  </div>
+                )}
                 {entry.source.upstream.skillPath && (
                   <div className="drawer-meta-row">
                     <span className="drawer-meta-key">path in repo</span>

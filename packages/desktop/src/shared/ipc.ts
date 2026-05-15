@@ -109,6 +109,7 @@ export const IPC = {
   getSkillDiff: "skills:getSkillDiff",
   upstreamProbe: "upstream:probe",
   upstreamUpdate: "upstream:update",
+  upstreamRepoMetadata: "upstream:repoMetadata",
 } as const;
 
 /**
@@ -125,6 +126,18 @@ export interface UpstreamProbeResult {
   updates: number;
   /** ISO-8601 timestamp of completion. */
   probedAt: string;
+}
+
+/**
+ * Display-time enrichment for a skill's source repo. Fetched per-repo
+ * by the renderer when an Origin section is visible; cached in main
+ * process memory (15-min TTL). Errors collapse to null fields rather
+ * than throwing — the drawer just omits the missing chips.
+ */
+export interface UpstreamRepoMetadata {
+  stars: number | null;
+  description: string | null;
+  defaultBranch: string | null;
 }
 
 export interface SkillDiffFile {
@@ -575,6 +588,7 @@ interface SkillsBankAPI {
   upstreamUpdate(
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: unknown }>;
+  upstreamRepoMetadata(repo: string): Promise<UpstreamRepoMetadata>;
 }
 
 declare global {

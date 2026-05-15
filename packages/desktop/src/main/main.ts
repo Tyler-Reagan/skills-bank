@@ -90,6 +90,7 @@ import {
   type SyncStatus,
   type UpdateStatus,
   type UpstreamProbeResult,
+  type UpstreamRepoMetadata,
   type UserRepo,
 } from "../shared/ipc.js";
 import { createPatch, diffLines } from "diff";
@@ -610,6 +611,76 @@ async function applyUpstreamUpdate(
 
 ipcMain.handle(IPC.upstreamUpdate, async (_e, name: string) =>
   applyUpstreamUpdate(name),
+);
+
+// ─── Repo-metadata enrichment ───────────────────────────────────────────────
+//
+// Display-time fetch for source-repo info that doesn't fit the probe
+// runner's purpose (probe = "did the tree change?", metadata =
+// "what is this repo's identity?"). Cached per-repo with a 15-min
+// TTL — repo identity changes orders of magnitude less often than
+// content. Errors degrade to nulls so the drawer just omits missing
+// chips.
+
+interface RepoMetadataCacheEntry {
+  metadata: UpstreamRepoMetadata;
+  fetchedAt: number;
+}
+
+const repoMetadataCache = new Map<string, RepoMetadataCacheEntry>();
+const REPO_METADATA_TTL_MS = 15 * 60 * 1000;
+
+async function getRepoMetadata(repo: string): Promise<UpstreamRepoMetadata> {
+  const cached = repoMetadataCache.get(repo);
+  if (cached && Date.now() - cached.fetchedAt < REPO_METADATA_TTL_MS) {
+    return cached.metadata;
+  }
+  const empty: UpstreamRepoMetadata = {
+    stars: null,
+    description: null,
+    defaultBranch: null,
+  };
+  try {
+    const token = getStoredToken();
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "skills-bank",
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`https://api.github.com/repos/${repo}`, {
+      headers,
+    });
+    if (!res.ok) {
+      repoMetadataCache.set(repo, { metadata: empty, fetchedAt: Date.now() });
+      return empty;
+    }
+    const body = (await res.json()) as {
+      stargazers_count?: number;
+      description?: string | null;
+      default_branch?: string;
+    };
+    const metadata: UpstreamRepoMetadata = {
+      stars: typeof body.stargazers_count === "number"
+        ? body.stargazers_count
+        : null,
+      description: typeof body.description === "string"
+        ? body.description
+        : null,
+      defaultBranch: typeof body.default_branch === "string"
+        ? body.default_branch
+        : null,
+    };
+    repoMetadataCache.set(repo, { metadata, fetchedAt: Date.now() });
+    return metadata;
+  } catch {
+    repoMetadataCache.set(repo, { metadata: empty, fetchedAt: Date.now() });
+    return empty;
+  }
+}
+
+ipcMain.handle(IPC.upstreamRepoMetadata, async (_e, repo: string) =>
+  getRepoMetadata(repo),
 );
 
 // Resolve registry source at boot. Stored values are respected; an
