@@ -10,7 +10,10 @@ __pycache__/
 .env
 .env.local
 .skills-bank/
-# Per-skill app-state marker. Created by the desktop app inside the
-# active registryRoot; never belongs in an upstream skills registry.
+# Per-skill app-state sidecars. Created by the desktop app inside the
+# active registryRoot; never belong in an upstream skills registry.
+# `.skills-bank.json` records source + syncedAt; `.skills-bank-hash`
+# records the post-sync content hash used for drift detection.
 .skills-bank.json
+.skills-bank-hash
 .claude/settings.local.json

@@ -2,20 +2,24 @@
 //
 // Dev-mode helper: wipe the Skills Bank desktop app's userData state so
 // the next launch behaves like a first install. Use this between manual
-// test runs of LoginScreen / sync / repo-picker flows.
+// test runs of github-linked flows / sync / repo-picker.
 //
 // Default mode deletes:
-//   - config.json   (registryRoot, persona)
+//   - config.json   (registryRoot, registrySource, linkedRepo, dismissedUpdateVersion)
 //   - auth.enc      (encrypted GitHub token)
 //
 // `--hard` additionally deletes:
 //   - registry/     (the entire app-managed registry directory, including
 //                    .skills-bank/ state and any synced or imported skills)
 //
-// Run via: `pnpm run desktop:reset` or `pnpm run desktop:reset --hard`.
-// Caveat: if `SKILLS_BANK_ROOT` is set in your shell, the next launch will
-// auto-set persona=convenience at boot and skip the LoginScreen — `unset`
-// it before relaunching if you're testing the LoginScreen path.
+// Run via: `pnpm reset` or `pnpm reset:hard`. The `:hard` variant also
+// auto-invokes `pnpm reset:seed` to repopulate source markers in the
+// repo's `skills/` directory.
+//
+// Post persona-collapse the next launch always boots into local-bundled
+// mode (the LoginScreen path is reachable only via in-app GitHub sign-
+// out). To exercise github-linked flows from a clean state, run reset
+// then in-app: AccountModal → Connect to GitHub.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -82,9 +86,9 @@ if (touched === 0) {
 
 console.log(
   hard
-    ? "Reset complete (hard). Next launch starts fresh — LoginScreen, no skills, no token."
-    : "Reset complete. Next launch shows LoginScreen.",
+    ? "Reset complete (hard). Next launch boots to local-bundled with a fresh registry — no skills installed, no token."
+    : "Reset complete. Next launch boots to local-bundled — registry contents preserved, token cleared.",
 );
 console.log(
-  "If SKILLS_BANK_ROOT is set in your shell, `unset` it before relaunching to see the LoginScreen.",
+  "Post persona-collapse, boot auto-routes to local-bundled when no source is stored. To switch into github-linked, use AccountModal → Connect to GitHub.",
 );

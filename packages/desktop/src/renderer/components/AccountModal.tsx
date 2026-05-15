@@ -19,12 +19,12 @@ interface Props {
   appVersion: string;
   onClose: () => void;
   onChangeRegistry: () => void | Promise<void>;
+  onRefreshRegistry: () => void | Promise<void>;
   onMergeRegistry: () => void | Promise<void>;
   onExportRegistry: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
   onCheckForUpdates: () => void | Promise<void>;
-  onOpenGitHubLinkComingSoon: () => void;
-  onOpenPromoteToGitHubComingSoon: () => void;
+  onConnectGithub: () => void;
 }
 
 export function AccountModal({
@@ -32,12 +32,12 @@ export function AccountModal({
   appVersion,
   onClose,
   onChangeRegistry,
+  onRefreshRegistry,
   onMergeRegistry,
   onExportRegistry,
   onSignOut,
   onCheckForUpdates,
-  onOpenGitHubLinkComingSoon,
-  onOpenPromoteToGitHubComingSoon,
+  onConnectGithub,
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
@@ -45,6 +45,7 @@ export function AccountModal({
   useInitialFocus(modalRef);
 
   const isGithub = authStatus?.registrySource === "github";
+  const linkedRepo = authStatus?.linkedRepo ?? null;
   const sourceChipLabel = isGithub
     ? `@${authStatus?.user?.login ?? "you"}`
     : "Local bundled";
@@ -75,7 +76,9 @@ export function AccountModal({
         <section style={section}>
           <h3 style={sectionTitle}>Registry source</h3>
           <p style={hint}>
-            Where your registry lives. Linking a GitHub repo is on the way.
+            Where your registry lives. Local-bundled users get the curated set
+            shipped with the app. GitHub-linked users mirror a repo of their
+            own.
           </p>
           <div style={sourceRow}>
             <span style={sourceChip}>{sourceChipLabel}</span>
@@ -85,31 +88,38 @@ export function AccountModal({
                 : "Bundled set shipped with the app."}
             </span>
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-              marginTop: 8,
-            }}
-          >
-            <button
-              className="btn"
-              type="button"
-              onClick={onOpenGitHubLinkComingSoon}
-            >
-              Link a GitHub repo (Coming soon)
-            </button>
-            {!isGithub && (
+          {isGithub && linkedRepo && (
+            <div style={{ ...hint, marginTop: 8 }}>
+              Linked: <code>github.com/{linkedRepo.fullName}</code>
+              <br />
+              Last fetched: {formatRelativeTime(
+                linkedRepo.lastFetchedAt,
+              )} · <code>{linkedRepo.syncedFromCommit.slice(0, 7)}</code>
+            </div>
+          )}
+          {!isGithub && (
+            <div style={{ marginTop: 10 }}>
               <button
                 className="btn"
                 type="button"
-                onClick={onOpenPromoteToGitHubComingSoon}
+                onClick={onConnectGithub}
+                disabled={!authStatus?.isAuthConfigured}
+                title={
+                  authStatus?.isAuthConfigured
+                    ? "Authenticate with GitHub, then pick a repo to back your registry with."
+                    : "GitHub OAuth isn't configured for this build."
+                }
               >
-                Promote to a GitHub repo (Coming soon)
+                Connect to GitHub
               </button>
-            )}
-          </div>
+              {!authStatus?.isAuthConfigured && (
+                <div style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+                  GitHub OAuth Client ID not set. See{" "}
+                  <code>auth-config.ts</code>.
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         <section style={section}>
@@ -127,13 +137,26 @@ export function AccountModal({
             }}
           >
             {isGithub ? (
-              <button
-                className="btn"
-                type="button"
-                onClick={() => void onChangeRegistry()}
-              >
-                Choose registry repo
-              </button>
+              <>
+                {linkedRepo && (
+                  <button
+                    className="btn primary"
+                    type="button"
+                    onClick={() => void onRefreshRegistry()}
+                  >
+                    Refresh from {linkedRepo.fullName}
+                  </button>
+                )}
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => void onChangeRegistry()}
+                >
+                  {linkedRepo
+                    ? "Choose a different repo"
+                    : "Choose registry repo"}
+                </button>
+              </>
             ) : (
               <button
                 className="btn"
@@ -294,3 +317,21 @@ const footer: React.CSSProperties = {
   paddingTop: 12,
   borderTop: "1px solid var(--border)",
 };
+
+function formatRelativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "unknown";
+  const diffMs = Date.now() - then;
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `${day}d ago`;
+  const mo = Math.floor(day / 30);
+  if (mo < 12) return `${mo}mo ago`;
+  const yr = Math.floor(day / 365);
+  return `${yr}y ago`;
+}

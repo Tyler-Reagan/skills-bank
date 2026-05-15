@@ -41,10 +41,7 @@ import { DiscoverTab } from "./components/DiscoverTab.js";
 import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
-import {
-  ComingSoonDialog,
-  GitHubLinkComingSoon,
-} from "./components/ComingSoonDialog.js";
+import { ConnectGithubModal } from "./components/ConnectGithubModal.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
 import { AccountModal } from "./components/AccountModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
@@ -286,10 +283,7 @@ export function App(): React.ReactElement {
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
-  const [showGitHubLinkComingSoon, setShowGitHubLinkComingSoon] =
-    useState(false);
-  const [showPromoteToGitHubComingSoon, setShowPromoteToGitHubComingSoon] =
-    useState(false);
+  const [showConnectGithub, setShowConnectGithub] = useState(false);
   // Auto-update state. `latestUpdateStatus` is a live mirror of the most
   // recent event the main process broadcast; the modal reads it directly
   // when open, so a render during `downloading` shows the live progress
@@ -679,6 +673,19 @@ export function App(): React.ReactElement {
     }
   }, [refresh, flash, authStatus]);
 
+  // Re-fetch from the currently linked GitHub repo, no picker.
+  const refreshLinkedRepo = useCallback(async () => {
+    const r = await window.skillsBank.reposRefreshCurrent();
+    if (r.ok) {
+      flash(r.message);
+      const next = await window.skillsBank.authStatus();
+      setAuthStatus(next);
+      await refresh();
+    } else {
+      flash(r.message);
+    }
+  }, [refresh, flash]);
+
   // M8: additive import. Pops a folder picker, runs the merge,
   // surfaces collisions through the sync-conflict modal. Default
   // decision per the taxonomy plan is keep-mine (handled inside the
@@ -718,6 +725,8 @@ export function App(): React.ReactElement {
       if (r.ok) {
         flash(r.message);
         setShowRepoPicker(false);
+        const next = await window.skillsBank.authStatus();
+        setAuthStatus(next);
         await refresh();
       } else {
         // Surface as a thrown error so the modal can show it inline.
@@ -822,9 +831,22 @@ export function App(): React.ReactElement {
     return (
       <LoginScreen
         isAuthConfigured={authStatus.isAuthConfigured}
-        onStatusChanged={(s) => {
+        onStatusChanged={async (s) => {
           setAuthStatus(s);
-          if (s.registrySource !== null) void refresh();
+          // Plan 02 structural fix: authPollDeviceFlow no longer eagerly
+          // flips registrySource to "github". If Device Flow just
+          // completed (s.user populated, registrySource still null),
+          // park the user in local-bundled and pop RepoPicker so they
+          // can finish linking. Cancelling RepoPicker lands them in
+          // local-bundled with a useful cached token — no orphaned state.
+          if (s.registrySource === null && s.user) {
+            const local = await window.skillsBank.authSetRegistrySourceLocal();
+            setAuthStatus(local);
+            setShowRepoPicker(true);
+            void refresh();
+          } else if (s.registrySource !== null) {
+            void refresh();
+          }
         }}
       />
     );
@@ -963,8 +985,7 @@ export function App(): React.ReactElement {
               showSettings ||
               showShortcuts ||
               showAccount ||
-              showGitHubLinkComingSoon ||
-              showPromoteToGitHubComingSoon ||
+              showConnectGithub ||
               !!conflictModalEntries ||
               showRepoPicker ||
               !!pickDestinationTarget ||
@@ -1485,6 +1506,10 @@ export function App(): React.ReactElement {
               setShowAccount(false);
               await changeRegistry();
             }}
+            onRefreshRegistry={async () => {
+              setShowAccount(false);
+              await refreshLinkedRepo();
+            }}
             onMergeRegistry={async () => {
               setShowAccount(false);
               await mergeRegistry();
@@ -1498,30 +1523,29 @@ export function App(): React.ReactElement {
               await signOut();
             }}
             onCheckForUpdates={checkForUpdates}
-            onOpenGitHubLinkComingSoon={() => setShowGitHubLinkComingSoon(true)}
-            onOpenPromoteToGitHubComingSoon={() =>
-              setShowPromoteToGitHubComingSoon(true)
-            }
+            onConnectGithub={() => {
+              setShowAccount(false);
+              setShowConnectGithub(true);
+            }}
           />
         )}
 
-        <GitHubLinkComingSoon
-          open={showGitHubLinkComingSoon}
-          onClose={() => setShowGitHubLinkComingSoon(false)}
-        />
-
-        <ComingSoonDialog
-          open={showPromoteToGitHubComingSoon}
-          onClose={() => setShowPromoteToGitHubComingSoon(false)}
-          title="Promote local registry to a GitHub repo"
-          summary="A future release will let you push the current state of your local registry — your edits and additions — to a brand-new GitHub repo, then back the app with it going forward."
-          bullets={[
-            "Create a new GitHub repo from your account",
-            "Initial commit captures the current local registry state",
-            "App switches to GitHub-linked mode automatically after promotion",
-            "Available after GitHub linking ships",
-          ]}
-        />
+        {showConnectGithub && authStatus && (
+          <ConnectGithubModal
+            isAuthConfigured={authStatus.isAuthConfigured}
+            onClose={() => setShowConnectGithub(false)}
+            onConnected={(status) => {
+              setShowConnectGithub(false);
+              setAuthStatus(status);
+              // Plan 02 structural fix: registrySource no longer flips
+              // eagerly on Device Flow success — only when a repo is
+              // actually linked. Pop RepoPicker so the user can finish.
+              // Cancelling lands them in local-bundled with a cached
+              // token; no "authed-but-unlinked" interstitial.
+              setShowRepoPicker(true);
+            }}
+          />
+        )}
 
         <DestinationPickerDialog
           open={pickDestinationTarget !== null}
@@ -1845,6 +1869,22 @@ export function App(): React.ReactElement {
                           setSelected(null);
                         }
                         await refresh();
+                      }
+                    : undefined
+                }
+                onRepoint={
+                  classifyDrawerState(selected, installed, isRegistered)
+                    .capabilities.canRepoint
+                    ? async () => {
+                        const r = await window.skillsBank.repointExternal(
+                          selected.name,
+                        );
+                        if (r.message !== "cancelled") {
+                          flash(r.message);
+                        }
+                        if (r.ok) {
+                          await refresh();
+                        }
                       }
                     : undefined
                 }

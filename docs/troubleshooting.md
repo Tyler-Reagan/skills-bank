@@ -46,8 +46,8 @@ The app polls the GitHub Releases feed once on launch. If you've been running th
 Two reset scripts wipe local state (developer-oriented, but available to anyone running from source):
 
 ```bash
-pnpm run desktop:reset          # clear persona + GitHub token
-pnpm run desktop:reset:hard     # also wipe the app-managed registry directory
+pnpm reset          # clear persona + GitHub token
+pnpm reset:hard     # also wipe the app-managed registry directory (and re-seed)
 ```
 
 Both handle dev-mode and packaged userData paths. Set `unset SKILLS_BANK_ROOT` in your shell first if you've been pointing the app at a checkout.

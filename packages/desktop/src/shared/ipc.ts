@@ -47,6 +47,7 @@ export const IPC = {
   getRoot: "skills:getRoot",
   rebuildIndex: "skills:rebuildIndex",
   finalize: "skills:finalize",
+  listTopLevelSymlinks: "agents:listTopLevelSymlinks",
   exportInfo: "skills:exportInfo",
   exportSkill: "skills:export",
   readSkillMd: "skills:readSkillMd",
@@ -70,9 +71,11 @@ export const IPC = {
   authStartDeviceFlow: "auth:startDeviceFlow",
   authPollDeviceFlow: "auth:pollDeviceFlow",
   authCancelDeviceFlow: "auth:cancelDeviceFlow",
+  authResumeDeviceFlow: "auth:resumeDeviceFlow",
   authLogout: "auth:logout",
   reposListMine: "repos:listMine",
   reposReplaceRegistry: "repos:replaceRegistry",
+  reposRefreshCurrent: "repos:refreshCurrent",
   openExternal: "system:openExternal",
   openSelfHostDocs: "system:openSelfHostDocs",
   exportRegistry: "skills:exportRegistry",
@@ -90,6 +93,7 @@ export const IPC = {
   acceptDrift: "skills:acceptDrift",
   takeCanonical: "skills:takeCanonical",
   forgetMissing: "skills:forgetMissing",
+  repointExternal: "skills:repointExternal",
   clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
@@ -153,6 +157,19 @@ interface PickCustomSkillsDirResult {
  */
 export type RegistrySource = "local" | "github";
 
+/**
+ * Records which GitHub repo the user has linked, when it was last
+ * fetched, and the commit SHA we synced from. Written by
+ * `reposReplaceRegistry` on every successful fetch; surfaced in
+ * AccountModal so users can see what they're tracking. Null when the
+ * user is not in github-linked mode.
+ */
+export interface LinkedRepoMetadata {
+  fullName: string;
+  lastFetchedAt: string;
+  syncedFromCommit: string;
+}
+
 export interface AuthStatus {
   registrySource: RegistrySource | null;
   isAuthConfigured: boolean;
@@ -161,6 +178,7 @@ export interface AuthStatus {
     avatarUrl: string;
     htmlUrl: string;
   } | null;
+  linkedRepo: LinkedRepoMetadata | null;
 }
 
 export interface DeviceFlowStartPayload {
@@ -169,6 +187,19 @@ export interface DeviceFlowStartPayload {
   expiresIn: number;
   interval: number;
   flowId: string;
+}
+
+/**
+ * Payload returned by `authResumeDeviceFlow` when an in-progress flow
+ * was persisted (the previous app session quit mid-poll and the device
+ * code hasn't expired yet). `expiresAt` is an absolute ms-epoch
+ * timestamp; the renderer derives a remaining-seconds budget from it.
+ */
+export interface DeviceFlowResumePayload {
+  flowId: string;
+  userCode: string;
+  verificationUri: string;
+  expiresAt: number;
 }
 
 export interface UserRepo {
@@ -223,8 +254,7 @@ export type HeaderMenuAction =
   | "signOut"
   | "refresh"
   | "sync"
-  | "checkForUpdates"
-  | "githubLinkComingSoon";
+  | "checkForUpdates";
 
 export type UpdateStatus =
   | { kind: "idle" }
@@ -349,6 +379,15 @@ interface SkillsBankAPI {
   forgetMissing(
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  /**
+   * Open a directory picker and repoint a non-adopted external entry's
+   * target path to the user's selection. Returns `cancelled` (ok=false)
+   * if the user dismisses the picker; surfaces validation errors as
+   * `error.message` otherwise.
+   */
+  repointExternal(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   clearPendingConflicts(): Promise<{
     ok: boolean;
     message: string;
@@ -361,6 +400,15 @@ interface SkillsBankAPI {
   getRoot(): Promise<string>;
   rebuildIndex(): Promise<{ ok: boolean; message: string; entries: number }>;
   finalize(): Promise<FinalizeResult>;
+  /**
+   * Lightweight probe for "is any agent dir a symlink we could finalize?"
+   * Returns one entry per agent whose top-level skills dir is itself a
+   * symlink. Empty array when nothing is symlinked. Used by Settings to
+   * gate visibility of the Collapse symlinked agent dirs entry.
+   */
+  listTopLevelSymlinks(): Promise<
+    Array<{ agent: AgentId; resolvedTarget: string; exists: boolean }>
+  >;
   exportInfo(name: string): Promise<ExportInfo>;
   exportSkill(
     name: string,
@@ -408,11 +456,27 @@ interface SkillsBankAPI {
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
   authPollDeviceFlow(flowId: string): Promise<AuthStatus>;
   authCancelDeviceFlow(flowId: string): Promise<void>;
+  authResumeDeviceFlow(): Promise<DeviceFlowResumePayload | null>;
   authLogout(): Promise<AuthStatus>;
   reposListMine(): Promise<UserRepo[]>;
-  reposReplaceRegistry(
-    fullName: string,
-  ): Promise<{ ok: boolean; message: string; importedCount?: number }>;
+  reposReplaceRegistry(fullName: string): Promise<{
+    ok: boolean;
+    message: string;
+    importedCount?: number;
+    conflictCount?: number;
+  }>;
+  /**
+   * Re-fetch from the currently linked GitHub repo (no picker). Resolves
+   * the target from persisted `linkedRepo`; errors clearly if nothing is
+   * linked yet. Shares the diff-before-apply path with
+   * `reposReplaceRegistry`.
+   */
+  reposRefreshCurrent(): Promise<{
+    ok: boolean;
+    message: string;
+    importedCount?: number;
+    conflictCount?: number;
+  }>;
   openExternal(url: string): Promise<void>;
   openSelfHostDocs(): Promise<{ ok: boolean; message?: string }>;
   exportRegistry(): Promise<{

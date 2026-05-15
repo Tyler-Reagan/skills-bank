@@ -41,7 +41,8 @@ export type PrimaryAction =
   | "repair-broken"
   | "unhide"
   | "accept-drift"
-  | "forget-missing";
+  | "forget-missing"
+  | "repoint";
 
 export interface DrawerCapabilities {
   canInstall: boolean;
@@ -91,6 +92,14 @@ export interface DrawerCapabilities {
    * non-adopted missing: removes the external.json row.
    */
   canForgetMissing: boolean;
+  /**
+   * Repoint a non-adopted missing entry — open a directory picker, let
+   * the user pick the new location of a skill they moved on disk, and
+   * rewrite the external.json target so the missing flag clears.
+   * Only granted for `external-target-missing` (not adopted-missing —
+   * adopted entries have no external row to repoint).
+   */
+  canRepoint: boolean;
   canResolveConflicts: boolean;
   /**
    * Same skill name has multiple non-ours installations across agent
@@ -136,6 +145,7 @@ const NEVER: DrawerCapabilities = {
   canAcceptDrift: false,
   canTakeCanonical: false,
   canForgetMissing: false,
+  canRepoint: false,
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
   canRepairBroken: false,
@@ -170,18 +180,19 @@ export function classifyDrawerState(
   // copy; today's heal flow is the same single-option "Forget this
   // entry" for both (repoint/refetch are future work).
   if (isRegistered && entry.missing === true) {
+    const isExternal = entry.adopted === false;
     return {
-      state:
-        entry.adopted === false
-          ? "external-target-missing"
-          : "registry-folder-missing",
+      state: isExternal ? "external-target-missing" : "registry-folder-missing",
       brokenCount: 0,
       conflictCount: 0,
       capabilities: {
         ...NEVER,
         canRevealInFinder: true,
         canForgetMissing: true,
-        primary: "forget-missing",
+        // Repoint only applies to external entries; adopted-missing has
+        // no external.json row to rewrite.
+        canRepoint: isExternal,
+        primary: isExternal ? "repoint" : "forget-missing",
       },
     };
   }

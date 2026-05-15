@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
 import {
   AGENT_LABELS,
@@ -92,6 +92,39 @@ export function SettingsModal({
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
   const [draft, setDraft] = useState<AppSettings>(settings);
+
+  // Top-level agent dir symlinks — drives the conditional "Collapse
+  // symlinked agent dirs" section. Loaded once on mount; refresh after
+  // a successful finalize so the section disappears.
+  const [topLevelSymlinks, setTopLevelSymlinks] = useState<
+    Array<{ agent: AgentId; resolvedTarget: string; exists: boolean }>
+  >([]);
+  const [finalizing, setFinalizing] = useState(false);
+  const [finalizeError, setFinalizeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void window.skillsBank.listTopLevelSymlinks().then(setTopLevelSymlinks);
+  }, []);
+
+  const runFinalize = async () => {
+    setFinalizing(true);
+    setFinalizeError(null);
+    try {
+      const r = await window.skillsBank.finalize();
+      if (r.ok) {
+        const next = await window.skillsBank.listTopLevelSymlinks();
+        setTopLevelSymlinks(next);
+      } else {
+        setFinalizeError(
+          r.blockingEntries
+            ? `${r.message}\n${r.blockingEntries.map((n) => `  • ${n}`).join("\n")}`
+            : r.message,
+        );
+      }
+    } finally {
+      setFinalizing(false);
+    }
+  };
 
   const toggleAgent = (id: AgentId) => {
     setDraft((prev) => {
@@ -262,6 +295,70 @@ export function SettingsModal({
             ))}
           </div>
         </section>
+
+        {topLevelSymlinks.length > 0 && (
+          <section style={section}>
+            <h3 style={sectionTitle}>Collapse symlinked agent dirs</h3>
+            <p style={hint}>
+              {topLevelSymlinks.length === 1
+                ? "One"
+                : `${topLevelSymlinks.length}`}{" "}
+              agent skills directory
+              {topLevelSymlinks.length === 1 ? " is" : "s are"} symlinked to
+              another location:
+            </p>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: "6px 0 8px",
+                fontSize: 12,
+                color: "var(--text-2)",
+              }}
+            >
+              {topLevelSymlinks.map((tls) => (
+                <li key={tls.agent} style={{ marginBottom: 2 }}>
+                  <code>{tls.agent}</code> → <code>{tls.resolvedTarget}</code>
+                  {!tls.exists && (
+                    <span style={{ color: "var(--danger)" }}> (missing)</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p style={hint}>
+              Finalize collapses each symlink into a real directory in place,
+              moving content from the resolved target. Skills must be registered
+              first — finalize refuses while real-directory entries remain
+              unregistered.
+            </p>
+            <button
+              className="btn"
+              type="button"
+              disabled={finalizing}
+              onClick={() => void runFinalize()}
+            >
+              {finalizing ? (
+                <>
+                  <span className="spinner inline" /> Finalizing
+                </>
+              ) : (
+                "Finalize now"
+              )}
+            </button>
+            {finalizeError && (
+              <pre
+                style={{
+                  margin: "8px 0 0",
+                  fontSize: 11,
+                  color: "var(--danger)",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {finalizeError}
+              </pre>
+            )}
+          </section>
+        )}
 
         <section style={section}>
           <h3 style={sectionTitle}>Terminal app (macOS)</h3>

@@ -1,5 +1,9 @@
-import React, { useState } from "react";
-import type { AuthStatus, DeviceFlowStartPayload } from "../../shared/ipc.js";
+import React, { useEffect, useState } from "react";
+import type {
+  AuthStatus,
+  DeviceFlowResumePayload,
+  DeviceFlowStartPayload,
+} from "../../shared/ipc.js";
 import { Icon } from "./Icon.js";
 
 interface Props {
@@ -13,15 +17,29 @@ interface Props {
  *   2. Continue without → registrySource = "local"
  *   3. Self-host → opens fork-and-build docs in browser; user is expected
  *      to fork and run their own build, so we don't change registrySource here.
+ *
+ * On mount we also probe for a persisted in-progress flow from a prior
+ * session (the app quit / crashed mid-poll). If present and not yet
+ * expired, the user sees a Resume / Start over recovery card instead
+ * of the path-picker.
  */
 export function LoginScreen({
   isAuthConfigured,
   onStatusChanged,
 }: Props): React.ReactElement {
   const [flow, setFlow] = useState<DeviceFlowStartPayload | null>(null);
+  const [resumable, setResumable] = useState<DeviceFlowResumePayload | null>(
+    null,
+  );
   const [pollError, setPollError] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    void window.skillsBank.authResumeDeviceFlow().then((r) => {
+      if (r) setResumable(r);
+    });
+  }, []);
 
   const skip = async () => {
     setBusy(true);
@@ -65,12 +83,97 @@ export function LoginScreen({
     setPollError(null);
   };
 
+  const resumeFlow = async () => {
+    if (!resumable) return;
+    setPollError(null);
+    setBusy(true);
+    setPolling(true);
+    // Promote the resumable payload into the same shape the flow-active
+    // branch renders. expiresIn/interval aren't used by the renderer
+    // after the initial render — they're only relayed back to GitHub
+    // by the main-process poll loop.
+    setFlow({
+      flowId: resumable.flowId,
+      userCode: resumable.userCode,
+      verificationUri: resumable.verificationUri,
+      expiresIn: Math.max(
+        0,
+        Math.floor((resumable.expiresAt - Date.now()) / 1000),
+      ),
+      interval: 5,
+    });
+    setResumable(null);
+    try {
+      const status = await window.skillsBank.authPollDeviceFlow(
+        resumable.flowId,
+      );
+      onStatusChanged(status);
+    } catch (err) {
+      const msg = (err as Error).message;
+      setPollError(prettyDeviceFlowError(msg));
+    } finally {
+      setPolling(false);
+      setBusy(false);
+    }
+  };
+
+  const startOver = async () => {
+    if (resumable) {
+      await window.skillsBank.authCancelDeviceFlow(resumable.flowId);
+    }
+    setResumable(null);
+  };
+
   const openSelfHost = async () => {
     const r = await window.skillsBank.openSelfHostDocs();
     if (!r.ok) {
       setPollError(r.message ?? "could not open self-host docs");
     }
   };
+
+  if (resumable && !flow) {
+    const minutesLeft = Math.max(
+      0,
+      Math.floor((resumable.expiresAt - Date.now()) / 60000),
+    );
+    return (
+      <div className="setup-screen">
+        <div className="setup-card">
+          <div className="setup-brand">
+            skills<span>-</span>bank
+          </div>
+          <h1>Resume GitHub authentication?</h1>
+          <p>
+            An in-progress authentication from a previous session is still valid
+            (about {minutesLeft} minute{minutesLeft === 1 ? "" : "s"}{" "}
+            remaining). If you completed the GitHub side, Resume will pick up
+            the token. Otherwise pick Start over.
+          </p>
+          <div className="device-code-box">
+            <code className="device-code">{resumable.userCode}</code>
+          </div>
+          <button
+            type="button"
+            className="btn primary setup-cta"
+            disabled={busy}
+            onClick={() => void resumeFlow()}
+          >
+            <Icon name="check" size="sm" /> Resume GitHub authentication
+          </button>
+          <p className="setup-footnote">
+            <button
+              type="button"
+              className="link-btn"
+              disabled={busy}
+              onClick={() => void startOver()}
+            >
+              Start over
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (flow) {
     return (

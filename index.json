@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-14T00:23:01.766Z",
+  "generatedAt": "2026-05-15T16:36:18.972Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -9,12 +9,28 @@
       "path": "skills/404-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "add-app-to-server",
+      "description": "This skill should be used when the user asks to \"add an app to my MCP server\", \"add UI to my MCP server\", \"add a view to my MCP tool\", \"enrich MCP tools with UI\", \"add interactive UI to existing server\", \"add MCP Apps to my server\", or needs to add interactive UI capabilities to an existing MCP server that already has tools. Provides guidance for analyzing existing tools and adding MCP Apps UI resources.",
+      "path": "skills/add-app-to-server",
+      "source": {
+        "source": "yours"
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "api-page-generator",
@@ -23,10 +39,15 @@
       "path": "skills/api-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -37,10 +58,15 @@
       "path": "skills/brand-visual-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -51,10 +77,15 @@
       "path": "skills/branding",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -65,10 +96,15 @@
       "path": "skills/carousel",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -79,10 +115,15 @@
       "path": "skills/competitor-research",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -93,10 +134,15 @@
       "path": "skills/content-optimization",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -107,10 +153,15 @@
       "path": "skills/content-strategy",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -121,12 +172,28 @@
       "path": "skills/core-web-vitals",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "create-mcp-app",
+      "description": "This skill should be used when the user asks to \"create an MCP App\", \"add a UI to an MCP tool\", \"build an interactive MCP View\", \"scaffold an MCP App\", or needs guidance on MCP Apps SDK patterns, UI-resource registration, MCP App lifecycle, or host integration. Provides comprehensive guidance for building MCP Apps with interactive UIs.",
+      "path": "skills/create-mcp-app",
+      "source": {
+        "source": "yours"
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "create-readme",
@@ -134,10 +201,15 @@
       "path": "skills/create-readme",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -147,10 +219,15 @@
       "path": "skills/d3-viz",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -161,10 +238,15 @@
       "path": "skills/docs-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -174,10 +256,15 @@
       "path": "skills/electron",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -188,10 +275,15 @@
       "path": "skills/favicon-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -201,10 +293,15 @@
       "path": "skills/find-skills",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -214,10 +311,15 @@
       "path": "skills/fix-knip-unused-exports",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -228,10 +330,15 @@
       "path": "skills/footer-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -241,10 +348,15 @@
       "path": "skills/frontend-design",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -254,10 +366,15 @@
       "path": "skills/gitlab-ci-inspector",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -267,10 +384,15 @@
       "path": "skills/gitlab-ci-patterns",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -280,12 +402,28 @@
       "path": "skills/gitlab-mr-writing",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "golang-testing",
+      "description": "Go testing patterns including table-driven tests, subtests, benchmarks, fuzzing, and test coverage. Follows TDD methodology with idiomatic Go practices.",
+      "path": "skills/golang-testing",
+      "source": {
+        "source": "yours"
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "hero-generator",
@@ -294,10 +432,15 @@
       "path": "skills/hero-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -308,10 +451,15 @@
       "path": "skills/homepage-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -324,12 +472,18 @@
       "path": "skills/impeccable",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
-      "canon": true
+      "canon": true,
+      "drift": true
     },
     {
       "name": "landing-page-generator",
@@ -338,10 +492,15 @@
       "path": "skills/landing-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -352,10 +511,15 @@
       "path": "skills/logo-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -365,10 +529,15 @@
       "path": "skills/mcp-builder",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -378,10 +547,15 @@
       "path": "skills/mermaid-diagrams",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -391,10 +565,15 @@
       "path": "skills/naming-analyzer",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -404,10 +583,15 @@
       "path": "skills/next-best-practices",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -417,10 +601,15 @@
       "path": "skills/obsidian-cli",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "5e94b37c2d4a1689c298ee564a20841dd75b7cd2",
+        "date": "2026-05-12 13:24:04 -0700",
+        "message": "(skills): update skills canon - remove any specific terminology from personal skills"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -430,10 +619,15 @@
       "path": "skills/pr-description",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -443,10 +637,15 @@
       "path": "skills/prd-development",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -456,10 +655,15 @@
       "path": "skills/pretty-mermaid",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -469,12 +673,28 @@
       "path": "skills/problem-statement",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "python-packaging",
+      "description": "Create distributable Python packages with proper project structure, setup.py/pyproject.toml, and publishing to PyPI. Use when packaging Python libraries, creating CLI tools, or distributing Python code.",
+      "path": "skills/python-packaging",
+      "source": {
+        "source": "yours"
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "react-components",
@@ -482,10 +702,15 @@
       "path": "skills/react-components",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -495,10 +720,15 @@
       "path": "skills/react-state-management",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
+        "date": "2026-05-05 17:12:54 -0700",
+        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -508,10 +738,15 @@
       "path": "skills/roadmap-planning",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -522,10 +757,15 @@
       "path": "skills/seo-strategy",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -535,10 +775,15 @@
       "path": "skills/shadcn",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -549,10 +794,15 @@
       "path": "skills/signup-login-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -562,12 +812,28 @@
       "path": "skills/specs-code-cleanup",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "terraform-module-library",
+      "description": "Build reusable Terraform modules for AWS, Azure, GCP, and OCI infrastructure following infrastructure-as-code best practices. Use when creating infrastructure modules, standardizing cloud provisioning, or implementing reusable IaC components.",
+      "path": "skills/terraform-module-library",
+      "source": {
+        "source": "yours"
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "terraform-plan-summary",
@@ -575,12 +841,29 @@
       "path": "skills/terraform-plan-summary",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "terraform-test",
+      "description": "Comprehensive guide for writing and running Terraform tests. Use when creating test files (.tftest.hcl), writing test scenarios with run blocks, validating infrastructure behavior with assertions, mocking providers and data sources, testing module outputs and resource configurations, or troubleshooting Terraform test syntax and execution.",
+      "version": "0.0.2",
+      "path": "skills/terraform-test",
+      "source": {
+        "source": "yours"
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "theme-factory",
@@ -588,10 +871,15 @@
       "path": "skills/theme-factory",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -601,10 +889,15 @@
       "path": "skills/typescript-mcp-server-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -614,10 +907,15 @@
       "path": "skills/typescript-react-reviewer",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -627,10 +925,15 @@
       "path": "skills/ui-ux-pro-max",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -640,10 +943,15 @@
       "path": "skills/user-personas",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -653,10 +961,15 @@
       "path": "skills/user-story",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -666,10 +979,15 @@
       "path": "skills/user-story-mapping",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -681,10 +999,15 @@
       "path": "skills/vercel-react-best-practices",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -696,10 +1019,15 @@
       "path": "skills/vite",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     },
@@ -711,10 +1039,15 @@
       "path": "skills/web-design-guidelines",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "a17ab8ed3452311b876e57903d54c0a2f0453665",
-        "syncedAt": "2026-05-13T21:47:31.868Z"
+        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
+        "syncedAt": "2026-05-14T22:22:49.802Z"
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
+        "date": "2026-05-12 15:14:06 -0700",
+        "message": "(cleanup): ran pnpm format on all files"
+      },
       "publishState": "pushed",
       "canon": true
     }
