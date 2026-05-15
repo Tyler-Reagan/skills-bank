@@ -29,6 +29,14 @@ export type SkillOrigin = "bundled" | "yours";
  */
 export type UpstreamKind = "github" | "none";
 
+/**
+ * Constant form of `UpstreamKind`'s positive value. Use this in
+ * runtime comparisons (e.g. `entry.sourceType !== UPSTREAM_KIND_GITHUB`)
+ * instead of the bare `"github"` string so a typo at any call site
+ * fails to compile rather than silently misrouting.
+ */
+export const UPSTREAM_KIND_GITHUB: UpstreamKind = "github";
+
 export interface UpstreamPointer {
   kind: UpstreamKind;
   /** "owner/repo" — e.g. `vercel-labs/skills`. */

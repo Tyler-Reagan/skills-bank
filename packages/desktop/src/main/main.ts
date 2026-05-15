@@ -45,6 +45,7 @@ import {
   readPendingConflicts,
   readSyncDecisions,
   resolveRegistryRoot,
+  scanAndStampUpstreamFromLock,
   scanExistingInstalls,
   uninstallSkill,
   removeBrokenLinks,
@@ -327,6 +328,14 @@ function resolveBootRegistryRoot(): string {
 }
 
 let registryRoot: string = resolveBootRegistryRoot();
+
+// Fallback origin-capture scanner: stamp upstream pointers onto any
+// registry skill that has a matching entry in the `vercel-labs/skills`
+// CLI's lock file but no existing `upstream` field. Run once at boot
+// as a deliberate sync point — index reads stay pure. Re-runs on
+// explicit Rebuild via the `rebuildIndex` IPC. Silent no-op when the
+// CLI isn't installed.
+scanAndStampUpstreamFromLock(registryRoot);
 
 // Resolve registry source at boot. Stored values are respected; an
 // absent value signals a fresh install and is returned as null so the
@@ -1407,6 +1416,10 @@ ipcMain.handle(
 ipcMain.handle(IPC.rebuildIndex, () => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, entries: 0 };
   try {
+    // Explicit user-triggered rebuild re-runs the upstream scanner —
+    // covers the "I just installed a skill via raw npx" case without
+    // requiring an app restart.
+    scanAndStampUpstreamFromLock(registryRoot);
     const index = buildRegistryIndex(registryRoot, {
       includeGitInfo: true,
       writeFile: true,
