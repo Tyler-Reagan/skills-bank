@@ -9,8 +9,8 @@
 // would normally write at first launch are absent. With no markers,
 // every skill reads as `source: yours` (the safe default for unknown
 // provenance) and Sync surfaces a sync collision for every name.
-// Run this once against your clone after `desktop:reset:hard` to
-// bootstrap markers and avoid that collision storm on first Sync.
+// Auto-invoked by `pnpm reset:hard`. Runnable standalone via `pnpm
+// reset:seed` if you need to re-seed markers without a full reset.
 //
 // Target directory:
 //   - `--root <path>` if passed
