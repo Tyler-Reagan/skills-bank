@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 
 /**
  * Shared inline-CSSProperties for the scrim-and-centered-modal pattern
- * used by ConfirmDialog, DestinationPickerDialog, ComingSoonDialog,
+ * used by ConfirmDialog, DestinationPickerDialog,
  * DeleteUnregisteredConfirm, AccountModal, and SettingsModal. The
  * codebase has no global modal CSS class hierarchy — each modal
  * historically inlined these objects, drifting between zIndex values

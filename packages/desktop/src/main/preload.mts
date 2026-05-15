@@ -27,6 +27,9 @@ const api = {
   acceptDrift: (name: string) => ipcRenderer.invoke(IPC.acceptDrift, name),
   takeCanonical: (name: string) => ipcRenderer.invoke(IPC.takeCanonical, name),
   forgetMissing: (name: string) => ipcRenderer.invoke(IPC.forgetMissing, name),
+  repointExternal: (name: string) =>
+    ipcRenderer.invoke(IPC.repointExternal, name),
+  listTopLevelSymlinks: () => ipcRenderer.invoke(IPC.listTopLevelSymlinks),
   clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),
   scan: () => ipcRenderer.invoke(IPC.scan),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),
@@ -70,10 +73,12 @@ const api = {
     ipcRenderer.invoke(IPC.authPollDeviceFlow, flowId),
   authCancelDeviceFlow: (flowId: string) =>
     ipcRenderer.invoke(IPC.authCancelDeviceFlow, flowId),
+  authResumeDeviceFlow: () => ipcRenderer.invoke(IPC.authResumeDeviceFlow),
   authLogout: () => ipcRenderer.invoke(IPC.authLogout),
   reposListMine: () => ipcRenderer.invoke(IPC.reposListMine),
   reposReplaceRegistry: (fullName: string) =>
     ipcRenderer.invoke(IPC.reposReplaceRegistry, fullName),
+  reposRefreshCurrent: () => ipcRenderer.invoke(IPC.reposRefreshCurrent),
   openExternal: (url: string) => ipcRenderer.invoke(IPC.openExternal, url),
   openSelfHostDocs: () => ipcRenderer.invoke(IPC.openSelfHostDocs),
   exportRegistry: () => ipcRenderer.invoke(IPC.exportRegistry),

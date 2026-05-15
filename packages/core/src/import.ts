@@ -21,6 +21,22 @@ import type {
   TopLevelSymlinkInfo,
 } from "./types.js";
 
+/**
+ * Lightweight probe for "is any agent dir a symlink we could finalize?"
+ * Walks each agent dir's top-level lstat without the full
+ * scanExistingInstalls / buildRegistryIndex cost. Suitable for SettingsModal
+ * on-open conditional rendering.
+ */
+export function listTopLevelSymlinks(): TopLevelSymlinkInfo[] {
+  const out: TopLevelSymlinkInfo[] = [];
+  for (const agent of AGENTS) {
+    const dir = getAgentSkillsDir(agent);
+    const tls = detectTopLevelSymlink(agent, dir);
+    if (tls) out.push(tls);
+  }
+  return out;
+}
+
 export function scanExistingInstalls(registryRoot: string): ScanReport {
   // Build the index once and reuse for the installed-list classification
   // so a stale on-disk index.json can't mislead either side.

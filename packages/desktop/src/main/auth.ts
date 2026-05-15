@@ -55,6 +55,107 @@ function tokenPath(): string {
   return path.join(app.getPath("userData"), "auth.enc");
 }
 
+// ─── Mid-flow recovery persistence ──────────────────────────────────────────
+//
+// In-memory `flows` evaporates if the app quits or crashes mid-poll. We
+// persist enough state to LoginScreen so a relaunch can offer Resume —
+// the user may have completed the GitHub side in the meantime and we'd
+// otherwise force them to start over for no reason.
+//
+// State is plaintext JSON: the device-code is short-lived (~15 min) and
+// only useful to whoever can also intercept the GitHub-side
+// authorization, so encrypting it adds little. Token persistence
+// continues to use safeStorage.
+
+interface PersistedFlow {
+  flowId: string;
+  deviceCode: string;
+  userCode: string;
+  verificationUri: string;
+  expiresAt: number;
+  interval: number;
+  startedAt: number;
+}
+
+export interface DeviceFlowResumePayload {
+  flowId: string;
+  userCode: string;
+  verificationUri: string;
+  expiresAt: number;
+}
+
+function flowStatePath(): string {
+  return path.join(app.getPath("userData"), "device-flow.json");
+}
+
+function readPersistedFlow(): PersistedFlow | null {
+  const p = flowStatePath();
+  if (!fs.existsSync(p)) return null;
+  try {
+    const raw = JSON.parse(
+      fs.readFileSync(p, "utf8"),
+    ) as Partial<PersistedFlow>;
+    if (
+      typeof raw.flowId !== "string" ||
+      typeof raw.deviceCode !== "string" ||
+      typeof raw.userCode !== "string" ||
+      typeof raw.verificationUri !== "string" ||
+      typeof raw.expiresAt !== "number" ||
+      typeof raw.interval !== "number"
+    ) {
+      return null;
+    }
+    if (Date.now() >= raw.expiresAt) {
+      // Stale — GitHub's device code already expired.
+      fs.unlinkSync(p);
+      return null;
+    }
+    return {
+      flowId: raw.flowId,
+      deviceCode: raw.deviceCode,
+      userCode: raw.userCode,
+      verificationUri: raw.verificationUri,
+      expiresAt: raw.expiresAt,
+      interval: raw.interval,
+      startedAt: typeof raw.startedAt === "number" ? raw.startedAt : Date.now(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writePersistedFlow(flow: PersistedFlow): void {
+  fs.writeFileSync(flowStatePath(), JSON.stringify(flow, null, 2) + "\n");
+}
+
+function clearPersistedFlow(): void {
+  const p = flowStatePath();
+  if (fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+/**
+ * Recover an in-progress device flow that was interrupted by an app
+ * quit or crash. Returns null when nothing recoverable exists.
+ * Rehydrates the in-memory flow state so a subsequent pollDeviceFlow
+ * call works exactly like a fresh start.
+ */
+export function resumeDeviceFlow(): DeviceFlowResumePayload | null {
+  const persisted = readPersistedFlow();
+  if (!persisted) return null;
+  flows.set(persisted.flowId, {
+    deviceCode: persisted.deviceCode,
+    interval: persisted.interval,
+    expiresAt: persisted.expiresAt,
+    cancelled: false,
+  });
+  return {
+    flowId: persisted.flowId,
+    userCode: persisted.userCode,
+    verificationUri: persisted.verificationUri,
+    expiresAt: persisted.expiresAt,
+  };
+}
+
 export function getStoredToken(): string | null {
   const p = tokenPath();
   if (!fs.existsSync(p)) return null;
@@ -127,6 +228,15 @@ export async function startDeviceFlow(): Promise<DeviceFlowStart> {
     expiresAt,
     cancelled: false,
   });
+  writePersistedFlow({
+    flowId,
+    deviceCode: data.device_code,
+    userCode: data.user_code,
+    verificationUri: data.verification_uri,
+    expiresAt,
+    interval,
+    startedAt: Date.now(),
+  });
   return {
     userCode: data.user_code,
     verificationUri: data.verification_uri,
@@ -139,6 +249,7 @@ export async function startDeviceFlow(): Promise<DeviceFlowStart> {
 export function cancelDeviceFlow(flowId: string): void {
   const flow = flows.get(flowId);
   if (flow) flow.cancelled = true;
+  clearPersistedFlow();
 }
 
 /**
@@ -157,6 +268,7 @@ export async function pollDeviceFlow(flowId: string): Promise<GitHubUser> {
   while (!flow.cancelled) {
     if (Date.now() >= flow.expiresAt) {
       flows.delete(flowId);
+      clearPersistedFlow();
       throw new DeviceFlowError("expired", "device code expired");
     }
     await sleep(interval);
@@ -188,6 +300,7 @@ export async function pollDeviceFlow(flowId: string): Promise<GitHubUser> {
     };
     if (data.access_token) {
       flows.delete(flowId);
+      clearPersistedFlow();
       setStoredToken(data.access_token);
       return await fetchUser(data.access_token);
     }
@@ -198,19 +311,23 @@ export async function pollDeviceFlow(flowId: string): Promise<GitHubUser> {
     }
     if (data.error === "access_denied") {
       flows.delete(flowId);
+      clearPersistedFlow();
       throw new DeviceFlowError("denied", "user denied authorization");
     }
     if (data.error === "expired_token") {
       flows.delete(flowId);
+      clearPersistedFlow();
       throw new DeviceFlowError("expired", "device code expired");
     }
     flows.delete(flowId);
+    clearPersistedFlow();
     throw new DeviceFlowError(
       "unknown",
       `unexpected token response: ${data.error ?? "no token"}`,
     );
   }
   flows.delete(flowId);
+  clearPersistedFlow();
   throw new DeviceFlowError("cancelled", "polling cancelled");
 }
 

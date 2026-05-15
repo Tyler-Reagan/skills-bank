@@ -92,6 +92,12 @@ interface Props {
    * external-target-missing.
    */
   onForgetMissing?: () => Promise<void> | void;
+  /**
+   * Repoint a non-adopted entry whose target moved on disk. Opens a
+   * directory picker in main, validates SKILL.md, rewrites the
+   * external.json target. Only granted in external-target-missing.
+   */
+  onRepoint?: () => Promise<void> | void;
 }
 
 type ActionState =
@@ -104,7 +110,8 @@ type ActionState =
   | "unhiding"
   | "accepting-drift"
   | "taking-canonical"
-  | "forgetting";
+  | "forgetting"
+  | "repointing";
 
 export function SkillDetailDrawer({
   entry,
@@ -124,6 +131,7 @@ export function SkillDetailDrawer({
   onAcceptDrift,
   onTakeCanonical,
   onForgetMissing,
+  onRepoint,
 }: Props): React.ReactElement {
   const registrySource = useRegistrySource();
   const [skillMd, setSkillMd] = useState<string | null>(null);
@@ -665,10 +673,31 @@ export function SkillDetailDrawer({
               </p>
             </>
           )}
+          {caps.canRepoint && onRepoint && (
+            <button
+              className="btn primary"
+              disabled={action !== null}
+              onClick={() => {
+                setAction("repointing");
+                void Promise.resolve(onRepoint()).finally(() =>
+                  setAction(null),
+                );
+              }}
+              title="Pick the folder the skill moved to. Updates the registry entry's target path."
+            >
+              {action === "repointing" ? (
+                <>
+                  <span className="spinner inline" /> Picking
+                </>
+              ) : (
+                "Pick new location"
+              )}
+            </button>
+          )}
           {caps.canForgetMissing && onForgetMissing && (
             <>
               <button
-                className="btn warn"
+                className={caps.canRepoint ? "btn" : "btn warn"}
                 disabled={action !== null}
                 onClick={() => {
                   setAction("forgetting");
@@ -687,8 +716,9 @@ export function SkillDetailDrawer({
                 )}
               </button>
               <p className="drawer-action-hint">
-                The files for this skill are gone. Forgetting drops the registry
-                record so the skill stops appearing.
+                {caps.canRepoint
+                  ? "If the skill just moved on disk, pick its new location. Otherwise forget the entry to stop tracking it."
+                  : "The files for this skill are gone. Forgetting drops the registry record so the skill stops appearing."}
               </p>
             </>
           )}

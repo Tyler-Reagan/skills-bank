@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  externalRegistryPath,
   readExternalRegistry,
   removeExternalRegistryEntry,
 } from "./external.js";
@@ -147,6 +148,47 @@ export function acceptDriftTakeCanonical(skillDir: string): void {
   if (src.source !== "bundled") return;
   const h = hashSkillFolder(skillDir);
   if (h) writeSyncedHash(skillDir, h);
+}
+
+/**
+ * Heal action — repoint a non-adopted external entry whose target has
+ * moved. Validates the new target exists and contains a SKILL.md, then
+ * rewrites the external.json row in place (preserving `registeredAt`).
+ * No-op for adopted entries — those have no external.json row to
+ * repoint; the user should re-register them instead.
+ */
+export function repointExternalEntry(
+  registryRoot: string,
+  name: string,
+  newTarget: string,
+): { ok: boolean; message: string } {
+  if (!fs.existsSync(newTarget)) {
+    return { ok: false, message: `path does not exist: ${newTarget}` };
+  }
+  if (!fs.statSync(newTarget).isDirectory()) {
+    return { ok: false, message: `not a directory: ${newTarget}` };
+  }
+  if (!fs.existsSync(path.join(newTarget, "SKILL.md"))) {
+    return {
+      ok: false,
+      message: `no SKILL.md found at: ${newTarget}`,
+    };
+  }
+  const list = readExternalRegistry(registryRoot);
+  const entry = list.find((e) => e.name === name);
+  if (!entry) {
+    return {
+      ok: false,
+      message: `no external entry for ${name} — adopted entries can't be repointed`,
+    };
+  }
+  const next = list.map((e) =>
+    e.name === name ? { ...e, target: newTarget } : e,
+  );
+  const p = externalRegistryPath(registryRoot);
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(next, null, 2) + "\n");
+  return { ok: true, message: `repointed ${name} → ${newTarget}` };
 }
 
 /**

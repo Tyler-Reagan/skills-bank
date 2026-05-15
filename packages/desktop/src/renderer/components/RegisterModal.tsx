@@ -44,7 +44,6 @@ export function RegisterModal({
   const [report, setReport] = useState<ScanReport | null>(null);
   const [choices, setChoices] = useState<ChoiceMap>({});
   const [phase, setPhase] = useState<Phase>({ kind: "scan" });
-  const [finalizing, setFinalizing] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [skillsDirHint, setSkillsDirHint] = useState<string | null>(null);
 
@@ -143,16 +142,6 @@ export function RegisterModal({
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
             Scanned <code>{report.claudeSkillsDir}</code> and found no entries.
           </p>
-          {report.topLevelSymlinks.length > 0 && (
-            <FinalizeCallout
-              report={report}
-              finalizing={finalizing}
-              setFinalizing={setFinalizing}
-              onFlash={onFlash}
-              onAfter={onClose}
-              hasUnregistered={false}
-            />
-          )}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button className="primary" onClick={() => void onClose()}>
               Done
@@ -328,16 +317,6 @@ export function RegisterModal({
           <br />
           Skills dir: {report.claudeSkillsDir}
         </p>
-        {report.topLevelSymlinks.length > 0 && (
-          <FinalizeCallout
-            report={report}
-            finalizing={finalizing}
-            setFinalizing={setFinalizing}
-            onFlash={onFlash}
-            onAfter={onClose}
-            hasUnregistered={stillUnregistered}
-          />
-        )}
         <div style={{ maxHeight: 400, overflow: "auto", marginBottom: 16 }}>
           {report.entries
             .filter(
@@ -459,113 +438,6 @@ const resultRow: React.CSSProperties = {
   gap: 8,
   padding: "6px 0",
   borderBottom: "1px solid var(--border)",
-};
-
-function FinalizeCallout(props: {
-  report: ScanReport;
-  finalizing: boolean;
-  setFinalizing: (v: boolean) => void;
-  onFlash: (msg: string) => void;
-  onAfter: () => void | Promise<void>;
-  hasUnregistered: boolean;
-}): React.ReactElement {
-  const {
-    report,
-    finalizing,
-    setFinalizing,
-    onFlash,
-    onAfter,
-    hasUnregistered,
-  } = props;
-  const [errorDetail, setErrorDetail] = useState<string | null>(null);
-
-  const target = report.topLevelSymlinks[0]?.resolvedTarget;
-
-  const finalize = async () => {
-    setErrorDetail(null);
-    setFinalizing(true);
-    try {
-      const r = await window.skillsBank.finalize();
-      if (r.ok) {
-        onFlash(r.message);
-        await onAfter();
-      } else {
-        setErrorDetail(
-          r.blockingEntries
-            ? `${r.message}\n\n${r.blockingEntries.map((n) => `  • ${n}`).join("\n")}`
-            : r.message,
-        );
-      }
-    } finally {
-      setFinalizing(false);
-    }
-  };
-
-  return (
-    <div style={callout}>
-      <div style={{ flex: 1 }}>
-        <strong
-          style={{
-            color: "var(--warn)",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon name="alert-triangle" size="sm" /> Top-level indirection
-        </strong>
-        <p style={{ margin: "4px 0", fontSize: 12, color: "var(--text)" }}>
-          <code>{report.claudeSkillsDir}</code> is itself a symlink →{" "}
-          <code>{target}</code>. Registering skills here leaves a double-hop.
-          Once everything is registered, finalize to replace the top-level
-          symlink with a real directory.
-        </p>
-        {hasUnregistered && (
-          <p
-            style={{ margin: "4px 0 0", fontSize: 12, color: "var(--danger)" }}
-          >
-            Register first — finalize will refuse while real-directory entries
-            remain.
-          </p>
-        )}
-        {errorDetail && (
-          <pre
-            style={{
-              margin: "8px 0 0",
-              fontSize: 11,
-              color: "var(--danger)",
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {errorDetail}
-          </pre>
-        )}
-      </div>
-      <button
-        disabled={finalizing || hasUnregistered}
-        onClick={() => void finalize()}
-      >
-        {finalizing ? (
-          <>
-            <span className="spinner inline" /> Finalizing
-          </>
-        ) : (
-          "Finalize"
-        )}
-      </button>
-    </div>
-  );
-}
-
-const callout: React.CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  gap: 12,
-  background: "var(--warn-dim)",
-  border: "1px solid var(--warn)",
-  borderRadius: 6,
-  padding: 12,
-  marginBottom: 16,
 };
 
 const overlay: React.CSSProperties = {

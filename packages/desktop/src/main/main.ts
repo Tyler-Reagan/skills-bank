@@ -30,7 +30,9 @@ import {
   acceptDriftKeepLocal,
   acceptDriftTakeCanonical,
   finalizeSkillsDir,
+  listTopLevelSymlinks,
   forgetMissingEntry,
+  repointExternalEntry,
   fromCaught,
   getExportInfo,
   hideCanonSkill,
@@ -65,6 +67,7 @@ import {
   type Bounds,
   type DiscoverStatus,
   type HeaderMenuAction,
+  type LinkedRepoMetadata,
   type SkillDiffFile,
   type SkillDiffRequest,
   type SkillDiffResult,
@@ -80,10 +83,11 @@ import {
   getCurrentUser,
   getStoredToken,
   pollDeviceFlow,
+  resumeDeviceFlow,
   startDeviceFlow,
 } from "./auth.js";
 import { isAuthConfigured } from "./auth-config.js";
-import { writeSkillSource } from "@skills-bank/core";
+import { readSkillSource, writeSkillSource } from "@skills-bank/core";
 
 const CANONICAL_OWNER = "Tyler-Reagan";
 const CANONICAL_REPO = "skills-bank";
@@ -110,6 +114,9 @@ interface AppConfig {
   // app still auto-checks and auto-downloads, and the user can always
   // re-summon the modal via the "Check for Updates" menu item.
   dismissedUpdateVersion: string | null;
+  // Identity + freshness of the GitHub repo backing the registry when
+  // registrySource === "github". Null in local-bundled mode.
+  linkedRepo: LinkedRepoMetadata | null;
 }
 
 function emptyConfig(): AppConfig {
@@ -117,6 +124,7 @@ function emptyConfig(): AppConfig {
     registryRoot: null,
     registrySource: null,
     dismissedUpdateVersion: null,
+    linkedRepo: null,
   };
 }
 
@@ -140,10 +148,28 @@ function readConfig(): AppConfig {
         typeof raw.dismissedUpdateVersion === "string"
           ? raw.dismissedUpdateVersion
           : null,
+      linkedRepo: readLinkedRepo(raw.linkedRepo),
     };
   } catch {
     return emptyConfig();
   }
+}
+
+function readLinkedRepo(raw: unknown): LinkedRepoMetadata | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Partial<LinkedRepoMetadata>;
+  if (
+    typeof r.fullName !== "string" ||
+    typeof r.lastFetchedAt !== "string" ||
+    typeof r.syncedFromCommit !== "string"
+  ) {
+    return null;
+  }
+  return {
+    fullName: r.fullName,
+    lastFetchedAt: r.lastFetchedAt,
+    syncedFromCommit: r.syncedFromCommit,
+  };
 }
 
 function writeConfig(cfg: AppConfig): void {
@@ -302,11 +328,14 @@ function resolveBootRegistryRoot(): string {
 let registryRoot: string = resolveBootRegistryRoot();
 
 // Resolve registry source at boot. Persona-collapse default: every fresh
-// install lands on local-bundled. Stored values are still respected (so a
-// linked GitHub repo persists across launches once Bundle 3 wires up the
-// switching affordance from Settings). The LoginScreen onboarding fork is
-// gone; users opt into github-linked from Settings, not from a first-
-// launch dialog.
+// install (or post-reset) lands on local-bundled. Stored values are
+// respected, so a linked GitHub repo persists across launches.
+//
+// Users transition local-bundled → github-linked at runtime via
+// AccountModal's "Connect to GitHub" button, which opens
+// ConnectGithubModal (Device Flow) and chains into RepoPickerModal.
+// The LoginScreen path here is reachable only via authLogout() (which
+// nulls registrySource), used by github-linked users signing out.
 function resolveBootRegistrySource(): RegistrySource {
   const stored = readConfig().registrySource;
   if (stored) return stored;
@@ -316,6 +345,7 @@ function resolveBootRegistrySource(): RegistrySource {
     registryRoot,
     registrySource: "local",
     dismissedUpdateVersion: readConfig().dismissedUpdateVersion,
+    linkedRepo: null,
   });
   return "local";
 }
@@ -323,12 +353,18 @@ function resolveBootRegistrySource(): RegistrySource {
 let registrySource: RegistrySource | null = resolveBootRegistrySource();
 
 let dismissedUpdateVersion: string | null = readConfig().dismissedUpdateVersion;
+let linkedRepo: LinkedRepoMetadata | null = readConfig().linkedRepo;
 
-// Writes the current in-memory app config triple. Use this instead of calling
+// Writes the current in-memory app config. Use this instead of calling
 // writeConfig({...}) at sites that only mutate one field, so we don't lose
 // the others when fields are added.
 function persistConfig(): void {
-  writeConfig({ registryRoot, registrySource, dismissedUpdateVersion });
+  writeConfig({
+    registryRoot,
+    registrySource,
+    dismissedUpdateVersion,
+    linkedRepo,
+  });
 }
 
 // Source PNG used for window/dock icons in dev. Packaged macOS builds use
@@ -679,7 +715,7 @@ function createWindow(): void {
   const indexHtml = path.join(__dirname, "..", "..", "dist", "index.html");
   void win.loadFile(indexHtml);
 
-  // DevTools is opt-in via env var to keep `pnpm desktop:dev` quiet.
+  // DevTools is opt-in via env var to keep `pnpm dev` quiet.
   // Cmd+Alt+I (View → Toggle Developer Tools) still summons it on demand
   // because we don't override Electron's default menu.
   if (process.env["SKILLS_BANK_DEVTOOLS"] === "1") {
@@ -1136,6 +1172,35 @@ ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
   }
 });
 
+// external-target-missing heal — let the user pick the new location
+// of a non-adopted skill they moved on disk. Picker → validate →
+// rewrite external.json target → rebuild index so `missing` clears.
+ipcMain.handle(IPC.repointExternal, async (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const win = BrowserWindow.getFocusedWindow();
+  const picker = await dialog.showOpenDialog(win ?? undefined!, {
+    title: `Pick the new location for "${name}"`,
+    message: "Choose the folder that contains the skill's SKILL.md.",
+    properties: ["openDirectory"],
+  });
+  if (picker.canceled || picker.filePaths.length === 0) {
+    return { ok: false, message: "cancelled" };
+  }
+  try {
+    const r = repointExternalEntry(registryRoot, name, picker.filePaths[0]!);
+    if (r.ok) {
+      buildRegistryIndex(registryRoot, {
+        includeGitInfo: true,
+        writeFile: true,
+      });
+    }
+    return r;
+  } catch (err) {
+    const error = fromCaught("ipc.unknown", err);
+    return { ok: false, message: error.message, error };
+  }
+});
+
 // M9b: bottom-of-the-ladder destructive action for unregistered
 // skills. Refuses if the skill is registered — caller must
 // unregister first. Real-dir installations are rm-rf'd; symlinks
@@ -1400,6 +1465,10 @@ ipcMain.handle(IPC.finalize, () => {
     message: summary,
     ...(blockingEntries.length > 0 ? { blockingEntries } : {}),
   };
+});
+
+ipcMain.handle(IPC.listTopLevelSymlinks, () => {
+  return listTopLevelSymlinks();
 });
 
 ipcMain.handle(IPC.exportInfo, (_e, name: string) => {
@@ -1872,9 +1941,16 @@ async function runSync(): Promise<{
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     broadcastSyncStatus({ kind: "fetching" });
+    // Opportunistically authenticate the tarball fetch when a token is
+    // already on disk (typically from a prior GitHub-linked session).
+    // Unauthenticated GitHub API calls share a 60 req/hr ceiling per IP
+    // — easy to exhaust on NAT'd networks. The token is irrelevant to
+    // local-bundled semantics; it just raises the ceiling to 5000/hr.
+    const token = getStoredToken();
     const fetched = await fetchCanonicalTarball({
       owner: CANONICAL_OWNER,
       repo: CANONICAL_REPO,
+      ...(token ? { token } : {}),
     });
     try {
       broadcastSyncStatus({ kind: "applying" });
@@ -1939,6 +2015,12 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
       return { ok: false, message: error.message, error };
     })();
   }
+  // Re-run against the right upstream. GitHub-linked users sync against
+  // their linked repo; local-bundled users sync against the canonical
+  // skills-bank tarball.
+  if (registrySource === "github" && linkedRepo) {
+    return replaceRegistryWithRepo(linkedRepo.fullName);
+  }
   return runSync();
 });
 
@@ -1949,11 +2031,16 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
 // registrySource = null means first-launch and the renderer shows LoginScreen.
 
 async function buildAuthStatus(): Promise<AuthStatus> {
-  const user = registrySource === "github" ? await getCurrentUser() : null;
+  // Identity is independent of registry mode: a token persists across
+  // mode switches (and is opportunistically used by local-bundled sync
+  // for rate-limit headroom), so `user` reflects token validity, not
+  // current mode. linkedRepo only makes sense under github-linked.
+  const user = await getCurrentUser();
   return {
     registrySource,
     isAuthConfigured: isAuthConfigured(),
     user,
+    linkedRepo: registrySource === "github" ? linkedRepo : null,
   };
 }
 
@@ -1961,6 +2048,7 @@ ipcMain.handle(IPC.authStatus, () => buildAuthStatus());
 
 ipcMain.handle(IPC.authSetRegistrySourceLocal, async () => {
   registrySource = "local";
+  linkedRepo = null;
   persistConfig();
   return buildAuthStatus();
 });
@@ -1972,8 +2060,11 @@ ipcMain.handle(IPC.authStartDeviceFlow, async () => {
 ipcMain.handle(IPC.authPollDeviceFlow, async (_e, flowId: string) => {
   try {
     await pollDeviceFlow(flowId);
-    registrySource = "github";
-    persistConfig();
+    // Deferred: registrySource flips to "github" only when a repo is
+    // actually linked (see replaceRegistryWithRepo). Successful Device
+    // Flow alone just establishes identity; the renderer is expected to
+    // route the user through repo selection before considering them
+    // github-linked.
     return await buildAuthStatus();
   } catch (err) {
     if (err instanceof DeviceFlowError) {
@@ -1987,9 +2078,14 @@ ipcMain.handle(IPC.authCancelDeviceFlow, (_e, flowId: string) => {
   cancelDeviceFlow(flowId);
 });
 
+ipcMain.handle(IPC.authResumeDeviceFlow, () => {
+  return resumeDeviceFlow();
+});
+
 ipcMain.handle(IPC.authLogout, async () => {
   clearStoredToken();
   registrySource = null;
+  linkedRepo = null;
   persistConfig();
   return buildAuthStatus();
 });
@@ -2042,7 +2138,49 @@ ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
   return out;
 });
 
-ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
+/**
+ * Pre-applyCanonicalSync migration for legacy github-linked registries.
+ *
+ * The pre-diff-before-apply implementation of `replaceRegistryWithRepo`
+ * wiped the registry and re-imported every skill stamped
+ * `source: "yours"` with a `syncedFromCommit`. That's semantically wrong:
+ * a skill from the linked upstream is `source: "bundled"` in this
+ * codebase's vocabulary (where "bundled" means "from the registry's
+ * canonical upstream," not literally "shipped in the app binary").
+ *
+ * Without this migration, the first re-fetch under the new code path
+ * would surface every previously-imported skill as a conflict (because
+ * applyCanonicalSync treats non-"bundled" local sources as user-owned
+ * and conflicts on overwrite). Re-stamping legacy entries fixes that
+ * silently on the next refresh.
+ *
+ * Heuristic: `source: "yours"` + `syncedFromCommit` present = legacy
+ * github-linked import. User-authored skills don't carry
+ * `syncedFromCommit`.
+ *
+ * Idempotent: after the first run every legacy skill is re-stamped,
+ * subsequent calls are no-ops.
+ */
+function migrateLegacyGithubMarkers(registryRoot: string): void {
+  const skillsDir = path.join(registryRoot, "skills");
+  if (!fs.existsSync(skillsDir)) return;
+  for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+    if (!ent.isDirectory()) continue;
+    const skillDir = path.join(skillsDir, ent.name);
+    const src = readSkillSource(skillDir);
+    if (src.source === "yours" && src.syncedFromCommit) {
+      writeSkillSource(skillDir, { ...src, source: "bundled" });
+    }
+  }
+}
+
+async function replaceRegistryWithRepo(fullName: string): Promise<{
+  ok: boolean;
+  message: string;
+  importedCount?: number;
+  conflictCount?: number;
+  error?: ReturnType<typeof fromCaught>;
+}> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const token = getStoredToken();
   if (!token) return { ok: false, message: "not authenticated" };
@@ -2053,68 +2191,81 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) => {
   const owner = fullName.slice(0, slash);
   const repo = fullName.slice(slash + 1);
 
-  let fetched;
   try {
-    fetched = await fetchCanonicalTarball({ owner, repo, token });
-  } catch (err) {
-    return (() => {
-      const error = fromCaught("ipc.unknown", err);
-      return { ok: false, message: error.message, error };
-    })();
-  }
-  try {
-    const skillsDir = path.join(fetched.extractedRoot, "skills");
-    if (!fs.existsSync(skillsDir)) {
-      return {
-        ok: false,
-        message: `${fullName} has no skills/ directory at the repo root`,
-      };
-    }
-    // Wipe the existing local registry skills/ wholesale; github-linked
-    // registry replace is "replace, don't merge."
-    const localSkillsDir = path.join(registryRoot, "skills");
-    fs.rmSync(localSkillsDir, { recursive: true, force: true });
-    fs.mkdirSync(localSkillsDir, { recursive: true });
+    broadcastSyncStatus({ kind: "fetching" });
+    const fetched = await fetchCanonicalTarball({ owner, repo, token });
+    try {
+      const skillsDir = path.join(fetched.extractedRoot, "skills");
+      if (!fs.existsSync(skillsDir)) {
+        broadcastSyncStatus({ kind: "idle" });
+        return {
+          ok: false,
+          message: `${fullName} has no skills/ directory at the repo root`,
+        };
+      }
+      // Re-stamp any pre-diff-before-apply legacy markers before the
+      // diff so they don't surface as fake conflicts.
+      migrateLegacyGithubMarkers(registryRoot);
 
-    const importedAt = new Date().toISOString();
-    const importedNames: string[] = [];
-    let count = 0;
-    for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-      if (!ent.isDirectory()) continue;
-      const src = path.join(skillsDir, ent.name);
-      const dest = path.join(localSkillsDir, ent.name);
-      fs.cpSync(src, dest, { recursive: true });
-      writeSkillSource(dest, {
-        source: "yours",
-        syncedFromCommit: fetched.commitSha,
-        syncedAt: importedAt,
+      broadcastSyncStatus({ kind: "applying" });
+      const decisions = readSyncDecisions(registryRoot);
+      const report = await applyCanonicalSync(
+        registryRoot,
+        fetched.extractedRoot,
+        fetched.commitSha,
+        decisions,
+      );
+      broadcastSyncStatus({
+        kind: "done",
+        upserted: report.upserted.length,
+        conflicts: report.conflicts.length,
+        orphaned: report.orphaned.length,
+        commitSha: report.commitSha,
       });
-      importedNames.push(ent.name);
-      count++;
+      // The link event is what defines github-linked mode (Plan 02
+      // structural fix). Flipping registrySource here — atomically with
+      // linkedRepo — prevents the "authed-but-unlinked" interstitial
+      // that previously misled AccountModal copy.
+      registrySource = "github";
+      linkedRepo = {
+        fullName,
+        lastFetchedAt: report.syncedAt,
+        syncedFromCommit: fetched.commitSha,
+      };
+      persistConfig();
+      const message =
+        report.conflicts.length > 0
+          ? `synced ${report.upserted.length} from ${fullName}, ${report.conflicts.length} conflict(s) need review`
+          : `synced ${report.upserted.length} skill(s) from ${fullName}`;
+      return {
+        ok: true,
+        message,
+        importedCount: report.upserted.length,
+        conflictCount: report.conflicts.length,
+      };
+    } finally {
+      fetched.cleanup();
     }
-    // Clear sync state so any prior bundled state doesn't leak in.
-    const stateDir = path.join(registryRoot, ".skills-bank");
-    for (const f of [
-      "last-sync.json",
-      "pending-conflicts.json",
-      "sync-decisions.json",
-    ]) {
-      const p = path.join(stateDir, f);
-      if (fs.existsSync(p)) fs.unlinkSync(p);
-    }
-    // Snapshot the imported set as the canon source for this repo so
-    // buildRegistryIndex marks them canon immediately. The imported
-    // tarball doesn't include `.git`, so publishState would be
-    // "unknown" otherwise.
-    writeUpstreamCanonNames(registryRoot, importedNames, "imported");
-    return {
-      ok: true,
-      message: `imported ${count} skill(s) from ${fullName}`,
-      importedCount: count,
-    };
-  } finally {
-    fetched.cleanup();
+  } catch (err) {
+    const error = fromCaught("ipc.unknown", err);
+    broadcastSyncStatus({ kind: "error", message: error.message });
+    return { ok: false, message: error.message, error };
   }
+}
+
+ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) =>
+  replaceRegistryWithRepo(fullName),
+);
+
+ipcMain.handle(IPC.reposRefreshCurrent, async () => {
+  if (!linkedRepo) {
+    return {
+      ok: false,
+      message:
+        "No GitHub repo is linked yet. Use Choose registry repo to pick one.",
+    };
+  }
+  return replaceRegistryWithRepo(linkedRepo.fullName);
 });
 
 ipcMain.handle(IPC.openExternal, async (_e, url: string) => {

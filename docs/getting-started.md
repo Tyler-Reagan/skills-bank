@@ -19,7 +19,7 @@ The app boots straight into the Registry tab on top of the bundled curated skill
 
 ![The Registry tab — the default view on first launch](images/registry.png)
 
-If you want to back your registry with a GitHub repo so it follows you across machines, look for **Link a GitHub repo… (Coming soon)** in the account menu or Settings → Registry source. That feature is on the way — see [docs/plans/03-github-backed-mode.md](plans/03-github-backed-mode.md) for the full plan.
+If you want to back your registry with a GitHub repo so it follows you across machines, pick **Connect your own registry** on the first-launch screen and authenticate via GitHub Device Flow. Your repo holds the skill content; the app pulls from it on demand. See [flows/login.md](flows/login.md#github-linked) for what your repo needs to contain and how to set it up from scratch.
 
 Want to fork the entire app and ship your own build? See [self-host.md](self-host.md).
 
