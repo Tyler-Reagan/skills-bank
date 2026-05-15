@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-15T18:57:35.502Z",
+  "generatedAt": "2026-05-15T19:47:50.126Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -9,8 +9,8 @@
       "path": "skills/404-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -26,7 +26,9 @@
       "description": "This skill should be used when the user asks to \"add an app to my MCP server\", \"add UI to my MCP server\", \"add a view to my MCP tool\", \"enrich MCP tools with UI\", \"add interactive UI to existing server\", \"add MCP Apps to my server\", or needs to add interactive UI capabilities to an existing MCP server that already has tools. Provides guidance for analyzing existing tools and adding MCP Apps UI resources.",
       "path": "skills/add-app-to-server",
       "source": {
-        "source": "yours"
+        "source": "bundled",
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -44,8 +46,8 @@
       "path": "skills/api-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -63,8 +65,8 @@
       "path": "skills/brand-visual-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -82,8 +84,8 @@
       "path": "skills/branding",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -101,8 +103,8 @@
       "path": "skills/carousel",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -120,8 +122,8 @@
       "path": "skills/competitor-research",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -139,8 +141,8 @@
       "path": "skills/content-optimization",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -158,8 +160,8 @@
       "path": "skills/content-strategy",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -177,8 +179,8 @@
       "path": "skills/core-web-vitals",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -194,7 +196,9 @@
       "description": "This skill should be used when the user asks to \"create an MCP App\", \"add a UI to an MCP tool\", \"build an interactive MCP View\", \"scaffold an MCP App\", or needs guidance on MCP Apps SDK patterns, UI-resource registration, MCP App lifecycle, or host integration. Provides comprehensive guidance for building MCP Apps with interactive UIs.",
       "path": "skills/create-mcp-app",
       "source": {
-        "source": "yours"
+        "source": "bundled",
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -211,8 +215,8 @@
       "path": "skills/create-readme",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -229,8 +233,8 @@
       "path": "skills/d3-viz",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -248,8 +252,8 @@
       "path": "skills/docs-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -266,8 +270,8 @@
       "path": "skills/electron",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -285,8 +289,8 @@
       "path": "skills/favicon-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -303,8 +307,8 @@
       "path": "skills/find-skills",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -321,8 +325,8 @@
       "path": "skills/fix-knip-unused-exports",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -340,8 +344,8 @@
       "path": "skills/footer-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -358,8 +362,8 @@
       "path": "skills/frontend-design",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -376,8 +380,8 @@
       "path": "skills/gitlab-ci-inspector",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -394,8 +398,8 @@
       "path": "skills/gitlab-ci-patterns",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -412,8 +416,8 @@
       "path": "skills/gitlab-mr-writing",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -429,7 +433,9 @@
       "description": "Go testing patterns including table-driven tests, subtests, benchmarks, fuzzing, and test coverage. Follows TDD methodology with idiomatic Go practices.",
       "path": "skills/golang-testing",
       "source": {
-        "source": "yours"
+        "source": "bundled",
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -447,8 +453,8 @@
       "path": "skills/hero-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -466,8 +472,8 @@
       "path": "skills/homepage-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -487,18 +493,17 @@
       "path": "skills/impeccable",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "3404d776053dcb2b798c13e8027007e4ce95b1bb",
+        "date": "2026-05-15 12:44:23 -0700",
+        "message": "fix: preserve linkedRepo on sign-out + drop forced RepoPicker on re-sign-in"
       },
       "publishState": "pushed",
-      "canon": true,
-      "drift": true
+      "canon": true
     },
     {
       "name": "landing-page-generator",
@@ -507,8 +512,8 @@
       "path": "skills/landing-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -526,8 +531,8 @@
       "path": "skills/logo-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -544,8 +549,8 @@
       "path": "skills/mcp-builder",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -562,8 +567,8 @@
       "path": "skills/mermaid-diagrams",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -580,8 +585,8 @@
       "path": "skills/naming-analyzer",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -598,8 +603,8 @@
       "path": "skills/next-best-practices",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -616,8 +621,8 @@
       "path": "skills/obsidian-cli",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -634,8 +639,8 @@
       "path": "skills/pr-description",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -652,8 +657,8 @@
       "path": "skills/prd-development",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -670,8 +675,8 @@
       "path": "skills/pretty-mermaid",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -688,8 +693,8 @@
       "path": "skills/problem-statement",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -705,7 +710,9 @@
       "description": "Create distributable Python packages with proper project structure, setup.py/pyproject.toml, and publishing to PyPI. Use when packaging Python libraries, creating CLI tools, or distributing Python code.",
       "path": "skills/python-packaging",
       "source": {
-        "source": "yours"
+        "source": "bundled",
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -722,8 +729,8 @@
       "path": "skills/react-components",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -740,8 +747,8 @@
       "path": "skills/react-state-management",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -758,8 +765,8 @@
       "path": "skills/roadmap-planning",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -777,8 +784,8 @@
       "path": "skills/seo-strategy",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -795,8 +802,8 @@
       "path": "skills/shadcn",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -814,8 +821,8 @@
       "path": "skills/signup-login-page-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -832,8 +839,8 @@
       "path": "skills/specs-code-cleanup",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -849,7 +856,9 @@
       "description": "Build reusable Terraform modules for AWS, Azure, GCP, and OCI infrastructure following infrastructure-as-code best practices. Use when creating infrastructure modules, standardizing cloud provisioning, or implementing reusable IaC components.",
       "path": "skills/terraform-module-library",
       "source": {
-        "source": "yours"
+        "source": "bundled",
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -866,8 +875,8 @@
       "path": "skills/terraform-plan-summary",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -884,7 +893,9 @@
       "version": "0.0.2",
       "path": "skills/terraform-test",
       "source": {
-        "source": "yours"
+        "source": "bundled",
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -901,8 +912,8 @@
       "path": "skills/theme-factory",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -919,8 +930,8 @@
       "path": "skills/typescript-mcp-server-generator",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -937,8 +948,8 @@
       "path": "skills/typescript-react-reviewer",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -955,8 +966,8 @@
       "path": "skills/ui-ux-pro-max",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -973,8 +984,8 @@
       "path": "skills/user-personas",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -991,8 +1002,8 @@
       "path": "skills/user-story",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -1009,8 +1020,8 @@
       "path": "skills/user-story-mapping",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -1029,8 +1040,8 @@
       "path": "skills/vercel-react-best-practices",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -1049,8 +1060,8 @@
       "path": "skills/vite",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
@@ -1069,8 +1080,8 @@
       "path": "skills/web-design-guidelines",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "202b0ba43c215cff1a75f9fb9c5325fd46f2be92",
-        "syncedAt": "2026-05-14T22:22:49.802Z"
+        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+        "syncedAt": "2026-05-15T19:39:10.065Z"
       },
       "adopted": true,
       "lastCommit": {
