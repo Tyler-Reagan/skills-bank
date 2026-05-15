@@ -123,6 +123,8 @@ const api = {
     ipcRenderer.invoke(IPC.upstreamUpdate, name),
   upstreamRepoMetadata: (repo: string) =>
     ipcRenderer.invoke(IPC.upstreamRepoMetadata, repo),
+  upstreamLastCommit: (repo: string, skillPath: string) =>
+    ipcRenderer.invoke(IPC.upstreamLastCommit, repo, skillPath),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

@@ -110,6 +110,7 @@ export const IPC = {
   upstreamProbe: "upstream:probe",
   upstreamUpdate: "upstream:update",
   upstreamRepoMetadata: "upstream:repoMetadata",
+  upstreamLastCommit: "upstream:lastCommit",
 } as const;
 
 /**
@@ -138,6 +139,20 @@ export interface UpstreamRepoMetadata {
   stars: number | null;
   description: string | null;
   defaultBranch: string | null;
+}
+
+/**
+ * Latest commit touching a specific path in a source repo. Fetched
+ * per-skill when the Settings "Show upstream activity" toggle is on;
+ * cached in main-process memory with a 15-min TTL. Nulls when the
+ * fetch fails or the path has no commits in the default branch.
+ */
+export interface UpstreamLastCommit {
+  sha: string | null;
+  /** ISO-8601 commit author date. */
+  date: string | null;
+  /** First line of the commit message. */
+  message: string | null;
 }
 
 export interface SkillDiffFile {
@@ -589,6 +604,10 @@ interface SkillsBankAPI {
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: unknown }>;
   upstreamRepoMetadata(repo: string): Promise<UpstreamRepoMetadata>;
+  upstreamLastCommit(
+    repo: string,
+    skillPath: string,
+  ): Promise<UpstreamLastCommit>;
 }
 
 declare global {

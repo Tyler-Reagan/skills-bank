@@ -89,6 +89,7 @@ import {
   type SkillDiffResult,
   type SyncStatus,
   type UpdateStatus,
+  type UpstreamLastCommit,
   type UpstreamProbeResult,
   type UpstreamRepoMetadata,
   type UserRepo,
@@ -681,6 +682,83 @@ async function getRepoMetadata(repo: string): Promise<UpstreamRepoMetadata> {
 
 ipcMain.handle(IPC.upstreamRepoMetadata, async (_e, repo: string) =>
   getRepoMetadata(repo),
+);
+
+interface LastCommitCacheEntry {
+  commit: UpstreamLastCommit;
+  fetchedAt: number;
+}
+
+const lastCommitCache = new Map<string, LastCommitCacheEntry>();
+const LAST_COMMIT_TTL_MS = 15 * 60 * 1000;
+
+async function getLastCommit(
+  repo: string,
+  skillPath: string,
+): Promise<UpstreamLastCommit> {
+  const key = `${repo}:${skillPath}`;
+  const cached = lastCommitCache.get(key);
+  if (cached && Date.now() - cached.fetchedAt < LAST_COMMIT_TTL_MS) {
+    return cached.commit;
+  }
+  const empty: UpstreamLastCommit = {
+    sha: null,
+    date: null,
+    message: null,
+  };
+  try {
+    const token = getStoredToken();
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "skills-bank",
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    // Query the folder (strip the `/SKILL.md` leaf) so the result
+    // reflects any change in the skill's content, not just changes
+    // to SKILL.md itself.
+    const folder = skillPath.replace(/\/SKILL\.md$/, "");
+    const url = `https://api.github.com/repos/${repo}/commits?path=${encodeURIComponent(
+      folder,
+    )}&per_page=1`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      lastCommitCache.set(key, { commit: empty, fetchedAt: Date.now() });
+      return empty;
+    }
+    const body = (await res.json()) as Array<{
+      sha?: string;
+      commit?: {
+        author?: { date?: string };
+        message?: string;
+      };
+    }>;
+    if (!Array.isArray(body) || body.length === 0) {
+      lastCommitCache.set(key, { commit: empty, fetchedAt: Date.now() });
+      return empty;
+    }
+    const top = body[0]!;
+    const message = top.commit?.message;
+    const commit: UpstreamLastCommit = {
+      sha: typeof top.sha === "string" ? top.sha : null,
+      date: typeof top.commit?.author?.date === "string"
+        ? top.commit.author.date
+        : null,
+      message: typeof message === "string"
+        ? message.split("\n")[0]?.slice(0, 120) ?? null
+        : null,
+    };
+    lastCommitCache.set(key, { commit, fetchedAt: Date.now() });
+    return commit;
+  } catch {
+    lastCommitCache.set(key, { commit: empty, fetchedAt: Date.now() });
+    return empty;
+  }
+}
+
+ipcMain.handle(
+  IPC.upstreamLastCommit,
+  async (_e, repo: string, skillPath: string) => getLastCommit(repo, skillPath),
 );
 
 // Resolve registry source at boot. Stored values are respected; an

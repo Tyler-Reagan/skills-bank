@@ -1512,6 +1512,7 @@ export function App(): React.ReactElement {
               flash(r.message);
               await refresh();
             }}
+            isAuthed={Boolean(authStatus?.user)}
           />
         )}
 
@@ -1811,6 +1812,9 @@ export function App(): React.ReactElement {
                   settings.defaultInstallAgents.length > 0
                     ? settings.defaultInstallAgents
                     : undefined
+                }
+                showUpstreamActivity={
+                  settings.showUpstreamActivity && Boolean(authStatus?.user)
                 }
                 onClose={() => setSelected(null)}
                 onChanged={async (msg) => {

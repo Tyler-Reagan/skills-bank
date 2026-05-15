@@ -105,6 +105,14 @@ interface Props {
    */
   onUpdate?: () => Promise<void> | void;
   /**
+   * Settings → "Show upstream activity" toggle. When true and the
+   * skill has a GitHub upstream, the drawer fetches and displays
+   * the latest commit touching the skill's folder. Costs 1 GitHub
+   * API call per skill (no repo dedup); gated to opt-in to keep
+   * heavy registries from pressuring the rate-limit budget.
+   */
+  showUpstreamActivity?: boolean;
+  /**
    * M6: missing-entry heal. Forget the registry/external record.
    * Only meaningful in registry-folder-missing and
    * external-target-missing.
@@ -154,12 +162,16 @@ export function SkillDetailDrawer({
   onUpdate,
   onForgetMissing,
   onRepoint,
+  showUpstreamActivity,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
   const [repoMeta, setRepoMeta] = useState<
     import("../../shared/ipc.js").UpstreamRepoMetadata | null
+  >(null);
+  const [lastCommit, setLastCommit] = useState<
+    import("../../shared/ipc.js").UpstreamLastCommit | null
   >(null);
   const drawerRef = useRef<HTMLElement | null>(null);
   // The drawer slides in from the right (~280ms). Until it lands,
@@ -211,6 +223,7 @@ export function SkillDetailDrawer({
   // the drawer omits the stars chip and description when fields
   // are null.
   const upstreamRepo = entry.source.upstream?.repo;
+  const upstreamSkillPath = entry.source.upstream?.skillPath;
   useEffect(() => {
     setRepoMeta(null);
     if (!upstreamRepo) return;
@@ -227,6 +240,26 @@ export function SkillDetailDrawer({
       cancelled = true;
     };
   }, [upstreamRepo]);
+
+  // Per-skill last-commit fetch, opt-in via Settings. Costs 1 GitHub
+  // API call per skill (no repo dedup) so it stays off by default.
+  useEffect(() => {
+    setLastCommit(null);
+    if (!showUpstreamActivity) return;
+    if (!upstreamRepo || !upstreamSkillPath) return;
+    let cancelled = false;
+    void window.skillsBank
+      .upstreamLastCommit(upstreamRepo, upstreamSkillPath)
+      .then((c) => {
+        if (!cancelled) setLastCommit(c);
+      })
+      .catch(() => {
+        // Silent degrade.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [upstreamRepo, upstreamSkillPath, showUpstreamActivity]);
 
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
@@ -677,6 +710,31 @@ export function SkillDetailDrawer({
                     </span>
                   </div>
                 )}
+                {showUpstreamActivity &&
+                  lastCommit?.sha &&
+                  lastCommit?.date && (
+                    <div className="drawer-meta-row">
+                      <span className="drawer-meta-key">last upstream</span>
+                      <span className="drawer-meta-value">
+                        {new Date(lastCommit.date).toLocaleDateString()} ·{" "}
+                        <code>{lastCommit.sha.slice(0, 7)}</code>
+                        {lastCommit.message && (
+                          <span
+                            style={{
+                              marginLeft: 6,
+                              color: "var(--text-3)",
+                              fontSize: 11,
+                            }}
+                            title={lastCommit.message}
+                          >
+                            {lastCommit.message.length > 60
+                              ? lastCommit.message.slice(0, 60) + "…"
+                              : lastCommit.message}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
               </div>
             )}
 
