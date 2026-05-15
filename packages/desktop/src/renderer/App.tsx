@@ -47,7 +47,6 @@ import { AccountModal } from "./components/AccountModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
-import { RegistrySourceProvider } from "./RegistrySourceContext.js";
 
 const LS_KEYS = {
   search: "skills-bank.searchQuery",
@@ -657,13 +656,17 @@ export function App(): React.ReactElement {
     [flash, refresh],
   );
 
+  // Change linked repo is universal — always opens RepoPicker.
+  // The folder-picker path (Import a registry from disk) is a separate
+  // Operations action; see `importRegistryFromDisk` below.
   const changeRegistry = useCallback(async () => {
-    // GitHub-linked users pick a GitHub repo; local-bundled users import
-    // a local folder (validated to contain a skills/ subdirectory).
-    if (authStatus?.registrySource === "github") {
-      setShowRepoPicker(true);
-      return;
-    }
+    setShowRepoPicker(true);
+  }, []);
+
+  // Folder-picker replace path. Bundled-default and custom-repo users
+  // alike can swap their registry root for a local folder this way —
+  // it's no longer mode-gated.
+  const importRegistryFromDisk = useCallback(async () => {
     const r = await window.skillsBank.importRegistry();
     if (r.ok && r.registryRoot) {
       flash(r.message);
@@ -671,7 +674,7 @@ export function App(): React.ReactElement {
     } else if (r.message !== "cancelled") {
       flash(`Couldn't import registry: ${r.message}`);
     }
-  }, [refresh, flash, authStatus]);
+  }, [refresh, flash]);
 
   // Re-fetch from the currently linked GitHub repo, no picker.
   const refreshLinkedRepo = useCallback(async () => {
@@ -888,7 +891,6 @@ export function App(): React.ReactElement {
           onToggleDensity={toggleDensity}
           syncing={false}
           onSync={() => undefined}
-          showSync={false}
           authStatus={null}
           onOpenAccount={() => undefined}
           onOpenSettings={() => undefined}
@@ -920,8 +922,7 @@ export function App(): React.ReactElement {
   }
 
   return (
-    <RegistrySourceProvider registrySource={authStatus?.registrySource ?? null}>
-      <div className="app">
+    <div className="app">
         <Header
           refreshing={refreshing}
           onRefresh={() => void onRefreshClick()}
@@ -932,8 +933,7 @@ export function App(): React.ReactElement {
           syncing={
             syncStatus.kind === "fetching" || syncStatus.kind === "applying"
           }
-          onSync={() => void sync()}
-          showSync={authStatus?.registrySource !== "github"}
+          onSync={() => void refreshLinkedRepo()}
           authStatus={authStatus}
           onOpenAccount={() => setShowAccount(true)}
           onOpenSettings={() => setShowSettings(true)}
@@ -1510,6 +1510,10 @@ export function App(): React.ReactElement {
               setShowAccount(false);
               await refreshLinkedRepo();
             }}
+            onImportRegistry={async () => {
+              setShowAccount(false);
+              await importRegistryFromDisk();
+            }}
             onMergeRegistry={async () => {
               setShowAccount(false);
               await mergeRegistry();
@@ -1537,12 +1541,13 @@ export function App(): React.ReactElement {
             onConnected={(status) => {
               setShowConnectGithub(false);
               setAuthStatus(status);
-              // Plan 02 structural fix: registrySource no longer flips
-              // eagerly on Device Flow success — only when a repo is
-              // actually linked. Pop RepoPicker so the user can finish.
-              // Cancelling lands them in local-bundled with a cached
-              // token; no "authed-but-unlinked" interstitial.
-              setShowRepoPicker(true);
+              // Identity update only — `linkedRepo` is preserved. Users
+              // already past onboarding don't need to re-pick a repo
+              // just because they signed back in; the explicit "Change
+              // linked repo" action covers that intent. The first-launch
+              // path (where RepoPicker should pop) goes through
+              // LoginScreen's onStatusChanged, not this handler.
+              void refresh();
             }}
           />
         )}
@@ -1980,7 +1985,6 @@ export function App(): React.ReactElement {
             )}
           </div>
         )}
-      </div>
-    </RegistrySourceProvider>
+    </div>
   );
 }

@@ -38,13 +38,15 @@ Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/ski
 > [!NOTE]
 > Builds are signed with a Developer ID certificate and notarized through Apple — Gatekeeper opens them on a normal double-click. The app auto-updates by polling the Releases feed on launch.
 
-On first launch the app boots straight into the Registry tab on top of a bundled curated skill set — no persona-choice screen, no `git clone` prerequisite.
+On first launch the app shows a two-card onboarding screen — pick a starting point and you're in the Registry tab from then on.
 
 ![The Registry tab — the default view on first launch](docs/images/registry.png)
 
-- **Use the bundled registry** _(the default; nothing to do)_ — Browse the curated skills shipped with the app, pull updates with one click via Sync, add your own alongside.
-- **Link a GitHub repo** — Back your registry with a GitHub repo you own. Your repo holds the skill content (a `skills/` directory at the root, one folder per skill); the app pulls from it on demand. The first-launch screen offers **Connect your own registry**; authentication uses GitHub's Device Flow. Best for multi-machine continuity, team sharing, and version-controlled history. See [`docs/flows/login.md`](docs/flows/login.md#github-linked) for what to put in the repo and how to set it up.
+- **Use the public skills bank** _(the default, low-friction)_ — Browse and install from the curated `Tyler-Reagan/skills-bank` repo. No GitHub account needed. Refresh pulls the latest at the unauthenticated GitHub rate limit (60/hr). Sign in later for 5000/hr.
+- **Connect with GitHub** — Authenticate via Device Flow, then pick a repo to mirror. The curated bank is pre-listed as **Recommended** (same content, 5000/hr); or pick any GitHub repo you own (with a `skills/` directory at its root) to host your own registry. Best for multi-machine continuity, team sharing, and version-controlled history. See [`docs/flows/login.md`](docs/flows/login.md) for what to put in the repo and how to set it up.
 - **Self-host** _(developer path)_ — Fork the app + registry and ship your own build. See [`docs/self-host.md`](docs/self-host.md).
+
+Either way, every user gets the same surfaces: **Refresh from `<repo>`** in the header pulls the latest with diff-before-apply, and **Account → Change linked repo** lets you swap your linked repo any time. Defaults for which agent directories an Install action targets live in **Settings…**.
 
 Defaults for which agent directories an Install action targets live in **Settings…**.
 
@@ -100,7 +102,7 @@ pnpm start    # one-shot production build, then launch Electron
 `dev` keeps the renderer rebuilding on save; quit Electron (`Cmd+Q` and re-run) to pick up changes to the main or preload process.
 
 > [!TIP]
-> Set `SKILLS_BANK_ROOT=/path/to/skills-bank` in your shell to work against the cloned skills folder on disk. The app reads from there directly and silently sets `registrySource = "local"`. On a fresh clone, run `pnpm reset:seed` once before launching so Sync doesn't surface a collision for every skill.
+> Set `SKILLS_BANK_ROOT=/path/to/skills-bank` in your shell to work against the cloned skills folder on disk. The app reads from there directly with no linked repo (treated as bundled-default). On a fresh clone, run `pnpm reset:seed` once before launching so Refresh doesn't surface a collision for every skill.
 
 Reset local state between test runs:
 

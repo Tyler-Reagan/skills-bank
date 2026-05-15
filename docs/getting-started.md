@@ -15,11 +15,14 @@ The app auto-updates by polling the GitHub Releases feed on launch — when a ne
 
 ## First launch
 
-The app boots straight into the Registry tab on top of the bundled curated skill set. No persona choice, no `git clone` prerequisite — your registry is ready to use as soon as the window opens.
+On first launch you pick a starting point:
+
+- **Use the public skills bank** — browse and install from the curated `Tyler-Reagan/skills-bank` repo. No GitHub account needed. Refresh pulls the latest at the unauthenticated GitHub rate limit (60/hr).
+- **Connect with GitHub** — sign in via Device Flow. After signing in you pick a repo to back your registry. The curated bank is pre-listed as **Recommended** (same content, 5000/hr rate limit); or pick any repo of your own to host your own registry.
+
+Either way, the app boots into the Registry tab once you've picked. You can change your mind any time from **Account → Change linked repo**.
 
 ![The Registry tab — the default view on first launch](images/registry.png)
-
-If you want to back your registry with a GitHub repo so it follows you across machines, pick **Connect your own registry** on the first-launch screen and authenticate via GitHub Device Flow. Your repo holds the skill content; the app pulls from it on demand. See [flows/login.md](flows/login.md#github-linked) for what your repo needs to contain and how to set it up from scratch.
 
 Want to fork the entire app and ship your own build? See [self-host.md](self-host.md).
 

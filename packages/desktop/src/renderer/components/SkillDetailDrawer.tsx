@@ -5,7 +5,6 @@ import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
-import { useRegistrySource } from "../RegistrySourceContext.js";
 import { classifyDrawerState } from "./skillState.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
@@ -133,7 +132,6 @@ export function SkillDetailDrawer({
   onForgetMissing,
   onRepoint,
 }: Props): React.ReactElement {
-  const registrySource = useRegistrySource();
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
@@ -610,9 +608,10 @@ export function SkillDetailDrawer({
                 )}
               </button>
               <p className="drawer-action-hint">
-                {registrySource === "github"
-                  ? "Files move into your repo's skills/ directory unless you turn off adoption in Settings. Commit to persist."
-                  : "Files move to the app's local registry unless you turn off adoption in Settings. Safe from Sync skills; linkable across agents."}
+                Files move into your registry's skills/ directory unless you
+                turn off adoption in Settings. Preserved through Refresh via
+                diff-before-apply; cross-agent linkable. If your registry
+                mirrors a GitHub repo, commit to persist across machines.
               </p>
             </>
           )}

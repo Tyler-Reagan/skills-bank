@@ -149,11 +149,26 @@ interface PickCustomSkillsDirResult {
 }
 
 /**
- * Internal-only enum. `"local"` ⇒ the user is on the bundled registry
- * shipped with the app. `"github"` ⇒ they've linked a GitHub repo as
- * the registry backing store. Replaces the legacy `Persona` enum and
- * never surfaces to the user (the UI uses "Local bundled" / "Link a
- * GitHub repo" copy).
+ * The canonical bundled-default repo. Every registry is linked to a
+ * GitHub repo, and this one is the default — there is no separate
+ * "local mode." A user is "on the bundled set" when `linkedRepo` is
+ * either null (fresh install / migrated from the older local mode) or
+ * equal to `BUNDLED_REPO`. Renderer code checks the `linkedRepo` field
+ * on `AuthStatus` directly; no separate `mode()` helper, since every
+ * relevant branch collapses to "do I have a non-bundled linkedRepo?"
+ * (See `docs/plans/github-first-onboarding.md`.)
+ */
+export const BUNDLED_REPO = "Tyler-Reagan/skills-bank";
+
+/**
+ * Legacy mode discriminator. Kept as a derived alias on `AuthStatus`
+ * for one release as a migration safety net; new code should branch on
+ * `linkedRepo` instead. Will be dropped in a follow-up release after
+ * the migration has settled.
+ *
+ * Mapping today: `"github"` ⇒ `linkedRepo !== null`; `"local"` ⇒
+ * `linkedRepo === null`; `null` is emitted only on fresh installs that
+ * haven't completed onboarding (renderer routes to LoginScreen).
  */
 export type RegistrySource = "local" | "github";
 

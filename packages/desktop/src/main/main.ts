@@ -62,6 +62,7 @@ import {
   type SyncDecisions,
 } from "@skills-bank/core";
 import {
+  BUNDLED_REPO,
   IPC,
   type AuthStatus,
   type Bounds,
@@ -327,27 +328,19 @@ function resolveBootRegistryRoot(): string {
 
 let registryRoot: string = resolveBootRegistryRoot();
 
-// Resolve registry source at boot. Persona-collapse default: every fresh
-// install (or post-reset) lands on local-bundled. Stored values are
-// respected, so a linked GitHub repo persists across launches.
+// Resolve registry source at boot. Stored values are respected; an
+// absent value signals a fresh install and is returned as null so the
+// renderer can route to the two-card LoginScreen.
 //
-// Users transition local-bundled → github-linked at runtime via
-// AccountModal's "Connect to GitHub" button, which opens
-// ConnectGithubModal (Device Flow) and chains into RepoPickerModal.
-// The LoginScreen path here is reachable only via authLogout() (which
-// nulls registrySource), used by github-linked users signing out.
-function resolveBootRegistrySource(): RegistrySource {
-  const stored = readConfig().registrySource;
-  if (stored) return stored;
-  // First launch (or post-reset). Default to local-bundled and persist
-  // so the renderer never sees registrySource === null in the boot path.
-  writeConfig({
-    registryRoot,
-    registrySource: "local",
-    dismissedUpdateVersion: readConfig().dismissedUpdateVersion,
-    linkedRepo: null,
-  });
-  return "local";
+// Fresh installs no longer auto-coerce to "local" — the user picks
+// **Use the public skills bank** (→ "local", linkedRepo stays null) or
+// **Connect with GitHub** (→ Device Flow → RepoPickerModal with the
+// bundled repo pre-listed as Recommended). Existing users — anyone
+// with a config file from v0.10.0 or earlier — already have a
+// persisted value, so the LoginScreen path doesn't fire for them and
+// there's nothing to migrate. (See `docs/plans/github-first-onboarding.md`.)
+function resolveBootRegistrySource(): RegistrySource | null {
+  return readConfig().registrySource;
 }
 
 let registrySource: RegistrySource | null = resolveBootRegistrySource();
@@ -2026,21 +2019,29 @@ ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
 
 // ─── Auth + registry source ─────────────────────────────────────────────────
 //
-// `registrySource` drives which features the renderer surfaces. Local-bundled
-// users get the Sync flow; github-linked users get the registry-replace flow.
-// registrySource = null means first-launch and the renderer shows LoginScreen.
+// `linkedRepo` is the source of truth for which GitHub repo backs the
+// registry; `registrySource` survives as a derived alias on AuthStatus
+// for one release to ease migration. `registrySource = null` means
+// first-launch (renderer shows LoginScreen); "local" means bundled-
+// default; "github" means a repo has been linked (which may be
+// `BUNDLED_REPO` or a user-picked custom).
 
 async function buildAuthStatus(): Promise<AuthStatus> {
   // Identity is independent of registry mode: a token persists across
   // mode switches (and is opportunistically used by local-bundled sync
   // for rate-limit headroom), so `user` reflects token validity, not
-  // current mode. linkedRepo only makes sense under github-linked.
+  // current mode.
   const user = await getCurrentUser();
   return {
     registrySource,
     isAuthConfigured: isAuthConfigured(),
     user,
-    linkedRepo: registrySource === "github" ? linkedRepo : null,
+    // Emit `linkedRepo` unconditionally so the renderer can render the
+    // linked-repo label / last-fetched chrome for any user who's bound
+    // to an explicit repo. Bundled-default users (`linkedRepo: null`)
+    // get the "Bundled (Tyler-Reagan/skills-bank)" label without
+    // last-fetched metadata.
+    linkedRepo,
   };
 }
 
@@ -2083,9 +2084,14 @@ ipcMain.handle(IPC.authResumeDeviceFlow, () => {
 });
 
 ipcMain.handle(IPC.authLogout, async () => {
+  // Clear the token only — preserve `registrySource` and `linkedRepo`
+  // so the user stays in the app shell with anonymized identity rather
+  // than being kicked back to LoginScreen. Header Refresh continues to
+  // work against the linked repo at the GitHub unauth rate ceiling
+  // (60/hr), which is enough for public repos. Private-repo refresh
+  // will fail until the user signs in again — surfaced as a clear
+  // error, not a state corruption.
   clearStoredToken();
-  registrySource = null;
-  linkedRepo = null;
   persistConfig();
   return buildAuthStatus();
 });
@@ -2258,14 +2264,12 @@ ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) =>
 );
 
 ipcMain.handle(IPC.reposRefreshCurrent, async () => {
-  if (!linkedRepo) {
-    return {
-      ok: false,
-      message:
-        "No GitHub repo is linked yet. Use Choose registry repo to pick one.",
-    };
-  }
-  return replaceRegistryWithRepo(linkedRepo.fullName);
+  // Refresh is universal: bundled-default users (`linkedRepo` null)
+  // fall through to the canonical bundled repo, so the same diff-
+  // before-apply path serves every refresh — no separate Sync code
+  // path and no mode conditional in the renderer.
+  const target = linkedRepo?.fullName ?? BUNDLED_REPO;
+  return replaceRegistryWithRepo(target);
 });
 
 ipcMain.handle(IPC.openExternal, async (_e, url: string) => {
