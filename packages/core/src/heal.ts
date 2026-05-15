@@ -132,6 +132,35 @@ export function acceptDriftKeepLocal(skillDir: string): void {
 }
 
 /**
+ * Heal action — sever-upstream on a `user-edited-with-upstream` state.
+ * The user keeps their local edits and severs the upstream pointer
+ * so future probes don't surface the skill as having an update
+ * available. The source axis (`bundled` / `yours`) is preserved —
+ * this is a per-skill-upstream operation, not a registry-level one.
+ * Idempotent on skills without an `upstream` field.
+ */
+export function acceptDriftSeverUpstream(skillDir: string): void {
+  const src = readSkillSource(skillDir);
+  if (!src.upstream) return;
+  const next: typeof src = { ...src };
+  delete next.upstream;
+  writeSkillSource(skillDir, next);
+  // Drop the synced-hash so the next build doesn't flag this as
+  // user-edited-with-upstream again. (The drift gate in build.ts
+  // checks `source.upstream` and `source.source === "bundled"`;
+  // with upstream cleared and source unchanged, drift detection
+  // disengages for non-bundled skills.)
+  const hashPath = path.join(skillDir, SYNCED_HASH_FILE);
+  if (fs.existsSync(hashPath)) {
+    try {
+      fs.unlinkSync(hashPath);
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/**
  * Heal action — revert on a bundled-skill-edited state. The user
  * acknowledges that the current on-disk content is the bundled
  * baseline going forward: re-snapshot the hash so the next build

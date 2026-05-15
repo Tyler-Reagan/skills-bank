@@ -119,6 +119,8 @@ const api = {
     ipcRenderer.on(IPC.upstreamProbe, listener);
     return () => ipcRenderer.removeListener(IPC.upstreamProbe, listener);
   },
+  upstreamUpdate: (name: string) =>
+    ipcRenderer.invoke(IPC.upstreamUpdate, name),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

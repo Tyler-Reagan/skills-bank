@@ -108,6 +108,7 @@ export const IPC = {
   pickCustomSkillsDir: "skills:pickCustomSkillsDir",
   getSkillDiff: "skills:getSkillDiff",
   upstreamProbe: "upstream:probe",
+  upstreamUpdate: "upstream:update",
 } as const;
 
 /**
@@ -571,6 +572,9 @@ interface SkillsBankAPI {
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
   upstreamProbe(): Promise<UpstreamProbeResult>;
   onUpstreamProbeComplete(cb: () => void): () => void;
+  upstreamUpdate(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: unknown }>;
 }
 
 declare global {

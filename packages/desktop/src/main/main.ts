@@ -12,7 +12,11 @@ import type { MenuItemConstructorOptions } from "electron";
 // cleanly under Node's ESM loader (NodeNext module resolution).
 import electronUpdater from "electron-updater";
 const { autoUpdater } = electronUpdater;
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import os from "node:os";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +32,13 @@ import {
   exportRegistry,
   fetchCanonicalTarball,
   acceptDriftKeepLocal,
+  acceptDriftSeverUpstream,
+  defaultSkillLockPath,
+  hashSkillFolder,
+  readSkillLockFile,
+  readSkillSource,
+  writeSkillSource,
+  writeSyncedHash,
   acceptDriftTakeCanonical,
   finalizeSkillsDir,
   listTopLevelSymlinks,
@@ -93,7 +104,6 @@ import {
   startDeviceFlow,
 } from "./auth.js";
 import { isAuthConfigured } from "./auth-config.js";
-import { readSkillSource, writeSkillSource } from "@skills-bank/core";
 
 const CANONICAL_OWNER = "Tyler-Reagan";
 const CANONICAL_REPO = "skills-bank";
@@ -473,6 +483,134 @@ function augmentWithProbedUpdates<T extends { name: string }>(
 }
 
 ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
+
+/**
+ * Update or take-upstream backend. Both heal flows
+ * (`upstream-update-available` apply / `user-edited-with-upstream`
+ * revert) share the same underlying op: run `npx skills update <name>`
+ * to refresh the CLI's agent-dir copy, then for adopted skills mirror
+ * the result back into our registry and re-baseline the markers.
+ *
+ * v1 scope: tracked (non-adopted) skills work via the CLI's own state
+ * update — our next index walk picks up the new content. Adopted
+ * skills copy from `~/.agents/skills/<name>/` back into our registry
+ * folder (preserving our `.skills-bank.json` / `.skills-bank-hash`
+ * markers, which we rewrite after the copy).
+ *
+ * The npx invocation depends on `npx` being reachable on PATH; in
+ * packaged macOS builds launched from Finder, PATH may not include
+ * the user's node install. Surfaced as an actionable error rather
+ * than a silent failure.
+ */
+async function applyUpstreamUpdate(
+  name: string,
+): Promise<{ ok: boolean; message: string; error?: unknown }> {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const index = buildRegistryIndex(registryRoot);
+  const entry = index.entries.find((e) => e.name === name);
+  if (!entry) {
+    return { ok: false, message: `${name} is not in the registry` };
+  }
+  if (entry.source.upstream?.kind !== "github") {
+    return {
+      ok: false,
+      message: `${name} has no GitHub upstream — nothing to update`,
+    };
+  }
+
+  // Run `npx skills update <name> -g -y`. `-g` targets global skills
+  // (the CLI's `~/.agents/skills/` scope, which is where the lock
+  // file entries we mirror live). `-y` skips confirmation prompts.
+  try {
+    await execFileAsync("npx", ["-y", "skills", "update", name, "-g", "-y"], {
+      timeout: 120000,
+    });
+  } catch (err) {
+    const msg = (err as Error).message;
+    const hint = msg.includes("ENOENT") || msg.includes("not found")
+      ? " — is `npx` on the app's PATH? Try launching from a terminal."
+      : "";
+    return {
+      ok: false,
+      message: `npx skills update failed: ${msg}${hint}`,
+      error: err,
+    };
+  }
+
+  // Tracked path: CLI updated the agent-dir copy. Our next scan picks
+  // up the new content via external-entry rebuild. Re-probe so the
+  // upstream-update-available chip clears on this skill specifically.
+  if (entry.adopted === false) {
+    probedUpdates.delete(name);
+    notifyProbeComplete();
+    return { ok: true, message: `Updated ${name} via npx skills update.` };
+  }
+
+  // Adopted path: mirror the CLI's freshly-updated agent-dir content
+  // into our registry, then re-baseline our markers.
+  const cliAgentDir = path.join(os.homedir(), ".agents", "skills", name);
+  if (!fs.existsSync(cliAgentDir)) {
+    return {
+      ok: false,
+      message: `npx ran but CLI agent dir not found at ${cliAgentDir}; update may have failed silently`,
+    };
+  }
+
+  const registrySkillDir = path.join(registryRoot, "skills", name);
+  // Read our existing source marker so we can preserve the bundled/
+  // yours axis and the canon-related fields while replacing the
+  // upstream block with fresh values from the lock file.
+  const existingSource = readSkillSource(registrySkillDir);
+
+  // Wipe + recopy. We can't merge file-by-file because the upstream
+  // may have deleted files. After the copy, rewrite our app-state
+  // sidecars from existing source + fresh upstream values.
+  try {
+    fs.rmSync(registrySkillDir, { recursive: true, force: true });
+    fs.cpSync(cliAgentDir, registrySkillDir, {
+      recursive: true,
+      dereference: true, // CLI may symlink internally; flatten to real files
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      message: `failed to mirror ${cliAgentDir} into registry: ${(err as Error).message}`,
+      error: err,
+    };
+  }
+
+  // Refresh the upstream pointer from the lock file (skillFolderHash,
+  // fetchedAt) and re-baseline the SHA-256 against the new content.
+  const lock = readSkillLockFile(defaultSkillLockPath());
+  const lockEntry = lock?.skills[name];
+  if (lockEntry && existingSource.upstream) {
+    const next: typeof existingSource = {
+      ...existingSource,
+      upstream: {
+        ...existingSource.upstream,
+        skillFolderHash:
+          typeof lockEntry.skillFolderHash === "string"
+            ? lockEntry.skillFolderHash
+            : existingSource.upstream.skillFolderHash,
+        fetchedAt:
+          typeof lockEntry.updatedAt === "string"
+            ? lockEntry.updatedAt
+            : new Date().toISOString(),
+      },
+    };
+    writeSkillSource(registrySkillDir, next);
+  }
+  const newBaseline = hashSkillFolder(registrySkillDir);
+  if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
+
+  probedUpdates.delete(name);
+  notifyProbeComplete();
+  return { ok: true, message: `Updated ${name} into the registry.` };
+}
+
+ipcMain.handle(IPC.upstreamUpdate, async (_e, name: string) =>
+  applyUpstreamUpdate(name),
+);
 
 // Resolve registry source at boot. Stored values are respected; an
 // absent value signals a fresh install and is returned as null so the
@@ -1237,15 +1375,27 @@ ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
     };
   }
   const skillDir = path.join(registryRoot, entry.path);
+  // Dispatch based on the source axis carrying the drift signal.
+  // - Skills with a per-skill `upstream` pointer route through
+  //   `acceptDriftSeverUpstream` — clears the upstream and drops
+  //   the baseline so future probes don't surface it as having an
+  //   update available. Source axis (bundled/yours) is preserved.
+  // - Skills without an upstream (the original bundled-sync drift
+  //   case) route through `acceptDriftKeepLocal` as before — flips
+  //   source to "yours" so future syncs leave the skill alone.
+  const isUpstream = entry.source.upstream?.kind === "github";
   try {
-    acceptDriftKeepLocal(skillDir);
+    if (isUpstream) acceptDriftSeverUpstream(skillDir);
+    else acceptDriftKeepLocal(skillDir);
     buildRegistryIndex(registryRoot, {
       includeGitInfo: true,
       writeFile: true,
     });
     return {
       ok: true,
-      message: `Kept local edits to ${name}; future syncs will leave it alone.`,
+      message: isUpstream
+        ? `Severed upstream link on ${name}; future probes will leave it alone.`
+        : `Kept local edits to ${name}; future syncs will leave it alone.`,
     };
   } catch (err) {
     return (() => {
