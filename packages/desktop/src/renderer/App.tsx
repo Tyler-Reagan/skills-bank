@@ -1802,6 +1802,15 @@ export function App(): React.ReactElement {
             const installations = installed.filter(
               (i) => i.name === selected.name,
             );
+            // Classifier is non-trivial (full installation partition +
+            // capability fan-out). Compute once per IIFE invocation
+            // rather than 10× inline per drawer-prop callback.
+            const classification = classifyDrawerState(
+              selected,
+              installed,
+              isRegistered,
+            );
+            const caps = classification.capabilities;
             return (
               <SkillDetailDrawer
                 entry={selected}
@@ -1866,8 +1875,7 @@ export function App(): React.ReactElement {
                   // bank or stay at origin follows the global
                   // `registerAdopts` setting (M3 unified the two
                   // paths into a single op).
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canRegister
+                  caps.canRegister
                     ? async () => {
                         const results = await window.skillsBank.register([
                           {
@@ -1889,8 +1897,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onAcceptDrift={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canAcceptDrift
+                  caps.canAcceptDrift
                     ? async () => {
                         const r = await window.skillsBank.acceptDrift(
                           selected.name,
@@ -1904,8 +1911,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onTakeCanonical={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canTakeCanonical
+                  caps.canTakeCanonical
                     ? async () => {
                         const r = await window.skillsBank.takeCanonical(
                           selected.name,
@@ -1919,8 +1925,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onTakeUpstream={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canTakeUpstream
+                  caps.canTakeUpstream
                     ? async () => {
                         const r = await window.skillsBank.upstreamUpdate(
                           selected.name,
@@ -1932,8 +1937,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onUpdate={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canUpdate
+                  caps.canUpdate
                     ? async () => {
                         const r = await window.skillsBank.upstreamUpdate(
                           selected.name,
@@ -1944,8 +1948,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onForgetMissing={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canForgetMissing
+                  caps.canForgetMissing
                     ? async () => {
                         const r = await window.skillsBank.forgetMissing(
                           selected.name,
@@ -1959,8 +1962,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onRepoint={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canRepoint
+                  caps.canRepoint
                     ? async () => {
                         const r = await window.skillsBank.repointExternal(
                           selected.name,
@@ -1975,8 +1977,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onHide={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canHide
+                  caps.canHide
                     ? async () => {
                         const r = await window.skillsBank.hide(selected.name);
                         flash(r.message);
@@ -1988,8 +1989,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onUnhide={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canUnhide
+                  caps.canUnhide
                     ? async () => {
                         const r = await window.skillsBank.unhide(selected.name);
                         flash(r.message);
@@ -2001,8 +2001,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onUnregister={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canUnregister
+                  caps.canUnregister
                     ? async () => {
                         // Remove-from-registry is a terminating action
                         // for this surface — close the drawer up-front
