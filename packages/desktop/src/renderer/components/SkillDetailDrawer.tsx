@@ -767,7 +767,14 @@ export function SkillDetailDrawer({
                         type="button"
                         className="link-btn"
                         disabled={pickerBusy}
-                        onClick={() => setPickerOpen(false)}
+                        onClick={() => {
+                          // Preserve repo/path entries — the user may
+                          // cancel to check something and come back —
+                          // but clear any prior validation error so
+                          // it doesn't ghost the next attempt.
+                          setPickerOpen(false);
+                          setPickerError(null);
+                        }}
                       >
                         Cancel
                       </button>

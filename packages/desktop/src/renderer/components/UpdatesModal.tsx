@@ -49,8 +49,13 @@ export function UpdatesModal({
   const updateAll = async () => {
     setRunning(true);
     try {
+      // No within-loop skip on `states` — `setStates` inside `updateOne`
+      // queues an update React applies asynchronously, so any read of
+      // `states` later in this loop would see the closure-captured
+      // pre-loop snapshot, not in-flight results. Re-running an
+      // already-updated `npx skills update <name>` is a backend no-op
+      // anyway; harmless to iterate every entry.
       for (const e of entries) {
-        if (states[e.name] === "ok") continue;
         await updateOne(e.name);
       }
     } finally {
