@@ -1,6 +1,7 @@
 import React from "react";
 import type { RegistryEntry } from "@skills-bank/core";
 import { Icon } from "./Icon.js";
+import { TagFilter } from "./TagFilter.js";
 
 /**
  * Filter chip strip + sort control above the Browse grid.
@@ -9,6 +10,14 @@ import { Icon } from "./Icon.js";
  * with AND semantics. The "All" chip is mutually exclusive with the
  * rest — clicking it clears the set. The other chips toggle into and
  * out of the active set independently.
+ *
+ * Two parallel filter affordances render in the same strip but live on
+ * separate state:
+ *   - `installedOnly` (boolean) — sits next to the registry-state
+ *     chips because it reads as another state filter, but isn't part
+ *     of the `RegistryFilterTag` union.
+ *   - Tag dropdown ("Tags ▾") — anchored multi-select rendered via
+ *     `TagFilter` in panel form; selection count shows on the trigger.
  *
  * Cross-category combinations the model allows but the data forbids
  * (e.g. Bundled AND Yours, Personal AND Vendored) collapse to an
@@ -163,6 +172,14 @@ interface Props {
   onChange: (next: Set<RegistryFilterTag>) => void;
   sort: RegistrySortState;
   onSortChange: (next: RegistrySortState) => void;
+  /** Boolean filter rendered as a chip adjacent to the state chips. */
+  installedOnly: boolean;
+  onInstalledOnlyChange: (next: boolean) => void;
+  /** Pre-computed count of registry skills with at least one ours installation. */
+  installedCount: number;
+  /** Selected tag set for the Tags ▾ dropdown. */
+  selectedTags: string[];
+  onSelectedTagsChange: (next: string[]) => void;
 }
 
 export function RegistryFilters({
@@ -171,6 +188,11 @@ export function RegistryFilters({
   onChange,
   sort,
   onSortChange,
+  installedOnly,
+  onInstalledOnlyChange,
+  installedCount,
+  selectedTags,
+  onSelectedTagsChange,
 }: Props): React.ReactElement {
   const counts = React.useMemo(() => {
     const out = new Map<RegistryFilterTag, number>();
@@ -182,7 +204,30 @@ export function RegistryFilters({
     return out;
   }, [registry]);
 
-  const allActive = active.size === 0;
+  const allActive =
+    active.size === 0 && !installedOnly && selectedTags.length === 0;
+
+  // Tags dropdown state — owned here because the trigger is here too.
+  const [tagsOpen, setTagsOpen] = React.useState(false);
+  const tagsWrapRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (!tagsOpen) return;
+    const onDocDown = (ev: MouseEvent) => {
+      const node = tagsWrapRef.current;
+      if (node && ev.target instanceof Node && !node.contains(ev.target)) {
+        setTagsOpen(false);
+      }
+    };
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setTagsOpen(false);
+    };
+    document.addEventListener("mousedown", onDocDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [tagsOpen]);
 
   function toggle(tag: RegistryFilterTag): void {
     const next = new Set(active);
@@ -192,7 +237,13 @@ export function RegistryFilters({
   }
 
   function clearAll(): void {
+    // The "All" chip is a one-click reset for every filter affordance
+    // that lives in this strip — chip set, installedOnly, and tag
+    // selection. Search stays put (it's its own input outside the
+    // strip).
     onChange(new Set());
+    if (installedOnly) onInstalledOnlyChange(false);
+    if (selectedTags.length > 0) onSelectedTagsChange([]);
   }
 
   function toggleSortBy(): void {
@@ -212,6 +263,14 @@ export function RegistryFilters({
     });
   }
 
+  // Are there any tags in the registry at all? If not, hide the
+  // Tags trigger entirely — same null-result behaviour TagFilter
+  // had pre-refactor.
+  const hasAnyTags = React.useMemo(() => {
+    for (const e of registry) if ((e.tags?.length ?? 0) > 0) return true;
+    return false;
+  }, [registry]);
+
   return (
     <div className="registry-filters">
       <div className="registry-filters-chips" role="group" aria-label="Filters">
@@ -225,29 +284,100 @@ export function RegistryFilters({
           All
         </button>
         {CHIP_DEFS.map((def) => {
-          const isActive = active.has(def.tag);
-          const count = counts.get(def.tag) ?? 0;
-          return (
-            <button
-              key={def.tag}
-              type="button"
-              className={`filter-chip${isActive ? " active" : ""}`}
-              onClick={() => toggle(def.tag)}
-              aria-pressed={isActive}
-              title={def.title}
-              disabled={count === 0 && !isActive}
-            >
-              {def.label}{" "}
-              <span className="filter-chip-count">({count})</span>
-            </button>
-          );
+          // The boolean `installedOnly` chip sits between `missing`
+          // and `bundled` per the canonical chip ordering — render
+          // it inline when we hit that seam.
+          const chipNode = (() => {
+            const isActive = active.has(def.tag);
+            const count = counts.get(def.tag) ?? 0;
+            return (
+              <button
+                key={def.tag}
+                type="button"
+                className={`filter-chip${isActive ? " active" : ""}`}
+                onClick={() => toggle(def.tag)}
+                aria-pressed={isActive}
+                title={def.title}
+                disabled={count === 0 && !isActive}
+              >
+                {def.label}{" "}
+                <span className="filter-chip-count">({count})</span>
+              </button>
+            );
+          })();
+          if (def.tag === "missing") {
+            return (
+              <React.Fragment key="missing-plus-installed">
+                {chipNode}
+                <button
+                  key="installed-only"
+                  type="button"
+                  className={`filter-chip${installedOnly ? " active" : ""}`}
+                  onClick={() => onInstalledOnlyChange(!installedOnly)}
+                  aria-pressed={installedOnly}
+                  title={
+                    installedOnly
+                      ? "Showing only registry skills you have installed"
+                      : "Show only registry skills you have installed"
+                  }
+                >
+                  Installed only{" "}
+                  <span className="filter-chip-count">({installedCount})</span>
+                </button>
+              </React.Fragment>
+            );
+          }
+          return chipNode;
         })}
       </div>
-      <div
-        className="registry-filters-sort"
-        role="group"
-        aria-label="Sort registry"
-      >
+      <div className="registry-filters-right">
+        {hasAnyTags && (
+          <div
+            className="tag-filter-wrap"
+            ref={tagsWrapRef}
+            role="group"
+            aria-label="Filter by tag"
+          >
+            <button
+              type="button"
+              className={`filter-chip tag-filter-trigger${
+                selectedTags.length > 0 ? " active" : ""
+              }${tagsOpen ? " open" : ""}`}
+              onClick={() => setTagsOpen((v) => !v)}
+              aria-haspopup="true"
+              aria-expanded={tagsOpen}
+              title="Filter by tag"
+            >
+              Tags
+              {selectedTags.length > 0 && (
+                <>
+                  {" "}
+                  <span className="filter-chip-count">
+                    ({selectedTags.length})
+                  </span>
+                </>
+              )}{" "}
+              <Icon
+                name="chevron-down"
+                size="sm"
+                className="tag-filter-chevron"
+              />
+            </button>
+            {tagsOpen && (
+              <TagFilter
+                registry={registry}
+                selected={selectedTags}
+                onChange={onSelectedTagsChange}
+                onClearAll={() => setTagsOpen(false)}
+              />
+            )}
+          </div>
+        )}
+        <div
+          className="registry-filters-sort"
+          role="group"
+          aria-label="Sort registry"
+        >
         <button
           type="button"
           className="filter-chip sort-chip"
@@ -281,6 +411,7 @@ export function RegistryFilters({
             size="sm"
           />
         </button>
+        </div>
       </div>
     </div>
   );

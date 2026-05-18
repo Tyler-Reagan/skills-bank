@@ -2,7 +2,6 @@ import React from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
-import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
 import {
   RegistryFilters,
@@ -160,28 +159,12 @@ export function BrowseTab({
           onChange={setRegistryFilters}
           sort={registrySort}
           onSortChange={setRegistrySort}
+          installedOnly={installedOnly}
+          onInstalledOnlyChange={setInstalledOnly}
+          installedCount={installedFromRegistry}
+          selectedTags={selectedTags}
+          onSelectedTagsChange={setSelectedTags}
         />
-        <div className="filter-row">
-          <button
-            type="button"
-            className={`filter-chip${installedOnly ? " active" : ""}`}
-            onClick={() => setInstalledOnly(!installedOnly)}
-            aria-pressed={installedOnly}
-            title={
-              installedOnly
-                ? "Showing only registry skills you have installed"
-                : "Show only registry skills you have installed"
-            }
-          >
-            Installed only{" "}
-            <span className="filter-chip-count">({installedFromRegistry})</span>
-          </button>
-          <TagFilter
-            registry={registry}
-            selected={selectedTags}
-            onChange={setSelectedTags}
-          />
-        </div>
       </div>
       <p className="results-count">
         {filtered.length} of {registry.length} skill

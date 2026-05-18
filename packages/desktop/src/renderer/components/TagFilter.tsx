@@ -5,19 +5,24 @@ interface Props {
   registry: RegistryEntry[];
   selected: string[];
   onChange: (next: string[]) => void;
+  /** Close-the-panel hook: invoked when the user picks a "Clear all" action so
+   *  the parent can dismiss the dropdown immediately. Selection toggles keep
+   *  the panel open so the user can pick multiple tags in one trip. */
+  onClearAll?: () => void;
 }
 
 /**
- * Multi-select tag filter. Pills are derived live from the union of every
- * skill's `tags`, sorted by frequency descending then alphabetical.
- * Clicking toggles selection. A skill matches when at least one selected
- * tag appears in its `tags` (OR semantics). Empty selection means no
- * filter.
+ * Multi-select tag list. Rendered inside a dropdown panel anchored from the
+ * "Tags ▾" trigger chip in `RegistryFilters`. Tags are derived live from the
+ * union of every skill's `tags`, sorted by frequency descending then
+ * alphabetical. A skill matches when at least one selected tag appears in its
+ * `tags` (OR semantics). Empty selection means no filter.
  */
 export function TagFilter({
   registry,
   selected,
   onChange,
+  onClearAll,
 }: Props): React.ReactElement | null {
   const counts = new Map<string, number>();
   for (const e of registry) {
@@ -39,25 +44,39 @@ export function TagFilter({
   };
 
   return (
-    <div className="domain-filter">
-      <button
-        className={`domain-pill ${selected.length === 0 ? "active" : ""}`}
-        onClick={() => onChange([])}
-      >
-        All <span className="count">{registry.length}</span>
-      </button>
-      {ordered.map(([tag, count]) => {
-        const isActive = selectedSet.has(tag);
-        return (
-          <button
-            key={tag}
-            className={`domain-pill ${isActive ? "active" : ""}`}
-            onClick={() => toggle(tag)}
-          >
-            #{tag} <span className="count">{count}</span>
-          </button>
-        );
-      })}
+    <div className="tag-filter-panel" role="group" aria-label="Filter by tag">
+      <div className="tag-filter-panel-header">
+        <span className="tag-filter-panel-title">Filter by tag</span>
+        <button
+          type="button"
+          className="tag-filter-clear"
+          onClick={() => {
+            onChange([]);
+            onClearAll?.();
+          }}
+          disabled={selected.length === 0}
+        >
+          Clear
+        </button>
+      </div>
+      <div className="tag-filter-panel-list">
+        {ordered.map(([tag, count]) => {
+          const isActive = selectedSet.has(tag);
+          return (
+            <button
+              key={tag}
+              type="button"
+              className={`tag-filter-item${isActive ? " active" : ""}`}
+              onClick={() => toggle(tag)}
+              role="checkbox"
+              aria-checked={isActive}
+            >
+              <span className="tag-filter-item-label">#{tag}</span>
+              <span className="tag-filter-item-count">{count}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
