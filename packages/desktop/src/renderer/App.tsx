@@ -349,6 +349,17 @@ export function App(): React.ReactElement {
   );
   const [selectedTags, setSelectedTagsState] =
     useState<string[]>(readTagFilterLS);
+  // BrowseTab filter chip + sort state. Defaults to "All" (empty set)
+  // on launch — pending updates from prior sessions may have been
+  // resolved while the app was closed; don't presume staleness. State
+  // lives here (not BrowseTab) so the Rescan done-state's View action
+  // can flip the Updates chip on remotely.
+  const [registryFilters, setRegistryFilters] = useState<
+    Set<import("./components/RegistryFilters.js").RegistryFilterTag>
+  >(() => new Set());
+  const [registrySort, setRegistrySort] = useState<
+    import("./components/RegistryFilters.js").RegistrySortState
+  >({ by: "name", direction: "asc" });
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
   const [theme, setTheme] = useState<Theme>(readInitialTheme);
   const [density, setDensity] = useState<Density>(readInitialDensity);

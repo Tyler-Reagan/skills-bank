@@ -28,7 +28,11 @@ type IconName =
   | "settings"
   | "download"
   | "chevron-down"
-  | "log-out";
+  | "log-out"
+  | "sort-az"
+  | "clock"
+  | "arrow-up"
+  | "arrow-down";
 
 interface Props {
   name: IconName;
@@ -205,6 +209,37 @@ const PATHS: Record<IconName, React.ReactElement> = {
     <>
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </>
+  ),
+  // Lucide "arrow-down-az" condensed — A-Z stack with a down arrow.
+  "sort-az": (
+    <>
+      <path d="M11 9 5 4 11 9" />
+      <path d="M5 4v16" />
+      <path d="M15 9h6" />
+      <path d="M15 13h4" />
+      <path d="M15 17h2" />
+    </>
+  ),
+  // Lucide "clock".
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </>
+  ),
+  // Lucide "arrow-up".
+  "arrow-up": (
+    <>
+      <line x1="12" y1="19" x2="12" y2="5" />
+      <polyline points="5 12 12 5 19 12" />
+    </>
+  ),
+  // Lucide "arrow-down".
+  "arrow-down": (
+    <>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <polyline points="19 12 12 19 5 12" />
     </>
   ),
 };
