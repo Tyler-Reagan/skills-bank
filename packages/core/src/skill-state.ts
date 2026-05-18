@@ -29,6 +29,8 @@ export type DrawerState =
   | "bundled-skill-dismissed"
   // Heal states:
   | "bundled-skill-edited"
+  | "user-edited-with-upstream"
+  | "upstream-update-available"
   | "registry-folder-missing"
   | "external-target-missing";
 
@@ -41,6 +43,8 @@ export type PrimaryAction =
   | "repair-broken"
   | "unhide"
   | "accept-drift"
+  | "take-upstream"
+  | "update"
   | "forget-missing"
   | "repoint";
 
@@ -85,6 +89,23 @@ export interface DrawerCapabilities {
    * continues to own the skill.
    */
   canTakeCanonical: boolean;
+  /**
+   * `user-edited-with-upstream` heal — revert local content to the
+   * skill's upstream copy (re-fetch via `npx skills update <name>`).
+   * Distinct from `canTakeCanonical` because the source axis here is
+   * the per-skill `upstream` pointer, not the registry-level bundled
+   * snapshot — the action and the post-state are different.
+   */
+  canTakeUpstream: boolean;
+  /**
+   * `upstream-update-available` heal — apply the upstream change in
+   * place. Runs `npx skills update <name>`; the new content replaces
+   * the on-disk skill and the baseline hash is re-snapshotted.
+   * Conflict-aware: when local edits and upstream changes coexist,
+   * the classifier surfaces `user-edited-with-upstream` first and
+   * this capability is gated to that flow's conflict path instead.
+   */
+  canUpdate: boolean;
   /**
    * Forget a missing entry — drop the registry/external record. For
    * adopted missing: the entry naturally drops on next index build
@@ -144,6 +165,8 @@ const NEVER: DrawerCapabilities = {
   canUnhide: false,
   canAcceptDrift: false,
   canTakeCanonical: false,
+  canTakeUpstream: false,
+  canUpdate: false,
   canForgetMissing: false,
   canRepoint: false,
   canResolveConflicts: false,
@@ -197,17 +220,36 @@ export function classifyDrawerState(
     };
   }
 
-  // Bundled-skill-edited. Local copy of a bundled skill has been
-  // edited since the last sync. Two recoverable heal arms:
-  //   - Keep my edits (canAcceptDrift): clear the bundled source
-  //     marker so the skill becomes the user's own; Sync stops
-  //     trying to overwrite it.
-  //   - Revert to bundled (canTakeCanonical): re-snapshot the current
-  //     on-disk hash as the new synced baseline. Source marker stays
-  //     bundled; Sync still owns the skill. Use this when drift
-  //     surfaced spuriously and the current state is acceptable as
-  //     bundled going forward.
+  // Drift fan-out: local content has diverged from the recorded
+  // baseline. Which heal flow applies depends on the source axis.
+  //   - Upstream-pointer skills (`source.upstream` set) →
+  //     `user-edited-with-upstream`. Two arms: Keep my edits
+  //     (sever the upstream) or Revert to upstream (re-fetch via
+  //     `npx skills update`).
+  //   - Bundled skills without an upstream pointer → preserved
+  //     `bundled-skill-edited` semantics (Keep mine / Re-baseline
+  //     against bundled).
+  // An upstream-stamped skill that ALSO has `source: "bundled"` —
+  // possible when the user has the same name installed via raw npx
+  // — routes to the upstream branch since that's the more specific
+  // signal and its heal flow can fall back to clearing the bundled
+  // marker if the user chooses Keep mine.
   if (isRegistered && entry.drift === true) {
+    if (entry.source.upstream?.kind === "github") {
+      return {
+        state: "user-edited-with-upstream",
+        brokenCount: 0,
+        conflictCount: 0,
+        capabilities: {
+          ...NEVER,
+          canRevealInFinder: true,
+          canAcceptDrift: true,
+          canTakeUpstream: true,
+          canExport: true,
+          primary: "accept-drift",
+        },
+      };
+    }
     return {
       state: "bundled-skill-edited",
       brokenCount: 0,
@@ -219,6 +261,25 @@ export function classifyDrawerState(
         canTakeCanonical: true,
         canExport: true,
         primary: "accept-drift",
+      },
+    };
+  }
+
+  // Upstream update available with no local drift. The user can
+  // apply the change in place. Drift takes priority above so this
+  // arm only fires for clean local state.
+  if (isRegistered && entry.upstreamUpdateAvailable === true) {
+    return {
+      state: "upstream-update-available",
+      brokenCount: 0,
+      conflictCount: 0,
+      capabilities: {
+        ...NEVER,
+        canRevealInFinder: true,
+        canManageLinks: true,
+        canExport: true,
+        canUpdate: true,
+        primary: "update",
       },
     };
   }

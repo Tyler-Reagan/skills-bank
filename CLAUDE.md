@@ -37,6 +37,8 @@ If you add a new script, place it in the appropriate group by ordering. If you a
 | `pnpm reset`        | Between manual test runs of LoginScreen / sync / RepoPicker flows. Wipes userData state (registry source choice + auth token) only.                     |
 | `pnpm reset:hard`   | Full first-install simulation. Wipes userData + registry, auto-invokes `reset:seed`.                                                                    |
 | `pnpm reset:seed`   | Repopulate `.skills-bank.json` source markers in this repo's `skills/`. Auto-invoked by `reset:hard`; runnable standalone after a fresh checkout.       |
+| `pnpm backfill:bundled`  | Stamp upstream pointers into this repo's `skills/<name>/.skills-bank.json` from `scripts/bundled-upstream-mapping.json`. Run after adding new bundled skills with known GitHub upstreams. `--dry` previews without writing. |
+| `pnpm backfill:deployed` | Stamp upstream pointers into a deployed registry by reading the local `~/.agents/.skill-lock.json`. Mostly redundant with the desktop's boot-time scanner; useful for scripted bootstraps. Resolves registry root via `--root`, `SKILLS_BANK_ROOT`, or cwd walk-up. |
 
 ### Common sequences
 

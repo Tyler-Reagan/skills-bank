@@ -8,6 +8,8 @@ export * from "./import.js";
 export * from "./export.js";
 export * from "./build.js";
 export * from "./source.js";
+export * from "./upstream.js";
+export * from "./skill-lock.js";
 export * from "./sync.js";
 export * from "./agents.js";
 export * from "./canon.js";
