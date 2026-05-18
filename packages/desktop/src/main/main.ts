@@ -32,6 +32,7 @@ import {
   hashSkillFolder,
   readSkillSource,
   writeSkillSource,
+  writeRuntimeState,
   writeSyncedHash,
   acceptDriftTakeCanonical,
   finalizeSkillsDir,
@@ -583,16 +584,19 @@ async function applyUpstreamUpdate(
     };
   }
 
-  // Refresh marker with the new probed folder hash + fetchedAt.
+  // Refresh marker with the new probed folder hash. `fetchedAt` lives
+  // in the gitignored runtime sidecar (ADR-0002) so this write doesn't
+  // churn the committed `.skills-bank.json` when only the timestamp
+  // shifts.
   const now = new Date().toISOString();
   writeSkillSource(registrySkillDir, {
     ...existingSource,
     upstream: {
       ...upstream,
       skillFolderHash: mirror.folderHash,
-      fetchedAt: now,
     },
   });
+  writeRuntimeState(registrySkillDir, { fetchedAt: now });
   const newBaseline = hashSkillFolder(registrySkillDir);
   if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
 
@@ -807,9 +811,9 @@ async function setManualUpstream(
       skillPath: choice.skillPath,
       skillFolderHash: folderHash,
       installedAt: existing.upstream?.installedAt ?? now,
-      fetchedAt: now,
     },
   });
+  writeRuntimeState(skillDir, { fetchedAt: now });
   // Baseline the current on-disk content so drift detection
   // disengages until the user actually edits.
   const baseline = hashSkillFolder(skillDir);

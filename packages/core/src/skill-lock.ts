@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { hashSkillFolder, writeSyncedHash } from "./heal.js";
+import {
+  hashSkillFolder,
+  writeRuntimeState,
+  writeSyncedHash,
+} from "./heal.js";
 import { walkSkills } from "./registry.js";
 import {
   readSkillSource,
@@ -133,7 +137,10 @@ export function inferUpstreamForSkill(
   if (typeof entry.installedAt === "string") {
     out.installedAt = entry.installedAt;
   }
-  if (typeof entry.updatedAt === "string") out.fetchedAt = entry.updatedAt;
+  // `fetchedAt` is persisted in `.skills-bank-runtime.json` (ADR-0002)
+  // — scanAndStampUpstreamFromLock writes the lock's `updatedAt` to
+  // that sidecar separately. Don't include it in the UpstreamPointer
+  // that gets written to the committed `.skills-bank.json`.
   return out;
 }
 
@@ -165,6 +172,13 @@ export function scanAndStampUpstreamFromLock(registryRoot: string): {
     if (!inferred) continue;
     try {
       writeSkillSource(ref.dir, { ...base, upstream: inferred });
+      // Persist the lock's `updatedAt` as the per-skill `fetchedAt` in
+      // the runtime sidecar — keeps the value out of the committed
+      // marker (ADR-0002) so unrelated metadata writes don't churn it.
+      const lockEntry = lock.skills[ref.name];
+      if (lockEntry && typeof lockEntry.updatedAt === "string") {
+        writeRuntimeState(ref.dir, { fetchedAt: lockEntry.updatedAt });
+      }
       // Capture the on-disk content hash as the user-edit baseline.
       // The CLI's `skillFolderHash` is a SHA-1 git tree hash (probe
       // identity); this is the SHA-256 we compare against on every

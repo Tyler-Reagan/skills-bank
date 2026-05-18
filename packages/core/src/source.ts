@@ -112,6 +112,11 @@ function parseUpstream(raw: unknown): UpstreamPointer | undefined {
     out.skillFolderHash = r.skillFolderHash;
   }
   if (typeof r.installedAt === "string") out.installedAt = r.installedAt;
+  // `fetchedAt` moved to `.skills-bank-runtime.json` in v0.11.7
+  // (ADR-0002). Tolerate legacy markers that still carry it inline —
+  // build.ts merges the runtime sidecar's value over whatever this
+  // reads. Persisting it back through writeSkillSource is suppressed
+  // below so the committed marker eventually settles without it.
   if (typeof r.fetchedAt === "string") out.fetchedAt = r.fetchedAt;
   return out;
 }
@@ -119,5 +124,16 @@ function parseUpstream(raw: unknown): UpstreamPointer | undefined {
 export function writeSkillSource(skillDir: string, src: SkillSource): void {
   const p = path.join(skillDir, SKILL_SOURCE_FILENAME);
   fs.mkdirSync(skillDir, { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(src, null, 2) + "\n");
+  // Strip the runtime `fetchedAt` field — it belongs in
+  // `.skills-bank-runtime.json` (ADR-0002). Leaving it on disk here
+  // caused unstaged churn after every app launch
+  // (`docs/bug-reports/2026-05-18-fetchedAt-churn.md`). Callers that
+  // need to persist it use `writeRuntimeState` from `./heal.js`.
+  let toWrite: SkillSource = src;
+  if (src.upstream && "fetchedAt" in src.upstream) {
+    const { fetchedAt: _drop, ...upstreamNoFetched } = src.upstream;
+    void _drop;
+    toWrite = { ...src, upstream: upstreamNoFetched };
+  }
+  fs.writeFileSync(p, JSON.stringify(toWrite, null, 2) + "\n");
 }
