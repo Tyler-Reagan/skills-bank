@@ -40,8 +40,8 @@ export type RegistryFilterTag =
   | "personal"
   | "vendored";
 
-export type RegistrySortBy = "name" | "age";
-export type RegistrySortDirection = "asc" | "desc";
+type RegistrySortBy = "name" | "age";
+type RegistrySortDirection = "asc" | "desc";
 
 export interface RegistrySortState {
   by: RegistrySortBy;
@@ -100,9 +100,6 @@ const CHIP_DEFS: readonly ChipDef[] = [
     matches: (e) => e.bucket === "vendored",
   },
 ];
-
-/** All chip definitions, for renderers that want to enumerate. */
-export const REGISTRY_CHIPS = CHIP_DEFS;
 
 /**
  * Apply the active chip set to a registry slice. Empty set = pass

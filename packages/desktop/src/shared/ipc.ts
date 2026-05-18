@@ -25,7 +25,7 @@ import type {
  * shape on failure; success returns vary per-handler but include the
  * same `ok: true` top-level marker.
  */
-export interface IPCFailureFields {
+interface IPCFailureFields {
   /**
    * Stable one-line summary. Kept for back-compat with the legacy
    * toast surface and used as the ErrorPanel header text.

@@ -18,7 +18,12 @@ import {
   type InstalledGroup,
 } from "./components/InstalledTab.js";
 import { RegisterModal } from "./components/RegisterModal.js";
-import { Header, type Density, type Theme } from "./components/Header.js";
+import {
+  Header,
+  type Density,
+  type RescanState,
+  type Theme,
+} from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
 import {
   InstallConflictModal,
@@ -330,9 +335,9 @@ export function App(): React.ReactElement {
   // never set this — `userTriggeredProbeRef` only flips true on a
   // header click, gating the state machine in the probe-complete
   // subscription.
-  const [rescanState, setRescanState] = useState<
-    import("./components/Header.js").RescanState
-  >({ phase: "idle" });
+  const [rescanState, setRescanState] = useState<RescanState>({
+    phase: "idle",
+  });
   const userTriggeredProbeRef = useRef(false);
   const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(

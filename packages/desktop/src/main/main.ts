@@ -81,6 +81,7 @@ import {
   type DiscoverStatus,
   type HeaderMenuAction,
   type LinkedRepoMetadata,
+  type RegistrySource,
   type SkillDiffFile,
   type SkillDiffRequest,
   type SkillDiffResult,
@@ -88,6 +89,7 @@ import {
   type UpdateStatus,
   type UpstreamLastCommit,
   type UpstreamManualChoice,
+  type UpstreamProbeCompleteEvent,
   type UpstreamProbeResult,
   type UpstreamRepoMetadata,
   type UserRepo,
@@ -119,8 +121,6 @@ const __dirname = path.dirname(__filename);
 //
 // Result is exposed to the renderer via IPC.getConfig so it can show the
 // first-run setup screen when nothing resolves to a valid registry.
-
-export type RegistrySource = "local" | "github";
 
 interface AppConfig {
   registryRoot: string | null;
@@ -418,9 +418,7 @@ async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
     }
     const token = getStoredToken();
     let updates = 0;
-    let rateLimitInfo:
-      | import("../shared/ipc.js").UpstreamProbeCompleteEvent["rateLimit"]
-      | undefined;
+    let rateLimitInfo: UpstreamProbeCompleteEvent["rateLimit"] | undefined;
     const failedRepos: string[] = [];
     for (const [repo, skills] of byRepo) {
       let cache = repoProbeCache.get(repo);
@@ -482,9 +480,7 @@ function buildFolderHashMap(tree: GitTreeEntry[]): Map<string, string> {
   return m;
 }
 
-function notifyProbeComplete(
-  event: import("../shared/ipc.js").UpstreamProbeCompleteEvent = {},
-): void {
+function notifyProbeComplete(event: UpstreamProbeCompleteEvent = {}): void {
   const wins = BrowserWindow.getAllWindows();
   for (const win of wins) {
     if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
