@@ -3,6 +3,7 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
+import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
 import { classifyDrawerState } from "./skillState.js";
@@ -206,6 +207,7 @@ export function SkillDetailDrawer({
 
   useFocusReturn();
   useInitialFocus(drawerRef);
+  const confirmDeleteRef = useRef<HTMLDivElement | null>(null);
   const [descExpanded, setDescExpanded] = useState(false);
   const [editingTags, setEditingTags] = useState(false);
   const [tagDraft, setTagDraft] = useState<string[]>(entry.tags ?? []);
@@ -304,6 +306,10 @@ export function SkillDetailDrawer({
         reasons: string[];
       }
   >({ kind: "idle" });
+  // Drawer trap is suspended while the confirm-delete sub-dialog is
+  // mounted — focus belongs to the inner dialog, not the drawer.
+  useFocusTrap(drawerRef, repairState.kind !== "confirm-delete");
+  useFocusTrap(confirmDeleteRef, repairState.kind === "confirm-delete");
   // Single source of truth for which actions are valid in this state.
   // Replaces the previous scatter of isRegistered/isInstalled/hasConflicts
   // /hasBrokenLinks conditionals across the action block. See plan §7b.
@@ -1483,6 +1489,8 @@ export function SkillDetailDrawer({
           }}
         >
           <div
+            ref={confirmDeleteRef}
+            tabIndex={-1}
             style={{
               background: "var(--surface)",
               border: "1px solid var(--border-hi)",
@@ -1490,6 +1498,7 @@ export function SkillDetailDrawer({
               padding: 24,
               width: 480,
               maxWidth: "90vw",
+              outline: "none",
             }}
           >
             <h3 style={{ marginTop: 0 }}>
