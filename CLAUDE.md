@@ -9,7 +9,7 @@ Monorepo (pnpm workspaces):
 - **`packages/core`** — pure TypeScript registry/install logic. Consumed by both desktop and CLI; no Electron, no DOM dependencies.
 - **`packages/desktop`** — Electron app (main + renderer). The primary product.
 - **`packages/cli`** — Node CLI. Small surface; the `cli-minimal` plan strips it further.
-- **`skills/`** — the bundled curated skill set, plus user-contributed/external skills.
+- **`skills/`** — bundled skill content. Two subdirectories: `personal/` for skills authored in this repo (self-referential upstream or `kind: "none"`); `vendored/` for skills harvested from external authors' repos. Names are globally unique across buckets; collisions throw at index-build time. The eventual `Tyler-Reagan/personal-skills` repo split extracts `skills/personal/` via `git subtree split`.
 - **`docs/plans/`** — implementation plans. Filenames are descriptive (not numbered) so the IDs don't conflate with execution order; see the **Plans** section below for the canonical sequence.
 - **`scripts/`** — maintenance + agent operations (validation, index build, reset, etc.).
 
@@ -41,7 +41,7 @@ If you add a new script, place it in the appropriate group by ordering. If you a
 | `pnpm backfill:deployed` | Stamp upstream pointers into a deployed registry by reading the local `~/.agents/.skill-lock.json`. Mostly redundant with the desktop's boot-time scanner; useful for scripted bootstraps. Resolves registry root via `--root`, `SKILLS_BANK_ROOT`, or cwd walk-up. |
 | `pnpm discover:bundled`  | Discover authoritative upstreams for unstamped bundled skills via `npx skills find` + GitHub Trees probe. Writes a candidate JSON the maintainer reviews, then re-runs with `--apply <json>` to commit markers. Used by the `origin-paradigm-reframe` plan's Pass B backfill. |
 | `pnpm stamp:self-authored` | Stamp self-referential upstream pointers (`repo = BUNDLED_REPO`) onto any bundled skill still missing an `upstream` field after `discover:bundled` runs. Dry by default; `--apply` writes; `--only foo,bar` scopes to a subset. Pass C of the `origin-paradigm-reframe` backfill. |
-| `pnpm vendor:skill <owner/repo>@<id>` | Forward-vendoring: pull a skill folder from an upstream GitHub repo into `skills/<id>/`, write the `.skills-bank.json` marker, baseline the drift hash. Supports `--path` (explicit SKILL.md path), `--as` (rename), `--force` (overwrite existing). The canonical way to add a harvested skill to the bundled set. |
+| `pnpm vendor:skill <owner/repo>@<id>` | Forward-vendoring: pull a skill folder from an upstream GitHub repo into `skills/vendored/<id>/` (default) or `skills/personal/<id>/` with `--personal`. Writes the `.skills-bank.json` marker (`source: "bundled"`) and baselines the drift hash. Supports `--path` (explicit SKILL.md path), `--as` (rename), `--force` (overwrite existing). Refuses cross-bucket name collisions. The canonical way to add a harvested skill to the bundled set. |
 
 ### Common sequences
 
