@@ -23,7 +23,7 @@ M1 first (it's the foundation other modules depend on). Then M2, M3, M4 in paral
 
 - **vs v0.11.7 core tests.** v0.11.7 lands first. Every refactor here runs against the test suite.
 - **vs v0.11.8 security.** Both touch `main.ts`. Sequence v0.11.8 → v0.11.9 so the security hardening is in the baseline when handlers move around.
-- **vs v0.12.0 Origin rename.** v0.12.0 ships after v0.11.9 so the rename codemod targets the post-consolidation module layout. Renaming pre-consolidation forces double-work.
+- **vs v0.11.10 Origin rename.** v0.11.10 ships after v0.11.9 so the rename codemod targets the post-consolidation module layout. Renaming pre-consolidation forces double-work.
 
 ## Risk
 

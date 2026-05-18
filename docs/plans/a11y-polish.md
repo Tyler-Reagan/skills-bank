@@ -18,7 +18,7 @@ No new features. No paradigm shifts. Markup + CSS + tiny helpers only.
 
 - **vs v0.11.6 renderer state.** Both touch component files. v0.11.5 lands first (smaller blast radius). v0.11.6's component splits would otherwise force a redo of the focus-trap wiring on each new component.
 - **vs v0.11.4's already-shipped `theme.css`.** No conflict; the new `color-scheme` tokens stay.
-- **vs v0.12.0 Origin rename.** No conflict — copy uses the user-facing canonical "Origin" which is already settled.
+- **vs v0.11.10 Origin rename.** No conflict — copy uses the user-facing canonical "Origin" which is already settled.
 
 ## Exit criteria
 

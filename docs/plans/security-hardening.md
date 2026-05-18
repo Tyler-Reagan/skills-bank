@@ -19,7 +19,7 @@ The v0.11.4 audit confirmed the baseline posture is already strong (`contextIsol
 - **vs v0.11.5 a11y, v0.11.6 renderer state.** Different surfaces. Independent.
 - **vs v0.11.7 core tests.** v0.11.7 lands first so IPC handler changes here can leverage the core test net.
 - **vs v0.11.9 core refactor.** v0.11.9 also touches `main.ts`. Sequence v0.11.8 → v0.11.9 so the security hardening is in the baseline when v0.11.9 starts moving handlers around.
-- **vs v0.12.0 Origin rename.** Identifier-level. Independent of security mechanics.
+- **vs v0.11.10 Origin rename.** Identifier-level. Independent of security mechanics.
 
 ## Risk
 
