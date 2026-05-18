@@ -86,6 +86,12 @@ Active body of work. Filenames are stable descriptive IDs; execution order is do
 | [`drift-update-ux-consistency.md`](docs/plans/drift-update-ux-consistency.md)     | `origin-paradigm-reframe` (cleaner if `skills-directory-split` lands first) |
 | [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | `origin-paradigm-reframe`                                 |
 | [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `origin-paradigm-reframe` + `bank-mode-persistence`       |
+| [`a11y-polish.md`](docs/plans/a11y-polish.md)                                     | none (v0.11.4 audits feed it)                             |
+| [`renderer-state-architecture.md`](docs/plans/renderer-state-architecture.md)     | `a11y-polish` (cleaner if a11y lands first)               |
+| [`core-test-foundation.md`](docs/plans/core-test-foundation.md)                   | none                                                      |
+| [`security-hardening.md`](docs/plans/security-hardening.md)                       | `core-test-foundation`                                    |
+| [`core-architecture-refactor.md`](docs/plans/core-architecture-refactor.md)       | `core-test-foundation` (hard) + `security-hardening`      |
+| [`origin-rename-pass.md`](docs/plans/origin-rename-pass.md)                       | `core-architecture-refactor`                              |
 
 ### Recommended execution order
 
@@ -97,8 +103,14 @@ To minimize thrashing (later plans rendering earlier plans' code obsolete), this
 4. **`origin-paradigm-reframe`** — reframes Origin as authoritative upstream (not the bundled repo), reverts Tier 3, lands maintainer-time backfill + direct-fetch update flow.
 5. **`skills-directory-split`** — spatial separation of `skills/` into `personal/` + `vendored/` subdirectories.
 6. **`drift-update-ux-consistency`** — drawer button language/styling consistency under the canonical glossary, plus Registry-tab filter for pending updates.
-7. **`bank-mode-persistence`** — adds the local snapshot cache.
-8. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
+7. **`a11y-polish`** (v0.11.5) — keyboard/screen-reader polish; deferred items from the v0.11.4 audit.
+8. **`renderer-state-architecture`** (v0.11.6) — `useRescanController`, `RegistryHostContext`, App.tsx split.
+9. **`core-test-foundation`** (v0.11.7) — first `packages/core` tests + ADR-0001/2/3 + `fetchedAt` probe-path fix.
+10. **`security-hardening`** (v0.11.8) — CSP tightening + storage policy + devtools call.
+11. **`core-architecture-refactor`** (v0.11.9) — `SkillRecord` consolidation, probe scheduler / diff / `applyUpstreamUpdate` extraction to core.
+12. **`origin-rename-pass`** (v0.12.0) — coordinated internal rename; user-facing copy already aligned in v0.11.4.
+13. **`bank-mode-persistence`** — adds the local snapshot cache.
+14. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
 
 `cli-minimal` is independent of the others and can slot anywhere — typically last since it's pure housekeeping.
 
