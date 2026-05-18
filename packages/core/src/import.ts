@@ -378,18 +378,6 @@ function adoptIntoRegistry(
   };
 }
 
-function copyDir(src: string, dst: string): void {
-  fs.mkdirSync(dst, { recursive: true });
-  for (const ent of fs.readdirSync(src, { withFileTypes: true })) {
-    const s = path.join(src, ent.name);
-    const d = path.join(dst, ent.name);
-    if (ent.isDirectory()) copyDir(s, d);
-    else if (ent.isSymbolicLink()) {
-      fs.symlinkSync(fs.readlinkSync(s), d);
-    } else fs.copyFileSync(s, d);
-  }
-}
-
 function isSymlink(p: string): boolean {
   try {
     return fs.lstatSync(p).isSymbolicLink();
