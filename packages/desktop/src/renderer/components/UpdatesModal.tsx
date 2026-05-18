@@ -90,16 +90,18 @@ export function UpdatesModal({
         </div>
 
         <p style={hint}>
-          These skills have a newer version available from their linked GitHub
-          repos. Updating runs <code>npx skills update &lt;name&gt;</code> and
-          mirrors the result back into your registry for adopted skills.
+          These skills have a newer version available from their authoritative
+          upstream. Updating fetches the latest content directly from each
+          skill's <strong>Origin</strong> and mirrors it into your registry —
+          local edits are not preserved, so skills you've edited surface via
+          the Drift heal flow (Reset to origin / Unlink origin) instead.
         </p>
 
         <div style={list}>
           {entries.length === 0 && (
             <div style={emptyState}>
               <Icon name="check" size="md" />
-              <span>All your tracked skills are up to date.</span>
+              <span>Every skill is up to date with its Origin.</span>
             </div>
           )}
           {entries.map((e) => {
