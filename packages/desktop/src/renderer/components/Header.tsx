@@ -248,8 +248,10 @@ export function Header({
           >
             {authStatus?.user?.avatarUrl ? (
               <img
-                src={authStatus.user.avatarUrl}
+                src={`${authStatus.user.avatarUrl}${authStatus.user.avatarUrl.includes("?") ? "&" : "?"}s=64`}
                 alt=""
+                width={18}
+                height={18}
                 className="header-trigger-avatar"
                 referrerPolicy="no-referrer"
               />

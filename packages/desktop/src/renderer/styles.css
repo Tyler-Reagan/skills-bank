@@ -2204,7 +2204,9 @@ button:disabled {
 .header-trigger-avatar {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
   border-radius: 50%;
+  object-fit: cover;
 }
 
 /* ── ErrorPanel ───────────────────────────────────────────────────── */
