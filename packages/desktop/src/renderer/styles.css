@@ -1461,7 +1461,10 @@ select {
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(420px, 100vw);
+  /* 540px clears long mono skill names + the Origin block's
+     `<repo>/<skillPath>` line at the design font sizes without
+     wrapping. Caps at 100vw on narrow windows. */
+  width: min(540px, 100vw);
   background: var(--bg);
   border-left: 1px solid var(--border);
   box-shadow: var(--shadow-hover);

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T16:52:45.708Z",
+  "generatedAt": "2026-05-18T23:47:34.861Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -180,7 +180,7 @@
       "description": ">",
       "path": "skills/vendored/caveman",
       "source": {
-        "source": "yours",
+        "source": "bundled",
         "upstream": {
           "kind": "github",
           "repo": "mattpocock/skills",
@@ -293,7 +293,7 @@
       "description": "This skill should be used when the user asks to \"add MCP App support to my web app\", \"turn my web app into a hybrid MCP App\", \"make my web page work as an MCP App too\", \"wrap my existing UI as an MCP App\", \"convert iframe embed to MCP App\", \"turn my SPA into an MCP App\", or needs to add MCP App support to an existing web application while keeping it working standalone. Provides guidance for analyzing existing web apps and creating a hybrid web + MCP App with server-side tool and resource registration.",
       "path": "skills/vendored/convert-web-app",
       "source": {
-        "source": "yours",
+        "source": "bundled",
         "upstream": {
           "kind": "github",
           "repo": "modelcontextprotocol/ext-apps",
@@ -741,7 +741,7 @@
       "description": "Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions \"grill me\".",
       "path": "skills/vendored/grill-me",
       "source": {
-        "source": "yours",
+        "source": "bundled",
         "upstream": {
           "kind": "github",
           "repo": "mattpocock/skills",
@@ -767,7 +767,7 @@
       "description": "Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan against their project's language and documented decisions.",
       "path": "skills/vendored/grill-with-docs",
       "source": {
-        "source": "yours",
+        "source": "bundled",
         "upstream": {
           "kind": "github",
           "repo": "mattpocock/skills",
@@ -882,7 +882,7 @@
       "description": "Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.",
       "path": "skills/vendored/improve-codebase-architecture",
       "source": {
-        "source": "yours",
+        "source": "bundled",
         "upstream": {
           "kind": "github",
           "repo": "mattpocock/skills",
@@ -1253,7 +1253,7 @@
           "skillPath": "skills/noise/react_components/SKILL.md",
           "skillFolderHash": "fbdbab0c2bf0ace0652ab602a4011cef7d5b07f8",
           "installedAt": "2026-05-18T15:09:38.004Z",
-          "fetchedAt": "2026-05-18T15:09:38.004Z"
+          "fetchedAt": "2026-05-18T23:42:18.314Z"
         }
       },
       "adopted": true,
@@ -1622,20 +1622,21 @@
           "repo": "mattpocock/skills",
           "sourceUrl": "https://github.com/mattpocock/skills.git",
           "skillPath": "skills/deprecated/ubiquitous-language/SKILL.md",
-          "skillFolderHash": "483fe10b01bed81b7eba7ee26df3f1bef9540c89",
+          "skillFolderHash": "483fe10b01bed81b7eba7ee26df3f1bef9540c88",
           "installedAt": "2026-05-18T08:09:53.421Z",
           "fetchedAt": "2026-05-18T08:09:53.421Z"
         }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
-        "date": "2026-05-18 09:25:01 -0700",
-        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+        "sha": "d90d2b2ab8544bfe681db26948655ae0e948a19a",
+        "date": "2026-05-18 10:35:53 -0700",
+        "message": "chore(v0.11.4): heal marker drift — ubiquitous-language hash + fetchedAt bug report"
       },
       "bucket": "vendored",
       "publishState": "pushed",
-      "canon": true
+      "canon": true,
+      "drift": true
     },
     {
       "name": "ui-ux-pro-max",
@@ -1844,7 +1845,7 @@
       "description": "Tell the agent to zoom out and give broader context or a higher-level perspective. Use when you're unfamiliar with a section of code or need to understand how it fits into the bigger picture.",
       "path": "skills/vendored/zoom-out",
       "source": {
-        "source": "yours",
+        "source": "bundled",
         "upstream": {
           "kind": "github",
           "repo": "mattpocock/skills",
