@@ -52,6 +52,11 @@ import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
 import { useRescanController } from "./hooks/useRescanController.js";
+import {
+  RegistryHostProvider,
+  useRegistryHost,
+  type ToastAction,
+} from "./RegistryHostContext.js";
 import type {
   AuthStatus,
   SyncStatus,
@@ -137,6 +142,24 @@ function readTagFilterLS(): string[] {
 }
 
 export function App(): React.ReactElement {
+  return (
+    <RegistryHostProvider>
+      <AppContent />
+    </RegistryHostProvider>
+  );
+}
+
+function AppContent(): React.ReactElement {
+  const {
+    flash,
+    flashWithAction,
+    flashError,
+    dismissToast,
+    pushAppError,
+    dismissAppError,
+    appErrors,
+  } = useRegistryHost();
+
   const [tab, setTab] = useState<TabId>(
     (readLS(LS_KEYS.tab, "browse") as TabId) ?? "browse",
   );
@@ -144,36 +167,6 @@ export function App(): React.ReactElement {
   const [installed, setInstalled] = useState<InstalledSkill[]>([]);
   const [registryRoot, setRegistryRoot] = useState<string | null>(null);
   const [configChecked, setConfigChecked] = useState(false);
-  type ToastAction = { label: string; onClick: () => void };
-  type ToastShape = {
-    message: string;
-    /** When set, the toast doesn't auto-dismiss; user must click ×. */
-    sticky?: boolean;
-    /** Visual severity. "error" gets a red border + persistent close. */
-    severity?: "info" | "error";
-    /** Primary action button (e.g. "Sign in"). */
-    action?: ToastAction;
-    /** Optional secondary action — typically Copy details / Diagnostics. */
-    secondaryAction?: ToastAction;
-    /** Hidden diagnostic payload; "Copy details" copies this to clipboard. */
-    diagnostic?: string;
-  };
-  const [toast, setToast] = useState<ToastShape | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Persistent error surface. Stacks vertically; each entry is
-  // individually dismissable; failures land here (toasts stay for
-  // success confirmation only).
-  const [appErrors, setAppErrors] = useState<
-    Array<{ id: number; error: import("@skills-bank/core").AppError }>
-  >([]);
-  const appErrorIdRef = useRef(0);
-  const pushAppError = (e: import("@skills-bank/core").AppError) => {
-    const id = ++appErrorIdRef.current;
-    setAppErrors((prev) => [...prev, { id, error: e }]);
-  };
-  const dismissAppError = (id: number) => {
-    setAppErrors((prev) => prev.filter((x) => x.id !== id));
-  };
   // Typed string-key reader for AppError.copyableDetails. Returns the
   // value when present and a string; null otherwise.
   const detailString = (
@@ -481,66 +474,6 @@ export function App(): React.ReactElement {
     writeLS(LS_KEYS.tab, t);
   };
 
-  const flash = useCallback((msg: string) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast({ message: msg });
-    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
-  }, []);
-
-  const flashWithAction = useCallback(
-    (msg: string, label: string, onClick: () => void) => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      setToast({
-        message: msg,
-        action: {
-          label,
-          onClick: () => {
-            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-            setToast(null);
-            onClick();
-          },
-        },
-      });
-      toastTimerRef.current = setTimeout(() => setToast(null), 6000);
-    },
-    [],
-  );
-
-  /**
-   * Sticky error toast — no auto-dismiss; user clicks × to close.
-   * Always offers a "Copy details" affordance writing the message
-   * (plus the optional `diagnostic` blob) to clipboard, so the user
-   * can paste it into another agent without retyping.
-   */
-  const flashError = useCallback(
-    (
-      msg: string,
-      opts: {
-        action?: ToastAction;
-        diagnostic?: string;
-      } = {},
-    ) => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      const diagnostic = opts.diagnostic ?? msg;
-      const copyAction: ToastAction = {
-        label: "Copy details",
-        onClick: () => {
-          void navigator.clipboard.writeText(diagnostic);
-        },
-      };
-      setToast({
-        message: msg,
-        sticky: true,
-        severity: "error",
-        action: opts.action,
-        secondaryAction: copyAction,
-        diagnostic,
-      });
-      // No timer — sticky toasts persist until the user dismisses.
-    },
-    [],
-  );
-
   /**
    * Handle an UpstreamUpdateResult uniformly across the three Update
    * call sites (drawer Update, drawer Take-upstream, UpdatesModal).
@@ -565,8 +498,7 @@ export function App(): React.ReactElement {
           ? {
               label: "Sign in",
               onClick: () => {
-                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-                setToast(null);
+                dismissToast();
                 setShowAccount(true);
               },
             }
@@ -627,10 +559,9 @@ export function App(): React.ReactElement {
     setRegistryFilters,
     setTabPersisted,
     onRequestSignIn: useCallback(() => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      setToast(null);
+      dismissToast();
       setShowAccount(true);
-    }, []),
+    }, [dismissToast]),
   });
 
   // Common post-action plumbing for unregister retries: dismiss the
@@ -660,7 +591,7 @@ export function App(): React.ReactElement {
     if (!r.ok || !r.path) return; // user canceled
     const chosen = r.path;
     if (settings.customSkillsDirs.includes(chosen)) {
-      setToast({ message: "That directory is already in the scan list." });
+      flash("That directory is already in the scan list.");
       return;
     }
     saveSettings({
@@ -2179,40 +2110,6 @@ export function App(): React.ReactElement {
             );
           })()}
 
-        {toast && (
-          <div
-            className={`toast${toast.severity === "error" ? " toast-error" : ""}`}
-            role={toast.severity === "error" ? "alert" : "status"}
-            aria-live={toast.severity === "error" ? "assertive" : "polite"}
-          >
-            <span className="toast-message">{toast.message}</span>
-            {toast.action && (
-              <button className="toast-action" onClick={toast.action.onClick}>
-                {toast.action.label}
-              </button>
-            )}
-            {toast.secondaryAction && (
-              <button
-                className="toast-action secondary"
-                onClick={toast.secondaryAction.onClick}
-              >
-                {toast.secondaryAction.label}
-              </button>
-            )}
-            {toast.sticky && (
-              <button
-                className="toast-close"
-                aria-label="Dismiss"
-                onClick={() => {
-                  if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-                  setToast(null);
-                }}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        )}
     </div>
   );
 }
