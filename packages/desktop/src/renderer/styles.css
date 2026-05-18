@@ -485,6 +485,19 @@ select {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.refresh-btn.rescan-working {
+  /* Working state keeps standard chrome but is undimmed —
+     it's busy, not unavailable. */
+  opacity: 1;
+}
+.refresh-btn.rescan-done {
+  /* Brief positive confirmation. Lasts ~1.5s before reverting to
+     idle. Border/color tint, not a fill — keeps the chrome quiet
+     alongside the rest of the header. */
+  opacity: 1;
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
 
 /* ── Tab intro ───────────────────────────────────────── */
 .tab-intro {

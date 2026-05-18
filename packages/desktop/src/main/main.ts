@@ -460,6 +460,7 @@ async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
       }
     }
     notifyProbeComplete({
+      updates,
       ...(rateLimitInfo ? { rateLimit: rateLimitInfo } : {}),
       ...(failedRepos.length > 0 ? { failedRepos } : {}),
     });

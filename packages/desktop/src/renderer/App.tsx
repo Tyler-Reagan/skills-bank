@@ -324,7 +324,23 @@ export function App(): React.ReactElement {
     }
   }, []);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  // Header Rescan button state machine. Covers the whole user-triggered
+  // rebuild + upstream-probe cycle so the user gets unbroken visual
+  // feedback while the probe runs. Boot probes / 6h periodic probes
+  // never set this — `userTriggeredProbeRef` only flips true on a
+  // header click, gating the state machine in the probe-complete
+  // subscription.
+  const [rescanState, setRescanState] = useState<
+    import("./components/Header.js").RescanState
+  >({ phase: "idle" });
+  const userTriggeredProbeRef = useRef(false);
+  const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
+    },
+    [],
+  );
   const [rebuilding, setRebuilding] = useState(false);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
@@ -562,32 +578,24 @@ export function App(): React.ReactElement {
     registryCount: number;
     installedCount: number;
   }> => {
-    setRefreshing(true);
-    const minSpinner = new Promise<void>((resolve) => setTimeout(resolve, 250));
-    try {
-      const cfg = await window.skillsBank.getConfig();
-      setRegistryRoot(cfg.registryRoot);
-      setConfigChecked(true);
-      if (!cfg.registryRoot) {
-        setRegistry([]);
-        setInstalled([]);
-        await minSpinner;
-        return { registryCount: 0, installedCount: 0 };
-      }
-      const [r, i] = await Promise.all([
-        window.skillsBank.listRegistry(),
-        window.skillsBank.listInstalled(settings.customSkillsDirs),
-      ]);
-      setRegistry(r);
-      setInstalled(i);
-      await minSpinner;
-      return {
-        registryCount: r.length,
-        installedCount: new Set(i.map((x) => x.name)).size,
-      };
-    } finally {
-      setRefreshing(false);
+    const cfg = await window.skillsBank.getConfig();
+    setRegistryRoot(cfg.registryRoot);
+    setConfigChecked(true);
+    if (!cfg.registryRoot) {
+      setRegistry([]);
+      setInstalled([]);
+      return { registryCount: 0, installedCount: 0 };
     }
+    const [r, i] = await Promise.all([
+      window.skillsBank.listRegistry(),
+      window.skillsBank.listInstalled(settings.customSkillsDirs),
+    ]);
+    setRegistry(r);
+    setInstalled(i);
+    return {
+      registryCount: r.length,
+      installedCount: new Set(i.map((x) => x.name)).size,
+    };
   }, [settings.customSkillsDirs]);
 
   // Common post-action plumbing for unregister retries: dismiss the
@@ -639,11 +647,27 @@ export function App(): React.ReactElement {
   );
 
   const onRefreshClick = useCallback(async () => {
-    const { registryCount, installedCount } = await refresh();
-    flash(
-      `Refreshed — ${registryCount} in registry, ${installedCount} installed`,
-    );
-  }, [refresh, flash]);
+    // Full sweep: rebuild the index (which lock-file-scans + persists +
+    // fires the probe), then re-fetch the registry. The probe runs
+    // async on the main side — we flip the button into "working" and
+    // wait for the probe-complete event to advance to "done" (or back
+    // to idle on rate-limit, where the sticky-error toast carries the
+    // message).
+    if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
+    userTriggeredProbeRef.current = true;
+    setRescanState({ phase: "working" });
+    try {
+      await window.skillsBank.rebuildIndex();
+      await refresh();
+    } catch {
+      // rebuildIndex failures fall through; clear the working state
+      // so the user can retry. The IPC handler's own error path
+      // returns ok:false with a message we could surface, but a
+      // bare throw here means something deeper went wrong.
+      userTriggeredProbeRef.current = false;
+      setRescanState({ phase: "idle" });
+    }
+  }, [refresh]);
 
   useEffect(() => {
     void refresh().finally(() => setInitialLoading(false));
@@ -702,10 +726,10 @@ export function App(): React.ReactElement {
   }, []);
 
   // Main process completes an upstream probe → re-fetch registry so
-  // the new `upstreamUpdateAvailable` flags surface as card chips.
-  // Also surfaces probe-time rate-limit failures as a sticky error
-  // toast — without this the probe would silently console.warn and
-  // the user would see no chips with no explanation.
+  // the new `upstreamUpdateAvailable` flags surface as card chips,
+  // surface rate-limit failures as a sticky error toast, and advance
+  // the user-triggered Rescan button's state machine (working → done
+  // → idle, or working → idle on rate-limit).
   useEffect(() => {
     if (!window.skillsBank.onUpstreamProbeComplete) return;
     return window.skillsBank.onUpstreamProbeComplete((event) => {
@@ -741,6 +765,26 @@ export function App(): React.ReactElement {
               ? `\nfailedRepos=${event.failedRepos.join(",")}`
               : ""),
         });
+      }
+      // Advance the Rescan button's state machine only when the user
+      // started the probe via the header click. Boot probes and the
+      // 6h periodic both fire this event too — letting them drive the
+      // button would surprise the user with a "checking…" flash on
+      // every launch.
+      if (userTriggeredProbeRef.current) {
+        userTriggeredProbeRef.current = false;
+        if (event.rateLimit) {
+          // Rate-limit toast carries the message; drop the button to
+          // idle without a "done" flash so we don't claim success.
+          setRescanState({ phase: "idle" });
+        } else {
+          setRescanState({ phase: "done", updates: event.updates ?? 0 });
+          if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
+          doneTimerRef.current = setTimeout(
+            () => setRescanState({ phase: "idle" }),
+            1500,
+          );
+        }
       }
       void refresh();
     });
@@ -1035,7 +1079,7 @@ export function App(): React.ReactElement {
     return (
       <div className="app" aria-busy="true">
         <Header
-          refreshing={true}
+          rescanState={{ phase: "working" }}
           onRefresh={() => undefined}
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -1078,7 +1122,7 @@ export function App(): React.ReactElement {
   return (
     <div className="app">
         <Header
-          refreshing={refreshing}
+          rescanState={rescanState}
           onRefresh={() => void onRefreshClick()}
           theme={theme}
           onToggleTheme={toggleTheme}

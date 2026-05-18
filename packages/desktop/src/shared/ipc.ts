@@ -176,6 +176,11 @@ export interface UpstreamProbeCompleteEvent {
   /** Repos whose probe failed for non-rate-limit reasons. Surfaced
    *  for diagnostics rather than as a user-facing alert. */
   failedRepos?: string[];
+  /** Skills whose upstream hash moved past what was recorded — i.e.
+   *  how many Update Available chips this probe will produce. Used
+   *  by the Rescan button's "done" state copy. Undefined when the
+   *  event is a non-probe refresh nudge. */
+  updates?: number;
 }
 
 /**
