@@ -213,14 +213,14 @@ export function SkillDetailDrawer({
   const [tagInputError, setTagInputError] = useState<string | null>(null);
   const [savingTags, setSavingTags] = useState(false);
 
+  // SKILL.md fetch keys purely on the skill name. Splitting this off
+  // from the tag-reset effect prevents a re-fetch every time the parent
+  // hands us a refreshed `entry` reference with the same `name` (e.g.
+  // after a registry refresh that only bumped a sibling skill).
   useEffect(() => {
     let cancelled = false;
     setSkillMd(null);
     setSkillMdLoading(true);
-    setDescExpanded(false);
-    setEditingTags(false);
-    setTagDraft(entry.tags ?? []);
-    setTagInput("");
     void window.skillsBank.readSkillMd(entry.name).then((md) => {
       if (!cancelled) {
         setSkillMd(md);
@@ -230,6 +230,17 @@ export function SkillDetailDrawer({
     return () => {
       cancelled = true;
     };
+  }, [entry.name]);
+
+  // Reset drawer-local UI state when the selected entry changes
+  // identity (a different skill, or the same skill with a refreshed
+  // tag list). Cheap synchronous resets; runs independently of the
+  // SKILL.md fetch above.
+  useEffect(() => {
+    setDescExpanded(false);
+    setEditingTags(false);
+    setTagDraft(entry.tags ?? []);
+    setTagInput("");
   }, [entry.name, entry.tags]);
 
   useEscapeToClose(onClose);

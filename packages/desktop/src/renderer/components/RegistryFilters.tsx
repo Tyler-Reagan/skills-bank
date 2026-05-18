@@ -248,8 +248,10 @@ export function RegistryFilters({
       by: sort.by === "name" ? "age" : "name",
       // Sensible defaults per mode: name → A-Z; age → oldest first
       // (the surfacing-stale framing) so toggling between them
-      // doesn't strand the user in a reversed direction.
-      direction: sort.by === "name" ? "asc" : "asc",
+      // doesn't strand the user in a reversed direction. Both modes
+      // happen to land on "asc" by default — kept as a single literal
+      // rather than a useless ternary.
+      direction: "asc",
     });
   }
 

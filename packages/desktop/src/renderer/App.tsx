@@ -1104,9 +1104,20 @@ export function App(): React.ReactElement {
 
   // Skills with an available upstream update — set by the main-process
   // probe runner via the augmented `listRegistry`. Drives the header
-  // aggregate badge and the UpdatesModal's content.
-  const pendingSkillUpdates = registry.filter(
-    (e) => e.upstreamUpdateAvailable === true,
+  // aggregate badge and the UpdatesModal's content. Memoized so the
+  // UpdatesModal doesn't see a fresh `entries` array on every render.
+  const pendingSkillUpdates = useMemo(
+    () => registry.filter((e) => e.upstreamUpdateAvailable === true),
+    [registry],
+  );
+
+  // Hidden canon skills stay in `registry` for lookups/installs/Settings
+  // but are filtered out of the default Browse view. Memoize so BrowseTab
+  // (and its descendant RegistryFilters / count effects) see a stable
+  // reference until the registry actually changes.
+  const visibleRegistry = useMemo(
+    () => registry.filter((e) => !e.hidden),
+    [registry],
   );
 
   // Plain functions (not useCallback) — this code lives below early-return
@@ -1252,8 +1263,8 @@ export function App(): React.ReactElement {
                 // M5: filter hidden canon entries from the default
                 // Browse view. They remain in `registry` for lookups,
                 // installations, and the Settings → Hidden canon
-                // skills section.
-                registry={registry.filter((e) => !e.hidden)}
+                // skills section. Memoized above as `visibleRegistry`.
+                registry={visibleRegistry}
                 installed={installed}
                 search={search}
                 setSearch={setSearch}
