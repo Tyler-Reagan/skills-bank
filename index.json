@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T08:10:24.441Z",
+  "generatedAt": "2026-05-18T15:17:31.417Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -23,9 +23,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -50,9 +50,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -78,9 +78,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -106,9 +106,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -134,9 +134,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -162,9 +162,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -210,9 +210,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -238,9 +238,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -266,9 +266,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -314,9 +314,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -341,9 +341,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -368,9 +368,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -395,9 +395,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -423,9 +423,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -450,9 +450,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -478,9 +478,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -505,9 +505,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -532,9 +532,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -560,9 +560,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -587,9 +587,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -613,9 +613,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -640,9 +640,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -666,9 +666,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -693,9 +693,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -761,9 +761,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -789,9 +789,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -819,9 +819,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "3404d776053dcb2b798c13e8027007e4ce95b1bb",
-        "date": "2026-05-15 12:44:23 -0700",
-        "message": "fix: preserve linkedRepo on sign-out + drop forced RepoPicker on re-sign-in"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -867,9 +867,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -895,9 +895,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -922,9 +922,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -949,9 +949,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -976,9 +976,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1003,9 +1003,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1030,9 +1030,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "5e94b37c2d4a1689c298ee564a20841dd75b7cd2",
-        "date": "2026-05-12 13:24:04 -0700",
-        "message": "(skills): update skills canon - remove any specific terminology from personal skills"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1057,9 +1057,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1084,9 +1084,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1110,9 +1110,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1137,9 +1137,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1164,39 +1164,38 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
     },
     {
       "name": "react-components",
-      "description": "Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.",
+      "description": "Modern React component patterns with hooks and TypeScript",
       "path": "skills/react-components",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z",
         "upstream": {
           "kind": "github",
           "repo": "langchain-ai/skills-benchmarks",
           "sourceUrl": "https://github.com/langchain-ai/skills-benchmarks.git",
           "skillPath": "skills/noise/react_components/SKILL.md",
           "skillFolderHash": "fbdbab0c2bf0ace0652ab602a4011cef7d5b07f8",
-          "installedAt": "2026-05-18T08:09:53.421Z",
-          "fetchedAt": "2026-05-18T08:09:53.421Z"
+          "installedAt": "2026-05-18T15:09:38.004Z",
+          "fetchedAt": "2026-05-18T15:09:38.004Z"
         }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
-      "publishState": "pushed",
-      "canon": true
+      "publishState": "untracked",
+      "canon": true,
+      "drift": true
     },
     {
       "name": "react-state-management",
@@ -1218,9 +1217,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1245,9 +1244,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1273,9 +1272,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1300,9 +1299,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1328,9 +1327,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1355,9 +1354,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1382,9 +1381,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1408,9 +1407,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1436,9 +1435,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1463,9 +1462,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1490,9 +1489,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1517,9 +1516,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1535,25 +1534,25 @@
       "author": "mattpocock",
       "path": "skills/ubiquitous-language",
       "source": {
-        "source": "yours",
+        "source": "bundled",
         "upstream": {
           "kind": "github",
           "repo": "mattpocock/skills",
           "sourceUrl": "https://github.com/mattpocock/skills.git",
           "skillPath": "skills/deprecated/ubiquitous-language/SKILL.md",
-          "skillFolderHash": "483fe10b01bed81b7eba7ee26df3f1bef9540c88",
+          "skillFolderHash": "483fe10b01bed81b7eba7ee26df3f1bef9540c89",
           "installedAt": "2026-05-18T08:09:53.421Z",
           "fetchedAt": "2026-05-18T08:09:53.421Z"
         }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "559cf07fa2e7e56fd58ba129f0748134bc6f44df",
-        "date": "2026-05-17 22:46:22 -0700",
-        "message": "chore(v0.11.2): install ubiquitous-language skill + domain glossary"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
-      "publishState": "pushed",
-      "canon": true
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "ui-ux-pro-max",
@@ -1575,9 +1574,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1602,9 +1601,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1629,9 +1628,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1656,9 +1655,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1685,9 +1684,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1714,9 +1713,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1743,9 +1742,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
