@@ -82,6 +82,8 @@ Active body of work. Filenames are stable descriptive IDs; execution order is do
 | [`github-first-onboarding.md`](docs/plans/github-first-onboarding.md)             | `github-mode-coherence` (groundwork)                      |
 | [`per-skill-upstream-foundation.md`](docs/plans/per-skill-upstream-foundation.md) | none (cleaner if `github-first-onboarding` lands first)   |
 | [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | `per-skill-upstream-foundation`                           |
+| [`skills-directory-split.md`](docs/plans/skills-directory-split.md)               | `origin-paradigm-reframe`                                 |
+| [`drift-update-ux-consistency.md`](docs/plans/drift-update-ux-consistency.md)     | `origin-paradigm-reframe` (cleaner if `skills-directory-split` lands first) |
 | [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | `origin-paradigm-reframe`                                 |
 | [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `origin-paradigm-reframe` + `bank-mode-persistence`       |
 
@@ -93,8 +95,10 @@ To minimize thrashing (later plans rendering earlier plans' code obsolete), this
 2. **`github-first-onboarding`** — collapses the local-vs-github mode discriminator. Doing this before the per-skill plans means they won't have to branch on a flag that's about to disappear.
 3. **`per-skill-upstream-foundation`** — adds the per-skill upstream metadata + probe/update.
 4. **`origin-paradigm-reframe`** — reframes Origin as authoritative upstream (not the bundled repo), reverts Tier 3, lands maintainer-time backfill + direct-fetch update flow.
-5. **`bank-mode-persistence`** — adds the local snapshot cache.
-6. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
+5. **`skills-directory-split`** — spatial separation of `skills/` into `personal/` + `vendored/` subdirectories.
+6. **`drift-update-ux-consistency`** — drawer button language/styling consistency under the canonical glossary, plus Registry-tab filter for pending updates.
+7. **`bank-mode-persistence`** — adds the local snapshot cache.
+8. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
 
 `cli-minimal` is independent of the others and can slot anywhere — typically last since it's pure housekeeping.
 
