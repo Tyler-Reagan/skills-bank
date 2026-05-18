@@ -10,6 +10,7 @@
 //   pnpm vendor:skill <owner/repo> --path <path-to-SKILL.md>
 //   pnpm vendor:skill <owner/repo>@<skill-id> --as <local-name>
 //   pnpm vendor:skill <owner/repo>@<skill-id> --force
+//   pnpm vendor:skill <owner/repo>@<skill-id> --no-synthesize-meta
 //
 // The script:
 //   1. Resolves the in-repo path to the skill's SKILL.md (via
@@ -17,11 +18,18 @@
 //      supplied, or via the explicit `--path` flag).
 //   2. Mirrors the skill folder into `<repo-root>/skills/<name>/`
 //      using the shared `mirrorSkillFolder` helper from core.
-//   3. Writes `.skills-bank.json` with `kind: "github"`, repo,
+//   3. If the mirrored folder lacks meta.json, synthesizes one from
+//      SKILL.md frontmatter so the rest of the toolchain (which
+//      generally expects a per-skill meta.json) doesn't have to
+//      fall back to frontmatter parsing for every consumer. Skipped
+//      with `--no-synthesize-meta`. Never overwrites an existing
+//      upstream meta.json — preserved verbatim.
+//   4. Writes `.skills-bank.json` with `kind: "github"`, repo,
 //      sourceUrl, skillPath, skillFolderHash, installedAt, fetchedAt.
-//   4. Writes `.skills-bank-hash` as the drift baseline (post-vendor
-//      content == new clean state).
-//   5. Prints `git status` for the maintainer to review and commit.
+//   5. Writes `.skills-bank-hash` as the drift baseline (post-vendor
+//      content == new clean state, including any synthesized
+//      meta.json).
+//   6. Prints `git status` for the maintainer to review and commit.
 //
 // Refuses to overwrite an existing `skills/<name>/` unless `--force`
 // is given — protects against accidental clobbering.
@@ -60,16 +68,21 @@ interface ParsedArg {
   localName: string | null;
   bucket: import("../packages/core/src/index.js").SkillBucket;
   force: boolean;
+  synthesizeMeta: boolean;
 }
 
 function usage(): never {
   console.error(
-    "usage: pnpm vendor:skill <owner/repo>@<skill-id> [--as <name>] [--personal] [--force]\n" +
-      "       pnpm vendor:skill <owner/repo> --path <SKILL.md path> [--as <name>] [--personal] [--force]\n" +
+    "usage: pnpm vendor:skill <owner/repo>@<skill-id> [--as <name>] [--personal] [--force] [--no-synthesize-meta]\n" +
+      "       pnpm vendor:skill <owner/repo> --path <SKILL.md path> [--as <name>] [--personal] [--force] [--no-synthesize-meta]\n" +
       "\n" +
       "Defaults destination to skills/vendored/<name>/. Pass --personal to write\n" +
       "to skills/personal/<name>/ instead — for forks the maintainer is taking\n" +
-      "ownership of.",
+      "ownership of.\n" +
+      "\n" +
+      "By default, synthesizes a meta.json from SKILL.md frontmatter when the\n" +
+      "mirrored folder lacks one. Pass --no-synthesize-meta to skip — useful for\n" +
+      "the rare upstream that intentionally ships SKILL.md only.",
   );
   process.exit(1);
 }
@@ -85,6 +98,7 @@ function parseArgs(): ParsedArg {
     localName: null,
     bucket: "vendored",
     force: false,
+    synthesizeMeta: true,
   };
   const atIdx = spec.indexOf("@");
   if (atIdx >= 0) {
@@ -108,6 +122,10 @@ function parseArgs(): ParsedArg {
       out.bucket = "personal";
     } else if (args[i] === "--vendored") {
       out.bucket = "vendored";
+    } else if (args[i] === "--no-synthesize-meta") {
+      out.synthesizeMeta = false;
+    } else if (args[i] === "--synthesize-meta") {
+      out.synthesizeMeta = true;
     } else {
       console.error(`unknown arg: ${args[i]}`);
       usage();
@@ -216,6 +234,102 @@ async function resolveSkillPath(
   return null;
 }
 
+/**
+ * Parse the YAML frontmatter block at the top of a SKILL.md into a
+ * flat record. Supports scalar `key: value` lines plus inline-array
+ * tags (`tags: [a, b]`) and block-array tags (one `- item` per line
+ * after a `tags:` header). Anything else is silently dropped — we
+ * only need a small fixed set of fields for meta.json synthesis.
+ */
+function parseSkillFrontmatter(skillMdPath: string): Record<
+  string,
+  string | string[]
+> | null {
+  if (!fs.existsSync(skillMdPath)) return null;
+  const content = fs.readFileSync(skillMdPath, "utf8");
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match || !match[1]) return null;
+  const out: Record<string, string | string[]> = {};
+  const lines = match[1].split("\n");
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i]!;
+    i++;
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    if (!key) continue;
+    const rest = line.slice(idx + 1).trim();
+    // Inline array: `tags: [a, b, c]`.
+    if (rest.startsWith("[") && rest.endsWith("]")) {
+      const inner = rest.slice(1, -1).trim();
+      if (!inner) {
+        out[key] = [];
+      } else {
+        out[key] = inner
+          .split(",")
+          .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+          .filter(Boolean);
+      }
+      continue;
+    }
+    // Block array: header line is empty, subsequent `- item` lines.
+    if (rest === "" && i < lines.length && lines[i]!.trim().startsWith("-")) {
+      const arr: string[] = [];
+      while (i < lines.length && lines[i]!.trim().startsWith("-")) {
+        const item = lines[i]!
+          .trim()
+          .replace(/^-\s*/, "")
+          .replace(/^["']|["']$/g, "");
+        if (item) arr.push(item);
+        i++;
+      }
+      out[key] = arr;
+      continue;
+    }
+    // Scalar (strip surrounding quotes, drop trailing comment).
+    const stripped = rest.replace(/^["']|["']$/g, "");
+    out[key] = stripped;
+  }
+  return out;
+}
+
+/**
+ * Synthesize a meta.json into `destDir` from the SKILL.md frontmatter
+ * if (a) meta.json doesn't already exist and (b) the frontmatter
+ * yields at minimum a `name` and `description`. No-op otherwise.
+ * Returns the path written (or null when skipped).
+ *
+ * Field set is the maintainable subset of `SkillMeta` plus optional
+ * `license` — schema's `additionalProperties: true` lets us round-trip
+ * a license field through validate.
+ */
+function synthesizeMetaJson(destDir: string): string | null {
+  const metaPath = path.join(destDir, "meta.json");
+  if (fs.existsSync(metaPath)) return null;
+  const fm = parseSkillFrontmatter(path.join(destDir, "SKILL.md"));
+  if (!fm) return null;
+  const name = typeof fm["name"] === "string" ? fm["name"] : null;
+  const description =
+    typeof fm["description"] === "string" ? fm["description"] : null;
+  if (!name || !description) return null;
+  const meta: Record<string, string | string[]> = { name, description };
+  const version = typeof fm["version"] === "string" ? fm["version"] : "0.1.0";
+  meta["version"] = version;
+  if (Array.isArray(fm["tags"]) && fm["tags"].length > 0) {
+    meta["tags"] = fm["tags"];
+  }
+  if (typeof fm["license"] === "string" && fm["license"]) {
+    meta["license"] = fm["license"];
+  }
+  if (typeof fm["author"] === "string" && fm["author"]) {
+    meta["author"] = fm["author"];
+  }
+  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + "\n", "utf8");
+  return metaPath;
+}
+
 async function main(): Promise<void> {
   const args = parseArgs();
   const token = process.env["GITHUB_TOKEN"] ?? null;
@@ -284,6 +398,18 @@ async function main(): Promise<void> {
   if (!mirror.ok) {
     console.error(`mirror failed: ${mirror.message}`);
     process.exit(1);
+  }
+
+  // Synthesize meta.json from frontmatter when the upstream folder
+  // didn't ship one. Runs BEFORE the drift baseline so the synthesized
+  // file is part of the clean state; otherwise the first install
+  // would immediately register as drifted. Skipped via
+  // `--no-synthesize-meta` and a no-op when meta.json already exists.
+  if (args.synthesizeMeta) {
+    const written = synthesizeMetaJson(destDir);
+    if (written) {
+      console.log(`  synthesized meta.json from SKILL.md frontmatter`);
+    }
   }
 
   // Write marker + baseline.

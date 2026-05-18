@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
-import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
 import {
   RegistryFilters,
@@ -78,7 +77,7 @@ export function BrowseTab({
           >
             {rebuilding ? (
               <>
-                <span className="spinner inline" /> Rescanning
+                <span className="spinner inline" /> Rescanning…
               </>
             ) : (
               "Rescan"
@@ -89,31 +88,43 @@ export function BrowseTab({
     );
   }
 
-  const installedNames = new Set(
-    installed.filter((i) => i.kind === "ours").map((i) => i.name),
+  const installedNames = useMemo(
+    () => new Set(installed.filter((i) => i.kind === "ours").map((i) => i.name)),
+    [installed],
   );
   // Compose in this order: chip-filters narrow the registry by the
   // user's tag-like state filters; the search/tag/installedOnly pass
   // applies free-text + legacy filters; sort orders the survivors;
   // and when the user hasn't expressed any opinion (no chips, default
   // name-asc), float pending-update cards to the top so the Rescan
-  // deep-link lands them in the obvious spot.
-  const chipFiltered = applyChipFilters(registry, registryFilters);
-  const filteredRaw = applyFilters(
-    chipFiltered,
+  // deep-link lands them in the obvious spot. Memoized so an unrelated
+  // re-render (e.g. a sibling tab's state changing) doesn't re-sort.
+  const filtered = useMemo(() => {
+    const chipFiltered = applyChipFilters(registry, registryFilters);
+    const filteredRaw = applyFilters(
+      chipFiltered,
+      search,
+      selectedTags,
+      installedOnly,
+      installedNames,
+    );
+    const sorted = applySort(filteredRaw, registrySort);
+    const isDefaultOrder =
+      registryFilters.size === 0 &&
+      registrySort.by === "name" &&
+      registrySort.direction === "asc";
+    return isDefaultOrder
+      ? floatToTop(sorted, (e) => e.upstreamUpdateAvailable === true)
+      : sorted;
+  }, [
+    registry,
+    registryFilters,
     search,
     selectedTags,
     installedOnly,
     installedNames,
-  );
-  const sorted = applySort(filteredRaw, registrySort);
-  const isDefaultOrder =
-    registryFilters.size === 0 &&
-    registrySort.by === "name" &&
-    registrySort.direction === "asc";
-  const filtered = isDefaultOrder
-    ? floatToTop(sorted, (e) => e.upstreamUpdateAvailable === true)
-    : sorted;
+    registrySort,
+  ]);
   const installedFromRegistry = installedNames.size;
   const warningCount = registry.reduce(
     (acc, e) => acc + (e.warnings?.length ?? 0),
@@ -160,30 +171,14 @@ export function BrowseTab({
           onChange={setRegistryFilters}
           sort={registrySort}
           onSortChange={setRegistrySort}
+          installedOnly={installedOnly}
+          onInstalledOnlyChange={setInstalledOnly}
+          installedCount={installedFromRegistry}
+          selectedTags={selectedTags}
+          onSelectedTagsChange={setSelectedTags}
         />
-        <div className="filter-row">
-          <button
-            type="button"
-            className={`filter-chip${installedOnly ? " active" : ""}`}
-            onClick={() => setInstalledOnly(!installedOnly)}
-            aria-pressed={installedOnly}
-            title={
-              installedOnly
-                ? "Showing only registry skills you have installed"
-                : "Show only registry skills you have installed"
-            }
-          >
-            Installed only{" "}
-            <span className="filter-chip-count">({installedFromRegistry})</span>
-          </button>
-          <TagFilter
-            registry={registry}
-            selected={selectedTags}
-            onChange={setSelectedTags}
-          />
-        </div>
       </div>
-      <p className="results-count">
+      <p className="results-count" aria-live="polite" aria-atomic="true">
         {filtered.length} of {registry.length} skill
         {registry.length === 1 ? "" : "s"}
       </p>

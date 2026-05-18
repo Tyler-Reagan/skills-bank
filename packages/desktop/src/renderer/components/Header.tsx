@@ -122,8 +122,8 @@ export function Header({
               onClick={onShowUpdates}
               title={`${pendingSkillUpdates} skill${
                 pendingSkillUpdates === 1 ? "" : "s"
-              } can be updated from upstream. Click to review.`}
-              aria-label={`${pendingSkillUpdates} skill upstream updates available — open updates modal`}
+              } can be updated from Origin. Click to review.`}
+              aria-label={`${pendingSkillUpdates} skill Origin updates available — open updates modal`}
             >
               <Icon name="refresh" size="sm" />
               <span>
@@ -173,7 +173,7 @@ export function Header({
             {syncing ? (
               <>
                 <span className="spinner inline" aria-hidden="true" />{" "}
-                Refreshing
+                Refreshing…
               </>
             ) : (
               <>
@@ -192,21 +192,21 @@ export function Header({
             aria-busy={rescanState.phase === "working" || undefined}
             title={
               rescanState.phase === "working"
-                ? "Checking upstream for updates"
+                ? "Checking Origins for updates"
                 : rescanState.phase === "done" && rescanState.updates > 0
                   ? `${rescanState.updates} update${
                       rescanState.updates === 1 ? "" : "s"
                     } found. Click to view in the registry.`
-                  : "Re-scan the registry, agent directories, and probe upstreams for updates"
+                  : "Re-scan the registry, agent directories, and probe Origins for updates"
             }
             aria-label={
               rescanState.phase === "working"
-                ? "Checking upstream for updates"
+                ? "Checking Origins for updates"
                 : rescanState.phase === "done"
                   ? rescanState.updates === 0
                     ? "Up to date"
                     : `${rescanState.updates} update${rescanState.updates === 1 ? "" : "s"} found — view in registry`
-                  : "Rescan registry and check for upstream updates"
+                  : "Rescan registry and check for Origin updates"
             }
             onClick={
               rescanState.phase === "done" && rescanState.updates > 0
@@ -217,7 +217,7 @@ export function Header({
             {rescanState.phase === "working" ? (
               <>
                 <span className="spinner inline" aria-hidden="true" />{" "}
-                Checking upstream…
+                Checking Origins…
               </>
             ) : rescanState.phase === "done" ? (
               rescanState.updates === 0 ? (
@@ -248,8 +248,10 @@ export function Header({
           >
             {authStatus?.user?.avatarUrl ? (
               <img
-                src={authStatus.user.avatarUrl}
+                src={`${authStatus.user.avatarUrl}${authStatus.user.avatarUrl.includes("?") ? "&" : "?"}s=64`}
                 alt=""
+                width={18}
+                height={18}
                 className="header-trigger-avatar"
                 referrerPolicy="no-referrer"
               />

@@ -139,13 +139,22 @@ export function SkillCard({
                   aria-label={`Remove tag ${t}`}
                   onClick={(e) => void removeTag(t, e)}
                   onKeyDown={(e) => e.stopPropagation()}
+                  title={`Remove tag ${t}`}
                 >
                   <Icon name="x" size="sm" />
                 </button>
               )}
             </span>
           ))}
-          {hidden > 0 && <span className="skill-tag-more">+{hidden}</span>}
+          {hidden > 0 && (
+            <span
+              className="skill-tag-more"
+              title={`${hidden} more tag${hidden === 1 ? "" : "s"}`}
+              aria-label={`${hidden} more tag${hidden === 1 ? "" : "s"}`}
+            >
+              +{hidden}
+            </span>
+          )}
           {onSaveTags && !adding && (
             <button
               type="button"
@@ -268,7 +277,7 @@ function PublishBadge({
         className="skill-state-badge drift"
         title={
           entry.source.upstream?.kind === "github"
-            ? "You've edited this skill since the last upstream fetch. Open to unlink the origin (keep edits) or reset to origin (discard edits)."
+            ? "You've edited this skill since the last Origin fetch. Open to unlink the Origin (keep edits) or reset to Origin (discard edits)."
             : "You've edited this bundled skill. Open to re-baseline or accept the drift."
         }
       >
@@ -281,7 +290,7 @@ function PublishBadge({
       <span
         className="skill-state-badge update"
         title={`An update is available from ${
-          entry.source.upstream?.repo ?? "upstream"
+          entry.source.upstream?.repo ?? "Origin"
         }. Open to apply.`}
       >
         UPDATE

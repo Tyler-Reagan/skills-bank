@@ -36,6 +36,8 @@ button {
   border: none;
   background: none;
   color: inherit;
+  /* Cuts ~300ms double-tap delay on touch surfaces; harmless on desktop. */
+  touch-action: manipulation;
 }
 input,
 select {
@@ -606,43 +608,6 @@ select {
   background: var(--surface-hi);
 }
 
-/* ── Domain pills ────────────────────────────────────── */
-.domain-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s2);
-}
-.domain-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s2);
-  padding: var(--s2) var(--s3);
-  border-radius: var(--r-xl);
-  border: 1px solid var(--border);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-2);
-  background: transparent;
-  transition:
-    border-color var(--t),
-    color var(--t),
-    background var(--t);
-}
-.domain-pill:hover {
-  border-color: var(--border-hi);
-  color: var(--text);
-}
-.domain-pill.active {
-  background: var(--pill-dim, var(--accent-dim));
-  border-color: var(--pill-color, var(--accent));
-  color: var(--pill-color, var(--accent));
-}
-.domain-pill .count {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  opacity: 0.7;
-}
-
 /* ── Skills grid ─────────────────────────────────────── */
 .skills-grid {
   display: grid;
@@ -754,17 +719,12 @@ select {
   transition-duration: var(--t-fast);
 }
 .skill-card--update-available {
-  /* Subtle left-edge accent so update-pending cards read as a
-     cohort even before the user pans down to the UPDATE badge.
-     2px stripe is borderline per impeccable's "side-stripe >1px"
-     ban — kept because the in-card UPDATE badge already carries
-     the primary signal, and the stripe just helps cluster the
-     cards visually when sorted/floated to the top. */
-  border-left: 2px solid var(--accent);
-  padding-left: calc(var(--s5) - 1px);
-}
-:root[data-density="compact"] .skill-card--update-available {
-  padding-left: calc(var(--s3) - 1px);
+  /* Grouping affordance: a hairline accent stripe lets update-pending
+     cards read as a cohort when the default sort floats them to the
+     top of the registry. The in-card UPDATE badge carries the status
+     signal; this stripe only encodes cluster membership. 1px keeps
+     it within impeccable's side-stripe budget. */
+  border-left: 1px solid var(--accent);
 }
 .skill-card-top {
   display: flex;
@@ -874,14 +834,7 @@ select {
   border: 1px solid var(--accent, #3b82f6);
 }
 
-/* ── Browse filter row ─── */
-.filter-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--s2);
-  margin-top: var(--s2);
-}
+/* ── Browse filter chips ─── */
 .filter-chip {
   display: inline-flex;
   align-items: center;
@@ -940,11 +893,16 @@ select {
   gap: var(--s2);
   align-items: center;
 }
+.registry-filters-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-left: auto;
+}
 .registry-filters-sort {
   display: flex;
   align-items: center;
   gap: var(--s1);
-  margin-left: auto;
 }
 .filter-chip.sort-chip {
   /* Sort buttons aren't toggleable filters — render quieter so the
@@ -956,6 +914,108 @@ select {
 .filter-chip.sort-chip:hover {
   color: var(--text);
   border-color: var(--border-hi);
+}
+
+/* ── Tag filter dropdown ─── */
+.tag-filter-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.tag-filter-chevron {
+  transition: transform var(--t-fast) var(--ease);
+}
+.tag-filter-trigger.open .tag-filter-chevron {
+  transform: rotate(180deg);
+}
+.tag-filter-panel {
+  position: absolute;
+  top: calc(100% + var(--s1));
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 220px;
+  max-width: 320px;
+  max-height: 320px;
+  padding: var(--s3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.18),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.tag-filter-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+.tag-filter-panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+.tag-filter-clear {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  transition: color var(--t-fast) var(--ease);
+}
+.tag-filter-clear:hover:not(:disabled) {
+  color: var(--text);
+}
+.tag-filter-clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.tag-filter-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.tag-filter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 4px var(--s2);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid transparent;
+  transition:
+    background var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+.tag-filter-item:hover {
+  background: var(--surface-hi);
+  color: var(--text);
+}
+.tag-filter-item.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tag-filter-item-label {
+  font-family: var(--font-mono);
+}
+.tag-filter-item-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+}
+.tag-filter-item.active .tag-filter-item-count {
+  color: var(--accent);
 }
 
 .skill-agent-chips {
@@ -1395,6 +1455,9 @@ select {
 .drawer-body {
   flex: 1;
   overflow-y: auto;
+  /* Stop scroll-chain from leaking into the underlying document when
+     the drawer body bottoms/tops out. */
+  overscroll-behavior: contain;
   padding: var(--s5);
   /* Reveal contents just after the panel arrives so the eye lands on
      a settled card rather than scrolling content while it slides. */
@@ -2204,7 +2267,9 @@ button:disabled {
 .header-trigger-avatar {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
   border-radius: 50%;
+  object-fit: cover;
 }
 
 /* ── ErrorPanel ───────────────────────────────────────────────────── */

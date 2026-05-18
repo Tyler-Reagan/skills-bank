@@ -213,14 +213,14 @@ export function SkillDetailDrawer({
   const [tagInputError, setTagInputError] = useState<string | null>(null);
   const [savingTags, setSavingTags] = useState(false);
 
+  // SKILL.md fetch keys purely on the skill name. Splitting this off
+  // from the tag-reset effect prevents a re-fetch every time the parent
+  // hands us a refreshed `entry` reference with the same `name` (e.g.
+  // after a registry refresh that only bumped a sibling skill).
   useEffect(() => {
     let cancelled = false;
     setSkillMd(null);
     setSkillMdLoading(true);
-    setDescExpanded(false);
-    setEditingTags(false);
-    setTagDraft(entry.tags ?? []);
-    setTagInput("");
     void window.skillsBank.readSkillMd(entry.name).then((md) => {
       if (!cancelled) {
         setSkillMd(md);
@@ -230,6 +230,17 @@ export function SkillDetailDrawer({
     return () => {
       cancelled = true;
     };
+  }, [entry.name]);
+
+  // Reset drawer-local UI state when the selected entry changes
+  // identity (a different skill, or the same skill with a refreshed
+  // tag list). Cheap synchronous resets; runs independently of the
+  // SKILL.md fetch above.
+  useEffect(() => {
+    setDescExpanded(false);
+    setEditingTags(false);
+    setTagDraft(entry.tags ?? []);
+    setTagInput("");
   }, [entry.name, entry.tags]);
 
   useEscapeToClose(onClose);
@@ -477,7 +488,13 @@ export function SkillDetailDrawer({
               </p>
             )}
           </div>
-          <button className="drawer-close" onClick={onClose} aria-label="Close">
+          <button
+            type="button"
+            className="drawer-close"
+            onClick={onClose}
+            aria-label="Close skill details"
+            title="Close skill details (Esc)"
+          >
             <Icon name="x" size="lg" />
           </button>
         </div>
@@ -550,7 +567,7 @@ export function SkillDetailDrawer({
                     onClick={() => void saveTags()}
                     disabled={savingTags}
                   >
-                    {savingTags ? "Saving" : "Save"}
+                    {savingTags ? "Saving…" : "Save"}
                   </button>
                 </div>
               )}
@@ -562,8 +579,10 @@ export function SkillDetailDrawer({
                     <span key={t} className="skill-tag editable">
                       #{t}
                       <button
+                        type="button"
                         className="tag-remove"
-                        aria-label={`remove ${t}`}
+                        aria-label={`Remove tag ${t}`}
+                        title={`Remove tag ${t}`}
                         onClick={() => removeTag(t)}
                       >
                         <Icon name="x" size="sm" />
@@ -757,7 +776,7 @@ export function SkillDetailDrawer({
                       >
                         {pickerBusy ? (
                           <>
-                            <span className="spinner inline" /> Validating
+                            <span className="spinner inline" /> Validating…
                           </>
                         ) : (
                           "Link"
@@ -875,7 +894,7 @@ export function SkillDetailDrawer({
                   lastCommit?.sha &&
                   lastCommit?.date && (
                     <div className="drawer-meta-row">
-                      <span className="drawer-meta-key">last upstream</span>
+                      <span className="drawer-meta-key">last Origin commit</span>
                       <span className="drawer-meta-value">
                         {new Date(lastCommit.date).toLocaleDateString()} ·{" "}
                         <code>{lastCommit.sha.slice(0, 7)}</code>
@@ -965,7 +984,7 @@ export function SkillDetailDrawer({
               >
                 {action === "registering" ? (
                   <>
-                    <span className="spinner inline" /> Registering
+                    <span className="spinner inline" /> Registering…
                   </>
                 ) : (
                   "Register in registry"
@@ -1000,11 +1019,11 @@ export function SkillDetailDrawer({
                       setAction(null),
                     );
                   }}
-                  title={`Discard local edits and re-fetch from ${entry.source.upstream?.repo ?? "upstream"}. Your changes are lost.`}
+                  title={`Discard local edits and re-fetch from ${entry.source.upstream?.repo ?? "Origin"}. Your changes are lost.`}
                 >
                   {action === "taking-upstream" ? (
                     <>
-                      <span className="spinner inline" /> Resetting
+                      <span className="spinner inline" /> Resetting…
                     </>
                   ) : (
                     "Reset to origin"
@@ -1025,7 +1044,7 @@ export function SkillDetailDrawer({
                 >
                   {action === "taking-canonical" ? (
                     <>
-                      <span className="spinner inline" /> Re-baselining
+                      <span className="spinner inline" /> Re-baselining…
                     </>
                   ) : (
                     "Re-baseline"
@@ -1043,14 +1062,14 @@ export function SkillDetailDrawer({
                 }}
                 title={
                   caps.canTakeUpstream
-                    ? "Keep your local edits and clear the upstream pointer. Future probes won't surface this skill as having an update available."
+                    ? "Keep your local edits and clear the Origin pointer. Future probes won't surface this skill as having an update available."
                     : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
                 }
               >
                 {action === "accepting-drift" ? (
                   <>
                     <span className="spinner inline" />{" "}
-                    {caps.canTakeUpstream ? "Unlinking" : "Accepting"}
+                    {caps.canTakeUpstream ? "Unlinking…" : "Accepting…"}
                   </>
                 ) : caps.canTakeUpstream ? (
                   "Unlink origin"
@@ -1062,11 +1081,11 @@ export function SkillDetailDrawer({
                 {caps.canTakeUpstream ? (
                   <>
                     Your local copy diverges from{" "}
-                    {entry.source.upstream?.repo ?? "the upstream"}.
+                    {entry.source.upstream?.repo ?? "its Origin"}.
                     <strong> Reset to origin</strong> discards your edits and
                     refetches.
                     <strong> Unlink origin</strong> keeps your edits and clears
-                    the upstream pointer.
+                    the Origin pointer.
                   </>
                 ) : (
                   <>
@@ -1092,12 +1111,12 @@ export function SkillDetailDrawer({
                   );
                 }}
                 title={`Fetch the latest content from ${
-                  entry.source.upstream?.repo ?? "the upstream"
+                  entry.source.upstream?.repo ?? "the Origin"
                 } and mirror it into this skill.`}
               >
                 {action === "updating" ? (
                   <>
-                    <span className="spinner inline" /> Updating
+                    <span className="spinner inline" /> Updating…
                   </>
                 ) : (
                   "Update"
@@ -1105,7 +1124,7 @@ export function SkillDetailDrawer({
               </button>
               <p className="drawer-action-hint">
                 A newer version is available from{" "}
-                <code>{entry.source.upstream?.repo ?? "upstream"}</code>. Local
+                <code>{entry.source.upstream?.repo ?? "Origin"}</code>. Local
                 content is unchanged since the last fetch, so the update applies
                 cleanly.
               </p>
@@ -1125,7 +1144,7 @@ export function SkillDetailDrawer({
             >
               {action === "repointing" ? (
                 <>
-                  <span className="spinner inline" /> Picking
+                  <span className="spinner inline" /> Picking…
                 </>
               ) : (
                 "Pick new location"
@@ -1147,7 +1166,7 @@ export function SkillDetailDrawer({
               >
                 {action === "forgetting" ? (
                   <>
-                    <span className="spinner inline" /> Forgetting
+                    <span className="spinner inline" /> Forgetting…
                   </>
                 ) : (
                   "Forget this skill"
@@ -1178,7 +1197,7 @@ export function SkillDetailDrawer({
             >
               {repairState.kind === "running" ? (
                 <>
-                  <span className="spinner inline" /> Repairing
+                  <span className="spinner inline" /> Repairing…
                 </>
               ) : (
                 <>
@@ -1290,7 +1309,7 @@ export function SkillDetailDrawer({
             >
               {action === "installing" ? (
                 <>
-                  <span className="spinner inline" /> Installing
+                  <span className="spinner inline" /> Installing…
                 </>
               ) : classification.state === "registered-broken" ? (
                 "Reinstall (fixes broken links)"
@@ -1330,7 +1349,7 @@ export function SkillDetailDrawer({
             >
               {repairState.kind === "running" ? (
                 <>
-                  <span className="spinner inline" /> Repairing
+                  <span className="spinner inline" /> Repairing…
                 </>
               ) : (
                 `Fix broken link${classification.brokenCount === 1 ? "" : "s"}`
@@ -1361,7 +1380,7 @@ export function SkillDetailDrawer({
             >
               {action === "exporting" ? (
                 <>
-                  <span className="spinner inline" /> Exporting
+                  <span className="spinner inline" /> Exporting…
                 </>
               ) : (
                 "Export"
@@ -1395,7 +1414,7 @@ export function SkillDetailDrawer({
               >
                 {action === "unregistering" ? (
                   <>
-                    <span className="spinner inline" /> Removing
+                    <span className="spinner inline" /> Removing…
                   </>
                 ) : (
                   "Remove from registry"
@@ -1421,7 +1440,7 @@ export function SkillDetailDrawer({
             >
               {action === "hiding" ? (
                 <>
-                  <span className="spinner inline" /> Hiding
+                  <span className="spinner inline" /> Hiding…
                 </>
               ) : (
                 "Dismiss from registry view"
@@ -1440,7 +1459,7 @@ export function SkillDetailDrawer({
             >
               {action === "unhiding" ? (
                 <>
-                  <span className="spinner inline" /> Unhiding
+                  <span className="spinner inline" /> Unhiding…
                 </>
               ) : (
                 "Unhide"
