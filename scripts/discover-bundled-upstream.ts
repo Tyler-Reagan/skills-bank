@@ -9,13 +9,19 @@
 //
 // Workflow:
 //
-//   tsx scripts/discover-bundled-upstream.ts                      # write candidate JSON to stdout
-//   tsx scripts/discover-bundled-upstream.ts --out CAND.json      # write to file
-//   tsx scripts/discover-bundled-upstream.ts --apply CAND.json    # apply markers from JSON
+//   tsx scripts/discover-bundled-upstream.ts                            # write candidate JSON to stdout
+//   tsx scripts/discover-bundled-upstream.ts --out CAND.json            # write to file
+//   tsx scripts/discover-bundled-upstream.ts --apply CAND.json          # apply markers from JSON
+//   tsx scripts/discover-bundled-upstream.ts --apply CAND.json --source yours
+//                                                                       # override default source axis
 //
 // The two-phase split is deliberate: discovery emits a candidate
 // mapping the maintainer can review (and hand-correct for skills
 // where the top match is wrong) before any markers get written.
+//
+// Apply-phase markers default to `source: "bundled"` — this tool is
+// for skills the maintainer is intentionally adding to the bundled
+// set. Pass `--source yours` for the rare personal-skill case.
 //
 // Authentication: probes use the GITHUB_TOKEN env var if present,
 // else fall back to the unauthenticated 60/hr ceiling. For a 39-skill
@@ -38,6 +44,7 @@ import {
   walkSkills,
   writeSkillSource,
   writeSyncedHash,
+  type SkillOrigin,
   type UpstreamPointer,
 } from "../packages/core/src/index.js";
 
@@ -299,7 +306,18 @@ async function discoverPhase(): Promise<CandidateMap> {
   return { version: 1, unresolved, skills };
 }
 
-function applyPhase(cand: CandidateMap): void {
+function parseSourceFlag(): SkillOrigin {
+  const idx = process.argv.indexOf("--source");
+  if (idx < 0) return "bundled";
+  const v = process.argv[idx + 1];
+  if (v === "bundled" || v === "yours") return v;
+  console.error(
+    `--source must be "bundled" or "yours" (got: ${v ?? "<missing>"})`,
+  );
+  process.exit(1);
+}
+
+function applyPhase(cand: CandidateMap, sourceDefault: SkillOrigin): void {
   const refsByName = new Map(
     walkSkills(repoRoot).map((r) => [r.name, r] as const),
   );
@@ -326,7 +344,17 @@ function applyPhase(cand: CandidateMap): void {
       installedAt: now,
       fetchedAt: now,
     };
-    writeSkillSource(skillDir, { ...base, upstream: pointer });
+    // Default new markers to `source: "bundled"` — this tool stamps
+    // skills the maintainer is intentionally adding to the bundled
+    // set. `readSkillSource` returns `source: "yours"` both when the
+    // marker file is missing AND when it exists with that value, so
+    // we can't distinguish; just write the desired default directly.
+    // `--source yours` overrides for the rare personal-skill case.
+    writeSkillSource(skillDir, {
+      ...base,
+      source: sourceDefault,
+      upstream: pointer,
+    });
     const baseline = hashSkillFolder(skillDir);
     if (baseline) writeSyncedHash(skillDir, baseline);
     stamped++;
@@ -354,7 +382,8 @@ async function main(): Promise<void> {
       console.error(`unexpected candidate JSON version: ${cand.version}`);
       process.exit(1);
     }
-    applyPhase(cand);
+    const sourceDefault = parseSourceFlag();
+    applyPhase(cand, sourceDefault);
     return;
   }
 
