@@ -60,13 +60,13 @@ const CHIP_DEFS: readonly ChipDef[] = [
   {
     tag: "updates",
     label: "Updates",
-    title: "Skills with a newer version available from their authoritative upstream.",
+    title: "Skills with a newer version available from their Origin.",
     matches: (e) => e.upstreamUpdateAvailable === true,
   },
   {
     tag: "edited",
     label: "Edited",
-    title: "Skills you've edited since their last upstream snapshot.",
+    title: "Skills you've edited since their last Origin snapshot.",
     matches: (e) => e.drift === true,
   },
   {
@@ -90,7 +90,7 @@ const CHIP_DEFS: readonly ChipDef[] = [
   {
     tag: "personal",
     label: "Personal",
-    title: "Skills authored in this repo (self-referential upstream or no upstream).",
+    title: "Skills authored in this repo (self-referential Origin or no Origin).",
     matches: (e) => e.bucket === "personal",
   },
   {

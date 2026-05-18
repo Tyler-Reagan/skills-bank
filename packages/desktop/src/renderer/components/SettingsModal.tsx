@@ -229,7 +229,7 @@ export function SettingsModal({
                 }))
               }
             />
-            <strong>Show upstream activity</strong>
+            <strong>Show Origin activity</strong>
           </label>
           {!isAuthed && (
             <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>

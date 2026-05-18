@@ -875,7 +875,7 @@ export function SkillDetailDrawer({
                   lastCommit?.sha &&
                   lastCommit?.date && (
                     <div className="drawer-meta-row">
-                      <span className="drawer-meta-key">last upstream</span>
+                      <span className="drawer-meta-key">last Origin commit</span>
                       <span className="drawer-meta-value">
                         {new Date(lastCommit.date).toLocaleDateString()} ·{" "}
                         <code>{lastCommit.sha.slice(0, 7)}</code>
@@ -1000,7 +1000,7 @@ export function SkillDetailDrawer({
                       setAction(null),
                     );
                   }}
-                  title={`Discard local edits and re-fetch from ${entry.source.upstream?.repo ?? "upstream"}. Your changes are lost.`}
+                  title={`Discard local edits and re-fetch from ${entry.source.upstream?.repo ?? "Origin"}. Your changes are lost.`}
                 >
                   {action === "taking-upstream" ? (
                     <>
@@ -1043,7 +1043,7 @@ export function SkillDetailDrawer({
                 }}
                 title={
                   caps.canTakeUpstream
-                    ? "Keep your local edits and clear the upstream pointer. Future probes won't surface this skill as having an update available."
+                    ? "Keep your local edits and clear the Origin pointer. Future probes won't surface this skill as having an update available."
                     : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
                 }
               >
@@ -1062,11 +1062,11 @@ export function SkillDetailDrawer({
                 {caps.canTakeUpstream ? (
                   <>
                     Your local copy diverges from{" "}
-                    {entry.source.upstream?.repo ?? "the upstream"}.
+                    {entry.source.upstream?.repo ?? "its Origin"}.
                     <strong> Reset to origin</strong> discards your edits and
                     refetches.
                     <strong> Unlink origin</strong> keeps your edits and clears
-                    the upstream pointer.
+                    the Origin pointer.
                   </>
                 ) : (
                   <>
@@ -1092,7 +1092,7 @@ export function SkillDetailDrawer({
                   );
                 }}
                 title={`Fetch the latest content from ${
-                  entry.source.upstream?.repo ?? "the upstream"
+                  entry.source.upstream?.repo ?? "the Origin"
                 } and mirror it into this skill.`}
               >
                 {action === "updating" ? (
@@ -1105,7 +1105,7 @@ export function SkillDetailDrawer({
               </button>
               <p className="drawer-action-hint">
                 A newer version is available from{" "}
-                <code>{entry.source.upstream?.repo ?? "upstream"}</code>. Local
+                <code>{entry.source.upstream?.repo ?? "Origin"}</code>. Local
                 content is unchanged since the last fetch, so the update applies
                 cleanly.
               </p>

@@ -90,11 +90,11 @@ export function UpdatesModal({
         </div>
 
         <p style={hint}>
-          These skills have a newer version available from their authoritative
-          upstream. Updating fetches the latest content directly from each
-          skill's <strong>Origin</strong> and mirrors it into your registry —
-          local edits are not preserved, so skills you've edited surface via
-          the Drift heal flow (Reset to origin / Unlink origin) instead.
+          These skills have a newer version available from their{" "}
+          <strong>Origin</strong>. Updating fetches the latest content directly
+          from each skill's Origin and mirrors it into your registry — local
+          edits are not preserved, so skills you've edited surface via the
+          Drift heal flow (Reset to origin / Unlink origin) instead.
         </p>
 
         <div style={list}>
@@ -150,7 +150,7 @@ export function UpdatesModal({
             type="button"
             onClick={() => void onRefresh()}
             disabled={running}
-            title="Probe upstream now (resets known updates against the latest tree hashes)."
+            title="Probe Origins now (resets known updates against the latest tree hashes)."
           >
             <Icon name="refresh" size="sm" /> Refresh
           </button>
