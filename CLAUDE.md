@@ -9,7 +9,7 @@ Monorepo (pnpm workspaces):
 - **`packages/core`** — pure TypeScript registry/install logic. Consumed by both desktop and CLI; no Electron, no DOM dependencies.
 - **`packages/desktop`** — Electron app (main + renderer). The primary product.
 - **`packages/cli`** — Node CLI. Small surface; the `cli-minimal` plan strips it further.
-- **`skills/`** — the bundled curated skill set, plus user-contributed/external skills.
+- **`skills/`** — bundled skill content. Two subdirectories: `personal/` for skills authored in this repo (self-referential upstream or `kind: "none"`); `vendored/` for skills harvested from external authors' repos. Names are globally unique across buckets; collisions throw at index-build time. The eventual `Tyler-Reagan/personal-skills` repo split extracts `skills/personal/` via `git subtree split`.
 - **`docs/plans/`** — implementation plans. Filenames are descriptive (not numbered) so the IDs don't conflate with execution order; see the **Plans** section below for the canonical sequence.
 - **`scripts/`** — maintenance + agent operations (validation, index build, reset, etc.).
 
@@ -41,7 +41,7 @@ If you add a new script, place it in the appropriate group by ordering. If you a
 | `pnpm backfill:deployed` | Stamp upstream pointers into a deployed registry by reading the local `~/.agents/.skill-lock.json`. Mostly redundant with the desktop's boot-time scanner; useful for scripted bootstraps. Resolves registry root via `--root`, `SKILLS_BANK_ROOT`, or cwd walk-up. |
 | `pnpm discover:bundled`  | Discover authoritative upstreams for unstamped bundled skills via `npx skills find` + GitHub Trees probe. Writes a candidate JSON the maintainer reviews, then re-runs with `--apply <json>` to commit markers. Used by the `origin-paradigm-reframe` plan's Pass B backfill. |
 | `pnpm stamp:self-authored` | Stamp self-referential upstream pointers (`repo = BUNDLED_REPO`) onto any bundled skill still missing an `upstream` field after `discover:bundled` runs. Dry by default; `--apply` writes; `--only foo,bar` scopes to a subset. Pass C of the `origin-paradigm-reframe` backfill. |
-| `pnpm vendor:skill <owner/repo>@<id>` | Forward-vendoring: pull a skill folder from an upstream GitHub repo into `skills/<id>/`, write the `.skills-bank.json` marker, baseline the drift hash. Supports `--path` (explicit SKILL.md path), `--as` (rename), `--force` (overwrite existing). The canonical way to add a harvested skill to the bundled set. |
+| `pnpm vendor:skill <owner/repo>@<id>` | Forward-vendoring: pull a skill folder from an upstream GitHub repo into `skills/vendored/<id>/` (default) or `skills/personal/<id>/` with `--personal`. Writes the `.skills-bank.json` marker (`source: "bundled"`) and baselines the drift hash. Supports `--path` (explicit SKILL.md path), `--as` (rename), `--force` (overwrite existing). Refuses cross-bucket name collisions. The canonical way to add a harvested skill to the bundled set. |
 
 ### Common sequences
 
@@ -82,6 +82,8 @@ Active body of work. Filenames are stable descriptive IDs; execution order is do
 | [`github-first-onboarding.md`](docs/plans/github-first-onboarding.md)             | `github-mode-coherence` (groundwork)                      |
 | [`per-skill-upstream-foundation.md`](docs/plans/per-skill-upstream-foundation.md) | none (cleaner if `github-first-onboarding` lands first)   |
 | [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | `per-skill-upstream-foundation`                           |
+| [`skills-directory-split.md`](docs/plans/skills-directory-split.md)               | `origin-paradigm-reframe`                                 |
+| [`drift-update-ux-consistency.md`](docs/plans/drift-update-ux-consistency.md)     | `origin-paradigm-reframe` (cleaner if `skills-directory-split` lands first) |
 | [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | `origin-paradigm-reframe`                                 |
 | [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `origin-paradigm-reframe` + `bank-mode-persistence`       |
 
@@ -93,8 +95,10 @@ To minimize thrashing (later plans rendering earlier plans' code obsolete), this
 2. **`github-first-onboarding`** — collapses the local-vs-github mode discriminator. Doing this before the per-skill plans means they won't have to branch on a flag that's about to disappear.
 3. **`per-skill-upstream-foundation`** — adds the per-skill upstream metadata + probe/update.
 4. **`origin-paradigm-reframe`** — reframes Origin as authoritative upstream (not the bundled repo), reverts Tier 3, lands maintainer-time backfill + direct-fetch update flow.
-5. **`bank-mode-persistence`** — adds the local snapshot cache.
-6. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
+5. **`skills-directory-split`** — spatial separation of `skills/` into `personal/` + `vendored/` subdirectories.
+6. **`drift-update-ux-consistency`** — drawer button language/styling consistency under the canonical glossary, plus Registry-tab filter for pending updates.
+7. **`bank-mode-persistence`** — adds the local snapshot cache.
+8. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
 
 `cli-minimal` is independent of the others and can slot anywhere — typically last since it's pure housekeeping.
 

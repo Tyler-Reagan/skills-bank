@@ -8,6 +8,7 @@ Domain: per-skill upstream tracking, drift detection, and the manual upstream pi
 | ------------ | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | **Skill**    | A folder containing a `SKILL.md` that the user has installed locally                                              | Package, plugin                           |
 | **Registry** | The on-disk directory of installed **Skill**s the desktop app reads from                                          | Library, collection, bank                 |
+| **Bucket**   | Spatial categorization of a **Skill** under the **Registry**'s `skills/` directory. `personal` for **Skill**s authored in this repo (self-referential **Origin** or `kind: "none"`); `vendored` for harvested **Skill**s with external **Origin** | Category, group                          |
 | **Adopted**  | A **Skill** whose files live inside the user's **Registry** and are managed by the desktop app                    | Owned, local, bundled (overloaded — see Flagged) |
 | **Tracked**  | A **Skill** whose files live in the agent directory and are managed by the `vercel-labs/skills` CLI               | CLI-managed, external                     |
 

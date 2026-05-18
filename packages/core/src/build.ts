@@ -7,7 +7,7 @@ import { readUpstreamCanonNames } from "./canon.js";
 import { readExternalRegistry } from "./external.js";
 import { hashSkillFolder, readSyncedHash } from "./heal.js";
 import { readHiddenCanonNames } from "./hide.js";
-import { readSkillMeta } from "./registry.js";
+import { readSkillMeta, walkSkills } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import type {
   PublishState,
@@ -97,24 +97,24 @@ export function buildRegistryIndex(
   const hiddenCanon = readHiddenCanonNames(registryRoot);
 
   if (fs.existsSync(skillsDir)) {
-    for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-      if (!sk.isDirectory()) continue;
-      const skillDir = path.join(skillsDir, sk.name);
+    const skillRefs = walkSkills(registryRoot);
+    for (const ref of skillRefs) {
       const built = buildOneEntry(
         registryRoot,
-        skillDir,
-        sk.name,
+        ref.dir,
+        ref.name,
         validate,
         opts,
       );
       if (built) {
-        const ps = publishStates.get(sk.name);
+        built.bucket = ref.bucket;
+        const ps = publishStates.get(ref.name);
         if (ps) built.publishState = ps;
-        built.canon = upstreamCanon.has(sk.name) || ps === "pushed";
+        built.canon = upstreamCanon.has(ref.name) || ps === "pushed";
         // Hide flag is only meaningful for canon entries (non-canon
         // skills are just unregisterable). Stale entries in the
         // hidden list for skills that lost canon status get ignored.
-        if (built.canon && hiddenCanon.has(sk.name)) built.hidden = true;
+        if (built.canon && hiddenCanon.has(ref.name)) built.hidden = true;
         // Drift detection for skills with a recorded baseline hash.
         // Two paths populate `.skills-bank-hash` today: the bundled
         // sync flow (snapshot at sync time) and the upstream-scanner
@@ -127,9 +127,9 @@ export function buildRegistryIndex(
           built.source.source === "bundled" ||
           built.source.upstream !== undefined
         ) {
-          const recorded = readSyncedHash(skillDir);
+          const recorded = readSyncedHash(ref.dir);
           if (recorded) {
-            const live = hashSkillFolder(skillDir);
+            const live = hashSkillFolder(ref.dir);
             if (live && live !== recorded) built.drift = true;
           }
         }
@@ -157,16 +157,17 @@ export function buildRegistryIndex(
   // user gets a Heal flow on these instead of having them silently
   // disappear.
   const live = new Set(entries.map((e) => e.name));
-  for (const name of priorNames) {
-    if (live.has(name)) continue;
+  for (const prior of priorNames) {
+    if (live.has(prior.name)) continue;
     entries.push({
-      name,
+      name: prior.name,
       description: "(files missing)",
-      path: `skills/${name}`,
+      path: prior.path,
       source: { source: "yours" },
       adopted: true,
       missing: true,
-      ...(upstreamCanon.has(name) ? { canon: true } : {}),
+      ...(prior.bucket ? { bucket: prior.bucket } : {}),
+      ...(upstreamCanon.has(prior.name) ? { canon: true } : {}),
     });
   }
 
@@ -353,12 +354,24 @@ function buildExternalEntry(
  * successful build. Returns an empty array if no prior index exists
  * or it can't be parsed.
  */
-function readPriorIndexNames(registryRoot: string): string[] {
+interface PriorIndexEntry {
+  name: string;
+  path: string;
+  bucket?: import("./registry.js").SkillBucket;
+}
+
+function readPriorIndexNames(registryRoot: string): PriorIndexEntry[] {
   const p = path.join(registryRoot, "index.json");
   if (!fs.existsSync(p)) return [];
   try {
     const raw = JSON.parse(fs.readFileSync(p, "utf8")) as {
-      entries?: Array<{ name?: unknown; adopted?: unknown; missing?: unknown }>;
+      entries?: Array<{
+        name?: unknown;
+        path?: unknown;
+        bucket?: unknown;
+        adopted?: unknown;
+        missing?: unknown;
+      }>;
     };
     if (!Array.isArray(raw.entries)) return [];
     return raw.entries
@@ -372,7 +385,17 @@ function readPriorIndexNames(registryRoot: string): string[] {
           e.adopted !== false &&
           e.missing !== true,
       )
-      .map((e) => e.name as string);
+      .map((e) => {
+        const out: PriorIndexEntry = {
+          name: e.name as string,
+          path:
+            typeof e.path === "string" ? e.path : `skills/${e.name as string}`,
+        };
+        if (e.bucket === "personal" || e.bucket === "vendored") {
+          out.bucket = e.bucket;
+        }
+        return out;
+      });
   } catch {
     return [];
   }
@@ -436,19 +459,17 @@ function computePublishStates(registryRoot: string): Map<string, PublishState> {
   );
 
   // Bulk: latest commit per skill folder via name-only diff. Iterate
-  // each skill's last commit cheaply.
-  const skillsDir = path.join(registryRoot, "skills");
-  if (!fs.existsSync(skillsDir)) return out;
-  for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    if (!sk.isDirectory()) continue;
-    if (out.has(sk.name)) continue; // already untracked
-    const sha = exec(`git log -1 --format=%H -- "skills/${sk.name}"`)?.trim();
+  // each skill's last commit cheaply. Walks the bucket subtree via
+  // walkSkills so we get the right relPath for the git log scope.
+  for (const ref of walkSkills(registryRoot)) {
+    if (out.has(ref.name)) continue; // already untracked
+    const sha = exec(`git log -1 --format=%H -- "${ref.relPath}"`)?.trim();
     if (!sha) {
       // Folder has no commit history → counts as a local edit.
-      out.set(sk.name, "untracked");
+      out.set(ref.name, "untracked");
       continue;
     }
-    out.set(sk.name, unpushedSet.has(sha) ? "draft" : "pushed");
+    out.set(ref.name, unpushedSet.has(sha) ? "draft" : "pushed");
   }
   return out;
 }

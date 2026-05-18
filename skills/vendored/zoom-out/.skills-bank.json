@@ -1,0 +1,12 @@
+{
+  "source": "yours",
+  "upstream": {
+    "kind": "github",
+    "repo": "mattpocock/skills",
+    "skillPath": "skills/engineering/zoom-out/SKILL.md",
+    "sourceUrl": "https://github.com/mattpocock/skills.git",
+    "skillFolderHash": "6ecebabdea814d12888f56a611da7bf182b5fb26",
+    "installedAt": "2026-05-18T05:30:44.426Z",
+    "fetchedAt": "2026-05-18T05:30:44.426Z"
+  }
+}

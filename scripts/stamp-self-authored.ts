@@ -27,8 +27,10 @@ import {
   hashSkillFolder,
   readSkillSource,
   UPSTREAM_KIND_GITHUB,
+  walkSkills,
   writeSkillSource,
   writeSyncedHash,
+  type SkillFolderRef,
   type UpstreamPointer,
 } from "../packages/core/src/index.js";
 import { BUNDLED_REPO } from "../packages/desktop/src/shared/ipc.js";
@@ -45,22 +47,22 @@ function main(): void {
       ? new Set(process.argv[onlyIdx + 1]!.split(",").map((s) => s.trim()))
       : null;
 
-  const skillsDir = path.join(repoRoot, "skills");
   const now = new Date().toISOString();
-  const candidates: string[] = [];
-
-  for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    if (!sk.isDirectory()) continue;
-    const name = sk.name;
-    if (only && !only.has(name)) continue;
-    const base = readSkillSource(path.join(skillsDir, name));
+  // Self-authored skills live under skills/personal/<name>/ post-split.
+  // Pre-split (during the migration window) they may still be under the
+  // flat skills/<name>/ layout — walkSkills tolerates both since flat
+  // entries simply aren't found.
+  const candidates: SkillFolderRef[] = [];
+  for (const ref of walkSkills(repoRoot)) {
+    if (only && !only.has(ref.name)) continue;
+    const base = readSkillSource(ref.dir);
     if (base.upstream !== undefined) continue;
-    candidates.push(name);
+    candidates.push(ref);
   }
 
-  candidates.sort();
+  candidates.sort((a, b) => a.name.localeCompare(b.name));
   console.log(`${candidates.length} unstamped:`);
-  for (const n of candidates) console.log(`  ${n}`);
+  for (const ref of candidates) console.log(`  ${ref.name}`);
 
   if (!apply) {
     console.log(
@@ -70,10 +72,9 @@ function main(): void {
   }
 
   let stamped = 0;
-  for (const name of candidates) {
-    const skillDir = path.join(skillsDir, name);
-    const base = readSkillSource(skillDir);
-    const skillPath = `skills/${name}/SKILL.md`;
+  for (const ref of candidates) {
+    const base = readSkillSource(ref.dir);
+    const skillPath = `${ref.relPath}/SKILL.md`;
     const pointer: UpstreamPointer = {
       kind: UPSTREAM_KIND_GITHUB,
       repo: BUNDLED_REPO,
@@ -82,9 +83,9 @@ function main(): void {
       installedAt: now,
       fetchedAt: now,
     };
-    writeSkillSource(skillDir, { ...base, upstream: pointer });
-    const baseline = hashSkillFolder(skillDir);
-    if (baseline) writeSyncedHash(skillDir, baseline);
+    writeSkillSource(ref.dir, { ...base, upstream: pointer });
+    const baseline = hashSkillFolder(ref.dir);
+    if (baseline) writeSyncedHash(ref.dir, baseline);
     stamped++;
   }
   console.log(`\nstamped ${stamped} as self-authored (repo: ${BUNDLED_REPO})`);

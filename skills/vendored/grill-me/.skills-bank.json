@@ -1,0 +1,12 @@
+{
+  "source": "yours",
+  "upstream": {
+    "kind": "github",
+    "repo": "mattpocock/skills",
+    "skillPath": "skills/productivity/grill-me/SKILL.md",
+    "sourceUrl": "https://github.com/mattpocock/skills.git",
+    "skillFolderHash": "2a1ad17028306ebe45f0e49703fa28b9b2e7f499",
+    "installedAt": "2026-05-18T05:30:44.421Z",
+    "fetchedAt": "2026-05-18T05:30:44.421Z"
+  }
+}

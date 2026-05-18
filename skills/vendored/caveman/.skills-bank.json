@@ -1,0 +1,12 @@
+{
+  "source": "yours",
+  "upstream": {
+    "kind": "github",
+    "repo": "mattpocock/skills",
+    "skillPath": "skills/productivity/caveman/SKILL.md",
+    "sourceUrl": "https://github.com/mattpocock/skills.git",
+    "skillFolderHash": "17972a1bdbf5909b9dbdc435ad348f0bf45f8664",
+    "installedAt": "2026-05-14T00:40:48.763Z",
+    "fetchedAt": "2026-05-18T05:30:44.417Z"
+  }
+}

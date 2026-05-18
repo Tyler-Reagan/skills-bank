@@ -1,0 +1,12 @@
+{
+  "source": "yours",
+  "upstream": {
+    "kind": "github",
+    "repo": "modelcontextprotocol/ext-apps",
+    "skillPath": "plugins/mcp-apps/skills/convert-web-app/SKILL.md",
+    "sourceUrl": "https://github.com/modelcontextprotocol/ext-apps.git",
+    "skillFolderHash": "1878b683a535492a90e26cfc2943fd21aea28380",
+    "installedAt": "2026-05-14T18:22:36.034Z",
+    "fetchedAt": "2026-05-14T18:22:36.034Z"
+  }
+}

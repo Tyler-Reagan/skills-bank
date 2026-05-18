@@ -56,6 +56,7 @@ import {
   resolveRegistryRoot,
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
+  walkSkills,
   type GitTreeEntry,
   uninstallSkill,
   removeBrokenLinks,
@@ -546,7 +547,12 @@ async function applyUpstreamUpdate(
   }
 
   const folderPath = folderPathFromSkillPath(upstream.skillPath);
-  const registrySkillDir = path.join(registryRoot, "skills", name);
+  // Resolve through entry.path so the right bucket is used; falls
+  // back to legacy flat layout if entry.path is somehow missing.
+  const registrySkillDir = path.resolve(
+    registryRoot,
+    entry.path || `skills/${name}`,
+  );
   const existingSource = readSkillSource(registrySkillDir);
 
   const mirror = await mirrorSkillFolder(
@@ -761,10 +767,13 @@ async function setManualUpstream(
   choice: UpstreamManualChoice,
 ): Promise<{ ok: boolean; message: string }> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  const skillDir = path.join(registryRoot, "skills", name);
-  if (!fs.existsSync(skillDir)) {
+  // Look up the bucket via walkSkills; setManualUpstream is invoked
+  // for adopted skills only, so we expect a match.
+  const ref = walkSkills(registryRoot).find((r) => r.name === name);
+  if (!ref) {
     return { ok: false, message: `${name} is not adopted into the registry` };
   }
+  const skillDir = ref.dir;
   const existing = readSkillSource(skillDir);
   if (choice.kind === "none") {
     writeSkillSource(skillDir, { ...existing, upstream: { kind: "none" } });
@@ -2021,7 +2030,6 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
 ipcMain.handle(IPC.exportRegistry, async () => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
-    const skillsDir = path.join(registryRoot, "skills");
     const date = new Date().toISOString().slice(0, 10);
     const win = BrowserWindow.getFocusedWindow();
     const result = await dialog.showSaveDialog(win ?? undefined!, {
@@ -2687,14 +2695,10 @@ ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
  * subsequent calls are no-ops.
  */
 function migrateLegacyGithubMarkers(registryRoot: string): void {
-  const skillsDir = path.join(registryRoot, "skills");
-  if (!fs.existsSync(skillsDir)) return;
-  for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    if (!ent.isDirectory()) continue;
-    const skillDir = path.join(skillsDir, ent.name);
-    const src = readSkillSource(skillDir);
+  for (const ref of walkSkills(registryRoot)) {
+    const src = readSkillSource(ref.dir);
     if (src.source === "yours" && src.syncedFromCommit) {
-      writeSkillSource(skillDir, { ...src, source: "bundled" });
+      writeSkillSource(ref.dir, { ...src, source: "bundled" });
     }
   }
 }

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
+import { walkSkills } from "./registry.js";
 import {
   readSkillSource,
   UPSTREAM_KIND_GITHUB,
@@ -156,18 +157,14 @@ export function scanAndStampUpstreamFromLock(registryRoot: string): {
 } {
   const lock = readSkillLockFile(defaultSkillLockPath());
   if (!lock) return { stamped: 0 };
-  const skillsDir = path.join(registryRoot, "skills");
-  if (!fs.existsSync(skillsDir)) return { stamped: 0 };
   let stamped = 0;
-  for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    if (!sk.isDirectory()) continue;
-    const skillDir = path.join(skillsDir, sk.name);
-    const base = readSkillSource(skillDir);
+  for (const ref of walkSkills(registryRoot)) {
+    const base = readSkillSource(ref.dir);
     if (base.upstream !== undefined) continue;
-    const inferred = inferUpstreamForSkill(sk.name, lock);
+    const inferred = inferUpstreamForSkill(ref.name, lock);
     if (!inferred) continue;
     try {
-      writeSkillSource(skillDir, { ...base, upstream: inferred });
+      writeSkillSource(ref.dir, { ...base, upstream: inferred });
       // Capture the on-disk content hash as the user-edit baseline.
       // The CLI's `skillFolderHash` is a SHA-1 git tree hash (probe
       // identity); this is the SHA-256 we compare against on every
@@ -177,8 +174,8 @@ export function scanAndStampUpstreamFromLock(registryRoot: string): {
       // practice. Best-effort: a null hash (folder too large) just
       // skips baseline-writing; drift detection silently disables
       // for that skill until it shrinks.
-      const baseline = hashSkillFolder(skillDir);
-      if (baseline) writeSyncedHash(skillDir, baseline);
+      const baseline = hashSkillFolder(ref.dir);
+      if (baseline) writeSyncedHash(ref.dir, baseline);
       stamped++;
     } catch {
       // A failed write isn't fatal — next scan retries.

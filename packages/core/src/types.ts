@@ -33,12 +33,23 @@ export interface RegistryEntry extends SkillMeta {
   publishState?: PublishState;
   /**
    * Taxonomy axis: true when the skill's files physically live under
-   * `<registryRoot>/skills/<name>/`. False when the registry entry
-   * tracks an external location (the symlink-mode register path).
-   * Defaults to true for entries built from `<registryRoot>/skills/`
-   * — those are de facto adopted. M3 generalizes the non-adopted case.
+   * `<registryRoot>/skills/<bucket>/<name>/`. False when the registry
+   * entry tracks an external location (the symlink-mode register path).
+   * Defaults to true for entries built from the bucket subtree —
+   * those are de facto adopted. M3 generalizes the non-adopted case.
    */
   adopted?: boolean;
+  /**
+   * Spatial categorization. `personal` for skills authored in this
+   * repo (self-referential upstream or `kind: "none"`); `vendored`
+   * for harvested skills with external upstream. Derived from the
+   * folder's location under `<registryRoot>/skills/{personal,vendored}/`
+   * — purely a path-level concept, never stored in markers.
+   *
+   * Absent on external (non-adopted) entries, since those don't live
+   * under the bucket subtree.
+   */
+  bucket?: import("./registry.js").SkillBucket;
   /**
    * Internal-only taxonomy axis: true when this skill's name appears
    * in the active linked registry's upstream bundled snapshot — local
