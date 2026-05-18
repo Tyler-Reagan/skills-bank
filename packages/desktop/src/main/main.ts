@@ -791,6 +791,11 @@ async function setManualUpstream(
   // disengages until the user actually edits.
   const baseline = hashSkillFolder(skillDir);
   if (baseline) writeSyncedHash(skillDir, baseline);
+  // Re-fire the probe so this newly-linked skill is compared against
+  // upstream immediately, instead of waiting for the periodic 6h tick.
+  // Per-repo cache absorbs the cost; if the user just probed this repo
+  // via the picker validation above, the runner reuses it.
+  void runUpstreamProbe();
   return { ok: true, message: `Stamped ${name} as from ${choice.repo}.` };
 }
 
@@ -1899,6 +1904,14 @@ ipcMain.handle(IPC.rebuildIndex, () => {
       includeGitInfo: true,
       writeFile: true,
     });
+    // Re-fire the probe so any marker edits made since last probe
+    // (e.g. a hand-tweaked skillFolderHash, a freshly-stamped
+    // upstream pointer, a Tier-1 lock-file pickup just done above)
+    // are re-compared against upstream. Fire-and-forget; the renderer
+    // re-fetches via the existing onUpstreamProbeComplete subscription.
+    // Per-repo TTL cache means no extra GitHub call when the boot
+    // probe just ran.
+    void runUpstreamProbe();
     return {
       ok: true,
       message: `index rebuilt (${index.entries.length} entries)`,
