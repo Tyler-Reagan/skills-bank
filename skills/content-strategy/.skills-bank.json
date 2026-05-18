@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "coreyhaines31/marketingskills",
+    "sourceUrl": "https://github.com/coreyhaines31/marketingskills.git",
+    "skillPath": "skills/content-strategy/SKILL.md",
+    "skillFolderHash": "8a2387b41d046b1b5a72a346103120b3c28e8bf5",
+    "installedAt": "2026-05-18T08:09:53.421Z",
+    "fetchedAt": "2026-05-18T08:09:53.421Z"
+  }
+}

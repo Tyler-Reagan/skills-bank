@@ -42,12 +42,29 @@ export interface RepoTreeProbeOk {
   truncated: boolean;
 }
 
+export interface RateLimitInfo {
+  /** Hourly request ceiling — 60 for unauth-per-IP, 5000 for authed. */
+  limit: number;
+  /** Requests remaining in the current window. 0 means exhausted. */
+  remaining: number;
+  /** ISO timestamp at which the window resets and quota replenishes. */
+  resetAt: string;
+  /** True iff the caller was operating on the unauthenticated ceiling. */
+  unauthenticated: boolean;
+}
+
 export interface RepoTreeProbeErr {
   ok: false;
-  /** HTTP status code, or 0 for transport-level failure. */
+  /** HTTP status code, or 0 for transport-level failure. We map
+   *  GitHub's "403 with X-RateLimit-Remaining: 0" quirk to 429 here
+   *  so callers branch on the semantically-correct code. */
   status: number;
-  /** Human-readable reason for surfacing to the user. */
+  /** Human-readable reason — short, no jargon. The desktop renderer
+   *  formats this directly into the toast. */
   message: string;
+  /** Populated when `status === 429`. Lets the renderer show the
+   *  exact ceiling, time-to-reset, and a "sign in" affordance. */
+  rateLimit?: RateLimitInfo;
 }
 
 export type RepoTreeProbe = RepoTreeProbeOk | RepoTreeProbeErr;
@@ -88,6 +105,28 @@ export async function probeRepoTree(
     };
   }
   if (!res.ok) {
+    // GitHub returns 403 (not 429) when the rate-limit window is
+    // exhausted, distinguishable only by `X-RateLimit-Remaining: 0`.
+    // Translate to a structured rate-limit error so the renderer
+    // can show "60/hr, resets at 4:12 PM" rather than a bare
+    // "403 Forbidden."
+    const remainingHdr = res.headers.get("x-ratelimit-remaining");
+    if (res.status === 403 && remainingHdr === "0") {
+      const limit = Number(res.headers.get("x-ratelimit-limit") ?? "0") || 60;
+      const resetEpoch = Number(res.headers.get("x-ratelimit-reset") ?? "0");
+      const resetAt = resetEpoch > 0
+        ? new Date(resetEpoch * 1000).toISOString()
+        : new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      const unauthenticated = !token;
+      return {
+        ok: false,
+        status: 429,
+        message: unauthenticated
+          ? `GitHub rate limit reached (${limit}/hr, unauthenticated)`
+          : `GitHub rate limit reached (${limit}/hr)`,
+        rateLimit: { limit, remaining: 0, resetAt, unauthenticated },
+      };
+    }
     return {
       ok: false,
       status: res.status,
@@ -138,4 +177,149 @@ export function folderPathFromSkillPath(skillPath: string): string {
   const i = skillPath.lastIndexOf("/");
   if (i < 0) return "";
   return skillPath.slice(0, i);
+}
+
+export interface MirrorResultOk {
+  ok: true;
+  /** SHA-1 git tree hash of the upstream folder — write this into the
+   *  skill's `upstream.skillFolderHash` marker so subsequent probes
+   *  compare against the just-mirrored snapshot. */
+  folderHash: string;
+  /** Number of files mirrored. Used for telemetry / human-readable
+   *  return messages; not load-bearing. */
+  fileCount: number;
+}
+
+export interface MirrorResultErr {
+  ok: false;
+  /** HTTP status when known; 0 for transport errors or refusal; 429
+   *  when the upstream-side rate limit is exhausted. */
+  status: number;
+  message: string;
+  /** Set when `status === 429` so the renderer can show ceiling +
+   *  reset time + auth affordance. */
+  rateLimit?: RateLimitInfo;
+}
+
+export type MirrorResult = MirrorResultOk | MirrorResultErr;
+
+/**
+ * Fetch every file under `<folderPath>/` from `repo` and mirror them
+ * into `destDir`. Wipe + recopy semantics — `destDir` is cleared
+ * before writing, so files removed upstream are removed locally too.
+ *
+ * The fetch is a single recursive Git Trees probe + one blob fetch
+ * per file. Typical skill folders (≤10 files) → ~11 API calls.
+ *
+ * Errors abort before any disk mutation: a transport failure
+ * mid-loop is detected before the local folder is wiped. Callers
+ * can retry without worrying about partial state.
+ *
+ * Does NOT write `.skills-bank.json` / `.skills-bank-hash` sidecars —
+ * those are app-state concerns the caller wires after the mirror
+ * succeeds (so vendor-new-skill, update-in-place, and
+ * preview-into-temp-dir can each manage marker state appropriately).
+ */
+export async function mirrorSkillFolder(
+  repo: string,
+  folderPath: string,
+  destDir: string,
+  token: string | null,
+  options: ProbeOptions = {},
+): Promise<MirrorResult> {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+
+  const probe = await probeRepoTree(repo, token, options);
+  if (!probe.ok) {
+    const err: MirrorResultErr = {
+      ok: false,
+      status: probe.status,
+      message: probe.message,
+    };
+    if (probe.rateLimit) err.rateLimit = probe.rateLimit;
+    return err;
+  }
+  if (probe.truncated) {
+    return {
+      ok: false,
+      status: 0,
+      message: `tree truncated for ${repo} — refusing to mirror on partial data`,
+    };
+  }
+  const folderHash = findFolderHash(probe.tree, folderPath);
+  if (!folderHash) {
+    return {
+      ok: false,
+      status: 404,
+      message: `${folderPath} not found in ${repo}`,
+    };
+  }
+
+  const folderPrefix = `${folderPath}/`;
+  const blobs = probe.tree.filter(
+    (e) => e.type === "blob" && e.path.startsWith(folderPrefix),
+  );
+  if (blobs.length === 0) {
+    return {
+      ok: false,
+      status: 0,
+      message: `${folderPath} in ${repo} contains no files`,
+    };
+  }
+
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "skills-bank",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  // Fetch all blobs into memory before touching disk — partial fetch
+  // failures must not leave destDir half-mirrored.
+  const fetched: { relPath: string; content: Buffer }[] = [];
+  for (const blob of blobs) {
+    const url = `https://api.github.com/repos/${repo}/git/blobs/${blob.sha}`;
+    let body: { content?: string; encoding?: string };
+    try {
+      const res = await fetch(url, { headers, signal: options.signal });
+      if (!res.ok) {
+        return {
+          ok: false,
+          status: res.status,
+          message: `failed to fetch ${blob.path} (${res.status} ${res.statusText})`,
+        };
+      }
+      body = (await res.json()) as typeof body;
+    } catch (err) {
+      return {
+        ok: false,
+        status: 0,
+        message: `transport error fetching ${blob.path}: ${(err as Error).message}`,
+      };
+    }
+    if (body.encoding !== "base64" || typeof body.content !== "string") {
+      return {
+        ok: false,
+        status: 0,
+        message: `unexpected blob encoding for ${blob.path}`,
+      };
+    }
+    fetched.push({
+      relPath: blob.path.slice(folderPrefix.length),
+      content: Buffer.from(body.content, "base64"),
+    });
+  }
+
+  // Commit to disk. Wipe destDir to drop files the upstream tree no
+  // longer carries, then write each fetched blob.
+  fs.rmSync(destDir, { recursive: true, force: true });
+  fs.mkdirSync(destDir, { recursive: true });
+  for (const { relPath, content } of fetched) {
+    const dest = path.join(destDir, relPath);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, content);
+  }
+
+  return { ok: true, folderHash, fileCount: fetched.length };
 }

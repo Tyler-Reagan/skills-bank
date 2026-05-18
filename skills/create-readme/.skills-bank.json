@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "github/awesome-copilot",
+    "skillPath": "skills/create-readme/SKILL.md",
+    "sourceUrl": "https://github.com/github/awesome-copilot.git",
+    "skillFolderHash": "f65537a3461b663121fe195697979c17a8004ea5",
+    "installedAt": "2026-05-12T18:13:53.358Z",
+    "fetchedAt": "2026-05-12T18:13:53.358Z"
+  }
+}

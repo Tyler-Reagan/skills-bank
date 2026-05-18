@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "anthropics/skills",
+    "sourceUrl": "https://github.com/anthropics/skills.git",
+    "skillPath": "skills/theme-factory/SKILL.md",
+    "skillFolderHash": "e05534d132fb1b21f9917840874758e30f0a9b1a",
+    "installedAt": "2026-05-18T08:09:53.421Z",
+    "fetchedAt": "2026-05-18T08:09:53.421Z"
+  }
+}

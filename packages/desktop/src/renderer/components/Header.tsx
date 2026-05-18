@@ -5,8 +5,27 @@ import { Icon } from "./Icon.js";
 export type Theme = "dark" | "light";
 export type Density = "comfortable" | "compact";
 
+/**
+ * Three-phase state of the Rescan affordance. Drives a single button
+ * through both the synchronous rebuild and the async upstream probe
+ * so the user has unbroken feedback for the entire "did anything
+ * change?" cycle.
+ *
+ *   - `idle`     ↻ Rescan
+ *   - `working`  ◐ Checking upstream…
+ *   - `done`     ✓ Up to date  /  ✓ N updates found
+ *
+ * Boot probes and the 6h periodic probe never set this — the renderer
+ * gates with a local `userTriggeredProbe` flag so background syncs
+ * stay silent.
+ */
+export type RescanState =
+  | { phase: "idle" }
+  | { phase: "working" }
+  | { phase: "done"; updates: number };
+
 interface Props {
-  refreshing: boolean;
+  rescanState: RescanState;
   onRefresh: () => void;
   theme: Theme;
   onToggleTheme: () => void;
@@ -41,7 +60,7 @@ interface Props {
 }
 
 export function Header({
-  refreshing,
+  rescanState,
   onRefresh,
   theme,
   onToggleTheme,
@@ -155,20 +174,38 @@ export function Header({
             )}
           </button>
           <button
-            className="refresh-btn"
-            disabled={refreshing}
-            title="Re-scan the registry and every agent directory from disk. No network."
+            className={`refresh-btn rescan-${rescanState.phase}`}
+            disabled={rescanState.phase !== "idle"}
+            aria-busy={rescanState.phase === "working" || undefined}
+            title={
+              rescanState.phase === "working"
+                ? "Checking upstream for updates"
+                : "Re-scan the registry, agent directories, and probe upstreams for updates"
+            }
             aria-label={
-              refreshing
-                ? "Re-scanning registry and agent directories"
-                : "Re-scan registry and agent directories"
+              rescanState.phase === "working"
+                ? "Checking upstream for updates"
+                : rescanState.phase === "done"
+                  ? rescanState.updates === 0
+                    ? "Up to date"
+                    : `${rescanState.updates} update${rescanState.updates === 1 ? "" : "s"} found`
+                  : "Rescan registry and check for upstream updates"
             }
             onClick={onRefresh}
           >
-            {refreshing ? (
+            {rescanState.phase === "working" ? (
               <>
                 <span className="spinner inline" aria-hidden="true" />{" "}
-                Re-scanning
+                Checking upstream…
+              </>
+            ) : rescanState.phase === "done" ? (
+              <>
+                <Icon name="check" size="md" />{" "}
+                {rescanState.updates === 0
+                  ? "Up to date"
+                  : rescanState.updates === 1
+                    ? "1 update found"
+                    : `${rescanState.updates} updates found`}
               </>
             ) : (
               <>

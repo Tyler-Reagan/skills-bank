@@ -1,0 +1,12 @@
+{
+  "source": "bundled",
+  "upstream": {
+    "kind": "github",
+    "repo": "mattpocock/skills",
+    "sourceUrl": "https://github.com/mattpocock/skills.git",
+    "skillPath": "skills/deprecated/ubiquitous-language/SKILL.md",
+    "skillFolderHash": "483fe10b01bed81b7eba7ee26df3f1bef9540c89",
+    "installedAt": "2026-05-18T08:09:53.421Z",
+    "fetchedAt": "2026-05-18T08:09:53.421Z"
+  }
+}

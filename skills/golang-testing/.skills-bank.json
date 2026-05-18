@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "affaan-m/everything-claude-code",
+    "skillPath": "skills/golang-testing/SKILL.md",
+    "sourceUrl": "https://github.com/affaan-m/everything-claude-code.git",
+    "skillFolderHash": "7fad33a9354adc951ae015d008c7c6478f3f1c1b",
+    "installedAt": "2026-05-14T02:33:27.608Z",
+    "fetchedAt": "2026-05-14T02:33:27.608Z"
+  }
+}

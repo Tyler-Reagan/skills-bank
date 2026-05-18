@@ -127,6 +127,63 @@ export type UpstreamManualChoice =
   | { kind: "none" };
 
 /**
+ * Response for `upstream:update`. Carries structured rate-limit info
+ * on 429 so the renderer can render a tailored, sticky error toast
+ * with a "Sign in" affordance, instead of a generic transient flash.
+ *
+ * `rateLimit` mirrors core's `RateLimitInfo` shape. Inlined here so
+ * the IPC surface doesn't depend on a separately-exported name.
+ */
+export interface UpstreamUpdateResult {
+  ok: boolean;
+  message: string;
+  /** Populated only on rate-limit failures. */
+  rateLimit?: {
+    limit: number;
+    remaining: number;
+    resetAt: string;
+    unauthenticated: boolean;
+  };
+  /** Populated only on failure when not a rate-limit. Free-form
+   *  diagnostic payload the user can copy into an external agent. */
+  diagnostic?: string;
+  error?: unknown;
+}
+
+/**
+ * Payload broadcast on the `upstream:probe` channel when the probe
+ * runner finishes a pass. Always sent — when the pass had no
+ * surfaceable issues the fields are undefined and the renderer
+ * treats the event as a pure "refresh the registry" nudge.
+ *
+ * `rateLimit` is set when at least one repo probe failed with a 429
+ * — populated from the most recent such failure (they all carry the
+ * same window state, so any one is representative). Triggers a
+ * sticky error toast in the renderer with a Sign-in affordance for
+ * unauthenticated hits.
+ *
+ * Other call sites that emit on this channel purely to nudge a
+ * registry refresh (e.g. applyUpstreamUpdate success, upstreamSetManual
+ * success) send an empty payload.
+ */
+export interface UpstreamProbeCompleteEvent {
+  rateLimit?: {
+    limit: number;
+    remaining: number;
+    resetAt: string;
+    unauthenticated: boolean;
+  };
+  /** Repos whose probe failed for non-rate-limit reasons. Surfaced
+   *  for diagnostics rather than as a user-facing alert. */
+  failedRepos?: string[];
+  /** Skills whose upstream hash moved past what was recorded — i.e.
+   *  how many Update Available chips this probe will produce. Used
+   *  by the Rescan button's "done" state copy. Undefined when the
+   *  event is a non-probe refresh nudge. */
+  updates?: number;
+}
+
+/**
  * Summary returned by `upstream:probe`. The renderer uses this to
  * surface progress in the UpdatesModal's manual-refresh control;
  * per-skill update state is surfaced via the augmented
@@ -612,10 +669,10 @@ interface SkillsBankAPI {
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
   upstreamProbe(): Promise<UpstreamProbeResult>;
-  onUpstreamProbeComplete(cb: () => void): () => void;
-  upstreamUpdate(
-    name: string,
-  ): Promise<{ ok: boolean; message: string; error?: unknown }>;
+  onUpstreamProbeComplete(
+    cb: (event: UpstreamProbeCompleteEvent) => void,
+  ): () => void;
+  upstreamUpdate(name: string): Promise<UpstreamUpdateResult>;
   upstreamRepoMetadata(repo: string): Promise<UpstreamRepoMetadata>;
   upstreamLastCommit(
     repo: string,

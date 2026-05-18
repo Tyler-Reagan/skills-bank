@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-15T19:47:50.126Z",
+  "generatedAt": "2026-05-18T15:17:31.417Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -10,13 +10,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/utility/404/SKILL.md",
+          "skillFolderHash": "2d2d535f88cb68f992c7dcaa96ffb86d874fd03d",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -28,13 +37,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "modelcontextprotocol/ext-apps",
+          "sourceUrl": "https://github.com/modelcontextprotocol/ext-apps.git",
+          "skillPath": "plugins/mcp-apps/skills/add-app-to-server/SKILL.md",
+          "skillFolderHash": "cce8d7d0ab939d9a02e3567df97d21f8f513eef2",
+          "installedAt": "2026-05-14T18:22:08.048Z",
+          "fetchedAt": "2026-05-14T18:22:08.048Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -47,13 +65,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/content/api/SKILL.md",
+          "skillFolderHash": "dff6934e57704f134aa9bb6245e57939d7778e2c",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -66,13 +93,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/branding/brand-visual/SKILL.md",
+          "skillFolderHash": "bc1f137b698e026b5b21f8092aec540981343b6b",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -85,13 +121,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/strategies/brand/branding/SKILL.md",
+          "skillFolderHash": "a224ec7902808cbd4af59a7a1b1876069990a414",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -104,16 +149,45 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/layout/carousel/SKILL.md",
+          "skillFolderHash": "4aec61b2179237ec30bb03ca7fd30766d2673297",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "caveman",
+      "description": ">",
+      "path": "skills/caveman",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/productivity/caveman/SKILL.md",
+          "skillFolderHash": "17972a1bdbf5909b9dbdc435ad348f0bf45f8664",
+          "installedAt": "2026-05-14T00:40:48.763Z",
+          "fetchedAt": "2026-05-18T05:30:44.417Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "competitor-research",
@@ -123,13 +197,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/seo/content/competitor-research/SKILL.md",
+          "skillFolderHash": "3f1c2c0a756b124397ba61a7c80b863495794d1e",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -142,13 +225,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/seo/content/content-optimization/SKILL.md",
+          "skillFolderHash": "d331bd9e6cb0017a54d4642dd70573aa1def6a2f",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -161,16 +253,45 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "coreyhaines31/marketingskills",
+          "sourceUrl": "https://github.com/coreyhaines31/marketingskills.git",
+          "skillPath": "skills/content-strategy/SKILL.md",
+          "skillFolderHash": "8a2387b41d046b1b5a72a346103120b3c28e8bf5",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "convert-web-app",
+      "description": "This skill should be used when the user asks to \"add MCP App support to my web app\", \"turn my web app into a hybrid MCP App\", \"make my web page work as an MCP App too\", \"wrap my existing UI as an MCP App\", \"convert iframe embed to MCP App\", \"turn my SPA into an MCP App\", or needs to add MCP App support to an existing web application while keeping it working standalone. Provides guidance for analyzing existing web apps and creating a hybrid web + MCP App with server-side tool and resource registration.",
+      "path": "skills/convert-web-app",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "modelcontextprotocol/ext-apps",
+          "sourceUrl": "https://github.com/modelcontextprotocol/ext-apps.git",
+          "skillPath": "plugins/mcp-apps/skills/convert-web-app/SKILL.md",
+          "skillFolderHash": "1878b683a535492a90e26cfc2943fd21aea28380",
+          "installedAt": "2026-05-14T18:22:36.034Z",
+          "fetchedAt": "2026-05-14T18:22:36.034Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "core-web-vitals",
@@ -180,13 +301,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "addyosmani/web-quality-skills",
+          "sourceUrl": "https://github.com/addyosmani/web-quality-skills.git",
+          "skillPath": "skills/core-web-vitals/SKILL.md",
+          "skillFolderHash": "041da568684b2b15ccb8789253dd2df29c8de433",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -198,13 +328,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "modelcontextprotocol/ext-apps",
+          "sourceUrl": "https://github.com/modelcontextprotocol/ext-apps.git",
+          "skillPath": "plugins/mcp-apps/skills/create-mcp-app/SKILL.md",
+          "skillFolderHash": "989d5b5a7f8b30e76f554a799f39e9350944e55b",
+          "installedAt": "2026-05-14T18:21:54.806Z",
+          "fetchedAt": "2026-05-14T18:21:54.806Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -216,13 +355,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "github/awesome-copilot",
+          "sourceUrl": "https://github.com/github/awesome-copilot.git",
+          "skillPath": "skills/create-readme/SKILL.md",
+          "skillFolderHash": "f65537a3461b663121fe195697979c17a8004ea5",
+          "installedAt": "2026-05-12T18:13:53.358Z",
+          "fetchedAt": "2026-05-12T18:13:53.358Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -234,13 +382,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "davila7/claude-code-templates",
+          "sourceUrl": "https://github.com/davila7/claude-code-templates.git",
+          "skillPath": "cli-tool/components/skills/creative-design/claude-d3js-skill/SKILL.md",
+          "skillFolderHash": "ac6ef90f2fc5edb2ed2e5a575f336087dc88dc37",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -253,13 +410,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/content/docs/SKILL.md",
+          "skillFolderHash": "c1dd50e708285ddc3eb8d491d9549ce5351740d9",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -271,13 +437,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "teachingai/full-stack-skills",
+          "sourceUrl": "https://github.com/teachingai/full-stack-skills.git",
+          "skillPath": "skills/electron-skills/electron/SKILL.md",
+          "skillFolderHash": "2b889701cf0fba3fb968fbeaaf5dfb243a2c6a8e",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -290,13 +465,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/branding/favicon/SKILL.md",
+          "skillFolderHash": "31207a5280b4fe3c54341c607a4bb597acc81b32",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -308,13 +492,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "vercel-labs/skills",
+          "sourceUrl": "https://github.com/vercel-labs/skills.git",
+          "skillPath": "skills/find-skills/SKILL.md",
+          "skillFolderHash": "3013fdeb8a11b10b1eb795ec3ae8bfca38f7c26d",
+          "installedAt": "2026-04-30T18:44:26.088Z",
+          "fetchedAt": "2026-04-30T18:44:26.088Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -326,13 +519,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "factory-ai/factory-plugins",
+          "sourceUrl": "https://github.com/factory-ai/factory-plugins.git",
+          "skillPath": "plugins/typescript/skills/fix-knip-unused-exports/SKILL.md",
+          "skillFolderHash": "ef5f03e6e3f64c21865482cb02767b1a96f0ce27",
+          "installedAt": "2026-05-06T20:17:45.972Z",
+          "fetchedAt": "2026-05-06T20:17:45.972Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -345,13 +547,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/navigation/footer/SKILL.md",
+          "skillFolderHash": "f82d109938336bcd6f10d4aea1453cf81770b517",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -363,13 +574,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "anthropics/skills",
+          "sourceUrl": "https://github.com/anthropics/skills.git",
+          "skillPath": "skills/frontend-design/SKILL.md",
+          "skillFolderHash": "928950704df8a8b885c03de5da626331e6f29cf8",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -381,13 +601,21 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/gitlab-ci-inspector/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z",
+          "fetchedAt": "2026-05-18T08:09:59.482Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -399,13 +627,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "wshobson/agents",
+          "sourceUrl": "https://github.com/wshobson/agents.git",
+          "skillPath": "plugins/cicd-automation/skills/gitlab-ci-patterns/SKILL.md",
+          "skillFolderHash": "d43fb980bb5ac5d3caaae257e5e1235c4da7495a",
+          "installedAt": "2026-05-01T16:41:22.450Z",
+          "fetchedAt": "2026-05-01T16:41:22.450Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -417,13 +654,21 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/gitlab-mr-writing/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z",
+          "fetchedAt": "2026-05-18T08:09:59.482Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -435,16 +680,65 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "affaan-m/everything-claude-code",
+          "sourceUrl": "https://github.com/affaan-m/everything-claude-code.git",
+          "skillPath": "skills/golang-testing/SKILL.md",
+          "skillFolderHash": "7fad33a9354adc951ae015d008c7c6478f3f1c1b",
+          "installedAt": "2026-05-14T02:33:27.608Z",
+          "fetchedAt": "2026-05-14T02:33:27.608Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "grill-me",
+      "description": "Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions \"grill me\".",
+      "path": "skills/grill-me",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/productivity/grill-me/SKILL.md",
+          "skillFolderHash": "2a1ad17028306ebe45f0e49703fa28b9b2e7f499",
+          "installedAt": "2026-05-18T05:30:44.421Z",
+          "fetchedAt": "2026-05-18T05:30:44.421Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
+    },
+    {
+      "name": "grill-with-docs",
+      "description": "Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan against their project's language and documented decisions.",
+      "path": "skills/grill-with-docs",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+          "skillFolderHash": "3c4ac970c404e8d32c24f2725bfe679e455a925b",
+          "installedAt": "2026-05-18T05:30:44.422Z",
+          "fetchedAt": "2026-05-18T05:30:44.422Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "hero-generator",
@@ -454,13 +748,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/branding/hero/SKILL.md",
+          "skillFolderHash": "2da6451fa744283bf6ddae2877d9f13cd85898f9",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -473,13 +776,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/brand/home/SKILL.md",
+          "skillFolderHash": "144700d86efae7c328bae5a6a7959a0562087f47",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -494,16 +806,45 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "pbakaus/impeccable",
+          "sourceUrl": "https://github.com/pbakaus/impeccable.git",
+          "skillPath": ".agents/skills/impeccable/SKILL.md",
+          "skillFolderHash": "acf2d1c8e0fc8a5388c67a6add3d45e1d2ec90fb",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "3404d776053dcb2b798c13e8027007e4ce95b1bb",
-        "date": "2026-05-15 12:44:23 -0700",
-        "message": "fix: preserve linkedRepo on sign-out + drop forced RepoPicker on re-sign-in"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "description": "Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.",
+      "path": "skills/improve-codebase-architecture",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+          "skillFolderHash": "3ad8fa787b3b9b622d1f5a3d0afc27812ac782fa",
+          "installedAt": "2026-05-18T05:30:44.424Z",
+          "fetchedAt": "2026-05-18T05:30:44.424Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "landing-page-generator",
@@ -513,13 +854,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/marketing/landing-page/SKILL.md",
+          "skillFolderHash": "887329b70b63b04301498b4a7b5599f9998cbe1e",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -532,13 +882,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/branding/logo/SKILL.md",
+          "skillFolderHash": "a0d7ed2abce314ff776d0f2f09b4faa5d551a885",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -550,13 +909,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "anthropics/skills",
+          "sourceUrl": "https://github.com/anthropics/skills.git",
+          "skillPath": "skills/mcp-builder/SKILL.md",
+          "skillFolderHash": "b866bcfb57b780c10b587c7b543e871a91661ce0",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -568,13 +936,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "softaworks/agent-toolkit",
+          "sourceUrl": "https://github.com/softaworks/agent-toolkit.git",
+          "skillPath": "skills/mermaid-diagrams/SKILL.md",
+          "skillFolderHash": "1b7a962715838d762fe4b34701d797d1d57496cd",
+          "installedAt": "2026-05-04T20:13:27.108Z",
+          "fetchedAt": "2026-05-04T20:13:27.108Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -586,13 +963,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "softaworks/agent-toolkit",
+          "sourceUrl": "https://github.com/softaworks/agent-toolkit.git",
+          "skillPath": "skills/naming-analyzer/SKILL.md",
+          "skillFolderHash": "6717b98252ff6423dccbd77dc652dead434552bb",
+          "installedAt": "2026-05-06T20:16:02.161Z",
+          "fetchedAt": "2026-05-07T00:15:47.068Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -604,13 +990,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "vercel-labs/next-skills",
+          "sourceUrl": "https://github.com/vercel-labs/next-skills.git",
+          "skillPath": "skills/next-best-practices/SKILL.md",
+          "skillFolderHash": "a236d702277c5364cf6f540712a8dddb46e79a46",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -622,13 +1017,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kepano/obsidian-skills",
+          "sourceUrl": "https://github.com/kepano/obsidian-skills.git",
+          "skillPath": "skills/obsidian-cli/SKILL.md",
+          "skillFolderHash": "96254a554e480359de7b685571876f2e7f9ba57d",
+          "installedAt": "2026-05-01T16:43:02.270Z",
+          "fetchedAt": "2026-05-01T16:43:02.270Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "5e94b37c2d4a1689c298ee564a20841dd75b7cd2",
-        "date": "2026-05-12 13:24:04 -0700",
-        "message": "(skills): update skills canon - remove any specific terminology from personal skills"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -640,13 +1044,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "pipecat-ai/pipecat",
+          "sourceUrl": "https://github.com/pipecat-ai/pipecat.git",
+          "skillPath": ".claude/skills/pr-description/SKILL.md",
+          "skillFolderHash": "e053a82eedd03e2e6be477f74625c0d2f7b25d94",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -658,13 +1071,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/prd-development/SKILL.md",
+          "skillFolderHash": "9326f146f3fb8d85eafe52499928321c7edb9fac",
+          "installedAt": "2026-05-12T18:07:08.736Z",
+          "fetchedAt": "2026-05-12T18:07:08.736Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -676,13 +1098,21 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/pretty-mermaid/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z",
+          "fetchedAt": "2026-05-18T08:09:59.482Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -694,13 +1124,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/problem-statement/SKILL.md",
+          "skillFolderHash": "1de9dad18374bbffccd35cfd7ef2edc41515ea89",
+          "installedAt": "2026-05-12T18:09:16.247Z",
+          "fetchedAt": "2026-05-12T18:09:16.247Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -712,34 +1151,51 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "wshobson/agents",
+          "sourceUrl": "https://github.com/wshobson/agents.git",
+          "skillPath": "plugins/python-development/skills/python-packaging/SKILL.md",
+          "skillFolderHash": "b7e32fe9db6e4d089f1102388ff2879a90f79c04",
+          "installedAt": "2026-05-14T02:33:01.189Z",
+          "fetchedAt": "2026-05-14T02:33:01.189Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
     },
     {
       "name": "react-components",
-      "description": "Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.",
+      "description": "Modern React component patterns with hooks and TypeScript",
       "path": "skills/react-components",
       "source": {
         "source": "bundled",
-        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "upstream": {
+          "kind": "github",
+          "repo": "langchain-ai/skills-benchmarks",
+          "sourceUrl": "https://github.com/langchain-ai/skills-benchmarks.git",
+          "skillPath": "skills/noise/react_components/SKILL.md",
+          "skillFolderHash": "fbdbab0c2bf0ace0652ab602a4011cef7d5b07f8",
+          "installedAt": "2026-05-18T15:09:38.004Z",
+          "fetchedAt": "2026-05-18T15:09:38.004Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
-      "publishState": "pushed",
-      "canon": true
+      "publishState": "untracked",
+      "canon": true,
+      "drift": true
     },
     {
       "name": "react-state-management",
@@ -748,13 +1204,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "wshobson/agents",
+          "sourceUrl": "https://github.com/wshobson/agents.git",
+          "skillPath": "plugins/frontend-mobile-development/skills/react-state-management/SKILL.md",
+          "skillFolderHash": "88c9ede61cb44428693c452b3c93f7602da5cd82",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "6a9420c24a9a843ecacd64a32f43d7f7555f645b",
-        "date": "2026-05-05 17:12:54 -0700",
-        "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -766,13 +1231,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/roadmap-planning/SKILL.md",
+          "skillFolderHash": "19863acb42422fbc0e69a71de239eccbebc73160",
+          "installedAt": "2026-05-12T18:07:56.909Z",
+          "fetchedAt": "2026-05-12T18:07:56.909Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -785,13 +1259,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/strategies/structure/seo/SKILL.md",
+          "skillFolderHash": "85a77b7462a89ac5ca576a38c41b5e9f9b938d62",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -803,13 +1286,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "shadcn/ui",
+          "sourceUrl": "https://github.com/shadcn/ui.git",
+          "skillPath": "skills/shadcn/SKILL.md",
+          "skillFolderHash": "a8404703769866faf15bee897c9ae6e252ac2d35",
+          "installedAt": "2026-05-12T18:11:58.042Z",
+          "fetchedAt": "2026-05-12T18:11:58.042Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -822,13 +1314,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/utility/signup-login/SKILL.md",
+          "skillFolderHash": "3b79fab75db9702041099ba5395d2c6d35e38964",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -840,13 +1341,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "giuseppe-trisciuoglio/developer-kit",
+          "sourceUrl": "https://github.com/giuseppe-trisciuoglio/developer-kit.git",
+          "skillPath": "plugins/developer-kit-specs/skills/specs-code-cleanup/SKILL.md",
+          "skillFolderHash": "1efda5f0c7226437798f4924afa8a559a1ff59fb",
+          "installedAt": "2026-05-06T20:21:17.968Z",
+          "fetchedAt": "2026-05-07T00:14:55.313Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -858,13 +1368,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "wshobson/agents",
+          "sourceUrl": "https://github.com/wshobson/agents.git",
+          "skillPath": "plugins/cloud-infrastructure/skills/terraform-module-library/SKILL.md",
+          "skillFolderHash": "06e4f4e3295990a5829735db832044925a85e222",
+          "installedAt": "2026-05-14T02:32:38.105Z",
+          "fetchedAt": "2026-05-14T02:32:38.105Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -876,13 +1395,21 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/terraform-plan-summary/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z",
+          "fetchedAt": "2026-05-18T08:09:59.482Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -895,13 +1422,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "hashicorp/agent-skills",
+          "sourceUrl": "https://github.com/hashicorp/agent-skills.git",
+          "skillPath": "terraform/code-generation/skills/terraform-test/SKILL.md",
+          "skillFolderHash": "e24dc7d3c72d1208736b329434667d43c7bfcfa4",
+          "installedAt": "2026-05-14T02:33:45.012Z",
+          "fetchedAt": "2026-05-14T02:33:45.012Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "ac132a41014622b6adbab353e3ea15fc61e1eaa3",
-        "date": "2026-05-15 09:37:28 -0700",
-        "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -913,13 +1449,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "anthropics/skills",
+          "sourceUrl": "https://github.com/anthropics/skills.git",
+          "skillPath": "skills/theme-factory/SKILL.md",
+          "skillFolderHash": "e05534d132fb1b21f9917840874758e30f0a9b1a",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -931,13 +1476,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "github/awesome-copilot",
+          "sourceUrl": "https://github.com/github/awesome-copilot.git",
+          "skillPath": "skills/typescript-mcp-server-generator/SKILL.md",
+          "skillFolderHash": "946d7e1dd613c9c371d7022bdb774f0170b86c75",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -949,16 +1503,56 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "dotneet/claude-code-marketplace",
+          "sourceUrl": "https://github.com/dotneet/claude-code-marketplace.git",
+          "skillPath": "review-tool/skills/typescript-react-reviewer/SKILL.md",
+          "skillFolderHash": "c42f66f381de0fa465b7e2dbc52e8e8f5ecca495",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "ubiquitous-language",
+      "description": "Extract a DDD-style ubiquitous language glossary from the current conversation, flagging ambiguities and proposing canonical terms. Saves to UBIQUITOUS_LANGUAGE.md. Use when user wants to define domain terms, build a glossary, harden terminology, create a ubiquitous language, or mentions \"domain model\" or \"DDD\".",
+      "tags": [
+        "ddd",
+        "glossary",
+        "documentation"
+      ],
+      "author": "mattpocock",
+      "path": "skills/ubiquitous-language",
+      "source": {
+        "source": "bundled",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/deprecated/ubiquitous-language/SKILL.md",
+          "skillFolderHash": "483fe10b01bed81b7eba7ee26df3f1bef9540c89",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
+      },
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "ui-ux-pro-max",
@@ -967,13 +1561,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+          "sourceUrl": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git",
+          "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+          "skillFolderHash": "75e1acaafe8b08e59d4b86fc253ac7873aff6bba",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -985,13 +1588,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "phuryn/pm-skills",
+          "sourceUrl": "https://github.com/phuryn/pm-skills.git",
+          "skillPath": "pm-market-research/skills/user-personas/SKILL.md",
+          "skillFolderHash": "58bbb0463cd8360fbda860d388146a4cfb6b4b4c",
+          "installedAt": "2026-05-06T21:45:07.412Z",
+          "fetchedAt": "2026-05-07T00:15:08.844Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1003,13 +1615,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/user-story/SKILL.md",
+          "skillFolderHash": "b8e53307616bb30fc18fffdc6c1eac7621453653",
+          "installedAt": "2026-05-12T18:07:28.487Z",
+          "fetchedAt": "2026-05-12T18:07:28.487Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1021,13 +1642,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/user-story-mapping/SKILL.md",
+          "skillFolderHash": "5d68cc49920b104e6a052e99d0e6c5e5e849a54e",
+          "installedAt": "2026-05-12T18:08:29.524Z",
+          "fetchedAt": "2026-05-12T18:08:29.524Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1041,13 +1671,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "vercel-labs/agent-skills",
+          "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
+          "skillPath": "skills/react-best-practices/SKILL.md",
+          "skillFolderHash": "343db72180d05814949fef7d46be96b5c6ee86b3",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1061,13 +1700,22 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "antfu/skills",
+          "sourceUrl": "https://github.com/antfu/skills.git",
+          "skillPath": "skills/vite/SKILL.md",
+          "skillFolderHash": "3c0dc60ce4ffc34fca02aaa7eb21130ae48c8dff",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
@@ -1081,16 +1729,45 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "vercel-labs/agent-skills",
+          "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
+          "skillPath": "skills/web-design-guidelines/SKILL.md",
+          "skillFolderHash": "3116f3e62dbd02b44a598b1aa690d2a8938e8f89",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "c7926d39743ddd24d3f142644c30cfaef1195249",
-        "date": "2026-05-12 15:14:06 -0700",
-        "message": "(cleanup): ran pnpm format on all files"
+        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
+        "date": "2026-05-18 01:12:27 -0700",
+        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
       },
       "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "zoom-out",
+      "description": "Tell the agent to zoom out and give broader context or a higher-level perspective. Use when you're unfamiliar with a section of code or need to understand how it fits into the bigger picture.",
+      "path": "skills/zoom-out",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/engineering/zoom-out/SKILL.md",
+          "skillFolderHash": "6ecebabdea814d12888f56a611da7bf182b5fb26",
+          "installedAt": "2026-05-18T05:30:44.426Z",
+          "fetchedAt": "2026-05-18T05:30:44.426Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     }
   ]
 }

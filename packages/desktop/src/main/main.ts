@@ -12,11 +12,7 @@ import type { MenuItemConstructorOptions } from "electron";
 // cleanly under Node's ESM loader (NodeNext module resolution).
 import electronUpdater from "electron-updater";
 const { autoUpdater } = electronUpdater;
-import { execFile, spawn } from "node:child_process";
-import os from "node:os";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,9 +29,7 @@ import {
   fetchCanonicalTarball,
   acceptDriftKeepLocal,
   acceptDriftSeverUpstream,
-  defaultSkillLockPath,
   hashSkillFolder,
-  readSkillLockFile,
   readSkillSource,
   writeSkillSource,
   writeSyncedHash,
@@ -56,6 +50,7 @@ import {
   readPendingConflicts,
   readSyncDecisions,
   findFolderHash,
+  mirrorSkillFolder,
   folderPathFromSkillPath,
   probeRepoTree,
   resolveRegistryRoot,
@@ -422,6 +417,10 @@ async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
     }
     const token = getStoredToken();
     let updates = 0;
+    let rateLimitInfo:
+      | import("../shared/ipc.js").UpstreamProbeCompleteEvent["rateLimit"]
+      | undefined;
+    const failedRepos: string[] = [];
     for (const [repo, skills] of byRepo) {
       let cache = repoProbeCache.get(repo);
       const now = Date.now();
@@ -431,6 +430,14 @@ async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
           console.warn(
             `upstream probe: ${repo} failed (${res.status}): ${res.message}`,
           );
+          if (res.status === 429 && res.rateLimit) {
+            // First rate-limit hit wins — they all carry the same
+            // window state (limit/remaining/resetAt are repo-agnostic
+            // for unauth-per-IP).
+            if (!rateLimitInfo) rateLimitInfo = res.rateLimit;
+          } else {
+            failedRepos.push(repo);
+          }
           continue;
         }
         const folderHashes = buildFolderHashMap(res.tree);
@@ -452,7 +459,11 @@ async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
         }
       }
     }
-    notifyProbeComplete();
+    notifyProbeComplete({
+      updates,
+      ...(rateLimitInfo ? { rateLimit: rateLimitInfo } : {}),
+      ...(failedRepos.length > 0 ? { failedRepos } : {}),
+    });
     return { probed: byRepo.size, updates, probedAt };
   })();
   try {
@@ -470,10 +481,12 @@ function buildFolderHashMap(tree: GitTreeEntry[]): Map<string, string> {
   return m;
 }
 
-function notifyProbeComplete(): void {
+function notifyProbeComplete(
+  event: import("../shared/ipc.js").UpstreamProbeCompleteEvent = {},
+): void {
   const wins = BrowserWindow.getAllWindows();
   for (const win of wins) {
-    if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, "complete");
+    if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
   }
 }
 
@@ -489,127 +502,101 @@ function augmentWithProbedUpdates<T extends { name: string }>(
 ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
 
 /**
- * Update or take-upstream backend. Both heal flows
- * (`upstream-update-available` apply / `user-edited-with-upstream`
- * revert) share the same underlying op: run `npx skills update <name>`
- * to refresh the CLI's agent-dir copy, then for adopted skills mirror
- * the result back into our registry and re-baseline the markers.
+ * Update backend. Fetches the skill's folder content directly from
+ * its authoritative upstream (`entry.source.upstream.repo`) via
+ * GitHub's REST API and mirrors it into our registry. Replaces the
+ * prior `npx skills update <name>` shell-out (see PR γ of
+ * docs/plans/origin-paradigm-reframe.md).
  *
- * v1 scope: tracked (non-adopted) skills work via the CLI's own state
- * update — our next index walk picks up the new content. Adopted
- * skills copy from `~/.agents/skills/<name>/` back into our registry
- * folder (preserving our `.skills-bank.json` / `.skills-bank-hash`
- * markers, which we rewrite after the copy).
+ * Why direct fetch:
+ *   - Origin under the new paradigm is the authoritative author's
+ *     repo, not the CLI's recorded source. For bundled-vendored
+ *     skills the user never CLI-installed, npx update would 404 on
+ *     the lock file. Direct fetch works uniformly.
+ *   - Severs a load-bearing dependency on `npx` being on PATH inside
+ *     packaged Electron builds (an enduring source of bug reports).
+ *   - Never writes the CLI's `~/.agents/.skill-lock.json` — that's
+ *     the CLI's database, not ours.
  *
- * The npx invocation depends on `npx` being reachable on PATH; in
- * packaged macOS builds launched from Finder, PATH may not include
- * the user's node install. Surfaced as an actionable error rather
- * than a silent failure.
+ * The fetch is a single recursive Git Trees probe + one blob fetch
+ * per file. For typical skill folders (≤10 files) that's ~11 API
+ * calls, well within the user's authenticated rate-limit budget.
+ *
+ * Mirror semantics: wipe + recopy. After the fetch we delete any
+ * local file the upstream tree doesn't contain, so a removed-upstream
+ * file is reflected locally. Our app-state sidecars
+ * (`.skills-bank.json`, `.skills-bank-hash`) are rewritten after
+ * the mirror so they survive the wipe.
  */
 async function applyUpstreamUpdate(
   name: string,
-): Promise<{ ok: boolean; message: string; error?: unknown }> {
+): Promise<import("../shared/ipc.js").UpstreamUpdateResult> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const index = buildRegistryIndex(registryRoot);
   const entry = index.entries.find((e) => e.name === name);
   if (!entry) {
     return { ok: false, message: `${name} is not in the registry` };
   }
-  if (entry.source.upstream?.kind !== "github") {
+  const upstream = entry.source.upstream;
+  if (upstream?.kind !== "github" || !upstream.repo || !upstream.skillPath) {
     return {
       ok: false,
       message: `${name} has no GitHub upstream — nothing to update`,
     };
   }
 
-  // Run `npx skills update <name> -g -y`. `-g` targets global skills
-  // (the CLI's `~/.agents/skills/` scope, which is where the lock
-  // file entries we mirror live). `-y` skips confirmation prompts.
-  try {
-    await execFileAsync("npx", ["-y", "skills", "update", name, "-g", "-y"], {
-      timeout: 120000,
-    });
-  } catch (err) {
-    const msg = (err as Error).message;
-    const hint = msg.includes("ENOENT") || msg.includes("not found")
-      ? " — is `npx` on the app's PATH? Try launching from a terminal."
+  const folderPath = folderPathFromSkillPath(upstream.skillPath);
+  const registrySkillDir = path.join(registryRoot, "skills", name);
+  const existingSource = readSkillSource(registrySkillDir);
+
+  const mirror = await mirrorSkillFolder(
+    upstream.repo,
+    folderPath,
+    registrySkillDir,
+    getStoredToken(),
+  );
+  if (!mirror.ok) {
+    if (mirror.status === 429 && mirror.rateLimit) {
+      // Hand the renderer everything it needs to render a tailored
+      // sticky toast — no inline copy-mangling. Sign-in affordance
+      // surfaces only for unauth hits.
+      return {
+        ok: false,
+        message: mirror.message,
+        rateLimit: mirror.rateLimit,
+      };
+    }
+    const recoveryHint = mirror.status === 404
+      ? " Sever to keep local, or Unlink the pointer."
       : "";
     return {
       ok: false,
-      message: `npx skills update failed: ${msg}${hint}`,
-      error: err,
+      message: `Update failed: ${mirror.message}.${recoveryHint}`,
+      diagnostic:
+        `name=${name}\n` +
+        `repo=${upstream.repo}\n` +
+        `skillPath=${upstream.skillPath}\n` +
+        `status=${mirror.status}\n` +
+        `message=${mirror.message}`,
     };
   }
 
-  // Tracked path: CLI updated the agent-dir copy. Our next scan picks
-  // up the new content via external-entry rebuild. Re-probe so the
-  // upstream-update-available chip clears on this skill specifically.
-  if (entry.adopted === false) {
-    probedUpdates.delete(name);
-    notifyProbeComplete();
-    return { ok: true, message: `Updated ${name} via npx skills update.` };
-  }
-
-  // Adopted path: mirror the CLI's freshly-updated agent-dir content
-  // into our registry, then re-baseline our markers.
-  const cliAgentDir = path.join(os.homedir(), ".agents", "skills", name);
-  if (!fs.existsSync(cliAgentDir)) {
-    return {
-      ok: false,
-      message: `npx ran but CLI agent dir not found at ${cliAgentDir}; update may have failed silently`,
-    };
-  }
-
-  const registrySkillDir = path.join(registryRoot, "skills", name);
-  // Read our existing source marker so we can preserve the bundled/
-  // yours axis and the canon-related fields while replacing the
-  // upstream block with fresh values from the lock file.
-  const existingSource = readSkillSource(registrySkillDir);
-
-  // Wipe + recopy. We can't merge file-by-file because the upstream
-  // may have deleted files. After the copy, rewrite our app-state
-  // sidecars from existing source + fresh upstream values.
-  try {
-    fs.rmSync(registrySkillDir, { recursive: true, force: true });
-    fs.cpSync(cliAgentDir, registrySkillDir, {
-      recursive: true,
-      dereference: true, // CLI may symlink internally; flatten to real files
-    });
-  } catch (err) {
-    return {
-      ok: false,
-      message: `failed to mirror ${cliAgentDir} into registry: ${(err as Error).message}`,
-      error: err,
-    };
-  }
-
-  // Refresh the upstream pointer from the lock file (skillFolderHash,
-  // fetchedAt) and re-baseline the SHA-256 against the new content.
-  const lock = readSkillLockFile(defaultSkillLockPath());
-  const lockEntry = lock?.skills[name];
-  if (lockEntry && existingSource.upstream) {
-    const next: typeof existingSource = {
-      ...existingSource,
-      upstream: {
-        ...existingSource.upstream,
-        skillFolderHash:
-          typeof lockEntry.skillFolderHash === "string"
-            ? lockEntry.skillFolderHash
-            : existingSource.upstream.skillFolderHash,
-        fetchedAt:
-          typeof lockEntry.updatedAt === "string"
-            ? lockEntry.updatedAt
-            : new Date().toISOString(),
-      },
-    };
-    writeSkillSource(registrySkillDir, next);
-  }
+  // Refresh marker with the new probed folder hash + fetchedAt.
+  const now = new Date().toISOString();
+  writeSkillSource(registrySkillDir, {
+    ...existingSource,
+    upstream: {
+      ...upstream,
+      skillFolderHash: mirror.folderHash,
+      fetchedAt: now,
+    },
+  });
   const newBaseline = hashSkillFolder(registrySkillDir);
   if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
 
   probedUpdates.delete(name);
   notifyProbeComplete();
-  return { ok: true, message: `Updated ${name} into the registry.` };
+  return { ok: true, message: `Updated ${name} from ${upstream.repo}.` };
 }
 
 ipcMain.handle(IPC.upstreamUpdate, async (_e, name: string) =>
@@ -822,6 +809,11 @@ async function setManualUpstream(
   // disengages until the user actually edits.
   const baseline = hashSkillFolder(skillDir);
   if (baseline) writeSyncedHash(skillDir, baseline);
+  // Re-fire the probe so this newly-linked skill is compared against
+  // upstream immediately, instead of waiting for the periodic 6h tick.
+  // Per-repo cache absorbs the cost; if the user just probed this repo
+  // via the picker validation above, the runner reuses it.
+  void runUpstreamProbe();
   return { ok: true, message: `Stamped ${name} as from ${choice.repo}.` };
 }
 
@@ -1930,6 +1922,14 @@ ipcMain.handle(IPC.rebuildIndex, () => {
       includeGitInfo: true,
       writeFile: true,
     });
+    // Re-fire the probe so any marker edits made since last probe
+    // (e.g. a hand-tweaked skillFolderHash, a freshly-stamped
+    // upstream pointer, a Tier-1 lock-file pickup just done above)
+    // are re-compared against upstream. Fire-and-forget; the renderer
+    // re-fetches via the existing onUpstreamProbeComplete subscription.
+    // Per-repo TTL cache means no extra GitHub call when the boot
+    // probe just ran.
+    void runUpstreamProbe();
     return {
       ok: true,
       message: `index rebuilt (${index.entries.length} entries)`,

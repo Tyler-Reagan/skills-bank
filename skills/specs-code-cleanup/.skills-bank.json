@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "giuseppe-trisciuoglio/developer-kit",
+    "skillPath": "plugins/developer-kit-specs/skills/specs-code-cleanup/SKILL.md",
+    "sourceUrl": "https://github.com/giuseppe-trisciuoglio/developer-kit.git",
+    "skillFolderHash": "1efda5f0c7226437798f4924afa8a559a1ff59fb",
+    "installedAt": "2026-05-06T20:21:17.968Z",
+    "fetchedAt": "2026-05-07T00:14:55.313Z"
+  }
+}

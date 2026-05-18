@@ -1,0 +1,12 @@
+{
+  "source": "bundled",
+  "upstream": {
+    "kind": "github",
+    "repo": "langchain-ai/skills-benchmarks",
+    "sourceUrl": "https://github.com/langchain-ai/skills-benchmarks.git",
+    "skillPath": "skills/noise/react_components/SKILL.md",
+    "skillFolderHash": "fbdbab0c2bf0ace0652ab602a4011cef7d5b07f8",
+    "installedAt": "2026-05-18T15:09:38.004Z",
+    "fetchedAt": "2026-05-18T15:09:38.004Z"
+  }
+}

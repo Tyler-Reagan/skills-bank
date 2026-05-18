@@ -485,6 +485,19 @@ select {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.refresh-btn.rescan-working {
+  /* Working state keeps standard chrome but is undimmed —
+     it's busy, not unavailable. */
+  opacity: 1;
+}
+.refresh-btn.rescan-done {
+  /* Brief positive confirmation. Lasts ~1.5s before reverting to
+     idle. Border/color tint, not a fill — keeps the chrome quiet
+     alongside the rest of the header. */
+  opacity: 1;
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
 
 /* ── Tab intro ───────────────────────────────────────── */
 .tab-intro {
@@ -1213,6 +1226,53 @@ select {
   width: 100%;
 }
 
+/* ── Text inputs ─────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  background: var(--surface-hi);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  transition:
+    border-color var(--t),
+    background var(--t);
+}
+.input:hover:not(:disabled) {
+  border-color: var(--border-hi);
+}
+.input:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.input::placeholder {
+  color: var(--text-3);
+}
+
+.form-field {
+  margin-bottom: var(--s3);
+}
+.form-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  margin-bottom: var(--s1);
+}
+.form-field-hint {
+  margin: var(--s1) 0 0;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
 /* ── Drawer ──────────────────────────────────────────── */
 .drawer-overlay {
   position: fixed;
@@ -1567,6 +1627,38 @@ select {
 .toast-action:hover {
   background: var(--accent);
   color: var(--on-primary);
+}
+.toast-action.secondary {
+  border-color: var(--border-hi);
+  color: var(--text-2);
+}
+.toast-action.secondary:hover {
+  background: var(--surface-hi);
+  color: var(--text);
+}
+.toast-error {
+  border-color: var(--danger);
+  border-left-width: 3px;
+  max-width: 460px;
+  align-items: flex-start;
+}
+.toast-error .toast-message {
+  flex: 1;
+  line-height: 1.4;
+}
+.toast-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 var(--s1);
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.toast-close:hover {
+  color: var(--text);
 }
 
 /* ── Legacy row layout (used by RegisterModal entry list) ── */

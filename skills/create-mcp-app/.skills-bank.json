@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "modelcontextprotocol/ext-apps",
+    "skillPath": "plugins/mcp-apps/skills/create-mcp-app/SKILL.md",
+    "sourceUrl": "https://github.com/modelcontextprotocol/ext-apps.git",
+    "skillFolderHash": "989d5b5a7f8b30e76f554a799f39e9350944e55b",
+    "installedAt": "2026-05-14T18:21:54.806Z",
+    "fetchedAt": "2026-05-14T18:21:54.806Z"
+  }
+}

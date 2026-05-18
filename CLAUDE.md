@@ -39,6 +39,9 @@ If you add a new script, place it in the appropriate group by ordering. If you a
 | `pnpm reset:seed`   | Repopulate `.skills-bank.json` source markers in this repo's `skills/`. Auto-invoked by `reset:hard`; runnable standalone after a fresh checkout.       |
 | `pnpm backfill:bundled`  | Stamp upstream pointers into this repo's `skills/<name>/.skills-bank.json` from `scripts/bundled-upstream-mapping.json`. Run after adding new bundled skills with known GitHub upstreams. `--dry` previews without writing. |
 | `pnpm backfill:deployed` | Stamp upstream pointers into a deployed registry by reading the local `~/.agents/.skill-lock.json`. Mostly redundant with the desktop's boot-time scanner; useful for scripted bootstraps. Resolves registry root via `--root`, `SKILLS_BANK_ROOT`, or cwd walk-up. |
+| `pnpm discover:bundled`  | Discover authoritative upstreams for unstamped bundled skills via `npx skills find` + GitHub Trees probe. Writes a candidate JSON the maintainer reviews, then re-runs with `--apply <json>` to commit markers. Used by the `origin-paradigm-reframe` plan's Pass B backfill. |
+| `pnpm stamp:self-authored` | Stamp self-referential upstream pointers (`repo = BUNDLED_REPO`) onto any bundled skill still missing an `upstream` field after `discover:bundled` runs. Dry by default; `--apply` writes; `--only foo,bar` scopes to a subset. Pass C of the `origin-paradigm-reframe` backfill. |
+| `pnpm vendor:skill <owner/repo>@<id>` | Forward-vendoring: pull a skill folder from an upstream GitHub repo into `skills/<id>/`, write the `.skills-bank.json` marker, baseline the drift hash. Supports `--path` (explicit SKILL.md path), `--as` (rename), `--force` (overwrite existing). The canonical way to add a harvested skill to the bundled set. |
 
 ### Common sequences
 
@@ -78,8 +81,9 @@ Active body of work. Filenames are stable descriptive IDs; execution order is do
 | [`github-mode-coherence.md`](docs/plans/github-mode-coherence.md)                 | none                                                      |
 | [`github-first-onboarding.md`](docs/plans/github-first-onboarding.md)             | `github-mode-coherence` (groundwork)                      |
 | [`per-skill-upstream-foundation.md`](docs/plans/per-skill-upstream-foundation.md) | none (cleaner if `github-first-onboarding` lands first)   |
-| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | `per-skill-upstream-foundation`                           |
-| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `per-skill-upstream-foundation` + `bank-mode-persistence` |
+| [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | `per-skill-upstream-foundation`                           |
+| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | `origin-paradigm-reframe`                                 |
+| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `origin-paradigm-reframe` + `bank-mode-persistence`       |
 
 ### Recommended execution order
 
@@ -88,8 +92,9 @@ To minimize thrashing (later plans rendering earlier plans' code obsolete), this
 1. **`github-mode-coherence`** — ground-truth polish for github-linked mode.
 2. **`github-first-onboarding`** — collapses the local-vs-github mode discriminator. Doing this before the per-skill plans means they won't have to branch on a flag that's about to disappear.
 3. **`per-skill-upstream-foundation`** — adds the per-skill upstream metadata + probe/update.
-4. **`bank-mode-persistence`** — adds the local snapshot cache.
-5. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
+4. **`origin-paradigm-reframe`** — reframes Origin as authoritative upstream (not the bundled repo), reverts Tier 3, lands maintainer-time backfill + direct-fetch update flow.
+5. **`bank-mode-persistence`** — adds the local snapshot cache.
+6. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
 
 `cli-minimal` is independent of the others and can slot anywhere — typically last since it's pure housekeeping.
 
