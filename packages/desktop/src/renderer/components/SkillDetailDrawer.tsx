@@ -191,7 +191,12 @@ export function SkillDetailDrawer({
   const [pickerPath, setPickerPath] = useState("");
   const [pickerBusy, setPickerBusy] = useState(false);
   const [pickerError, setPickerError] = useState<string | null>(null);
+  const pickerRepoRef = useRef<HTMLInputElement | null>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (pickerOpen) pickerRepoRef.current?.focus();
+  }, [pickerOpen]);
   // The drawer slides in from the right (~280ms). Until it lands,
   // its hit area is offscreen — a click on the eventual drawer position
   // would land on the overlay underneath and dismiss the drawer the
@@ -636,88 +641,97 @@ export function SkillDetailDrawer({
             )}
           </div>
 
-          {/* Manual upstream picker — shown for adopted skills whose
-              `.skills-bank.json` has no `upstream` field. Collapsed
-              disclosure by default; clicking opens a small inline form. */}
           {isRegistered &&
             entry.adopted !== false &&
             !entry.source.upstream &&
             onSetManualUpstream && (
               <div className="drawer-section">
-                <h3>Where did this come from?</h3>
+                <h3>Origin</h3>
                 {!pickerOpen ? (
-                  <button
-                    type="button"
-                    className="link-btn"
-                    onClick={() => {
-                      setPickerOpen(true);
-                      setPickerError(null);
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "var(--s3)",
+                      alignItems: "center",
                     }}
                   >
-                    Stamp a GitHub upstream or mark as user-authored…
-                  </button>
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() => {
+                        setPickerOpen(true);
+                        setPickerError(null);
+                      }}
+                    >
+                      Link origin
+                    </button>
+                    <span style={{ color: "var(--text-3)", fontSize: 12 }}>
+                      ·
+                    </span>
+                    <button
+                      type="button"
+                      className="link-btn"
+                      disabled={pickerBusy}
+                      onClick={async () => {
+                        setPickerBusy(true);
+                        await onSetManualUpstream({ kind: "none" });
+                        setPickerBusy(false);
+                      }}
+                    >
+                      Mark as local
+                    </button>
+                  </div>
                 ) : (
-                  <div style={{ marginTop: 6 }}>
-                    <p
-                      style={{
-                        margin: "0 0 8px",
-                        fontSize: 12,
-                        color: "var(--text-3)",
-                      }}
-                    >
-                      Tagging this skill's upstream enables update detection
-                      and the Origin section. Skip with "I authored this" to
-                      stop the scanner from re-classifying on every walk.
-                    </p>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: 11,
-                        color: "var(--text-3)",
-                        marginBottom: 2,
-                      }}
-                    >
-                      Repo (owner/name)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="vercel-labs/skills"
-                      value={pickerRepo}
-                      onChange={(e) => setPickerRepo(e.target.value)}
-                      disabled={pickerBusy}
-                      style={{ width: "100%", marginBottom: 8 }}
-                    />
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: 11,
-                        color: "var(--text-3)",
-                        marginBottom: 2,
-                      }}
-                    >
-                      Path to SKILL.md within the repo
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="skills/my-skill/SKILL.md"
-                      value={pickerPath}
-                      onChange={(e) => setPickerPath(e.target.value)}
-                      disabled={pickerBusy}
-                      style={{ width: "100%", marginBottom: 8 }}
-                    />
+                  <div>
+                    <div className="form-field">
+                      <label htmlFor="picker-repo">Repo</label>
+                      <input
+                        id="picker-repo"
+                        ref={pickerRepoRef}
+                        type="text"
+                        className="input"
+                        placeholder="owner/name"
+                        value={pickerRepo}
+                        onChange={(e) => setPickerRepo(e.target.value)}
+                        disabled={pickerBusy}
+                      />
+                      <p className="form-field-hint">e.g. vercel-labs/skills</p>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="picker-path">Path</label>
+                      <input
+                        id="picker-path"
+                        type="text"
+                        className="input"
+                        placeholder="skills/my-skill/SKILL.md"
+                        value={pickerPath}
+                        onChange={(e) => setPickerPath(e.target.value)}
+                        disabled={pickerBusy}
+                      />
+                      <p className="form-field-hint">
+                        Path to SKILL.md within the repo
+                      </p>
+                    </div>
                     {pickerError && (
                       <p
                         style={{
                           color: "var(--danger)",
                           fontSize: 12,
-                          margin: "4px 0 8px",
+                          margin: "var(--s2) 0",
                         }}
                         role="alert"
                       >
                         {pickerError}
                       </p>
                     )}
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "var(--s3)",
+                        alignItems: "center",
+                        marginTop: "var(--s3)",
+                      }}
+                    >
                       <button
                         type="button"
                         className="btn primary"
@@ -746,32 +760,14 @@ export function SkillDetailDrawer({
                             <span className="spinner inline" /> Validating
                           </>
                         ) : (
-                          "Stamp"
+                          "Link"
                         )}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn"
-                        disabled={pickerBusy}
-                        onClick={async () => {
-                          setPickerBusy(true);
-                          await onSetManualUpstream({ kind: "none" });
-                          setPickerOpen(false);
-                          setPickerBusy(false);
-                        }}
-                        title="Mark as user-authored; scanner won't try to classify on future walks."
-                      >
-                        I authored this
                       </button>
                       <button
                         type="button"
                         className="link-btn"
                         disabled={pickerBusy}
                         onClick={() => {
-                          // Preserve repo/path entries — the user may
-                          // cancel to check something and come back —
-                          // but clear any prior validation error so
-                          // it doesn't ghost the next attempt.
                           setPickerOpen(false);
                           setPickerError(null);
                         }}

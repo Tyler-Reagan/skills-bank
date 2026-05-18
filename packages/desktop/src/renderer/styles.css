@@ -1213,6 +1213,53 @@ select {
   width: 100%;
 }
 
+/* ── Text inputs ─────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  background: var(--surface-hi);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  transition:
+    border-color var(--t),
+    background var(--t);
+}
+.input:hover:not(:disabled) {
+  border-color: var(--border-hi);
+}
+.input:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.input::placeholder {
+  color: var(--text-3);
+}
+
+.form-field {
+  margin-bottom: var(--s3);
+}
+.form-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  margin-bottom: var(--s1);
+}
+.form-field-hint {
+  margin: var(--s1) 0 0;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
 /* ── Drawer ──────────────────────────────────────────── */
 .drawer-overlay {
   position: fixed;
