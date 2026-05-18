@@ -4,6 +4,14 @@ import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
 import { TagFilter } from "./TagFilter.js";
 import { SkillsGrid } from "./SkillsGrid.js";
+import {
+  RegistryFilters,
+  applyChipFilters,
+  applySort,
+  floatToTop,
+  type RegistryFilterTag,
+  type RegistrySortState,
+} from "./RegistryFilters.js";
 
 const REGISTRY_TOOLTIP =
   "Skills in your registry — the curated bundled set by default, or a " +
@@ -27,6 +35,10 @@ interface Props {
   onRebuild: () => void | Promise<void>;
   rebuilding: boolean;
   searchInputRef?: React.Ref<HTMLInputElement>;
+  registryFilters: ReadonlySet<RegistryFilterTag>;
+  setRegistryFilters: (next: Set<RegistryFilterTag>) => void;
+  registrySort: RegistrySortState;
+  setRegistrySort: (next: RegistrySortState) => void;
 }
 
 export function BrowseTab({
@@ -43,6 +55,10 @@ export function BrowseTab({
   onRebuild,
   rebuilding,
   searchInputRef,
+  registryFilters,
+  setRegistryFilters,
+  registrySort,
+  setRegistrySort,
 }: Props): React.ReactElement {
   if (registry.length === 0) {
     return (
@@ -76,20 +92,38 @@ export function BrowseTab({
   const installedNames = new Set(
     installed.filter((i) => i.kind === "ours").map((i) => i.name),
   );
-  const filtered = applyFilters(
-    registry,
+  // Compose in this order: chip-filters narrow the registry by the
+  // user's tag-like state filters; the search/tag/installedOnly pass
+  // applies free-text + legacy filters; sort orders the survivors;
+  // and when the user hasn't expressed any opinion (no chips, default
+  // name-asc), float pending-update cards to the top so the Rescan
+  // deep-link lands them in the obvious spot.
+  const chipFiltered = applyChipFilters(registry, registryFilters);
+  const filteredRaw = applyFilters(
+    chipFiltered,
     search,
     selectedTags,
     installedOnly,
     installedNames,
   );
+  const sorted = applySort(filteredRaw, registrySort);
+  const isDefaultOrder =
+    registryFilters.size === 0 &&
+    registrySort.by === "name" &&
+    registrySort.direction === "asc";
+  const filtered = isDefaultOrder
+    ? floatToTop(sorted, (e) => e.upstreamUpdateAvailable === true)
+    : sorted;
   const installedFromRegistry = installedNames.size;
   const warningCount = registry.reduce(
     (acc, e) => acc + (e.warnings?.length ?? 0),
     0,
   );
   const filtersActive =
-    search.length > 0 || selectedTags.length > 0 || installedOnly;
+    search.length > 0 ||
+    selectedTags.length > 0 ||
+    installedOnly ||
+    registryFilters.size > 0;
 
   return (
     <div>
@@ -120,6 +154,13 @@ export function BrowseTab({
       </div>
       <div className="filters-section">
         <SearchBar value={search} onChange={setSearch} ref={searchInputRef} />
+        <RegistryFilters
+          registry={registry}
+          active={registryFilters}
+          onChange={setRegistryFilters}
+          sort={registrySort}
+          onSortChange={setRegistrySort}
+        />
         <div className="filter-row">
           <button
             type="button"
@@ -157,6 +198,7 @@ export function BrowseTab({
                 setSearch("");
                 setSelectedTags([]);
                 setInstalledOnly(false);
+                setRegistryFilters(new Set());
               }
             : undefined
         }

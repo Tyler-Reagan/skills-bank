@@ -789,12 +789,20 @@ export function App(): React.ReactElement {
           // idle without a "done" flash so we don't claim success.
           setRescanState({ phase: "idle" });
         } else {
-          setRescanState({ phase: "done", updates: event.updates ?? 0 });
+          const updates = event.updates ?? 0;
+          setRescanState({ phase: "done", updates });
           if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
-          doneTimerRef.current = setTimeout(
-            () => setRescanState({ phase: "idle" }),
-            1500,
-          );
+          // Updates>0 case: the button now hosts an actionable "View"
+          // CTA. Don't auto-fade — the user dismisses it by clicking
+          // View (which navigates and clears the state) or by
+          // clicking Rescan again. Auto-fading here would yank the
+          // affordance out from under a slow reader.
+          if (updates === 0) {
+            doneTimerRef.current = setTimeout(
+              () => setRescanState({ phase: "idle" }),
+              1500,
+            );
+          }
         }
       }
       void refresh();
@@ -855,6 +863,25 @@ export function App(): React.ReactElement {
     },
     [flash, refresh],
   );
+
+  // Rescan done-state "View" deep-link. Flip the Updates chip on,
+  // bounce the user into Browse, scroll the grid to the top, then
+  // clear the done badge. Owns the doneTimer ref too — a stale
+  // timer left over from updates=0 transitions would otherwise pull
+  // the rug while the user reads the filtered grid.
+  const viewRescanUpdates = useCallback(() => {
+    if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
+    setRegistryFilters(new Set(["updates"]));
+    setTabPersisted("browse");
+    setRescanState({ phase: "idle" });
+    // Scroll the content scroll container to the top after React
+    // commits the tab/filter change. Querying the DOM is fine here —
+    // there's exactly one `.content` element in the layout.
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(".content");
+      if (el) el.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
+  }, []);
 
   // Change linked repo is universal — always opens RepoPicker.
   // The folder-picker path (Import a registry from disk) is a separate
@@ -1105,6 +1132,7 @@ export function App(): React.ReactElement {
           onShowUpdate={() => undefined}
           pendingSkillUpdates={0}
           onShowUpdates={() => undefined}
+          onViewRescanUpdates={() => undefined}
         />
         <Tabs
           active="browse"
@@ -1150,6 +1178,7 @@ export function App(): React.ReactElement {
           onShowUpdate={openUpdateModal}
           pendingSkillUpdates={pendingSkillUpdates.length}
           onShowUpdates={() => setShowUpdatesModal(true)}
+          onViewRescanUpdates={viewRescanUpdates}
         />
         {appErrors.length > 0 && (
           <div className="error-panel-stack">
@@ -1232,6 +1261,10 @@ export function App(): React.ReactElement {
                 onRebuild={rebuild}
                 rebuilding={rebuilding}
                 searchInputRef={searchInputRef}
+                registryFilters={registryFilters}
+                setRegistryFilters={setRegistryFilters}
+                registrySort={registrySort}
+                setRegistrySort={setRegistrySort}
               />
             )}
             {tab === "installed" && (

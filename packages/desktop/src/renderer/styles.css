@@ -498,6 +498,19 @@ select {
   color: var(--accent);
   border-color: var(--accent-dim);
 }
+.refresh-btn.rescan-done-actionable {
+  /* Updates>0: the button now hosts the View deep-link. Sits in
+     done-state indefinitely until clicked, so give it a steady
+     accent border so it reads as the active CTA in the header. */
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  cursor: pointer;
+}
+.rescan-view-cta {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 
 /* ── Tab intro ───────────────────────────────────────── */
 .tab-intro {
@@ -740,6 +753,19 @@ select {
   transform: translateY(0) scale(0.99);
   transition-duration: var(--t-fast);
 }
+.skill-card--update-available {
+  /* Subtle left-edge accent so update-pending cards read as a
+     cohort even before the user pans down to the UPDATE badge.
+     2px stripe is borderline per impeccable's "side-stripe >1px"
+     ban — kept because the in-card UPDATE badge already carries
+     the primary signal, and the stripe just helps cluster the
+     cards visually when sorted/floated to the top. */
+  border-left: 2px solid var(--accent);
+  padding-left: calc(var(--s5) - 1px);
+}
+:root[data-density="compact"] .skill-card--update-available {
+  padding-left: calc(var(--s3) - 1px);
+}
 .skill-card-top {
   display: flex;
   align-items: flex-start;
@@ -888,6 +914,48 @@ select {
 }
 .filter-chip.active .filter-chip-count {
   color: var(--accent);
+}
+.filter-chip:disabled {
+  /* Zero-count chips: still visible (they convey "this category
+     exists but is empty") but not clickable. Muted color and
+     not-allowed cursor signal the dead state. */
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.filter-chip:disabled:hover {
+  border-color: var(--border);
+}
+
+/* ── Registry filters (chip strip + sort) ─── */
+.registry-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  justify-content: space-between;
+}
+.registry-filters-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+.registry-filters-sort {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  margin-left: auto;
+}
+.filter-chip.sort-chip {
+  /* Sort buttons aren't toggleable filters — render quieter so the
+     filter chips read as the primary affordance. No hover-accent
+     border shift either. */
+  color: var(--text-3);
+  background: transparent;
+}
+.filter-chip.sort-chip:hover {
+  color: var(--text);
+  border-color: var(--border-hi);
 }
 
 .skill-agent-chips {

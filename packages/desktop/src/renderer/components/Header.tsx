@@ -57,6 +57,14 @@ interface Props {
    */
   pendingSkillUpdates: number;
   onShowUpdates: () => void;
+  /**
+   * Invoked when the user clicks "View" in the Rescan done-state
+   * after a probe surfaces N>0 updates. The host is expected to
+   * switch to the Browse tab, flip the Updates chip on, and scroll
+   * the grid to the top. The button stays in done-state until this
+   * fires (or the user clicks Rescan again) — no auto-fade.
+   */
+  onViewRescanUpdates: () => void;
 }
 
 export function Header({
@@ -75,6 +83,7 @@ export function Header({
   onShowUpdate,
   pendingSkillUpdates,
   onShowUpdates,
+  onViewRescanUpdates,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -174,13 +183,21 @@ export function Header({
             )}
           </button>
           <button
-            className={`refresh-btn rescan-${rescanState.phase}`}
-            disabled={rescanState.phase !== "idle"}
+            className={`refresh-btn rescan-${rescanState.phase}${
+              rescanState.phase === "done" && rescanState.updates > 0
+                ? " rescan-done-actionable"
+                : ""
+            }`}
+            disabled={rescanState.phase === "working"}
             aria-busy={rescanState.phase === "working" || undefined}
             title={
               rescanState.phase === "working"
                 ? "Checking upstream for updates"
-                : "Re-scan the registry, agent directories, and probe upstreams for updates"
+                : rescanState.phase === "done" && rescanState.updates > 0
+                  ? `${rescanState.updates} update${
+                      rescanState.updates === 1 ? "" : "s"
+                    } found. Click to view in the registry.`
+                  : "Re-scan the registry, agent directories, and probe upstreams for updates"
             }
             aria-label={
               rescanState.phase === "working"
@@ -188,10 +205,14 @@ export function Header({
                 : rescanState.phase === "done"
                   ? rescanState.updates === 0
                     ? "Up to date"
-                    : `${rescanState.updates} update${rescanState.updates === 1 ? "" : "s"} found`
+                    : `${rescanState.updates} update${rescanState.updates === 1 ? "" : "s"} found — view in registry`
                   : "Rescan registry and check for upstream updates"
             }
-            onClick={onRefresh}
+            onClick={
+              rescanState.phase === "done" && rescanState.updates > 0
+                ? onViewRescanUpdates
+                : onRefresh
+            }
           >
             {rescanState.phase === "working" ? (
               <>
@@ -199,14 +220,19 @@ export function Header({
                 Checking upstream…
               </>
             ) : rescanState.phase === "done" ? (
-              <>
-                <Icon name="check" size="md" />{" "}
-                {rescanState.updates === 0
-                  ? "Up to date"
-                  : rescanState.updates === 1
+              rescanState.updates === 0 ? (
+                <>
+                  <Icon name="check" size="md" /> Up to date
+                </>
+              ) : (
+                <>
+                  <Icon name="check" size="md" />{" "}
+                  {rescanState.updates === 1
                     ? "1 update found"
                     : `${rescanState.updates} updates found`}
-              </>
+                  <span className="rescan-view-cta"> · View</span>
+                </>
+              )
             ) : (
               <>
                 <Icon name="refresh" size="md" /> Rescan

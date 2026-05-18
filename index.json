@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T16:24:32.577Z",
+  "generatedAt": "2026-05-18T16:52:45.708Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -22,8 +22,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -45,8 +50,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -69,8 +79,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -93,8 +108,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -117,8 +137,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -141,8 +166,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -162,9 +192,14 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "competitor-research",
@@ -186,8 +221,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -210,8 +250,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -234,8 +279,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -255,9 +305,14 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "core-web-vitals",
@@ -279,8 +334,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -302,8 +362,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -325,8 +390,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -348,8 +418,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -372,8 +447,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -395,8 +475,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -419,8 +504,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -442,8 +532,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -465,8 +560,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -489,8 +589,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -512,8 +617,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -534,8 +644,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "personal",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -557,8 +672,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -579,8 +699,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "personal",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -602,8 +727,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -623,9 +753,14 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "grill-with-docs",
@@ -644,9 +779,14 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "hero-generator",
@@ -668,8 +808,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -692,8 +837,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -718,8 +868,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -739,9 +894,14 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "landing-page-generator",
@@ -763,8 +923,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -787,8 +952,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -810,8 +980,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -833,8 +1008,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -856,8 +1036,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -879,8 +1064,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -902,8 +1092,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -925,8 +1120,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -948,8 +1148,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -970,8 +1175,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "personal",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -993,8 +1203,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1016,8 +1231,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1037,8 +1257,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true,
       "drift": true
     },
@@ -1061,8 +1286,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1084,8 +1314,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1108,8 +1343,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1131,8 +1371,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1155,8 +1400,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1178,8 +1428,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1201,8 +1456,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1223,8 +1483,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "personal",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1247,8 +1512,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1270,8 +1540,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1293,8 +1568,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1316,8 +1596,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1343,9 +1628,14 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "ui-ux-pro-max",
@@ -1366,8 +1656,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1389,8 +1684,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1412,8 +1712,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1435,8 +1740,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1460,8 +1770,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1485,8 +1800,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1510,8 +1830,13 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1531,9 +1856,14 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
+        "date": "2026-05-18 09:25:01 -0700",
+        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     }
   ]
 }

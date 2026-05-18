@@ -89,7 +89,7 @@ export function SkillCard({
 
   return (
     <div
-      className="skill-card"
+      className={`skill-card${entry.upstreamUpdateAvailable ? " skill-card--update-available" : ""}`}
       style={{ animationDelay: `${index * 30}ms` } as React.CSSProperties}
       onClick={onSelect}
       role="button"
