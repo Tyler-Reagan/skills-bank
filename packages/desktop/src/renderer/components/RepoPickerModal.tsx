@@ -131,7 +131,7 @@ export function RepoPickerModal({
         <div style={{ marginTop: 12, maxHeight: "55vh", overflowY: "auto" }}>
           {repos === null && (
             <p style={{ color: "var(--text-3)", fontSize: 12 }}>
-              <span className="spinner inline" /> Loading your repos
+              <span className="spinner inline" /> Loading your repos…
             </p>
           )}
           {repos !== null && filtered.length === 0 && (
@@ -220,7 +220,7 @@ export function RepoPickerModal({
                     color: "var(--text-3)",
                   }}
                 >
-                  <span className="spinner inline" /> Importing
+                  <span className="spinner inline" /> Importing…
                 </p>
               )}
             </button>
@@ -246,7 +246,12 @@ export function RepoPickerModal({
           >
             Sign out of GitHub
           </button>
-          <button onClick={onClose} disabled={picking !== null}>
+          <button
+            type="button"
+            className="btn"
+            onClick={onClose}
+            disabled={picking !== null}
+          >
             Close
           </button>
         </div>

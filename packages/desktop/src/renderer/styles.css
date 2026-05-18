@@ -36,6 +36,8 @@ button {
   border: none;
   background: none;
   color: inherit;
+  /* Cuts ~300ms double-tap delay on touch surfaces; harmless on desktop. */
+  touch-action: manipulation;
 }
 input,
 select {
@@ -1453,6 +1455,9 @@ select {
 .drawer-body {
   flex: 1;
   overflow-y: auto;
+  /* Stop scroll-chain from leaking into the underlying document when
+     the drawer body bottoms/tops out. */
+  overscroll-behavior: contain;
   padding: var(--s5);
   /* Reveal contents just after the panel arrives so the eye lands on
      a settled card rather than scrolling content while it slides. */

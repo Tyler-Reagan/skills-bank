@@ -131,7 +131,7 @@ export function UpdatesModal({
                   >
                     {state === "updating" && (
                       <>
-                        <span className="spinner inline" /> Updating
+                        <span className="spinner inline" /> Updating…
                       </>
                     )}
                     {state === "ok" && "✓ Updated"}
@@ -163,7 +163,7 @@ export function UpdatesModal({
           >
             {running ? (
               <>
-                <span className="spinner inline" /> Updating all
+                <span className="spinner inline" /> Updating all…
               </>
             ) : (
               `Update all (${entries.length})`

@@ -139,13 +139,22 @@ export function SkillCard({
                   aria-label={`Remove tag ${t}`}
                   onClick={(e) => void removeTag(t, e)}
                   onKeyDown={(e) => e.stopPropagation()}
+                  title={`Remove tag ${t}`}
                 >
                   <Icon name="x" size="sm" />
                 </button>
               )}
             </span>
           ))}
-          {hidden > 0 && <span className="skill-tag-more">+{hidden}</span>}
+          {hidden > 0 && (
+            <span
+              className="skill-tag-more"
+              title={`${hidden} more tag${hidden === 1 ? "" : "s"}`}
+              aria-label={`${hidden} more tag${hidden === 1 ? "" : "s"}`}
+            >
+              +{hidden}
+            </span>
+          )}
           {onSaveTags && !adding && (
             <button
               type="button"

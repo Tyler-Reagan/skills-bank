@@ -5,6 +5,10 @@
  * intentionally NOT aligned with the le-diegz palette we forked from.
  */
 :root {
+  /* Tell the UA to render form controls and scrollbars in dark mode by
+     default. Light theme overrides below. */
+  color-scheme: dark;
+
   /* Backgrounds — slate-900 base; surface and surface-hi step up by ~8% L */
   --bg:          #0F172A; /* slate-900 */
   --surface:     #1E293B; /* slate-800 */
@@ -103,6 +107,7 @@
  * near-white backgrounds.
  */
 :root[data-theme="light"] {
+  color-scheme: light;
   --bg:          #F8FAFC; /* slate-50 */
   --surface:     #FFFFFF;
   --surface-hi:  #F1F5F9; /* slate-100 */

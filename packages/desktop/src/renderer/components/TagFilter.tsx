@@ -44,7 +44,7 @@ export function TagFilter({
   };
 
   return (
-    <div className="tag-filter-panel" role="group" aria-label="Filter by tag">
+    <div className="tag-filter-panel">
       <div className="tag-filter-panel-header">
         <span className="tag-filter-panel-title">Filter by tag</span>
         <button

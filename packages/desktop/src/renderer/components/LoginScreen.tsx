@@ -216,7 +216,7 @@ export function LoginScreen({
           {polling && (
             <p className="setup-hint" role="status" aria-live="polite">
               <span className="spinner inline" /> Waiting for you to authorize
-              the app
+              the app…
             </p>
           )}
           {pollError && (

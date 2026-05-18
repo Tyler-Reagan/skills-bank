@@ -173,7 +173,7 @@ export function Header({
             {syncing ? (
               <>
                 <span className="spinner inline" aria-hidden="true" />{" "}
-                Refreshing
+                Refreshing…
               </>
             ) : (
               <>

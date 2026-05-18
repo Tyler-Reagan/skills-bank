@@ -77,7 +77,7 @@ export function BrowseTab({
           >
             {rebuilding ? (
               <>
-                <span className="spinner inline" /> Rescanning
+                <span className="spinner inline" /> Rescanning…
               </>
             ) : (
               "Rescan"
@@ -166,7 +166,7 @@ export function BrowseTab({
           onSelectedTagsChange={setSelectedTags}
         />
       </div>
-      <p className="results-count">
+      <p className="results-count" aria-live="polite" aria-atomic="true">
         {filtered.length} of {registry.length} skill
         {registry.length === 1 ? "" : "s"}
       </p>

@@ -477,7 +477,13 @@ export function SkillDetailDrawer({
               </p>
             )}
           </div>
-          <button className="drawer-close" onClick={onClose} aria-label="Close">
+          <button
+            type="button"
+            className="drawer-close"
+            onClick={onClose}
+            aria-label="Close skill details"
+            title="Close skill details (Esc)"
+          >
             <Icon name="x" size="lg" />
           </button>
         </div>
@@ -550,7 +556,7 @@ export function SkillDetailDrawer({
                     onClick={() => void saveTags()}
                     disabled={savingTags}
                   >
-                    {savingTags ? "Saving" : "Save"}
+                    {savingTags ? "Saving…" : "Save"}
                   </button>
                 </div>
               )}
@@ -562,8 +568,10 @@ export function SkillDetailDrawer({
                     <span key={t} className="skill-tag editable">
                       #{t}
                       <button
+                        type="button"
                         className="tag-remove"
-                        aria-label={`remove ${t}`}
+                        aria-label={`Remove tag ${t}`}
+                        title={`Remove tag ${t}`}
                         onClick={() => removeTag(t)}
                       >
                         <Icon name="x" size="sm" />
@@ -757,7 +765,7 @@ export function SkillDetailDrawer({
                       >
                         {pickerBusy ? (
                           <>
-                            <span className="spinner inline" /> Validating
+                            <span className="spinner inline" /> Validating…
                           </>
                         ) : (
                           "Link"
@@ -965,7 +973,7 @@ export function SkillDetailDrawer({
               >
                 {action === "registering" ? (
                   <>
-                    <span className="spinner inline" /> Registering
+                    <span className="spinner inline" /> Registering…
                   </>
                 ) : (
                   "Register in registry"
@@ -1004,7 +1012,7 @@ export function SkillDetailDrawer({
                 >
                   {action === "taking-upstream" ? (
                     <>
-                      <span className="spinner inline" /> Resetting
+                      <span className="spinner inline" /> Resetting…
                     </>
                   ) : (
                     "Reset to origin"
@@ -1025,7 +1033,7 @@ export function SkillDetailDrawer({
                 >
                   {action === "taking-canonical" ? (
                     <>
-                      <span className="spinner inline" /> Re-baselining
+                      <span className="spinner inline" /> Re-baselining…
                     </>
                   ) : (
                     "Re-baseline"
@@ -1050,7 +1058,7 @@ export function SkillDetailDrawer({
                 {action === "accepting-drift" ? (
                   <>
                     <span className="spinner inline" />{" "}
-                    {caps.canTakeUpstream ? "Unlinking" : "Accepting"}
+                    {caps.canTakeUpstream ? "Unlinking…" : "Accepting…"}
                   </>
                 ) : caps.canTakeUpstream ? (
                   "Unlink origin"
@@ -1097,7 +1105,7 @@ export function SkillDetailDrawer({
               >
                 {action === "updating" ? (
                   <>
-                    <span className="spinner inline" /> Updating
+                    <span className="spinner inline" /> Updating…
                   </>
                 ) : (
                   "Update"
@@ -1125,7 +1133,7 @@ export function SkillDetailDrawer({
             >
               {action === "repointing" ? (
                 <>
-                  <span className="spinner inline" /> Picking
+                  <span className="spinner inline" /> Picking…
                 </>
               ) : (
                 "Pick new location"
@@ -1147,7 +1155,7 @@ export function SkillDetailDrawer({
               >
                 {action === "forgetting" ? (
                   <>
-                    <span className="spinner inline" /> Forgetting
+                    <span className="spinner inline" /> Forgetting…
                   </>
                 ) : (
                   "Forget this skill"
@@ -1178,7 +1186,7 @@ export function SkillDetailDrawer({
             >
               {repairState.kind === "running" ? (
                 <>
-                  <span className="spinner inline" /> Repairing
+                  <span className="spinner inline" /> Repairing…
                 </>
               ) : (
                 <>
@@ -1290,7 +1298,7 @@ export function SkillDetailDrawer({
             >
               {action === "installing" ? (
                 <>
-                  <span className="spinner inline" /> Installing
+                  <span className="spinner inline" /> Installing…
                 </>
               ) : classification.state === "registered-broken" ? (
                 "Reinstall (fixes broken links)"
@@ -1330,7 +1338,7 @@ export function SkillDetailDrawer({
             >
               {repairState.kind === "running" ? (
                 <>
-                  <span className="spinner inline" /> Repairing
+                  <span className="spinner inline" /> Repairing…
                 </>
               ) : (
                 `Fix broken link${classification.brokenCount === 1 ? "" : "s"}`
@@ -1361,7 +1369,7 @@ export function SkillDetailDrawer({
             >
               {action === "exporting" ? (
                 <>
-                  <span className="spinner inline" /> Exporting
+                  <span className="spinner inline" /> Exporting…
                 </>
               ) : (
                 "Export"
@@ -1395,7 +1403,7 @@ export function SkillDetailDrawer({
               >
                 {action === "unregistering" ? (
                   <>
-                    <span className="spinner inline" /> Removing
+                    <span className="spinner inline" /> Removing…
                   </>
                 ) : (
                   "Remove from registry"
@@ -1421,7 +1429,7 @@ export function SkillDetailDrawer({
             >
               {action === "hiding" ? (
                 <>
-                  <span className="spinner inline" /> Hiding
+                  <span className="spinner inline" /> Hiding…
                 </>
               ) : (
                 "Dismiss from registry view"
@@ -1440,7 +1448,7 @@ export function SkillDetailDrawer({
             >
               {action === "unhiding" ? (
                 <>
-                  <span className="spinner inline" /> Unhiding
+                  <span className="spinner inline" /> Unhiding…
                 </>
               ) : (
                 "Unhide"
