@@ -1070,8 +1070,12 @@ ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
     } else if (process.platform === "win32") {
       // `start ""` consumes the title arg so the path isn't taken as one.
       // Falls back to cmd if Windows Terminal isn't installed.
-      const command = cwd
-        ? `start "" wt.exe -d "${cwd}" || start "" cmd.exe /K cd /D "${cwd}"`
+      // Strip embedded quotes/control chars before interpolation —
+      // `registryRoot` is user-set but we still don't want a literal
+      // quote in the path to break out of the cmd.exe string.
+      const safeCwd = cwd ? cwd.replace(/["\r\n]/g, "") : "";
+      const command = safeCwd
+        ? `start "" wt.exe -d "${safeCwd}" || start "" cmd.exe /K cd /D "${safeCwd}"`
         : `start "" wt.exe || start "" cmd.exe`;
       spawn("cmd.exe", ["/c", command], {
         detached: true,
@@ -1202,7 +1206,12 @@ function createWindow(): void {
       preload: path.join(__dirname, "..", "main", "preload.mjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      // Sandbox the renderer. The preload uses only `electron`'s
+      // `contextBridge` and `ipcRenderer`, both of which are
+      // sandbox-compatible. Defense-in-depth against renderer
+      // RCE: a compromised renderer can't reach Node primitives
+      // even via the preload's import graph.
+      sandbox: true,
     },
   });
   const indexHtml = path.join(__dirname, "..", "..", "dist", "index.html");
@@ -2144,6 +2153,24 @@ ipcMain.handle(
         message: NO_ROOT_MSG,
         report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
       };
+    // Re-validate the renderer-supplied path. The picker IPC normally
+    // guarantees a real directory with a skills/ child, but a
+    // misbehaving renderer could call this handler with arbitrary
+    // input; the merge implementation walks the path with fs ops, so
+    // we refuse non-existent or skills-less paths up front.
+    if (
+      typeof sourcePath !== "string" ||
+      !path.isAbsolute(sourcePath) ||
+      !fs.existsSync(sourcePath) ||
+      !fs.statSync(sourcePath).isDirectory() ||
+      !fs.existsSync(path.join(sourcePath, "skills"))
+    ) {
+      return {
+        ok: false,
+        message: `Invalid merge source path: ${String(sourcePath)}`,
+        report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
+      };
+    }
     try {
       const report = mergeImportRegistry(registryRoot, sourcePath, decisions);
       return {
@@ -2221,7 +2248,58 @@ ipcMain.handle(IPC.readSkillMd, (_e, name: string) => {
   }
 });
 
+/**
+ * Compute the set of root directories the renderer is allowed to ask us
+ * to reveal in Finder/Explorer. Anything outside this allowlist is
+ * refused — a compromised or misbehaving renderer cannot use
+ * `shell.openPath` as a generic file-open primitive.
+ */
+function allowedRevealRoots(): string[] {
+  const roots: string[] = [];
+  if (registryRoot) roots.push(path.resolve(registryRoot));
+  for (const agent of AGENTS) {
+    try {
+      const dir = getAgentSkillsDir(agent);
+      if (dir) roots.push(path.resolve(dir));
+    } catch {
+      // Ignore agents that aren't configured on this host.
+    }
+  }
+  return roots;
+}
+
+/**
+ * Returns true when `candidate` (after symlink-free normalization) sits
+ * inside one of `roots`. Uses path.relative + boundary checks so
+ * `/foo/bar-attacker` doesn't pass against root `/foo/bar`. Symlinks
+ * are NOT pre-resolved (realpath would force the candidate to exist);
+ * callers should assume the renderer cannot use this to traverse out
+ * of the allowlist via `..` because we reject any normalized path
+ * outside the listed roots.
+ */
+function isInsideAnyRoot(candidate: string, roots: string[]): boolean {
+  const normalized = path.resolve(candidate);
+  for (const root of roots) {
+    const rel = path.relative(root, normalized);
+    if (rel === "") return true;
+    if (!rel.startsWith("..") && !path.isAbsolute(rel)) return true;
+  }
+  return false;
+}
+
 ipcMain.handle(IPC.openInFinder, async (_e, absolutePath: string) => {
+  if (typeof absolutePath !== "string" || absolutePath.length === 0) {
+    return;
+  }
+  // Refuse anything that isn't an absolute, normalized path. Belt-and-
+  // suspenders alongside the root check below.
+  if (!path.isAbsolute(absolutePath)) return;
+  if (!isInsideAnyRoot(absolutePath, allowedRevealRoots())) {
+    console.warn(
+      `openInFinder: refused path outside allowlist: ${absolutePath}`,
+    );
+    return;
+  }
   await shell.openPath(absolutePath);
 });
 
@@ -2791,7 +2869,28 @@ ipcMain.handle(IPC.reposRefreshCurrent, async () => {
   return replaceRegistryWithRepo(target);
 });
 
+/**
+ * Restrict `shell.openExternal` to http(s) URLs. Without this guard a
+ * compromised renderer could ship `file://`, `javascript:`, custom
+ * URI schemes, or registered protocol handlers to escape the sandbox.
+ * Anything that fails the URL parse or scheme check is silently dropped
+ * and logged.
+ */
+function isSafeExternalUrl(raw: unknown): raw is string {
+  if (typeof raw !== "string" || raw.length === 0) return false;
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 ipcMain.handle(IPC.openExternal, async (_e, url: string) => {
+  if (!isSafeExternalUrl(url)) {
+    console.warn(`openExternal: refused non-http(s) URL: ${String(url)}`);
+    return;
+  }
   await shell.openExternal(url);
 });
 
@@ -2868,6 +2967,43 @@ ipcMain.handle(IPC.openSelfHostDocs, async () => {
   const error = await shell.openPath(docPath);
   if (error) return { ok: false, message: error };
   return { ok: true };
+});
+
+// App-wide WebContents hardening. Every web contents (main window,
+// Discover view, future windows) gets:
+//   - `setWindowOpenHandler` defaulted to "deny + route http(s) to the
+//     OS browser" so a renderer can't pop a new BrowserWindow.
+//   - `will-navigate` cancelled for anything outside file:// (main
+//     bundle) or the Discover host allowlist — defends against a
+//     compromised renderer chasing a malicious href.
+// The Discover view installs its own handlers (above) that match this
+// default; the duplication is harmless and the order is unimportant.
+app.on("web-contents-created", (_event, contents) => {
+  contents.setWindowOpenHandler(({ url }) => {
+    if (isSafeExternalUrl(url)) void shell.openExternal(url);
+    return { action: "deny" };
+  });
+  contents.on("will-navigate", (event, navUrl) => {
+    try {
+      const parsed = new URL(navUrl);
+      // Local app bundle (loadFile) — always allowed.
+      if (parsed.protocol === "file:") return;
+      // Discover view's host allowlist.
+      if (
+        (parsed.protocol === "https:" || parsed.protocol === "http:") &&
+        DISCOVER_HOSTS.has(parsed.hostname)
+      ) {
+        return;
+      }
+      // Anything else: cancel + route http(s) to the OS browser.
+      event.preventDefault();
+      if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+        void shell.openExternal(navUrl);
+      }
+    } catch {
+      event.preventDefault();
+    }
+  });
 });
 
 void app.whenReady().then(() => {
