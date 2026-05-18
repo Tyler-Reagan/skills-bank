@@ -512,7 +512,7 @@ ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
  */
 async function applyUpstreamUpdate(
   name: string,
-): Promise<{ ok: boolean; message: string; error?: unknown }> {
+): Promise<import("../shared/ipc.js").UpstreamUpdateResult> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const index = buildRegistryIndex(registryRoot);
   const entry = index.entries.find((e) => e.name === name);
@@ -538,13 +538,28 @@ async function applyUpstreamUpdate(
     getStoredToken(),
   );
   if (!mirror.ok) {
-    const hint = mirror.status === 403 ? " — sign in for 5000/hr" : "";
+    if (mirror.status === 429 && mirror.rateLimit) {
+      // Hand the renderer everything it needs to render a tailored
+      // sticky toast — no inline copy-mangling. Sign-in affordance
+      // surfaces only for unauth hits.
+      return {
+        ok: false,
+        message: mirror.message,
+        rateLimit: mirror.rateLimit,
+      };
+    }
     const recoveryHint = mirror.status === 404
-      ? ". Sever to keep local, or Unlink the pointer."
+      ? " Sever to keep local, or Unlink the pointer."
       : "";
     return {
       ok: false,
-      message: `${mirror.message}${hint}${recoveryHint}`,
+      message: `Update failed: ${mirror.message}.${recoveryHint}`,
+      diagnostic:
+        `name=${name}\n` +
+        `repo=${upstream.repo}\n` +
+        `skillPath=${upstream.skillPath}\n` +
+        `status=${mirror.status}\n` +
+        `message=${mirror.message}`,
     };
   }
 

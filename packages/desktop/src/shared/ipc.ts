@@ -127,6 +127,30 @@ export type UpstreamManualChoice =
   | { kind: "none" };
 
 /**
+ * Response for `upstream:update`. Carries structured rate-limit info
+ * on 429 so the renderer can render a tailored, sticky error toast
+ * with a "Sign in" affordance, instead of a generic transient flash.
+ *
+ * `rateLimit` mirrors core's `RateLimitInfo` shape. Inlined here so
+ * the IPC surface doesn't depend on a separately-exported name.
+ */
+export interface UpstreamUpdateResult {
+  ok: boolean;
+  message: string;
+  /** Populated only on rate-limit failures. */
+  rateLimit?: {
+    limit: number;
+    remaining: number;
+    resetAt: string;
+    unauthenticated: boolean;
+  };
+  /** Populated only on failure when not a rate-limit. Free-form
+   *  diagnostic payload the user can copy into an external agent. */
+  diagnostic?: string;
+  error?: unknown;
+}
+
+/**
  * Summary returned by `upstream:probe`. The renderer uses this to
  * surface progress in the UpdatesModal's manual-refresh control;
  * per-skill update state is surfaced via the augmented
@@ -613,9 +637,7 @@ interface SkillsBankAPI {
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
   upstreamProbe(): Promise<UpstreamProbeResult>;
   onUpstreamProbeComplete(cb: () => void): () => void;
-  upstreamUpdate(
-    name: string,
-  ): Promise<{ ok: boolean; message: string; error?: unknown }>;
+  upstreamUpdate(name: string): Promise<UpstreamUpdateResult>;
   upstreamRepoMetadata(repo: string): Promise<UpstreamRepoMetadata>;
   upstreamLastCommit(
     repo: string,

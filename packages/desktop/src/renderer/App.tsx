@@ -47,7 +47,12 @@ import { AccountModal } from "./components/AccountModal.js";
 import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
-import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
+import type {
+  AuthStatus,
+  SyncStatus,
+  UpdateStatus,
+  UpstreamUpdateResult,
+} from "../shared/ipc.js";
 
 const LS_KEYS = {
   search: "skills-bank.searchQuery",
@@ -134,9 +139,19 @@ export function App(): React.ReactElement {
   const [installed, setInstalled] = useState<InstalledSkill[]>([]);
   const [registryRoot, setRegistryRoot] = useState<string | null>(null);
   const [configChecked, setConfigChecked] = useState(false);
+  type ToastAction = { label: string; onClick: () => void };
   type ToastShape = {
     message: string;
-    action?: { label: string; onClick: () => void };
+    /** When set, the toast doesn't auto-dismiss; user must click ×. */
+    sticky?: boolean;
+    /** Visual severity. "error" gets a red border + persistent close. */
+    severity?: "info" | "error";
+    /** Primary action button (e.g. "Sign in"). */
+    action?: ToastAction;
+    /** Optional secondary action — typically Copy details / Diagnostics. */
+    secondaryAction?: ToastAction;
+    /** Hidden diagnostic payload; "Copy details" copies this to clipboard. */
+    diagnostic?: string;
   };
   const [toast, setToast] = useState<ToastShape | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -454,6 +469,89 @@ export function App(): React.ReactElement {
       toastTimerRef.current = setTimeout(() => setToast(null), 6000);
     },
     [],
+  );
+
+  /**
+   * Sticky error toast — no auto-dismiss; user clicks × to close.
+   * Always offers a "Copy details" affordance writing the message
+   * (plus the optional `diagnostic` blob) to clipboard, so the user
+   * can paste it into another agent without retyping.
+   */
+  const flashError = useCallback(
+    (
+      msg: string,
+      opts: {
+        action?: ToastAction;
+        diagnostic?: string;
+      } = {},
+    ) => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      const diagnostic = opts.diagnostic ?? msg;
+      const copyAction: ToastAction = {
+        label: "Copy details",
+        onClick: () => {
+          void navigator.clipboard.writeText(diagnostic);
+        },
+      };
+      setToast({
+        message: msg,
+        sticky: true,
+        severity: "error",
+        action: opts.action,
+        secondaryAction: copyAction,
+        diagnostic,
+      });
+      // No timer — sticky toasts persist until the user dismisses.
+    },
+    [],
+  );
+
+  /**
+   * Handle an UpstreamUpdateResult uniformly across the three Update
+   * call sites (drawer Update, drawer Take-upstream, UpdatesModal).
+   * Success → transient flash; rate-limit → sticky error with a
+   * "Sign in" affordance for unauth hits; other errors → sticky
+   * error with a Copy-details diagnostic payload.
+   */
+  const handleUpdateResult = useCallback(
+    (r: UpstreamUpdateResult) => {
+      if (r.ok) {
+        flash(r.message);
+        return;
+      }
+      if (r.rateLimit) {
+        const resetAt = new Date(r.rateLimit.resetAt);
+        const resetText = resetAt.toLocaleTimeString(undefined, {
+          hour: "numeric",
+          minute: "2-digit",
+        });
+        const msg = `${r.message}. Resets at ${resetText}.`;
+        const action: ToastAction | undefined = r.rateLimit.unauthenticated
+          ? {
+              label: "Sign in",
+              onClick: () => {
+                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+                setToast(null);
+                setShowAccount(true);
+              },
+            }
+          : undefined;
+        flashError(msg, {
+          ...(action ? { action } : {}),
+          diagnostic:
+            `${r.message}\n` +
+            `limit=${r.rateLimit.limit}/hr\n` +
+            `remaining=${r.rateLimit.remaining}\n` +
+            `resetsAt=${r.rateLimit.resetAt}\n` +
+            `authenticated=${!r.rateLimit.unauthenticated}`,
+        });
+        return;
+      }
+      flashError(r.message, {
+        diagnostic: r.diagnostic ?? r.message,
+      });
+    },
+    [flash, flashError],
   );
 
   // Minimum spinner duration so the user actually sees the load state.
@@ -1581,7 +1679,7 @@ export function App(): React.ReactElement {
             onClose={() => setShowUpdatesModal(false)}
             onUpdate={async (name) => {
               const r = await window.skillsBank.upstreamUpdate(name);
-              flash(r.message);
+              handleUpdateResult(r);
               await refresh();
               return r;
             }}
@@ -1930,7 +2028,7 @@ export function App(): React.ReactElement {
                         const r = await window.skillsBank.upstreamUpdate(
                           selected.name,
                         );
-                        flash(r.message);
+                        handleUpdateResult(r);
                         if (r.ok) setSelected(null);
                         await refresh();
                       }
@@ -1942,7 +2040,7 @@ export function App(): React.ReactElement {
                         const r = await window.skillsBank.upstreamUpdate(
                           selected.name,
                         );
-                        flash(r.message);
+                        handleUpdateResult(r);
                         await refresh();
                       }
                     : undefined
@@ -2056,11 +2154,35 @@ export function App(): React.ReactElement {
           })()}
 
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
-            <span>{toast.message}</span>
+          <div
+            className={`toast${toast.severity === "error" ? " toast-error" : ""}`}
+            role={toast.severity === "error" ? "alert" : "status"}
+            aria-live={toast.severity === "error" ? "assertive" : "polite"}
+          >
+            <span className="toast-message">{toast.message}</span>
             {toast.action && (
               <button className="toast-action" onClick={toast.action.onClick}>
                 {toast.action.label}
+              </button>
+            )}
+            {toast.secondaryAction && (
+              <button
+                className="toast-action secondary"
+                onClick={toast.secondaryAction.onClick}
+              >
+                {toast.secondaryAction.label}
+              </button>
+            )}
+            {toast.sticky && (
+              <button
+                className="toast-close"
+                aria-label="Dismiss"
+                onClick={() => {
+                  if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+                  setToast(null);
+                }}
+              >
+                ×
               </button>
             )}
           </div>

@@ -1615,6 +1615,38 @@ select {
   background: var(--accent);
   color: var(--on-primary);
 }
+.toast-action.secondary {
+  border-color: var(--border-hi);
+  color: var(--text-2);
+}
+.toast-action.secondary:hover {
+  background: var(--surface-hi);
+  color: var(--text);
+}
+.toast-error {
+  border-color: var(--danger);
+  border-left-width: 3px;
+  max-width: 460px;
+  align-items: flex-start;
+}
+.toast-error .toast-message {
+  flex: 1;
+  line-height: 1.4;
+}
+.toast-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 var(--s1);
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.toast-close:hover {
+  color: var(--text);
+}
 
 /* ── Legacy row layout (used by RegisterModal entry list) ── */
 .row {

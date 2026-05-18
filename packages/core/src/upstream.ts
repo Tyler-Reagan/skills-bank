@@ -42,12 +42,29 @@ export interface RepoTreeProbeOk {
   truncated: boolean;
 }
 
+export interface RateLimitInfo {
+  /** Hourly request ceiling — 60 for unauth-per-IP, 5000 for authed. */
+  limit: number;
+  /** Requests remaining in the current window. 0 means exhausted. */
+  remaining: number;
+  /** ISO timestamp at which the window resets and quota replenishes. */
+  resetAt: string;
+  /** True iff the caller was operating on the unauthenticated ceiling. */
+  unauthenticated: boolean;
+}
+
 export interface RepoTreeProbeErr {
   ok: false;
-  /** HTTP status code, or 0 for transport-level failure. */
+  /** HTTP status code, or 0 for transport-level failure. We map
+   *  GitHub's "403 with X-RateLimit-Remaining: 0" quirk to 429 here
+   *  so callers branch on the semantically-correct code. */
   status: number;
-  /** Human-readable reason for surfacing to the user. */
+  /** Human-readable reason — short, no jargon. The desktop renderer
+   *  formats this directly into the toast. */
   message: string;
+  /** Populated when `status === 429`. Lets the renderer show the
+   *  exact ceiling, time-to-reset, and a "sign in" affordance. */
+  rateLimit?: RateLimitInfo;
 }
 
 export type RepoTreeProbe = RepoTreeProbeOk | RepoTreeProbeErr;
@@ -88,6 +105,28 @@ export async function probeRepoTree(
     };
   }
   if (!res.ok) {
+    // GitHub returns 403 (not 429) when the rate-limit window is
+    // exhausted, distinguishable only by `X-RateLimit-Remaining: 0`.
+    // Translate to a structured rate-limit error so the renderer
+    // can show "60/hr, resets at 4:12 PM" rather than a bare
+    // "403 Forbidden."
+    const remainingHdr = res.headers.get("x-ratelimit-remaining");
+    if (res.status === 403 && remainingHdr === "0") {
+      const limit = Number(res.headers.get("x-ratelimit-limit") ?? "0") || 60;
+      const resetEpoch = Number(res.headers.get("x-ratelimit-reset") ?? "0");
+      const resetAt = resetEpoch > 0
+        ? new Date(resetEpoch * 1000).toISOString()
+        : new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      const unauthenticated = !token;
+      return {
+        ok: false,
+        status: 429,
+        message: unauthenticated
+          ? `GitHub rate limit reached (${limit}/hr, unauthenticated)`
+          : `GitHub rate limit reached (${limit}/hr)`,
+        rateLimit: { limit, remaining: 0, resetAt, unauthenticated },
+      };
+    }
     return {
       ok: false,
       status: res.status,
@@ -153,9 +192,13 @@ export interface MirrorResultOk {
 
 export interface MirrorResultErr {
   ok: false;
-  /** HTTP status when known; 0 for transport errors or refusal. */
+  /** HTTP status when known; 0 for transport errors or refusal; 429
+   *  when the upstream-side rate limit is exhausted. */
   status: number;
   message: string;
+  /** Set when `status === 429` so the renderer can show ceiling +
+   *  reset time + auth affordance. */
+  rateLimit?: RateLimitInfo;
 }
 
 export type MirrorResult = MirrorResultOk | MirrorResultErr;
@@ -188,7 +231,15 @@ export async function mirrorSkillFolder(
   const path = await import("node:path");
 
   const probe = await probeRepoTree(repo, token, options);
-  if (!probe.ok) return { ok: false, status: probe.status, message: probe.message };
+  if (!probe.ok) {
+    const err: MirrorResultErr = {
+      ok: false,
+      status: probe.status,
+      message: probe.message,
+    };
+    if (probe.rateLimit) err.rateLimit = probe.rateLimit;
+    return err;
+  }
   if (probe.truncated) {
     return {
       ok: false,
