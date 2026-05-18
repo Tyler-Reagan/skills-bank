@@ -49,9 +49,20 @@ select {
 :focus {
   outline: none;
 }
+/* Default the ring flush with the element's outer edge. Outset
+   (offset > 0) creates two classes of bugs: clipped rings inside
+   `overflow-y: auto` containers (Chromium collapses overflow-x to
+   hidden when the cross-axis is auto), and rings that bleed into
+   adjacent siblings in tight grids. Widgets that want non-zero
+   offset opt in explicitly:
+     - inset (-2px) for cards / list rows whose border doubles as
+       the ring surface (`.skill-card`, `.repo-picker-item`,
+       `.tag-filter-item`).
+     - outset (2px) for free-floating badges that have room
+       around them (`.update-badge`, `.updates-badge`). */
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 0;
   border-radius: var(--r-sm);
 }
 .skill-card:focus-visible {
@@ -586,6 +597,37 @@ select {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
+
+/* Standalone search/filter input — same look as `.search-bar input`
+   minus the icon-slot padding on the left. Used by modal filters
+   (RepoPickerModal, etc.) that don't render an inline search glyph. */
+.search-input {
+  padding: var(--s3) var(--s4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 13px;
+  outline: none;
+  color: var(--text);
+  transition:
+    border-color var(--t) var(--ease),
+    box-shadow var(--t) var(--ease);
+}
+.search-input::placeholder {
+  color: var(--text-3);
+}
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* Repo-picker list rows — inset ring so the button's own border
+   acts as the surface the ring sits inside. (Outset rings here
+   would clip on the sides when the parent scroll container
+   collapses overflow-x.) */
+.repo-picker-item:focus-visible {
+  outline-offset: -2px;
+}
 .search-clear {
   position: absolute;
   right: var(--s2);
@@ -1005,6 +1047,11 @@ select {
   background: var(--accent-dim);
   border-color: var(--accent);
   color: var(--accent);
+}
+/* Inset ring — same reasoning as `.repo-picker-item:focus-visible`:
+   the `.tag-filter-panel-list` parent is a scroll container. */
+.tag-filter-item:focus-visible {
+  outline-offset: -2px;
 }
 .tag-filter-item-label {
   font-family: var(--font-mono);

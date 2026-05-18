@@ -68,8 +68,7 @@ export function TagFilter({
               type="button"
               className={`tag-filter-item${isActive ? " active" : ""}`}
               onClick={() => toggle(tag)}
-              role="checkbox"
-              aria-checked={isActive}
+              aria-pressed={isActive}
             >
               <span className="tag-filter-item-label">#{tag}</span>
               <span className="tag-filter-item-count">{count}</span>

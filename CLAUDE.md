@@ -108,7 +108,7 @@ To minimize thrashing (later plans rendering earlier plans' code obsolete), this
 9. **`core-test-foundation`** (v0.11.7) — first `packages/core` tests + ADR-0001/2/3 + `fetchedAt` probe-path fix.
 10. **`security-hardening`** (v0.11.8) — CSP tightening + storage policy + devtools call.
 11. **`core-architecture-refactor`** (v0.11.9) — `SkillRecord` consolidation, probe scheduler / diff / `applyUpstreamUpdate` extraction to core.
-12. **`origin-rename-pass`** (v0.12.0) — coordinated internal rename; user-facing copy already aligned in v0.11.4.
+12. **`origin-rename-pass`** (v0.11.10) — coordinated internal rename; user-facing copy already aligned in v0.11.4.
 13. **`bank-mode-persistence`** — adds the local snapshot cache.
 14. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
 

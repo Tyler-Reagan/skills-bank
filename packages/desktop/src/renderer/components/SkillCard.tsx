@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { AGENT_LABELS, AGENT_PATHS } from "../agentDisplay.js";
+import { useReducedMotion } from "../hooks/useReducedMotion.js";
 import { Icon } from "./Icon.js";
 
 function freshness(lastCommit: RegistryEntry["lastCommit"]): {
@@ -58,6 +59,7 @@ export function SkillCard({
   const hidden = (entry.tags?.length ?? 0) - visibleTags.length;
   const [adding, setAdding] = useState(false);
   const [addInput, setAddInput] = useState("");
+  const reducedMotion = useReducedMotion();
 
   const removeTag = async (tag: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -90,7 +92,11 @@ export function SkillCard({
   return (
     <div
       className={`skill-card${entry.upstreamUpdateAvailable ? " skill-card--update-available" : ""}`}
-      style={{ animationDelay: `${index * 30}ms` } as React.CSSProperties}
+      style={
+        reducedMotion
+          ? undefined
+          : ({ animationDelay: `${index * 30}ms` } as React.CSSProperties)
+      }
       onClick={onSelect}
       role="button"
       tabIndex={0}

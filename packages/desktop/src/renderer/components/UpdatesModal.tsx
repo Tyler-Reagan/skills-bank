@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import type { RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { Icon } from "./Icon.js";
 
 interface Props {
@@ -37,6 +38,7 @@ export function UpdatesModal({
   useEscapeToClose(onClose);
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
+  useFocusTrap(modalRef);
   const [states, setStates] = useState<Record<string, RowState>>({});
   const [running, setRunning] = useState(false);
 

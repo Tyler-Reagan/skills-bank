@@ -23,7 +23,7 @@ Theme: **`packages/core` gets its first tests and decision records.** Unblocks v
 - **vs v0.11.5 a11y, v0.11.6 renderer state.** Different surfaces (core vs renderer). Independent.
 - **vs v0.11.8 security.** Security can now refactor IPC handlers with the core test net underneath. Land v0.11.7 first.
 - **vs v0.11.9 core architecture refactor.** v0.11.9 is gated on v0.11.7. The consolidation/extraction work in v0.11.9 is high-risk without these tests.
-- **vs v0.12.0 Origin rename.** Tests will rename identifiers via the codemod alongside. No conflict.
+- **vs v0.11.10 Origin rename.** Tests will rename identifiers via the codemod alongside. No conflict.
 
 ## Exit criteria
 

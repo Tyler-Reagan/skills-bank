@@ -18,7 +18,7 @@ M1 → M2 → M3, in sequence. M3 is gated on M2 (without context, the splits wo
 
 - **vs v0.11.5 a11y polish.** A11y lands first. The component splits in M3 would force a redo of focus-trap wiring on each new component otherwise.
 - **vs v0.11.9 core refactor.** Different package surfaces (renderer vs core). Independent.
-- **vs v0.12.0 Origin rename.** Identifier-level. Worth landing v0.11.6 first so the rename codemod targets the post-split file layout.
+- **vs v0.11.10 Origin rename.** Identifier-level. Worth landing v0.11.6 first so the rename codemod targets the post-split file layout.
 
 ## Estimated blast radius
 

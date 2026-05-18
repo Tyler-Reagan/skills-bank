@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { BUNDLED_REPO, type UserRepo } from "../../shared/ipc.js";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
+import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { Icon } from "./Icon.js";
 
 interface Props {
@@ -40,6 +41,9 @@ export function RepoPickerModal({
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  useInitialFocus(modalRef);
+  useFocusTrap(modalRef);
   const [repos, setRepos] = useState<UserRepo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -87,10 +91,12 @@ export function RepoPickerModal({
   return (
     <div style={overlay}>
       <div
+        ref={modalRef}
         style={modal}
         role="dialog"
         aria-modal="true"
         aria-label="Choose a registry repo"
+        tabIndex={-1}
       >
         <h2 style={{ marginTop: 0 }}>Choose a registry repo</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
@@ -143,6 +149,7 @@ export function RepoPickerModal({
             <button
               key={r.fullName}
               type="button"
+              className="repo-picker-item"
               disabled={picking !== null}
               onClick={() => void pick(r.fullName)}
               style={{

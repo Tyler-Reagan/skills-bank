@@ -1,10 +1,10 @@
-# Origin internal rename (v0.12.0)
+# Origin internal rename (v0.11.10)
 
 Single coordinated rename pass that catches the codebase's internal vocabulary up to the v0.11.2 user-facing paradigm shift. Source: `docs/audits/v0.11.4-language-sweep.md` + `docs/audits/v0.11.4-architecture.md` §5.
 
 Theme: **internal identifiers say what user-facing copy already says — "Origin", not "upstream".**
 
-Warrants a minor bump (v0.12.0) because it changes the shape of public `@skills-bank/core` types. Coordinated single PR with codemod + deprecation aliases so downstream consumers (the CLI, any future SDK users) get a soft landing.
+Stays in the v0.11.x series. The shape change to `@skills-bank/core` types is real but pre-1.0 contracts are negotiable — the project's "cut hard" convention applies. Ship deprecation aliases for one minor cycle anyway as a courtesy to the CLI + any future SDK users, then drop them in v0.12.0.
 
 ## Renames
 
@@ -56,7 +56,7 @@ Code comments still reference "upstream" in many places where v0.11.4 renamed on
 ## Strategy
 
 1. **Codemod-driven.** Write `scripts/codemod-origin-rename.ts` (or use `ts-morph`) that rewrites identifiers + imports + string-literal action states across the monorepo in one pass. Manual review of the diff before commit.
-2. **Deprecation aliases for one minor cycle.** Export the old type names as `export type UpstreamPointer = OriginPointer` for one minor version with a `@deprecated` JSDoc, then remove in v0.13.0. (Pre-1.0 convention says "cut hard," but this is the one place where downstream-consumer kindness wins — the CLI and any future SDK users get a soft landing.)
+2. **Deprecation aliases for one minor cycle.** Export the old type names as `export type UpstreamPointer = OriginPointer` for one minor version with a `@deprecated` JSDoc, then remove in v0.12.0. (Pre-1.0 convention says "cut hard," but this is the one place where downstream-consumer kindness wins — the CLI and any future SDK users get a soft landing.)
 3. **Plan dependency.** Sequence after v0.11.9 so the rename hits the post-consolidation module layout, not pre-consolidation.
 4. **Single PR.** No split. The whole point is one coherent diff.
 

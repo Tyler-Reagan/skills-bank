@@ -389,6 +389,26 @@ export function App(): React.ReactElement {
     [installed],
   );
 
+  // Skills with an available upstream update — set by the main-process
+  // probe runner via the augmented `listRegistry`. Drives the header
+  // aggregate badge and the UpdatesModal's content. Memoized so the
+  // UpdatesModal doesn't see a fresh `entries` array on every render.
+  // Must live above the auth/loading early-return gates below — Rules
+  // of Hooks: every render must reach the same set of hook calls.
+  const pendingSkillUpdates = useMemo(
+    () => registry.filter((e) => e.upstreamUpdateAvailable === true),
+    [registry],
+  );
+
+  // Hidden canon skills stay in `registry` for lookups/installs/Settings
+  // but are filtered out of the default Browse view. Memoize so BrowseTab
+  // (and its descendant RegistryFilters / count effects) see a stable
+  // reference until the registry actually changes.
+  const visibleRegistry = useMemo(
+    () => registry.filter((e) => !e.hidden),
+    [registry],
+  );
+
   // Tab badge counts — dedupe by skill name so a skill linked into two
   // agent dirs counts once. The toast computed by refresh() uses the
   // same expression; keep them in sync via this single derivation.
@@ -1101,24 +1121,6 @@ export function App(): React.ReactElement {
     isLiveUpdate && latestUpdateStatus.version !== dismissedUpdateVersion
       ? latestUpdateStatus.version
       : null;
-
-  // Skills with an available upstream update — set by the main-process
-  // probe runner via the augmented `listRegistry`. Drives the header
-  // aggregate badge and the UpdatesModal's content. Memoized so the
-  // UpdatesModal doesn't see a fresh `entries` array on every render.
-  const pendingSkillUpdates = useMemo(
-    () => registry.filter((e) => e.upstreamUpdateAvailable === true),
-    [registry],
-  );
-
-  // Hidden canon skills stay in `registry` for lookups/installs/Settings
-  // but are filtered out of the default Browse view. Memoize so BrowseTab
-  // (and its descendant RegistryFilters / count effects) see a stable
-  // reference until the registry actually changes.
-  const visibleRegistry = useMemo(
-    () => registry.filter((e) => !e.hidden),
-    [registry],
-  );
 
   // Plain functions (not useCallback) — this code lives below early-return
   // gates above (no authStatus, persona unresolved). A hook here would be a
