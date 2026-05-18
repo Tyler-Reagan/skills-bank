@@ -586,6 +586,40 @@ select {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
+
+/* Standalone search/filter input — same look as `.search-bar input`
+   minus the icon-slot padding on the left. Used by modal filters
+   (RepoPickerModal, etc.) that don't render an inline search glyph. */
+.search-input {
+  padding: var(--s3) var(--s4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 13px;
+  outline: none;
+  color: var(--text);
+  transition:
+    border-color var(--t) var(--ease),
+    box-shadow var(--t) var(--ease);
+}
+.search-input::placeholder {
+  color: var(--text-3);
+}
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* Repo-picker list rows — `overflow-y: auto` on the parent collapses
+   `overflow-x` to hidden in Chromium, which clips the global
+   `:focus-visible` outline (offset 2px) on the left/right edges so
+   only the top + bottom segments render. Drawing the ring inside
+   the button (negative offset) keeps the full ring visible. Matches
+   the `.skill-card:focus-visible` pattern. */
+.repo-picker-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 .search-clear {
   position: absolute;
   right: var(--s2);

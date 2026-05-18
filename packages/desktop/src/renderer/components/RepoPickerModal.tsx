@@ -149,6 +149,7 @@ export function RepoPickerModal({
             <button
               key={r.fullName}
               type="button"
+              className="repo-picker-item"
               disabled={picking !== null}
               onClick={() => void pick(r.fullName)}
               style={{
