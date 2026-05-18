@@ -41,6 +41,7 @@ If you add a new script, place it in the appropriate group by ordering. If you a
 | `pnpm backfill:deployed` | Stamp upstream pointers into a deployed registry by reading the local `~/.agents/.skill-lock.json`. Mostly redundant with the desktop's boot-time scanner; useful for scripted bootstraps. Resolves registry root via `--root`, `SKILLS_BANK_ROOT`, or cwd walk-up. |
 | `pnpm discover:bundled`  | Discover authoritative upstreams for unstamped bundled skills via `npx skills find` + GitHub Trees probe. Writes a candidate JSON the maintainer reviews, then re-runs with `--apply <json>` to commit markers. Used by the `origin-paradigm-reframe` plan's Pass B backfill. |
 | `pnpm stamp:self-authored` | Stamp self-referential upstream pointers (`repo = BUNDLED_REPO`) onto any bundled skill still missing an `upstream` field after `discover:bundled` runs. Dry by default; `--apply` writes; `--only foo,bar` scopes to a subset. Pass C of the `origin-paradigm-reframe` backfill. |
+| `pnpm vendor:skill <owner/repo>@<id>` | Forward-vendoring: pull a skill folder from an upstream GitHub repo into `skills/<id>/`, write the `.skills-bank.json` marker, baseline the drift hash. Supports `--path` (explicit SKILL.md path), `--as` (rename), `--force` (overwrite existing). The canonical way to add a harvested skill to the bundled set. |
 
 ### Common sequences
 

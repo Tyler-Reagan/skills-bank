@@ -50,6 +50,7 @@ import {
   readPendingConflicts,
   readSyncDecisions,
   findFolderHash,
+  mirrorSkillFolder,
   folderPathFromSkillPath,
   probeRepoTree,
   resolveRegistryRoot,
@@ -527,103 +528,23 @@ async function applyUpstreamUpdate(
   }
 
   const folderPath = folderPathFromSkillPath(upstream.skillPath);
-  const token = getStoredToken();
-
-  const probe = await probeRepoTree(upstream.repo, token);
-  if (!probe.ok) {
-    const hint = probe.status === 403 ? " — sign in for 5000/hr" : "";
-    return {
-      ok: false,
-      message: `couldn't fetch upstream tree for ${upstream.repo}: ${probe.message}${hint}`,
-    };
-  }
-  if (probe.truncated) {
-    return {
-      ok: false,
-      message: `upstream tree for ${upstream.repo} is truncated — refusing to mirror on partial data`,
-    };
-  }
-
-  const folderHash = findFolderHash(probe.tree, folderPath);
-  if (!folderHash) {
-    return {
-      ok: false,
-      message: `upstream removed ${folderPath} from ${upstream.repo}. Sever to keep local, or Unlink the pointer.`,
-    };
-  }
-
-  // Filter to blobs under <folderPath>/ — these are the files we mirror.
-  const folderPrefix = `${folderPath}/`;
-  const blobs = probe.tree.filter(
-    (e) => e.type === "blob" && e.path.startsWith(folderPrefix),
-  );
-  if (blobs.length === 0) {
-    return {
-      ok: false,
-      message: `upstream folder ${folderPath} contains no files`,
-    };
-  }
-
   const registrySkillDir = path.join(registryRoot, "skills", name);
   const existingSource = readSkillSource(registrySkillDir);
 
-  // Fetch all blobs first into memory; only commit to disk after the
-  // full set arrives. Avoids leaving a half-mirrored skill on a
-  // partial-network failure mid-loop.
-  const blobHeaders: Record<string, string> = {
-    Accept: "application/vnd.github+json",
-    "User-Agent": "skills-bank",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-  if (token) blobHeaders.Authorization = `Bearer ${token}`;
-  const fetched: { relPath: string; content: Buffer }[] = [];
-  for (const blob of blobs) {
-    const url = `https://api.github.com/repos/${upstream.repo}/git/blobs/${blob.sha}`;
-    let body: { content?: string; encoding?: string };
-    try {
-      const res = await fetch(url, { headers: blobHeaders });
-      if (!res.ok) {
-        return {
-          ok: false,
-          message: `failed to fetch ${blob.path} (${res.status} ${res.statusText})`,
-        };
-      }
-      body = (await res.json()) as typeof body;
-    } catch (err) {
-      return {
-        ok: false,
-        message: `transport error fetching ${blob.path}: ${(err as Error).message}`,
-        error: err,
-      };
-    }
-    if (body.encoding !== "base64" || typeof body.content !== "string") {
-      return {
-        ok: false,
-        message: `unexpected blob encoding for ${blob.path}`,
-      };
-    }
-    const relPath = blob.path.slice(folderPrefix.length);
-    fetched.push({
-      relPath,
-      content: Buffer.from(body.content, "base64"),
-    });
-  }
-
-  // Commit to disk. Wipe the skill folder (drop any files the upstream
-  // no longer has), recreate it, write each fetched blob.
-  try {
-    fs.rmSync(registrySkillDir, { recursive: true, force: true });
-    fs.mkdirSync(registrySkillDir, { recursive: true });
-    for (const { relPath, content } of fetched) {
-      const dest = path.join(registrySkillDir, relPath);
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.writeFileSync(dest, content);
-    }
-  } catch (err) {
+  const mirror = await mirrorSkillFolder(
+    upstream.repo,
+    folderPath,
+    registrySkillDir,
+    getStoredToken(),
+  );
+  if (!mirror.ok) {
+    const hint = mirror.status === 403 ? " — sign in for 5000/hr" : "";
+    const recoveryHint = mirror.status === 404
+      ? ". Sever to keep local, or Unlink the pointer."
+      : "";
     return {
       ok: false,
-      message: `failed to write ${registrySkillDir}: ${(err as Error).message}`,
-      error: err,
+      message: `${mirror.message}${hint}${recoveryHint}`,
     };
   }
 
@@ -633,7 +554,7 @@ async function applyUpstreamUpdate(
     ...existingSource,
     upstream: {
       ...upstream,
-      skillFolderHash: folderHash,
+      skillFolderHash: mirror.folderHash,
       fetchedAt: now,
     },
   });

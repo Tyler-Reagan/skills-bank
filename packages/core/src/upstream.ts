@@ -139,3 +139,136 @@ export function folderPathFromSkillPath(skillPath: string): string {
   if (i < 0) return "";
   return skillPath.slice(0, i);
 }
+
+export interface MirrorResultOk {
+  ok: true;
+  /** SHA-1 git tree hash of the upstream folder — write this into the
+   *  skill's `upstream.skillFolderHash` marker so subsequent probes
+   *  compare against the just-mirrored snapshot. */
+  folderHash: string;
+  /** Number of files mirrored. Used for telemetry / human-readable
+   *  return messages; not load-bearing. */
+  fileCount: number;
+}
+
+export interface MirrorResultErr {
+  ok: false;
+  /** HTTP status when known; 0 for transport errors or refusal. */
+  status: number;
+  message: string;
+}
+
+export type MirrorResult = MirrorResultOk | MirrorResultErr;
+
+/**
+ * Fetch every file under `<folderPath>/` from `repo` and mirror them
+ * into `destDir`. Wipe + recopy semantics — `destDir` is cleared
+ * before writing, so files removed upstream are removed locally too.
+ *
+ * The fetch is a single recursive Git Trees probe + one blob fetch
+ * per file. Typical skill folders (≤10 files) → ~11 API calls.
+ *
+ * Errors abort before any disk mutation: a transport failure
+ * mid-loop is detected before the local folder is wiped. Callers
+ * can retry without worrying about partial state.
+ *
+ * Does NOT write `.skills-bank.json` / `.skills-bank-hash` sidecars —
+ * those are app-state concerns the caller wires after the mirror
+ * succeeds (so vendor-new-skill, update-in-place, and
+ * preview-into-temp-dir can each manage marker state appropriately).
+ */
+export async function mirrorSkillFolder(
+  repo: string,
+  folderPath: string,
+  destDir: string,
+  token: string | null,
+  options: ProbeOptions = {},
+): Promise<MirrorResult> {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+
+  const probe = await probeRepoTree(repo, token, options);
+  if (!probe.ok) return { ok: false, status: probe.status, message: probe.message };
+  if (probe.truncated) {
+    return {
+      ok: false,
+      status: 0,
+      message: `tree truncated for ${repo} — refusing to mirror on partial data`,
+    };
+  }
+  const folderHash = findFolderHash(probe.tree, folderPath);
+  if (!folderHash) {
+    return {
+      ok: false,
+      status: 404,
+      message: `${folderPath} not found in ${repo}`,
+    };
+  }
+
+  const folderPrefix = `${folderPath}/`;
+  const blobs = probe.tree.filter(
+    (e) => e.type === "blob" && e.path.startsWith(folderPrefix),
+  );
+  if (blobs.length === 0) {
+    return {
+      ok: false,
+      status: 0,
+      message: `${folderPath} in ${repo} contains no files`,
+    };
+  }
+
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "skills-bank",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  // Fetch all blobs into memory before touching disk — partial fetch
+  // failures must not leave destDir half-mirrored.
+  const fetched: { relPath: string; content: Buffer }[] = [];
+  for (const blob of blobs) {
+    const url = `https://api.github.com/repos/${repo}/git/blobs/${blob.sha}`;
+    let body: { content?: string; encoding?: string };
+    try {
+      const res = await fetch(url, { headers, signal: options.signal });
+      if (!res.ok) {
+        return {
+          ok: false,
+          status: res.status,
+          message: `failed to fetch ${blob.path} (${res.status} ${res.statusText})`,
+        };
+      }
+      body = (await res.json()) as typeof body;
+    } catch (err) {
+      return {
+        ok: false,
+        status: 0,
+        message: `transport error fetching ${blob.path}: ${(err as Error).message}`,
+      };
+    }
+    if (body.encoding !== "base64" || typeof body.content !== "string") {
+      return {
+        ok: false,
+        status: 0,
+        message: `unexpected blob encoding for ${blob.path}`,
+      };
+    }
+    fetched.push({
+      relPath: blob.path.slice(folderPrefix.length),
+      content: Buffer.from(body.content, "base64"),
+    });
+  }
+
+  // Commit to disk. Wipe destDir to drop files the upstream tree no
+  // longer carries, then write each fetched blob.
+  fs.rmSync(destDir, { recursive: true, force: true });
+  fs.mkdirSync(destDir, { recursive: true });
+  for (const { relPath, content } of fetched) {
+    const dest = path.join(destDir, relPath);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, content);
+  }
+
+  return { ok: true, folderHash, fileCount: fetched.length };
+}

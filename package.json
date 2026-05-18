@@ -27,7 +27,8 @@
     "backfill:bundled": "tsx scripts/backfill-bundled-upstream.ts",
     "backfill:deployed": "tsx scripts/backfill-deployed-upstream.ts",
     "discover:bundled": "tsx scripts/discover-bundled-upstream.ts",
-    "stamp:self-authored": "tsx scripts/stamp-self-authored.ts"
+    "stamp:self-authored": "tsx scripts/stamp-self-authored.ts",
+    "vendor:skill": "tsx scripts/vendor-skill.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
