@@ -78,8 +78,9 @@ Active body of work. Filenames are stable descriptive IDs; execution order is do
 | [`github-mode-coherence.md`](docs/plans/github-mode-coherence.md)                 | none                                                      |
 | [`github-first-onboarding.md`](docs/plans/github-first-onboarding.md)             | `github-mode-coherence` (groundwork)                      |
 | [`per-skill-upstream-foundation.md`](docs/plans/per-skill-upstream-foundation.md) | none (cleaner if `github-first-onboarding` lands first)   |
-| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | `per-skill-upstream-foundation`                           |
-| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `per-skill-upstream-foundation` + `bank-mode-persistence` |
+| [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | `per-skill-upstream-foundation`                           |
+| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | `origin-paradigm-reframe`                                 |
+| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `origin-paradigm-reframe` + `bank-mode-persistence`       |
 
 ### Recommended execution order
 
@@ -88,8 +89,9 @@ To minimize thrashing (later plans rendering earlier plans' code obsolete), this
 1. **`github-mode-coherence`** — ground-truth polish for github-linked mode.
 2. **`github-first-onboarding`** — collapses the local-vs-github mode discriminator. Doing this before the per-skill plans means they won't have to branch on a flag that's about to disappear.
 3. **`per-skill-upstream-foundation`** — adds the per-skill upstream metadata + probe/update.
-4. **`bank-mode-persistence`** — adds the local snapshot cache.
-5. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
+4. **`origin-paradigm-reframe`** — reframes Origin as authoritative upstream (not the bundled repo), reverts Tier 3, lands maintainer-time backfill + direct-fetch update flow.
+5. **`bank-mode-persistence`** — adds the local snapshot cache.
+6. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
 
 `cli-minimal` is independent of the others and can slot anywhere — typically last since it's pure housekeeping.
 
