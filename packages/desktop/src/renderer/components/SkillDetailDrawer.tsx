@@ -983,37 +983,37 @@ export function SkillDetailDrawer({
           {/* Drift heal — fan-out by source axis. The classifier emits
               `canAcceptDrift` for both bundled-sync drift and upstream-
               pointer drift; render the sub-arm and hint copy that
-              matches the actual axis on this entry. */}
+              matches the actual axis on this entry.
+
+              Copy migrated to the canonical glossary verbs:
+                user-edited-with-upstream:  [Reset to origin] (primary, danger)  [Unlink origin]
+                bundled-skill-edited:       [Re-baseline]     (primary)          [Accept drift] */}
           {caps.canAcceptDrift && onAcceptDrift && (
             <>
-              <button
-                className="btn warn"
-                disabled={action !== null}
-                onClick={() => {
-                  setAction("accepting-drift");
-                  void Promise.resolve(onAcceptDrift()).finally(() =>
-                    setAction(null),
-                  );
-                }}
-                title={
-                  caps.canTakeUpstream
-                    ? "Keep your local edits and sever the upstream link. Future probes won't surface this skill as having an update available."
-                    : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
-                }
-              >
-                {action === "accepting-drift" ? (
-                  <>
-                    <span className="spinner inline" /> Accepting
-                  </>
-                ) : caps.canTakeUpstream ? (
-                  "Keep my edits"
-                ) : (
-                  "Accept local changes"
-                )}
-              </button>
+              {caps.canTakeUpstream && onTakeUpstream && (
+                <button
+                  className="btn danger"
+                  disabled={action !== null}
+                  onClick={() => {
+                    setAction("taking-upstream");
+                    void Promise.resolve(onTakeUpstream()).finally(() =>
+                      setAction(null),
+                    );
+                  }}
+                  title={`Discard local edits and re-fetch from ${entry.source.upstream?.repo ?? "upstream"}. Your changes are lost.`}
+                >
+                  {action === "taking-upstream" ? (
+                    <>
+                      <span className="spinner inline" /> Resetting
+                    </>
+                  ) : (
+                    "Reset to origin"
+                  )}
+                </button>
+              )}
               {caps.canTakeCanonical && onTakeCanonical && (
                 <button
-                  className="btn"
+                  className="btn primary"
                   disabled={action !== null}
                   onClick={() => {
                     setAction("taking-canonical");
@@ -1028,48 +1028,53 @@ export function SkillDetailDrawer({
                       <span className="spinner inline" /> Re-baselining
                     </>
                   ) : (
-                    "Take canonical"
+                    "Re-baseline"
                   )}
                 </button>
               )}
-              {caps.canTakeUpstream && onTakeUpstream && (
-                <button
-                  className="btn"
-                  disabled={action !== null}
-                  onClick={() => {
-                    setAction("taking-upstream");
-                    void Promise.resolve(onTakeUpstream()).finally(() =>
-                      setAction(null),
-                    );
-                  }}
-                  title="Discard local edits and re-fetch from upstream via `npx skills update`. Your changes are lost."
-                >
-                  {action === "taking-upstream" ? (
-                    <>
-                      <span className="spinner inline" /> Reverting
-                    </>
-                  ) : (
-                    "Revert to upstream"
-                  )}
-                </button>
-              )}
+              <button
+                className="btn"
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("accepting-drift");
+                  void Promise.resolve(onAcceptDrift()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title={
+                  caps.canTakeUpstream
+                    ? "Keep your local edits and clear the upstream pointer. Future probes won't surface this skill as having an update available."
+                    : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
+                }
+              >
+                {action === "accepting-drift" ? (
+                  <>
+                    <span className="spinner inline" />{" "}
+                    {caps.canTakeUpstream ? "Unlinking" : "Accepting"}
+                  </>
+                ) : caps.canTakeUpstream ? (
+                  "Unlink origin"
+                ) : (
+                  "Accept drift"
+                )}
+              </button>
               <p className="drawer-action-hint">
                 {caps.canTakeUpstream ? (
                   <>
                     Your local copy diverges from{" "}
                     {entry.source.upstream?.repo ?? "the upstream"}.
-                    <strong> Keep my edits</strong> severs the upstream link.
-                    <strong> Revert to upstream</strong> discards your edits and
-                    re-fetches.
+                    <strong> Reset to origin</strong> discards your edits and
+                    refetches.
+                    <strong> Unlink origin</strong> keeps your edits and clears
+                    the upstream pointer.
                   </>
                 ) : (
                   <>
                     This canonical skill differs from its synced baseline.
-                    <strong> Accept local changes</strong> detaches from Sync —
-                    your edits stay, sync stops overwriting.
-                    <strong> Take canonical</strong> re-baselines the current
-                    state as the new synced version — drift clears, Sync still
-                    owns the skill.
+                    <strong> Re-baseline</strong> re-snaps the current state as
+                    the new synced version; Sync still owns the skill.
+                    <strong> Accept drift</strong> detaches from Sync — your
+                    edits stay, Sync stops overwriting.
                   </>
                 )}
               </p>
@@ -1086,20 +1091,20 @@ export function SkillDetailDrawer({
                     setAction(null),
                   );
                 }}
-                title={`Apply the upstream update from ${
-                  entry.source.upstream?.repo ?? "the linked repo"
-                } via \`npx skills update\`.`}
+                title={`Fetch the latest content from ${
+                  entry.source.upstream?.repo ?? "the upstream"
+                } and mirror it into this skill.`}
               >
                 {action === "updating" ? (
                   <>
                     <span className="spinner inline" /> Updating
                   </>
                 ) : (
-                  "Update this skill"
+                  "Update"
                 )}
               </button>
               <p className="drawer-action-hint">
-                A newer version of this skill is available from{" "}
+                A newer version is available from{" "}
                 <code>{entry.source.upstream?.repo ?? "upstream"}</code>. Local
                 content is unchanged since the last fetch, so the update applies
                 cleanly.
@@ -1130,7 +1135,7 @@ export function SkillDetailDrawer({
           {caps.canForgetMissing && onForgetMissing && (
             <>
               <button
-                className={caps.canRepoint ? "btn" : "btn warn"}
+                className={caps.canRepoint ? "btn" : "btn primary"}
                 disabled={action !== null}
                 onClick={() => {
                   setAction("forgetting");
@@ -1145,12 +1150,12 @@ export function SkillDetailDrawer({
                     <span className="spinner inline" /> Forgetting
                   </>
                 ) : (
-                  "Forget this entry"
+                  "Forget this skill"
                 )}
               </button>
               <p className="drawer-action-hint">
                 {caps.canRepoint
-                  ? "If the skill just moved on disk, pick its new location. Otherwise forget the entry to stop tracking it."
+                  ? "If the skill just moved on disk, pick its new location. Otherwise forget it to stop tracking."
                   : "The files for this skill are gone. Forgetting drops the registry record so the skill stops appearing."}
               </p>
             </>

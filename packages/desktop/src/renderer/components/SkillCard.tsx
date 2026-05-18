@@ -237,7 +237,7 @@ export function agentsForSkill(
  * when present. Priority order, highest wins:
  *
  *   1. MISSING  — entry.missing: files gone. Open drawer to forget.
- *   2. DRIFT    — entry.drift: you've edited a bundled-or-upstream skill.
+ *   2. EDITED   — entry.drift: you've edited a bundled-or-upstream skill.
  *   3. UPDATE   — entry.upstreamUpdateAvailable: upstream changed, local
  *                 content is clean. Open drawer to apply.
  *   4. BUNDLED  — source: bundled. Sync owns this; destructive verbs
@@ -268,11 +268,11 @@ function PublishBadge({
         className="skill-state-badge drift"
         title={
           entry.source.upstream?.kind === "github"
-            ? "You've edited this skill since the last upstream fetch. Open to keep or revert."
-            : "You've edited this bundled skill. Open to review your changes."
+            ? "You've edited this skill since the last upstream fetch. Open to unlink the origin (keep edits) or reset to origin (discard edits)."
+            : "You've edited this bundled skill. Open to re-baseline or accept the drift."
         }
       >
-        DRIFT
+        EDITED
       </span>
     );
   }
