@@ -59,7 +59,6 @@ import {
   folderPathFromSkillPath,
   probeRepoTree,
   resolveRegistryRoot,
-  scanAndStampOriginFromRepo,
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
   type GitTreeEntry,
@@ -488,64 +487,6 @@ function augmentWithProbedUpdates<T extends { name: string }>(
 }
 
 ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
-
-/**
- * Tier 3 of the Origin auto-resolver — same-repo self-detection.
- *
- * Probes `BUNDLED_REPO` (and the user's `linkedRepo` when it's a
- * distinct repo) and stamps Origin pointers onto any local skill
- * whose folder name also exists at `skills/<name>/` in that repo.
- *
- * Runs once at app boot (piggybacks on the existing probe warmup) and
- * again on every `rebuildIndex` IPC. Idempotent: skills with an
- * existing `upstream` field are skipped. Fire-and-forget — failures
- * (rate-limit, transport) log and let the next sync point retry.
- */
-let sameRepoScanInFlight: Promise<void> | null = null;
-
-async function runSameRepoOriginScan(): Promise<void> {
-  if (sameRepoScanInFlight) return sameRepoScanInFlight;
-  sameRepoScanInFlight = (async () => {
-    if (!registryRoot) return;
-    const token = getStoredToken();
-    // Always check BUNDLED_REPO — it's the canonical source for the
-    // bundled set every install carries. Then also check the user's
-    // linkedRepo when it's different, to catch user-authored skills in
-    // their own registry repo.
-    const repos: string[] = [BUNDLED_REPO];
-    if (linkedRepo && linkedRepo.fullName !== BUNDLED_REPO) {
-      repos.push(linkedRepo.fullName);
-    }
-    let totalStamped = 0;
-    for (const repo of repos) {
-      try {
-        const result = await scanAndStampOriginFromRepo(
-          registryRoot!,
-          repo,
-          token,
-        );
-        totalStamped += result.stamped;
-        if (!result.probed && result.reason) {
-          console.warn(`[same-repo-origin] ${repo}: ${result.reason}`);
-        }
-      } catch (err) {
-        console.warn(`[same-repo-origin] ${repo} threw:`, err);
-      }
-    }
-    if (totalStamped > 0) {
-      // The renderer's next `listRegistry` reflects the new pointers
-      // automatically via the index walk. Reuse the probe-complete
-      // notification so the renderer re-fetches without waiting for
-      // a user action; Origin sections + picker visibility update.
-      notifyProbeComplete();
-    }
-  })();
-  try {
-    await sameRepoScanInFlight;
-  } finally {
-    sameRepoScanInFlight = null;
-  }
-}
 
 /**
  * Update or take-upstream backend. Both heal flows
@@ -1985,10 +1926,6 @@ ipcMain.handle(IPC.rebuildIndex, () => {
     // covers the "I just installed a skill via raw npx" case without
     // requiring an app restart.
     scanAndStampUpstreamFromLock(registryRoot);
-    // Tier 3 same-repo scan is async (network); fire-and-forget. The
-    // index built below reflects pre-scan state; when the scan
-    // completes it emits probe-complete and the renderer re-fetches.
-    void runSameRepoOriginScan();
     const index = buildRegistryIndex(registryRoot, {
       includeGitInfo: true,
       writeFile: true,
@@ -2953,12 +2890,8 @@ void app.whenReady().then(() => {
   // Upstream probe: fire once shortly after the renderer paints, then
   // every 6h. Per-repo 5-min TTL cache absorbs back-pressure from
   // user-explicit `upstream:probe` invocations between scheduled runs.
-  // The same-repo Origin scanner piggybacks on the warmup window —
-  // it stamps Origins for any unstamped local skill that matches a
-  // folder in BUNDLED_REPO / linkedRepo, then the probe that follows
-  // picks up the freshly-stamped skills.
   setTimeout(() => {
-    void runSameRepoOriginScan().then(() => runUpstreamProbe());
+    void runUpstreamProbe();
   }, PROBE_BOOT_DELAY_MS);
   setInterval(() => {
     void runUpstreamProbe();
