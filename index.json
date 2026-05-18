@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-15T19:47:50.126Z",
+  "generatedAt": "2026-05-18T05:39:21.613Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -18,7 +18,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -28,7 +27,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "modelcontextprotocol/ext-apps",
+          "sourceUrl": "https://github.com/modelcontextprotocol/ext-apps.git",
+          "skillPath": "plugins/mcp-apps/skills/add-app-to-server/SKILL.md",
+          "skillFolderHash": "cce8d7d0ab939d9a02e3567df97d21f8f513eef2",
+          "installedAt": "2026-05-14T18:22:08.048Z",
+          "fetchedAt": "2026-05-14T18:22:08.048Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -36,7 +44,6 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -55,7 +62,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -74,7 +80,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -93,7 +98,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -112,7 +116,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -131,7 +134,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -150,7 +152,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -169,7 +170,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -188,7 +188,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -198,7 +197,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "modelcontextprotocol/ext-apps",
+          "sourceUrl": "https://github.com/modelcontextprotocol/ext-apps.git",
+          "skillPath": "plugins/mcp-apps/skills/create-mcp-app/SKILL.md",
+          "skillFolderHash": "989d5b5a7f8b30e76f554a799f39e9350944e55b",
+          "installedAt": "2026-05-14T18:21:54.806Z",
+          "fetchedAt": "2026-05-14T18:21:54.806Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -206,7 +214,6 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -216,7 +223,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "github/awesome-copilot",
+          "sourceUrl": "https://github.com/github/awesome-copilot.git",
+          "skillPath": "skills/create-readme/SKILL.md",
+          "skillFolderHash": "f65537a3461b663121fe195697979c17a8004ea5",
+          "installedAt": "2026-05-12T18:13:53.358Z",
+          "fetchedAt": "2026-05-12T18:13:53.358Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -224,7 +240,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -242,7 +257,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -261,7 +275,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -279,7 +292,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -298,7 +310,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -308,7 +319,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "vercel-labs/skills",
+          "sourceUrl": "https://github.com/vercel-labs/skills.git",
+          "skillPath": "skills/find-skills/SKILL.md",
+          "skillFolderHash": "3013fdeb8a11b10b1eb795ec3ae8bfca38f7c26d",
+          "installedAt": "2026-04-30T18:44:26.088Z",
+          "fetchedAt": "2026-04-30T18:44:26.088Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -316,7 +336,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -326,7 +345,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "factory-ai/factory-plugins",
+          "sourceUrl": "https://github.com/factory-ai/factory-plugins.git",
+          "skillPath": "plugins/typescript/skills/fix-knip-unused-exports/SKILL.md",
+          "skillFolderHash": "ef5f03e6e3f64c21865482cb02767b1a96f0ce27",
+          "installedAt": "2026-05-06T20:17:45.972Z",
+          "fetchedAt": "2026-05-06T20:17:45.972Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -334,7 +362,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -353,7 +380,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -371,7 +397,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -389,7 +414,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -399,7 +423,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "wshobson/agents",
+          "sourceUrl": "https://github.com/wshobson/agents.git",
+          "skillPath": "plugins/cicd-automation/skills/gitlab-ci-patterns/SKILL.md",
+          "skillFolderHash": "d43fb980bb5ac5d3caaae257e5e1235c4da7495a",
+          "installedAt": "2026-05-01T16:41:22.450Z",
+          "fetchedAt": "2026-05-01T16:41:22.450Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -407,7 +440,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -425,7 +457,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -435,7 +466,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "affaan-m/everything-claude-code",
+          "sourceUrl": "https://github.com/affaan-m/everything-claude-code.git",
+          "skillPath": "skills/golang-testing/SKILL.md",
+          "skillFolderHash": "7fad33a9354adc951ae015d008c7c6478f3f1c1b",
+          "installedAt": "2026-05-14T02:33:27.608Z",
+          "fetchedAt": "2026-05-14T02:33:27.608Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -443,7 +483,6 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -462,7 +501,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -481,7 +519,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -502,7 +539,6 @@
         "date": "2026-05-15 12:44:23 -0700",
         "message": "fix: preserve linkedRepo on sign-out + drop forced RepoPicker on re-sign-in"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -521,7 +557,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -540,7 +575,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -558,7 +592,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -568,7 +601,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "softaworks/agent-toolkit",
+          "sourceUrl": "https://github.com/softaworks/agent-toolkit.git",
+          "skillPath": "skills/mermaid-diagrams/SKILL.md",
+          "skillFolderHash": "1b7a962715838d762fe4b34701d797d1d57496cd",
+          "installedAt": "2026-05-04T20:13:27.108Z",
+          "fetchedAt": "2026-05-04T20:13:27.108Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -576,7 +618,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -586,7 +627,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "softaworks/agent-toolkit",
+          "sourceUrl": "https://github.com/softaworks/agent-toolkit.git",
+          "skillPath": "skills/naming-analyzer/SKILL.md",
+          "skillFolderHash": "6717b98252ff6423dccbd77dc652dead434552bb",
+          "installedAt": "2026-05-06T20:16:02.161Z",
+          "fetchedAt": "2026-05-07T00:15:47.068Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -594,7 +644,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -612,7 +661,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -622,7 +670,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kepano/obsidian-skills",
+          "sourceUrl": "https://github.com/kepano/obsidian-skills.git",
+          "skillPath": "skills/obsidian-cli/SKILL.md",
+          "skillFolderHash": "96254a554e480359de7b685571876f2e7f9ba57d",
+          "installedAt": "2026-05-01T16:43:02.270Z",
+          "fetchedAt": "2026-05-01T16:43:02.270Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -630,7 +687,6 @@
         "date": "2026-05-12 13:24:04 -0700",
         "message": "(skills): update skills canon - remove any specific terminology from personal skills"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -648,7 +704,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -658,7 +713,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/prd-development/SKILL.md",
+          "skillFolderHash": "9326f146f3fb8d85eafe52499928321c7edb9fac",
+          "installedAt": "2026-05-12T18:07:08.736Z",
+          "fetchedAt": "2026-05-12T18:07:08.736Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -666,7 +730,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -684,7 +747,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -694,7 +756,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/problem-statement/SKILL.md",
+          "skillFolderHash": "1de9dad18374bbffccd35cfd7ef2edc41515ea89",
+          "installedAt": "2026-05-12T18:09:16.247Z",
+          "fetchedAt": "2026-05-12T18:09:16.247Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -702,7 +773,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -712,7 +782,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "wshobson/agents",
+          "sourceUrl": "https://github.com/wshobson/agents.git",
+          "skillPath": "plugins/python-development/skills/python-packaging/SKILL.md",
+          "skillFolderHash": "b7e32fe9db6e4d089f1102388ff2879a90f79c04",
+          "installedAt": "2026-05-14T02:33:01.189Z",
+          "fetchedAt": "2026-05-14T02:33:01.189Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -720,7 +799,6 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -738,7 +816,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -756,7 +833,6 @@
         "date": "2026-05-05 17:12:54 -0700",
         "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -766,7 +842,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/roadmap-planning/SKILL.md",
+          "skillFolderHash": "19863acb42422fbc0e69a71de239eccbebc73160",
+          "installedAt": "2026-05-12T18:07:56.909Z",
+          "fetchedAt": "2026-05-12T18:07:56.909Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -774,7 +859,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -793,7 +877,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -803,7 +886,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "shadcn/ui",
+          "sourceUrl": "https://github.com/shadcn/ui.git",
+          "skillPath": "skills/shadcn/SKILL.md",
+          "skillFolderHash": "a8404703769866faf15bee897c9ae6e252ac2d35",
+          "installedAt": "2026-05-12T18:11:58.042Z",
+          "fetchedAt": "2026-05-12T18:11:58.042Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -811,7 +903,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -830,7 +921,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -840,7 +930,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "giuseppe-trisciuoglio/developer-kit",
+          "sourceUrl": "https://github.com/giuseppe-trisciuoglio/developer-kit.git",
+          "skillPath": "plugins/developer-kit-specs/skills/specs-code-cleanup/SKILL.md",
+          "skillFolderHash": "1efda5f0c7226437798f4924afa8a559a1ff59fb",
+          "installedAt": "2026-05-06T20:21:17.968Z",
+          "fetchedAt": "2026-05-07T00:14:55.313Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -848,7 +947,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -858,7 +956,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "wshobson/agents",
+          "sourceUrl": "https://github.com/wshobson/agents.git",
+          "skillPath": "plugins/cloud-infrastructure/skills/terraform-module-library/SKILL.md",
+          "skillFolderHash": "06e4f4e3295990a5829735db832044925a85e222",
+          "installedAt": "2026-05-14T02:32:38.105Z",
+          "fetchedAt": "2026-05-14T02:32:38.105Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -866,7 +973,6 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -884,7 +990,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -895,7 +1000,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "hashicorp/agent-skills",
+          "sourceUrl": "https://github.com/hashicorp/agent-skills.git",
+          "skillPath": "terraform/code-generation/skills/terraform-test/SKILL.md",
+          "skillFolderHash": "e24dc7d3c72d1208736b329434667d43c7bfcfa4",
+          "installedAt": "2026-05-14T02:33:45.012Z",
+          "fetchedAt": "2026-05-14T02:33:45.012Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -903,7 +1017,6 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -921,7 +1034,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -939,7 +1051,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -957,8 +1068,24 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "ubiquitous-language",
+      "description": "Extract a DDD-style ubiquitous language glossary from the current conversation, flagging ambiguities and proposing canonical terms. Saves to UBIQUITOUS_LANGUAGE.md. Use when user wants to define domain terms, build a glossary, harden terminology, create a ubiquitous language, or mentions \"domain model\" or \"DDD\".",
+      "tags": [
+        "ddd",
+        "glossary",
+        "documentation"
+      ],
+      "author": "mattpocock",
+      "path": "skills/ubiquitous-language",
+      "source": {
+        "source": "yours"
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "ui-ux-pro-max",
@@ -975,7 +1102,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -985,7 +1111,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "phuryn/pm-skills",
+          "sourceUrl": "https://github.com/phuryn/pm-skills.git",
+          "skillPath": "pm-market-research/skills/user-personas/SKILL.md",
+          "skillFolderHash": "58bbb0463cd8360fbda860d388146a4cfb6b4b4c",
+          "installedAt": "2026-05-06T21:45:07.412Z",
+          "fetchedAt": "2026-05-07T00:15:08.844Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -993,7 +1128,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1003,7 +1137,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/user-story/SKILL.md",
+          "skillFolderHash": "b8e53307616bb30fc18fffdc6c1eac7621453653",
+          "installedAt": "2026-05-12T18:07:28.487Z",
+          "fetchedAt": "2026-05-12T18:07:28.487Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1011,7 +1154,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1021,7 +1163,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "deanpeters/product-manager-skills",
+          "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+          "skillPath": "skills/user-story-mapping/SKILL.md",
+          "skillFolderHash": "5d68cc49920b104e6a052e99d0e6c5e5e849a54e",
+          "installedAt": "2026-05-12T18:08:29.524Z",
+          "fetchedAt": "2026-05-12T18:08:29.524Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1029,7 +1180,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1049,7 +1199,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1069,7 +1218,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1089,7 +1237,6 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
-      "publishState": "pushed",
       "canon": true
     }
   ]
