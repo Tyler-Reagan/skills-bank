@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
+import { walkSkills } from "../packages/core/src/index.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..");
@@ -23,8 +24,9 @@ if (!fs.existsSync(skillsDir)) {
   process.exit(0);
 }
 
-const skillFolders = findSkillFolders(skillsDir);
-for (const folder of skillFolders) {
+const skillRefs = walkSkills(repoRoot);
+for (const ref of skillRefs) {
+  const folder = ref.dir;
   const metaPath = path.join(folder, "meta.json");
   const rel = path.relative(repoRoot, folder);
   if (!fs.existsSync(metaPath)) {
@@ -55,13 +57,3 @@ for (const folder of skillFolders) {
 console.log();
 console.log(`Validated ${checked} skill(s); ${failures} failure(s).`);
 process.exit(failures > 0 ? 1 : 0);
-
-function findSkillFolders(root: string): string[] {
-  const out: string[] = [];
-  if (!fs.existsSync(root)) return out;
-  for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
-    if (!ent.isDirectory()) continue;
-    out.push(path.join(root, ent.name));
-  }
-  return out;
-}

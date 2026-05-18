@@ -35,6 +35,7 @@ import {
   probeRepoTree,
   readSkillSource,
   UPSTREAM_KIND_GITHUB,
+  walkSkills,
   writeSkillSource,
   writeSyncedHash,
   type UpstreamPointer,
@@ -228,7 +229,6 @@ async function findSkillPath(
 }
 
 async function discoverPhase(): Promise<CandidateMap> {
-  const skillsDir = path.join(repoRoot, "skills");
   const token = process.env["GITHUB_TOKEN"] ?? null;
   const treeCache = new Map<
     string,
@@ -245,12 +245,9 @@ async function discoverPhase(): Promise<CandidateMap> {
   const skills: Record<string, Candidate> = {};
   const unresolved: string[] = [];
 
-  for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true }).sort(
-    (a, b) => a.name.localeCompare(b.name),
-  )) {
-    if (!sk.isDirectory()) continue;
-    const name = sk.name;
-    const base = readSkillSource(path.join(skillsDir, name));
+  for (const ref of walkSkills(repoRoot)) {
+    const name = ref.name;
+    const base = readSkillSource(ref.dir);
     if (base.upstream !== undefined) continue;
 
     process.stderr.write(`  ${name} ... `);
@@ -303,15 +300,18 @@ async function discoverPhase(): Promise<CandidateMap> {
 }
 
 function applyPhase(cand: CandidateMap): void {
-  const skillsDir = path.join(repoRoot, "skills");
+  const refsByName = new Map(
+    walkSkills(repoRoot).map((r) => [r.name, r] as const),
+  );
   const now = new Date().toISOString();
   let stamped = 0;
   for (const [name, c] of Object.entries(cand.skills)) {
-    const skillDir = path.join(skillsDir, name);
-    if (!fs.existsSync(skillDir)) {
+    const ref = refsByName.get(name);
+    if (!ref) {
       console.warn(`skip ${name}: folder missing`);
       continue;
     }
+    const skillDir = ref.dir;
     const base = readSkillSource(skillDir);
     if (base.upstream !== undefined) {
       console.warn(`skip ${name}: already stamped`);

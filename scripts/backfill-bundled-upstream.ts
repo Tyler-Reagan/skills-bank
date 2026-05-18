@@ -29,6 +29,7 @@ import {
   hashSkillFolder,
   readSkillSource,
   UPSTREAM_KIND_GITHUB,
+  walkSkills,
   writeSkillSource,
   writeSyncedHash,
   type UpstreamPointer,
@@ -63,20 +64,14 @@ function loadMapping(): MappingFile {
 function main(): void {
   const dry = process.argv.includes("--dry");
   const mapping = loadMapping();
-  const skillsDir = path.join(repoRoot, "skills");
-  if (!fs.existsSync(skillsDir)) {
-    console.error(`no skills/ directory at ${skillsDir}`);
-    process.exit(1);
-  }
 
   const stamped: string[] = [];
   const alreadyStamped: string[] = [];
   const unmapped: string[] = [];
 
-  for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    if (!sk.isDirectory()) continue;
-    const name = sk.name;
-    const skillDir = path.join(skillsDir, name);
+  for (const ref of walkSkills(repoRoot)) {
+    const name = ref.name;
+    const skillDir = ref.dir;
     const base = readSkillSource(skillDir);
 
     if (base.upstream !== undefined) {

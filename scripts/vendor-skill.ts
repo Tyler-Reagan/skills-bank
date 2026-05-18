@@ -58,13 +58,18 @@ interface ParsedArg {
   skillId: string | null;
   explicitPath: string | null;
   localName: string | null;
+  bucket: import("../packages/core/src/index.js").SkillBucket;
   force: boolean;
 }
 
 function usage(): never {
   console.error(
-    "usage: pnpm vendor:skill <owner/repo>@<skill-id> [--as <name>] [--force]\n" +
-      "       pnpm vendor:skill <owner/repo> --path <SKILL.md path> [--as <name>] [--force]",
+    "usage: pnpm vendor:skill <owner/repo>@<skill-id> [--as <name>] [--personal] [--force]\n" +
+      "       pnpm vendor:skill <owner/repo> --path <SKILL.md path> [--as <name>] [--personal] [--force]\n" +
+      "\n" +
+      "Defaults destination to skills/vendored/<name>/. Pass --personal to write\n" +
+      "to skills/personal/<name>/ instead — for forks the maintainer is taking\n" +
+      "ownership of.",
   );
   process.exit(1);
 }
@@ -78,6 +83,7 @@ function parseArgs(): ParsedArg {
     skillId: null,
     explicitPath: null,
     localName: null,
+    bucket: "vendored",
     force: false,
   };
   const atIdx = spec.indexOf("@");
@@ -98,6 +104,10 @@ function parseArgs(): ParsedArg {
       out.localName = args[++i] ?? null;
     } else if (args[i] === "--force") {
       out.force = true;
+    } else if (args[i] === "--personal") {
+      out.bucket = "personal";
+    } else if (args[i] === "--vendored") {
+      out.bucket = "vendored";
     } else {
       console.error(`unknown arg: ${args[i]}`);
       usage();
@@ -241,19 +251,29 @@ async function main(): Promise<void> {
   const folderPath = folderPathFromSkillPath(skillPath);
   const folderLeaf = folderPath.slice(folderPath.lastIndexOf("/") + 1);
   const localName = args.localName ?? args.skillId ?? folderLeaf;
-  const destDir = path.join(repoRoot, "skills", localName);
+  const destDir = path.join(repoRoot, "skills", args.bucket, localName);
+  const destRel = `skills/${args.bucket}/${localName}`;
 
   if (fs.existsSync(destDir) && !args.force) {
     console.error(
-      `skills/${localName}/ already exists. Pass --force to overwrite, ` +
+      `${destRel}/ already exists. Pass --force to overwrite, ` +
         `or --as <name> to vendor under a different folder name.`,
     );
     process.exit(1);
   }
 
-  console.log(
-    `vendoring ${args.repo}/${folderPath} → skills/${localName}/ ...`,
-  );
+  // Cross-bucket collision: bail rather than silently shadow.
+  const otherBucket = args.bucket === "personal" ? "vendored" : "personal";
+  const otherPath = path.join(repoRoot, "skills", otherBucket, localName);
+  if (fs.existsSync(otherPath)) {
+    console.error(
+      `${localName} already exists in skills/${otherBucket}/. Skill names must ` +
+        `be unique across buckets. Use --as <name> to disambiguate.`,
+    );
+    process.exit(1);
+  }
+
+  console.log(`vendoring ${args.repo}/${folderPath} → ${destRel}/ ...`);
 
   const mirror = await mirrorSkillFolder(
     args.repo,
@@ -278,14 +298,21 @@ async function main(): Promise<void> {
     fetchedAt: now,
   };
   const existing = readSkillSource(destDir);
-  writeSkillSource(destDir, { ...existing, upstream: pointer });
+  // Bundled-repo vendoring writes `source: "bundled"` by default so the
+  // marker matches its siblings; the readSkillSource default of "yours"
+  // would otherwise leave a fresh vendor in the wrong provenance axis.
+  writeSkillSource(destDir, {
+    ...existing,
+    source: existing.source ?? "bundled",
+    upstream: pointer,
+  });
   const baseline = hashSkillFolder(destDir);
   if (baseline) writeSyncedHash(destDir, baseline);
 
   console.log(
     `\nvendored ${mirror.fileCount} files. Review with:\n` +
-      `  git status skills/${localName}/\n` +
-      `  git diff skills/${localName}/\n` +
+      `  git status ${destRel}/\n` +
+      `  git diff ${destRel}/\n` +
       `\nWhen happy, stage + commit.`,
   );
 }

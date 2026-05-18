@@ -22,6 +22,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { walkSkills } from "../packages/core/src/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,19 +39,12 @@ function resolveRegistryRoot(): string {
 
 function main(): void {
   const root = resolveRegistryRoot();
-  const skillsDir = path.join(root, "skills");
-  if (!fs.existsSync(skillsDir) || !fs.statSync(skillsDir).isDirectory()) {
-    console.error(`no skills/ directory at ${root}`);
-    process.exit(1);
-  }
-
   const syncedAt = new Date().toISOString();
   let wrote = 0;
   let skipped = 0;
 
-  for (const ent of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    if (!ent.isDirectory()) continue;
-    const markerPath = path.join(skillsDir, ent.name, ".skills-bank.json");
+  for (const ref of walkSkills(root)) {
+    const markerPath = path.join(ref.dir, ".skills-bank.json");
     if (fs.existsSync(markerPath)) {
       skipped += 1;
       continue;

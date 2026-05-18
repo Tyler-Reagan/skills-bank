@@ -459,19 +459,17 @@ function computePublishStates(registryRoot: string): Map<string, PublishState> {
   );
 
   // Bulk: latest commit per skill folder via name-only diff. Iterate
-  // each skill's last commit cheaply.
-  const skillsDir = path.join(registryRoot, "skills");
-  if (!fs.existsSync(skillsDir)) return out;
-  for (const sk of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    if (!sk.isDirectory()) continue;
-    if (out.has(sk.name)) continue; // already untracked
-    const sha = exec(`git log -1 --format=%H -- "skills/${sk.name}"`)?.trim();
+  // each skill's last commit cheaply. Walks the bucket subtree via
+  // walkSkills so we get the right relPath for the git log scope.
+  for (const ref of walkSkills(registryRoot)) {
+    if (out.has(ref.name)) continue; // already untracked
+    const sha = exec(`git log -1 --format=%H -- "${ref.relPath}"`)?.trim();
     if (!sha) {
       // Folder has no commit history → counts as a local edit.
-      out.set(sk.name, "untracked");
+      out.set(ref.name, "untracked");
       continue;
     }
-    out.set(sk.name, unpushedSet.has(sha) ? "draft" : "pushed");
+    out.set(ref.name, unpushedSet.has(sha) ? "draft" : "pushed");
   }
   return out;
 }
