@@ -16,6 +16,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,md,mdx,json,yml,yaml}\" --cache",
     "package:mac": "pnpm --filter @skills-bank/desktop package:mac",
     "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
     "validate": "tsx scripts/validate-all.ts",
     "build:index": "tsx scripts/build-index.ts",
     "docs:check": "node scripts/check-doc-links.mjs",
