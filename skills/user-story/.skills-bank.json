@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "deanpeters/product-manager-skills",
+    "skillPath": "skills/user-story/SKILL.md",
+    "sourceUrl": "https://github.com/deanpeters/product-manager-skills.git",
+    "skillFolderHash": "b8e53307616bb30fc18fffdc6c1eac7621453653",
+    "installedAt": "2026-05-12T18:07:28.487Z",
+    "fetchedAt": "2026-05-12T18:07:28.487Z"
+  }
+}

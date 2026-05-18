@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "softaworks/agent-toolkit",
+    "skillPath": "skills/mermaid-diagrams/SKILL.md",
+    "sourceUrl": "https://github.com/softaworks/agent-toolkit.git",
+    "skillFolderHash": "1b7a962715838d762fe4b34701d797d1d57496cd",
+    "installedAt": "2026-05-04T20:13:27.108Z",
+    "fetchedAt": "2026-05-04T20:13:27.108Z"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "kostja94/marketing-skills",
+    "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+    "skillPath": "skills/strategies/structure/seo/SKILL.md",
+    "skillFolderHash": "85a77b7462a89ac5ca576a38c41b5e9f9b938d62",
+    "installedAt": "2026-05-18T08:09:53.421Z",
+    "fetchedAt": "2026-05-18T08:09:53.421Z"
+  }
+}

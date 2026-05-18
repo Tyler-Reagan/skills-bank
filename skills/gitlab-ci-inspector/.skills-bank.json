@@ -1,0 +1,13 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "Tyler-Reagan/skills-bank",
+    "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+    "skillPath": "skills/gitlab-ci-inspector/SKILL.md",
+    "installedAt": "2026-05-18T08:09:59.482Z",
+    "fetchedAt": "2026-05-18T08:09:59.482Z"
+  }
+}

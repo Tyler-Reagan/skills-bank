@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "phuryn/pm-skills",
+    "skillPath": "pm-market-research/skills/user-personas/SKILL.md",
+    "sourceUrl": "https://github.com/phuryn/pm-skills.git",
+    "skillFolderHash": "58bbb0463cd8360fbda860d388146a4cfb6b4b4c",
+    "installedAt": "2026-05-06T21:45:07.412Z",
+    "fetchedAt": "2026-05-07T00:15:08.844Z"
+  }
+}

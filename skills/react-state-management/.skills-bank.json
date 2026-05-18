@@ -1,0 +1,14 @@
+{
+  "source": "bundled",
+  "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
+  "syncedAt": "2026-05-15T19:39:10.065Z",
+  "upstream": {
+    "kind": "github",
+    "repo": "wshobson/agents",
+    "sourceUrl": "https://github.com/wshobson/agents.git",
+    "skillPath": "plugins/frontend-mobile-development/skills/react-state-management/SKILL.md",
+    "skillFolderHash": "88c9ede61cb44428693c452b3c93f7602da5cd82",
+    "installedAt": "2026-05-18T08:09:53.421Z",
+    "fetchedAt": "2026-05-18T08:09:53.421Z"
+  }
+}

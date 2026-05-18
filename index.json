@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T05:39:21.613Z",
+  "generatedAt": "2026-05-18T08:10:24.441Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -10,7 +10,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/utility/404/SKILL.md",
+          "skillFolderHash": "2d2d535f88cb68f992c7dcaa96ffb86d874fd03d",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -18,6 +27,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -44,6 +54,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -54,7 +65,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/content/api/SKILL.md",
+          "skillFolderHash": "dff6934e57704f134aa9bb6245e57939d7778e2c",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -62,6 +82,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -72,7 +93,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/branding/brand-visual/SKILL.md",
+          "skillFolderHash": "bc1f137b698e026b5b21f8092aec540981343b6b",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -80,6 +110,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -90,7 +121,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/strategies/brand/branding/SKILL.md",
+          "skillFolderHash": "a224ec7902808cbd4af59a7a1b1876069990a414",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -98,6 +138,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -108,7 +149,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/layout/carousel/SKILL.md",
+          "skillFolderHash": "4aec61b2179237ec30bb03ca7fd30766d2673297",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -116,7 +166,28 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "caveman",
+      "description": ">",
+      "path": "skills/caveman",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/productivity/caveman/SKILL.md",
+          "skillFolderHash": "17972a1bdbf5909b9dbdc435ad348f0bf45f8664",
+          "installedAt": "2026-05-14T00:40:48.763Z",
+          "fetchedAt": "2026-05-18T05:30:44.417Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "competitor-research",
@@ -126,7 +197,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/seo/content/competitor-research/SKILL.md",
+          "skillFolderHash": "3f1c2c0a756b124397ba61a7c80b863495794d1e",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -134,6 +214,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -144,7 +225,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/seo/content/content-optimization/SKILL.md",
+          "skillFolderHash": "d331bd9e6cb0017a54d4642dd70573aa1def6a2f",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -152,6 +242,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -162,7 +253,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "coreyhaines31/marketingskills",
+          "sourceUrl": "https://github.com/coreyhaines31/marketingskills.git",
+          "skillPath": "skills/content-strategy/SKILL.md",
+          "skillFolderHash": "8a2387b41d046b1b5a72a346103120b3c28e8bf5",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -170,7 +270,28 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "convert-web-app",
+      "description": "This skill should be used when the user asks to \"add MCP App support to my web app\", \"turn my web app into a hybrid MCP App\", \"make my web page work as an MCP App too\", \"wrap my existing UI as an MCP App\", \"convert iframe embed to MCP App\", \"turn my SPA into an MCP App\", or needs to add MCP App support to an existing web application while keeping it working standalone. Provides guidance for analyzing existing web apps and creating a hybrid web + MCP App with server-side tool and resource registration.",
+      "path": "skills/convert-web-app",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "modelcontextprotocol/ext-apps",
+          "sourceUrl": "https://github.com/modelcontextprotocol/ext-apps.git",
+          "skillPath": "plugins/mcp-apps/skills/convert-web-app/SKILL.md",
+          "skillFolderHash": "1878b683a535492a90e26cfc2943fd21aea28380",
+          "installedAt": "2026-05-14T18:22:36.034Z",
+          "fetchedAt": "2026-05-14T18:22:36.034Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "core-web-vitals",
@@ -180,7 +301,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "addyosmani/web-quality-skills",
+          "sourceUrl": "https://github.com/addyosmani/web-quality-skills.git",
+          "skillPath": "skills/core-web-vitals/SKILL.md",
+          "skillFolderHash": "041da568684b2b15ccb8789253dd2df29c8de433",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -188,6 +318,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -214,6 +345,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -240,6 +372,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -249,7 +382,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "davila7/claude-code-templates",
+          "sourceUrl": "https://github.com/davila7/claude-code-templates.git",
+          "skillPath": "cli-tool/components/skills/creative-design/claude-d3js-skill/SKILL.md",
+          "skillFolderHash": "ac6ef90f2fc5edb2ed2e5a575f336087dc88dc37",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -257,6 +399,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -267,7 +410,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/content/docs/SKILL.md",
+          "skillFolderHash": "c1dd50e708285ddc3eb8d491d9549ce5351740d9",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -275,6 +427,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -284,7 +437,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "teachingai/full-stack-skills",
+          "sourceUrl": "https://github.com/teachingai/full-stack-skills.git",
+          "skillPath": "skills/electron-skills/electron/SKILL.md",
+          "skillFolderHash": "2b889701cf0fba3fb968fbeaaf5dfb243a2c6a8e",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -292,6 +454,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -302,7 +465,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/branding/favicon/SKILL.md",
+          "skillFolderHash": "31207a5280b4fe3c54341c607a4bb597acc81b32",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -310,6 +482,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -336,6 +509,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -362,6 +536,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -372,7 +547,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/navigation/footer/SKILL.md",
+          "skillFolderHash": "f82d109938336bcd6f10d4aea1453cf81770b517",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -380,6 +564,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -389,7 +574,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "anthropics/skills",
+          "sourceUrl": "https://github.com/anthropics/skills.git",
+          "skillPath": "skills/frontend-design/SKILL.md",
+          "skillFolderHash": "928950704df8a8b885c03de5da626331e6f29cf8",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -397,6 +591,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -406,7 +601,15 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/gitlab-ci-inspector/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z",
+          "fetchedAt": "2026-05-18T08:09:59.482Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -414,6 +617,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -440,6 +644,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -449,7 +654,15 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/gitlab-mr-writing/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z",
+          "fetchedAt": "2026-05-18T08:09:59.482Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -457,6 +670,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -483,7 +697,48 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "grill-me",
+      "description": "Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions \"grill me\".",
+      "path": "skills/grill-me",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/productivity/grill-me/SKILL.md",
+          "skillFolderHash": "2a1ad17028306ebe45f0e49703fa28b9b2e7f499",
+          "installedAt": "2026-05-18T05:30:44.421Z",
+          "fetchedAt": "2026-05-18T05:30:44.421Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
+    },
+    {
+      "name": "grill-with-docs",
+      "description": "Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan against their project's language and documented decisions.",
+      "path": "skills/grill-with-docs",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+          "skillFolderHash": "3c4ac970c404e8d32c24f2725bfe679e455a925b",
+          "installedAt": "2026-05-18T05:30:44.422Z",
+          "fetchedAt": "2026-05-18T05:30:44.422Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "hero-generator",
@@ -493,7 +748,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/branding/hero/SKILL.md",
+          "skillFolderHash": "2da6451fa744283bf6ddae2877d9f13cd85898f9",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -501,6 +765,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -511,7 +776,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/brand/home/SKILL.md",
+          "skillFolderHash": "144700d86efae7c328bae5a6a7959a0562087f47",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -519,6 +793,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -531,7 +806,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "pbakaus/impeccable",
+          "sourceUrl": "https://github.com/pbakaus/impeccable.git",
+          "skillPath": ".agents/skills/impeccable/SKILL.md",
+          "skillFolderHash": "acf2d1c8e0fc8a5388c67a6add3d45e1d2ec90fb",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -539,7 +823,28 @@
         "date": "2026-05-15 12:44:23 -0700",
         "message": "fix: preserve linkedRepo on sign-out + drop forced RepoPicker on re-sign-in"
       },
+      "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "description": "Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.",
+      "path": "skills/improve-codebase-architecture",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+          "skillFolderHash": "3ad8fa787b3b9b622d1f5a3d0afc27812ac782fa",
+          "installedAt": "2026-05-18T05:30:44.424Z",
+          "fetchedAt": "2026-05-18T05:30:44.424Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     },
     {
       "name": "landing-page-generator",
@@ -549,7 +854,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/marketing/landing-page/SKILL.md",
+          "skillFolderHash": "887329b70b63b04301498b4a7b5599f9998cbe1e",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -557,6 +871,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -567,7 +882,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/components/branding/logo/SKILL.md",
+          "skillFolderHash": "a0d7ed2abce314ff776d0f2f09b4faa5d551a885",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -575,6 +899,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -584,7 +909,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "anthropics/skills",
+          "sourceUrl": "https://github.com/anthropics/skills.git",
+          "skillPath": "skills/mcp-builder/SKILL.md",
+          "skillFolderHash": "b866bcfb57b780c10b587c7b543e871a91661ce0",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -592,6 +926,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -618,6 +953,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -644,6 +980,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -653,7 +990,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "vercel-labs/next-skills",
+          "sourceUrl": "https://github.com/vercel-labs/next-skills.git",
+          "skillPath": "skills/next-best-practices/SKILL.md",
+          "skillFolderHash": "a236d702277c5364cf6f540712a8dddb46e79a46",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -661,6 +1007,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -687,6 +1034,7 @@
         "date": "2026-05-12 13:24:04 -0700",
         "message": "(skills): update skills canon - remove any specific terminology from personal skills"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -696,7 +1044,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "pipecat-ai/pipecat",
+          "sourceUrl": "https://github.com/pipecat-ai/pipecat.git",
+          "skillPath": ".claude/skills/pr-description/SKILL.md",
+          "skillFolderHash": "e053a82eedd03e2e6be477f74625c0d2f7b25d94",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -704,6 +1061,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -730,6 +1088,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -739,7 +1098,15 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/pretty-mermaid/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z",
+          "fetchedAt": "2026-05-18T08:09:59.482Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -747,6 +1114,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -773,6 +1141,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -799,6 +1168,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -808,7 +1178,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "langchain-ai/skills-benchmarks",
+          "sourceUrl": "https://github.com/langchain-ai/skills-benchmarks.git",
+          "skillPath": "skills/noise/react_components/SKILL.md",
+          "skillFolderHash": "fbdbab0c2bf0ace0652ab602a4011cef7d5b07f8",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -816,6 +1195,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -825,7 +1205,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "wshobson/agents",
+          "sourceUrl": "https://github.com/wshobson/agents.git",
+          "skillPath": "plugins/frontend-mobile-development/skills/react-state-management/SKILL.md",
+          "skillFolderHash": "88c9ede61cb44428693c452b3c93f7602da5cd82",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -833,6 +1222,7 @@
         "date": "2026-05-05 17:12:54 -0700",
         "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -859,6 +1249,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -869,7 +1260,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/strategies/structure/seo/SKILL.md",
+          "skillFolderHash": "85a77b7462a89ac5ca576a38c41b5e9f9b938d62",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -877,6 +1277,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -903,6 +1304,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -913,7 +1315,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "kostja94/marketing-skills",
+          "sourceUrl": "https://github.com/kostja94/marketing-skills.git",
+          "skillPath": "skills/pages/utility/signup-login/SKILL.md",
+          "skillFolderHash": "3b79fab75db9702041099ba5395d2c6d35e38964",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -921,6 +1332,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -947,6 +1359,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -973,6 +1386,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -982,7 +1396,15 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/terraform-plan-summary/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z",
+          "fetchedAt": "2026-05-18T08:09:59.482Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -990,6 +1412,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1017,6 +1440,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1026,7 +1450,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "anthropics/skills",
+          "sourceUrl": "https://github.com/anthropics/skills.git",
+          "skillPath": "skills/theme-factory/SKILL.md",
+          "skillFolderHash": "e05534d132fb1b21f9917840874758e30f0a9b1a",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1034,6 +1467,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1043,7 +1477,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "github/awesome-copilot",
+          "sourceUrl": "https://github.com/github/awesome-copilot.git",
+          "skillPath": "skills/typescript-mcp-server-generator/SKILL.md",
+          "skillFolderHash": "946d7e1dd613c9c371d7022bdb774f0170b86c75",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1051,6 +1494,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1060,7 +1504,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "dotneet/claude-code-marketplace",
+          "sourceUrl": "https://github.com/dotneet/claude-code-marketplace.git",
+          "skillPath": "review-tool/skills/typescript-react-reviewer/SKILL.md",
+          "skillFolderHash": "c42f66f381de0fa465b7e2dbc52e8e8f5ecca495",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1068,6 +1521,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1081,11 +1535,25 @@
       "author": "mattpocock",
       "path": "skills/ubiquitous-language",
       "source": {
-        "source": "yours"
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/deprecated/ubiquitous-language/SKILL.md",
+          "skillFolderHash": "483fe10b01bed81b7eba7ee26df3f1bef9540c88",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
-      "publishState": "untracked",
-      "canon": false
+      "lastCommit": {
+        "sha": "559cf07fa2e7e56fd58ba129f0748134bc6f44df",
+        "date": "2026-05-17 22:46:22 -0700",
+        "message": "chore(v0.11.2): install ubiquitous-language skill + domain glossary"
+      },
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "ui-ux-pro-max",
@@ -1094,7 +1562,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+          "sourceUrl": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git",
+          "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+          "skillFolderHash": "75e1acaafe8b08e59d4b86fc253ac7873aff6bba",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1102,6 +1579,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1128,6 +1606,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1154,6 +1633,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1180,6 +1660,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1191,7 +1672,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "vercel-labs/agent-skills",
+          "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
+          "skillPath": "skills/react-best-practices/SKILL.md",
+          "skillFolderHash": "343db72180d05814949fef7d46be96b5c6ee86b3",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1199,6 +1689,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1210,7 +1701,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "antfu/skills",
+          "sourceUrl": "https://github.com/antfu/skills.git",
+          "skillPath": "skills/vite/SKILL.md",
+          "skillFolderHash": "3c0dc60ce4ffc34fca02aaa7eb21130ae48c8dff",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1218,6 +1718,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1229,7 +1730,16 @@
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z"
+        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "upstream": {
+          "kind": "github",
+          "repo": "vercel-labs/agent-skills",
+          "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
+          "skillPath": "skills/web-design-guidelines/SKILL.md",
+          "skillFolderHash": "3116f3e62dbd02b44a598b1aa690d2a8938e8f89",
+          "installedAt": "2026-05-18T08:09:53.421Z",
+          "fetchedAt": "2026-05-18T08:09:53.421Z"
+        }
       },
       "adopted": true,
       "lastCommit": {
@@ -1237,7 +1747,28 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
+    },
+    {
+      "name": "zoom-out",
+      "description": "Tell the agent to zoom out and give broader context or a higher-level perspective. Use when you're unfamiliar with a section of code or need to understand how it fits into the bigger picture.",
+      "path": "skills/zoom-out",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/engineering/zoom-out/SKILL.md",
+          "skillFolderHash": "6ecebabdea814d12888f56a611da7bf182b5fb26",
+          "installedAt": "2026-05-18T05:30:44.426Z",
+          "fetchedAt": "2026-05-18T05:30:44.426Z"
+        }
+      },
+      "adopted": true,
+      "publishState": "untracked",
+      "canon": false
     }
   ]
 }
