@@ -754,17 +754,12 @@ select {
   transition-duration: var(--t-fast);
 }
 .skill-card--update-available {
-  /* Subtle left-edge accent so update-pending cards read as a
-     cohort even before the user pans down to the UPDATE badge.
-     2px stripe is borderline per impeccable's "side-stripe >1px"
-     ban — kept because the in-card UPDATE badge already carries
-     the primary signal, and the stripe just helps cluster the
-     cards visually when sorted/floated to the top. */
-  border-left: 2px solid var(--accent);
-  padding-left: calc(var(--s5) - 1px);
-}
-:root[data-density="compact"] .skill-card--update-available {
-  padding-left: calc(var(--s3) - 1px);
+  /* Grouping affordance: a hairline accent stripe lets update-pending
+     cards read as a cohort when the default sort floats them to the
+     top of the registry. The in-card UPDATE badge carries the status
+     signal; this stripe only encodes cluster membership. 1px keeps
+     it within impeccable's side-stripe budget. */
+  border-left: 1px solid var(--accent);
 }
 .skill-card-top {
   display: flex;
