@@ -107,7 +107,66 @@ export const IPC = {
   headerMenuAction: "header:action",
   pickCustomSkillsDir: "skills:pickCustomSkillsDir",
   getSkillDiff: "skills:getSkillDiff",
+  upstreamProbe: "upstream:probe",
+  upstreamUpdate: "upstream:update",
+  upstreamRepoMetadata: "upstream:repoMetadata",
+  upstreamLastCommit: "upstream:lastCommit",
+  upstreamSetManual: "upstream:setManual",
 } as const;
+
+/**
+ * Renderer → main payload for `upstream:setManual`. Either:
+ * - Stamp a GitHub upstream (`kind: "github"` + repo + skillPath).
+ *   Validated against `GET /repos/{repo}/contents/{folder}` before
+ *   writing — invalid combos return an error and don't mutate.
+ * - Mark explicitly user-owned (`kind: "none"`). Suppresses the
+ *   scanner from trying to classify on future walks.
+ */
+export type UpstreamManualChoice =
+  | { kind: "github"; repo: string; skillPath: string }
+  | { kind: "none" };
+
+/**
+ * Summary returned by `upstream:probe`. The renderer uses this to
+ * surface progress in the UpdatesModal's manual-refresh control;
+ * per-skill update state is surfaced via the augmented
+ * `RegistryEntry.upstreamUpdateAvailable` field on `listRegistry`,
+ * not through this payload.
+ */
+export interface UpstreamProbeResult {
+  /** Number of unique source repos probed (after dedup). */
+  probed: number;
+  /** Number of skills found with a newer upstream hash than recorded. */
+  updates: number;
+  /** ISO-8601 timestamp of completion. */
+  probedAt: string;
+}
+
+/**
+ * Display-time enrichment for a skill's source repo. Fetched per-repo
+ * by the renderer when an Origin section is visible; cached in main
+ * process memory (15-min TTL). Errors collapse to null fields rather
+ * than throwing — the drawer just omits the missing chips.
+ */
+export interface UpstreamRepoMetadata {
+  stars: number | null;
+  description: string | null;
+  defaultBranch: string | null;
+}
+
+/**
+ * Latest commit touching a specific path in a source repo. Fetched
+ * per-skill when the Settings "Show upstream activity" toggle is on;
+ * cached in main-process memory with a 15-min TTL. Nulls when the
+ * fetch fails or the path has no commits in the default branch.
+ */
+export interface UpstreamLastCommit {
+  sha: string | null;
+  /** ISO-8601 commit author date. */
+  date: string | null;
+  /** First line of the commit message. */
+  message: string | null;
+}
 
 export interface SkillDiffFile {
   /** Relative path within the skill folder, e.g. "SKILL.md". */
@@ -552,6 +611,20 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
+  upstreamProbe(): Promise<UpstreamProbeResult>;
+  onUpstreamProbeComplete(cb: () => void): () => void;
+  upstreamUpdate(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: unknown }>;
+  upstreamRepoMetadata(repo: string): Promise<UpstreamRepoMetadata>;
+  upstreamLastCommit(
+    repo: string,
+    skillPath: string,
+  ): Promise<UpstreamLastCommit>;
+  upstreamSetManual(
+    name: string,
+    choice: UpstreamManualChoice,
+  ): Promise<{ ok: boolean; message: string }>;
 }
 
 declare global {

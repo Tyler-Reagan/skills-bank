@@ -49,6 +49,15 @@ export interface AppSettings {
    * scoped to that tab's UX.
    */
   customSkillsDirs: string[];
+  /**
+   * Show per-skill upstream activity (last commit to the skill's
+   * folder in its source repo) in the drawer's Origin section.
+   * Off by default — this is a per-skill GitHub API call with no
+   * repo dedup, so heavy registries can pressure the user's rate
+   * limit budget. Gated to authed users; surfaces a sign-in hint
+   * when toggled by an unauth user.
+   */
+  showUpstreamActivity: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -59,6 +68,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   registerAdopts: true,
   unregisterDestinationAgent: "agents",
   customSkillsDirs: [],
+  showUpstreamActivity: false,
 };
 
 interface Props {
@@ -73,6 +83,13 @@ interface Props {
   hiddenCanon: string[];
   /** Unhide a name; host refreshes the registry list. */
   onUnhide: (name: string) => Promise<void> | void;
+  /**
+   * Whether the user is signed in with GitHub. Gates the
+   * "Show upstream activity" toggle — when not authed, the toggle
+   * disables and surfaces a sign-in hint rather than letting the
+   * user enable a feature that would silently fail.
+   */
+  isAuthed: boolean;
 }
 
 /**
@@ -86,6 +103,7 @@ export function SettingsModal({
   onClose,
   hiddenCanon,
   onUnhide,
+  isAuthed,
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
@@ -189,6 +207,35 @@ export function SettingsModal({
             />
             <strong>Move files into Skills Bank on Register</strong>
           </label>
+        </section>
+
+        <section style={section}>
+          <h3 style={sectionTitle}>Upstream activity</h3>
+          <p style={hint}>
+            Show the most recent commit to each skill's folder in its source
+            repo (in the drawer's Origin section). Uses your GitHub token for 1
+            API call per skill — heavy registries can pressure your rate-limit
+            budget, so it's off by default.
+          </p>
+          <label style={{ ...checkboxRow, marginTop: 8, opacity: isAuthed ? 1 : 0.5 }}>
+            <input
+              type="checkbox"
+              checked={draft.showUpstreamActivity && isAuthed}
+              disabled={!isAuthed}
+              onChange={() =>
+                setDraft((prev) => ({
+                  ...prev,
+                  showUpstreamActivity: !prev.showUpstreamActivity,
+                }))
+              }
+            />
+            <strong>Show upstream activity</strong>
+          </label>
+          {!isAuthed && (
+            <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+              Sign in with GitHub to enable — Account → Sign in with GitHub.
+            </p>
+          )}
         </section>
 
         <section style={section}>

@@ -113,6 +113,20 @@ const api = {
     ipcRenderer.on(IPC.headerMenuAction, listener);
     return () => ipcRenderer.removeListener(IPC.headerMenuAction, listener);
   },
+  upstreamProbe: () => ipcRenderer.invoke(IPC.upstreamProbe),
+  onUpstreamProbeComplete: (cb: () => void) => {
+    const listener = () => cb();
+    ipcRenderer.on(IPC.upstreamProbe, listener);
+    return () => ipcRenderer.removeListener(IPC.upstreamProbe, listener);
+  },
+  upstreamUpdate: (name: string) =>
+    ipcRenderer.invoke(IPC.upstreamUpdate, name),
+  upstreamRepoMetadata: (repo: string) =>
+    ipcRenderer.invoke(IPC.upstreamRepoMetadata, repo),
+  upstreamLastCommit: (repo: string, skillPath: string) =>
+    ipcRenderer.invoke(IPC.upstreamLastCommit, repo, skillPath),
+  upstreamSetManual: (name: string, choice: unknown) =>
+    ipcRenderer.invoke(IPC.upstreamSetManual, name, choice),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

@@ -44,6 +44,7 @@ import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
 import { ConnectGithubModal } from "./components/ConnectGithubModal.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
 import { AccountModal } from "./components/AccountModal.js";
+import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
@@ -283,6 +284,7 @@ export function App(): React.ReactElement {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [showConnectGithub, setShowConnectGithub] = useState(false);
+  const [showUpdatesModal, setShowUpdatesModal] = useState(false);
   // Auto-update state. `latestUpdateStatus` is a live mirror of the most
   // recent event the main process broadcast; the modal reads it directly
   // when open, so a render during `downloading` shows the live progress
@@ -601,6 +603,15 @@ export function App(): React.ReactElement {
     })();
   }, []);
 
+  // Main process completes an upstream probe → re-fetch registry so
+  // the new `upstreamUpdateAvailable` flags surface as card chips.
+  useEffect(() => {
+    if (!window.skillsBank.onUpstreamProbeComplete) return;
+    return window.skillsBank.onUpstreamProbeComplete(() => {
+      void refresh();
+    });
+  }, [refresh]);
+
   // Initial auth/persona snapshot. The LoginScreen is shown until persona
   // resolves to convenience or power.
   useEffect(() => {
@@ -870,6 +881,13 @@ export function App(): React.ReactElement {
       ? latestUpdateStatus.version
       : null;
 
+  // Skills with an available upstream update — set by the main-process
+  // probe runner via the augmented `listRegistry`. Drives the header
+  // aggregate badge and the UpdatesModal's content.
+  const pendingSkillUpdates = registry.filter(
+    (e) => e.upstreamUpdateAvailable === true,
+  );
+
   // Plain functions (not useCallback) — this code lives below early-return
   // gates above (no authStatus, persona unresolved). A hook here would be a
   // Rules-of-Hooks violation. None of the consumers memoize, so referential
@@ -896,6 +914,8 @@ export function App(): React.ReactElement {
           onOpenSettings={() => undefined}
           pendingUpdateVersion={null}
           onShowUpdate={() => undefined}
+          pendingSkillUpdates={0}
+          onShowUpdates={() => undefined}
         />
         <Tabs
           active="browse"
@@ -939,6 +959,8 @@ export function App(): React.ReactElement {
           onOpenSettings={() => setShowSettings(true)}
           pendingUpdateVersion={pendingUpdateVersion}
           onShowUpdate={openUpdateModal}
+          pendingSkillUpdates={pendingSkillUpdates.length}
+          onShowUpdates={() => setShowUpdatesModal(true)}
         />
         {appErrors.length > 0 && (
           <div className="error-panel-stack">
@@ -1490,6 +1512,7 @@ export function App(): React.ReactElement {
               flash(r.message);
               await refresh();
             }}
+            isAuthed={Boolean(authStatus?.user)}
           />
         )}
 
@@ -1548,6 +1571,27 @@ export function App(): React.ReactElement {
               // path (where RepoPicker should pop) goes through
               // LoginScreen's onStatusChanged, not this handler.
               void refresh();
+            }}
+          />
+        )}
+
+        {showUpdatesModal && (
+          <UpdatesModal
+            entries={pendingSkillUpdates}
+            onClose={() => setShowUpdatesModal(false)}
+            onUpdate={async (name) => {
+              const r = await window.skillsBank.upstreamUpdate(name);
+              flash(r.message);
+              await refresh();
+              return r;
+            }}
+            onView={(entry) => {
+              setShowUpdatesModal(false);
+              setSelected(entry);
+            }}
+            onRefresh={async () => {
+              await window.skillsBank.upstreamProbe();
+              await refresh();
             }}
           />
         )}
@@ -1758,6 +1802,15 @@ export function App(): React.ReactElement {
             const installations = installed.filter(
               (i) => i.name === selected.name,
             );
+            // Classifier is non-trivial (full installation partition +
+            // capability fan-out). Compute once per IIFE invocation
+            // rather than 10× inline per drawer-prop callback.
+            const classification = classifyDrawerState(
+              selected,
+              installed,
+              isRegistered,
+            );
+            const caps = classification.capabilities;
             return (
               <SkillDetailDrawer
                 entry={selected}
@@ -1769,6 +1822,18 @@ export function App(): React.ReactElement {
                     ? settings.defaultInstallAgents
                     : undefined
                 }
+                showUpstreamActivity={
+                  settings.showUpstreamActivity && Boolean(authStatus?.user)
+                }
+                onSetManualUpstream={async (choice) => {
+                  const r = await window.skillsBank.upstreamSetManual(
+                    selected.name,
+                    choice,
+                  );
+                  flash(r.message);
+                  if (r.ok) await refresh();
+                  return r;
+                }}
                 onClose={() => setSelected(null)}
                 onChanged={async (msg) => {
                   flash(msg);
@@ -1810,8 +1875,7 @@ export function App(): React.ReactElement {
                   // bank or stay at origin follows the global
                   // `registerAdopts` setting (M3 unified the two
                   // paths into a single op).
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canRegister
+                  caps.canRegister
                     ? async () => {
                         const results = await window.skillsBank.register([
                           {
@@ -1833,8 +1897,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onAcceptDrift={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canAcceptDrift
+                  caps.canAcceptDrift
                     ? async () => {
                         const r = await window.skillsBank.acceptDrift(
                           selected.name,
@@ -1848,8 +1911,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onTakeCanonical={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canTakeCanonical
+                  caps.canTakeCanonical
                     ? async () => {
                         const r = await window.skillsBank.takeCanonical(
                           selected.name,
@@ -1862,9 +1924,31 @@ export function App(): React.ReactElement {
                       }
                     : undefined
                 }
+                onTakeUpstream={
+                  caps.canTakeUpstream
+                    ? async () => {
+                        const r = await window.skillsBank.upstreamUpdate(
+                          selected.name,
+                        );
+                        flash(r.message);
+                        if (r.ok) setSelected(null);
+                        await refresh();
+                      }
+                    : undefined
+                }
+                onUpdate={
+                  caps.canUpdate
+                    ? async () => {
+                        const r = await window.skillsBank.upstreamUpdate(
+                          selected.name,
+                        );
+                        flash(r.message);
+                        await refresh();
+                      }
+                    : undefined
+                }
                 onForgetMissing={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canForgetMissing
+                  caps.canForgetMissing
                     ? async () => {
                         const r = await window.skillsBank.forgetMissing(
                           selected.name,
@@ -1878,8 +1962,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onRepoint={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canRepoint
+                  caps.canRepoint
                     ? async () => {
                         const r = await window.skillsBank.repointExternal(
                           selected.name,
@@ -1894,8 +1977,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onHide={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canHide
+                  caps.canHide
                     ? async () => {
                         const r = await window.skillsBank.hide(selected.name);
                         flash(r.message);
@@ -1907,8 +1989,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onUnhide={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canUnhide
+                  caps.canUnhide
                     ? async () => {
                         const r = await window.skillsBank.unhide(selected.name);
                         flash(r.message);
@@ -1920,8 +2001,7 @@ export function App(): React.ReactElement {
                     : undefined
                 }
                 onUnregister={
-                  classifyDrawerState(selected, installed, isRegistered)
-                    .capabilities.canUnregister
+                  caps.canUnregister
                     ? async () => {
                         // Remove-from-registry is a terminating action
                         // for this surface — close the drawer up-front

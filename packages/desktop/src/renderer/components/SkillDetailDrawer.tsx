@@ -9,6 +9,11 @@ import { classifyDrawerState } from "./skillState.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
 
+function formatStarCount(stars: number): string {
+  if (stars >= 1000) return `${(stars / 1000).toFixed(stars >= 10000 ? 0 : 1)}k`;
+  return String(stars);
+}
+
 interface Props {
   entry: RegistryEntry;
   installed: InstalledSkill[];
@@ -86,6 +91,40 @@ interface Props {
    */
   onTakeCanonical?: () => Promise<void> | void;
   /**
+   * Upstream-drift heal — revert arm. Re-fetches from the linked
+   * upstream via `npx skills update`, discarding local edits.
+   * Companion to `onAcceptDrift` in the
+   * `user-edited-with-upstream` heal flow.
+   */
+  onTakeUpstream?: () => Promise<void> | void;
+  /**
+   * Apply an available upstream update in place. Same backend as
+   * `onTakeUpstream` but surfaced in the
+   * `upstream-update-available` state where there's no local
+   * drift to clobber.
+   */
+  onUpdate?: () => Promise<void> | void;
+  /**
+   * Settings → "Show upstream activity" toggle. When true and the
+   * skill has a GitHub upstream, the drawer fetches and displays
+   * the latest commit touching the skill's folder. Costs 1 GitHub
+   * API call per skill (no repo dedup); gated to opt-in to keep
+   * heavy registries from pressuring the rate-limit budget.
+   */
+  showUpstreamActivity?: boolean;
+  /**
+   * Stamp a manual upstream pointer onto a skill the scanner
+   * couldn't classify automatically (no matching CLI lock entry,
+   * name collision, or hand-authored skill the user wants to tag).
+   * `null` choice means user clicked "this is mine" → kind: "none".
+   * Renderer refreshes after the call resolves.
+   */
+  onSetManualUpstream?: (
+    choice:
+      | { kind: "github"; repo: string; skillPath: string }
+      | { kind: "none" },
+  ) => Promise<{ ok: boolean; message: string }>;
+  /**
    * M6: missing-entry heal. Forget the registry/external record.
    * Only meaningful in registry-folder-missing and
    * external-target-missing.
@@ -109,6 +148,8 @@ type ActionState =
   | "unhiding"
   | "accepting-drift"
   | "taking-canonical"
+  | "taking-upstream"
+  | "updating"
   | "forgetting"
   | "repointing";
 
@@ -129,12 +170,27 @@ export function SkillDetailDrawer({
   onUnhide,
   onAcceptDrift,
   onTakeCanonical,
+  onTakeUpstream,
+  onUpdate,
   onForgetMissing,
   onRepoint,
+  showUpstreamActivity,
+  onSetManualUpstream,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
+  const [repoMeta, setRepoMeta] = useState<
+    import("../../shared/ipc.js").UpstreamRepoMetadata | null
+  >(null);
+  const [lastCommit, setLastCommit] = useState<
+    import("../../shared/ipc.js").UpstreamLastCommit | null
+  >(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerRepo, setPickerRepo] = useState("");
+  const [pickerPath, setPickerPath] = useState("");
+  const [pickerBusy, setPickerBusy] = useState(false);
+  const [pickerError, setPickerError] = useState<string | null>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
   // The drawer slides in from the right (~280ms). Until it lands,
   // its hit area is offscreen — a click on the eventual drawer position
@@ -177,6 +233,51 @@ export function SkillDetailDrawer({
     const id = window.setTimeout(() => setOverlayReady(true), 300);
     return () => window.clearTimeout(id);
   }, []);
+
+  // Fetch source-repo metadata (stars, description) when an Origin
+  // section is visible. Main process caches per-repo with a 15-min
+  // TTL so consecutive drawer opens for skills from the same repo
+  // don't re-hit GitHub. Result `null` until the fetch resolves;
+  // the drawer omits the stars chip and description when fields
+  // are null.
+  const upstreamRepo = entry.source.upstream?.repo;
+  const upstreamSkillPath = entry.source.upstream?.skillPath;
+  useEffect(() => {
+    setRepoMeta(null);
+    if (!upstreamRepo) return;
+    let cancelled = false;
+    void window.skillsBank
+      .upstreamRepoMetadata(upstreamRepo)
+      .then((m) => {
+        if (!cancelled) setRepoMeta(m);
+      })
+      .catch(() => {
+        // Errors degrade to no enrichment.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [upstreamRepo]);
+
+  // Per-skill last-commit fetch, opt-in via Settings. Costs 1 GitHub
+  // API call per skill (no repo dedup) so it stays off by default.
+  useEffect(() => {
+    setLastCommit(null);
+    if (!showUpstreamActivity) return;
+    if (!upstreamRepo || !upstreamSkillPath) return;
+    let cancelled = false;
+    void window.skillsBank
+      .upstreamLastCommit(upstreamRepo, upstreamSkillPath)
+      .then((c) => {
+        if (!cancelled) setLastCommit(c);
+      })
+      .catch(() => {
+        // Silent degrade.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [upstreamRepo, upstreamSkillPath, showUpstreamActivity]);
 
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
@@ -535,6 +636,273 @@ export function SkillDetailDrawer({
             )}
           </div>
 
+          {/* Manual upstream picker — shown for adopted skills whose
+              `.skills-bank.json` has no `upstream` field. Collapsed
+              disclosure by default; clicking opens a small inline form. */}
+          {isRegistered &&
+            entry.adopted !== false &&
+            !entry.source.upstream &&
+            onSetManualUpstream && (
+              <div className="drawer-section">
+                <h3>Where did this come from?</h3>
+                {!pickerOpen ? (
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={() => {
+                      setPickerOpen(true);
+                      setPickerError(null);
+                    }}
+                  >
+                    Stamp a GitHub upstream or mark as user-authored…
+                  </button>
+                ) : (
+                  <div style={{ marginTop: 6 }}>
+                    <p
+                      style={{
+                        margin: "0 0 8px",
+                        fontSize: 12,
+                        color: "var(--text-3)",
+                      }}
+                    >
+                      Tagging this skill's upstream enables update detection
+                      and the Origin section. Skip with "I authored this" to
+                      stop the scanner from re-classifying on every walk.
+                    </p>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 11,
+                        color: "var(--text-3)",
+                        marginBottom: 2,
+                      }}
+                    >
+                      Repo (owner/name)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="vercel-labs/skills"
+                      value={pickerRepo}
+                      onChange={(e) => setPickerRepo(e.target.value)}
+                      disabled={pickerBusy}
+                      style={{ width: "100%", marginBottom: 8 }}
+                    />
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 11,
+                        color: "var(--text-3)",
+                        marginBottom: 2,
+                      }}
+                    >
+                      Path to SKILL.md within the repo
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="skills/my-skill/SKILL.md"
+                      value={pickerPath}
+                      onChange={(e) => setPickerPath(e.target.value)}
+                      disabled={pickerBusy}
+                      style={{ width: "100%", marginBottom: 8 }}
+                    />
+                    {pickerError && (
+                      <p
+                        style={{
+                          color: "var(--danger)",
+                          fontSize: 12,
+                          margin: "4px 0 8px",
+                        }}
+                        role="alert"
+                      >
+                        {pickerError}
+                      </p>
+                    )}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        className="btn primary"
+                        disabled={
+                          pickerBusy || !pickerRepo.trim() || !pickerPath.trim()
+                        }
+                        onClick={async () => {
+                          setPickerBusy(true);
+                          setPickerError(null);
+                          const r = await onSetManualUpstream({
+                            kind: "github",
+                            repo: pickerRepo.trim(),
+                            skillPath: pickerPath.trim(),
+                          });
+                          if (!r.ok) {
+                            setPickerError(r.message);
+                            setPickerBusy(false);
+                          } else {
+                            setPickerOpen(false);
+                            setPickerBusy(false);
+                          }
+                        }}
+                      >
+                        {pickerBusy ? (
+                          <>
+                            <span className="spinner inline" /> Validating
+                          </>
+                        ) : (
+                          "Stamp"
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={pickerBusy}
+                        onClick={async () => {
+                          setPickerBusy(true);
+                          await onSetManualUpstream({ kind: "none" });
+                          setPickerOpen(false);
+                          setPickerBusy(false);
+                        }}
+                        title="Mark as user-authored; scanner won't try to classify on future walks."
+                      >
+                        I authored this
+                      </button>
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={pickerBusy}
+                        onClick={() => {
+                          // Preserve repo/path entries — the user may
+                          // cancel to check something and come back —
+                          // but clear any prior validation error so
+                          // it doesn't ghost the next attempt.
+                          setPickerOpen(false);
+                          setPickerError(null);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          {entry.source.upstream?.kind === "github" &&
+            entry.source.upstream.repo && (
+              <div className="drawer-section">
+                <h3>Origin</h3>
+                <div className="drawer-meta-row">
+                  <span className="drawer-meta-key">from</span>
+                  <span className="drawer-meta-value">
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() =>
+                        void window.skillsBank.openExternal(
+                          `https://github.com/${entry.source.upstream!.repo!}`,
+                        )
+                      }
+                      title="Open the source repo on GitHub"
+                    >
+                      github.com/{entry.source.upstream.repo}
+                    </button>
+                    {repoMeta?.stars !== null &&
+                      repoMeta?.stars !== undefined && (
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            fontSize: 11,
+                            color: "var(--text-3)",
+                          }}
+                          title={`${repoMeta.stars} stars on GitHub`}
+                        >
+                          ★ {formatStarCount(repoMeta.stars)}
+                        </span>
+                      )}
+                  </span>
+                </div>
+                {repoMeta?.description && (
+                  <div className="drawer-meta-row">
+                    <span className="drawer-meta-key">about</span>
+                    <span
+                      className="drawer-meta-value"
+                      style={{ fontStyle: "italic" }}
+                    >
+                      {repoMeta.description}
+                    </span>
+                  </div>
+                )}
+                {entry.source.upstream.skillPath && (
+                  <div className="drawer-meta-row">
+                    <span className="drawer-meta-key">path in repo</span>
+                    <span className="drawer-meta-value">
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => {
+                          const repo = entry.source.upstream!.repo!;
+                          const skillPath = entry.source.upstream!.skillPath!;
+                          // Strip the trailing /SKILL.md so the link
+                          // opens the folder view rather than the file.
+                          const folder = skillPath.replace(/\/SKILL\.md$/, "");
+                          void window.skillsBank.openExternal(
+                            `https://github.com/${repo}/tree/HEAD/${folder}`,
+                          );
+                        }}
+                        title="Open the skill's folder on GitHub"
+                      >
+                        {entry.source.upstream.skillPath.replace(
+                          /\/SKILL\.md$/,
+                          "/",
+                        )}
+                      </button>
+                    </span>
+                  </div>
+                )}
+                {entry.source.upstream.skillFolderHash && (
+                  <div className="drawer-meta-row">
+                    <span className="drawer-meta-key">fetched hash</span>
+                    <span className="drawer-meta-value">
+                      <code>
+                        {entry.source.upstream.skillFolderHash.slice(0, 7)}
+                      </code>
+                    </span>
+                  </div>
+                )}
+                {entry.source.upstream.fetchedAt && (
+                  <div className="drawer-meta-row">
+                    <span className="drawer-meta-key">last fetched</span>
+                    <span className="drawer-meta-value">
+                      {new Date(
+                        entry.source.upstream.fetchedAt,
+                      ).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+                {showUpstreamActivity &&
+                  lastCommit?.sha &&
+                  lastCommit?.date && (
+                    <div className="drawer-meta-row">
+                      <span className="drawer-meta-key">last upstream</span>
+                      <span className="drawer-meta-value">
+                        {new Date(lastCommit.date).toLocaleDateString()} ·{" "}
+                        <code>{lastCommit.sha.slice(0, 7)}</code>
+                        {lastCommit.message && (
+                          <span
+                            style={{
+                              marginLeft: 6,
+                              color: "var(--text-3)",
+                              fontSize: 11,
+                            }}
+                            title={lastCommit.message}
+                          >
+                            {lastCommit.message.length > 60
+                              ? lastCommit.message.slice(0, 60) + "…"
+                              : lastCommit.message}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+              </div>
+            )}
+
           <div className="drawer-section">
             <h3>SKILL.md preview</h3>
             {skillMdLoading ? (
@@ -616,10 +984,10 @@ export function SkillDetailDrawer({
             </>
           )}
 
-          {/* Canon-drift two-arm heal. Both clear the badge; they
-              differ in what happens on future syncs. Side-by-side
-              presentation so the user can see both choices without
-              hunting through a submenu. */}
+          {/* Drift heal — fan-out by source axis. The classifier emits
+              `canAcceptDrift` for both bundled-sync drift and upstream-
+              pointer drift; render the sub-arm and hint copy that
+              matches the actual axis on this entry. */}
           {caps.canAcceptDrift && onAcceptDrift && (
             <>
               <button
@@ -631,12 +999,18 @@ export function SkillDetailDrawer({
                     setAction(null),
                   );
                 }}
-                title="Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
+                title={
+                  caps.canTakeUpstream
+                    ? "Keep your local edits and sever the upstream link. Future probes won't surface this skill as having an update available."
+                    : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
+                }
               >
                 {action === "accepting-drift" ? (
                   <>
                     <span className="spinner inline" /> Accepting
                   </>
+                ) : caps.canTakeUpstream ? (
+                  "Keep my edits"
                 ) : (
                   "Accept local changes"
                 )}
@@ -662,13 +1036,77 @@ export function SkillDetailDrawer({
                   )}
                 </button>
               )}
+              {caps.canTakeUpstream && onTakeUpstream && (
+                <button
+                  className="btn"
+                  disabled={action !== null}
+                  onClick={() => {
+                    setAction("taking-upstream");
+                    void Promise.resolve(onTakeUpstream()).finally(() =>
+                      setAction(null),
+                    );
+                  }}
+                  title="Discard local edits and re-fetch from upstream via `npx skills update`. Your changes are lost."
+                >
+                  {action === "taking-upstream" ? (
+                    <>
+                      <span className="spinner inline" /> Reverting
+                    </>
+                  ) : (
+                    "Revert to upstream"
+                  )}
+                </button>
+              )}
               <p className="drawer-action-hint">
-                This canonical skill differs from its synced baseline.
-                <strong> Accept local changes</strong> detaches from Sync — your
-                edits stay, sync stops overwriting.
-                <strong> Take canonical</strong> re-baselines the current state
-                as the new synced version — drift clears, Sync still owns the
-                skill.
+                {caps.canTakeUpstream ? (
+                  <>
+                    Your local copy diverges from{" "}
+                    {entry.source.upstream?.repo ?? "the upstream"}.
+                    <strong> Keep my edits</strong> severs the upstream link.
+                    <strong> Revert to upstream</strong> discards your edits and
+                    re-fetches.
+                  </>
+                ) : (
+                  <>
+                    This canonical skill differs from its synced baseline.
+                    <strong> Accept local changes</strong> detaches from Sync —
+                    your edits stay, sync stops overwriting.
+                    <strong> Take canonical</strong> re-baselines the current
+                    state as the new synced version — drift clears, Sync still
+                    owns the skill.
+                  </>
+                )}
+              </p>
+            </>
+          )}
+          {caps.canUpdate && onUpdate && (
+            <>
+              <button
+                className="btn primary"
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("updating");
+                  void Promise.resolve(onUpdate()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title={`Apply the upstream update from ${
+                  entry.source.upstream?.repo ?? "the linked repo"
+                } via \`npx skills update\`.`}
+              >
+                {action === "updating" ? (
+                  <>
+                    <span className="spinner inline" /> Updating
+                  </>
+                ) : (
+                  "Update this skill"
+                )}
+              </button>
+              <p className="drawer-action-hint">
+                A newer version of this skill is available from{" "}
+                <code>{entry.source.upstream?.repo ?? "upstream"}</code>. Local
+                content is unchanged since the last fetch, so the update applies
+                cleanly.
               </p>
             </>
           )}

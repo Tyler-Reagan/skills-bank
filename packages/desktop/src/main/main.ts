@@ -12,7 +12,11 @@ import type { MenuItemConstructorOptions } from "electron";
 // cleanly under Node's ESM loader (NodeNext module resolution).
 import electronUpdater from "electron-updater";
 const { autoUpdater } = electronUpdater;
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import os from "node:os";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +32,13 @@ import {
   exportRegistry,
   fetchCanonicalTarball,
   acceptDriftKeepLocal,
+  acceptDriftSeverUpstream,
+  defaultSkillLockPath,
+  hashSkillFolder,
+  readSkillLockFile,
+  readSkillSource,
+  writeSkillSource,
+  writeSyncedHash,
   acceptDriftTakeCanonical,
   finalizeSkillsDir,
   listTopLevelSymlinks,
@@ -44,9 +55,13 @@ import {
   readLastSyncReport,
   readPendingConflicts,
   readSyncDecisions,
+  findFolderHash,
+  folderPathFromSkillPath,
+  probeRepoTree,
   resolveRegistryRoot,
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
+  type GitTreeEntry,
   uninstallSkill,
   removeBrokenLinks,
   repairBrokenLinks,
@@ -75,6 +90,10 @@ import {
   type SkillDiffResult,
   type SyncStatus,
   type UpdateStatus,
+  type UpstreamLastCommit,
+  type UpstreamManualChoice,
+  type UpstreamProbeResult,
+  type UpstreamRepoMetadata,
   type UserRepo,
 } from "../shared/ipc.js";
 import { createPatch, diffLines } from "diff";
@@ -89,7 +108,6 @@ import {
   startDeviceFlow,
 } from "./auth.js";
 import { isAuthConfigured } from "./auth-config.js";
-import { readSkillSource, writeSkillSource } from "@skills-bank/core";
 
 const CANONICAL_OWNER = "Tyler-Reagan";
 const CANONICAL_REPO = "skills-bank";
@@ -336,6 +354,482 @@ let registryRoot: string = resolveBootRegistryRoot();
 // explicit Rebuild via the `rebuildIndex` IPC. Silent no-op when the
 // CLI isn't installed.
 scanAndStampUpstreamFromLock(registryRoot);
+
+// ─── Upstream probe ─────────────────────────────────────────────────────────
+//
+// Periodic detection of upstream changes for skills with a `github`
+// upstream pointer. Probes are per-repo (one GitHub Git Trees fetch
+// covers every skill from that repo) and gated by a 5-minute TTL
+// cache so a burst of `upstream:probe` invocations doesn't hammer
+// the user's rate limit. Run at boot (after a brief warmup delay to
+// let the renderer paint) and every 6h thereafter; surfaced to the
+// renderer as `entry.upstreamUpdateAvailable` on `listRegistry`.
+//
+// Auth is the user's plan-02 OAuth token (5000/hr authenticated).
+// Unauthed users still see probes attempt against the unauth ceiling
+// (60/hr per IP) — usable for a small set of public repos, fragile
+// beyond that. AccountModal's "Sign in for 5000/hr" affordance is
+// the documented escape hatch.
+
+interface RepoProbeCacheEntry {
+  rootSha: string;
+  folderHashes: Map<string, string>;
+  fetchedAt: number;
+}
+
+interface SkillProbeResult {
+  latestHash: string;
+  probedAt: number;
+}
+
+const repoProbeCache = new Map<string, RepoProbeCacheEntry>();
+const probedUpdates = new Map<string, SkillProbeResult>();
+
+const PROBE_CACHE_TTL_MS = 5 * 60 * 1000;
+const PROBE_CADENCE_MS = 6 * 60 * 60 * 1000;
+const PROBE_BOOT_DELAY_MS = 5 * 1000;
+
+let probeInFlight: Promise<UpstreamProbeResult> | null = null;
+
+async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
+  if (probeInFlight) return probeInFlight;
+  probeInFlight = (async () => {
+    const probedAt = new Date().toISOString();
+    if (!registryRoot) return { probed: 0, updates: 0, probedAt };
+    let index;
+    try {
+      index = buildRegistryIndex(registryRoot);
+    } catch (err) {
+      console.warn("upstream probe: failed to read registry:", err);
+      return { probed: 0, updates: 0, probedAt };
+    }
+    const candidates = index.entries.filter(
+      (e) =>
+        e.source.upstream?.kind === "github" &&
+        typeof e.source.upstream.repo === "string" &&
+        typeof e.source.upstream.skillPath === "string" &&
+        typeof e.source.upstream.skillFolderHash === "string",
+    );
+    if (candidates.length === 0) {
+      return { probed: 0, updates: 0, probedAt };
+    }
+    const byRepo = new Map<string, typeof candidates>();
+    for (const e of candidates) {
+      const repo = e.source.upstream!.repo!;
+      const bucket = byRepo.get(repo);
+      if (bucket) bucket.push(e);
+      else byRepo.set(repo, [e]);
+    }
+    const token = getStoredToken();
+    let updates = 0;
+    for (const [repo, skills] of byRepo) {
+      let cache = repoProbeCache.get(repo);
+      const now = Date.now();
+      if (!cache || now - cache.fetchedAt > PROBE_CACHE_TTL_MS) {
+        const res = await probeRepoTree(repo, token);
+        if (!res.ok) {
+          console.warn(
+            `upstream probe: ${repo} failed (${res.status}): ${res.message}`,
+          );
+          continue;
+        }
+        const folderHashes = buildFolderHashMap(res.tree);
+        cache = { rootSha: res.rootSha, folderHashes, fetchedAt: now };
+        repoProbeCache.set(repo, cache);
+      }
+      for (const skill of skills) {
+        const upstream = skill.source.upstream!;
+        const folderPath = folderPathFromSkillPath(upstream.skillPath!);
+        const currentHash = cache.folderHashes.get(folderPath);
+        if (currentHash && currentHash !== upstream.skillFolderHash) {
+          probedUpdates.set(skill.name, {
+            latestHash: currentHash,
+            probedAt: now,
+          });
+          updates++;
+        } else {
+          probedUpdates.delete(skill.name);
+        }
+      }
+    }
+    notifyProbeComplete();
+    return { probed: byRepo.size, updates, probedAt };
+  })();
+  try {
+    return await probeInFlight;
+  } finally {
+    probeInFlight = null;
+  }
+}
+
+function buildFolderHashMap(tree: GitTreeEntry[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const entry of tree) {
+    if (entry.type === "tree") m.set(entry.path, entry.sha);
+  }
+  return m;
+}
+
+function notifyProbeComplete(): void {
+  const wins = BrowserWindow.getAllWindows();
+  for (const win of wins) {
+    if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, "complete");
+  }
+}
+
+function augmentWithProbedUpdates<T extends { name: string }>(
+  entries: T[],
+): T[] {
+  if (probedUpdates.size === 0) return entries;
+  return entries.map((e) =>
+    probedUpdates.has(e.name) ? { ...e, upstreamUpdateAvailable: true } : e,
+  );
+}
+
+ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
+
+/**
+ * Update or take-upstream backend. Both heal flows
+ * (`upstream-update-available` apply / `user-edited-with-upstream`
+ * revert) share the same underlying op: run `npx skills update <name>`
+ * to refresh the CLI's agent-dir copy, then for adopted skills mirror
+ * the result back into our registry and re-baseline the markers.
+ *
+ * v1 scope: tracked (non-adopted) skills work via the CLI's own state
+ * update — our next index walk picks up the new content. Adopted
+ * skills copy from `~/.agents/skills/<name>/` back into our registry
+ * folder (preserving our `.skills-bank.json` / `.skills-bank-hash`
+ * markers, which we rewrite after the copy).
+ *
+ * The npx invocation depends on `npx` being reachable on PATH; in
+ * packaged macOS builds launched from Finder, PATH may not include
+ * the user's node install. Surfaced as an actionable error rather
+ * than a silent failure.
+ */
+async function applyUpstreamUpdate(
+  name: string,
+): Promise<{ ok: boolean; message: string; error?: unknown }> {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const index = buildRegistryIndex(registryRoot);
+  const entry = index.entries.find((e) => e.name === name);
+  if (!entry) {
+    return { ok: false, message: `${name} is not in the registry` };
+  }
+  if (entry.source.upstream?.kind !== "github") {
+    return {
+      ok: false,
+      message: `${name} has no GitHub upstream — nothing to update`,
+    };
+  }
+
+  // Run `npx skills update <name> -g -y`. `-g` targets global skills
+  // (the CLI's `~/.agents/skills/` scope, which is where the lock
+  // file entries we mirror live). `-y` skips confirmation prompts.
+  try {
+    await execFileAsync("npx", ["-y", "skills", "update", name, "-g", "-y"], {
+      timeout: 120000,
+    });
+  } catch (err) {
+    const msg = (err as Error).message;
+    const hint = msg.includes("ENOENT") || msg.includes("not found")
+      ? " — is `npx` on the app's PATH? Try launching from a terminal."
+      : "";
+    return {
+      ok: false,
+      message: `npx skills update failed: ${msg}${hint}`,
+      error: err,
+    };
+  }
+
+  // Tracked path: CLI updated the agent-dir copy. Our next scan picks
+  // up the new content via external-entry rebuild. Re-probe so the
+  // upstream-update-available chip clears on this skill specifically.
+  if (entry.adopted === false) {
+    probedUpdates.delete(name);
+    notifyProbeComplete();
+    return { ok: true, message: `Updated ${name} via npx skills update.` };
+  }
+
+  // Adopted path: mirror the CLI's freshly-updated agent-dir content
+  // into our registry, then re-baseline our markers.
+  const cliAgentDir = path.join(os.homedir(), ".agents", "skills", name);
+  if (!fs.existsSync(cliAgentDir)) {
+    return {
+      ok: false,
+      message: `npx ran but CLI agent dir not found at ${cliAgentDir}; update may have failed silently`,
+    };
+  }
+
+  const registrySkillDir = path.join(registryRoot, "skills", name);
+  // Read our existing source marker so we can preserve the bundled/
+  // yours axis and the canon-related fields while replacing the
+  // upstream block with fresh values from the lock file.
+  const existingSource = readSkillSource(registrySkillDir);
+
+  // Wipe + recopy. We can't merge file-by-file because the upstream
+  // may have deleted files. After the copy, rewrite our app-state
+  // sidecars from existing source + fresh upstream values.
+  try {
+    fs.rmSync(registrySkillDir, { recursive: true, force: true });
+    fs.cpSync(cliAgentDir, registrySkillDir, {
+      recursive: true,
+      dereference: true, // CLI may symlink internally; flatten to real files
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      message: `failed to mirror ${cliAgentDir} into registry: ${(err as Error).message}`,
+      error: err,
+    };
+  }
+
+  // Refresh the upstream pointer from the lock file (skillFolderHash,
+  // fetchedAt) and re-baseline the SHA-256 against the new content.
+  const lock = readSkillLockFile(defaultSkillLockPath());
+  const lockEntry = lock?.skills[name];
+  if (lockEntry && existingSource.upstream) {
+    const next: typeof existingSource = {
+      ...existingSource,
+      upstream: {
+        ...existingSource.upstream,
+        skillFolderHash:
+          typeof lockEntry.skillFolderHash === "string"
+            ? lockEntry.skillFolderHash
+            : existingSource.upstream.skillFolderHash,
+        fetchedAt:
+          typeof lockEntry.updatedAt === "string"
+            ? lockEntry.updatedAt
+            : new Date().toISOString(),
+      },
+    };
+    writeSkillSource(registrySkillDir, next);
+  }
+  const newBaseline = hashSkillFolder(registrySkillDir);
+  if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
+
+  probedUpdates.delete(name);
+  notifyProbeComplete();
+  return { ok: true, message: `Updated ${name} into the registry.` };
+}
+
+ipcMain.handle(IPC.upstreamUpdate, async (_e, name: string) =>
+  applyUpstreamUpdate(name),
+);
+
+// ─── Repo-metadata enrichment ───────────────────────────────────────────────
+//
+// Display-time fetch for source-repo info that doesn't fit the probe
+// runner's purpose (probe = "did the tree change?", metadata =
+// "what is this repo's identity?"). Cached per-repo with a 15-min
+// TTL — repo identity changes orders of magnitude less often than
+// content. Errors degrade to nulls so the drawer just omits missing
+// chips.
+
+interface RepoMetadataCacheEntry {
+  metadata: UpstreamRepoMetadata;
+  fetchedAt: number;
+}
+
+const repoMetadataCache = new Map<string, RepoMetadataCacheEntry>();
+const REPO_METADATA_TTL_MS = 15 * 60 * 1000;
+
+async function getRepoMetadata(repo: string): Promise<UpstreamRepoMetadata> {
+  const cached = repoMetadataCache.get(repo);
+  if (cached && Date.now() - cached.fetchedAt < REPO_METADATA_TTL_MS) {
+    return cached.metadata;
+  }
+  const empty: UpstreamRepoMetadata = {
+    stars: null,
+    description: null,
+    defaultBranch: null,
+  };
+  try {
+    const token = getStoredToken();
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "skills-bank",
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`https://api.github.com/repos/${repo}`, {
+      headers,
+    });
+    if (!res.ok) {
+      repoMetadataCache.set(repo, { metadata: empty, fetchedAt: Date.now() });
+      return empty;
+    }
+    const body = (await res.json()) as {
+      stargazers_count?: number;
+      description?: string | null;
+      default_branch?: string;
+    };
+    const metadata: UpstreamRepoMetadata = {
+      stars: typeof body.stargazers_count === "number"
+        ? body.stargazers_count
+        : null,
+      description: typeof body.description === "string"
+        ? body.description
+        : null,
+      defaultBranch: typeof body.default_branch === "string"
+        ? body.default_branch
+        : null,
+    };
+    repoMetadataCache.set(repo, { metadata, fetchedAt: Date.now() });
+    return metadata;
+  } catch {
+    repoMetadataCache.set(repo, { metadata: empty, fetchedAt: Date.now() });
+    return empty;
+  }
+}
+
+ipcMain.handle(IPC.upstreamRepoMetadata, async (_e, repo: string) =>
+  getRepoMetadata(repo),
+);
+
+interface LastCommitCacheEntry {
+  commit: UpstreamLastCommit;
+  fetchedAt: number;
+}
+
+const lastCommitCache = new Map<string, LastCommitCacheEntry>();
+const LAST_COMMIT_TTL_MS = 15 * 60 * 1000;
+
+async function getLastCommit(
+  repo: string,
+  skillPath: string,
+): Promise<UpstreamLastCommit> {
+  const key = `${repo}:${skillPath}`;
+  const cached = lastCommitCache.get(key);
+  if (cached && Date.now() - cached.fetchedAt < LAST_COMMIT_TTL_MS) {
+    return cached.commit;
+  }
+  const empty: UpstreamLastCommit = {
+    sha: null,
+    date: null,
+    message: null,
+  };
+  try {
+    const token = getStoredToken();
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "skills-bank",
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    // Query the folder (strip the `/SKILL.md` leaf) so the result
+    // reflects any change in the skill's content, not just changes
+    // to SKILL.md itself.
+    const folder = skillPath.replace(/\/SKILL\.md$/, "");
+    const url = `https://api.github.com/repos/${repo}/commits?path=${encodeURIComponent(
+      folder,
+    )}&per_page=1`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      lastCommitCache.set(key, { commit: empty, fetchedAt: Date.now() });
+      return empty;
+    }
+    const body = (await res.json()) as Array<{
+      sha?: string;
+      commit?: {
+        author?: { date?: string };
+        message?: string;
+      };
+    }>;
+    if (!Array.isArray(body) || body.length === 0) {
+      lastCommitCache.set(key, { commit: empty, fetchedAt: Date.now() });
+      return empty;
+    }
+    const top = body[0]!;
+    const message = top.commit?.message;
+    const commit: UpstreamLastCommit = {
+      sha: typeof top.sha === "string" ? top.sha : null,
+      date: typeof top.commit?.author?.date === "string"
+        ? top.commit.author.date
+        : null,
+      message: typeof message === "string"
+        ? message.split("\n")[0]?.slice(0, 120) ?? null
+        : null,
+    };
+    lastCommitCache.set(key, { commit, fetchedAt: Date.now() });
+    return commit;
+  } catch {
+    lastCommitCache.set(key, { commit: empty, fetchedAt: Date.now() });
+    return empty;
+  }
+}
+
+ipcMain.handle(
+  IPC.upstreamLastCommit,
+  async (_e, repo: string, skillPath: string) => getLastCommit(repo, skillPath),
+);
+
+/**
+ * Manual upstream picker handler. Stamps the user's choice into the
+ * skill's `.skills-bank.json` after validating (for the github case)
+ * that the supplied repo + path actually resolves on GitHub. Failures
+ * report a clear error rather than writing a bogus marker.
+ */
+async function setManualUpstream(
+  name: string,
+  choice: UpstreamManualChoice,
+): Promise<{ ok: boolean; message: string }> {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const skillDir = path.join(registryRoot, "skills", name);
+  if (!fs.existsSync(skillDir)) {
+    return { ok: false, message: `${name} is not adopted into the registry` };
+  }
+  const existing = readSkillSource(skillDir);
+  if (choice.kind === "none") {
+    writeSkillSource(skillDir, { ...existing, upstream: { kind: "none" } });
+    return { ok: true, message: `Marked ${name} as not from any upstream.` };
+  }
+  if (!choice.repo || !choice.skillPath) {
+    return { ok: false, message: "repo and skillPath are required" };
+  }
+  if (!/^[\w.-]+\/[\w.-]+$/.test(choice.repo)) {
+    return { ok: false, message: `"${choice.repo}" isn't a valid owner/repo` };
+  }
+  // Validate against GitHub: probe the folder. Anything other than
+  // an ok response is treated as "couldn't verify" and rejected.
+  const folder = folderPathFromSkillPath(choice.skillPath);
+  const probe = await probeRepoTree(choice.repo, getStoredToken());
+  if (!probe.ok) {
+    return {
+      ok: false,
+      message: `Couldn't probe ${choice.repo}: ${probe.message}`,
+    };
+  }
+  const folderHash = findFolderHash(probe.tree, folder);
+  if (!folderHash) {
+    return {
+      ok: false,
+      message: `${choice.repo} has no folder at ${folder}`,
+    };
+  }
+  const now = new Date().toISOString();
+  writeSkillSource(skillDir, {
+    ...existing,
+    upstream: {
+      kind: "github",
+      repo: choice.repo,
+      skillPath: choice.skillPath,
+      skillFolderHash: folderHash,
+      installedAt: existing.upstream?.installedAt ?? now,
+      fetchedAt: now,
+    },
+  });
+  // Baseline the current on-disk content so drift detection
+  // disengages until the user actually edits.
+  const baseline = hashSkillFolder(skillDir);
+  if (baseline) writeSyncedHash(skillDir, baseline);
+  return { ok: true, message: `Stamped ${name} as from ${choice.repo}.` };
+}
+
+ipcMain.handle(
+  IPC.upstreamSetManual,
+  async (_e, name: string, choice: UpstreamManualChoice) =>
+    setManualUpstream(name, choice),
+);
 
 // Resolve registry source at boot. Stored values are respected; an
 // absent value signals a fresh install and is returned as null so the
@@ -780,7 +1274,7 @@ ipcMain.handle(IPC.listRegistry, () => {
   // session and silently overwriting git info that the explicit
   // Rebuild-index button had persisted. Mutation handlers and the
   // explicit rebuildIndex IPC are responsible for writing.
-  return buildRegistryIndex(registryRoot).entries;
+  return augmentWithProbedUpdates(buildRegistryIndex(registryRoot).entries);
 });
 
 ipcMain.handle(IPC.listInstalled, (_e, customDirs?: string[]) => {
@@ -1100,15 +1594,27 @@ ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
     };
   }
   const skillDir = path.join(registryRoot, entry.path);
+  // Dispatch based on the source axis carrying the drift signal.
+  // - Skills with a per-skill `upstream` pointer route through
+  //   `acceptDriftSeverUpstream` — clears the upstream and drops
+  //   the baseline so future probes don't surface it as having an
+  //   update available. Source axis (bundled/yours) is preserved.
+  // - Skills without an upstream (the original bundled-sync drift
+  //   case) route through `acceptDriftKeepLocal` as before — flips
+  //   source to "yours" so future syncs leave the skill alone.
+  const isUpstream = entry.source.upstream?.kind === "github";
   try {
-    acceptDriftKeepLocal(skillDir);
+    if (isUpstream) acceptDriftSeverUpstream(skillDir);
+    else acceptDriftKeepLocal(skillDir);
     buildRegistryIndex(registryRoot, {
       includeGitInfo: true,
       writeFile: true,
     });
     return {
       ok: true,
-      message: `Kept local edits to ${name}; future syncs will leave it alone.`,
+      message: isUpstream
+        ? `Severed upstream link on ${name}; future probes will leave it alone.`
+        : `Kept local edits to ${name}; future syncs will leave it alone.`,
     };
   } catch (err) {
     return (() => {
@@ -2381,6 +2887,15 @@ void app.whenReady().then(() => {
     // Fire-and-forget: any error broadcasts to the renderer via the error event.
     void autoUpdater.checkForUpdates();
   }
+  // Upstream probe: fire once shortly after the renderer paints, then
+  // every 6h. Per-repo 5-min TTL cache absorbs back-pressure from
+  // user-explicit `upstream:probe` invocations between scheduled runs.
+  setTimeout(() => {
+    void runUpstreamProbe();
+  }, PROBE_BOOT_DELAY_MS);
+  setInterval(() => {
+    void runUpstreamProbe();
+  }, PROBE_CADENCE_MS);
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
