@@ -110,3 +110,23 @@ When starting work on a plan, create a `feat/<plan-slug>` branch following the r
 - **Persist multi-milestone plans before implementing.** Drop a `docs/plans/<slug>.md` first; one PR per plan; integrate rationale + conflict-audit inline rather than in side documents. Filenames are descriptive (no leading number); execution order is documented in the Plans section above.
 - **CI logs: read past the headline error.** Scan `##[warning]` lines too; the visible error may already be fixed by a prior step.
 - **Don't fabricate skill names or paths from training data.** Verify with `find` / `grep` before referring to a specific file.
+
+### Heal local maintainer state
+
+After breaking changes to the `skills/` layout (e.g. the v0.11.3 directory split), the maintainer's host accumulates two kinds of local drift. Both are safe to heal without touching `src/`.
+
+**Broken symlinks in `~/.claude/skills/` and `~/.cursor/skills/`** — links that targeted the pre-split flat path. Sweep + repoint:
+
+```sh
+for link in $(find ~/.claude/skills/ ~/.cursor/skills/ -maxdepth 1 -type l ! -exec test -e {} \; -print); do
+  name=$(basename "$link")
+  for bucket in personal vendored; do
+    target="$(pwd)/skills/$bucket/$name"
+    [ -d "$target" ] && ln -sfn "$target" "$link" && break
+  done
+done
+```
+
+Run from the repo root. Symlinks whose name no longer exists in either bucket are uninstalled skills — list them and leave them alone.
+
+**Unstaged churn in `skills/**/.skills-bank.json` after running the app.** Diff vs `HEAD`: if `skillFolderHash` (or `installedAt`/`repo`/`skillPath`) changed, that's a legitimate baseline shift — commit. If only `fetchedAt` changed, it's runtime probe noise — `git restore` and capture details in `docs/bug-reports/` for the probe path to fix. For deleted `meta.json` files, run `pnpm validate` in both states: missing meta.json fails validation, so restore.
