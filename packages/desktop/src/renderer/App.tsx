@@ -21,7 +21,6 @@ import { RegisterModal } from "./components/RegisterModal.js";
 import {
   Header,
   type Density,
-  type RescanState,
   type Theme,
 } from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
@@ -52,6 +51,12 @@ import { AccountModal } from "./components/AccountModal.js";
 import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
+import { useRescanController } from "./hooks/useRescanController.js";
+import {
+  RegistryHostProvider,
+  useRegistryHost,
+  type ToastAction,
+} from "./RegistryHostContext.js";
 import type {
   AuthStatus,
   SyncStatus,
@@ -137,6 +142,24 @@ function readTagFilterLS(): string[] {
 }
 
 export function App(): React.ReactElement {
+  return (
+    <RegistryHostProvider>
+      <AppContent />
+    </RegistryHostProvider>
+  );
+}
+
+function AppContent(): React.ReactElement {
+  const {
+    flash,
+    flashWithAction,
+    flashError,
+    dismissToast,
+    pushAppError,
+    dismissAppError,
+    appErrors,
+  } = useRegistryHost();
+
   const [tab, setTab] = useState<TabId>(
     (readLS(LS_KEYS.tab, "browse") as TabId) ?? "browse",
   );
@@ -144,36 +167,6 @@ export function App(): React.ReactElement {
   const [installed, setInstalled] = useState<InstalledSkill[]>([]);
   const [registryRoot, setRegistryRoot] = useState<string | null>(null);
   const [configChecked, setConfigChecked] = useState(false);
-  type ToastAction = { label: string; onClick: () => void };
-  type ToastShape = {
-    message: string;
-    /** When set, the toast doesn't auto-dismiss; user must click ×. */
-    sticky?: boolean;
-    /** Visual severity. "error" gets a red border + persistent close. */
-    severity?: "info" | "error";
-    /** Primary action button (e.g. "Sign in"). */
-    action?: ToastAction;
-    /** Optional secondary action — typically Copy details / Diagnostics. */
-    secondaryAction?: ToastAction;
-    /** Hidden diagnostic payload; "Copy details" copies this to clipboard. */
-    diagnostic?: string;
-  };
-  const [toast, setToast] = useState<ToastShape | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Persistent error surface. Stacks vertically; each entry is
-  // individually dismissable; failures land here (toasts stay for
-  // success confirmation only).
-  const [appErrors, setAppErrors] = useState<
-    Array<{ id: number; error: import("@skills-bank/core").AppError }>
-  >([]);
-  const appErrorIdRef = useRef(0);
-  const pushAppError = (e: import("@skills-bank/core").AppError) => {
-    const id = ++appErrorIdRef.current;
-    setAppErrors((prev) => [...prev, { id, error: e }]);
-  };
-  const dismissAppError = (id: number) => {
-    setAppErrors((prev) => prev.filter((x) => x.id !== id));
-  };
   // Typed string-key reader for AppError.copyableDetails. Returns the
   // value when present and a string; null otherwise.
   const detailString = (
@@ -329,23 +322,6 @@ export function App(): React.ReactElement {
     }
   }, []);
   const [initialLoading, setInitialLoading] = useState(true);
-  // Header Rescan button state machine. Covers the whole user-triggered
-  // rebuild + upstream-probe cycle so the user gets unbroken visual
-  // feedback while the probe runs. Boot probes / 6h periodic probes
-  // never set this — `userTriggeredProbeRef` only flips true on a
-  // header click, gating the state machine in the probe-complete
-  // subscription.
-  const [rescanState, setRescanState] = useState<RescanState>({
-    phase: "idle",
-  });
-  const userTriggeredProbeRef = useRef(false);
-  const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
-    },
-    [],
-  );
   const [rebuilding, setRebuilding] = useState(false);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
@@ -498,66 +474,6 @@ export function App(): React.ReactElement {
     writeLS(LS_KEYS.tab, t);
   };
 
-  const flash = useCallback((msg: string) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast({ message: msg });
-    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
-  }, []);
-
-  const flashWithAction = useCallback(
-    (msg: string, label: string, onClick: () => void) => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      setToast({
-        message: msg,
-        action: {
-          label,
-          onClick: () => {
-            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-            setToast(null);
-            onClick();
-          },
-        },
-      });
-      toastTimerRef.current = setTimeout(() => setToast(null), 6000);
-    },
-    [],
-  );
-
-  /**
-   * Sticky error toast — no auto-dismiss; user clicks × to close.
-   * Always offers a "Copy details" affordance writing the message
-   * (plus the optional `diagnostic` blob) to clipboard, so the user
-   * can paste it into another agent without retyping.
-   */
-  const flashError = useCallback(
-    (
-      msg: string,
-      opts: {
-        action?: ToastAction;
-        diagnostic?: string;
-      } = {},
-    ) => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      const diagnostic = opts.diagnostic ?? msg;
-      const copyAction: ToastAction = {
-        label: "Copy details",
-        onClick: () => {
-          void navigator.clipboard.writeText(diagnostic);
-        },
-      };
-      setToast({
-        message: msg,
-        sticky: true,
-        severity: "error",
-        action: opts.action,
-        secondaryAction: copyAction,
-        diagnostic,
-      });
-      // No timer — sticky toasts persist until the user dismisses.
-    },
-    [],
-  );
-
   /**
    * Handle an UpstreamUpdateResult uniformly across the three Update
    * call sites (drawer Update, drawer Take-upstream, UpdatesModal).
@@ -582,8 +498,7 @@ export function App(): React.ReactElement {
           ? {
               label: "Sign in",
               onClick: () => {
-                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-                setToast(null);
+                dismissToast();
                 setShowAccount(true);
               },
             }
@@ -634,6 +549,21 @@ export function App(): React.ReactElement {
     };
   }, [settings.customSkillsDirs]);
 
+  // Header Rescan button — the whole user-triggered rebuild + upstream-
+  // probe state machine, plus the probe-complete listener that drives
+  // the rate-limit toast and the "View" deep-link. Owns rescanState,
+  // userTriggeredProbeRef, and doneTimerRef internally.
+  const rescan = useRescanController({
+    refresh,
+    flashError,
+    setRegistryFilters,
+    setTabPersisted,
+    onRequestSignIn: useCallback(() => {
+      dismissToast();
+      setShowAccount(true);
+    }, [dismissToast]),
+  });
+
   // Common post-action plumbing for unregister retries: dismiss the
   // originating panel on success, flash, refresh. Failures route the
   // new structured error back through the panel.
@@ -661,7 +591,7 @@ export function App(): React.ReactElement {
     if (!r.ok || !r.path) return; // user canceled
     const chosen = r.path;
     if (settings.customSkillsDirs.includes(chosen)) {
-      setToast({ message: "That directory is already in the scan list." });
+      flash("That directory is already in the scan list.");
       return;
     }
     saveSettings({
@@ -681,29 +611,6 @@ export function App(): React.ReactElement {
     },
     [settings, saveSettings, refresh],
   );
-
-  const onRefreshClick = useCallback(async () => {
-    // Full sweep: rebuild the index (which lock-file-scans + persists +
-    // fires the probe), then re-fetch the registry. The probe runs
-    // async on the main side — we flip the button into "working" and
-    // wait for the probe-complete event to advance to "done" (or back
-    // to idle on rate-limit, where the sticky-error toast carries the
-    // message).
-    if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
-    userTriggeredProbeRef.current = true;
-    setRescanState({ phase: "working" });
-    try {
-      await window.skillsBank.rebuildIndex();
-      await refresh();
-    } catch {
-      // rebuildIndex failures fall through; clear the working state
-      // so the user can retry. The IPC handler's own error path
-      // returns ok:false with a message we could surface, but a
-      // bare throw here means something deeper went wrong.
-      userTriggeredProbeRef.current = false;
-      setRescanState({ phase: "idle" });
-    }
-  }, [refresh]);
 
   useEffect(() => {
     void refresh().finally(() => setInitialLoading(false));
@@ -761,79 +668,6 @@ export function App(): React.ReactElement {
     })();
   }, []);
 
-  // Main process completes an upstream probe → re-fetch registry so
-  // the new `upstreamUpdateAvailable` flags surface as card chips,
-  // surface rate-limit failures as a sticky error toast, and advance
-  // the user-triggered Rescan button's state machine (working → done
-  // → idle, or working → idle on rate-limit).
-  useEffect(() => {
-    if (!window.skillsBank.onUpstreamProbeComplete) return;
-    return window.skillsBank.onUpstreamProbeComplete((event) => {
-      if (event.rateLimit) {
-        const resetAt = new Date(event.rateLimit.resetAt);
-        const resetText = resetAt.toLocaleTimeString(undefined, {
-          hour: "numeric",
-          minute: "2-digit",
-        });
-        const msg =
-          `Upstream probe rate-limited (${event.rateLimit.limit}/hr` +
-          `${event.rateLimit.unauthenticated ? ", unauthenticated" : ""}). ` +
-          `Resets at ${resetText}.`;
-        const action = event.rateLimit.unauthenticated
-          ? {
-              label: "Sign in",
-              onClick: () => {
-                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-                setToast(null);
-                setShowAccount(true);
-              },
-            }
-          : undefined;
-        flashError(msg, {
-          ...(action ? { action } : {}),
-          diagnostic:
-            `probe rate-limited\n` +
-            `limit=${event.rateLimit.limit}/hr\n` +
-            `remaining=${event.rateLimit.remaining}\n` +
-            `resetsAt=${event.rateLimit.resetAt}\n` +
-            `authenticated=${!event.rateLimit.unauthenticated}` +
-            (event.failedRepos?.length
-              ? `\nfailedRepos=${event.failedRepos.join(",")}`
-              : ""),
-        });
-      }
-      // Advance the Rescan button's state machine only when the user
-      // started the probe via the header click. Boot probes and the
-      // 6h periodic both fire this event too — letting them drive the
-      // button would surprise the user with a "checking…" flash on
-      // every launch.
-      if (userTriggeredProbeRef.current) {
-        userTriggeredProbeRef.current = false;
-        if (event.rateLimit) {
-          // Rate-limit toast carries the message; drop the button to
-          // idle without a "done" flash so we don't claim success.
-          setRescanState({ phase: "idle" });
-        } else {
-          const updates = event.updates ?? 0;
-          setRescanState({ phase: "done", updates });
-          if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
-          // Updates>0 case: the button now hosts an actionable "View"
-          // CTA. Don't auto-fade — the user dismisses it by clicking
-          // View (which navigates and clears the state) or by
-          // clicking Rescan again. Auto-fading here would yank the
-          // affordance out from under a slow reader.
-          if (updates === 0) {
-            doneTimerRef.current = setTimeout(
-              () => setRescanState({ phase: "idle" }),
-              1500,
-            );
-          }
-        }
-      }
-      void refresh();
-    });
-  }, [refresh, flashError]);
-
   // Initial auth/persona snapshot. The LoginScreen is shown until persona
   // resolves to convenience or power.
   useEffect(() => {
@@ -888,25 +722,6 @@ export function App(): React.ReactElement {
     },
     [flash, refresh],
   );
-
-  // Rescan done-state "View" deep-link. Flip the Updates chip on,
-  // bounce the user into Browse, scroll the grid to the top, then
-  // clear the done badge. Owns the doneTimer ref too — a stale
-  // timer left over from updates=0 transitions would otherwise pull
-  // the rug while the user reads the filtered grid.
-  const viewRescanUpdates = useCallback(() => {
-    if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
-    setRegistryFilters(new Set(["updates"]));
-    setTabPersisted("browse");
-    setRescanState({ phase: "idle" });
-    // Scroll the content scroll container to the top after React
-    // commits the tab/filter change. Querying the DOM is fine here —
-    // there's exactly one `.content` element in the layout.
-    setTimeout(() => {
-      const el = document.querySelector<HTMLElement>(".content");
-      if (el) el.scrollTo({ top: 0, behavior: "smooth" });
-    }, 0);
-  }, []);
 
   // Change linked repo is universal — always opens RepoPicker.
   // The folder-picker path (Import a registry from disk) is a separate
@@ -1031,7 +846,7 @@ export function App(): React.ReactElement {
           setShowShortcuts(true);
           break;
         case "refresh":
-          void onRefreshClick();
+          void rescan.onRefreshClick();
           break;
         case "sync":
           void sync();
@@ -1046,7 +861,7 @@ export function App(): React.ReactElement {
         // back-compat with the IPC shape; the cases are unreachable.
       }
     });
-  }, [onRefreshClick, sync, checkForUpdates]);
+  }, [rescan, sync, checkForUpdates]);
 
   const rebuild = useCallback(async () => {
     setRebuilding(true);
@@ -1179,8 +994,8 @@ export function App(): React.ReactElement {
   return (
     <div className="app">
         <Header
-          rescanState={rescanState}
-          onRefresh={() => void onRefreshClick()}
+          rescanState={rescan.state}
+          onRefresh={() => void rescan.onRefreshClick()}
           theme={theme}
           onToggleTheme={toggleTheme}
           density={density}
@@ -1196,7 +1011,7 @@ export function App(): React.ReactElement {
           onShowUpdate={openUpdateModal}
           pendingSkillUpdates={pendingSkillUpdates.length}
           onShowUpdates={() => setShowUpdatesModal(true)}
-          onViewRescanUpdates={viewRescanUpdates}
+          onViewRescanUpdates={rescan.onViewUpdates}
         />
         {appErrors.length > 0 && (
           <div className="error-panel-stack">
@@ -2295,40 +2110,6 @@ export function App(): React.ReactElement {
             );
           })()}
 
-        {toast && (
-          <div
-            className={`toast${toast.severity === "error" ? " toast-error" : ""}`}
-            role={toast.severity === "error" ? "alert" : "status"}
-            aria-live={toast.severity === "error" ? "assertive" : "polite"}
-          >
-            <span className="toast-message">{toast.message}</span>
-            {toast.action && (
-              <button className="toast-action" onClick={toast.action.onClick}>
-                {toast.action.label}
-              </button>
-            )}
-            {toast.secondaryAction && (
-              <button
-                className="toast-action secondary"
-                onClick={toast.secondaryAction.onClick}
-              >
-                {toast.secondaryAction.label}
-              </button>
-            )}
-            {toast.sticky && (
-              <button
-                className="toast-close"
-                aria-label="Dismiss"
-                onClick={() => {
-                  if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-                  setToast(null);
-                }}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        )}
     </div>
   );
 }
