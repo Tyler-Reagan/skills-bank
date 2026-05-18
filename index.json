@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-05-18T15:17:31.417Z",
+  "generatedAt": "2026-05-18T16:24:32.577Z",
   "registry": "skills-bank",
   "entries": [
     {
       "name": "404-page-generator",
       "description": "When the user wants to create, optimize, or audit 404 error pages. Also use when the user mentions \"404 page,\" \"404 error,\" \"error page,\" \"page not found,\" \"broken link page,\" \"404 design,\" \"custom 404,\" \"404 redirect,\" \"404 page UX,\" or \"404 recovery.\" For sitewide page planning, use website-structure.",
       "version": "1.0.1",
-      "path": "skills/404-page-generator",
+      "path": "skills/vendored/404-page-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -22,18 +22,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "add-app-to-server",
       "description": "This skill should be used when the user asks to \"add an app to my MCP server\", \"add UI to my MCP server\", \"add a view to my MCP tool\", \"enrich MCP tools with UI\", \"add interactive UI to existing server\", \"add MCP Apps to my server\", or needs to add interactive UI capabilities to an existing MCP server that already has tools. Provides guidance for analyzing existing tools and adding MCP Apps UI resources.",
-      "path": "skills/add-app-to-server",
+      "path": "skills/vendored/add-app-to-server",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -49,19 +45,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "api-page-generator",
       "description": "When the user wants to create, optimize, or audit the API introduction/overview page. Also use when the user mentions \"API page,\" \"API landing page,\" \"/api page,\" \"API overview,\" \"developer landing,\" \"API marketing,\" or \"API for developers.\" Note: API documentation (endpoint reference) lives in docs; use docs-page-generator.",
       "version": "1.0.1",
-      "path": "skills/api-page-generator",
+      "path": "skills/vendored/api-page-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -77,19 +69,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "brand-visual-generator",
       "description": "When the user wants to define, audit, or apply visual identity (typography, colors, spacing, design tokens, frontend aesthetics). Also use when the user mentions \"brand style guide,\" \"visual identity,\" \"design system,\" \"typography,\" \"color palette,\" \"brand guidelines,\" \"AI brand aesthetics,\" \"brand colors,\" \"font choices,\" \"spacing system,\" \"design tokens,\" \"motion,\" \"distinctive design,\" \"frontend aesthetics,\" \"PowerPoint theme,\" \"Google Slides brand,\" or \"slide master colors.\" For brand story, positioning, and voice, use branding.",
       "version": "1.4.0",
-      "path": "skills/brand-visual-generator",
+      "path": "skills/vendored/brand-visual-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -105,19 +93,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "branding",
       "description": "When the user wants to define, audit, or apply brand strategy—purpose, values, positioning, storytelling, voice, narrative (not only visuals). Also use when the user mentions \"brand strategy,\" \"brand story,\" \"brand storytelling,\" \"brand voice,\" \"brand identity,\" \"brand guidelines,\" \"brand purpose,\" \"brand values,\" \"origin story,\" \"brand narrative,\" \"brand personality,\" \"brand archetype,\" \"slide deck branding,\" \"PPT brand colors,\" or \"document style guide.\" For typography, colors, design tokens, and frontend visuals, use brand-visual-generator.",
       "version": "1.2.0",
-      "path": "skills/branding",
+      "path": "skills/vendored/branding",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -133,19 +117,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "carousel",
       "description": "When the user wants to design, optimize, or audit carousel/slider layouts for content display. Also use when the user mentions \"carousel,\" \"slider,\" \"carousel layout,\" \"testimonial carousel,\" \"gallery carousel,\" \"quote carousel,\" \"image slider,\" or \"carousel accessibility.\" For hero-area patterns, use hero-generator.",
       "version": "1.1.0",
-      "path": "skills/carousel",
+      "path": "skills/vendored/carousel",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -161,18 +141,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "caveman",
       "description": ">",
-      "path": "skills/caveman",
+      "path": "skills/vendored/caveman",
       "source": {
         "source": "yours",
         "upstream": {
@@ -186,6 +162,7 @@
         }
       },
       "adopted": true,
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": false
     },
@@ -193,7 +170,7 @@
       "name": "competitor-research",
       "description": "When the user wants to analyze competitors for SEO, content, backlinks, or positioning. Also use when the user mentions \"competitor analysis,\" \"competitor research,\" \"competitor keywords,\" \"competitor backlinks,\" \"link gap,\" \"content gap,\" \"competitor content,\" \"competitive analysis,\" or \"competitor comparison.\" For content roadmap, use content-strategy.",
       "version": "1.2.1",
-      "path": "skills/competitor-research",
+      "path": "skills/vendored/competitor-research",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -209,19 +186,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "content-optimization",
       "description": "When the user wants to optimize content for SEO—word count, H2 keywords, keyword density, multimedia, tables, lists. Also use when the user mentions \"content length,\" \"word count,\" \"keyword stuffing,\" \"H2 keywords,\" \"keyword density,\" \"tables,\" \"bullet points,\" or \"content structure.\" For keywords, use keyword-research.",
       "version": "1.2.1",
-      "path": "skills/content-optimization",
+      "path": "skills/vendored/content-optimization",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -237,19 +210,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "content-strategy",
       "description": "When the user wants to plan content for SEO, create content calendar, or build topic clusters. Also use when the user mentions \"content strategy,\" \"content plan,\" \"topic clusters,\" \"pillar content,\" \"pillar page,\" \"cluster articles,\" \"editorial calendar,\" \"content hub,\" \"content planning,\" \"content clusters,\" \"topic cluster strategy,\" \"content strategy for SEO,\" or \"content calendar.\" For editorial mix, use content-marketing.",
       "version": "1.1.1",
-      "path": "skills/content-strategy",
+      "path": "skills/vendored/content-strategy",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -265,18 +234,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "convert-web-app",
       "description": "This skill should be used when the user asks to \"add MCP App support to my web app\", \"turn my web app into a hybrid MCP App\", \"make my web page work as an MCP App too\", \"wrap my existing UI as an MCP App\", \"convert iframe embed to MCP App\", \"turn my SPA into an MCP App\", or needs to add MCP App support to an existing web application while keeping it working standalone. Provides guidance for analyzing existing web apps and creating a hybrid web + MCP App with server-side tool and resource registration.",
-      "path": "skills/convert-web-app",
+      "path": "skills/vendored/convert-web-app",
       "source": {
         "source": "yours",
         "upstream": {
@@ -290,6 +255,7 @@
         }
       },
       "adopted": true,
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": false
     },
@@ -297,7 +263,7 @@
       "name": "core-web-vitals",
       "description": "When the user wants to optimize Core Web Vitals, fix LCP, INP, or CLS issues. Also use when the user mentions \"Core Web Vitals,\" \"CWV,\" \"LCP,\" \"INP,\" \"CLS,\" \"FID,\" \"page speed,\" \"page performance,\" \"Largest Contentful Paint,\" \"Interaction to Next Paint,\" \"Cumulative Layout Shift,\" or \"Page Experience.\" For GSC CWV, use google-search-console.",
       "version": "1.0.1",
-      "path": "skills/core-web-vitals",
+      "path": "skills/vendored/core-web-vitals",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -313,18 +279,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "create-mcp-app",
       "description": "This skill should be used when the user asks to \"create an MCP App\", \"add a UI to an MCP tool\", \"build an interactive MCP View\", \"scaffold an MCP App\", or needs guidance on MCP Apps SDK patterns, UI-resource registration, MCP App lifecycle, or host integration. Provides comprehensive guidance for building MCP Apps with interactive UIs.",
-      "path": "skills/create-mcp-app",
+      "path": "skills/vendored/create-mcp-app",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -340,18 +302,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "create-readme",
       "description": "Create a README.md file for the project",
-      "path": "skills/create-readme",
+      "path": "skills/vendored/create-readme",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -367,18 +325,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "d3-viz",
       "description": "Creating interactive data visualisations using d3.js. This skill should be used when creating custom charts, graphs, network diagrams, geographic visualisations, or any complex SVG-based data visualisation that requires fine-grained control over visual elements, transitions, or interactions. Use this for bespoke visualisations beyond standard charting libraries, whether in React, Vue, Svelte, vanilla JavaScript, or any other environment.",
-      "path": "skills/d3-viz",
+      "path": "skills/vendored/d3-viz",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -394,19 +348,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "docs-page-generator",
       "description": "When the user wants to create, optimize, or structure a documentation site. Also use when the user mentions \"docs,\" \"documentation site,\" \"docs subdomain,\" \"docs.yourdomain.com,\" \"help center,\" \"knowledge base,\" \"Getting Started,\" \"API Reference,\" \"user guides,\" or \"tutorials.\" For API marketing landing, use api-page-generator.",
       "version": "1.0.1",
-      "path": "skills/docs-page-generator",
+      "path": "skills/vendored/docs-page-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -422,18 +372,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "electron",
       "description": "Build cross-platform desktop applications with Electron, covering main/renderer process architecture, IPC communication, BrowserWindow management, menus, tray icons, packaging, and security best practices. Use when the user asks about Electron, needs to create desktop applications, implement Electron features, or build cross-platform desktop apps.",
-      "path": "skills/electron",
+      "path": "skills/vendored/electron",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -449,19 +395,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "favicon-generator",
       "description": "When the user wants to implement, optimize, or audit favicon and app icons. Also use when the user mentions \"favicon,\" \"app icon,\" \"browser icon,\" \"touch icon,\" \"PWA icon,\" \"favicon sizes,\" \"apple-touch-icon,\" \"favicon.ico,\" \"site icon,\" or \"tab icon.\" For visual system, use brand-visual-generator.",
       "version": "1.0.1",
-      "path": "skills/favicon-generator",
+      "path": "skills/vendored/favicon-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -477,18 +419,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "find-skills",
       "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
-      "path": "skills/find-skills",
+      "path": "skills/vendored/find-skills",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -504,18 +442,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "fix-knip-unused-exports",
       "description": "|",
-      "path": "skills/fix-knip-unused-exports",
+      "path": "skills/vendored/fix-knip-unused-exports",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -531,19 +465,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "footer-generator",
       "description": "When the user wants to design, optimize, or audit website footers. Also use when the user mentions \"footer,\" \"page footer,\" \"site footer,\" \"footer links,\" \"footer navigation,\" \"footer SEO,\" \"footer design,\" \"footer CTA,\" \"multi-column footer,\" or \"footer sitemap.\" For main nav, use navigation-menu-generator.",
       "version": "1.0.1",
-      "path": "skills/footer-generator",
+      "path": "skills/vendored/footer-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -559,18 +489,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "frontend-design",
       "description": "Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.",
-      "path": "skills/frontend-design",
+      "path": "skills/vendored/frontend-design",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -586,18 +512,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "gitlab-ci-inspector",
       "description": "Inspect GitLab CI/CD job results, fetch job logs, and diagnose pipeline failures. Use when the user shares a GitLab job URL, pipeline URL, asks about CI/CD job output, wants to check why a pipeline failed, or needs to review build/deploy logs.",
-      "path": "skills/gitlab-ci-inspector",
+      "path": "skills/personal/gitlab-ci-inspector",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -612,18 +534,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "personal",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "gitlab-ci-patterns",
       "description": "Build GitLab CI/CD pipelines with multi-stage workflows, caching, and distributed runners for scalable automation. Use when implementing GitLab CI/CD, optimizing pipeline performance, or setting up automated testing and deployment.",
-      "path": "skills/gitlab-ci-patterns",
+      "path": "skills/vendored/gitlab-ci-patterns",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -639,18 +557,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "gitlab-mr-writing",
       "description": "Author GitLab merge request descriptions and technical reviewer guides for large-scale engineering changes. Use when the user asks to write an MR description, merge request body, PR description, technical reviewer summary, or reviewer guide — especially for refactors, architecture changes, or multi-package merges.",
-      "path": "skills/gitlab-mr-writing",
+      "path": "skills/personal/gitlab-mr-writing",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -665,18 +579,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "personal",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "golang-testing",
       "description": "Go testing patterns including table-driven tests, subtests, benchmarks, fuzzing, and test coverage. Follows TDD methodology with idiomatic Go practices.",
-      "path": "skills/golang-testing",
+      "path": "skills/vendored/golang-testing",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -692,18 +602,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "grill-me",
       "description": "Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions \"grill me\".",
-      "path": "skills/grill-me",
+      "path": "skills/vendored/grill-me",
       "source": {
         "source": "yours",
         "upstream": {
@@ -717,13 +623,14 @@
         }
       },
       "adopted": true,
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": false
     },
     {
       "name": "grill-with-docs",
       "description": "Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan against their project's language and documented decisions.",
-      "path": "skills/grill-with-docs",
+      "path": "skills/vendored/grill-with-docs",
       "source": {
         "source": "yours",
         "upstream": {
@@ -737,6 +644,7 @@
         }
       },
       "adopted": true,
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": false
     },
@@ -744,7 +652,7 @@
       "name": "hero-generator",
       "description": "When the user wants to design, optimize, or audit hero sections (above-the-fold main visual area). Also use when the user mentions \"hero,\" \"hero section,\" \"hero area,\" \"above the fold,\" \"above the fold content,\" \"landing hero,\" \"main banner,\" \"banner section,\" \"first fold,\" \"hero section design,\" \"hero conversion,\" \"split layout hero,\" \"centered hero,\" or \"hero alignment.\" For homepage, use homepage-generator.",
       "version": "1.2.1",
-      "path": "skills/hero-generator",
+      "path": "skills/vendored/hero-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -760,19 +668,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "homepage-generator",
       "description": "When the user wants to create, optimize, or audit the main site homepage (primary entry page). Also use when the user mentions \"homepage,\" \"main page,\" \"home page,\" \"hero section,\" \"above the fold,\" \"home page design,\" \"homepage conversion,\" or \"homepage structure.\" Not for paid campaign or ad landing pages—use landing-page-generator. For sitewide page planning, use website-structure.",
       "version": "1.2.0",
-      "path": "skills/homepage-generator",
+      "path": "skills/vendored/homepage-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -788,12 +692,8 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
@@ -802,7 +702,7 @@
       "tags": [
         "UI"
       ],
-      "path": "skills/impeccable",
+      "path": "skills/vendored/impeccable",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -818,18 +718,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "improve-codebase-architecture",
       "description": "Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.",
-      "path": "skills/improve-codebase-architecture",
+      "path": "skills/vendored/improve-codebase-architecture",
       "source": {
         "source": "yours",
         "upstream": {
@@ -843,6 +739,7 @@
         }
       },
       "adopted": true,
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": false
     },
@@ -850,7 +747,7 @@
       "name": "landing-page-generator",
       "description": "When the user wants to create, optimize, or audit campaign landing pages for paid ads, email, or other traffic. Also use when the user mentions \"landing page,\" \"PPC landing page,\" \"SEM landing page,\" \"conversion page,\" \"campaign page,\" \"lead capture page,\" \"landing page optimization,\" \"LP conversion,\" \"single-page funnel,\" or \"squeeze page.\" Not for the main site homepage; use homepage-generator.",
       "version": "1.4.1",
-      "path": "skills/landing-page-generator",
+      "path": "skills/vendored/landing-page-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -866,19 +763,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "logo-generator",
       "description": "When the user wants to optimize logo placement, linking, or branding on a website. Also use when the user mentions \"logo,\" \"brand logo,\" \"header logo,\" \"logo placement,\" \"AI logo design,\" \"logo link,\" \"logo alt text,\" \"logo sizing,\" \"favicon logo,\" or \"logo usage.\" For full brand visuals, use brand-visual-generator.",
       "version": "1.0.1",
-      "path": "skills/logo-generator",
+      "path": "skills/vendored/logo-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -894,18 +787,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "mcp-builder",
       "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).",
-      "path": "skills/mcp-builder",
+      "path": "skills/vendored/mcp-builder",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -921,18 +810,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "mermaid-diagrams",
       "description": "Comprehensive guide for creating software diagrams using Mermaid syntax. Use when users need to create, visualize, or document software through diagrams including class diagrams (domain modeling, object-oriented design), sequence diagrams (application flows, API interactions, code execution), flowcharts (processes, algorithms, user journeys), entity relationship diagrams (database schemas), C4 architecture diagrams (system context, containers, components), state diagrams, git graphs, pie charts, gantt charts, or any other diagram type. Triggers include requests to \"diagram\", \"visualize\", \"model\", \"map out\", \"show the flow\", or when explaining system architecture, database design, code structure, or user/application flows.",
-      "path": "skills/mermaid-diagrams",
+      "path": "skills/vendored/mermaid-diagrams",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -948,18 +833,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "naming-analyzer",
       "description": "Suggest better variable, function, and class names based on context and conventions.",
-      "path": "skills/naming-analyzer",
+      "path": "skills/vendored/naming-analyzer",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -975,18 +856,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "next-best-practices",
       "description": "Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling",
-      "path": "skills/next-best-practices",
+      "path": "skills/vendored/next-best-practices",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1002,18 +879,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "obsidian-cli",
       "description": "Interact with Obsidian vaults using the Obsidian CLI to read, create, search, and manage notes, tasks, properties, and more. Also supports plugin and theme development with commands to reload plugins, run JavaScript, capture errors, take screenshots, and inspect the DOM. Use when the user asks to interact with their Obsidian vault, manage notes, search vault content, perform vault operations from the command line, or develop and debug Obsidian plugins and themes.",
-      "path": "skills/obsidian-cli",
+      "path": "skills/vendored/obsidian-cli",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1029,18 +902,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "pr-description",
       "description": "Generate a GitHub PR description with proper issue linkage syntax. Use when the user asks for a PR description, wants to open a pull request, or says /pr-description. Inspects branch commits and open issues to produce Closes/Related/Follow-on sections automatically.",
-      "path": "skills/pr-description",
+      "path": "skills/vendored/pr-description",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1056,18 +925,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "prd-development",
       "description": "Build a structured PRD that connects problem, users, solution, and success criteria. Use when turning discovery notes into an engineering-ready document for a major initiative.",
-      "path": "skills/prd-development",
+      "path": "skills/vendored/prd-development",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1083,18 +948,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "pretty-mermaid",
       "description": "|",
-      "path": "skills/pretty-mermaid",
+      "path": "skills/personal/pretty-mermaid",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1109,18 +970,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "personal",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "problem-statement",
       "description": "Write a user-centered problem statement with who is blocked, what they are trying to do, why it matters, and how it feels. Use when framing discovery, prioritization, or a PRD.",
-      "path": "skills/problem-statement",
+      "path": "skills/vendored/problem-statement",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1136,18 +993,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "python-packaging",
       "description": "Create distributable Python packages with proper project structure, setup.py/pyproject.toml, and publishing to PyPI. Use when packaging Python libraries, creating CLI tools, or distributing Python code.",
-      "path": "skills/python-packaging",
+      "path": "skills/vendored/python-packaging",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1163,18 +1016,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "react-components",
       "description": "Modern React component patterns with hooks and TypeScript",
-      "path": "skills/react-components",
+      "path": "skills/vendored/react-components",
       "source": {
         "source": "bundled",
         "upstream": {
@@ -1188,11 +1037,7 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": true,
       "drift": true
@@ -1200,7 +1045,7 @@
     {
       "name": "react-state-management",
       "description": "Master modern React state management with Redux Toolkit, Zustand, Jotai, and React Query. Use when setting up global state, managing server state, or choosing between state management solutions.",
-      "path": "skills/react-state-management",
+      "path": "skills/vendored/react-state-management",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1216,18 +1061,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "roadmap-planning",
       "description": "Plan a strategic roadmap across prioritization, epic definition, stakeholder alignment, and sequencing. Use when turning strategy into a release plan that teams can execute.",
-      "path": "skills/roadmap-planning",
+      "path": "skills/vendored/roadmap-planning",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1243,19 +1084,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "seo-strategy",
       "description": "When the user wants to plan SEO strategy, prioritize SEO work, or understand the SEO workflow. Also use when the user mentions \"SEO strategy,\" \"SEO plan,\" \"SEO roadmap,\" \"SEO priority,\" \"SEO audit,\" \"SEO workflow,\" \"where to start SEO,\" \"SEO approach,\" \"organic growth strategy,\" \"why SEO,\" \"SEO value,\" or \"search strategy.\" For technical/crawl audit execution, use seo-audit. For keyword research, use keyword-research. For AI search visibility, use generative-engine-optimization.",
       "version": "1.3.0",
-      "path": "skills/seo-strategy",
+      "path": "skills/vendored/seo-strategy",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1271,18 +1108,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "shadcn",
       "description": "Manages shadcn components and projects — adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples. Applies when working with shadcn/ui, component registries, presets, --preset codes, or any project with a components.json file. Also triggers for \"shadcn init\", \"create an app with --preset\", or \"switch to --preset\".",
-      "path": "skills/shadcn",
+      "path": "skills/vendored/shadcn",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1298,19 +1131,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "signup-login-page-generator",
       "description": "When the user wants to create, optimize, or audit signup and login pages. Also use when the user mentions \"signup page,\" \"login page,\" \"registration page,\" \"auth page,\" \"sign up form,\" \"create account,\" \"student discount at signup,\" or \"auth subdomain.\" For indexing/auth URLs, use indexing.",
       "version": "1.0.1",
-      "path": "skills/signup-login-page-generator",
+      "path": "skills/vendored/signup-login-page-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1326,18 +1155,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "specs-code-cleanup",
       "description": "Provides final code cleanup after task review approval. Removes debug logs, temporary comments, dead code, optimizes imports, and improves readability. Use when asked to clean up code, polish, finalize, tidy up, remove technical debt, or prepare code for completion after review. Not for refactoring logic or fixing bugs—focused solely on cosmetic and hygiene cleanup.",
-      "path": "skills/specs-code-cleanup",
+      "path": "skills/vendored/specs-code-cleanup",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1353,18 +1178,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "terraform-module-library",
       "description": "Build reusable Terraform modules for AWS, Azure, GCP, and OCI infrastructure following infrastructure-as-code best practices. Use when creating infrastructure modules, standardizing cloud provisioning, or implementing reusable IaC components.",
-      "path": "skills/terraform-module-library",
+      "path": "skills/vendored/terraform-module-library",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1380,18 +1201,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "terraform-plan-summary",
       "description": "Parses noisy Terraform or GitLab CI job logs and produces a concise impact summary (add/change/destroy counts, per-resource actions, grouped repetitive changes, key attribute diffs, warnings). Use when summarizing terraform plan output, CI plan jobs, long job logs, or when the user asks what a plan would change.",
-      "path": "skills/terraform-plan-summary",
+      "path": "skills/personal/terraform-plan-summary",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1406,19 +1223,15 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "personal",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "terraform-test",
       "description": "Comprehensive guide for writing and running Terraform tests. Use when creating test files (.tftest.hcl), writing test scenarios with run blocks, validating infrastructure behavior with assertions, mocking providers and data sources, testing module outputs and resource configurations, or troubleshooting Terraform test syntax and execution.",
       "version": "0.0.2",
-      "path": "skills/terraform-test",
+      "path": "skills/vendored/terraform-test",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1434,18 +1247,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "theme-factory",
       "description": "Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors/fonts that you can apply to any artifact that has been creating, or can generate a new theme on-the-fly.",
-      "path": "skills/theme-factory",
+      "path": "skills/vendored/theme-factory",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1461,18 +1270,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "typescript-mcp-server-generator",
       "description": "Generate a complete MCP server project in TypeScript with tools, resources, and proper configuration",
-      "path": "skills/typescript-mcp-server-generator",
+      "path": "skills/vendored/typescript-mcp-server-generator",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1488,18 +1293,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "typescript-react-reviewer",
       "description": "Expert code reviewer for TypeScript + React 19 applications. Use when reviewing React code, identifying anti-patterns, evaluating state management, or assessing code maintainability. Triggers: code review requests, PR reviews, React architecture evaluation, identifying code smells, TypeScript type safety checks, useEffect abuse detection, state management review.",
-      "path": "skills/typescript-react-reviewer",
+      "path": "skills/vendored/typescript-react-reviewer",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1515,12 +1316,8 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
@@ -1532,7 +1329,7 @@
         "documentation"
       ],
       "author": "mattpocock",
-      "path": "skills/ubiquitous-language",
+      "path": "skills/vendored/ubiquitous-language",
       "source": {
         "source": "bundled",
         "upstream": {
@@ -1546,18 +1343,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": false
     },
     {
       "name": "ui-ux-pro-max",
       "description": "UI/UX design intelligence for web and mobile. Includes 50+ styles, 161 color palettes, 57 font pairings, 161 product types, 99 UX guidelines, and 25 chart types across 10 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui, and HTML/CSS). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, and check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, and mobile app. Elements: button, modal, navbar, sidebar, card, table, form, and chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, and flat design. Topics: color systems, accessibility, animation, layout, typography, font pairing, spacing, interaction states, shadow, and gradient. Integrations: shadcn/ui MCP for component search and examples.",
-      "path": "skills/ui-ux-pro-max",
+      "path": "skills/vendored/ui-ux-pro-max",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1573,18 +1366,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "user-personas",
       "description": "Create refined user personas from research data — 3 personas with JTBD, pains, gains, and unexpected insights. Use when building personas from survey data, creating user profiles from research, or segmenting users for product decisions.",
-      "path": "skills/user-personas",
+      "path": "skills/vendored/user-personas",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1600,18 +1389,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "user-story",
       "description": "Create user stories with Mike Cohn format and Gherkin acceptance criteria. Use when turning user needs into development-ready work with clear outcomes and testable conditions.",
-      "path": "skills/user-story",
+      "path": "skills/vendored/user-story",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1627,18 +1412,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "user-story-mapping",
       "description": "Create a user story map that lays out activities, steps, tasks, and release slices. Use when planning a workflow, backlog, or MVP around the user journey.",
-      "path": "skills/user-story-mapping",
+      "path": "skills/vendored/user-story-mapping",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1654,12 +1435,8 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
@@ -1667,7 +1444,7 @@
       "description": "React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements.",
       "version": "1.0.0",
       "author": "vercel",
-      "path": "skills/vercel-react-best-practices",
+      "path": "skills/vendored/vercel-react-best-practices",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1683,12 +1460,8 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
@@ -1696,7 +1469,7 @@
       "description": "Vite build tool configuration, plugin API, SSR, and Vite 8 Rolldown migration. Use when working with Vite projects, vite.config.ts, Vite plugins, or building libraries/SSR apps with Vite.",
       "version": "2026.1.31",
       "author": "Anthony Fu",
-      "path": "skills/vite",
+      "path": "skills/vendored/vite",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1712,12 +1485,8 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
@@ -1725,7 +1494,7 @@
       "description": "Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\".",
       "version": "1.0.0",
       "author": "vercel",
-      "path": "skills/web-design-guidelines",
+      "path": "skills/vendored/web-design-guidelines",
       "source": {
         "source": "bundled",
         "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
@@ -1741,18 +1510,14 @@
         }
       },
       "adopted": true,
-      "lastCommit": {
-        "sha": "407b2a4a924a3600539748b3a70211e6a1838c41",
-        "date": "2026-05-18 01:12:27 -0700",
-        "message": "feat(v0.11.2): PR β — backfill 60 bundled-skill upstream markers"
-      },
-      "publishState": "pushed",
+      "bucket": "vendored",
+      "publishState": "untracked",
       "canon": true
     },
     {
       "name": "zoom-out",
       "description": "Tell the agent to zoom out and give broader context or a higher-level perspective. Use when you're unfamiliar with a section of code or need to understand how it fits into the bigger picture.",
-      "path": "skills/zoom-out",
+      "path": "skills/vendored/zoom-out",
       "source": {
         "source": "yours",
         "upstream": {
@@ -1766,6 +1531,7 @@
         }
       },
       "adopted": true,
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": false
     }
