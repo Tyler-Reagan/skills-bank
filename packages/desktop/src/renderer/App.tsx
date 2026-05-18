@@ -703,12 +703,48 @@ export function App(): React.ReactElement {
 
   // Main process completes an upstream probe → re-fetch registry so
   // the new `upstreamUpdateAvailable` flags surface as card chips.
+  // Also surfaces probe-time rate-limit failures as a sticky error
+  // toast — without this the probe would silently console.warn and
+  // the user would see no chips with no explanation.
   useEffect(() => {
     if (!window.skillsBank.onUpstreamProbeComplete) return;
-    return window.skillsBank.onUpstreamProbeComplete(() => {
+    return window.skillsBank.onUpstreamProbeComplete((event) => {
+      if (event.rateLimit) {
+        const resetAt = new Date(event.rateLimit.resetAt);
+        const resetText = resetAt.toLocaleTimeString(undefined, {
+          hour: "numeric",
+          minute: "2-digit",
+        });
+        const msg =
+          `Upstream probe rate-limited (${event.rateLimit.limit}/hr` +
+          `${event.rateLimit.unauthenticated ? ", unauthenticated" : ""}). ` +
+          `Resets at ${resetText}.`;
+        const action = event.rateLimit.unauthenticated
+          ? {
+              label: "Sign in",
+              onClick: () => {
+                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+                setToast(null);
+                setShowAccount(true);
+              },
+            }
+          : undefined;
+        flashError(msg, {
+          ...(action ? { action } : {}),
+          diagnostic:
+            `probe rate-limited\n` +
+            `limit=${event.rateLimit.limit}/hr\n` +
+            `remaining=${event.rateLimit.remaining}\n` +
+            `resetsAt=${event.rateLimit.resetAt}\n` +
+            `authenticated=${!event.rateLimit.unauthenticated}` +
+            (event.failedRepos?.length
+              ? `\nfailedRepos=${event.failedRepos.join(",")}`
+              : ""),
+        });
+      }
       void refresh();
     });
-  }, [refresh]);
+  }, [refresh, flashError]);
 
   // Initial auth/persona snapshot. The LoginScreen is shown until persona
   // resolves to convenience or power.

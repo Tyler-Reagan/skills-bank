@@ -114,8 +114,22 @@ const api = {
     return () => ipcRenderer.removeListener(IPC.headerMenuAction, listener);
   },
   upstreamProbe: () => ipcRenderer.invoke(IPC.upstreamProbe),
-  onUpstreamProbeComplete: (cb: () => void) => {
-    const listener = () => cb();
+  onUpstreamProbeComplete: (
+    cb: (event: import("../shared/ipc.js").UpstreamProbeCompleteEvent) => void,
+  ) => {
+    const listener = (
+      _e: Electron.IpcRendererEvent,
+      payload: unknown,
+    ): void => {
+      // Tolerate the historical "complete" string and any future
+      // shape evolutions by coercing non-object payloads to an
+      // empty event.
+      const event =
+        payload && typeof payload === "object"
+          ? (payload as import("../shared/ipc.js").UpstreamProbeCompleteEvent)
+          : {};
+      cb(event);
+    };
     ipcRenderer.on(IPC.upstreamProbe, listener);
     return () => ipcRenderer.removeListener(IPC.upstreamProbe, listener);
   },

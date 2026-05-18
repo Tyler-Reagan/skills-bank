@@ -417,6 +417,10 @@ async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
     }
     const token = getStoredToken();
     let updates = 0;
+    let rateLimitInfo:
+      | import("../shared/ipc.js").UpstreamProbeCompleteEvent["rateLimit"]
+      | undefined;
+    const failedRepos: string[] = [];
     for (const [repo, skills] of byRepo) {
       let cache = repoProbeCache.get(repo);
       const now = Date.now();
@@ -426,6 +430,14 @@ async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
           console.warn(
             `upstream probe: ${repo} failed (${res.status}): ${res.message}`,
           );
+          if (res.status === 429 && res.rateLimit) {
+            // First rate-limit hit wins — they all carry the same
+            // window state (limit/remaining/resetAt are repo-agnostic
+            // for unauth-per-IP).
+            if (!rateLimitInfo) rateLimitInfo = res.rateLimit;
+          } else {
+            failedRepos.push(repo);
+          }
           continue;
         }
         const folderHashes = buildFolderHashMap(res.tree);
@@ -447,7 +459,10 @@ async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
         }
       }
     }
-    notifyProbeComplete();
+    notifyProbeComplete({
+      ...(rateLimitInfo ? { rateLimit: rateLimitInfo } : {}),
+      ...(failedRepos.length > 0 ? { failedRepos } : {}),
+    });
     return { probed: byRepo.size, updates, probedAt };
   })();
   try {
@@ -465,10 +480,12 @@ function buildFolderHashMap(tree: GitTreeEntry[]): Map<string, string> {
   return m;
 }
 
-function notifyProbeComplete(): void {
+function notifyProbeComplete(
+  event: import("../shared/ipc.js").UpstreamProbeCompleteEvent = {},
+): void {
   const wins = BrowserWindow.getAllWindows();
   for (const win of wins) {
-    if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, "complete");
+    if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
   }
 }
 
