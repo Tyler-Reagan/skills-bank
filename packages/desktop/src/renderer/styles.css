@@ -49,9 +49,20 @@ select {
 :focus {
   outline: none;
 }
+/* Default the ring flush with the element's outer edge. Outset
+   (offset > 0) creates two classes of bugs: clipped rings inside
+   `overflow-y: auto` containers (Chromium collapses overflow-x to
+   hidden when the cross-axis is auto), and rings that bleed into
+   adjacent siblings in tight grids. Widgets that want non-zero
+   offset opt in explicitly:
+     - inset (-2px) for cards / list rows whose border doubles as
+       the ring surface (`.skill-card`, `.repo-picker-item`,
+       `.tag-filter-item`).
+     - outset (2px) for free-floating badges that have room
+       around them (`.update-badge`, `.updates-badge`). */
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 0;
   border-radius: var(--r-sm);
 }
 .skill-card:focus-visible {
@@ -610,14 +621,11 @@ select {
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
-/* Repo-picker list rows — `overflow-y: auto` on the parent collapses
-   `overflow-x` to hidden in Chromium, which clips the global
-   `:focus-visible` outline (offset 2px) on the left/right edges so
-   only the top + bottom segments render. Drawing the ring inside
-   the button (negative offset) keeps the full ring visible. Matches
-   the `.skill-card:focus-visible` pattern. */
+/* Repo-picker list rows — inset ring so the button's own border
+   acts as the surface the ring sits inside. (Outset rings here
+   would clip on the sides when the parent scroll container
+   collapses overflow-x.) */
 .repo-picker-item:focus-visible {
-  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 .search-clear {
@@ -1040,12 +1048,9 @@ select {
   border-color: var(--accent);
   color: var(--accent);
 }
-/* Same outline-clipping fix as .repo-picker-item — the
-   `.tag-filter-panel-list` parent has `overflow-y: auto`, which
-   collapses overflow-x to hidden and clips the global 2px-offset
-   focus ring on left/right. Draw the ring inside the item instead. */
+/* Inset ring — same reasoning as `.repo-picker-item:focus-visible`:
+   the `.tag-filter-panel-list` parent is a scroll container. */
 .tag-filter-item:focus-visible {
-  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 .tag-filter-item-label {
