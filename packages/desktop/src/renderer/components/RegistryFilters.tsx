@@ -78,13 +78,13 @@ const CHIP_DEFS: readonly ChipDef[] = [
   {
     tag: "bundled",
     label: "Bundled",
-    title: "Skills shipped with the app and managed by Sync.",
+    title: "Skills curated as part of the bank's bundled set — managed by Sync.",
     matches: (e) => e.source.source === "bundled",
   },
   {
     tag: "yours",
     label: "Yours",
-    title: "Skills you've added, merged in, or detached from Sync.",
+    title: "Skills you authored or unlinked from a curated set.",
     matches: (e) => e.source.source === "yours",
   },
   {
