@@ -289,6 +289,13 @@ export function RegistryFilters({
           const chipNode = (() => {
             const isActive = active.has(def.tag);
             const count = counts.get(def.tag) ?? 0;
+            // Suppress degenerate chips: a filter with zero matches is
+            // a no-op (greys out anyway), and one that matches every
+            // entry doesn't narrow the view — both surface as visual
+            // noise. Keep an active chip visible regardless so the
+            // user can always un-apply it from this strip.
+            const useful = count > 0 && count < registry.length;
+            if (!useful && !isActive) return null;
             return (
               <button
                 key={def.tag}
@@ -297,7 +304,6 @@ export function RegistryFilters({
                 onClick={() => toggle(def.tag)}
                 aria-pressed={isActive}
                 title={def.title}
-                disabled={count === 0 && !isActive}
               >
                 {def.label}{" "}
                 <span className="filter-chip-count">({count})</span>
