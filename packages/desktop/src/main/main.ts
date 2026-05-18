@@ -1203,13 +1203,14 @@ function createWindow(): void {
     minHeight: 600,
     icon: iconPng,
     webPreferences: {
-      preload: path.join(__dirname, "..", "main", "preload.mjs"),
+      preload: path.join(__dirname, "..", "main", "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      // Sandbox the renderer. The preload uses only `electron`'s
-      // `contextBridge` and `ipcRenderer`, both of which are
-      // sandbox-compatible. Defense-in-depth against renderer
-      // RCE: a compromised renderer can't reach Node primitives
+      // Sandbox the renderer. The preload is bundled to CJS by esbuild
+      // (see build:preload) — sandboxed preloads don't support ES
+      // modules, so the .mjs that tsc emits from preload.mts is unused
+      // and we load the bundled .cjs instead. Defense-in-depth against
+      // renderer RCE: a compromised renderer can't reach Node primitives
       // even via the preload's import graph.
       sandbox: true,
     },
