@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T05:39:21.613Z",
+  "generatedAt": "2026-05-18T05:57:50.523Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -18,6 +18,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -44,6 +45,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -62,6 +64,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -80,6 +83,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -98,6 +102,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -116,6 +121,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -134,6 +140,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -152,6 +159,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -170,6 +178,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -188,6 +197,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -214,6 +224,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -240,6 +251,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -257,6 +269,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -275,6 +288,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -292,6 +306,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -310,6 +325,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -336,6 +352,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -362,6 +379,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -380,6 +398,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -397,6 +416,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -414,6 +434,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -440,6 +461,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -457,6 +479,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -483,6 +506,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -501,6 +525,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -519,6 +544,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -539,6 +565,7 @@
         "date": "2026-05-15 12:44:23 -0700",
         "message": "fix: preserve linkedRepo on sign-out + drop forced RepoPicker on re-sign-in"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -557,6 +584,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -575,6 +603,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -592,6 +621,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -618,6 +648,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -644,6 +675,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -661,6 +693,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -687,6 +720,7 @@
         "date": "2026-05-12 13:24:04 -0700",
         "message": "(skills): update skills canon - remove any specific terminology from personal skills"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -704,6 +738,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -730,6 +765,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -747,6 +783,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -773,6 +810,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -799,6 +837,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -816,6 +855,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -833,6 +873,7 @@
         "date": "2026-05-05 17:12:54 -0700",
         "message": "refactor: collapse domain/category into tags; flatten skills/<name>; drawer MD + edit tags + per-card migrate"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -859,6 +900,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -877,6 +919,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -903,6 +946,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -921,6 +965,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -947,6 +992,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -973,6 +1019,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -990,6 +1037,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1017,6 +1065,7 @@
         "date": "2026-05-15 09:37:28 -0700",
         "message": "chore: gitignore hash sidecar + bundle 6 new curated skills (Bundle C)"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1034,6 +1083,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1051,6 +1101,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1068,6 +1119,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1084,8 +1136,13 @@
         "source": "yours"
       },
       "adopted": true,
-      "publishState": "untracked",
-      "canon": false
+      "lastCommit": {
+        "sha": "559cf07fa2e7e56fd58ba129f0748134bc6f44df",
+        "date": "2026-05-17 22:46:22 -0700",
+        "message": "chore(v0.11.2): install ubiquitous-language skill + domain glossary"
+      },
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "ui-ux-pro-max",
@@ -1102,6 +1159,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1128,6 +1186,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1154,6 +1213,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1180,6 +1240,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1199,6 +1260,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1218,6 +1280,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1237,6 +1300,7 @@
         "date": "2026-05-12 15:14:06 -0700",
         "message": "(cleanup): ran pnpm format on all files"
       },
+      "publishState": "pushed",
       "canon": true
     }
   ]
