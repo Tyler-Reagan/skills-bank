@@ -74,52 +74,38 @@ pnpm knip
 
 ## Plans
 
-Active body of work. Filenames are stable descriptive IDs; execution order is documented separately below so plans can be re-sequenced without renaming files.
+Filenames are stable descriptive IDs; the contents of each plan file record the as-shipped state for completed plans and the open scope for remaining ones.
+
+### Shipped through v1.0.0
+
+| Plan                                                                              | Release  |
+| --------------------------------------------------------------------------------- | -------- |
+| [`github-mode-coherence.md`](docs/plans/github-mode-coherence.md)                 | v0.10.x  |
+| [`github-first-onboarding.md`](docs/plans/github-first-onboarding.md)             | v0.10.x  |
+| [`per-skill-upstream-foundation.md`](docs/plans/per-skill-upstream-foundation.md) | v0.11.2  |
+| [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | v0.11.2  |
+| [`skills-directory-split.md`](docs/plans/skills-directory-split.md)               | v0.11.3  |
+| [`drift-update-ux-consistency.md`](docs/plans/drift-update-ux-consistency.md)     | v0.11.4  |
+| [`a11y-polish.md`](docs/plans/a11y-polish.md)                                     | v0.11.5  |
+| [`renderer-state-architecture.md`](docs/plans/renderer-state-architecture.md)     | v0.11.6 (M1+M2), v0.11.6 follow-up (M3 DrawerHost). M3's remaining host extractions (UpdateHost / ConflictHost / RegistryHost) deferred as low-priority cleanup. |
+| [`core-test-foundation.md`](docs/plans/core-test-foundation.md)                   | v0.11.7  |
+| [`security-hardening.md`](docs/plans/security-hardening.md)                       | v0.11.8  |
+| [`core-architecture-refactor.md`](docs/plans/core-architecture-refactor.md)       | v0.11.9  |
+| [`origin-rename-pass.md`](docs/plans/origin-rename-pass.md)                       | v0.11.10 (deferred: `SkillSource.upstream` JSON-field rename and the heal-action renames — see plan file) |
+
+### Remaining
 
 | Plan                                                                              | Hard dependency                                           |
 | --------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [`cli-minimal.md`](docs/plans/cli-minimal.md)                                     | none                                                      |
-| [`github-mode-coherence.md`](docs/plans/github-mode-coherence.md)                 | none                                                      |
-| [`github-first-onboarding.md`](docs/plans/github-first-onboarding.md)             | `github-mode-coherence` (groundwork)                      |
-| [`per-skill-upstream-foundation.md`](docs/plans/per-skill-upstream-foundation.md) | none (cleaner if `github-first-onboarding` lands first)   |
-| [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | `per-skill-upstream-foundation`                           |
-| [`skills-directory-split.md`](docs/plans/skills-directory-split.md)               | `origin-paradigm-reframe`                                 |
-| [`drift-update-ux-consistency.md`](docs/plans/drift-update-ux-consistency.md)     | `origin-paradigm-reframe` (cleaner if `skills-directory-split` lands first) |
-| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | `origin-paradigm-reframe`                                 |
-| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `origin-paradigm-reframe` + `bank-mode-persistence`       |
-| [`a11y-polish.md`](docs/plans/a11y-polish.md)                                     | none (v0.11.4 audits feed it)                             |
-| [`renderer-state-architecture.md`](docs/plans/renderer-state-architecture.md)     | `a11y-polish` (cleaner if a11y lands first)               |
-| [`core-test-foundation.md`](docs/plans/core-test-foundation.md)                   | none                                                      |
-| [`security-hardening.md`](docs/plans/security-hardening.md)                       | `core-test-foundation`                                    |
-| [`core-architecture-refactor.md`](docs/plans/core-architecture-refactor.md)       | `core-test-foundation` (hard) + `security-hardening`      |
-| [`origin-rename-pass.md`](docs/plans/origin-rename-pass.md)                       | `core-architecture-refactor`                              |
-
-### Recommended execution order
-
-To minimize thrashing (later plans rendering earlier plans' code obsolete), this is the canonical sequence:
-
-1. **`github-mode-coherence`** — ground-truth polish for github-linked mode.
-2. **`github-first-onboarding`** — collapses the local-vs-github mode discriminator. Doing this before the per-skill plans means they won't have to branch on a flag that's about to disappear.
-3. **`per-skill-upstream-foundation`** — adds the per-skill upstream metadata + probe/update.
-4. **`origin-paradigm-reframe`** — reframes Origin as authoritative upstream (not the bundled repo), reverts Tier 3, lands maintainer-time backfill + direct-fetch update flow.
-5. **`skills-directory-split`** — spatial separation of `skills/` into `personal/` + `vendored/` subdirectories.
-6. **`drift-update-ux-consistency`** — drawer button language/styling consistency under the canonical glossary, plus Registry-tab filter for pending updates.
-7. **`a11y-polish`** (v0.11.5) — keyboard/screen-reader polish; deferred items from the v0.11.4 audit.
-8. **`renderer-state-architecture`** (v0.11.6) — `useRescanController`, `RegistryHostContext`, App.tsx split.
-9. **`core-test-foundation`** (v0.11.7) — first `packages/core` tests + ADR-0001/2/3 + `fetchedAt` probe-path fix.
-10. **`security-hardening`** (v0.11.8) — CSP tightening + storage policy + devtools call.
-11. **`core-architecture-refactor`** (v0.11.9) — `SkillRecord` consolidation, probe scheduler / diff / `applyUpstreamUpdate` extraction to core.
-12. **`origin-rename-pass`** (v0.11.10) — coordinated internal rename; user-facing copy already aligned in v0.11.4.
-13. **`bank-mode-persistence`** — adds the local snapshot cache.
-14. **`in-app-install-from-discover`** — completes the discover-to-bank install loop.
-
-`cli-minimal` is independent of the others and can slot anywhere — typically last since it's pure housekeeping.
+| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | none (post-v1.0)                                          |
+| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `bank-mode-persistence`                                   |
+| [`cli-minimal.md`](docs/plans/cli-minimal.md)                                     | none — housekeeping; anytime                              |
 
 When starting work on a plan, create a `feat/<plan-slug>` branch following the recent commit pattern in `git log`.
 
 ## Conventions specific to this repo
 
-- **Pre-1.0; cut hard.** Don't add backwards-compatibility shims for schema changes, deprecation aliases, or "removed in vX" comments unless the user asks for them.
+- **Post-1.0; backcompat-conscious for public surfaces.** `packages/core` exports are now considered part of the SDK surface — when renaming or removing, ship a `@deprecated` re-export for one minor cycle (see the v0.11.10 aliases for the pattern) before cutting. JSON wire formats (`.skills-bank.json`) tolerate a legacy read for one minor cycle when their shape changes. Renderer-internal types and component props stay flexible. (Pre-v1.0 the convention was "cut hard"; v1.0.0 flips the public-surface treatment.)
 - **Persist multi-milestone plans before implementing.** Drop a `docs/plans/<slug>.md` first; one PR per plan; integrate rationale + conflict-audit inline rather than in side documents. Filenames are descriptive (no leading number); execution order is documented in the Plans section above.
 - **CI logs: read past the headline error.** Scan `##[warning]` lines too; the visible error may already be fixed by a prior step.
 - **Don't fabricate skill names or paths from training data.** Verify with `find` / `grep` before referring to a specific file.
