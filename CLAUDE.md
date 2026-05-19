@@ -35,8 +35,8 @@ If you add a new script, place it in the appropriate group by ordering. If you a
 | `pnpm docs:check`   | After editing the README or any `docs/**.md`. Walks markdown and fails on unresolved links / images / anchors.                                          |
 | `pnpm format:check` | CI parity. Run when you've made format-sensitive changes and want non-mutating verification.                                                            |
 | `pnpm knip`         | After refactoring (renames, deletes, suspected dead code). Configuration in `knip.json`. Use the `fix-knip-unused-exports` skill to resolve violations. |
-| `pnpm reset`        | Between manual test runs of LoginScreen / sync / RepoPicker flows. Wipes userData state (registry source choice + auth token) only.                     |
-| `pnpm reset:hard`   | Full first-install simulation. Wipes userData + registry, auto-invokes `reset:seed`.                                                                    |
+| `pnpm reset`        | Between manual test runs of LoginScreen / sync / RepoPicker flows. Wipes dev-mode userData state (registry source choice + auth token) only. The packaged install's userData is never a target — see "Dev-mode isolation" below.                     |
+| `pnpm reset:hard`   | Full first-install simulation. Wipes dev-mode userData + registry, auto-invokes `reset:seed`.                                                                    |
 | `pnpm reset:seed`   | Repopulate `.skills-bank.json` source markers in this repo's `skills/`. Auto-invoked by `reset:hard`; runnable standalone after a fresh checkout.       |
 | `pnpm backfill:bundled`  | Stamp upstream pointers into this repo's `skills/<name>/.skills-bank.json` from `scripts/bundled-upstream-mapping.json`. Run after adding new bundled skills with known GitHub upstreams. `--dry` previews without writing. |
 | `pnpm backfill:deployed` | Stamp upstream pointers into a deployed registry by reading the local `~/.agents/.skill-lock.json`. Mostly redundant with the desktop's boot-time scanner; useful for scripted bootstraps. Resolves registry root via `--root`, `SKILLS_BANK_ROOT`, or cwd walk-up. |
@@ -109,6 +109,20 @@ When starting work on a plan, create a `feat/<plan-slug>` branch following the r
 - **Persist multi-milestone plans before implementing.** Drop a `docs/plans/<slug>.md` first; one PR per plan; integrate rationale + conflict-audit inline rather than in side documents. Filenames are descriptive (no leading number); execution order is documented in the Plans section above.
 - **CI logs: read past the headline error.** Scan `##[warning]` lines too; the visible error may already be fixed by a prior step.
 - **Don't fabricate skill names or paths from training data.** Verify with `find` / `grep` before referring to a specific file.
+
+### Dev-mode isolation
+
+Unpackaged runs (`pnpm dev` / `pnpm start`) auto-redirect every persistent side effect into `~/.skills-bank-dev/`:
+
+- **userData** → `~/.skills-bank-dev/userData/` (registry source choice, auth token)
+- **Skill sinks** → `~/.skills-bank-dev/.claude/skills/`, `~/.skills-bank-dev/.cursor/skills/`, etc. (via `SKILLS_BANK_HOME_OVERRIDE`, read by `getAgentSkillsDir` in `packages/core/src/agents.ts`)
+- **App label** → "Skills Bank (Dev)" in dock/menu
+
+The packaged install reads `~/.claude/skills/`, `~/.cursor/skills/`, and `~/Library/Application Support/Skills Bank/` as usual — dev runs cannot reach those paths. The redirect is gated on `!app.isPackaged` at the top of `packages/desktop/src/main/main.ts`.
+
+Consequence: skills "installed" via dev are not visible to your real Claude Code / Cursor clients. End-to-end installation testing requires the packaged app pointed at a deployed registry.
+
+`rm -rf ~/.skills-bank-dev/` is the one-line full dev-state reset.
 
 ### Heal local maintainer state
 

@@ -111,6 +111,19 @@ import {
 } from "./auth.js";
 import { isAuthConfigured } from "./auth-config.js";
 
+// ─── Dev-mode isolation ─────────────────────────────────────────────────────
+// When run unpackaged (pnpm dev / pnpm start), redirect every persistent
+// side effect into ~/.skills-bank-dev/ so this clone cannot contaminate the
+// packaged install's userData or skill-sinks (~/.claude/skills, ~/.cursor/
+// skills, etc.). Single root => one `rm -rf` to fully reset dev state.
+if (!app.isPackaged) {
+  const devHome = path.join(app.getPath("home"), ".skills-bank-dev");
+  fs.mkdirSync(devHome, { recursive: true });
+  app.setName("Skills Bank (Dev)");
+  app.setPath("userData", path.join(devHome, "userData"));
+  process.env.SKILLS_BANK_HOME_OVERRIDE = devHome;
+}
+
 const CANONICAL_OWNER = "Tyler-Reagan";
 const CANONICAL_REPO = "skills-bank";
 
@@ -1131,6 +1144,7 @@ function createWindow(): void {
     minWidth: 880,
     minHeight: 600,
     icon: iconPng,
+    title: app.getName(),
     webPreferences: {
       preload: path.join(__dirname, "..", "main", "preload.cjs"),
       contextIsolation: true,
@@ -1144,6 +1158,12 @@ function createWindow(): void {
       sandbox: true,
     },
   });
+  if (!app.isPackaged) {
+    // The renderer's <title>Skills Bank</title> would otherwise overwrite
+    // the dev-mode label as soon as the page loads. Suppress in dev only;
+    // packaged mode lets the renderer drive the title normally.
+    win.on("page-title-updated", (event) => event.preventDefault());
+  }
   const indexHtml = path.join(__dirname, "..", "..", "dist", "index.html");
   void win.loadFile(indexHtml);
 
