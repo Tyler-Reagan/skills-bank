@@ -20,9 +20,9 @@ import {
   applyCanonicalSync,
   applyRegistration,
   buildRegistryIndex,
-  applyUpstreamUpdate as coreApplyUpstreamUpdate,
+  applyOriginUpdate as coreApplyOriginUpdate,
   classifySkillByName,
-  createUpstreamProbeRunner,
+  createOriginProbeRunner,
   clearPendingConflicts,
   computeFolderDiff,
   deleteFromBankSkill,
@@ -56,7 +56,7 @@ import {
   findFolderHash,
   mirrorSkillFolder,
   folderPathFromSkillPath,
-  probeRepoTree,
+  probeOriginTree,
   resolveRegistryRoot,
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
@@ -428,7 +428,7 @@ const PROBE_BOOT_DELAY_MS = 5 * 1000;
 // Desktop wires the BrowserWindow broadcast as the completion sink
 // and exposes the runner's surface to the rest of main.ts via the
 // shims below (kept for call-site readability — they just delegate).
-const probeRunner = createUpstreamProbeRunner({
+const probeRunner = createOriginProbeRunner({
   registryRoot: () => registryRoot,
   token: () => getStoredToken(),
   onComplete: (event) => {
@@ -506,7 +506,7 @@ async function applyUpstreamUpdate(
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   // Core owns the disk-level mirror + marker rewrite. Desktop layers
   // on the probe-cache cleanup + notification (UI concerns).
-  const result = await coreApplyUpstreamUpdate({
+  const result = await coreApplyOriginUpdate({
     registryRoot,
     name,
     token: getStoredToken(),
@@ -701,7 +701,7 @@ async function setManualUpstream(
   // Validate against GitHub: probe the folder. Anything other than
   // an ok response is treated as "couldn't verify" and rejected.
   const folder = folderPathFromSkillPath(choice.skillPath);
-  const probe = await probeRepoTree(choice.repo, getStoredToken());
+  const probe = await probeOriginTree(choice.repo, getStoredToken());
   if (!probe.ok) {
     return {
       ok: false,

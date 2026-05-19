@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   folderPathFromSkillPath,
-  probeRepoTree,
+  probeOriginTree,
   type GitTreeEntry,
   type RateLimitInfo,
 } from "./upstream.js";
@@ -47,7 +47,7 @@ export interface ProbeResultSummary {
   probedAt: string;
 }
 
-export interface UpstreamProbeRunnerOpts {
+export interface OriginProbeRunnerOpts {
   /** Resolve the active registry root at call time — null = no-op. */
   registryRoot: () => string | null;
   /** Resolve the OAuth token at call time. Null = unauthenticated. */
@@ -60,7 +60,7 @@ export interface UpstreamProbeRunnerOpts {
   cacheTtlMs?: number;
 }
 
-export interface UpstreamProbeRunner {
+export interface OriginProbeRunner {
   /** Run a probe. Coalesces concurrent calls — a second call while
    *  one is in flight returns the in-flight promise. */
   run(): Promise<ProbeResultSummary>;
@@ -162,9 +162,9 @@ function persistCache(
   }
 }
 
-export function createUpstreamProbeRunner(
-  opts: UpstreamProbeRunnerOpts,
-): UpstreamProbeRunner {
+export function createOriginProbeRunner(
+  opts: OriginProbeRunnerOpts,
+): OriginProbeRunner {
   const repoProbeCache = new Map<string, RepoProbeCacheEntry>();
   const probedUpdates = new Map<string, SkillProbeResult>();
   const ttl = opts.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
@@ -237,7 +237,7 @@ export function createUpstreamProbeRunner(
       let cache = repoProbeCache.get(repo);
       const now = Date.now();
       if (!cache || now - cache.fetchedAt > ttl) {
-        const res = await probeRepoTree(repo, token);
+        const res = await probeOriginTree(repo, token);
         if (!res.ok) {
           console.warn(
             `upstream probe: ${repo} failed (${res.status}): ${res.message}`,
@@ -311,3 +311,11 @@ export function createUpstreamProbeRunner(
     },
   };
 }
+
+// v0.11.10 deprecation aliases. Drop in v0.12.0.
+/** @deprecated use `createOriginProbeRunner` */
+export const createUpstreamProbeRunner = createOriginProbeRunner;
+/** @deprecated use `OriginProbeRunnerOpts` */
+export type UpstreamProbeRunnerOpts = OriginProbeRunnerOpts;
+/** @deprecated use `OriginProbeRunner` */
+export type UpstreamProbeRunner = OriginProbeRunner;
