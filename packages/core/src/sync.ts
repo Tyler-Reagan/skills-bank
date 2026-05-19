@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import * as tar from "tar";
 import { writeUpstreamCanonNames } from "./canon.js";
+import { applyConflictDecision } from "./conflict.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import { getStateDir } from "./paths.js";
 import {
@@ -176,20 +177,8 @@ export async function fetchCanonicalTarball(
   };
 }
 
-/**
- * Find an unused folder name for renaming a user-authored skill out of
- * the way of an incoming canonical one. Tries `<name>-local` first,
- * then `<name>-local-2`, `<name>-local-3`, etc.
- */
-function resolveRenameTarget(skillsDir: string, name: string): string {
-  const base = `${name}-local`;
-  if (!fs.existsSync(path.join(skillsDir, base))) return base;
-  for (let i = 2; i < 1000; i++) {
-    const candidate = `${base}-${i}`;
-    if (!fs.existsSync(path.join(skillsDir, candidate))) return candidate;
-  }
-  throw new Error(`no available rename target for ${name}`);
-}
+// v0.11.9 M5: rename-target resolver + decision applicator moved to
+// `./conflict.ts` so Merge shares the implementation. Imported below.
 
 /**
  * Walk the canonical tarball's `skills/` dir and upsert each skill into
@@ -240,19 +229,27 @@ export async function applyCanonicalSync(
       if (existingSource.source !== "bundled") {
         const decision = decisions[name];
         if (decision) {
-          // Apply the stored resolution and skip the conflict queue.
-          if (decision.action === "keep-mine") {
+          // Apply the stored resolution via the shared primitive.
+          // keep-mine skips the canonical write entirely; the other
+          // two arms fall through to the cpSync below.
+          const effect = applyConflictDecision({
+            localSkillsDir,
+            localPath,
+            name,
+            decision,
+          });
+          if (effect.kind === "keep-mine") {
             resolved.push({ name, action: "keep-mine" });
             continue;
           }
-          if (decision.action === "use-canonical") {
-            fs.rmSync(localPath, { recursive: true, force: true });
-            // Falls through to the canonical write below.
+          if (effect.kind === "rename-mine") {
+            resolved.push({
+              name,
+              action: "rename-mine",
+              renamedTo: effect.renamedTo,
+            });
+          } else {
             resolved.push({ name, action: "use-canonical" });
-          } else if (decision.action === "rename-mine") {
-            const target = resolveRenameTarget(localSkillsDir, name);
-            fs.renameSync(localPath, path.join(localSkillsDir, target));
-            resolved.push({ name, action: "rename-mine", renamedTo: target });
           }
         } else {
           conflicts.push({ name, localSource: existingSource, canonicalPath });

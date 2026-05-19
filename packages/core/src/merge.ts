@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { invalidateCanonCache } from "./canon.js";
+import { applyConflictDecision } from "./conflict.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import {
   readSkillSource,
@@ -27,15 +28,8 @@ export interface MergeImportReport {
   renamed: { name: string; renamedTo: string }[];
 }
 
-function resolveRenameTarget(skillsDir: string, name: string): string {
-  const base = `${name}-local`;
-  if (!fs.existsSync(path.join(skillsDir, base))) return base;
-  for (let i = 2; i < 1000; i++) {
-    const candidate = `${base}-${i}`;
-    if (!fs.existsSync(path.join(skillsDir, candidate))) return candidate;
-  }
-  throw new Error(`no available rename target for ${name}`);
-}
+// v0.11.9 M5: rename-target resolver + decision applicator moved to
+// `./conflict.ts`. Imported below.
 
 /**
  * Merge skills from `sourceRoot/skills/` into the active registry.
@@ -94,35 +88,28 @@ export function mergeImportRegistry(
       conflicts.push({ name, localSource, canonicalPath: sourcePath });
       continue;
     }
-    if (decision.action === "keep-mine") {
+    const effect = applyConflictDecision({
+      localSkillsDir,
+      localPath,
+      name,
+      decision,
+    });
+    if (effect.kind === "keep-mine") {
       keptMine.push(name);
       continue;
     }
-    if (decision.action === "rename-mine") {
-      const target = resolveRenameTarget(localSkillsDir, name);
-      fs.renameSync(localPath, path.join(localSkillsDir, target));
-      renamed.push({ name, renamedTo: target });
-      fs.cpSync(sourcePath, localPath, { recursive: true });
-      writeSkillSource(localPath, {
-        source: "yours",
-        syncedAt: importedAt,
-      });
-      const h = hashSkillFolder(localPath);
-      if (h) writeSyncedHash(localPath, h);
-      imported.push(name);
-      continue;
+    if (effect.kind === "rename-mine") {
+      renamed.push({ name, renamedTo: effect.renamedTo });
     }
-    if (decision.action === "use-canonical") {
-      fs.rmSync(localPath, { recursive: true, force: true });
-      fs.cpSync(sourcePath, localPath, { recursive: true });
-      writeSkillSource(localPath, {
-        source: "yours",
-        syncedAt: importedAt,
-      });
-      const h = hashSkillFolder(localPath);
-      if (h) writeSyncedHash(localPath, h);
-      imported.push(name);
-    }
+    // Both rename-mine and use-canonical fall through to copy + stamp.
+    fs.cpSync(sourcePath, localPath, { recursive: true });
+    writeSkillSource(localPath, {
+      source: "yours",
+      syncedAt: importedAt,
+    });
+    const h = hashSkillFolder(localPath);
+    if (h) writeSyncedHash(localPath, h);
+    imported.push(name);
   }
 
   // Canon set may shift if imported names happen to be canon under

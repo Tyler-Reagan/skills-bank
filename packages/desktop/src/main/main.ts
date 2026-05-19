@@ -22,6 +22,7 @@ import {
   buildRegistryIndex,
   applyUpstreamUpdate as coreApplyUpstreamUpdate,
   classifySkillByName,
+  createUpstreamProbeRunner,
   clearPendingConflicts,
   computeFolderDiff,
   deleteFromBankSkill,
@@ -420,120 +421,37 @@ scanAndStampUpstreamFromLock(registryRoot);
 // beyond that. AccountModal's "Sign in for 5000/hr" affordance is
 // the documented escape hatch.
 
-interface RepoProbeCacheEntry {
-  rootSha: string;
-  folderHashes: Map<string, string>;
-  fetchedAt: number;
-}
-
-interface SkillProbeResult {
-  latestHash: string;
-  probedAt: number;
-}
-
-const repoProbeCache = new Map<string, RepoProbeCacheEntry>();
-const probedUpdates = new Map<string, SkillProbeResult>();
-
-const PROBE_CACHE_TTL_MS = 5 * 60 * 1000;
 const PROBE_CADENCE_MS = 6 * 60 * 60 * 1000;
 const PROBE_BOOT_DELAY_MS = 5 * 1000;
 
-let probeInFlight: Promise<UpstreamProbeResult> | null = null;
+// v0.11.9 M2: probe scheduler state + cadence loop live in core.
+// Desktop wires the BrowserWindow broadcast as the completion sink
+// and exposes the runner's surface to the rest of main.ts via the
+// shims below (kept for call-site readability — they just delegate).
+const probeRunner = createUpstreamProbeRunner({
+  registryRoot: () => registryRoot,
+  token: () => getStoredToken(),
+  onComplete: (event) => {
+    const wins = BrowserWindow.getAllWindows();
+    for (const win of wins) {
+      if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
+    }
+  },
+});
 
 async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
-  if (probeInFlight) return probeInFlight;
-  probeInFlight = (async () => {
-    const probedAt = new Date().toISOString();
-    if (!registryRoot) return { probed: 0, updates: 0, probedAt };
-    let index;
-    try {
-      index = buildRegistryIndex(registryRoot);
-    } catch (err) {
-      console.warn("upstream probe: failed to read registry:", err);
-      return { probed: 0, updates: 0, probedAt };
-    }
-    const candidates = index.entries.filter(
-      (e) =>
-        e.source.upstream?.kind === "github" &&
-        typeof e.source.upstream.repo === "string" &&
-        typeof e.source.upstream.skillPath === "string" &&
-        typeof e.source.upstream.skillFolderHash === "string",
-    );
-    if (candidates.length === 0) {
-      return { probed: 0, updates: 0, probedAt };
-    }
-    const byRepo = new Map<string, typeof candidates>();
-    for (const e of candidates) {
-      const repo = e.source.upstream!.repo!;
-      const bucket = byRepo.get(repo);
-      if (bucket) bucket.push(e);
-      else byRepo.set(repo, [e]);
-    }
-    const token = getStoredToken();
-    let updates = 0;
-    let rateLimitInfo: UpstreamProbeCompleteEvent["rateLimit"] | undefined;
-    const failedRepos: string[] = [];
-    for (const [repo, skills] of byRepo) {
-      let cache = repoProbeCache.get(repo);
-      const now = Date.now();
-      if (!cache || now - cache.fetchedAt > PROBE_CACHE_TTL_MS) {
-        const res = await probeRepoTree(repo, token);
-        if (!res.ok) {
-          console.warn(
-            `upstream probe: ${repo} failed (${res.status}): ${res.message}`,
-          );
-          if (res.status === 429 && res.rateLimit) {
-            // First rate-limit hit wins — they all carry the same
-            // window state (limit/remaining/resetAt are repo-agnostic
-            // for unauth-per-IP).
-            if (!rateLimitInfo) rateLimitInfo = res.rateLimit;
-          } else {
-            failedRepos.push(repo);
-          }
-          continue;
-        }
-        const folderHashes = buildFolderHashMap(res.tree);
-        cache = { rootSha: res.rootSha, folderHashes, fetchedAt: now };
-        repoProbeCache.set(repo, cache);
-      }
-      for (const skill of skills) {
-        const upstream = skill.source.upstream!;
-        const folderPath = folderPathFromSkillPath(upstream.skillPath!);
-        const currentHash = cache.folderHashes.get(folderPath);
-        if (currentHash && currentHash !== upstream.skillFolderHash) {
-          probedUpdates.set(skill.name, {
-            latestHash: currentHash,
-            probedAt: now,
-          });
-          updates++;
-        } else {
-          probedUpdates.delete(skill.name);
-        }
-      }
-    }
-    notifyProbeComplete({
-      updates,
-      ...(rateLimitInfo ? { rateLimit: rateLimitInfo } : {}),
-      ...(failedRepos.length > 0 ? { failedRepos } : {}),
-    });
-    return { probed: byRepo.size, updates, probedAt };
-  })();
-  try {
-    return await probeInFlight;
-  } finally {
-    probeInFlight = null;
-  }
+  return probeRunner.run();
 }
 
-function buildFolderHashMap(tree: GitTreeEntry[]): Map<string, string> {
-  const m = new Map<string, string>();
-  for (const entry of tree) {
-    if (entry.type === "tree") m.set(entry.path, entry.sha);
+function notifyProbeComplete(
+  event: UpstreamProbeCompleteEvent = {},
+): void {
+  // Re-emit through the runner's onComplete so empty refresh nudges
+  // and probe results follow the same channel.
+  if (Object.keys(event).length === 0) {
+    probeRunner.notifyRefresh();
+    return;
   }
-  return m;
-}
-
-function notifyProbeComplete(event: UpstreamProbeCompleteEvent = {}): void {
   const wins = BrowserWindow.getAllWindows();
   for (const win of wins) {
     if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
@@ -543,11 +461,15 @@ function notifyProbeComplete(event: UpstreamProbeCompleteEvent = {}): void {
 function augmentWithProbedUpdates<T extends { name: string }>(
   entries: T[],
 ): T[] {
-  if (probedUpdates.size === 0) return entries;
-  return entries.map((e) =>
-    probedUpdates.has(e.name) ? { ...e, upstreamUpdateAvailable: true } : e,
-  );
+  return probeRunner.augmentEntries(entries);
 }
+
+// Compatibility shim: the old `probedUpdates.delete(name)` call sites
+// keep using a Map-like object so the diff stays small. Implemented
+// against the runner's clearUpdate method.
+const probedUpdates = {
+  delete: (name: string) => probeRunner.clearUpdate(name),
+};
 
 ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
 
@@ -2683,6 +2605,20 @@ function migrateLegacyGithubMarkers(registryRoot: string): void {
   }
 }
 
+/**
+ * v0.11.9 M8: commit the github-linked-mode flip. Replacing the registry
+ * with a repo, restoring a session after relaunch, and any future
+ * re-link path all use this to atomically promote (registrySource,
+ * linkedRepo) to the authed/linked tuple — the "authed-but-unlinked"
+ * interstitial in AccountModal was the symptom of these two fields
+ * drifting out of sync.
+ */
+function commitGithubLinkage(meta: LinkedRepoMetadata): void {
+  registrySource = "github";
+  linkedRepo = meta;
+  persistConfig();
+}
+
 async function replaceRegistryWithRepo(fullName: string): Promise<{
   ok: boolean;
   message: string;
@@ -2731,17 +2667,13 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
         orphaned: report.orphaned.length,
         commitSha: report.commitSha,
       });
-      // The link event is what defines github-linked mode (Plan 02
-      // structural fix). Flipping registrySource here — atomically with
-      // linkedRepo — prevents the "authed-but-unlinked" interstitial
-      // that previously misled AccountModal copy.
-      registrySource = "github";
-      linkedRepo = {
+      // v0.11.9 M8: linkage commit step extracted so other paths
+      // (re-link, restore from session) can reuse it.
+      commitGithubLinkage({
         fullName,
         lastFetchedAt: report.syncedAt,
         syncedFromCommit: fetched.commitSha,
-      };
-      persistConfig();
+      });
       const message =
         report.conflicts.length > 0
           ? `synced ${report.upserted.length} from ${fullName}, ${report.conflicts.length} conflict(s) need review`
