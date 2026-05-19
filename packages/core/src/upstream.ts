@@ -401,6 +401,14 @@ export async function applyUpstreamUpdate(
   );
   const existingSource = readSkillSource(registrySkillDir);
 
+  // Preserve user-curated tags across the Update. mirrorSkillFolder
+  // wipe-and-recopies destDir, so a local meta.json that wasn't in
+  // upstream would be lost — and with it, the user's tags. Sync has
+  // the same splice (see `sync.ts:readMetaTags`); Update needs the
+  // same protection.
+  const fs = await import("node:fs");
+  const preservedTags = readMetaTagsFromSkillDir(registrySkillDir, fs);
+
   const mirror = await mirrorSkillFolder(
     upstream.repo,
     folderPath,
@@ -443,9 +451,83 @@ export async function applyUpstreamUpdate(
       skillFolderHash: mirror.folderHash,
     },
   });
+  // Restore user tags. Two cases:
+  //   - Upstream shipped meta.json → splice tags in (preserve other
+  //     upstream-curated fields like description).
+  //   - Upstream didn't ship meta.json → synthesize a minimal file
+  //     from SKILL.md frontmatter + the user's tags so the warning
+  //     "missing meta.json" doesn't surface for a skill the user
+  //     actually had metadata for.
+  if (preservedTags !== null && preservedTags.length > 0) {
+    restoreMetaTags(registrySkillDir, preservedTags, ctx.name, fs);
+  }
+
   writeRuntimeState(registrySkillDir, { fetchedAt: now });
+  // Re-hash AFTER restoring meta.json so the baseline reflects the
+  // final on-disk state. Otherwise drift fires immediately because
+  // the hash recorded by mirror would mismatch the post-restore tree.
   const newBaseline = hashSkillFolder(registrySkillDir);
   if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
 
   return { ok: true, message: `Updated ${ctx.name} from ${upstream.repo}.` };
+}
+
+function readMetaTagsFromSkillDir(
+  skillDir: string,
+  fsMod: typeof import("node:fs"),
+): string[] | null {
+  const metaPath = `${skillDir}/meta.json`;
+  if (!fsMod.existsSync(metaPath)) return null;
+  try {
+    const raw = JSON.parse(fsMod.readFileSync(metaPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const tags = raw["tags"];
+    if (!Array.isArray(tags)) return null;
+    return tags.filter((t): t is string => typeof t === "string");
+  } catch {
+    return null;
+  }
+}
+
+function restoreMetaTags(
+  skillDir: string,
+  tags: string[],
+  name: string,
+  fsMod: typeof import("node:fs"),
+): void {
+  const metaPath = `${skillDir}/meta.json`;
+  if (fsMod.existsSync(metaPath)) {
+    // Splice — preserve upstream's other fields.
+    try {
+      const raw = JSON.parse(fsMod.readFileSync(metaPath, "utf8")) as Record<
+        string,
+        unknown
+      >;
+      raw["tags"] = tags;
+      fsMod.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
+    } catch {
+      // Malformed upstream meta.json — fall through to synthesize.
+      synthesizeMetaJson(skillDir, name, tags, fsMod);
+    }
+    return;
+  }
+  // Upstream shipped no meta.json — synthesize a minimal one with the
+  // user's tags so they survive Update + the "missing meta.json"
+  // warning doesn't fire for a skill the user had metadata for.
+  synthesizeMetaJson(skillDir, name, tags, fsMod);
+}
+
+function synthesizeMetaJson(
+  skillDir: string,
+  name: string,
+  tags: string[],
+  fsMod: typeof import("node:fs"),
+): void {
+  const metaPath = `${skillDir}/meta.json`;
+  fsMod.writeFileSync(
+    metaPath,
+    JSON.stringify({ name, description: "", tags }, null, 2) + "\n",
+  );
 }
