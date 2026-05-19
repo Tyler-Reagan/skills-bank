@@ -50,6 +50,8 @@ const api = {
   quitAndInstallUpdate: () => ipcRenderer.invoke(IPC.quitAndInstallUpdate),
   setDismissedUpdateVersion: (version: string | null) =>
     ipcRenderer.invoke(IPC.setDismissedUpdateVersion, version),
+  dismissWeakStorageNotice: () =>
+    ipcRenderer.invoke(IPC.dismissWeakStorageNotice),
   onUpdateStatus: (cb: (status: UpdateStatus) => void) => {
     const listener = (_e: unknown, status: UpdateStatus) => cb(status);
     ipcRenderer.on(IPC.updateStatus, listener);

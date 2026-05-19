@@ -597,8 +597,12 @@ function AppContent(): React.ReactElement {
       ...settings,
       customSkillsDirs: [...settings.customSkillsDirs, chosen],
     });
+    // v0.11.8 M5: surface the soft-validator warning if the path
+    // shape is suspicious. The dir is added regardless — the
+    // warning is a hint, not a rejection.
+    if (r.warning) flashError(r.warning);
     void refresh();
-  }, [settings, saveSettings, refresh]);
+  }, [settings, saveSettings, refresh, flash, flashError]);
 
   const removeCustomSkillsDir = useCallback(
     (path: string) => {
@@ -618,11 +622,33 @@ function AppContent(): React.ReactElement {
   // Hydrate the user's "Skip this version" choice once at boot. The main
   // process is the source of truth (persisted alongside registryRoot/persona
   // in config.json), so this is fire-and-forget.
+  //
+  // Same boot read also surfaces the ADR-0004 weak-storage notice when
+  // the safeStorage backend resolved to `basic_text` (Linux without a
+  // keyring) and the user hasn't already dismissed it for this backend.
   useEffect(() => {
     void window.skillsBank.getConfig().then((cfg) => {
       setDismissedUpdateVersion(cfg.dismissedUpdateVersion);
+      if (cfg.showWeakStorageNotice) {
+        flashError(
+          "Your system has no usable keyring — the GitHub token is stored with weak encryption (basic_text). Sign out when you're done.",
+          {
+            action: {
+              label: "Don't show again",
+              onClick: () => {
+                void window.skillsBank.dismissWeakStorageNotice();
+                dismissToast();
+              },
+            },
+            diagnostic:
+              `safeStorage backend: ${cfg.storageBackend ?? "unavailable"}\n` +
+              `On Linux this means no libsecret-providing keyring (gnome-keyring, kwallet, etc.) was found.\n` +
+              `Install one and restart for proper OS-managed token encryption.`,
+          },
+        );
+      }
     });
-  }, []);
+  }, [flashError, dismissToast]);
 
   // Mirror every auto-updater event into local state. The boot-time check
   // only surfaces the badge; no modal auto-open — the user explicitly

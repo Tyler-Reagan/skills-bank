@@ -101,6 +101,7 @@ import {
   clearStoredToken,
   DeviceFlowError,
   getCurrentUser,
+  getStorageBackend,
   getStoredToken,
   pollDeviceFlow,
   resumeDeviceFlow,
@@ -134,6 +135,14 @@ interface AppConfig {
   // Identity + freshness of the GitHub repo backing the registry when
   // registrySource === "github". Null in local-bundled mode.
   linkedRepo: LinkedRepoMetadata | null;
+  // ADR-0004. Tracks which weak-storage backends the user has
+  // acknowledged the warning for. Keyed by Electron's
+  // `safeStorage.getSelectedStorageBackend()` return value
+  // (`basic_text` is the obfuscation-only fallback). If the backend
+  // changes later (e.g. user installed a keyring), the new value
+  // isn't in this set and the notice fires again — fresh consent
+  // for fresh state.
+  weakStorageNoticeDismissedFor: string[];
 }
 
 function emptyConfig(): AppConfig {
@@ -142,6 +151,7 @@ function emptyConfig(): AppConfig {
     registrySource: null,
     dismissedUpdateVersion: null,
     linkedRepo: null,
+    weakStorageNoticeDismissedFor: [],
   };
 }
 
@@ -166,6 +176,13 @@ function readConfig(): AppConfig {
           ? raw.dismissedUpdateVersion
           : null,
       linkedRepo: readLinkedRepo(raw.linkedRepo),
+      weakStorageNoticeDismissedFor: Array.isArray(
+        raw.weakStorageNoticeDismissedFor,
+      )
+        ? raw.weakStorageNoticeDismissedFor.filter(
+            (s): s is string => typeof s === "string",
+          )
+        : [],
     };
   } catch {
     return emptyConfig();
@@ -212,6 +229,40 @@ function isValidRegistryRoot(candidate: string): {
     return { ok: false, reason: `not a directory: ${candidate}` };
   }
   return { ok: true };
+}
+
+/**
+ * v0.11.8 M5 — soft validation. Detects paths the user almost
+ * certainly didn't mean to pick (the literal filesystem root, their
+ * home dir, common system paths). Returns a warning string the
+ * caller surfaces in the renderer; the operation still completes,
+ * since some users do legitimately want unusual paths (e.g. headless
+ * setups, custom partitions). "Warn, don't block."
+ *
+ * The check is path-shape only — no scanning of the directory's
+ * contents. Cheap, fast, runs on every picker submission.
+ */
+function suspiciousPathWarning(candidate: string): string | null {
+  const normalized = path.resolve(candidate);
+  const home = app.getPath("home");
+  // Filesystem root (`/` on POSIX, `C:\` on Windows).
+  if (normalized === path.parse(normalized).root) {
+    return `${normalized} is the filesystem root — did you mean a subfolder?`;
+  }
+  // User's home directory itself (not a subdir).
+  if (normalized === path.resolve(home)) {
+    return `${normalized} is your home directory — registry roots typically live in a subfolder (e.g. ~/Projects/skills-bank).`;
+  }
+  // Common POSIX system roots that almost certainly aren't a
+  // registry. Conservative list — only paths a misclick would land
+  // on, not every system dir.
+  const systemRoots = ["/usr", "/etc", "/var", "/bin", "/sbin", "/opt"];
+  for (const sys of systemRoots) {
+    if (normalized === sys) {
+      return `${normalized} is a system directory — registry roots should be a project folder.`;
+    }
+  }
+  return null;
 }
 
 // Default location for the local-bundled registry: app-managed,
@@ -856,11 +907,17 @@ let linkedRepo: LinkedRepoMetadata | null = readConfig().linkedRepo;
 // writeConfig({...}) at sites that only mutate one field, so we don't lose
 // the others when fields are added.
 function persistConfig(): void {
+  // Read first to preserve the weakStorageNoticeDismissedFor list,
+  // which only the dedicated IPC handler mutates — `persistConfig`
+  // shouldn't clobber the user's prior dismissal when other fields
+  // change.
+  const existing = readConfig();
   writeConfig({
     registryRoot,
     registrySource,
     dismissedUpdateVersion,
     linkedRepo,
+    weakStorageNoticeDismissedFor: existing.weakStorageNoticeDismissedFor,
   });
 }
 
@@ -1175,7 +1232,13 @@ function buildAppMenu(): Menu {
         { label: "Refresh", click: () => send("refresh") },
         { label: "Sync skills", click: () => send("sync") },
         { type: "separator" },
-        { role: "toggleDevTools" },
+        // ADR-0005: DevTools menu role only in dev. End-user packaged
+        // builds keep the social-engineering "paste-this-in-console"
+        // vector off-surface. Maintainers debugging a packaged build
+        // use SKILLS_BANK_DEVTOOLS=1 to auto-open at launch.
+        ...(app.isPackaged
+          ? []
+          : [{ role: "toggleDevTools" } as MenuItemConstructorOptions]),
         { type: "separator" },
         { role: "togglefullscreen" },
       ],
@@ -1236,13 +1299,38 @@ const NO_ROOT_MSG =
 
 ipcMain.handle(IPC.getRoot, () => registryRoot);
 
-ipcMain.handle(IPC.getConfig, () => ({
-  registryRoot,
-  configValid: registryRoot !== null,
-  isPackaged: app.isPackaged,
-  registrySource,
-  dismissedUpdateVersion,
-}));
+ipcMain.handle(IPC.getConfig, () => {
+  // ADR-0004: surface a weak-storage notice when `safeStorage`
+  // resolved to `basic_text` (Linux without a keyring) and the user
+  // hasn't already dismissed the warning for this backend.
+  const backend = getStorageBackend();
+  const cfg = readConfig();
+  const showWeakStorageNotice =
+    backend === "basic_text" &&
+    !cfg.weakStorageNoticeDismissedFor.includes(backend);
+  return {
+    registryRoot,
+    configValid: registryRoot !== null,
+    isPackaged: app.isPackaged,
+    registrySource,
+    dismissedUpdateVersion,
+    storageBackend: backend,
+    showWeakStorageNotice,
+  };
+});
+
+ipcMain.handle(IPC.dismissWeakStorageNotice, () => {
+  const backend = getStorageBackend();
+  if (!backend) return;
+  const cfg = readConfig();
+  if (!cfg.weakStorageNoticeDismissedFor.includes(backend)) {
+    cfg.weakStorageNoticeDismissedFor = [
+      ...cfg.weakStorageNoticeDismissedFor,
+      backend,
+    ];
+    writeConfig(cfg);
+  }
+});
 
 ipcMain.handle(IPC.setRegistryRoot, async () => {
   const win = BrowserWindow.getFocusedWindow();
@@ -1271,7 +1359,13 @@ ipcMain.handle(IPC.setRegistryRoot, async () => {
   // snapshot (or absence of one), not the old repo's set.
   invalidateCanonCache();
   persistConfig();
-  return { ok: true, message: `registry set to ${candidate}`, registryRoot };
+  const warning = suspiciousPathWarning(candidate);
+  return {
+    ok: true,
+    message: `registry set to ${candidate}`,
+    registryRoot,
+    ...(warning ? { warning } : {}),
+  };
 });
 
 // Always rebuild from filesystem on every call. The on-disk index.json is a
@@ -1311,7 +1405,14 @@ ipcMain.handle(IPC.pickCustomSkillsDir, async () => {
   if (result.canceled || result.filePaths.length === 0) {
     return { ok: false, message: "canceled" };
   }
-  return { ok: true, path: result.filePaths[0], message: "ok" };
+  const chosen = result.filePaths[0]!;
+  const warning = suspiciousPathWarning(chosen);
+  return {
+    ok: true,
+    path: chosen,
+    message: "ok",
+    ...(warning ? { warning } : {}),
+  };
 });
 
 // Per-file unified diff between two skill folders. Reusable across
