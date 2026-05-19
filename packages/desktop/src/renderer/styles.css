@@ -353,9 +353,10 @@ select {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-/* Skill upstream-update aggregate badge — same visual treatment as the
-   app-update badge but distinct so users register it as a different
-   concern (skill content vs app binary). */
+/* Skill origin-update aggregate badge — amber (--warn) to visually
+   separate "skill content updates" from the green app-binary update
+   badge above. Same shape and density; only the color semantic differs
+   so the two can sit side-by-side without being mistaken for one. */
 .updates-badge {
   display: inline-flex;
   align-items: center;
@@ -363,9 +364,9 @@ select {
   padding: 3px var(--s3);
   font-size: 12px;
   font-weight: 500;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
   border-radius: var(--r-xl);
   cursor: pointer;
   white-space: nowrap;
@@ -374,11 +375,11 @@ select {
     border-color var(--t) var(--ease);
 }
 .updates-badge:hover {
-  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--warn) 22%, var(--surface));
+  border-color: var(--warn);
 }
 .updates-badge:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--warn);
   outline-offset: 2px;
 }
 .header-stats {
