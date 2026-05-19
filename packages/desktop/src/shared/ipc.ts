@@ -60,6 +60,7 @@ export const IPC = {
   quitAndInstallUpdate: "app:quitAndInstallUpdate",
   updateStatus: "app:updateStatus",
   setDismissedUpdateVersion: "app:setDismissedUpdateVersion",
+  dismissWeakStorageNotice: "app:dismissWeakStorageNotice",
   syncCanonical: "registry:syncCanonical",
   getSyncReport: "registry:getSyncReport",
   syncStatus: "registry:syncStatus",
@@ -262,6 +263,13 @@ interface PickCustomSkillsDirResult {
   path?: string;
   /** Human-readable reason. "canceled" when the user dismissed the picker. */
   message: string;
+  /**
+   * Non-fatal sanity flag — the chosen path looks like a system root,
+   * the user's home dir, or otherwise unlikely to be a skills folder.
+   * `ok` stays true; renderer surfaces this as a confirm-before-add
+   * notice rather than a hard rejection. v0.11.8 M5 guardrail.
+   */
+  warning?: string;
 }
 
 /**
@@ -556,11 +564,34 @@ interface SkillsBankAPI {
     isPackaged: boolean;
     registrySource: RegistrySource | null;
     dismissedUpdateVersion: string | null;
+    /**
+     * Electron's currently-selected `safeStorage` backend. Possible
+     * values include `keychain`, `dpapi`, `gnome_libsecret`, `kwallet`,
+     * `basic_text`, or `null` when encryption is unavailable.
+     * `basic_text` indicates the Linux obfuscation-only fallback
+     * — auth.ts stores a token but only weakly encrypted. ADR-0004.
+     */
+    storageBackend: string | null;
+    /**
+     * True iff the renderer should surface the weak-storage notice
+     * this session (backend resolved to `basic_text` AND the user
+     * hasn't dismissed the warning for this backend yet). ADR-0004.
+     */
+    showWeakStorageNotice: boolean;
   }>;
+  /** Persist the user's dismissal of the weak-storage notice. ADR-0004. */
+  dismissWeakStorageNotice(): Promise<void>;
   setRegistryRoot(): Promise<{
     ok: boolean;
     message: string;
     registryRoot: string | null;
+    /**
+     * Non-fatal sanity flag — set when the chosen path is suspicious
+     * (system root, the user's home, etc.) but was otherwise valid as
+     * a registry root. v0.11.8 M5 guardrail. Renderer surfaces as a
+     * warning toast without rolling back the change.
+     */
+    warning?: string;
   }>;
   checkForUpdates(): Promise<{
     ok: boolean;

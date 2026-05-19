@@ -168,6 +168,38 @@ export function getStoredToken(): string | null {
   }
 }
 
+/**
+ * v0.11.8 / ADR-0004. Returns Electron's currently-selected
+ * safeStorage backend, or `null` when encryption is unavailable.
+ *
+ * `basic_text` on Linux indicates the obfuscation-only fallback —
+ * the token is stored with a hardcoded seed and is functionally
+ * cleartext to anyone with file-read access. The renderer surfaces
+ * this as a one-time warning so the user can decide whether to
+ * install a keyring or accept the risk.
+ *
+ * Other values (`gnome_libsecret`, `kwallet`, `keychain`, `dpapi`)
+ * are real OS-managed encryption.
+ */
+export function getStorageBackend(): string | null {
+  if (!safeStorage.isEncryptionAvailable()) return null;
+  // `getSelectedStorageBackend` is Linux-only on Electron 32 — feature-
+  // detect rather than crashing on macOS / Windows. When unavailable
+  // we infer the backend from platform: macOS = keychain, Windows =
+  // dpapi. The `basic_text` notice we care about can only surface on
+  // Linux anyway, and there the method exists.
+  type StorageBackendFn = () => string;
+  const getter = (
+    safeStorage as { getSelectedStorageBackend?: StorageBackendFn }
+  ).getSelectedStorageBackend;
+  if (typeof getter === "function") {
+    return getter.call(safeStorage);
+  }
+  if (process.platform === "darwin") return "keychain";
+  if (process.platform === "win32") return "dpapi";
+  return "unknown";
+}
+
 function setStoredToken(token: string): void {
   if (!safeStorage.isEncryptionAvailable()) {
     throw new Error("OS keychain encryption not available");
