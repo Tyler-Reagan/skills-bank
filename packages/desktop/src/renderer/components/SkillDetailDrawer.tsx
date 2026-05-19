@@ -182,10 +182,10 @@ export function SkillDetailDrawer({
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
   const [repoMeta, setRepoMeta] = useState<
-    import("../../shared/ipc.js").UpstreamRepoMetadata | null
+    import("../../shared/ipc.js").OriginRepoMetadata | null
   >(null);
   const [lastCommit, setLastCommit] = useState<
-    import("../../shared/ipc.js").UpstreamLastCommit | null
+    import("../../shared/ipc.js").OriginLastCommit | null
   >(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerRepo, setPickerRepo] = useState("");
@@ -265,7 +265,7 @@ export function SkillDetailDrawer({
     if (!upstreamRepo) return;
     let cancelled = false;
     void window.skillsBank
-      .upstreamRepoMetadata(upstreamRepo)
+      .originRepoMetadata(upstreamRepo)
       .then((m) => {
         if (!cancelled) setRepoMeta(m);
       })
@@ -285,7 +285,7 @@ export function SkillDetailDrawer({
     if (!upstreamRepo || !upstreamSkillPath) return;
     let cancelled = false;
     void window.skillsBank
-      .upstreamLastCommit(upstreamRepo, upstreamSkillPath)
+      .originLastCommit(upstreamRepo, upstreamSkillPath)
       .then((c) => {
         if (!cancelled) setLastCommit(c);
       })

@@ -10,8 +10,8 @@ import type {
 import { classifyDrawerState } from "./skillState.js";
 import type {
   AuthStatus,
-  UpstreamManualChoice,
-  UpstreamUpdateResult,
+  OriginManualChoice,
+  OriginUpdateResult,
 } from "../../shared/ipc.js";
 import { SkillDetailDrawer } from "./SkillDetailDrawer.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
@@ -35,7 +35,7 @@ interface Props {
   /** Re-fetch the registry after a state-changing action. */
   refresh: () => Promise<unknown>;
   /** Centralized handler for the three Update result paths. */
-  onUpdateResult: (r: UpstreamUpdateResult) => void;
+  onUpdateResult: (r: OriginUpdateResult) => void;
   /** Open the per-skill ManageLinks modal. */
   onOpenManageLinks: (target: {
     name: string;
@@ -113,8 +113,8 @@ export function DrawerHost({
       showUpstreamActivity={
         settings.showUpstreamActivity && Boolean(authStatus?.user)
       }
-      onSetManualUpstream={async (choice: UpstreamManualChoice) => {
-        const r = await window.skillsBank.upstreamSetManual(
+      onSetManualUpstream={async (choice: OriginManualChoice) => {
+        const r = await window.skillsBank.originSetManual(
           selected.name,
           choice,
         );
@@ -193,7 +193,7 @@ export function DrawerHost({
       onTakeUpstream={
         caps.canTakeUpstream
           ? async () => {
-              const r = await window.skillsBank.upstreamUpdate(selected.name);
+              const r = await window.skillsBank.originUpdate(selected.name);
               onUpdateResult(r);
               if (r.ok) onClose();
               await refresh();
@@ -203,7 +203,7 @@ export function DrawerHost({
       onUpdate={
         caps.canUpdate
           ? async () => {
-              const r = await window.skillsBank.upstreamUpdate(selected.name);
+              const r = await window.skillsBank.originUpdate(selected.name);
               onUpdateResult(r);
               await refresh();
             }

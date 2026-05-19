@@ -60,7 +60,7 @@ import type {
   AuthStatus,
   SyncStatus,
   UpdateStatus,
-  UpstreamUpdateResult,
+  OriginUpdateResult,
 } from "../shared/ipc.js";
 
 const LS_KEYS = {
@@ -474,14 +474,14 @@ function AppContent(): React.ReactElement {
   };
 
   /**
-   * Handle an UpstreamUpdateResult uniformly across the three Update
+   * Handle an OriginUpdateResult uniformly across the three Update
    * call sites (drawer Update, drawer Take-upstream, UpdatesModal).
    * Success → transient flash; rate-limit → sticky error with a
    * "Sign in" affordance for unauth hits; other errors → sticky
    * error with a Copy-details diagnostic payload.
    */
   const handleUpdateResult = useCallback(
-    (r: UpstreamUpdateResult) => {
+    (r: OriginUpdateResult) => {
       if (r.ok) {
         flash(r.message);
         return;
@@ -1660,7 +1660,7 @@ function AppContent(): React.ReactElement {
             entries={pendingSkillUpdates}
             onClose={() => setShowUpdatesModal(false)}
             onUpdate={async (name) => {
-              const r = await window.skillsBank.upstreamUpdate(name);
+              const r = await window.skillsBank.originUpdate(name);
               handleUpdateResult(r);
               await refresh();
               return r;
@@ -1670,7 +1670,7 @@ function AppContent(): React.ReactElement {
               setSelected(entry);
             }}
             onRefresh={async () => {
-              await window.skillsBank.upstreamProbe();
+              await window.skillsBank.originProbe();
               await refresh();
             }}
           />

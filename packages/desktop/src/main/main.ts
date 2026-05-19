@@ -434,7 +434,7 @@ const probeRunner = createOriginProbeRunner({
   onComplete: (event) => {
     const wins = BrowserWindow.getAllWindows();
     for (const win of wins) {
-      if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
+      if (!win.isDestroyed()) win.webContents.send(IPC.originProbe, event);
     }
   },
 });
@@ -454,7 +454,7 @@ function notifyProbeComplete(
   }
   const wins = BrowserWindow.getAllWindows();
   for (const win of wins) {
-    if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
+    if (!win.isDestroyed()) win.webContents.send(IPC.originProbe, event);
   }
 }
 
@@ -471,7 +471,7 @@ const probedUpdates = {
   delete: (name: string) => probeRunner.clearUpdate(name),
 };
 
-ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
+ipcMain.handle(IPC.originProbe, async () => runUpstreamProbe());
 
 /**
  * Update backend. Fetches the skill's folder content directly from
@@ -518,7 +518,7 @@ async function applyUpstreamUpdate(
   return result;
 }
 
-ipcMain.handle(IPC.upstreamUpdate, async (_e, name: string) =>
+ipcMain.handle(IPC.originUpdate, async (_e, name: string) =>
   applyUpstreamUpdate(name),
 );
 
@@ -588,7 +588,7 @@ async function getRepoMetadata(repo: string): Promise<UpstreamRepoMetadata> {
   }
 }
 
-ipcMain.handle(IPC.upstreamRepoMetadata, async (_e, repo: string) =>
+ipcMain.handle(IPC.originRepoMetadata, async (_e, repo: string) =>
   getRepoMetadata(repo),
 );
 
@@ -665,7 +665,7 @@ async function getLastCommit(
 }
 
 ipcMain.handle(
-  IPC.upstreamLastCommit,
+  IPC.originLastCommit,
   async (_e, repo: string, skillPath: string) => getLastCommit(repo, skillPath),
 );
 
@@ -740,7 +740,7 @@ async function setManualUpstream(
 }
 
 ipcMain.handle(
-  IPC.upstreamSetManual,
+  IPC.originSetManual,
   async (_e, name: string, choice: UpstreamManualChoice) =>
     setManualUpstream(name, choice),
 );

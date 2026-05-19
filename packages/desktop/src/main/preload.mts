@@ -115,9 +115,9 @@ const api = {
     ipcRenderer.on(IPC.headerMenuAction, listener);
     return () => ipcRenderer.removeListener(IPC.headerMenuAction, listener);
   },
-  upstreamProbe: () => ipcRenderer.invoke(IPC.upstreamProbe),
-  onUpstreamProbeComplete: (
-    cb: (event: import("../shared/ipc.js").UpstreamProbeCompleteEvent) => void,
+  originProbe: () => ipcRenderer.invoke(IPC.originProbe),
+  onOriginProbeComplete: (
+    cb: (event: import("../shared/ipc.js").OriginProbeCompleteEvent) => void,
   ) => {
     const listener = (
       _e: Electron.IpcRendererEvent,
@@ -128,21 +128,21 @@ const api = {
       // empty event.
       const event =
         payload && typeof payload === "object"
-          ? (payload as import("../shared/ipc.js").UpstreamProbeCompleteEvent)
+          ? (payload as import("../shared/ipc.js").OriginProbeCompleteEvent)
           : {};
       cb(event);
     };
-    ipcRenderer.on(IPC.upstreamProbe, listener);
-    return () => ipcRenderer.removeListener(IPC.upstreamProbe, listener);
+    ipcRenderer.on(IPC.originProbe, listener);
+    return () => ipcRenderer.removeListener(IPC.originProbe, listener);
   },
-  upstreamUpdate: (name: string) =>
-    ipcRenderer.invoke(IPC.upstreamUpdate, name),
-  upstreamRepoMetadata: (repo: string) =>
-    ipcRenderer.invoke(IPC.upstreamRepoMetadata, repo),
-  upstreamLastCommit: (repo: string, skillPath: string) =>
-    ipcRenderer.invoke(IPC.upstreamLastCommit, repo, skillPath),
-  upstreamSetManual: (name: string, choice: unknown) =>
-    ipcRenderer.invoke(IPC.upstreamSetManual, name, choice),
+  originUpdate: (name: string) =>
+    ipcRenderer.invoke(IPC.originUpdate, name),
+  originRepoMetadata: (repo: string) =>
+    ipcRenderer.invoke(IPC.originRepoMetadata, repo),
+  originLastCommit: (repo: string, skillPath: string) =>
+    ipcRenderer.invoke(IPC.originLastCommit, repo, skillPath),
+  originSetManual: (name: string, choice: unknown) =>
+    ipcRenderer.invoke(IPC.originSetManual, name, choice),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);
