@@ -43,6 +43,22 @@ interface Props {
    * affordance — caller can still edit via the detail drawer.
    */
   onSaveTags?: (next: string[]) => Promise<void> | void;
+  /**
+   * Bulk-install mode props. When `selectMode` is true the card
+   * renders a leading checkbox and a click on the card body toggles
+   * selection instead of opening the detail drawer. `disableSelect`
+   * is set for skills that are already installed for every
+   * applicable agent — the checkbox renders but is non-interactive
+   * so the user can see which cards bulk-install would skip.
+   * `bulkInstallStatus` annotates the card during a bulk-install
+   * run (pending → installing → installed/failed); presentation is
+   * a thin chip beside the status chip.
+   */
+  selectMode?: boolean;
+  selected?: boolean;
+  disableSelect?: boolean;
+  onToggleSelect?: () => void;
+  bulkInstallStatus?: "pending" | "installing" | "installed" | "failed";
 }
 
 export function SkillCard({
@@ -53,6 +69,11 @@ export function SkillCard({
   agents,
   isRegistered = true,
   onSaveTags,
+  selectMode = false,
+  selected = false,
+  disableSelect = false,
+  onToggleSelect,
+  bulkInstallStatus,
 }: Props): React.ReactElement {
   const fresh = freshness(entry.lastCommit);
   const visibleTags = (entry.tags ?? []).slice(0, 3);
@@ -89,32 +110,80 @@ export function SkillCard({
     setAddInput("");
   };
 
+  const handleCardClick = () => {
+    if (selectMode) {
+      if (!disableSelect && onToggleSelect) onToggleSelect();
+      return;
+    }
+    onSelect();
+  };
   return (
     <div
-      className={`skill-card${entry.originUpdateAvailable ? " skill-card--update-available" : ""}`}
+      className={`skill-card${entry.originUpdateAvailable ? " skill-card--update-available" : ""}${selectMode && selected ? " skill-card--selected" : ""}`}
       style={
         reducedMotion
           ? undefined
           : ({ animationDelay: `${index * 30}ms` } as React.CSSProperties)
       }
-      onClick={onSelect}
+      onClick={handleCardClick}
       role="button"
       tabIndex={0}
       aria-label={ariaLabelFor(entry, status)}
+      aria-pressed={selectMode ? selected : undefined}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onSelect();
+          handleCardClick();
         }
       }}
     >
       <div className="skill-card-top">
+        {selectMode && (
+          <input
+            type="checkbox"
+            checked={selected}
+            disabled={disableSelect}
+            onChange={onToggleSelect}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={
+              disableSelect
+                ? `${entry.name} (already installed)`
+                : selected
+                  ? `Deselect ${entry.name}`
+                  : `Select ${entry.name} for bulk install`
+            }
+            style={{ marginRight: 8, accentColor: "var(--accent)" }}
+          />
+        )}
         <p
           className="skill-name"
           style={{ flex: 1, minWidth: 0, marginBottom: 0 }}
         >
           {entry.name}
         </p>
+        {bulkInstallStatus && (
+          <span
+            className="skill-status-chip"
+            style={{
+              fontSize: 11,
+              color:
+                bulkInstallStatus === "failed"
+                  ? "var(--danger, #c33)"
+                  : bulkInstallStatus === "installed"
+                    ? "var(--fresh, #2a7)"
+                    : "var(--text-2)",
+            }}
+            title={`Bulk install: ${bulkInstallStatus}`}
+          >
+            {bulkInstallStatus === "installing"
+              ? "…"
+              : bulkInstallStatus === "installed"
+                ? "✓"
+                : bulkInstallStatus === "failed"
+                  ? "✕"
+                  : "•"}
+          </span>
+        )}
         <PublishBadge entry={entry} isRegistered={isRegistered} />
         <StatusChip status={status} warnings={entry.warnings?.length ?? 0} />
       </div>

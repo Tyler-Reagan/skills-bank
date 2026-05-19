@@ -11,7 +11,7 @@ import type {
   InstalledSkill,
   RegistryEntry,
 } from "@skills-bank/core";
-import { BrowseTab } from "./components/BrowseTab.js";
+import { BrowseTab, type BulkInstallState } from "./components/BrowseTab.js";
 import { ConflictResolutionModal } from "./components/ConflictResolutionModal.js";
 import {
   InstalledTab,
@@ -341,6 +341,9 @@ function AppContent(): React.ReactElement {
     import("./components/RegistryFilters.js").RegistrySortState
   >({ by: "name", direction: "asc" });
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
+  const [bulkInstall, setBulkInstall] = useState<BulkInstallState | null>(
+    null,
+  );
   const [theme, setTheme] = useState<Theme>(readInitialTheme);
   const [density, setDensity] = useState<Density>(readInitialDensity);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ kind: "idle" });
@@ -547,6 +550,90 @@ function AppContent(): React.ReactElement {
       installedCount: new Set(i.map((x) => x.name)).size,
     };
   }, [settings.customSkillsDirs]);
+
+  // Bulk-install runner. Iterates the queue sequentially and surfaces
+  // per-skill progress through `bulkInstall`. Skip-and-continue: a
+  // failure on one skill records the reason and moves to the next,
+  // matching the contract laid out in issue #60 ("probably skip-and-
+  // continue with a final report"). Conflicts that would normally open
+  // InstallConflictModal are recorded as failures here — the modal is
+  // single-skill UX and not worth re-entering 20 times in a row; the
+  // user can re-open those skills from the drawer afterwards. Re-uses
+  // settings.defaultInstallAgents so bulk mode lands skills in the
+  // same agent set as the per-card Install button.
+  const runBulkInstall = useCallback(
+    async (names: string[]): Promise<void> => {
+      if (names.length === 0) return;
+      const agents =
+        settings.defaultInstallAgents.length > 0
+          ? settings.defaultInstallAgents
+          : undefined;
+      let succeeded = new Set<string>();
+      let failed = new Map<string, string>();
+      let queue: ReadonlySet<string> = new Set(names);
+      setBulkInstall({
+        queue,
+        current: null,
+        succeeded,
+        failed,
+      });
+      for (const name of names) {
+        // Pop the current name out of the queue before kicking the
+        // install so the action bar's "X of N" math counts the active
+        // skill as the in-flight one, not as still-pending.
+        const nextQueue = new Set(queue);
+        nextQueue.delete(name);
+        queue = nextQueue;
+        setBulkInstall({
+          queue,
+          current: name,
+          succeeded,
+          failed,
+        });
+        try {
+          const r = await window.skillsBank.install(name, false, agents);
+          if (r.ok) {
+            succeeded = new Set(succeeded);
+            succeeded.add(name);
+          } else {
+            failed = new Map(failed);
+            failed.set(
+              name,
+              r.errors?.[0]?.message ?? r.message ?? "install failed",
+            );
+          }
+        } catch (err) {
+          failed = new Map(failed);
+          failed.set(
+            name,
+            err instanceof Error ? err.message : String(err),
+          );
+        }
+        setBulkInstall({
+          queue,
+          current: null,
+          succeeded,
+          failed,
+        });
+      }
+      // Final state: leave bulkInstall populated so the action bar's
+      // summary text stays visible until the user exits select mode.
+      // The next bulk run resets it.
+      await refresh();
+      const okCount = succeeded.size;
+      const failCount = failed.size;
+      if (failCount === 0) {
+        flash(`Installed ${okCount} skill${okCount === 1 ? "" : "s"}`);
+      } else if (okCount === 0) {
+        flash(`Bulk install failed for all ${failCount} skill(s)`);
+      } else {
+        flash(
+          `Installed ${okCount}, ${failCount} failed — see card badges`,
+        );
+      }
+    },
+    [settings.defaultInstallAgents, refresh, flash],
+  );
 
   // Header Rescan button — the whole user-triggered rebuild + upstream-
   // probe state machine, plus the probe-complete listener that drives
@@ -1123,6 +1210,8 @@ function AppContent(): React.ReactElement {
                 setRegistryFilters={setRegistryFilters}
                 registrySort={registrySort}
                 setRegistrySort={setRegistrySort}
+                onBulkInstall={runBulkInstall}
+                bulkInstall={bulkInstall}
               />
             )}
             {tab === "installed" && (

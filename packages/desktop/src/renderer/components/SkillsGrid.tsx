@@ -20,6 +20,24 @@ interface Props {
    * meta.json to write back to).
    */
   onSaveTags?: (name: string, next: string[]) => Promise<void> | void;
+  /**
+   * Bulk-install plumbing. When `selectMode` is true, each card
+   * renders a leading checkbox; clicks on the card body toggle
+   * selection rather than opening the detail drawer. Selection
+   * state is owned by the caller (BrowseTab) so it survives
+   * sort/filter changes. `isDisabled(entry)` returns true for
+   * cards that should render with a non-interactive checkbox
+   * (already installed); they stay visible so the user can see
+   * what the bulk action would skip. `bulkStatus(entry)` annotates
+   * per-card progress during a run.
+   */
+  selectMode?: boolean;
+  selectedNames?: ReadonlySet<string>;
+  onToggleSelect?: (name: string) => void;
+  isDisabled?: (entry: RegistryEntry) => boolean;
+  bulkStatus?: (
+    entry: RegistryEntry,
+  ) => "pending" | "installing" | "installed" | "failed" | undefined;
 }
 
 export function SkillsGrid({
@@ -29,6 +47,11 @@ export function SkillsGrid({
   emptyMessage,
   onClearFilters,
   onSaveTags,
+  selectMode = false,
+  selectedNames,
+  onToggleSelect,
+  isDisabled,
+  bulkStatus,
 }: Props): React.ReactElement {
   if (entries.length === 0) {
     return (
@@ -51,19 +74,29 @@ export function SkillsGrid({
   }
   return (
     <div className="skills-grid">
-      {entries.map((e, i) => (
-        <SkillCard
-          key={e.path}
-          entry={e}
-          status={statusForEntry(e, installed)}
-          onSelect={() => onSelect(e)}
-          index={i}
-          agents={agentsForSkill(installed, e.name)}
-          {...(onSaveTags
-            ? { onSaveTags: (next: string[]) => onSaveTags(e.name, next) }
-            : {})}
-        />
-      ))}
+      {entries.map((e, i) => {
+        const status = bulkStatus?.(e);
+        return (
+          <SkillCard
+            key={e.path}
+            entry={e}
+            status={statusForEntry(e, installed)}
+            onSelect={() => onSelect(e)}
+            index={i}
+            agents={agentsForSkill(installed, e.name)}
+            {...(onSaveTags
+              ? { onSaveTags: (next: string[]) => onSaveTags(e.name, next) }
+              : {})}
+            selectMode={selectMode}
+            selected={selectedNames?.has(e.name) ?? false}
+            disableSelect={isDisabled?.(e) ?? false}
+            {...(onToggleSelect
+              ? { onToggleSelect: () => onToggleSelect(e.name) }
+              : {})}
+            {...(status ? { bulkInstallStatus: status } : {})}
+          />
+        );
+      })}
     </div>
   );
 }
