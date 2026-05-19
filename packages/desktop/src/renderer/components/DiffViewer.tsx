@@ -7,7 +7,7 @@ import { Icon } from "./Icon.js";
  * skill folders. Compact by default: each file collapses to a one-line
  * summary (`+N / -M`); clicking expands to a monospace unified-diff
  * body. Reused across the sync-collision modal and (when the drift
- * drawer rebuild lands) the bundled-skill-edited heal flow.
+ * drawer rebuild lands) the edited-without-origin heal flow.
  *
  * Stays presentational — data acquisition lives in the calling
  * component, which decides which paths to diff and labels each side.

@@ -88,7 +88,7 @@ const ROWS: Row[] = [
   },
   {
     label:
-      "drift + upstream-github → user-edited-with-upstream (Accept/TakeUpstream)",
+      "drift + upstream-github → edited-with-origin (Accept/TakeUpstream)",
     entry: entry({
       drift: true,
       source: {
@@ -103,17 +103,17 @@ const ROWS: Row[] = [
     }),
     installed: [],
     isRegistered: true,
-    expectedState: "user-edited-with-upstream",
+    expectedState: "edited-with-origin",
     expectedPrimary: "accept-drift",
-    expectedCaps: { canAcceptDrift: true, canTakeUpstream: true },
+    expectedCaps: { canAcceptDrift: true, canResetToOrigin: true },
   },
   {
     label:
-      "drift + bundled-no-upstream → bundled-skill-edited (Accept/TakeCanonical)",
+      "drift + bundled-no-upstream → edited-without-origin (Accept/TakeCanonical)",
     entry: entry({ drift: true, source: { source: "bundled" } }),
     installed: [],
     isRegistered: true,
-    expectedState: "bundled-skill-edited",
+    expectedState: "edited-without-origin",
     expectedPrimary: "accept-drift",
     expectedCaps: { canAcceptDrift: true, canTakeCanonical: true },
   },
@@ -134,26 +134,26 @@ const ROWS: Row[] = [
     }),
     installed: [],
     isRegistered: true,
-    expectedState: "user-edited-with-upstream",
+    expectedState: "edited-with-origin",
     expectedPrimary: "accept-drift",
-    expectedCaps: { canTakeUpstream: true, canTakeCanonical: false },
+    expectedCaps: { canResetToOrigin: true, canTakeCanonical: false },
   },
   {
     label:
-      "upstreamUpdateAvailable + no drift → upstream-update-available (Update)",
-    entry: entry({ upstreamUpdateAvailable: true }),
+      "originUpdateAvailable + no drift → origin-update-available (Update)",
+    entry: entry({ originUpdateAvailable: true }),
     installed: [],
     isRegistered: true,
-    expectedState: "upstream-update-available",
+    expectedState: "origin-update-available",
     expectedPrimary: "update",
     expectedCaps: { canUpdate: true, canAcceptDrift: false },
   },
   {
     label:
-      "drift + upstreamUpdateAvailable → drift wins (user-edited-with-upstream)",
+      "drift + originUpdateAvailable → drift wins (edited-with-origin)",
     entry: entry({
       drift: true,
-      upstreamUpdateAvailable: true,
+      originUpdateAvailable: true,
       source: {
         source: "yours",
         upstream: {
@@ -166,7 +166,7 @@ const ROWS: Row[] = [
     }),
     installed: [],
     isRegistered: true,
-    expectedState: "user-edited-with-upstream",
+    expectedState: "edited-with-origin",
     expectedPrimary: "accept-drift",
     expectedCaps: { canUpdate: false },
   },

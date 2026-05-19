@@ -11,7 +11,7 @@ import { readSkillSource, writeSkillSource } from "./source.js";
 /**
  * Heal helpers. Three bad states the classifier surfaces:
  *
- *   - bundled-skill-edited     — local copy diverged from synced commit
+ *   - edited-without-origin     — local copy diverged from synced commit
  *   - registry-folder-missing  — name in prior index but skills/<name>/ gone
  *   - external-target-missing  — external entry whose target path is gone
  *
@@ -157,7 +157,7 @@ export function writeRuntimeState(
 }
 
 /**
- * Heal action — keep-mine on a bundled-skill-edited state. Clears
+ * Heal action — keep-mine on a edited-without-origin state. Clears
  * the source marker so the skill's `source` becomes "yours" going
  * forward and subsequent syncs leave it alone. Idempotent.
  */
@@ -178,7 +178,7 @@ export function acceptDriftKeepLocal(skillDir: string): void {
 }
 
 /**
- * Heal action — sever-upstream on a `user-edited-with-upstream` state.
+ * Heal action — sever-upstream on a `edited-with-origin` state.
  * The user keeps their local edits and severs the upstream pointer
  * so future probes don't surface the skill as having an update
  * available. The source axis (`bundled` / `yours`) is preserved —
@@ -192,7 +192,7 @@ export function acceptDriftSeverUpstream(skillDir: string): void {
   delete next.upstream;
   writeSkillSource(skillDir, next);
   // Drop the synced-hash so the next build doesn't flag this as
-  // user-edited-with-upstream again. (The drift gate in build.ts
+  // edited-with-origin again. (The drift gate in build.ts
   // checks `source.upstream` and `source.source === "bundled"`;
   // with upstream cleared and source unchanged, drift detection
   // disengages for non-bundled skills.)
@@ -207,7 +207,7 @@ export function acceptDriftSeverUpstream(skillDir: string): void {
 }
 
 /**
- * Heal action — revert on a bundled-skill-edited state. The user
+ * Heal action — revert on a edited-without-origin state. The user
  * acknowledges that the current on-disk content is the bundled
  * baseline going forward: re-snapshot the hash so the next build
  * sees no drift. Source marker stays `bundled` — Sync still owns

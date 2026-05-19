@@ -371,7 +371,7 @@ function AppContent(): React.ReactElement {
   // Must live above the auth/loading early-return gates below — Rules
   // of Hooks: every render must reach the same set of hook calls.
   const pendingSkillUpdates = useMemo(
-    () => registry.filter((e) => e.upstreamUpdateAvailable === true),
+    () => registry.filter((e) => e.originUpdateAvailable === true),
     [registry],
   );
 

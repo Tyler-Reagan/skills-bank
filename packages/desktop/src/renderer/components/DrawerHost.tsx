@@ -28,7 +28,7 @@ interface Props {
   installed: InstalledSkill[];
   /** Registry root (passed through to the drawer for path rendering). */
   registryRoot: string | null;
-  /** App-level settings (drawer reads showUpstreamActivity / defaultInstallAgents / etc.). */
+  /** App-level settings (drawer reads showOriginActivity / defaultInstallAgents / etc.). */
   settings: AppSettings;
   /** Auth state — drawer gates the upstream-activity strip on whether the user is signed in. */
   authStatus: AuthStatus | null;
@@ -110,8 +110,8 @@ export function DrawerHost({
           ? settings.defaultInstallAgents
           : undefined
       }
-      showUpstreamActivity={
-        settings.showUpstreamActivity && Boolean(authStatus?.user)
+      showOriginActivity={
+        settings.showOriginActivity && Boolean(authStatus?.user)
       }
       onSetManualUpstream={async (choice: OriginManualChoice) => {
         const r = await window.skillsBank.originSetManual(
@@ -191,7 +191,7 @@ export function DrawerHost({
           : undefined
       }
       onTakeUpstream={
-        caps.canTakeUpstream
+        caps.canResetToOrigin
           ? async () => {
               const r = await window.skillsBank.originUpdate(selected.name);
               onUpdateResult(r);

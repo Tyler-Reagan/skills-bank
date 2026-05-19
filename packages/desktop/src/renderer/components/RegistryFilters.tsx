@@ -61,7 +61,7 @@ const CHIP_DEFS: readonly ChipDef[] = [
     tag: "updates",
     label: "Updates",
     title: "Skills with a newer version available from their Origin.",
-    matches: (e) => e.upstreamUpdateAvailable === true,
+    matches: (e) => e.originUpdateAvailable === true,
   },
   {
     tag: "edited",

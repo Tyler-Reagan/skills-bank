@@ -81,20 +81,20 @@ export interface RegistryEntry extends SkillMeta {
    * baseline hash. Set when `source: "bundled"` (existing bundled-
    * sync drift) or when the skill carries an `upstream` pointer
    * (post-scanner drift). The classifier emits
-   * `bundled-skill-edited` for the bundled case and
-   * `user-edited-with-upstream` for the upstream case.
+   * `edited-without-origin` for the bundled case and
+   * `edited-with-origin` for the upstream case.
    */
   drift?: boolean;
   /**
    * Heal axis: the linked upstream has a newer content hash than
    * what was recorded at last fetch. Set by the desktop runner's
    * probe pass (plan 03, PR 2) for skills with an `upstream` pointer.
-   * The classifier emits `upstream-update-available` when true and
-   * `drift` is false; if both are true, `user-edited-with-upstream`
+   * The classifier emits `origin-update-available` when true and
+   * `drift` is false; if both are true, `edited-with-origin`
    * takes priority (the Update heal flow surfaces the upstream
    * change inside the conflict-aware path).
    */
-  upstreamUpdateAvailable?: boolean;
+  originUpdateAvailable?: boolean;
   /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has

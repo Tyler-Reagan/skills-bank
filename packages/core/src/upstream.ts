@@ -152,7 +152,7 @@ export async function probeOriginTree(
  * e.g. `"skills/find-skills"`. Returns null when the folder isn't
  * present (deleted upstream — a separate state from "unchanged"
  * that callers should surface as `upstream-missing` rather than
- * `upstream-update-available`).
+ * `origin-update-available`).
  */
 export function findFolderHash(
   tree: GitTreeEntry[],

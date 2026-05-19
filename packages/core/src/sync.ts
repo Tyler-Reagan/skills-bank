@@ -271,7 +271,7 @@ export async function applyCanonicalSync(
       syncedAt,
     });
     // Snapshot content hash so future builds can detect local edits
-    // to bundled copies (the bundled-skill-edited heal state).
+    // to bundled copies (the edited-without-origin heal state).
     const h = hashSkillFolder(localPath);
     if (h) writeSyncedHash(localPath, h);
     upserted.push(name);

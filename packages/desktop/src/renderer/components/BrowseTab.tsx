@@ -114,7 +114,7 @@ export function BrowseTab({
       registrySort.by === "name" &&
       registrySort.direction === "asc";
     return isDefaultOrder
-      ? floatToTop(sorted, (e) => e.upstreamUpdateAvailable === true)
+      ? floatToTop(sorted, (e) => e.originUpdateAvailable === true)
       : sorted;
   }, [
     registry,

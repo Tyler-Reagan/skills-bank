@@ -71,7 +71,7 @@ export interface OriginProbeRunner {
    *  desktop's `applyUpstreamUpdate` wrapper after a successful
    *  Update — the user has consumed the indicator. */
   clearUpdate(name: string): void;
-  /** Augment an entries list with `upstreamUpdateAvailable: true` for
+  /** Augment an entries list with `originUpdateAvailable: true` for
    *  any name the probe has flagged. Pure read; cheap. */
   augmentEntries<T extends { name: string }>(entries: T[]): T[];
   /** Fire `onComplete` with an empty payload — used by call sites
@@ -302,7 +302,7 @@ export function createOriginProbeRunner(
       if (probedUpdates.size === 0) return entries;
       return entries.map((e) =>
         probedUpdates.has(e.name)
-          ? ({ ...e, upstreamUpdateAvailable: true } as typeof e)
+          ? ({ ...e, originUpdateAvailable: true } as typeof e)
           : e,
       );
     },
