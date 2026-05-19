@@ -20,8 +20,10 @@ import {
   applyCanonicalSync,
   applyRegistration,
   buildRegistryIndex,
+  applyUpstreamUpdate as coreApplyUpstreamUpdate,
   classifySkillByName,
   clearPendingConflicts,
+  computeFolderDiff,
   deleteFromBankSkill,
   deleteUnregisteredSkill,
   exportSkill,
@@ -95,7 +97,6 @@ import {
   type UpstreamRepoMetadata,
   type UserRepo,
 } from "../shared/ipc.js";
-import { createPatch, diffLines } from "diff";
 import {
   cancelDeviceFlow,
   clearStoredToken,
@@ -581,79 +582,18 @@ async function applyUpstreamUpdate(
   name: string,
 ): Promise<import("../shared/ipc.js").UpstreamUpdateResult> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  const index = buildRegistryIndex(registryRoot);
-  const entry = index.entries.find((e) => e.name === name);
-  if (!entry) {
-    return { ok: false, message: `${name} is not in the registry` };
-  }
-  const upstream = entry.source.upstream;
-  if (upstream?.kind !== "github" || !upstream.repo || !upstream.skillPath) {
-    return {
-      ok: false,
-      message: `${name} has no GitHub upstream — nothing to update`,
-    };
-  }
-
-  const folderPath = folderPathFromSkillPath(upstream.skillPath);
-  // Resolve through entry.path so the right bucket is used; falls
-  // back to legacy flat layout if entry.path is somehow missing.
-  const registrySkillDir = path.resolve(
+  // Core owns the disk-level mirror + marker rewrite. Desktop layers
+  // on the probe-cache cleanup + notification (UI concerns).
+  const result = await coreApplyUpstreamUpdate({
     registryRoot,
-    entry.path || `skills/${name}`,
-  );
-  const existingSource = readSkillSource(registrySkillDir);
-
-  const mirror = await mirrorSkillFolder(
-    upstream.repo,
-    folderPath,
-    registrySkillDir,
-    getStoredToken(),
-  );
-  if (!mirror.ok) {
-    if (mirror.status === 429 && mirror.rateLimit) {
-      // Hand the renderer everything it needs to render a tailored
-      // sticky toast — no inline copy-mangling. Sign-in affordance
-      // surfaces only for unauth hits.
-      return {
-        ok: false,
-        message: mirror.message,
-        rateLimit: mirror.rateLimit,
-      };
-    }
-    const recoveryHint = mirror.status === 404
-      ? " Sever to keep local, or Unlink the pointer."
-      : "";
-    return {
-      ok: false,
-      message: `Update failed: ${mirror.message}.${recoveryHint}`,
-      diagnostic:
-        `name=${name}\n` +
-        `repo=${upstream.repo}\n` +
-        `skillPath=${upstream.skillPath}\n` +
-        `status=${mirror.status}\n` +
-        `message=${mirror.message}`,
-    };
-  }
-
-  // Refresh marker with the new probed folder hash. `fetchedAt` lives
-  // in the gitignored runtime sidecar (ADR-0002) so this write doesn't
-  // churn the committed `.skills-bank.json` when only the timestamp
-  // shifts.
-  const now = new Date().toISOString();
-  writeSkillSource(registrySkillDir, {
-    ...existingSource,
-    upstream: {
-      ...upstream,
-      skillFolderHash: mirror.folderHash,
-    },
+    name,
+    token: getStoredToken(),
   });
-  writeRuntimeState(registrySkillDir, { fetchedAt: now });
-  const newBaseline = hashSkillFolder(registrySkillDir);
-  if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
-
-  probedUpdates.delete(name);
-  notifyProbeComplete();
-  return { ok: true, message: `Updated ${name} from ${upstream.repo}.` };
+  if (result.ok) {
+    probedUpdates.delete(name);
+    notifyProbeComplete();
+  }
+  return result;
 }
 
 ipcMain.handle(IPC.upstreamUpdate, async (_e, name: string) =>
@@ -1430,146 +1370,6 @@ ipcMain.handle(
   },
 );
 
-// 1 MB per-file cap. Files past this size or with binary content
-// (NUL byte in the first 8 KB) are reported as `binary` with no
-// diff body — keeps the renderer responsive and the IPC channel
-// from blowing up on large fixture files.
-const DIFF_BYTE_BUDGET = 1024 * 1024;
-
-function looksBinary(buf: Buffer): boolean {
-  const head = buf.subarray(0, Math.min(buf.length, 8192));
-  for (let i = 0; i < head.length; i++) {
-    if (head[i] === 0) return true;
-  }
-  return false;
-}
-
-function readTextIfSmall(p: string): { kind: "text" | "binary"; body: string } {
-  const stat = fs.statSync(p);
-  if (stat.size > DIFF_BYTE_BUDGET) return { kind: "binary", body: "" };
-  const buf = fs.readFileSync(p);
-  if (looksBinary(buf)) return { kind: "binary", body: "" };
-  return { kind: "text", body: buf.toString("utf8") };
-}
-
-function walkFiles(root: string): string[] {
-  if (!fs.existsSync(root)) return [];
-  const out: string[] = [];
-  function visit(rel: string): void {
-    const abs = path.join(root, rel);
-    let entries: fs.Dirent[];
-    try {
-      entries = fs.readdirSync(abs, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const ent of entries) {
-      // Skip app-state sidecars — they're metadata the user didn't
-      // author and would surface as noise in every diff.
-      if (ent.name === ".skills-bank.json") continue;
-      if (ent.name === ".skills-bank-hash") continue;
-      const r = rel ? `${rel}/${ent.name}` : ent.name;
-      if (ent.isDirectory()) visit(r);
-      else if (ent.isFile()) out.push(r);
-    }
-  }
-  visit("");
-  out.sort();
-  return out;
-}
-
-function computeFolderDiff(
-  leftRoot: string,
-  rightRoot: string,
-): SkillDiffFile[] {
-  const leftFiles = new Set(walkFiles(leftRoot));
-  const rightFiles = new Set(walkFiles(rightRoot));
-  const allPaths = new Set<string>([...leftFiles, ...rightFiles]);
-  const sorted = [...allPaths].sort();
-  const out: SkillDiffFile[] = [];
-
-  for (const rel of sorted) {
-    const inLeft = leftFiles.has(rel);
-    const inRight = rightFiles.has(rel);
-    const leftAbs = path.join(leftRoot, rel);
-    const rightAbs = path.join(rightRoot, rel);
-
-    if (inLeft && inRight) {
-      const left = readTextIfSmall(leftAbs);
-      const right = readTextIfSmall(rightAbs);
-      if (left.kind === "binary" || right.kind === "binary") {
-        if (left.body === right.body) continue; // both binary-and-skipped, treat as same
-        out.push({
-          path: rel,
-          added: 0,
-          removed: 0,
-          unifiedDiff: "",
-          status: "binary",
-        });
-        continue;
-      }
-      if (left.body === right.body) continue;
-      let added = 0;
-      let removed = 0;
-      for (const part of diffLines(left.body, right.body)) {
-        const lines = part.count ?? part.value.split("\n").length - 1;
-        if (part.added) added += lines;
-        else if (part.removed) removed += lines;
-      }
-      const unifiedDiff = createPatch(rel, left.body, right.body, "", "");
-      out.push({
-        path: rel,
-        added,
-        removed,
-        unifiedDiff,
-        status: "modified",
-      });
-    } else if (inLeft) {
-      const left = readTextIfSmall(leftAbs);
-      if (left.kind === "binary") {
-        out.push({
-          path: rel,
-          added: 0,
-          removed: 0,
-          unifiedDiff: "",
-          status: "left-only",
-        });
-        continue;
-      }
-      const removed = left.body.split("\n").length;
-      const unifiedDiff = createPatch(rel, left.body, "", "", "");
-      out.push({
-        path: rel,
-        added: 0,
-        removed,
-        unifiedDiff,
-        status: "left-only",
-      });
-    } else {
-      const right = readTextIfSmall(rightAbs);
-      if (right.kind === "binary") {
-        out.push({
-          path: rel,
-          added: 0,
-          removed: 0,
-          unifiedDiff: "",
-          status: "right-only",
-        });
-        continue;
-      }
-      const added = right.body.split("\n").length;
-      const unifiedDiff = createPatch(rel, "", right.body, "", "");
-      out.push({
-        path: rel,
-        added,
-        removed: 0,
-        unifiedDiff,
-        status: "right-only",
-      });
-    }
-  }
-  return out;
-}
 
 ipcMain.handle(
   IPC.install,

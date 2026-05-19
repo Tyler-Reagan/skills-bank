@@ -60,6 +60,9 @@ importers:
       archiver:
         specifier: ^7.0.1
         version: 7.0.1
+      diff:
+        specifier: ^9.0.0
+        version: 9.0.0
       tar:
         specifier: ^7.5.14
         version: 7.5.14

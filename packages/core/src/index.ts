@@ -1,3 +1,4 @@
+export * from "./diff.js";
 export * from "./errors.js";
 export * from "./types.js";
 export * from "./paths.js";
@@ -18,6 +19,7 @@ export * from "./external.js";
 export * from "./heal.js";
 export * from "./hide.js";
 export * from "./merge.js";
+export * from "./publish-state.js";
 export * from "./skill-state.js";
 export * from "./skill-state-server.js";
 export * from "./unregister.js";
