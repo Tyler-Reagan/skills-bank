@@ -10,7 +10,7 @@ import {
 import { getStateDir } from "./paths.js";
 import { writeExternalRegistry } from "./external.js";
 import { listInstalled } from "./installed.js";
-import { readSkillMeta } from "./registry.js";
+import { findSkillFolder, readSkillMeta } from "./registry.js";
 import { buildRegistryIndex } from "./build.js";
 import type {
   FinalizeResult,
@@ -282,7 +282,19 @@ function adoptIntoRegistry(
     };
   }
 
-  const destDir = path.join(opts.registryRoot, "skills", entry.name);
+  // Destination respects the post-v0.11.3 bucket split. If a folder
+  // for this skill already lives in one bucket (e.g. a stale layout
+  // from a prior buggy Register run, or a legitimate vendored skill
+  // whose index hasn't been rebuilt), keep it where it is — moving
+  // it silently would relocate vendored content into personal/.
+  // Brand-new adoptions default to `personal/`: the Register-from-
+  // installed flow has no upstream-attribution machinery, so "yours"
+  // semantics + personal bucket is the safe default. The maintainer
+  // can promote to vendored later via `pnpm update:skill --bucket`.
+  const existing = findSkillFolder(opts.registryRoot, entry.name);
+  const destDir = existing
+    ? existing.dir
+    : path.join(opts.registryRoot, "skills", "personal", entry.name);
   fs.mkdirSync(path.dirname(destDir), { recursive: true });
 
   const sourceIsAlreadyRegistry =
@@ -670,8 +682,8 @@ export function repairBrokenLinks(
     }
   }
   if (!source) {
-    const registryPath = path.join(registryRoot, "skills", name);
-    if (fs.existsSync(registryPath)) source = registryPath;
+    const found = findSkillFolder(registryRoot, name);
+    if (found) source = found.dir;
   }
 
   const repaired: BrokenLinkRepairReport["repaired"] = [];
@@ -737,12 +749,14 @@ export function resolveSkillConflicts(
   name: string,
   decisions: ConflictResolveDecision[],
 ): ConflictResolveReport {
-  const registryDir = path.join(registryRoot, "skills", name);
-  // Only replace-with-symlink needs a registry copy to point at;
-  // delete/keep operate purely on agent-dir entries and are valid for
-  // unregistered skills too. Pre-fail individual replace-with-symlink
-  // decisions if the registry is missing, but let delete/keep proceed.
-  const registryExists = fs.existsSync(registryDir);
+  // Look up the registry copy across both buckets. Only
+  // replace-with-symlink needs it — delete/keep operate purely on
+  // agent-dir entries and are valid for unregistered skills too.
+  // Pre-fail individual replace-with-symlink decisions if the
+  // registry is missing, but let delete/keep proceed.
+  const registryFolder = findSkillFolder(registryRoot, name);
+  const registryDir = registryFolder?.dir ?? null;
+  const registryExists = registryDir !== null;
 
   const applied: ConflictResolveReport["applied"] = [];
   const errors: ConflictResolveReport["errors"] = [];
@@ -773,8 +787,11 @@ export function resolveSkillConflicts(
         }
       }
       if (d.action === "replace-with-symlink") {
+        // registryDir is non-null here: the !registryExists guard
+        // above pre-fails any replace-with-symlink decision when the
+        // registry copy is missing.
         fs.mkdirSync(path.dirname(linkPath), { recursive: true });
-        fs.symlinkSync(registryDir, linkPath, "dir");
+        fs.symlinkSync(registryDir!, linkPath, "dir");
       }
       applied.push({ agent: d.agent, action: d.action });
     } catch (err) {

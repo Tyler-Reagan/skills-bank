@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T18:06:54.076Z",
+  "generatedAt": "2026-05-19T20:51:04.197Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -627,6 +627,18 @@
       "canon": true
     },
     {
+      "name": "github-actions-docs",
+      "description": "Use when users ask how to write, explain, customize, migrate, secure, or troubleshoot GitHub Actions workflows, workflow syntax, triggers, matrices, runners, reusable workflows, artifacts, caching, secrets, OIDC, deployments, custom actions, or Actions Runner Controller, especially when they need official GitHub documentation, exact links, or docs-grounded YAML guidance.",
+      "path": "skills/personal/github-actions-docs",
+      "source": {
+        "source": "yours"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "publishState": "untracked",
+      "canon": false
+    },
+    {
       "name": "gitlab-ci-inspector",
       "description": "Inspect GitLab CI/CD job results, fetch job logs, and diagnose pipeline failures. Use when the user shares a GitLab job URL, pipeline URL, asks about CI/CD job output, wants to check why a pipeline failed, or needs to review build/deploy logs.",
       "path": "skills/personal/gitlab-ci-inspector",
@@ -706,7 +718,8 @@
       },
       "bucket": "personal",
       "publishState": "pushed",
-      "canon": true
+      "canon": true,
+      "drift": true
     },
     {
       "name": "golang-testing",
@@ -773,12 +786,15 @@
           "repo": "mattpocock/skills",
           "sourceUrl": "https://github.com/mattpocock/skills.git",
           "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
-          "skillFolderHash": "3c4ac970c404e8d32c24f2725bfe679e455a925b",
+          "skillFolderHash": "2c6aa7079cc705a6e0c319fcf23a0fa39968de29",
           "installedAt": "2026-05-18T05:30:44.422Z",
-          "fetchedAt": "2026-05-19T17:40:40.300Z"
+          "fetchedAt": "2026-05-19T18:45:53.735Z"
         }
       },
       "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
       "lastCommit": {
         "sha": "71d4c9403cc9770d6ce7f6f6784e28e90bab87fb",
         "date": "2026-05-18 16:48:00 -0700",
@@ -786,8 +802,7 @@
       },
       "bucket": "vendored",
       "publishState": "pushed",
-      "canon": true,
-      "drift": true
+      "canon": true
     },
     {
       "name": "hero-generator",
@@ -849,7 +864,7 @@
     },
     {
       "name": "impeccable",
-      "description": "Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks.",
+      "description": "",
       "tags": [
         "UI"
       ],
@@ -863,12 +878,16 @@
           "repo": "pbakaus/impeccable",
           "sourceUrl": "https://github.com/pbakaus/impeccable.git",
           "skillPath": ".agents/skills/impeccable/SKILL.md",
-          "skillFolderHash": "acf2d1c8e0fc8a5388c67a6add3d45e1d2ec90fb",
+          "skillFolderHash": "0e0d5857d98abc56bbc3e34c7bfddbd24f6e471b",
           "installedAt": "2026-05-18T08:09:53.421Z",
-          "fetchedAt": "2026-05-19T17:41:14.320Z"
+          "fetchedAt": "2026-05-19T18:46:21.502Z"
         }
       },
       "adopted": true,
+      "warnings": [
+        "meta.json /description: must NOT have fewer than 1 characters",
+        "missing description"
+      ],
       "lastCommit": {
         "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
         "date": "2026-05-18 09:25:01 -0700",
@@ -876,8 +895,7 @@
       },
       "bucket": "vendored",
       "publishState": "pushed",
-      "canon": true,
-      "drift": true
+      "canon": true
     },
     {
       "name": "improve-codebase-architecture",

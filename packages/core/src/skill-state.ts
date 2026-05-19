@@ -345,6 +345,28 @@ export function classifyDrawerState(
         },
       };
     }
+    // `kind: "ours"` with no index entry: the installed.ts classifier
+    // matched the symlink target to the registry tree but `walkSkills`
+    // didn't surface a matching folder. Typically a stale pre-v0.11.3
+    // layout (`skills/<name>/` directly, missed by the bucket walker)
+    // or an index that hasn't been rebuilt. Treat like a foreign
+    // symlink: offer Register, which the bucket-aware adopt path
+    // relocates into `skills/personal/<name>/`. Skipping this branch
+    // would fall into the broken-symlink catch-all below — that
+    // rendered as "Fix broken link (0)" with no actionable repair.
+    if (hasOurs && !hasBroken) {
+      return {
+        state: "unregistered-foreign",
+        brokenCount: 0,
+        conflictCount: 0,
+        capabilities: {
+          ...NEVER,
+          canRevealInFinder: true,
+          canRegister: true,
+          primary: "register",
+        },
+      };
+    }
     // No real-dir or foreign-symlink, only broken symlinks: dead skill.
     // Keep Reveal so the user can manually inspect/clean up the dead
     // symlink in Finder; everything else would error.

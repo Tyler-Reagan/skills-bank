@@ -245,6 +245,21 @@ const ROWS: Row[] = [
     expectedPrimary: "repair-broken",
     expectedCaps: { canRepairBroken: true },
   },
+  {
+    // Regression: pre-v0.11.3 adopt path placed files at
+    // `skills/<name>/`, which walkSkills skips. The symlink target
+    // resolved inside the registry → installed classified `ours`,
+    // but `isRegistered` was false → fell into `unregistered-broken`
+    // with brokenCount=0 ("Fix broken link (0)"). Branch added above
+    // routes this to `unregistered-foreign` so Register is offered.
+    label: "unregistered + ours (no index entry) → unregistered-foreign (Register)",
+    entry: entry(),
+    installed: [inst()],
+    isRegistered: false,
+    expectedState: "unregistered-foreign",
+    expectedPrimary: "register",
+    expectedCaps: { canRegister: true },
+  },
 
   // ── Registered branch ──────────────────────────────────
   {
