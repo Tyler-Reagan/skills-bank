@@ -25,33 +25,18 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// Electron picks the userData dir based on app.getName(), which differs
-// between dev and packaged runs:
-//   - packaged: build.productName from package.json ("Skills Bank")
-//   - dev (`electron .`): the top-level "name" field of the desktop
-//     package.json ("@skills-bank/desktop") → on macOS becomes the
-//     literal "@skills-bank/desktop" subpath under Application Support.
-// Reset both so the script works regardless of which mode you're testing.
-function appSupportRoot(): string {
-  switch (process.platform) {
-    case "darwin":
-      return path.join(os.homedir(), "Library", "Application Support");
-    case "win32":
-      return (
-        process.env["APPDATA"] ?? path.join(os.homedir(), "AppData", "Roaming")
-      );
-    default:
-      return (
-        process.env["XDG_CONFIG_HOME"] ?? path.join(os.homedir(), ".config")
-      );
-  }
-}
-
+// Dev-mode isolation (see packages/desktop/src/main/main.ts) redirects
+// every unpackaged run's userData into ~/.skills-bank-dev/userData/, so
+// reset only ever touches that path. The packaged install's userData
+// (~/Library/Application Support/Skills Bank) is intentionally NOT a
+// target — wiping it from a dev-clone script would re-introduce the
+// cross-contamination this isolation was designed to prevent.
 function userDataCandidates(): { label: string; path: string }[] {
-  const root = appSupportRoot();
   return [
-    { label: "packaged", path: path.join(root, "Skills Bank") },
-    { label: "dev", path: path.join(root, "@skills-bank", "desktop") },
+    {
+      label: "dev",
+      path: path.join(os.homedir(), ".skills-bank-dev", "userData"),
+    },
   ];
 }
 

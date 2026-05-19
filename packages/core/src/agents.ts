@@ -13,7 +13,8 @@ export type { AgentDef, AgentId };
 
 export function getAgentSkillsDir(agent: AgentDef | AgentId): string {
   const def = typeof agent === "string" ? getAgent(agent) : agent;
-  return path.join(os.homedir(), def.relativePath);
+  const home = process.env.SKILLS_BANK_HOME_OVERRIDE ?? os.homedir();
+  return path.join(home, def.relativePath);
 }
 
 /** Agent dirs that already exist on disk. */
