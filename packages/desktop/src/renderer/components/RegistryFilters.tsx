@@ -226,6 +226,30 @@ export function RegistryFilters({
     };
   }, [tagsOpen]);
 
+  // Glossary popover state — surfaces what each filter chip means
+  // since the labels alone don't disambiguate the two orthogonal
+  // axes (provenance vs location).
+  const [glossaryOpen, setGlossaryOpen] = React.useState(false);
+  const glossaryWrapRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (!glossaryOpen) return;
+    const onDocDown = (ev: MouseEvent) => {
+      const node = glossaryWrapRef.current;
+      if (node && ev.target instanceof Node && !node.contains(ev.target)) {
+        setGlossaryOpen(false);
+      }
+    };
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setGlossaryOpen(false);
+    };
+    document.addEventListener("mousedown", onDocDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [glossaryOpen]);
+
   function toggle(tag: RegistryFilterTag): void {
     const next = new Set(active);
     if (next.has(tag)) next.delete(tag);
@@ -289,6 +313,13 @@ export function RegistryFilters({
           const chipNode = (() => {
             const isActive = active.has(def.tag);
             const count = counts.get(def.tag) ?? 0;
+            // Suppress degenerate chips: a filter with zero matches is
+            // a no-op (greys out anyway), and one that matches every
+            // entry doesn't narrow the view — both surface as visual
+            // noise. Keep an active chip visible regardless so the
+            // user can always un-apply it from this strip.
+            const useful = count > 0 && count < registry.length;
+            if (!useful && !isActive) return null;
             return (
               <button
                 key={def.tag}
@@ -297,7 +328,6 @@ export function RegistryFilters({
                 onClick={() => toggle(def.tag)}
                 aria-pressed={isActive}
                 title={def.title}
-                disabled={count === 0 && !isActive}
               >
                 {def.label}{" "}
                 <span className="filter-chip-count">({count})</span>
@@ -328,6 +358,77 @@ export function RegistryFilters({
           }
           return chipNode;
         })}
+        <div
+          className="filter-glossary-wrap"
+          ref={glossaryWrapRef}
+          role="group"
+          aria-label="Filter glossary"
+        >
+          <button
+            type="button"
+            className="filter-chip filter-glossary-trigger"
+            onClick={() => setGlossaryOpen((v) => !v)}
+            aria-haspopup="dialog"
+            aria-expanded={glossaryOpen}
+            aria-label="What do these filters mean?"
+            title="What do these filters mean?"
+          >
+            <Icon name="info" size="sm" />
+          </button>
+          {glossaryOpen && (
+            <div
+              className="filter-glossary-panel"
+              role="dialog"
+              aria-label="Filter chip glossary"
+            >
+              <p className="filter-glossary-intro">
+                Chips combine with <strong>AND</strong>. The chips fall on
+                three independent axes — a skill can match one from each.
+              </p>
+              <dl className="filter-glossary-list">
+                <dt>State</dt>
+                <dd>
+                  <strong>Updates</strong> — newer version available from
+                  the skill's Origin.
+                </dd>
+                <dd>
+                  <strong>Edited</strong> — local content has drifted from
+                  the recorded baseline.
+                </dd>
+                <dd>
+                  <strong>Missing</strong> — the skill's files are gone on
+                  disk.
+                </dd>
+                <dd>
+                  <strong>Installed only</strong> — currently installed in
+                  one of your agent dirs.
+                </dd>
+                <dt>Provenance — where the bytes came from</dt>
+                <dd>
+                  <strong>Bundled</strong> — shipped with the app's
+                  curation set; managed by Sync.
+                </dd>
+                <dd>
+                  <strong>Yours</strong> — you added it (merge-import) or
+                  detached it from the curation set.
+                </dd>
+                <dt>Location — folder bucket under <code>skills/</code></dt>
+                <dd>
+                  <strong>Personal</strong> — authored in this repo
+                  (self-referential Origin or no Origin).
+                </dd>
+                <dd>
+                  <strong>Vendored</strong> — harvested from external
+                  authors' repos.
+                </dd>
+              </dl>
+              <p className="filter-glossary-note">
+                Chips that match every skill or no skills auto-hide — only
+                the ones that actually narrow the view show.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
       <div className="registry-filters-right">
         {hasAnyTags && (

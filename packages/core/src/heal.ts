@@ -54,6 +54,10 @@ export function hashSkillFolder(skillDir: string): string | null {
       // file in-tree and the comparison never matches.
       if (ent.name === ".skills-bank.json") continue;
       if (ent.name === ".skills-bank-hash") continue;
+      // Runtime sidecar — fetchedAt etc. Excluded for the same reason
+      // as the others: mutates per probe, would force spurious drift
+      // detection on every app launch.
+      if (ent.name === ".skills-bank-runtime.json") continue;
       const abs = path.join(dir, ent.name);
       const r = rel ? `${rel}/${ent.name}` : ent.name;
       if (ent.isSymbolicLink()) {
@@ -108,6 +112,48 @@ export function readSyncedHash(skillDir: string): string | null {
 export function writeSyncedHash(skillDir: string, hash: string): void {
   fs.mkdirSync(skillDir, { recursive: true });
   fs.writeFileSync(path.join(skillDir, SYNCED_HASH_FILE), hash + "\n");
+}
+
+/**
+ * Runtime state sidecar. `.skills-bank.json` is the committed Skill
+ * record (bundled-repo convention); fields that mutate on every probe
+ * — like `fetchedAt` — caused unstaged churn after each app launch
+ * (`docs/bug-reports/2026-05-18-fetchedAt-churn.md`). They live here
+ * instead, alongside `.skills-bank-hash` in the gitignored set
+ * (ADR-0002).
+ *
+ * Shape is intentionally a JSON object so future runtime fields can
+ * extend it without a new sidecar.
+ */
+const RUNTIME_STATE_FILE = ".skills-bank-runtime.json";
+
+export interface RuntimeState {
+  /** ISO-8601 timestamp of the last successful upstream fetch. */
+  fetchedAt?: string;
+}
+
+export function readRuntimeState(skillDir: string): RuntimeState {
+  const p = path.join(skillDir, RUNTIME_STATE_FILE);
+  if (!fs.existsSync(p)) return {};
+  try {
+    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<RuntimeState>;
+    const out: RuntimeState = {};
+    if (typeof raw.fetchedAt === "string") out.fetchedAt = raw.fetchedAt;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export function writeRuntimeState(
+  skillDir: string,
+  state: RuntimeState,
+): void {
+  fs.mkdirSync(skillDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(skillDir, RUNTIME_STATE_FILE),
+    JSON.stringify(state, null, 2) + "\n",
+  );
 }
 
 /**

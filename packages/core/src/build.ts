@@ -9,6 +9,7 @@ import { hashSkillFolder, readSyncedHash } from "./heal.js";
 import { readHiddenCanonNames } from "./hide.js";
 import { readSkillMeta, walkSkills } from "./registry.js";
 import { readSkillSource } from "./source.js";
+import { readRuntimeState } from "./heal.js";
 import type {
   PublishState,
   RegistryEntry,
@@ -187,6 +188,30 @@ export function buildRegistryIndex(
   return index;
 }
 
+/**
+ * `fetchedAt` lives in `.skills-bank-runtime.json` (the gitignored
+ * runtime sidecar — ADR-0002). The in-memory view stitches it back
+ * into `source.upstream.fetchedAt` so consumers (drawer display,
+ * Settings, etc.) keep reading from the familiar path.
+ */
+function mergeRuntimeFetchedAt(
+  source: import("./source.js").SkillSource,
+  skillDir: string,
+): import("./source.js").SkillSource {
+  if (!source.upstream) return source;
+  const runtime = readRuntimeState(skillDir);
+  // Runtime value is authoritative when present. Fall back to whatever
+  // the legacy committed marker carried — old `.skills-bank.json` files
+  // that still have `fetchedAt` inline keep working until the next
+  // writeSkillSource strips it.
+  const fetchedAt = runtime.fetchedAt ?? source.upstream.fetchedAt;
+  if (fetchedAt === undefined) return source;
+  return {
+    ...source,
+    upstream: { ...source.upstream, fetchedAt },
+  };
+}
+
 function buildOneEntry(
   registryRoot: string,
   skillDir: string,
@@ -273,7 +298,7 @@ function buildOneEntry(
     ...(meta.version ? { version: meta.version } : {}),
     ...(meta.author ? { author: meta.author } : {}),
     path: path.relative(registryRoot, skillDir),
-    source: readSkillSource(skillDir),
+    source: mergeRuntimeFetchedAt(readSkillSource(skillDir), skillDir),
     // Folders walked from <registryRoot>/skills/ are adopted by
     // definition — the files live in the bank. M3 introduces the
     // non-adopted (external) case alongside this.

@@ -26,4 +26,9 @@ __pycache__/
 # bake in a baseline that's computed at build time and might not
 # match the user's installed bytes exactly (line endings, file modes).
 .skills-bank-hash
+# `.skills-bank-runtime.json` is the v0.11.7 runtime sidecar for
+# `fetchedAt` (and any future per-skill runtime field — ADR-0002).
+# Same reasoning: probe-time state that mutates on every app launch
+# and has no business in the committed marker set.
+.skills-bank-runtime.json
 .claude/settings.local.json

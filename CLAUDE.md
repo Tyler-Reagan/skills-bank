@@ -29,6 +29,7 @@ If you add a new script, place it in the appropriate group by ordering. If you a
 | Script              | When to invoke                                                                                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm typecheck`    | After any TypeScript change, before declaring work done. CI runs this.                                                                                  |
+| `pnpm test`         | Runs the vitest suites under `packages/core`. Entry criteria live in `docs/adr/ADR-0001`. CI runs this.                                                 |
 | `pnpm validate`     | After editing any `skills/<name>/SKILL.md` frontmatter or `docs/meta-schema.json`. CI runs this.                                                        |
 | `pnpm build:index`  | After adding, removing, or editing skills — regenerates the root `index.json`. CI runs this.                                                            |
 | `pnpm docs:check`   | After editing the README or any `docs/**.md`. Walks markdown and fails on unresolved links / images / anchors.                                          |
@@ -62,7 +63,7 @@ The user is often running the app for manual verification. **Never blanket-pkill
 **CI-equivalent pre-PR check:**
 
 ```
-pnpm typecheck && pnpm validate && pnpm build:index && pnpm build
+pnpm typecheck && pnpm test && pnpm validate && pnpm build:index && pnpm build
 ```
 
 **After refactor that may leave dead code:**
