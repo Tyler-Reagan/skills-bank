@@ -28,7 +28,6 @@ import {
   InstallConflictModal,
   type InstallConflictError,
 } from "./components/InstallConflictModal.js";
-import { classifyDrawerState } from "./components/skillState.js";
 import { LoginScreen } from "./components/LoginScreen.js";
 import { SplashScreen } from "./components/SplashScreen.js";
 import { ManageLinksModal } from "./components/ManageLinksModal.js";
@@ -42,7 +41,7 @@ import { RepoPickerModal } from "./components/RepoPickerModal.js";
 import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
-import { SkillDetailDrawer } from "./components/SkillDetailDrawer.js";
+import { DrawerHost } from "./components/DrawerHost.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
 import { ConnectGithubModal } from "./components/ConnectGithubModal.js";
@@ -1851,264 +1850,30 @@ function AppContent(): React.ReactElement {
           />
         )}
 
-        {selected &&
-          (() => {
-            const isRegistered = registryByName.has(selected.name);
-            const installations = installed.filter(
-              (i) => i.name === selected.name,
-            );
-            // Classifier is non-trivial (full installation partition +
-            // capability fan-out). Compute once per IIFE invocation
-            // rather than 10× inline per drawer-prop callback.
-            const classification = classifyDrawerState(
-              selected,
-              installed,
-              isRegistered,
-            );
-            const caps = classification.capabilities;
-            return (
-              <SkillDetailDrawer
-                entry={selected}
-                installed={installed}
-                registryRoot={registryRoot}
-                isRegistered={isRegistered}
-                defaultInstallAgents={
-                  settings.defaultInstallAgents.length > 0
-                    ? settings.defaultInstallAgents
-                    : undefined
-                }
-                showUpstreamActivity={
-                  settings.showUpstreamActivity && Boolean(authStatus?.user)
-                }
-                onSetManualUpstream={async (choice) => {
-                  const r = await window.skillsBank.upstreamSetManual(
-                    selected.name,
-                    choice,
-                  );
-                  flash(r.message);
-                  if (r.ok) await refresh();
-                  return r;
-                }}
-                onClose={() => setSelected(null)}
-                onChanged={async (msg) => {
-                  flash(msg);
-                  await refresh();
-                }}
-                onInstallConflict={(payload) => setInstallConflict(payload)}
-                onManageLinks={() => {
-                  setManageLinksTarget({
-                    name: selected.name,
-                    installations,
-                  });
-                  setSelected(null);
-                }}
-                onResolveConflicts={() => {
-                  // Same level-pure routing as the InstalledTab path:
-                  // unregistered skills get delete/keep only, including
-                  // broken stragglers; registered skills get the full
-                  // three-action picker excluding broken (Repair handles those).
-                  const isRegistered = registryByName.has(selected.name);
-                  const conflicts = isRegistered
-                    ? installations.filter(
-                        (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
-                      )
-                    : installations.filter((i) => i.kind !== "ours");
-                  if (conflicts.length === 0) return;
-                  setConflictTarget({
-                    name: selected.name,
-                    conflicts,
-                    allowReplaceWithSymlink: isRegistered,
-                  });
-                  setSelected(null);
-                }}
-                onRegister={
-                  // Only wire the callback when the classifier says the
-                  // state is actually registerable — covers the
-                  // unregistered-broken edge case where there's no
-                  // usable source on disk and Register would fail with
-                  // a confusing error. Whether files move into the
-                  // bank or stay at origin follows the global
-                  // `registerAdopts` setting (M3 unified the two
-                  // paths into a single op).
-                  caps.canRegister
-                    ? async () => {
-                        const results = await window.skillsBank.register([
-                          {
-                            name: selected.name,
-                            action: {
-                              type: "register",
-                              name: selected.name,
-                              adopt: settings.registerAdopts,
-                            },
-                          },
-                        ]);
-                        const r = results[0]!;
-                        flash(r.message);
-                        if (r.ok) {
-                          setSelected(null);
-                        }
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onAcceptDrift={
-                  caps.canAcceptDrift
-                    ? async () => {
-                        const r = await window.skillsBank.acceptDrift(
-                          selected.name,
-                        );
-                        flash(r.message);
-                        if (r.ok) {
-                          setSelected(null);
-                        }
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onTakeCanonical={
-                  caps.canTakeCanonical
-                    ? async () => {
-                        const r = await window.skillsBank.takeCanonical(
-                          selected.name,
-                        );
-                        flash(r.message);
-                        if (r.ok) {
-                          setSelected(null);
-                        }
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onTakeUpstream={
-                  caps.canTakeUpstream
-                    ? async () => {
-                        const r = await window.skillsBank.upstreamUpdate(
-                          selected.name,
-                        );
-                        handleUpdateResult(r);
-                        if (r.ok) setSelected(null);
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onUpdate={
-                  caps.canUpdate
-                    ? async () => {
-                        const r = await window.skillsBank.upstreamUpdate(
-                          selected.name,
-                        );
-                        handleUpdateResult(r);
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onForgetMissing={
-                  caps.canForgetMissing
-                    ? async () => {
-                        const r = await window.skillsBank.forgetMissing(
-                          selected.name,
-                        );
-                        flash(r.message);
-                        if (r.ok) {
-                          setSelected(null);
-                        }
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onRepoint={
-                  caps.canRepoint
-                    ? async () => {
-                        const r = await window.skillsBank.repointExternal(
-                          selected.name,
-                        );
-                        if (r.message !== "cancelled") {
-                          flash(r.message);
-                        }
-                        if (r.ok) {
-                          await refresh();
-                        }
-                      }
-                    : undefined
-                }
-                onHide={
-                  caps.canHide
-                    ? async () => {
-                        const r = await window.skillsBank.hide(selected.name);
-                        flash(r.message);
-                        if (r.ok) {
-                          setSelected(null);
-                        }
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onUnhide={
-                  caps.canUnhide
-                    ? async () => {
-                        const r = await window.skillsBank.unhide(selected.name);
-                        flash(r.message);
-                        if (r.ok) {
-                          setSelected(null);
-                        }
-                        await refresh();
-                      }
-                    : undefined
-                }
-                onUnregister={
-                  caps.canUnregister
-                    ? async () => {
-                        // Remove-from-registry is a terminating action
-                        // for this surface — close the drawer up-front
-                        // so the result (toast or ErrorPanel) is the
-                        // only thing the user has to read.
-                        const name = selected.name;
-                        setSelected(null);
-                        const r = await window.skillsBank.unregister(
-                          name,
-                          settings.unregisterDestinationAgent,
-                        );
-                        if (r.ok && r.wasAdopted) {
-                          // First-run hint about the destination setting.
-                          // Surface once per machine — subsequent
-                          // unregistrations just toast the move.
-                          const hinted =
-                            localStorage.getItem(
-                              LS_KEYS.unregisterHintShown,
-                            ) === "1";
-                          if (!hinted) {
-                            flash(
-                              `${r.message} — change the destination in Settings → Unregister destination.`,
-                            );
-                            try {
-                              localStorage.setItem(
-                                LS_KEYS.unregisterHintShown,
-                                "1",
-                              );
-                            } catch {
-                              // ignore
-                            }
-                          } else {
-                            flash(r.message);
-                          }
-                        } else if (r.error) {
-                          // Structured failure — route to the
-                          // persistent ErrorPanel so the user can
-                          // see details, copy, and (Bundle C) act on
-                          // a suggestedAction.
-                          pushAppError(r.error);
-                        } else {
-                          flash(r.message);
-                        }
-                        if (r.ok) {
-                        }
-                        await refresh();
-                      }
-                    : undefined
-                }
-              />
-            );
-          })()}
+        <DrawerHost
+          selected={selected}
+          onClose={() => setSelected(null)}
+          registryByName={registryByName}
+          installed={installed}
+          registryRoot={registryRoot}
+          settings={settings}
+          authStatus={authStatus}
+          refresh={refresh}
+          onUpdateResult={handleUpdateResult}
+          onOpenManageLinks={(t) => setManageLinksTarget(t)}
+          onOpenConflicts={(t) => setConflictTarget(t)}
+          onInstallConflict={(p) => setInstallConflict(p)}
+          unregisterHintShown={() =>
+            localStorage.getItem(LS_KEYS.unregisterHintShown) === "1"
+          }
+          markUnregisterHintShown={() => {
+            try {
+              localStorage.setItem(LS_KEYS.unregisterHintShown, "1");
+            } catch {
+              // ignore
+            }
+          }}
+        />
 
     </div>
   );
