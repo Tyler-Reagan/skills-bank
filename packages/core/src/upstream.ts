@@ -81,7 +81,7 @@ export interface ProbeOptions {
  * entry list; callers scan it locally via `findFolderHash` to look
  * up per-path SHAs.
  */
-export async function probeRepoTree(
+export async function probeOriginTree(
   repo: string,
   token: string | null,
   options: ProbeOptions = {},
@@ -152,7 +152,7 @@ export async function probeRepoTree(
  * e.g. `"skills/find-skills"`. Returns null when the folder isn't
  * present (deleted upstream — a separate state from "unchanged"
  * that callers should surface as `upstream-missing` rather than
- * `upstream-update-available`).
+ * `origin-update-available`).
  */
 export function findFolderHash(
   tree: GitTreeEntry[],
@@ -230,7 +230,7 @@ export async function mirrorSkillFolder(
   const fs = await import("node:fs");
   const path = await import("node:path");
 
-  const probe = await probeRepoTree(repo, token, options);
+  const probe = await probeOriginTree(repo, token, options);
   if (!probe.ok) {
     const err: MirrorResultErr = {
       ok: false,
@@ -340,12 +340,12 @@ export async function mirrorSkillFolder(
  * mutation of `~/.agents/.skill-lock.json` or any other CLI-owned
  * state.
  */
-export interface UpstreamUpdateResultOk {
+export interface OriginUpdateResultOk {
   ok: true;
   message: string;
 }
 
-export interface UpstreamUpdateResultErr {
+export interface OriginUpdateResultErr {
   ok: false;
   message: string;
   /** Populated only on rate-limit failures. */
@@ -355,11 +355,11 @@ export interface UpstreamUpdateResultErr {
   diagnostic?: string;
 }
 
-export type UpstreamUpdateResult =
-  | UpstreamUpdateResultOk
-  | UpstreamUpdateResultErr;
+export type OriginUpdateResult =
+  | OriginUpdateResultOk
+  | OriginUpdateResultErr;
 
-export interface UpstreamUpdateContext {
+export interface OriginUpdateContext {
   registryRoot: string;
   /** Skill name (the registry index key, not the folder name). */
   name: string;
@@ -368,9 +368,9 @@ export interface UpstreamUpdateContext {
   token: string | null;
 }
 
-export async function applyUpstreamUpdate(
-  ctx: UpstreamUpdateContext,
-): Promise<UpstreamUpdateResult> {
+export async function applyOriginUpdate(
+  ctx: OriginUpdateContext,
+): Promise<OriginUpdateResult> {
   // Lazy imports keep this file tree-shake-friendly for the renderer's
   // skill-state subpath consumers — none of them want the build/sync
   // dependency graph that buildRegistryIndex pulls in.
@@ -531,3 +531,13 @@ function synthesizeMetaJson(
     JSON.stringify({ name, description: "", tags }, null, 2) + "\n",
   );
 }
+
+// v0.11.10 deprecation aliases. Drop in v0.12.0.
+/** @deprecated use `probeOriginTree` */
+export const probeRepoTree = probeOriginTree;
+/** @deprecated use `applyOriginUpdate` */
+export const applyUpstreamUpdate = applyOriginUpdate;
+/** @deprecated use `OriginUpdateResult` */
+export type UpstreamUpdateResult = OriginUpdateResult;
+/** @deprecated use `OriginUpdateContext` */
+export type UpstreamUpdateContext = OriginUpdateContext;

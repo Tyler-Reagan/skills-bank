@@ -95,13 +95,13 @@ interface Props {
    * Upstream-drift heal — revert arm. Re-fetches from the linked
    * upstream via `npx skills update`, discarding local edits.
    * Companion to `onAcceptDrift` in the
-   * `user-edited-with-upstream` heal flow.
+   * `edited-with-origin` heal flow.
    */
   onTakeUpstream?: () => Promise<void> | void;
   /**
    * Apply an available upstream update in place. Same backend as
    * `onTakeUpstream` but surfaced in the
-   * `upstream-update-available` state where there's no local
+   * `origin-update-available` state where there's no local
    * drift to clobber.
    */
   onUpdate?: () => Promise<void> | void;
@@ -112,7 +112,7 @@ interface Props {
    * API call per skill (no repo dedup); gated to opt-in to keep
    * heavy registries from pressuring the rate-limit budget.
    */
-  showUpstreamActivity?: boolean;
+  showOriginActivity?: boolean;
   /**
    * Stamp a manual upstream pointer onto a skill the scanner
    * couldn't classify automatically (no matching CLI lock entry,
@@ -149,7 +149,7 @@ type ActionState =
   | "unhiding"
   | "accepting-drift"
   | "taking-canonical"
-  | "taking-upstream"
+  | "resetting-to-origin"
   | "updating"
   | "forgetting"
   | "repointing";
@@ -175,17 +175,17 @@ export function SkillDetailDrawer({
   onUpdate,
   onForgetMissing,
   onRepoint,
-  showUpstreamActivity,
+  showOriginActivity,
   onSetManualUpstream,
 }: Props): React.ReactElement {
   const [skillMd, setSkillMd] = useState<string | null>(null);
   const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
   const [repoMeta, setRepoMeta] = useState<
-    import("../../shared/ipc.js").UpstreamRepoMetadata | null
+    import("../../shared/ipc.js").OriginRepoMetadata | null
   >(null);
   const [lastCommit, setLastCommit] = useState<
-    import("../../shared/ipc.js").UpstreamLastCommit | null
+    import("../../shared/ipc.js").OriginLastCommit | null
   >(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerRepo, setPickerRepo] = useState("");
@@ -265,7 +265,7 @@ export function SkillDetailDrawer({
     if (!upstreamRepo) return;
     let cancelled = false;
     void window.skillsBank
-      .upstreamRepoMetadata(upstreamRepo)
+      .originRepoMetadata(upstreamRepo)
       .then((m) => {
         if (!cancelled) setRepoMeta(m);
       })
@@ -281,11 +281,11 @@ export function SkillDetailDrawer({
   // API call per skill (no repo dedup) so it stays off by default.
   useEffect(() => {
     setLastCommit(null);
-    if (!showUpstreamActivity) return;
+    if (!showOriginActivity) return;
     if (!upstreamRepo || !upstreamSkillPath) return;
     let cancelled = false;
     void window.skillsBank
-      .upstreamLastCommit(upstreamRepo, upstreamSkillPath)
+      .originLastCommit(upstreamRepo, upstreamSkillPath)
       .then((c) => {
         if (!cancelled) setLastCommit(c);
       })
@@ -295,7 +295,7 @@ export function SkillDetailDrawer({
     return () => {
       cancelled = true;
     };
-  }, [upstreamRepo, upstreamSkillPath, showUpstreamActivity]);
+  }, [upstreamRepo, upstreamSkillPath, showOriginActivity]);
 
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
@@ -896,7 +896,7 @@ export function SkillDetailDrawer({
                     </span>
                   </div>
                 )}
-                {showUpstreamActivity &&
+                {showOriginActivity &&
                   lastCommit?.sha &&
                   lastCommit?.date && (
                     <div className="drawer-meta-row">
@@ -1011,23 +1011,23 @@ export function SkillDetailDrawer({
               matches the actual axis on this entry.
 
               Copy migrated to the canonical glossary verbs:
-                user-edited-with-upstream:  [Reset to origin] (primary, danger)  [Unlink origin]
-                bundled-skill-edited:       [Re-baseline]     (primary)          [Accept drift] */}
+                edited-with-origin:  [Reset to origin] (primary, danger)  [Unlink origin]
+                edited-without-origin:       [Re-baseline]     (primary)          [Accept drift] */}
           {caps.canAcceptDrift && onAcceptDrift && (
             <>
-              {caps.canTakeUpstream && onTakeUpstream && (
+              {caps.canResetToOrigin && onTakeUpstream && (
                 <button
                   className="btn danger"
                   disabled={action !== null}
                   onClick={() => {
-                    setAction("taking-upstream");
+                    setAction("resetting-to-origin");
                     void Promise.resolve(onTakeUpstream()).finally(() =>
                       setAction(null),
                     );
                   }}
                   title={`Discard local edits and re-fetch from ${entry.source.upstream?.repo ?? "Origin"}. Your changes are lost.`}
                 >
-                  {action === "taking-upstream" ? (
+                  {action === "resetting-to-origin" ? (
                     <>
                       <span className="spinner inline" /> Resetting…
                     </>
@@ -1067,7 +1067,7 @@ export function SkillDetailDrawer({
                   );
                 }}
                 title={
-                  caps.canTakeUpstream
+                  caps.canResetToOrigin
                     ? "Keep your local edits and clear the Origin pointer. Future probes won't surface this skill as having an update available."
                     : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
                 }
@@ -1075,16 +1075,16 @@ export function SkillDetailDrawer({
                 {action === "accepting-drift" ? (
                   <>
                     <span className="spinner inline" />{" "}
-                    {caps.canTakeUpstream ? "Unlinking…" : "Accepting…"}
+                    {caps.canResetToOrigin ? "Unlinking…" : "Accepting…"}
                   </>
-                ) : caps.canTakeUpstream ? (
+                ) : caps.canResetToOrigin ? (
                   "Unlink origin"
                 ) : (
                   "Accept drift"
                 )}
               </button>
               <p className="drawer-action-hint">
-                {caps.canTakeUpstream ? (
+                {caps.canResetToOrigin ? (
                   <>
                     Your local copy diverges from{" "}
                     {entry.source.upstream?.repo ?? "its Origin"}.

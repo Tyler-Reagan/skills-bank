@@ -12,7 +12,7 @@ import type { InstalledSkill, RegistryEntry } from "./types.js";
  * UI gating and IPC-level enforcement.
  *
  * State names align with user-facing copy where the state is surfaced
- * in the drawer (e.g. `bundled-skill-edited` matches the "You've
+ * in the drawer (e.g. `edited-without-origin` matches the "You've
  * edited this bundled skill" heading). Internal-only states keep
  * their composite shape.
  */
@@ -28,9 +28,9 @@ export type DrawerState =
   | "unregistered-broken"
   | "bundled-skill-dismissed"
   // Heal states:
-  | "bundled-skill-edited"
-  | "user-edited-with-upstream"
-  | "upstream-update-available"
+  | "edited-without-origin"
+  | "edited-with-origin"
+  | "origin-update-available"
   | "registry-folder-missing"
   | "external-target-missing";
 
@@ -90,19 +90,19 @@ export interface DrawerCapabilities {
    */
   canTakeCanonical: boolean;
   /**
-   * `user-edited-with-upstream` heal — revert local content to the
+   * `edited-with-origin` heal — revert local content to the
    * skill's upstream copy (re-fetch via `npx skills update <name>`).
    * Distinct from `canTakeCanonical` because the source axis here is
    * the per-skill `upstream` pointer, not the registry-level bundled
    * snapshot — the action and the post-state are different.
    */
-  canTakeUpstream: boolean;
+  canResetToOrigin: boolean;
   /**
-   * `upstream-update-available` heal — apply the upstream change in
+   * `origin-update-available` heal — apply the upstream change in
    * place. Runs `npx skills update <name>`; the new content replaces
    * the on-disk skill and the baseline hash is re-snapshotted.
    * Conflict-aware: when local edits and upstream changes coexist,
-   * the classifier surfaces `user-edited-with-upstream` first and
+   * the classifier surfaces `edited-with-origin` first and
    * this capability is gated to that flow's conflict path instead.
    */
   canUpdate: boolean;
@@ -165,7 +165,7 @@ const NEVER: DrawerCapabilities = {
   canUnhide: false,
   canAcceptDrift: false,
   canTakeCanonical: false,
-  canTakeUpstream: false,
+  canResetToOrigin: false,
   canUpdate: false,
   canForgetMissing: false,
   canRepoint: false,
@@ -223,11 +223,11 @@ export function classifyDrawerState(
   // Drift fan-out: local content has diverged from the recorded
   // baseline. Which heal flow applies depends on the source axis.
   //   - Upstream-pointer skills (`source.upstream` set) →
-  //     `user-edited-with-upstream`. Two arms: Keep my edits
+  //     `edited-with-origin`. Two arms: Keep my edits
   //     (sever the upstream) or Revert to upstream (re-fetch via
   //     `npx skills update`).
   //   - Bundled skills without an upstream pointer → preserved
-  //     `bundled-skill-edited` semantics (Keep mine / Re-baseline
+  //     `edited-without-origin` semantics (Keep mine / Re-baseline
   //     against bundled).
   // An upstream-stamped skill that ALSO has `source: "bundled"` —
   // possible when the user has the same name installed via raw npx
@@ -237,21 +237,21 @@ export function classifyDrawerState(
   if (isRegistered && entry.drift === true) {
     if (entry.source.upstream?.kind === "github") {
       return {
-        state: "user-edited-with-upstream",
+        state: "edited-with-origin",
         brokenCount: 0,
         conflictCount: 0,
         capabilities: {
           ...NEVER,
           canRevealInFinder: true,
           canAcceptDrift: true,
-          canTakeUpstream: true,
+          canResetToOrigin: true,
           canExport: true,
           primary: "accept-drift",
         },
       };
     }
     return {
-      state: "bundled-skill-edited",
+      state: "edited-without-origin",
       brokenCount: 0,
       conflictCount: 0,
       capabilities: {
@@ -268,9 +268,9 @@ export function classifyDrawerState(
   // Upstream update available with no local drift. The user can
   // apply the change in place. Drift takes priority above so this
   // arm only fires for clean local state.
-  if (isRegistered && entry.upstreamUpdateAvailable === true) {
+  if (isRegistered && entry.originUpdateAvailable === true) {
     return {
-      state: "upstream-update-available",
+      state: "origin-update-available",
       brokenCount: 0,
       conflictCount: 0,
       capabilities: {

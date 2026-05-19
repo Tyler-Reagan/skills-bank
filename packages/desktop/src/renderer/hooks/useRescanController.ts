@@ -94,8 +94,8 @@ export function useRescanController({
   // the user-triggered Rescan button's state machine (working → done
   // → idle, or working → idle on rate-limit).
   useEffect(() => {
-    if (!window.skillsBank.onUpstreamProbeComplete) return;
-    return window.skillsBank.onUpstreamProbeComplete((event) => {
+    if (!window.skillsBank.onOriginProbeComplete) return;
+    return window.skillsBank.onOriginProbeComplete((event) => {
       if (event.rateLimit) {
         const resetAt = new Date(event.rateLimit.resetAt);
         const resetText = resetAt.toLocaleTimeString(undefined, {

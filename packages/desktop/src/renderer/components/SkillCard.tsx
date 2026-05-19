@@ -91,7 +91,7 @@ export function SkillCard({
 
   return (
     <div
-      className={`skill-card${entry.upstreamUpdateAvailable ? " skill-card--update-available" : ""}`}
+      className={`skill-card${entry.originUpdateAvailable ? " skill-card--update-available" : ""}`}
       style={
         reducedMotion
           ? undefined
@@ -253,7 +253,7 @@ export function agentsForSkill(
  *
  *   1. MISSING  — entry.missing: files gone. Open drawer to forget.
  *   2. EDITED   — entry.drift: you've edited a bundled-or-upstream skill.
- *   3. UPDATE   — entry.upstreamUpdateAvailable: upstream changed, local
+ *   3. UPDATE   — entry.originUpdateAvailable: upstream changed, local
  *                 content is clean. Open drawer to apply.
  *   4. BUNDLED  — source: bundled. Sync owns this; destructive verbs
  *                 are gated.
@@ -291,7 +291,7 @@ function PublishBadge({
       </span>
     );
   }
-  if (entry.upstreamUpdateAvailable) {
+  if (entry.originUpdateAvailable) {
     return (
       <span
         className="skill-state-badge update"

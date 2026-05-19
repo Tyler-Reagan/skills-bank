@@ -57,7 +57,7 @@ export interface AppSettings {
    * limit budget. Gated to authed users; surfaces a sign-in hint
    * when toggled by an unauth user.
    */
-  showUpstreamActivity: boolean;
+  showOriginActivity: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -68,7 +68,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   registerAdopts: true,
   unregisterDestinationAgent: "agents",
   customSkillsDirs: [],
-  showUpstreamActivity: false,
+  showOriginActivity: false,
 };
 
 interface Props {
@@ -220,12 +220,12 @@ export function SettingsModal({
           <label style={{ ...checkboxRow, marginTop: 8, opacity: isAuthed ? 1 : 0.5 }}>
             <input
               type="checkbox"
-              checked={draft.showUpstreamActivity && isAuthed}
+              checked={draft.showOriginActivity && isAuthed}
               disabled={!isAuthed}
               onChange={() =>
                 setDraft((prev) => ({
                   ...prev,
-                  showUpstreamActivity: !prev.showUpstreamActivity,
+                  showOriginActivity: !prev.showOriginActivity,
                 }))
               }
             />

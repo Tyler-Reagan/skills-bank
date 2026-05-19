@@ -132,8 +132,8 @@ export function buildRegistryIndex(
         // stamp (snapshot at scan time). Either way: live folder hash
         // != stored hash ⇒ the user has edited the skill locally.
         // The classifier distinguishes which heal flow applies based
-        // on the source marker (`bundled-skill-edited` vs the
-        // upstream-aware `user-edited-with-upstream`).
+        // on the source marker (`edited-without-origin` vs the
+        // upstream-aware `edited-with-origin`).
         if (
           built.source.source === "bundled" ||
           built.source.upstream !== undefined

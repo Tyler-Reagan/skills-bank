@@ -108,8 +108,8 @@ export function readSkillLockFile(filePath: string): SkillLockFile | null {
  * lock file *also* has a `find-skills` entry (because they later
  * installed the upstream version into an agent dir), this inference
  * will mis-stamp the hand-authored skill. Drift detection downstream
- * (`upstream-update-available` vs `user-edited-with-upstream` vs the
- * existing `bundled-skill-edited`) will surface the mismatch on the
+ * (`origin-update-available` vs `edited-with-origin` vs the
+ * existing `edited-without-origin`) will surface the mismatch on the
  * first probe; the user heals via the manual upstream picker. This
  * trade is documented in `docs/plans/per-skill-upstream-foundation.md`
  * (open question: high-confidence matching).

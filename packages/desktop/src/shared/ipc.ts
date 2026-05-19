@@ -108,11 +108,24 @@ export const IPC = {
   headerMenuAction: "header:action",
   pickCustomSkillsDir: "skills:pickCustomSkillsDir",
   getSkillDiff: "skills:getSkillDiff",
-  upstreamProbe: "upstream:probe",
-  upstreamUpdate: "upstream:update",
-  upstreamRepoMetadata: "upstream:repoMetadata",
-  upstreamLastCommit: "upstream:lastCommit",
-  upstreamSetManual: "upstream:setManual",
+  originProbe: "origin:probe",
+  originUpdate: "origin:update",
+  originRepoMetadata: "origin:repoMetadata",
+  originLastCommit: "origin:lastCommit",
+  originSetManual: "origin:setManual",
+  // v0.11.10 deprecation aliases — same wire strings as the new keys
+  // above, so a renderer that hasn't been updated still reaches the
+  // same main handlers. Drop in v0.12.0.
+  /** @deprecated use IPC.originProbe */
+  upstreamProbe: "origin:probe",
+  /** @deprecated use IPC.originUpdate */
+  upstreamUpdate: "origin:update",
+  /** @deprecated use IPC.originRepoMetadata */
+  upstreamRepoMetadata: "origin:repoMetadata",
+  /** @deprecated use IPC.originLastCommit */
+  upstreamLastCommit: "origin:lastCommit",
+  /** @deprecated use IPC.originSetManual */
+  upstreamSetManual: "origin:setManual",
 } as const;
 
 /**
@@ -123,7 +136,7 @@ export const IPC = {
  * - Mark explicitly user-owned (`kind: "none"`). Suppresses the
  *   scanner from trying to classify on future walks.
  */
-export type UpstreamManualChoice =
+export type OriginManualChoice =
   | { kind: "github"; repo: string; skillPath: string }
   | { kind: "none" };
 
@@ -135,7 +148,7 @@ export type UpstreamManualChoice =
  * `rateLimit` mirrors core's `RateLimitInfo` shape. Inlined here so
  * the IPC surface doesn't depend on a separately-exported name.
  */
-export interface UpstreamUpdateResult {
+export interface OriginUpdateResult {
   ok: boolean;
   message: string;
   /** Populated only on rate-limit failures. */
@@ -167,7 +180,7 @@ export interface UpstreamUpdateResult {
  * registry refresh (e.g. applyUpstreamUpdate success, upstreamSetManual
  * success) send an empty payload.
  */
-export interface UpstreamProbeCompleteEvent {
+export interface OriginProbeCompleteEvent {
   rateLimit?: {
     limit: number;
     remaining: number;
@@ -191,7 +204,7 @@ export interface UpstreamProbeCompleteEvent {
  * `RegistryEntry.upstreamUpdateAvailable` field on `listRegistry`,
  * not through this payload.
  */
-export interface UpstreamProbeResult {
+export interface OriginProbeResult {
   /** Number of unique source repos probed (after dedup). */
   probed: number;
   /** Number of skills found with a newer upstream hash than recorded. */
@@ -206,7 +219,7 @@ export interface UpstreamProbeResult {
  * process memory (15-min TTL). Errors collapse to null fields rather
  * than throwing — the drawer just omits the missing chips.
  */
-export interface UpstreamRepoMetadata {
+export interface OriginRepoMetadata {
   stars: number | null;
   description: string | null;
   defaultBranch: string | null;
@@ -218,7 +231,7 @@ export interface UpstreamRepoMetadata {
  * cached in main-process memory with a 15-min TTL. Nulls when the
  * fetch fails or the path has no commits in the default branch.
  */
-export interface UpstreamLastCommit {
+export interface OriginLastCommit {
   sha: string | null;
   /** ISO-8601 commit author date. */
   date: string | null;
@@ -699,19 +712,19 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
-  upstreamProbe(): Promise<UpstreamProbeResult>;
-  onUpstreamProbeComplete(
-    cb: (event: UpstreamProbeCompleteEvent) => void,
+  originProbe(): Promise<OriginProbeResult>;
+  onOriginProbeComplete(
+    cb: (event: OriginProbeCompleteEvent) => void,
   ): () => void;
-  upstreamUpdate(name: string): Promise<UpstreamUpdateResult>;
-  upstreamRepoMetadata(repo: string): Promise<UpstreamRepoMetadata>;
-  upstreamLastCommit(
+  originUpdate(name: string): Promise<OriginUpdateResult>;
+  originRepoMetadata(repo: string): Promise<OriginRepoMetadata>;
+  originLastCommit(
     repo: string,
     skillPath: string,
-  ): Promise<UpstreamLastCommit>;
-  upstreamSetManual(
+  ): Promise<OriginLastCommit>;
+  originSetManual(
     name: string,
-    choice: UpstreamManualChoice,
+    choice: OriginManualChoice,
   ): Promise<{ ok: boolean; message: string }>;
 }
 
@@ -720,3 +733,17 @@ declare global {
     skillsBank: SkillsBankAPI;
   }
 }
+
+// v0.11.10 deprecation aliases for the renamed IPC types. Drop in v0.12.0.
+/** @deprecated use `OriginManualChoice` */
+export type UpstreamManualChoice = OriginManualChoice;
+/** @deprecated use `OriginUpdateResult` */
+export type UpstreamUpdateResult = OriginUpdateResult;
+/** @deprecated use `OriginProbeCompleteEvent` */
+export type UpstreamProbeCompleteEvent = OriginProbeCompleteEvent;
+/** @deprecated use `OriginProbeResult` */
+export type UpstreamProbeResult = OriginProbeResult;
+/** @deprecated use `OriginRepoMetadata` */
+export type UpstreamRepoMetadata = OriginRepoMetadata;
+/** @deprecated use `OriginLastCommit` */
+export type UpstreamLastCommit = OriginLastCommit;

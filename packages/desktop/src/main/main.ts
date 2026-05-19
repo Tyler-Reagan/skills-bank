@@ -20,9 +20,9 @@ import {
   applyCanonicalSync,
   applyRegistration,
   buildRegistryIndex,
-  applyUpstreamUpdate as coreApplyUpstreamUpdate,
+  applyOriginUpdate as coreApplyOriginUpdate,
   classifySkillByName,
-  createUpstreamProbeRunner,
+  createOriginProbeRunner,
   clearPendingConflicts,
   computeFolderDiff,
   deleteFromBankSkill,
@@ -56,7 +56,7 @@ import {
   findFolderHash,
   mirrorSkillFolder,
   folderPathFromSkillPath,
-  probeRepoTree,
+  probeOriginTree,
   resolveRegistryRoot,
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
@@ -428,13 +428,13 @@ const PROBE_BOOT_DELAY_MS = 5 * 1000;
 // Desktop wires the BrowserWindow broadcast as the completion sink
 // and exposes the runner's surface to the rest of main.ts via the
 // shims below (kept for call-site readability — they just delegate).
-const probeRunner = createUpstreamProbeRunner({
+const probeRunner = createOriginProbeRunner({
   registryRoot: () => registryRoot,
   token: () => getStoredToken(),
   onComplete: (event) => {
     const wins = BrowserWindow.getAllWindows();
     for (const win of wins) {
-      if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
+      if (!win.isDestroyed()) win.webContents.send(IPC.originProbe, event);
     }
   },
 });
@@ -454,7 +454,7 @@ function notifyProbeComplete(
   }
   const wins = BrowserWindow.getAllWindows();
   for (const win of wins) {
-    if (!win.isDestroyed()) win.webContents.send(IPC.upstreamProbe, event);
+    if (!win.isDestroyed()) win.webContents.send(IPC.originProbe, event);
   }
 }
 
@@ -471,7 +471,7 @@ const probedUpdates = {
   delete: (name: string) => probeRunner.clearUpdate(name),
 };
 
-ipcMain.handle(IPC.upstreamProbe, async () => runUpstreamProbe());
+ipcMain.handle(IPC.originProbe, async () => runUpstreamProbe());
 
 /**
  * Update backend. Fetches the skill's folder content directly from
@@ -506,7 +506,7 @@ async function applyUpstreamUpdate(
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   // Core owns the disk-level mirror + marker rewrite. Desktop layers
   // on the probe-cache cleanup + notification (UI concerns).
-  const result = await coreApplyUpstreamUpdate({
+  const result = await coreApplyOriginUpdate({
     registryRoot,
     name,
     token: getStoredToken(),
@@ -518,7 +518,7 @@ async function applyUpstreamUpdate(
   return result;
 }
 
-ipcMain.handle(IPC.upstreamUpdate, async (_e, name: string) =>
+ipcMain.handle(IPC.originUpdate, async (_e, name: string) =>
   applyUpstreamUpdate(name),
 );
 
@@ -588,7 +588,7 @@ async function getRepoMetadata(repo: string): Promise<UpstreamRepoMetadata> {
   }
 }
 
-ipcMain.handle(IPC.upstreamRepoMetadata, async (_e, repo: string) =>
+ipcMain.handle(IPC.originRepoMetadata, async (_e, repo: string) =>
   getRepoMetadata(repo),
 );
 
@@ -665,7 +665,7 @@ async function getLastCommit(
 }
 
 ipcMain.handle(
-  IPC.upstreamLastCommit,
+  IPC.originLastCommit,
   async (_e, repo: string, skillPath: string) => getLastCommit(repo, skillPath),
 );
 
@@ -701,7 +701,7 @@ async function setManualUpstream(
   // Validate against GitHub: probe the folder. Anything other than
   // an ok response is treated as "couldn't verify" and rejected.
   const folder = folderPathFromSkillPath(choice.skillPath);
-  const probe = await probeRepoTree(choice.repo, getStoredToken());
+  const probe = await probeOriginTree(choice.repo, getStoredToken());
   if (!probe.ok) {
     return {
       ok: false,
@@ -740,7 +740,7 @@ async function setManualUpstream(
 }
 
 ipcMain.handle(
-  IPC.upstreamSetManual,
+  IPC.originSetManual,
   async (_e, name: string, choice: UpstreamManualChoice) =>
     setManualUpstream(name, choice),
 );

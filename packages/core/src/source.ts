@@ -14,31 +14,31 @@ import path from "node:path";
 export type SkillOrigin = "bundled" | "yours";
 
 /**
- * Per-skill origin pointer — independent of the registry-level
+ * Per-skill Origin pointer — independent of the registry-level
  * `SkillOrigin`. Every skill installed via `npx skills` resolves to a
  * GitHub repo + a path within it (skills.sh is a discovery aggregator
  * over many such repos, not a separate package format), so `kind:
  * "github"` is the only positive identifier we model. `none` is an
  * explicit "this is mine, stop scanning" stamp set by the manual
- * upstream picker, distinct from a missing field (which means
+ * Origin picker, distinct from a missing field (which means
  * "unknown lineage, scanner may try to classify on next walk").
  *
  * Field shape mirrors the `vercel-labs/skills` CLI's `.skill-lock.json`
- * (version 3) so the fallback origin-capture scanner can copy values
+ * (version 3) so the fallback Origin-capture scanner can copy values
  * directly without translation.
  */
-export type UpstreamKind = "github" | "none";
+export type OriginKind = "github" | "none";
 
 /**
- * Constant form of `UpstreamKind`'s positive value. Use this in
- * runtime comparisons (e.g. `entry.sourceType !== UPSTREAM_KIND_GITHUB`)
+ * Constant form of `OriginKind`'s positive value. Use this in
+ * runtime comparisons (e.g. `entry.sourceType !== ORIGIN_KIND_GITHUB`)
  * instead of the bare `"github"` string so a typo at any call site
  * fails to compile rather than silently misrouting.
  */
-export const UPSTREAM_KIND_GITHUB: UpstreamKind = "github";
+export const ORIGIN_KIND_GITHUB: OriginKind = "github";
 
-export interface UpstreamPointer {
-  kind: UpstreamKind;
+export interface OriginPointer {
+  kind: OriginKind;
   /** "owner/repo" — e.g. `vercel-labs/skills`. */
   repo?: string;
   /** Full clone URL — preserved raw so non-github.com hosts (GitLab, self-hosted) survive the schema. */
@@ -52,6 +52,15 @@ export interface UpstreamPointer {
   /** ISO-8601 timestamp of the last successful refresh (bumps on update). */
   fetchedAt?: string;
 }
+
+// v0.11.10 deprecation aliases — one minor cycle of softness for
+// downstream consumers (CLI users, future SDK adopters). Drop in v0.12.0.
+/** @deprecated use `OriginKind` */
+export type UpstreamKind = OriginKind;
+/** @deprecated use `ORIGIN_KIND_GITHUB` */
+export const UPSTREAM_KIND_GITHUB = ORIGIN_KIND_GITHUB;
+/** @deprecated use `OriginPointer` */
+export type UpstreamPointer = OriginPointer;
 
 export interface SkillSource {
   source: SkillOrigin;
@@ -87,7 +96,7 @@ export function readSkillSource(skillDir: string): SkillSource {
       out.syncedFromCommit = raw.syncedFromCommit;
     }
     if (typeof raw.syncedAt === "string") out.syncedAt = raw.syncedAt;
-    const upstream = parseUpstream(raw.upstream);
+    const upstream = parseOrigin(raw.upstream);
     if (upstream) out.upstream = upstream;
     return out;
   } catch {
@@ -95,16 +104,16 @@ export function readSkillSource(skillDir: string): SkillSource {
   }
 }
 
-// Strict parser: a malformed upstream block is dropped silently rather
+// Strict parser: a malformed Origin block is dropped silently rather
 // than corrupting the rest of the source marker. Each field is
 // independently optional, but `kind` must be one of the known values
 // or we discard the whole block (preserves the "unknown lineage —
 // scanner may try to classify" semantics).
-function parseUpstream(raw: unknown): UpstreamPointer | undefined {
+function parseOrigin(raw: unknown): OriginPointer | undefined {
   if (!raw || typeof raw !== "object") return undefined;
-  const r = raw as Partial<UpstreamPointer>;
+  const r = raw as Partial<OriginPointer>;
   if (r.kind !== "github" && r.kind !== "none") return undefined;
-  const out: UpstreamPointer = { kind: r.kind };
+  const out: OriginPointer = { kind: r.kind };
   if (typeof r.repo === "string") out.repo = r.repo;
   if (typeof r.sourceUrl === "string") out.sourceUrl = r.sourceUrl;
   if (typeof r.skillPath === "string") out.skillPath = r.skillPath;
