@@ -323,3 +323,211 @@ export async function mirrorSkillFolder(
 
   return { ok: true, folderHash, fileCount: fetched.length };
 }
+
+/**
+ * Per-skill upstream Update operation. Mirrors the canonical author's
+ * folder into the user's registry, then rewrites the local marker +
+ * hash sidecars so the next probe disengages drift detection.
+ *
+ * Lifted from `packages/desktop/src/main/main.ts` in v0.11.9 M4 so
+ * the CLI and future test surfaces can exercise the same primitive
+ * without depending on Electron. The desktop wrapper keeps the
+ * probe-cache cleanup + notification side effects (those are UI
+ * concerns, not core concerns).
+ *
+ * Side effects: writes to disk under `<registryRoot>/skills/<entry.path>`.
+ * No network access beyond `mirrorSkillFolder`'s own fetches; no
+ * mutation of `~/.agents/.skill-lock.json` or any other CLI-owned
+ * state.
+ */
+export interface UpstreamUpdateResultOk {
+  ok: true;
+  message: string;
+}
+
+export interface UpstreamUpdateResultErr {
+  ok: false;
+  message: string;
+  /** Populated only on rate-limit failures. */
+  rateLimit?: RateLimitInfo;
+  /** Free-form diagnostic blob — surfaces in the renderer's
+   *  Copy-details affordance on the sticky-error toast. */
+  diagnostic?: string;
+}
+
+export type UpstreamUpdateResult =
+  | UpstreamUpdateResultOk
+  | UpstreamUpdateResultErr;
+
+export interface UpstreamUpdateContext {
+  registryRoot: string;
+  /** Skill name (the registry index key, not the folder name). */
+  name: string;
+  /** GitHub OAuth token. Null is fine — falls through to unauthenticated
+   *  GitHub probes, with the usual 60/hr rate limit. */
+  token: string | null;
+}
+
+export async function applyUpstreamUpdate(
+  ctx: UpstreamUpdateContext,
+): Promise<UpstreamUpdateResult> {
+  // Lazy imports keep this file tree-shake-friendly for the renderer's
+  // skill-state subpath consumers — none of them want the build/sync
+  // dependency graph that buildRegistryIndex pulls in.
+  const { buildRegistryIndex } = await import("./build.js");
+  const { readSkillSource, writeSkillSource } = await import("./source.js");
+  const { hashSkillFolder, writeRuntimeState, writeSyncedHash } = await import(
+    "./heal.js"
+  );
+  const path = await import("node:path");
+
+  const index = buildRegistryIndex(ctx.registryRoot);
+  const entry = index.entries.find((e) => e.name === ctx.name);
+  if (!entry) {
+    return { ok: false, message: `${ctx.name} is not in the registry` };
+  }
+  const upstream = entry.source.upstream;
+  if (upstream?.kind !== "github" || !upstream.repo || !upstream.skillPath) {
+    return {
+      ok: false,
+      message: `${ctx.name} has no GitHub upstream — nothing to update`,
+    };
+  }
+
+  const folderPath = folderPathFromSkillPath(upstream.skillPath);
+  const registrySkillDir = path.resolve(
+    ctx.registryRoot,
+    entry.path || `skills/${ctx.name}`,
+  );
+  const existingSource = readSkillSource(registrySkillDir);
+
+  // Preserve user-curated tags across the Update. mirrorSkillFolder
+  // wipe-and-recopies destDir, so a local meta.json that wasn't in
+  // upstream would be lost — and with it, the user's tags. Sync has
+  // the same splice (see `sync.ts:readMetaTags`); Update needs the
+  // same protection.
+  const fs = await import("node:fs");
+  const preservedTags = readMetaTagsFromSkillDir(registrySkillDir, fs);
+
+  const mirror = await mirrorSkillFolder(
+    upstream.repo,
+    folderPath,
+    registrySkillDir,
+    ctx.token,
+  );
+  if (!mirror.ok) {
+    if (mirror.status === 429 && mirror.rateLimit) {
+      return {
+        ok: false,
+        message: mirror.message,
+        rateLimit: mirror.rateLimit,
+      };
+    }
+    const recoveryHint =
+      mirror.status === 404
+        ? " Sever to keep local, or Unlink the pointer."
+        : "";
+    return {
+      ok: false,
+      message: `Update failed: ${mirror.message}.${recoveryHint}`,
+      diagnostic:
+        `name=${ctx.name}\n` +
+        `repo=${upstream.repo}\n` +
+        `skillPath=${upstream.skillPath}\n` +
+        `status=${mirror.status}\n` +
+        `message=${mirror.message}`,
+    };
+  }
+
+  // Refresh marker with the new probed folder hash. `fetchedAt` lives
+  // in the gitignored runtime sidecar (ADR-0002) so this write doesn't
+  // churn the committed `.skills-bank.json` when only the timestamp
+  // shifts.
+  const now = new Date().toISOString();
+  writeSkillSource(registrySkillDir, {
+    ...existingSource,
+    upstream: {
+      ...upstream,
+      skillFolderHash: mirror.folderHash,
+    },
+  });
+  // Restore user tags. Two cases:
+  //   - Upstream shipped meta.json → splice tags in (preserve other
+  //     upstream-curated fields like description).
+  //   - Upstream didn't ship meta.json → synthesize a minimal file
+  //     from SKILL.md frontmatter + the user's tags so the warning
+  //     "missing meta.json" doesn't surface for a skill the user
+  //     actually had metadata for.
+  if (preservedTags !== null && preservedTags.length > 0) {
+    restoreMetaTags(registrySkillDir, preservedTags, ctx.name, fs);
+  }
+
+  writeRuntimeState(registrySkillDir, { fetchedAt: now });
+  // Re-hash AFTER restoring meta.json so the baseline reflects the
+  // final on-disk state. Otherwise drift fires immediately because
+  // the hash recorded by mirror would mismatch the post-restore tree.
+  const newBaseline = hashSkillFolder(registrySkillDir);
+  if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
+
+  return { ok: true, message: `Updated ${ctx.name} from ${upstream.repo}.` };
+}
+
+function readMetaTagsFromSkillDir(
+  skillDir: string,
+  fsMod: typeof import("node:fs"),
+): string[] | null {
+  const metaPath = `${skillDir}/meta.json`;
+  if (!fsMod.existsSync(metaPath)) return null;
+  try {
+    const raw = JSON.parse(fsMod.readFileSync(metaPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const tags = raw["tags"];
+    if (!Array.isArray(tags)) return null;
+    return tags.filter((t): t is string => typeof t === "string");
+  } catch {
+    return null;
+  }
+}
+
+function restoreMetaTags(
+  skillDir: string,
+  tags: string[],
+  name: string,
+  fsMod: typeof import("node:fs"),
+): void {
+  const metaPath = `${skillDir}/meta.json`;
+  if (fsMod.existsSync(metaPath)) {
+    // Splice — preserve upstream's other fields.
+    try {
+      const raw = JSON.parse(fsMod.readFileSync(metaPath, "utf8")) as Record<
+        string,
+        unknown
+      >;
+      raw["tags"] = tags;
+      fsMod.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
+    } catch {
+      // Malformed upstream meta.json — fall through to synthesize.
+      synthesizeMetaJson(skillDir, name, tags, fsMod);
+    }
+    return;
+  }
+  // Upstream shipped no meta.json — synthesize a minimal one with the
+  // user's tags so they survive Update + the "missing meta.json"
+  // warning doesn't fire for a skill the user had metadata for.
+  synthesizeMetaJson(skillDir, name, tags, fsMod);
+}
+
+function synthesizeMetaJson(
+  skillDir: string,
+  name: string,
+  tags: string[],
+  fsMod: typeof import("node:fs"),
+): void {
+  const metaPath = `${skillDir}/meta.json`;
+  fsMod.writeFileSync(
+    metaPath,
+    JSON.stringify({ name, description: "", tags }, null, 2) + "\n",
+  );
+}
