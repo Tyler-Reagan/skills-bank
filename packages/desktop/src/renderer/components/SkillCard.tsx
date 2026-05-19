@@ -176,7 +176,7 @@ export function SkillCard({
             title={`Bulk install: ${bulkInstallStatus}`}
           >
             {bulkInstallStatus === "installing"
-              ? "…"
+              ? "▸"
               : bulkInstallStatus === "installed"
                 ? "✓"
                 : bulkInstallStatus === "failed"

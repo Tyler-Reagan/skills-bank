@@ -255,7 +255,7 @@ export function BrowseTab({
                 : "Select multiple skills to install in one batch"
             }
           >
-            {selectMode ? "Cancel select" : "Bulk install…"}
+            {selectMode ? "Cancel select" : "Bulk install"}
           </button>
         )}
       </div>
@@ -387,7 +387,7 @@ function BulkInstallBar({
       </button>
       <span aria-live="polite" style={{ fontSize: 13, color: "var(--text-2)" }}>
         {running && bulkInstall
-          ? `Installing ${done + 1} of ${total} — ${bulkInstall.current ?? ""}…`
+          ? `Installing ${done + 1} of ${total} — ${bulkInstall.current ?? ""}`
           : bulkInstall &&
               (bulkInstall.succeeded.size > 0 ||
                 bulkInstall.failed.size > 0)
@@ -402,7 +402,7 @@ function BulkInstallBar({
         >
           {running ? (
             <>
-              <span className="spinner inline" /> Installing…
+              <span className="spinner inline" /> Installing
             </>
           ) : (
             `Install ${selectedInstallable.length} selected`
