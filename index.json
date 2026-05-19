@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T02:33:02.889Z",
+  "generatedAt": "2026-05-19T18:06:54.076Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -28,6 +28,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -55,6 +56,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -83,6 +85,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -111,6 +114,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -139,6 +143,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -167,6 +172,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -192,7 +198,8 @@
         "message": "polish(v0.11.7): drawer width 540 + reconcile 6 vendored markers to bundled"
       },
       "bucket": "vendored",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "competitor-research",
@@ -220,6 +227,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -248,6 +256,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -276,6 +285,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -301,7 +311,8 @@
         "message": "polish(v0.11.7): drawer width 540 + reconcile 6 vendored markers to bundled"
       },
       "bucket": "vendored",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "core-web-vitals",
@@ -329,6 +340,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -356,6 +368,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -383,6 +396,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -410,6 +424,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -438,6 +453,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -465,6 +481,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -493,6 +510,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -520,6 +538,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -547,6 +566,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -575,6 +595,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -602,6 +623,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -628,6 +650,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "personal",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -655,6 +678,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -681,6 +705,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "personal",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -708,6 +733,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -733,7 +759,8 @@
         "message": "polish(v0.11.7): drawer width 540 + reconcile 6 vendored markers to bundled"
       },
       "bucket": "vendored",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "grill-with-docs",
@@ -748,7 +775,7 @@
           "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
           "skillFolderHash": "3c4ac970c404e8d32c24f2725bfe679e455a925b",
           "installedAt": "2026-05-18T05:30:44.422Z",
-          "fetchedAt": "2026-05-18T05:30:44.422Z"
+          "fetchedAt": "2026-05-19T17:40:40.300Z"
         }
       },
       "adopted": true,
@@ -758,7 +785,9 @@
         "message": "polish(v0.11.7): drawer width 540 + reconcile 6 vendored markers to bundled"
       },
       "bucket": "vendored",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true,
+      "drift": true
     },
     {
       "name": "hero-generator",
@@ -786,6 +815,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -814,6 +844,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -834,7 +865,7 @@
           "skillPath": ".agents/skills/impeccable/SKILL.md",
           "skillFolderHash": "acf2d1c8e0fc8a5388c67a6add3d45e1d2ec90fb",
           "installedAt": "2026-05-18T08:09:53.421Z",
-          "fetchedAt": "2026-05-19T02:12:35.379Z"
+          "fetchedAt": "2026-05-19T17:41:14.320Z"
         }
       },
       "adopted": true,
@@ -844,6 +875,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true,
       "drift": true
     },
@@ -870,7 +902,8 @@
         "message": "polish(v0.11.7): drawer width 540 + reconcile 6 vendored markers to bundled"
       },
       "bucket": "vendored",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "landing-page-generator",
@@ -898,6 +931,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -926,6 +960,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -953,6 +988,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -980,6 +1016,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1007,6 +1044,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1034,6 +1072,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1061,6 +1100,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1088,6 +1128,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1115,6 +1156,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1141,6 +1183,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "personal",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1168,6 +1211,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1195,6 +1239,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1209,8 +1254,7 @@
           "sourceUrl": "https://github.com/langchain-ai/skills-benchmarks.git",
           "skillPath": "skills/noise/react_components/SKILL.md",
           "skillFolderHash": "fbdbab0c2bf0ace0652ab602a4011cef7d5b07f8",
-          "installedAt": "2026-05-18T15:09:38.004Z",
-          "fetchedAt": "2026-05-18T23:42:18.314Z"
+          "installedAt": "2026-05-18T15:09:38.004Z"
         }
       },
       "adopted": true,
@@ -1220,8 +1264,8 @@
         "message": "polish(v0.11.7): drawer width 540 + reconcile 6 vendored markers to bundled"
       },
       "bucket": "vendored",
-      "canon": true,
-      "drift": true
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "react-state-management",
@@ -1248,6 +1292,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1275,6 +1320,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1303,6 +1349,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1330,6 +1377,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1358,6 +1406,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1385,6 +1434,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1412,6 +1462,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1438,6 +1489,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "personal",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1466,6 +1518,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1493,6 +1546,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1520,6 +1574,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1547,6 +1602,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1578,8 +1634,8 @@
         "message": "chore(v0.11.4): heal marker drift — ubiquitous-language hash + fetchedAt bug report"
       },
       "bucket": "vendored",
-      "canon": false,
-      "drift": true
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "ui-ux-pro-max",
@@ -1606,6 +1662,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1633,6 +1690,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1660,6 +1718,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1687,6 +1746,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1716,6 +1776,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1745,6 +1806,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1774,6 +1836,7 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
+      "publishState": "pushed",
       "canon": true
     },
     {
@@ -1799,7 +1862,8 @@
         "message": "polish(v0.11.7): drawer width 540 + reconcile 6 vendored markers to bundled"
       },
       "bucket": "vendored",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     }
   ]
 }

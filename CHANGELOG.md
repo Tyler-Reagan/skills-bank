@@ -3,6 +3,46 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.0.1
+
+Dev-experience hardening and two small visual fixes. No user-facing feature
+changes for packaged-app users; SDK surface unchanged.
+
+### Added
+
+- **Dev-mode isolation.** Unpackaged runs (`pnpm dev` / `pnpm start`) now
+  redirect every persistent side effect (userData, per-agent skill sinks) into
+  `~/.skills-bank-dev/`, with window title "Skills Bank (Dev)". The packaged
+  install's userData (`~/Library/Application Support/Skills Bank/`) and skill
+  sinks (`~/.claude/skills/`, `~/.cursor/skills/`, etc.) are now genuinely
+  untouchable from a local clone. New env var `SKILLS_BANK_HOME_OVERRIDE`
+  consulted by `getAgentSkillsDir` in `packages/core/src/agents.ts` — backwards
+  compatible (defaults to `os.homedir()` when unset).
+- **`CLAUDE.md` documents the isolation pattern** under Conventions so future
+  agents reading repo context can rely on the boundary.
+
+### Changed
+
+- **`pnpm reset` / `reset:hard` no longer target the packaged install's
+  userData** — only the dev path. Pre-isolation the script wiped both, which
+  re-introduced cross-contamination on every reset.
+
+### Fixed
+
+- **Header skill-update badge now visually distinct from the app-update badge.**
+  Both badges previously used identical green styling despite the CSS comment
+  claiming they were "distinct." Skill-updates now uses `--warn` amber so the
+  green/amber pairing maps to "app binary update" vs "skill content updates"
+  at a glance.
+- **Registry tab filter popovers no longer paint behind skill cards.** The
+  filter-glossary and "Tags ▾" panels had `z-index: 20` but lived inside a
+  container that didn't establish a stacking context; each `.skill-card`'s
+  `transform: translateZ(0)` (paint-perf hint) stacked them above the popovers.
+  Lifting `.filters-section` to its own stacking context fixes both popovers
+  in one rule.
+
+---
+
 ## v1.0.0
 
 The release marker — Skills Bank exits the pre-1.0 maintainer-only era. No new
