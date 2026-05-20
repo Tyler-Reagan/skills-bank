@@ -1,14 +1,31 @@
-# In-app Publish (planned post-v1.0)
+# In-app Publish (planned, v1.5)
 
-The desktop app lets a user push a skill from their local registry to their linked GitHub repo as a pull request — the inverse of vendoring. Three sub-flows (new skill / safekeeping / fork) cover every shape of "skill in my registry that I want to deposit in my linked repo." The maintainer scenario (linked repo == bundled repo) and the third-party-linked-repo scenario both work through the same primitives.
+Phase 5 of the post-v1.0 roadmap. Multi-milestone scope: the desktop
+app lets a user push a skill from their local registry to their
+linked GitHub repo as a pull request — the inverse of vendoring.
+Three sub-flows (new skill / safekeeping / fork) cover every shape
+of "skill in my registry that I want to deposit in my linked repo."
+The maintainer scenario (linked repo == curated repo) and the
+third-party-linked-repo scenario both work through the same
+primitives.
 
-The design pinned in this plan was grilled inline across the architecture-pass session that produced ADRs 0006 / 0007 / 0008. Each ADR pins the invariants for one primitive; this plan ties them together with implementation order, conflict audits, and the IPC + UI surface.
+The design pinned in this plan was grilled inline across the
+architecture-pass session that produced ADRs 0006 / 0007 / 0008.
+Each ADR pins the invariants for one primitive; this plan ties them
+together with implementation order, conflict audits, and the IPC +
+UI surface.
 
 ## Depends on
 
-- v1.0.0 (the post-v1.0 backcompat-conscious public-surface discipline applies).
-- Closure of the v0.11.10 origin-rename deprecation cycle (commit 474f42e on `feat/skills-flow-fixes`).
-- Renamed `RegistryEntry` shape (this plan drops `publishState` per ADR-0008).
+- v1.4.0 shipped. The origin-rename pass (`upstream` → `origin`),
+  function rename (`acceptDriftSeverUpstream` → `unlinkOrigin`), and
+  vocabulary rename (`bundled`/`yours` → `curated`/`user`) all
+  landed in v1.3 and are reflected in the surface this plan
+  composes. The `unlinkOrigin` heal action specifically is the
+  building block ADR-0006's `forkSkill` composes.
+- v1.4's origin-unreachable recovery is orthogonal — Phase 5 reads
+  the same `origin` field; nothing in publish flow depends on the
+  probe-failure counter.
 
 ## Goals
 
@@ -22,8 +39,6 @@ The design pinned in this plan was grilled inline across the architecture-pass s
 ## Non-goals
 
 - **Bulk publish.** Out of scope for the v0 implementation. Once the per-skill primitive lands, a thin loop in the IPC handler (matching the bulk-install precedent) is the natural extension; it follows in its own scope.
-- **Renaming `acceptDriftSeverUpstream` → `unlinkOrigin`.** UL canon, separate refactor. Out of scope.
-- **Renaming the `SkillSource.upstream` JSON field → `origin`.** ADR-0002 binds the wire format. Out of scope.
 - **PR template inheritance.** Linked repos with `.github/PULL_REQUEST_TEMPLATE.md` get our auto-generated body, which overrides the template per the GitHub API contract. If a maintainer with a template hits this, follow-up adds a "fetch template + prepend" path.
 - **Multi-linked-repo coexistence.** One linked repo at a time, as today.
 - **In-app file editing of published skills.** The user edits skills through their agent tools or the maintainer scripts; the app reads, classifies, and publishes.
@@ -48,7 +63,7 @@ export type ForkSkillResult =
   | { ok: false; reason: "swap-failed"; message: string };
 ```
 
-Per ADR-0006: scratch-dir + atomic-swap atomicity, refuse-on-collision policy, must-have-origin trigger. Composes `acceptDriftSeverUpstream` on the scratch dir + a new four-line `flipSourceToYours` helper in `heal.ts` + the bucket relocation.
+Per ADR-0006: scratch-dir + atomic-swap atomicity, refuse-on-collision policy, must-have-origin trigger. Composes `unlinkOrigin` on the scratch dir + a new four-line `flipSourceToUser` helper in `heal.ts` + the bucket relocation.
 
 `packages/core/src/upstream.ts` (extension)
 
@@ -185,7 +200,7 @@ Ordered so no milestone undoes prior work; no milestone overlaps another.
 
 **Conflict audit.** The canon-gate rewrite touches `canon.ts` and any caller passing a `RegistryEntry` to canon-derivation. The two existing callers (`build.ts`, the IPC handler for `listRegistry`) thread the `PublishState` lookup explicitly. No behavioral change in dev mode; behavioral change in packaged mode is the bug fix.
 
-**Docs.** `docs/personas.md` updates the canon-derivation note to say the lookup is dynamic, not stored.
+**Docs.** `docs/concepts.md` (post-v1.3 fold of personas.md) updates the canon-derivation note to say the lookup is dynamic, not stored.
 
 ### M3 — Drawer sectioning + publish UI
 
@@ -205,12 +220,12 @@ Ordered so no milestone undoes prior work; no milestone overlaps another.
 
 **Conflict audit.** No new code paths; only refinement. The `concepts.md` "Publish" section gets its final form.
 
-**Docs.** `docs/user-guide.md` adds a "Publish" subsection covering the three sub-flows and the Fork confirmation. `docs/personas.md` updates the persona feature comparison if power-persona users gain capabilities here.
+**Docs.** `docs/user-guide.md` adds a "Publish" subsection covering the three sub-flows and the Fork confirmation. `docs/concepts.md` Publish section gets its final form (the v1.3 fold of personas.md retired the persona feature comparison).
 
 ## Cross-cutting concerns (no separate milestone)
 
-- **Naming.** The function `acceptDriftSeverUpstream` keeps its name through this plan. The user-facing verb is **Unlink origin** per UL; the function rename to `unlinkOrigin` is a separate refactor.
-- **JSON wire format.** `.skills-bank.json`'s `upstream` field name stays per ADR-0002. The type annotation is `OriginPointer` (post-Tier-2 cleanup); the field name is unchanged.
+- **Naming.** The function is `unlinkOrigin` (renamed in v1.3 Phase 2). The user-facing verb is **Unlink origin** per UL. Fork composes `unlinkOrigin` on the scratch dir plus the bucket relocation + source flip.
+- **JSON wire format.** `.skills-bank.json`'s field is `origin` (renamed from `upstream` in v1.3 Phase 2; ADR-0002 amendment landed alongside). Read tolerance for the legacy `upstream` key stays through v1.3.x.
 - **Rate-limit budget.** Authenticated GitHub calls are 5000/hr. A publish operation costs ≤25 calls per skill (Invariant 1 of ADR-0007). The publishState tree probe (Invariant 7 of ADR-0008) costs ~1 call per 5-minute cache window. Heavy bulk activity (post-v1) would push this; the per-skill cost is the natural cap.
 
 ## Out of scope
@@ -220,4 +235,3 @@ Ordered so no milestone undoes prior work; no milestone overlaps another.
 - Bulk publish (per-skill primitive ships first; bulk is a thin loop in a follow-up).
 - Replacing the existing maintainer CLI flows (`pnpm vendor:skill`, `pnpm update:skill`); they stay alongside.
 - Webhooks or push notifications for cross-machine publish-state sync.
-- The function rename of `acceptDriftSeverUpstream` and the JSON field rename of `upstream` → `origin`.
