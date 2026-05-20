@@ -57,6 +57,23 @@ These are the three commit actions a user can take on a **Skill**'s **Origin**. 
 | **Link origin**   | The user action of supplying an **Origin repo** + **Origin path** through the **Picker**                                                    | Stamp, tag, set upstream                                      |
 | **Mark as local** | The user action of declaring a **Skill** has no upstream and is locally authored. Sets `kind: "none"` on the **Origin pointer**.            | I authored this, mark as user-authored, skip                  |
 
+## Publish operations (user-visible verbs)
+
+These are the user-time verbs for pushing local **Skill** content to a **Linked repo** as a pull request. Distinct from **Vendoring** (maintainer-time) and from **Origin operations** (per-skill inbound from **Origin**).
+
+| Term            | Definition                                                                                                                                                                                                                                                                                  | Aliases to avoid                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **Publish**     | Push a **Skill** from the local **Registry** to the user's **Linked repo** as a pull request. Three sub-flows by trigger condition: new skill (no **Origin**, `personal/`), safekeeping (has **Origin**, no **Drift**, `vendored/`), or **Fork** (has **Origin**, **Drift** detected). PR-only — the linked repo's default branch is never written directly. | Push, ship, submit                                            |
+| **Fork**        | A confirmed **Publish** of an edited vendored **Skill**. Composes **Unlink origin** with a bucket move (`vendored/` → `personal/`) and a **Source** flip (`bundled` → `yours`). Requires explicit user confirmation; irreversible without re-vendoring.                                       | Sever and publish, claim, take over                           |
+| **Safekeeping** | The motive for **Publish**ing an unedited vendored **Skill**: deposit the third-party content into your **Linked repo** so it survives if the **Origin** goes dark. The **Origin pointer** is preserved; updates from the original author continue to surface via the update **Probe**.       | Backup, snapshot, deposit                                     |
+
+## Linked repo
+
+| Term                  | Definition                                                                                                                            | Aliases to avoid                                  |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| **Linked repo**       | The GitHub repo the user has connected to the desktop app as their personal **Registry** source. For the maintainer, this happens to be the bundled `Tyler-Reagan/skills-bank`; for other users, it's their own fork or a separate repo they maintain. | registry repo, github registry, power persona's repo |
+| **Linked repo PR**    | A pull request opened against the **Linked repo** by the **Publish** flow. Stable branch name `publish/<name>`; subsequent publishes of the same skill append commits to the open PR.                                                              | Publish PR, push request                          |
+
 ## Relationships
 
 - A **Skill** has at most one **Origin pointer**.
@@ -65,6 +82,9 @@ These are the three commit actions a user can take on a **Skill**'s **Origin**. 
 - **Drift** is detected by comparing the current **Skill** content against its **Baseline**, not its **Origin hash**.
 - **Update available** is detected by comparing the latest **Probe** result against the recorded **Origin hash**.
 - **Update**, **Reset to origin**, and **Unlink origin** are mutually exclusive primary actions — exactly one is offered at a time based on the **Skill**'s drawer state.
+- **Publish** is orthogonal to the **Origin operations** — it pushes outbound to the **Linked repo**; the **Origin operations** pull inbound from **Origin**. A single **Skill** can be **Update**-eligible and **Publish**-eligible simultaneously.
+- **Fork** is a composition of **Unlink origin** + bucket move + **Source** flip, gated by a user confirmation. The underlying **Unlink origin** is the same primitive that fires in the heal flow when the user keeps local edits to a bundled skill.
+- **Safekeeping** is the rationale-name for the (has **Origin**, no **Drift**) **Publish** sub-flow — not a separate operation. It exists in the glossary because the *reason* explains why the **Origin pointer** stays in place when the (functionally identical) **Fork** drops it.
 
 ## Example dialogue
 
@@ -86,6 +106,8 @@ These are the three commit actions a user can take on a **Skill**'s **Origin**. 
 - **"Take upstream" (PR 36 description) vs "Apply upstream" (commit message) vs "Update" (UI label).** Three terms for at-most-two operations. Canonical: **Update** (clean local) and **Reset to origin** (dirty local). Retire "take upstream" and "apply upstream" from user-facing copy; keep them out of new code.
 - **"Sever upstream" vs "Accept drift"** — the code uses both for the same heal action. **Unlink origin** is the proposed canonical user-facing term. The capability flag `canAcceptDrift` describes a *capability* (the **Skill** is eligible to be unlinked), which is fine internally; the *action* is **Unlink origin**.
 - **"Where did this come from?" (picker section heading) and "Origin" (drawer section heading) are the same domain concept.** Two headings, two voices. Pick one. Recommendation: use **Origin** for both, since the picker only appears when **Origin** is unset — the heading "Origin" plus the empty state "No origin set" is more consistent than two voices.
+- **"Fork" overlaps with "Unlink origin."** **Fork** is the user-facing umbrella verb for the (publish-time) composition of three operations: **Unlink origin** + bucket move (`vendored/` → `personal/`) + **Source** flip (`bundled` → `yours`). **Unlink origin** is also reachable independently from the heal flow (the user keeps edits to a bundled or vendored skill but doesn't intend to publish). The distinction matters because the publish-time fork forces a confirmation modal; the heal-time unlink does not (the user already acted on the heal-pending state). In code: `forkSkill` composes `acceptDriftSeverUpstream` (the legacy-named implementation of **Unlink origin**) plus the new helpers.
+- **"Safekeeping" is rationale, not an operation.** It explains *why* the (has **Origin**, no **Drift**) **Publish** sub-flow preserves the **Origin pointer** while the **Fork** sub-flow drops it. There is no `safekeepSkill` primitive — the operation is **Publish**; "safekeeping" is the name for one of the three trigger conditions. If a future surface wants to action "safekeep this skill" directly (e.g. a sidebar shortcut), it routes to **Publish** with the unedited-vendored precondition; it does not create a new verb.
 
 ## Implications for the picker copy (v0.11.2 redesign)
 
