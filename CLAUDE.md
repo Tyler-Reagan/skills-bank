@@ -101,6 +101,7 @@ Filenames are stable descriptive IDs; the contents of each plan file record the 
 | --------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | none (post-v1.0)                                          |
 | [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `bank-mode-persistence`                                   |
+| [`in-app-publish.md`](docs/plans/in-app-publish.md)                               | none (post-v1.0) — pins ADRs 0006 / 0007 / 0008           |
 | [`cli-minimal.md`](docs/plans/cli-minimal.md)                                     | none — housekeeping; anytime                              |
 
 When starting work on a plan, create a `feat/<plan-slug>` branch following the recent commit pattern in `git log`.

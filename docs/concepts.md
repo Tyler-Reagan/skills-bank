@@ -204,7 +204,7 @@ Pushing a skill from the local registry to the user's linked repo as a pull requ
 
 The action is always PR-only — the linked repo's default branch is never written directly. Subsequent publishes of the same skill while a prior PR is still open append commits to the existing branch (the PR auto-updates); publishes after the prior PR is merged or closed clean up the stale branch and open a fresh one. Counterpart CLI is `pnpm update:skill` (maintainer-only, no PR — direct working-tree mutation in the repo itself).
 
-The atomicity, branch-resolution, rate-limit, and PR-metadata invariants of the `pushSkillFolder` primitive are pinned in [ADR-0007](adr/ADR-0007-push-skill-folder-invariants.md).
+The atomicity, branch-resolution, rate-limit, and PR-metadata invariants of the `pushSkillFolder` primitive are pinned in [ADR-0007](adr/ADR-0007-push-skill-folder-invariants.md). The dual-mode publish-state computation that drives the chip and the canon gate is pinned in [ADR-0008](adr/ADR-0008-publish-state-source-agnostic.md). Implementation order across all three primitives lives in [`docs/plans/in-app-publish.md`](plans/in-app-publish.md).
 
 ## Fork
 
