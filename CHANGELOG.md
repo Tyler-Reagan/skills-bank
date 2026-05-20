@@ -3,6 +3,30 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.4.0
+
+Phase 3 of the post-v1.0 roadmap ([bank-mode-persistence](docs/plans/bank-mode-persistence.md)). Originally scoped much larger; trimmed during plan rewrite (commit `2182788`) to align with the post-v1.2/v1.3 ground state. The product promise — "skills you've installed stay safe with you, even if their upstream goes dark" — was already met by v1.2's discovery-mount + local-content-copy architecture; what was missing was the **recovery UX** for skills whose origin probe persistently fails. v1.4 lands exactly that.
+
+### Added
+
+- **`origin-unreachable` drawer state.** New `DrawerState` triggered when a github-origin skill's probe has failed `ORIGIN_UNREACHABLE_THRESHOLD` (3) consecutive non-rate-limit times. Lower priority than drift (drift implies reachable-recently); higher than `origin-update-available` (can't surface updates we couldn't probe for).
+- **Drawer recovery banner** with two actions: **Retry probe** (re-runs the full probe pass via the existing `IPC.originProbe`) and **Keep this skill** (routes through the existing `IPC.acceptDrift` → `unlinkOrigin` dispatch v1.3 wired). Hint copy explains the local copy is intact regardless.
+- **`UNREACHABLE` SkillCard chip** for list-level visibility. Same priority slot as `MISSING`.
+- **`probeFailureCount` / `lastProbeFailureAt` in `.skills-bank-runtime.json`.** Runtime-only — ADR-0002 invariants preserved. Counter increments on per-skill failure (folder not in tree) and per-repo non-429 failure (tree fetch errored). Resets on success. Saturates at the threshold to avoid unbounded growth + sidecar churn.
+- **`RegistryEntry.originUnreachable`** boolean populated by `buildRegistryIndex` from the runtime sidecar.
+
+### Changed
+
+- **`docs/plans/bank-mode-persistence.md` rewritten.** Original plan (pre-v1.0) called for a per-skill `bankSnapshot` cache layer that the v1.2 grill retired, plus `npx skills add` integration that v1.2's `mirrorSkillFolder` superseded, plus pre-rename vocabulary. The rewrite scopes Phase 3 to the recovery UX only.
+
+### Compatibility
+
+No new IPC channels. No new on-disk schema changes beyond the gitignored runtime sidecar's new fields (backward-compatible defaults). No cache layer; the local content under `skills/.../<name>/` *is* the cache by virtue of v1.2's discovery mount.
+
+### Phase 4 inheritance
+
+`in-app-install-from-discover` will get the same recovery UX automatically — any Discover-installed skill picks up a github origin and inherits the probe-failure tracking by virtue of `entry.source.origin?.kind === "github"`.
+
 ## v1.3.0
 
 Phase 2 of the post-v1.0 roadmap ([vocabulary-rename](docs/plans/vocabulary-rename.md)). Mechanical vocabulary sweep + persona-collapse the v1.2 plan had carved out as a Phase 2 non-goal. Every wire-format / SDK-surface change ships behind a one-minor-cycle tolerant-read window; legacy aliases are dropped in v1.4.
