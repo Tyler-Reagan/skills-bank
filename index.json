@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T20:51:04.197Z",
+  "generatedAt": "2026-05-20T04:26:18.531Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -629,12 +629,21 @@
     {
       "name": "github-actions-docs",
       "description": "Use when users ask how to write, explain, customize, migrate, secure, or troubleshoot GitHub Actions workflows, workflow syntax, triggers, matrices, runners, reusable workflows, artifacts, caching, secrets, OIDC, deployments, custom actions, or Actions Runner Controller, especially when they need official GitHub documentation, exact links, or docs-grounded YAML guidance.",
-      "path": "skills/personal/github-actions-docs",
+      "path": "skills/vendored/github-actions-docs",
       "source": {
-        "source": "yours"
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "xixu-me/skills",
+          "sourceUrl": "https://github.com/xixu-me/skills.git",
+          "skillPath": "skills/github-actions-docs/SKILL.md",
+          "skillFolderHash": "518c85da555f91c346813aa5bb3cc62f9db8bfb3",
+          "installedAt": "2026-05-19T20:37:06.794Z",
+          "fetchedAt": "2026-05-19T20:37:06.794Z"
+        }
       },
       "adopted": true,
-      "bucket": "personal",
+      "bucket": "vendored",
       "publishState": "untracked",
       "canon": false
     },

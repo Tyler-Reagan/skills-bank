@@ -10,7 +10,7 @@ import type { AppError } from "@skills-bank/core";
 
 export type ToastAction = { label: string; onClick: () => void };
 
-export interface ToastShape {
+interface ToastShape {
   message: string;
   /** When set, the toast doesn't auto-dismiss; user must click ×. */
   sticky?: boolean;
@@ -24,12 +24,12 @@ export interface ToastShape {
   diagnostic?: string;
 }
 
-export interface FlashErrorOpts {
+interface FlashErrorOpts {
   action?: ToastAction;
   diagnostic?: string;
 }
 
-export interface AppErrorEntry {
+interface AppErrorEntry {
   id: number;
   error: AppError;
 }

@@ -515,7 +515,7 @@ ipcMain.handle(IPC.originProbe, async () => runUpstreamProbe());
  */
 async function applyUpstreamUpdate(
   name: string,
-): Promise<import("../shared/ipc.js").UpstreamUpdateResult> {
+): Promise<import("../shared/ipc.js").OriginUpdateResult> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   // Core owns the disk-level mirror + marker rewrite. Desktop layers
   // on the probe-cache cleanup + notification (UI concerns).
