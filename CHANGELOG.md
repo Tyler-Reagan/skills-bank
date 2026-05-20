@@ -3,6 +3,40 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.3.0
+
+Phase 2 of the post-v1.0 roadmap ([vocabulary-rename](docs/plans/vocabulary-rename.md)). Mechanical vocabulary sweep + persona-collapse the v1.2 plan had carved out as a Phase 2 non-goal. Every wire-format / SDK-surface change ships behind a one-minor-cycle tolerant-read window; legacy aliases are dropped in v1.4.
+
+### Changed
+
+- **Source axis values renamed.** `bundled` → `curated`, `yours` → `user`. The user-facing axis on each registry skill, persisted as `.skills-bank.json`'s `source` field. "Curated" replaces "bundled" because the curated set has never literally shipped in the app binary — it ships from the linked repo. "User" replaces "yours" to drop second-person framing from badges + tooltips. `readSkillSource` tolerantly accepts both old and new values for one minor cycle (v1.3.x); `writeSkillSource` emits only the new form.
+- **`.skills-bank.json` field `upstream` → `origin`.** The TypeScript surface already used "origin" in prose post-v0.11.10; v1.3 lands the wire-format rename to match. `parseOrigin` accepts both keys for one minor cycle. **ADR-0002 amended** to reframe the stability claim around tolerant-read windows.
+- **`acceptDriftSeverUpstream` → `unlinkOrigin`.** The function-name rename matches UL canon. The old export stays as a `@deprecated` const alias for one minor cycle.
+- **UI provenance badges.** Dropped the `YOURS` chip entirely (the **Mine** filter on the Registry tab is the single surface for "show me only my skills"). `BUNDLED` rung becomes `CURATED`. Filter chip "Yours" → "Mine".
+- **Persona collapse.** Removed the first-launch picker. Every install starts on the bundled-default (`linkedRepo: null`); GitHub linking moves to a single entry point in **Settings → Account → "Sign in with GitHub"**. `resolveBootRegistrySource` normalizes legacy `null` configs to `"local"`. `AuthStatus.registrySource` becomes a derived alias for one minor cycle and is removed in v1.4.
+- **Manifest `schemaVersion` v1 → v2.** `importRegistryManifest` grows a migration head (`migrateManifestV1ToV2`) that handles v1 imports transparently; exports always emit v2. The IPC handler accepts both. Removal of v1 reader targeted at v1.4.
+- **`docs/concepts.md` rewritten.** Source axis values updated; persona section folded into a single "Linked repo vs bundled default" configuration spectrum. `docs/personas.md` deleted (content folded in).
+
+### Added
+
+- **`pnpm migrate:source-markers`** — one-shot eager rewrite of every committed `.skills-bank.json` in a registry to the post-v1.3 form. Optional cleanup; the tolerant-read path handles legacy markers indefinitely within the v1.3.x window. Ran against this repo's curation layer as part of this release — the `find-skills` marker now uses `source: "curated"` + `origin` field.
+- **Deprecation aliases (SDK).** `SkillOriginLegacy` type (re-exports the legacy literal-string union), `acceptDriftSeverUpstream` const (alias of `unlinkOrigin`). One minor cycle; both removed in v1.4.
+
+### Removed
+
+- **`docs/personas.md`** — folded into `docs/concepts.md`. The persona distinction disappears from first launch; the bundled-default vs linked-repo split stays as a configuration spectrum, not a persona fork.
+- **`LoginScreen.tsx`** — first-launch picker retired. `ConnectGithubModal` already owned the device-flow + resume surface, so the entry point for GitHub linking moved cleanly into Settings → Account.
+
+### Fixed
+
+- **`applyCanonicalSync` no longer silently wipes per-skill `origin`** across every sync. (Pre-existing v0.11.3 oddity surfaced during the v1.2 Phase 1 work, then folded into the wire-format rename here.) `readSkillSource` now spreads existing source axes before stamping registry-level fields, so per-skill origin attribution survives.
+
+### Migration notes for SDK consumers
+
+- **TypeScript literal-string callers** (`source === "bundled"`) get a TS error post-upgrade. Migration: rename to `source === "curated"`. The `SkillOriginLegacy` type alias is a one-cycle escape hatch.
+- **JSON wire-format callers** outside the app (anything that reads `.skills-bank.json` directly) should switch to the new keys (`origin`, `curated`, `user`). Tolerant-read for one minor cycle means existing v1.2-written files still parse correctly on v1.3, but the rewrite happens on the next mutation.
+- **Manifest v1 consumers** continue to import successfully via the migration head. Exports always emit v2.
+
 ## v1.2.0
 
 Phase 1 of the post-v1.0 roadmap ([curation-layer-reset](docs/plans/curation-layer-reset.md)). Resets the bundled set to a deliberate MVP, extracts the maintainer's authored skills into their own origin repo, ships a metadata-only registry-manifest export/import flow with zero-effort `userData` auto-snapshots, and drops the remote-layout invariant so any GitHub repo (flat / bucketed / nested) is linkable as-is.
