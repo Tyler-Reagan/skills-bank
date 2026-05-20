@@ -258,7 +258,7 @@ export async function applyCanonicalSync(
     if (localExists) {
       preservedTags = readMetaTags(localPath);
       const existingSource = readSkillSource(localPath);
-      if (existingSource.source !== "bundled") {
+      if (existingSource.source !== "curated") {
         const decision = decisions[name];
         if (decision) {
           // Apply the stored resolution via the shared primitive.
@@ -316,7 +316,7 @@ export async function applyCanonicalSync(
     const mirroredSource = readSkillSource(mountPath);
     const merged: SkillSource = {
       ...(preservedSource ?? mirroredSource),
-      source: "bundled",
+      source: "curated",
       syncedFromCommit: commitSha,
       syncedAt,
     };
@@ -334,7 +334,7 @@ export async function applyCanonicalSync(
   const orphaned: string[] = [];
   for (const ref of walkSkills(registryRoot)) {
     if (canonicalNames.has(ref.name)) continue;
-    if (readSkillSource(ref.dir).source === "bundled") {
+    if (readSkillSource(ref.dir).source === "curated") {
       orphaned.push(ref.name);
     }
   }

@@ -3,15 +3,27 @@ import path from "node:path";
 
 /**
  * Binary provenance for a registry skill. Any skill the user didn't
- * get from the bundled curated set originated from them — whether
- * authored locally, merged from another bank, or added by hand.
+ * get from the curated set originated from them — whether authored
+ * locally, merged from another bank, or added by hand.
  *
  * Internal `entry.canon` (a derived boolean — "currently in the
- * upstream bundled snapshot") is the separate axis used purely for
+ * curated upstream snapshot") is the separate axis used purely for
  * destructive-action protection; it never surfaces to the user and
  * is intentionally not part of this enum.
+ *
+ * v1.3 vocabulary rename — see `docs/plans/vocabulary-rename.md`.
+ * Prior values `bundled`/`yours` are accepted on read for one minor
+ * cycle (v1.3.x); writes always emit `curated`/`user`.
  */
-export type SkillOrigin = "bundled" | "yours";
+export type SkillOrigin = "curated" | "user";
+
+/**
+ * @deprecated v1.3 — renamed to `SkillOrigin` values `curated` / `user`.
+ * Removal targeted for v1.4. The legacy literal-string type stays for
+ * one minor cycle as a migration breadcrumb for downstream consumers
+ * that imported the type itself.
+ */
+export type SkillOriginLegacy = "bundled" | "yours";
 
 /**
  * Per-skill Origin pointer — independent of the registry-level
@@ -55,7 +67,7 @@ export interface OriginPointer {
 
 export interface SkillSource {
   source: SkillOrigin;
-  /** Commit SHA of the bundled repo this skill was last synced from. */
+  /** Commit SHA of the curated repo this skill was last synced from. */
   syncedFromCommit?: string;
   /** ISO-8601 timestamp of the last sync. */
   syncedAt?: string;
@@ -65,39 +77,59 @@ export interface SkillSource {
    * index walk. Set explicitly to `{ kind: "none" }` to suppress
    * scanner attempts (the manual "this is mine" stamp).
    *
-   * Field name retained as `upstream` per the v0.11.10 origin-rename-pass
-   * deferral — the JSON wire format on `.skills-bank.json` (committed
-   * across the bank) cannot be changed without an ADR-0002 amendment.
-   * The type is the canonical `OriginPointer`; UL canon calls this
-   * concept "origin" in all prose.
+   * Field renamed from `upstream` → `origin` in v1.3 (ADR-0002
+   * Phase 2 amendment). `readSkillSource` tolerates the legacy
+   * `upstream` JSON key for one minor cycle; `writeSkillSource`
+   * always emits `origin`. The type itself is the canonical
+   * `OriginPointer`; UL canon already used "origin" in prose
+   * post-v0.11.10.
    */
-  upstream?: OriginPointer;
+  origin?: OriginPointer;
 }
 
 export const SKILL_SOURCE_FILENAME = ".skills-bank.json";
 
 /**
+ * Normalize a raw `source` axis value off disk to the post-v1.3
+ * vocabulary. Accepts both the new values (`curated` / `user`) and
+ * the legacy v1.2 values (`bundled` / `yours`) for one minor cycle.
+ * Defaults to `user` on missing / unknown values — the safe
+ * assumption for unknown provenance.
+ */
+function normalizeSourceValue(raw: unknown): SkillOrigin {
+  if (raw === "curated" || raw === "bundled") return "curated";
+  if (raw === "user" || raw === "yours") return "user";
+  return "user";
+}
+
+/**
  * Read a skill's origin marker. Missing or invalid files default to
- * `yours` — the safe assumption for unknown provenance. The maintainer
- * runs the rename script in the plan's "Resetting your local install"
- * section before launching the post-rename build.
+ * `user` — the safe assumption for unknown provenance. The maintainer
+ * may also run `scripts/migrate-source-markers.ts` for an eager
+ * pass over a registry's committed markers.
  */
 export function readSkillSource(skillDir: string): SkillSource {
   const p = path.join(skillDir, SKILL_SOURCE_FILENAME);
-  if (!fs.existsSync(p)) return { source: "yours" };
+  if (!fs.existsSync(p)) return { source: "user" };
   try {
-    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<SkillSource>;
-    const source: SkillOrigin = raw.source === "bundled" ? "bundled" : "yours";
+    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const source = normalizeSourceValue(raw["source"]);
     const out: SkillSource = { source };
-    if (typeof raw.syncedFromCommit === "string") {
-      out.syncedFromCommit = raw.syncedFromCommit;
+    if (typeof raw["syncedFromCommit"] === "string") {
+      out.syncedFromCommit = raw["syncedFromCommit"];
     }
-    if (typeof raw.syncedAt === "string") out.syncedAt = raw.syncedAt;
-    const upstream = parseOrigin(raw.upstream);
-    if (upstream) out.upstream = upstream;
+    if (typeof raw["syncedAt"] === "string") out.syncedAt = raw["syncedAt"];
+    // Accept both `origin` (post-v1.3) and `upstream` (legacy)
+    // wire keys for one minor cycle. `origin` wins when both are
+    // present (defensive in case a hand-edited marker has both).
+    const origin = parseOrigin(raw["origin"] ?? raw["upstream"]);
+    if (origin) out.origin = origin;
     return out;
   } catch {
-    return { source: "yours" };
+    return { source: "user" };
   }
 }
 
@@ -136,10 +168,10 @@ export function writeSkillSource(skillDir: string, src: SkillSource): void {
   // (`docs/bug-reports/2026-05-18-fetchedAt-churn.md`). Callers that
   // need to persist it use `writeRuntimeState` from `./heal.js`.
   let toWrite: SkillSource = src;
-  if (src.upstream && "fetchedAt" in src.upstream) {
-    const { fetchedAt: _drop, ...upstreamNoFetched } = src.upstream;
+  if (src.origin && "fetchedAt" in src.origin) {
+    const { fetchedAt: _drop, ...originNoFetched } = src.origin;
     void _drop;
-    toWrite = { ...src, upstream: upstreamNoFetched };
+    toWrite = { ...src, origin: originNoFetched };
   }
   fs.writeFileSync(p, JSON.stringify(toWrite, null, 2) + "\n");
 }

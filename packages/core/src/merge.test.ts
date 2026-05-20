@@ -72,13 +72,13 @@ describe("mergeImportRegistry", () => {
     expect(report.conflicts).toEqual([]);
 
     const src = readSkillSource(path.join(activeRoot, "skills", "alpha"));
-    expect(src.source).toBe("yours");
+    expect(src.source).toBe("user");
     // Sync would have written `syncedFromCommit`; merge does not.
     expect(src.syncedFromCommit).toBeUndefined();
   });
 
   test("collision with no decision is queued in conflicts", () => {
-    writeActive("beta", { "SKILL.md": "# my beta" }, { source: "yours" });
+    writeActive("beta", { "SKILL.md": "# my beta" }, { source: "user" });
     writeSource("beta", { "SKILL.md": "# imported beta" });
 
     const report = mergeImportRegistry(activeRoot, sourceRoot);
@@ -90,7 +90,7 @@ describe("mergeImportRegistry", () => {
   });
 
   test("keep-mine logs to keptMine and skips the import", () => {
-    writeActive("gamma", { "SKILL.md": "# my gamma" }, { source: "yours" });
+    writeActive("gamma", { "SKILL.md": "# my gamma" }, { source: "user" });
     writeSource("gamma", { "SKILL.md": "# imported gamma" });
 
     const report = mergeImportRegistry(activeRoot, sourceRoot, {
@@ -102,7 +102,7 @@ describe("mergeImportRegistry", () => {
   });
 
   test("use-canonical overwrites + stamps `source: yours` (not bundled)", () => {
-    writeActive("delta", { "SKILL.md": "# my delta" }, { source: "yours" });
+    writeActive("delta", { "SKILL.md": "# my delta" }, { source: "user" });
     writeSource("delta", { "SKILL.md": "# imported delta" });
 
     const report = mergeImportRegistry(activeRoot, sourceRoot, {
@@ -114,14 +114,14 @@ describe("mergeImportRegistry", () => {
     const src = readSkillSource(path.join(activeRoot, "skills", "delta"));
     // Critical: still `yours`, even though the content came from the
     // source. Merge-import never produces `bundled` skills.
-    expect(src.source).toBe("yours");
+    expect(src.source).toBe("user");
   });
 
   test("rename-mine renames local to <name>-local-* + imports to original name", () => {
     writeActive(
       "epsilon",
       { "SKILL.md": "# my epsilon" },
-      { source: "yours" },
+      { source: "user" },
     );
     writeSource("epsilon", { "SKILL.md": "# imported epsilon" });
 
@@ -141,11 +141,11 @@ describe("mergeImportRegistry", () => {
   });
 
   test("rename target collision picks <name>-local-2 / -3 / …", () => {
-    writeActive("zeta", { "SKILL.md": "# my zeta" }, { source: "yours" });
+    writeActive("zeta", { "SKILL.md": "# my zeta" }, { source: "user" });
     writeActive(
       "zeta-local",
       { "SKILL.md": "# previously renamed" },
-      { source: "yours" },
+      { source: "user" },
     );
     writeSource("zeta", { "SKILL.md": "# imported zeta" });
 

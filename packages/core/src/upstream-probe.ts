@@ -214,17 +214,17 @@ export function createOriginProbeRunner(
     }
     const candidates = index.entries.filter(
       (e) =>
-        e.source.upstream?.kind === "github" &&
-        typeof e.source.upstream.repo === "string" &&
-        typeof e.source.upstream.skillPath === "string" &&
-        typeof e.source.upstream.skillFolderHash === "string",
+        e.source.origin?.kind === "github" &&
+        typeof e.source.origin.repo === "string" &&
+        typeof e.source.origin.skillPath === "string" &&
+        typeof e.source.origin.skillFolderHash === "string",
     );
     if (candidates.length === 0) {
       return { probed: 0, updates: 0, probedAt };
     }
     const byRepo = new Map<string, typeof candidates>();
     for (const e of candidates) {
-      const repo = e.source.upstream!.repo!;
+      const repo = e.source.origin!.repo!;
       const bucket = byRepo.get(repo);
       if (bucket) bucket.push(e);
       else byRepo.set(repo, [e]);
@@ -257,10 +257,10 @@ export function createOriginProbeRunner(
         repoProbeCache.set(repo, cache);
       }
       for (const skill of skills) {
-        const upstream = skill.source.upstream!;
-        const folderPath = folderPathFromSkillPath(upstream.skillPath!);
+        const origin = skill.source.origin!;
+        const folderPath = folderPathFromSkillPath(origin.skillPath!);
         const currentHash = cache.folderHashes.get(folderPath);
-        if (currentHash && currentHash !== upstream.skillFolderHash) {
+        if (currentHash && currentHash !== origin.skillFolderHash) {
           probedUpdates.set(skill.name, {
             latestHash: currentHash,
             probedAt: now,

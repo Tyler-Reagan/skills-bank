@@ -35,8 +35,8 @@ export type RegistryFilterTag =
   | "updates"
   | "edited"
   | "missing"
-  | "bundled"
-  | "yours"
+  | "curated"
+  | "user"
   | "personal"
   | "vendored";
 
@@ -76,16 +76,16 @@ const CHIP_DEFS: readonly ChipDef[] = [
     matches: (e) => e.missing === true,
   },
   {
-    tag: "bundled",
-    label: "Bundled",
-    title: "Skills curated as part of the bank's bundled set — managed by Sync.",
-    matches: (e) => e.source.source === "bundled",
+    tag: "curated",
+    label: "Curated",
+    title: "Skills curated as part of the bank's set — managed by Sync.",
+    matches: (e) => e.source.source === "curated",
   },
   {
-    tag: "yours",
-    label: "Yours",
+    tag: "user",
+    label: "Mine",
     title: "Skills you authored or unlinked from a curated set.",
-    matches: (e) => e.source.source === "yours",
+    matches: (e) => e.source.source === "user",
   },
   {
     tag: "personal",

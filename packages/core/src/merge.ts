@@ -72,7 +72,7 @@ export function mergeImportRegistry(
       // No collision: copy in, mark imported.
       fs.cpSync(sourcePath, localPath, { recursive: true });
       writeSkillSource(localPath, {
-        source: "yours",
+        source: "user",
         syncedAt: importedAt,
       });
       const h = hashSkillFolder(localPath);
@@ -104,7 +104,7 @@ export function mergeImportRegistry(
     // Both rename-mine and use-canonical fall through to copy + stamp.
     fs.cpSync(sourcePath, localPath, { recursive: true });
     writeSkillSource(localPath, {
-      source: "yours",
+      source: "user",
       syncedAt: importedAt,
     });
     const h = hashSkillFolder(localPath);

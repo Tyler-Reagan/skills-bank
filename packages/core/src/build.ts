@@ -135,8 +135,8 @@ export function buildRegistryIndex(
         // on the source marker (`edited-without-origin` vs the
         // upstream-aware `edited-with-origin`).
         if (
-          built.source.source === "bundled" ||
-          built.source.upstream !== undefined
+          built.source.source === "curated" ||
+          built.source.origin !== undefined
         ) {
           const recorded = readSyncedHash(ref.dir);
           if (recorded) {
@@ -174,7 +174,7 @@ export function buildRegistryIndex(
       name: prior.name,
       description: "(files missing)",
       path: prior.path,
-      source: { source: "yours" },
+      source: { source: "user" },
       adopted: true,
       missing: true,
       ...(prior.bucket ? { bucket: prior.bucket } : {}),
@@ -201,24 +201,24 @@ export function buildRegistryIndex(
 /**
  * `fetchedAt` lives in `.skills-bank-runtime.json` (the gitignored
  * runtime sidecar — ADR-0002). The in-memory view stitches it back
- * into `source.upstream.fetchedAt` so consumers (drawer display,
+ * into `source.origin.fetchedAt` so consumers (drawer display,
  * Settings, etc.) keep reading from the familiar path.
  */
 function mergeRuntimeFetchedAt(
   source: import("./source.js").SkillSource,
   skillDir: string,
 ): import("./source.js").SkillSource {
-  if (!source.upstream) return source;
+  if (!source.origin) return source;
   const runtime = readRuntimeState(skillDir);
   // Runtime value is authoritative when present. Fall back to whatever
   // the legacy committed marker carried — old `.skills-bank.json` files
   // that still have `fetchedAt` inline keep working until the next
   // writeSkillSource strips it.
-  const fetchedAt = runtime.fetchedAt ?? source.upstream.fetchedAt;
+  const fetchedAt = runtime.fetchedAt ?? source.origin.fetchedAt;
   if (fetchedAt === undefined) return source;
   return {
     ...source,
-    upstream: { ...source.upstream, fetchedAt },
+    origin: { ...source.origin, fetchedAt },
   };
 }
 
@@ -346,7 +346,7 @@ function buildExternalEntry(
       name: ext.name,
       description: `(external target missing: ${ext.target})`,
       path: ext.target,
-      source: { source: "yours" },
+      source: { source: "user" },
       adopted: false,
       missing: true,
     };
@@ -374,7 +374,7 @@ function buildExternalEntry(
     // Absolute path for external entries — renderer falls back to
     // this when composing the reveal-in-finder path.
     path: ext.target,
-    source: { source: "yours" },
+    source: { source: "user" },
     adopted: false,
     ...(warnings.length > 0 ? { warnings } : {}),
   };

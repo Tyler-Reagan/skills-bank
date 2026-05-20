@@ -29,4 +29,4 @@ Use Unregister when you want to stop Skills Bank from managing a skill but keep 
 
 ## Canon skills
 
-Unregistering a bundled skill is prohibited — the upstream owns it. Use **Dismiss from registry view** instead to keep the skill installed but out of the default Browse surface — see [personas.md](../personas.md#canon-is-repo-relative).
+Unregistering a curated skill is prohibited — the upstream owns it. Use **Dismiss from registry view** instead to keep the skill installed but out of the default Browse surface.

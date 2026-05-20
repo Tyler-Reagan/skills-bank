@@ -158,13 +158,13 @@ export function writeRuntimeState(
 
 /**
  * Heal action — keep-mine on a edited-without-origin state. Clears
- * the source marker so the skill's `source` becomes "yours" going
+ * the source marker so the skill's `source` becomes "user" going
  * forward and subsequent syncs leave it alone. Idempotent.
  */
 export function acceptDriftKeepLocal(skillDir: string): void {
   const src = readSkillSource(skillDir);
-  if (src.source !== "bundled") return;
-  writeSkillSource(skillDir, { source: "yours" });
+  if (src.source !== "curated") return;
+  writeSkillSource(skillDir, { source: "user" });
   // Drop the synced-hash so the next build doesn't flag this as
   // drift again.
   const hashPath = path.join(skillDir, SYNCED_HASH_FILE);
@@ -178,24 +178,26 @@ export function acceptDriftKeepLocal(skillDir: string): void {
 }
 
 /**
- * Heal action — sever-upstream on a `edited-with-origin` state.
- * The user keeps their local edits and severs the upstream pointer
- * so future probes don't surface the skill as having an update
- * available. The source axis (`bundled` / `yours`) is preserved —
- * this is a per-skill-upstream operation, not a registry-level one.
- * Idempotent on skills without an `upstream` field.
+ * Heal action — clear the per-skill origin pointer on an
+ * `edited-with-origin` state. The user keeps their local edits and
+ * unlinks the origin so future probes don't surface the skill as
+ * having an update available. The source axis (`curated` / `user`)
+ * is preserved — this is a per-skill-origin operation, not a
+ * registry-level one. Idempotent on skills without an `origin` field.
+ *
+ * Renamed from `acceptDriftSeverUpstream` in v1.3 to match UL canon.
  */
-export function acceptDriftSeverUpstream(skillDir: string): void {
+export function unlinkOrigin(skillDir: string): void {
   const src = readSkillSource(skillDir);
-  if (!src.upstream) return;
+  if (!src.origin) return;
   const next: typeof src = { ...src };
-  delete next.upstream;
+  delete next.origin;
   writeSkillSource(skillDir, next);
   // Drop the synced-hash so the next build doesn't flag this as
   // edited-with-origin again. (The drift gate in build.ts
-  // checks `source.upstream` and `source.source === "bundled"`;
-  // with upstream cleared and source unchanged, drift detection
-  // disengages for non-bundled skills.)
+  // checks `source.origin` and `source.source === "curated"`;
+  // with origin cleared and source unchanged, drift detection
+  // disengages for non-curated skills.)
   const hashPath = path.join(skillDir, SYNCED_HASH_FILE);
   if (fs.existsSync(hashPath)) {
     try {
@@ -207,20 +209,26 @@ export function acceptDriftSeverUpstream(skillDir: string): void {
 }
 
 /**
+ * @deprecated v1.3 — renamed to `unlinkOrigin`. Removal targeted
+ * for v1.4. Behavior identical.
+ */
+export const acceptDriftSeverUpstream = unlinkOrigin;
+
+/**
  * Heal action — revert on a edited-without-origin state. The user
- * acknowledges that the current on-disk content is the bundled
+ * acknowledges that the current on-disk content is the curated
  * baseline going forward: re-snapshot the hash so the next build
- * sees no drift. Source marker stays `bundled` — Sync still owns
+ * sees no drift. Source marker stays `curated` — Sync still owns
  * the skill and would still overwrite on the next pull.
  *
- * Distinct from acceptDriftKeepLocal (which flips source to yours
+ * Distinct from acceptDriftKeepLocal (which flips source to `user`
  * and detaches from Sync entirely). Use this when the drift
  * indicator surfaced after a sync but the post-sync state is what
  * you want — clearing the indicator without reclassifying the skill.
  */
 export function acceptDriftTakeCanonical(skillDir: string): void {
   const src = readSkillSource(skillDir);
-  if (src.source !== "bundled") return;
+  if (src.source !== "curated") return;
   const h = hashSkillFolder(skillDir);
   if (h) writeSyncedHash(skillDir, h);
 }

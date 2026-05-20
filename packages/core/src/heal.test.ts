@@ -73,7 +73,7 @@ describe("hashSkillFolder", () => {
   test("excludes .skills-bank.json (sidecar)", () => {
     writeFile("a/SKILL.md", "# x");
     writeFile("b/SKILL.md", "# x");
-    writeFile("b/.skills-bank.json", JSON.stringify({ source: "bundled" }));
+    writeFile("b/.skills-bank.json", JSON.stringify({ source: "curated" }));
     const ha = hashSkillFolder(path.join(scratch, "a"));
     const hb = hashSkillFolder(path.join(scratch, "b"));
     expect(ha).toBe(hb);
@@ -198,8 +198,8 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
     const dir = path.join(scratch, "a");
     fs.mkdirSync(dir, { recursive: true });
     writeSkillSource(dir, {
-      source: "bundled",
-      upstream: {
+      source: "curated",
+      origin: {
         kind: "github",
         repo: "u/r",
         skillFolderHash: "deadbeef",
@@ -209,11 +209,11 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
     const raw = JSON.parse(
       fs.readFileSync(path.join(dir, ".skills-bank.json"), "utf8"),
     ) as {
-      upstream?: { fetchedAt?: string; repo?: string; skillFolderHash?: string };
+      origin?: { fetchedAt?: string; repo?: string; skillFolderHash?: string };
     };
-    expect(raw.upstream?.fetchedAt).toBeUndefined();
-    expect(raw.upstream?.repo).toBe("u/r");
-    expect(raw.upstream?.skillFolderHash).toBe("deadbeef");
+    expect(raw.origin?.fetchedAt).toBeUndefined();
+    expect(raw.origin?.repo).toBe("u/r");
+    expect(raw.origin?.skillFolderHash).toBe("deadbeef");
   });
 
   test("idempotent committed marker — repeated writes produce identical files even when fetchedAt shifts", () => {
@@ -224,8 +224,8 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
     const dir = path.join(scratch, "a");
     fs.mkdirSync(dir, { recursive: true });
     writeSkillSource(dir, {
-      source: "bundled",
-      upstream: {
+      source: "curated",
+      origin: {
         kind: "github",
         repo: "u/r",
         skillFolderHash: "hash1",
@@ -237,8 +237,8 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
       "utf8",
     );
     writeSkillSource(dir, {
-      source: "bundled",
-      upstream: {
+      source: "curated",
+      origin: {
         kind: "github",
         repo: "u/r",
         skillFolderHash: "hash1",
@@ -261,8 +261,8 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
     fs.writeFileSync(
       path.join(dir, ".skills-bank.json"),
       JSON.stringify({
-        source: "bundled",
-        upstream: {
+        source: "curated",
+        origin: {
           kind: "github",
           repo: "u/r",
           fetchedAt: "2026-05-18T12:00:00Z",
@@ -270,6 +270,6 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
       }),
     );
     const src = readSkillSource(dir);
-    expect(src.upstream?.fetchedAt).toBe("2026-05-18T12:00:00Z");
+    expect(src.origin?.fetchedAt).toBe("2026-05-18T12:00:00Z");
   });
 });

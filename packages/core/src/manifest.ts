@@ -33,7 +33,38 @@ import {
  * `exportRegistry` zip. See `docs/plans/curation-layer-reset.md`
  * sections 5–7.
  */
-export const MANIFEST_SCHEMA_VERSION = 1 as const;
+export const MANIFEST_SCHEMA_VERSION = 2 as const;
+
+/**
+ * Latest schemaVersion that import will accept. v1 manifests are
+ * migrated to v2 transparently via `migrateManifestV1ToV2`. The
+ * window stays open for one minor cycle (v1.3.x); v1 readers will
+ * be removed in v1.4 alongside the legacy wire-format keys.
+ */
+export const MANIFEST_OLDEST_READABLE_VERSION = 1 as const;
+
+/**
+ * v1 manifest shape, retained for the import-side migration head.
+ * Differs from v2 only on `ManifestSkill.source` axis values
+ * (`bundled`/`yours` → `curated`/`user`).
+ */
+interface ManifestSkillV1 {
+  name: string;
+  source: "bundled" | "yours";
+  origin: ManifestOrigin;
+  tags: string[];
+  dismissed: boolean;
+  hidden: boolean;
+  lastInstalledOn: AgentId[];
+}
+
+interface RegistryManifestV1 {
+  schemaVersion: 1;
+  exportedAt: string;
+  sourceBankVersion: string;
+  registryRoot?: string;
+  skills: ManifestSkillV1[];
+}
 
 export interface ManifestOrigin {
   kind: "github" | "none";
@@ -51,9 +82,10 @@ export interface ManifestOrigin {
 export interface ManifestSkill {
   name: string;
   /**
-   * v1 ships current vocabulary (`bundled` / `yours`). Phase 2 will
-   * bump `schemaVersion` to v2 with renamed values (`curated` /
-   * `user`); v1 imports remain readable via the migration path.
+   * v2 vocabulary (`curated` / `user`). v1 manifests with the
+   * legacy `bundled` / `yours` values are migrated transparently
+   * on import via `migrateManifestV1ToV2`. Removal of v1 import
+   * support is targeted at v1.4.
    */
   source: SkillOrigin;
   origin: ManifestOrigin;
@@ -109,7 +141,7 @@ export function exportRegistryManifest(
     return {
       name: entry.name,
       source: entry.source.source,
-      origin: originFromPointer(entry.source.upstream),
+      origin: originFromPointer(entry.source.origin),
       tags,
       dismissed: hidden,
       hidden,
@@ -166,17 +198,23 @@ export interface ImportRegistryManifestOptions {
  */
 export async function importRegistryManifest(
   registryRoot: string,
-  manifest: RegistryManifest,
+  manifest: RegistryManifest | RegistryManifestV1,
   opts: ImportRegistryManifestOptions = {},
 ): Promise<ImportRegistryManifestResult> {
+  // v1 migration head — see `migrateManifestV1ToV2`. v2+ pass through.
+  const v2: RegistryManifest =
+    manifest.schemaVersion === 1
+      ? migrateManifestV1ToV2(manifest as RegistryManifestV1)
+      : (manifest as RegistryManifest);
+
   const outcomes: ImportSkillOutcome[] = [];
   const installHints: { name: string; agents: AgentId[] }[] = [];
 
-  for (const skill of manifest.skills) {
+  for (const skill of v2.skills) {
     const existing = findSkillFolder(registryRoot, skill.name);
     if (existing) {
       const localOrigin = originFromPointer(
-        readSkillSource(existing.dir).upstream,
+        readSkillSource(existing.dir).origin,
       );
       if (originsEqual(localOrigin, skill.origin)) {
         restoreAuxState(registryRoot, existing.dir, skill);
@@ -202,7 +240,7 @@ export async function importRegistryManifest(
         });
         continue;
       }
-      const bucket = skill.source === "yours" ? "personal" : "vendored";
+      const bucket = skill.source === "user" ? "personal" : "vendored";
       const destDir = path.join(registryRoot, "skills", bucket, skill.name);
       fs.mkdirSync(path.dirname(destDir), { recursive: true });
       const folderPath = folderPathFromSkillPath(skill.origin.skillPath);
@@ -261,18 +299,18 @@ function stampOriginMarker(
   folderHash: string,
 ): void {
   if (skill.origin.kind !== "github") {
-    writeSkillSource(destDir, { source: skill.source, upstream: { kind: "none" } });
+    writeSkillSource(destDir, { source: skill.source, origin: { kind: "none" } });
     return;
   }
-  const upstream: OriginPointer = {
+  const origin: OriginPointer = {
     kind: "github",
     skillFolderHash: folderHash,
     installedAt: new Date().toISOString(),
   };
-  if (skill.origin.repo) upstream.repo = skill.origin.repo;
-  if (skill.origin.sourceUrl) upstream.sourceUrl = skill.origin.sourceUrl;
-  if (skill.origin.skillPath) upstream.skillPath = skill.origin.skillPath;
-  writeSkillSource(destDir, { source: skill.source, upstream });
+  if (skill.origin.repo) origin.repo = skill.origin.repo;
+  if (skill.origin.sourceUrl) origin.sourceUrl = skill.origin.sourceUrl;
+  if (skill.origin.skillPath) origin.skillPath = skill.origin.skillPath;
+  writeSkillSource(destDir, { source: skill.source, origin });
   // Baseline the synced-hash sidecar so drift detection starts clean
   // from the just-mirrored snapshot. Without this, the first probe
   // would compare against an empty hash and surface false drift.
@@ -312,6 +350,35 @@ function restoreAuxState(
   if (skill.hidden || skill.dismissed) {
     hideCanonSkill(registryRoot, skill.name);
   }
+}
+
+/**
+ * Migrate a v1 manifest in place to v2 shape. Pure transformer —
+ * no I/O, no manifest-level field changes other than `schemaVersion`
+ * and the per-skill `source` axis values. Tags, hide state,
+ * `lastInstalledOn`, and origin pointers pass through unchanged.
+ *
+ * Exported for the test suite; production import goes through the
+ * `manifest.schemaVersion === 1` branch in `importRegistryManifest`.
+ */
+export function migrateManifestV1ToV2(
+  manifest: RegistryManifestV1,
+): RegistryManifest {
+  return {
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
+    exportedAt: manifest.exportedAt,
+    sourceBankVersion: manifest.sourceBankVersion,
+    ...(manifest.registryRoot ? { registryRoot: manifest.registryRoot } : {}),
+    skills: manifest.skills.map((s) => ({
+      name: s.name,
+      source: s.source === "bundled" ? "curated" : "user",
+      origin: s.origin,
+      tags: s.tags,
+      dismissed: s.dismissed,
+      hidden: s.hidden,
+      lastInstalledOn: s.lastInstalledOn,
+    })),
+  };
 }
 
 function readInstalledAgentMap(): Map<string, AgentId[]> {

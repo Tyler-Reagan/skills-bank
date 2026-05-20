@@ -30,7 +30,8 @@
     "discover:bundled": "tsx scripts/discover-bundled-upstream.ts",
     "vendor:skill": "tsx scripts/vendor-skill.ts",
     "vendor:refresh": "tsx scripts/vendor-refresh.ts",
-    "update:skill": "tsx scripts/update-skill.ts"
+    "update:skill": "tsx scripts/update-skill.ts",
+    "migrate:source-markers": "tsx scripts/migrate-source-markers.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

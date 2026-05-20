@@ -28,7 +28,10 @@ import {
   InstallConflictModal,
   type InstallConflictError,
 } from "./components/InstallConflictModal.js";
-import { LoginScreen } from "./components/LoginScreen.js";
+// Phase 2 persona collapse: LoginScreen retired. Fresh installs land
+// directly on bundled-default; GitHub linking is reached via Settings
+// → Account → "Sign in with GitHub" (ConnectGithubModal, which owns
+// device-flow + resume).
 import { SplashScreen } from "./components/SplashScreen.js";
 import { ManageLinksModal } from "./components/ManageLinksModal.js";
 import {
@@ -1006,33 +1009,11 @@ function AppContent(): React.ReactElement {
     return <SplashScreen />;
   }
 
-  // Registry source unresolved → LoginScreen. Hoisted above the
-  // data-skeleton so we never render the app shell for a not-yet-
-  // onboarded user.
-  if (authStatus.registrySource === null) {
-    return (
-      <LoginScreen
-        isAuthConfigured={authStatus.isAuthConfigured}
-        onStatusChanged={async (s) => {
-          setAuthStatus(s);
-          // Plan 02 structural fix: authPollDeviceFlow no longer eagerly
-          // flips registrySource to "github". If Device Flow just
-          // completed (s.user populated, registrySource still null),
-          // park the user in local-bundled and pop RepoPicker so they
-          // can finish linking. Cancelling RepoPicker lands them in
-          // local-bundled with a useful cached token — no orphaned state.
-          if (s.registrySource === null && s.user) {
-            const local = await window.skillsBank.authSetRegistrySourceLocal();
-            setAuthStatus(local);
-            setShowRepoPicker(true);
-            void refresh();
-          } else if (s.registrySource !== null) {
-            void refresh();
-          }
-        }}
-      />
-    );
-  }
+  // Phase 2 persona collapse: the `registrySource === null` case is
+  // unreachable. Main-process boot normalizes it to "local" before the
+  // renderer ever sees AuthStatus, so this gate would have stayed dead
+  // code if not removed. The legacy v1.2 path that routed here on
+  // first launch is documented in `docs/plans/vocabulary-rename.md`.
 
   // Surface an app-update badge next to the brand whenever the main
   // process has told us about a release in any of the three active
@@ -1234,7 +1215,7 @@ function AppContent(): React.ReactElement {
                     name: s.name,
                     description: s.target ?? s.linkPath,
                     path: s.linkPath,
-                    source: { source: "yours" },
+                    source: { source: "user" },
                   };
                   setSelected(synthetic);
                 }}

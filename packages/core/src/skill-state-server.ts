@@ -37,7 +37,7 @@ export function classifySkillByName(
       name,
       description: "",
       path: mine[0]?.linkPath ?? name,
-      source: { source: "yours" },
+      source: { source: "user" },
     } as RegistryEntry);
 
   return classifyDrawerState(classifyEntry, installed, !!entry, options);

@@ -9,7 +9,7 @@ The vocabulary the app uses, defined in one place. Skim this once and the rest o
 
 Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
 
-- **Source (provenance)** — binary user-facing axis. Either `bundled` (came from the curated set this app ships with) or `yours` (you added it, however it got there). See [Source (provenance)](#source-provenance) below for full surface behavior. The codebase also carries an internal-only `entry.canon` boolean — "is this name currently in the upstream bundled snapshot?" — used only to gate destructive-action protection. It never surfaces to the user.
+- **Source (provenance)** — binary user-facing axis. Either `curated` (came from the curated set the bank tracks) or `user` (you added it, however it got there). See [Source (provenance)](#source-provenance) below for full surface behavior. The codebase also carries an internal-only `entry.canon` boolean — "is this name currently in the curated upstream snapshot?" — used only to gate destructive-action protection. It never surfaces to the user.
 - **Registered** — boolean. The skill has an entry in the local registry index. Mutated freely. Holds local-only metadata (tags, install paths, the Adopted flag).
 - **Adopted** — boolean on each registry entry. When `true`, the skill's files physically live under `<registryRoot>/skills/<name>/`. When `false`, the registry entry tracks an external location and the files stay where they are. Default at register time is the `registerAdopts` setting (default `true`).
 - **Installed** — derived from on-disk scan. A skill is installed if at least one agent dir contains an entry at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.
@@ -17,7 +17,7 @@ Every skill the app knows about sits on four orthogonal axes. Operations and UI 
 ### Derived rules
 
 - Bundled skills are registered by default. Unregister and delete of bundled skills are prohibited; the user-visible escape is **Dismiss from registry view**, scoped per linked-registry.
-- A registered but uninstalled `yours` skill is valid. Re-install requires the original source (no upstream to pull from).
+- A registered but uninstalled `user` skill is valid. Re-install requires the original source (no upstream to pull from).
 - Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
 - Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
 
@@ -88,9 +88,9 @@ Three actions form an escalation, with distinct file/recovery semantics. Each ti
 | [Unregister](flows/unregister.md) | Drawer                                                                              | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location                 |
 | Delete                            | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                       | bundled: re-pull; yours: gone (modulo export) |
 
-Bundled skills are exempt: Unregister and Delete are prohibited entirely. Use **Dismiss from registry view** instead — see [personas.md](personas.md#canon-protection-hide-instead-of-unregisterdelete).
+Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **Dismiss from registry view** instead.
 
-![Detail drawer for a non-canon, user-authored skill — Unregister is available as the mid-tier action; the YOURS badge sits on the card behind the drawer](images/skill-detail-yours.png)
+![Detail drawer for a non-canon, user-authored skill — Unregister is available as the mid-tier action](images/skill-detail-yours.png)
 
 ## Skill
 
@@ -119,26 +119,23 @@ The **persisted, metadata-tagged collection of skills this app manages.** It's a
 
 The registry is **not** the only source of skills you can use. Skills installed from elsewhere (e.g. via [skills.sh](https://skills.sh/)) appear alongside in the **Installed** tab and can be registered into Skills Bank if you want this app to manage them.
 
-## Persona
+## Linked repo vs bundled default
 
-A one-time decision made on first launch that determines how the app manages your registry:
+Every install starts on the **bundled default** — the app reads the canonical curated set from `Tyler-Reagan/skills-bank` at the unauthenticated GitHub rate limit (60/hr). Refresh pulls the latest. No GitHub account needed.
 
-- **Bundled registry** — Use the curated skill set shipped with this app. Sync skills with one click; add your own skills alongside. Export the registry to back it up or move it to another machine.
-- **Your own registry** — Point the app at a GitHub repo you own and maintain. The app clones it locally and never auto-syncs it — you manage content through your normal git workflow.
+Sign in via **Settings → Account** to either keep the curated set at a higher rate limit (5000/hr authenticated, plus access to private repos) or **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with `SKILL.md` and/or `meta.json`) — its layout doesn't have to match anything specific.
 
-Self-hosting (forking the entire app) is a developer path, not a runtime persona. See [self-host.md](self-host.md) for details.
-
-Persona is persisted. You can switch via the account menu in the header. See [personas.md](personas.md) for a full feature comparison.
+This single configuration spectrum replaces the v1.2 "persona" first-launch picker (collapsed in v1.3 — see [`docs/plans/vocabulary-rename.md`](plans/vocabulary-rename.md)). Self-hosting (forking the entire app) remains a separate developer path; see [self-host.md](self-host.md).
 
 ## Source (provenance)
 
-Provenance is a binary on each registry skill — every skill is either **bundled** (came from the curated set this app ships with) or **yours** (you added it, however it got there). Stored as `source` in a sibling `.skills-bank.json` per skill so the marker doesn't pollute upstream.
+Provenance is a binary on each registry skill — every skill is either **curated** (came from the curated set the bank tracks) or **user** (you added it, however it got there). Stored as `source` in a sibling `.skills-bank.json` per skill so the marker doesn't pollute upstream.
 
-- **`bundled`** — Part of the curated set the app ships with. Sync keeps it current.
-- **`yours`** — Anything that didn't come from the bundled set — authored locally, merged in from another bank's export, imported from elsewhere. Sync never touches it.
+- **`curated`** — Part of the curated set the bank tracks. Sync keeps it current.
+- **`user`** — Anything that didn't come from the curated set — authored locally, merged in from another bank's export, imported from elsewhere. Sync never touches it.
 
 > [!NOTE]
-> Internally the code carries an `entry.canon` boolean — "is this name currently in the upstream bundled snapshot?" — used only to gate destructive-action protection. It never surfaces to users; the user-facing signal is provenance (`bundled` / `yours`).
+> Internally the code carries an `entry.canon` boolean — "is this name currently in the curated upstream snapshot?" — used only to gate destructive-action protection. It never surfaces to users; the user-facing signal is provenance (`curated` / `user`).
 
 ### Tags are local
 
@@ -146,14 +143,16 @@ Tags are a local-only dimension. You can add or remove tags on any skill — inc
 
 ### Card badges
 
-Each card surfaces a single badge. Provenance is the primary signal; actionable state badges (drift, missing) override when present.
+Each card surfaces a single badge. Actionable state badges take priority; provenance is shown only for curated skills.
 
 Priority order, highest first:
 
 - **`MISSING`** _(danger)_ — files are gone. Open the drawer to **Forget this entry**.
-- **`DRIFT`** _(warn)_ — you've edited a bundled skill. Open the drawer to keep your edits or revert.
-- **`BUNDLED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the bundled-only escape hatch.
-- **`YOURS`** _(accent)_ — you added this. Fully user-mutable; safe from Sync overwrites.
+- **`EDITED`** _(warn)_ — you've edited a curated skill. Open the drawer to keep your edits or revert.
+- **`UPDATE`** _(info)_ — an update is available from the skill's origin.
+- **`CURATED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the curated-only escape hatch.
+
+User-source skills render no provenance chip. The **Mine** filter on the Registry tab is the single surface for "show me only my skills."
 
 ## Installation kind
 
@@ -171,7 +170,7 @@ A skill is in conflict when it's registered in Skills Bank **and** has straggler
 
 ## Sync
 
-A one-click pull of upstream registry updates. Sync is **upsert**: bundled skills refresh, skills with `source: yours` are never touched. Name collisions surface a modal — keep yours, use bundled, or rename yours.
+A one-click pull of upstream registry updates. Sync is **upsert**: curated skills refresh, skills with `source: user` are never touched. Name collisions surface a modal — keep yours, use curated, or rename yours.
 
 ## Register
 
@@ -198,7 +197,7 @@ Pulling a third-party skill from its origin GitHub repo into the bank, preservin
 
 Pushing a skill from the local registry to the user's linked repo as a pull request. Three sub-flows by trigger condition:
 
-- **New skill** — no origin, user-authored. Published to `skills/personal/`, `source: yours`.
+- **New skill** — no origin, user-authored. Published to `skills/personal/`, `source: user`.
 - **Vendored skill (safekeeping)** — has origin, no local drift. Published to `skills/vendored/` with the origin pointer preserved. The point is to deposit the third-party content into the user's own repo so it survives if the origin goes dark — see [Safekeeping](#safekeeping).
 - **Edited vendored skill** — has origin, drift detected. Forces the user to confirm a [Fork](#fork) before publishing; the publish is blocked otherwise.
 
@@ -210,7 +209,7 @@ The atomicity, branch-resolution, rate-limit, and PR-metadata invariants of the 
 
 Unlinking a vendored skill's origin and taking ownership locally. Triggered when the user publishes edits to a vendored skill: a confirmation modal makes the unlink explicit, since the action drops the origin pointer and stops the update probe from surfacing future changes from the original author. After confirmation the skill's `source` flips `bundled → yours`, the origin pointer is dropped, and the folder moves from `skills/vendored/` to `skills/personal/` — the skill is the user's now, indistinguishable from one they authored.
 
-Forking is irreversible without re-vendoring from scratch. Fork composes the existing per-skill **Unlink origin** heal action with a bucket move and a source-axis flip — see the canonical operation definitions in [`UBIQUITOUS_LANGUAGE.md`](../UBIQUITOUS_LANGUAGE.md). The atomicity, collision, and trigger invariants of the `forkSkill` primitive are pinned in [ADR-0006](adr/ADR-0006-fork-primitive-invariants.md).
+Forking is irreversible without re-vendoring from scratch. After confirmation the skill's `source` flips `curated → user`, the origin pointer is dropped, and the folder moves from `skills/vendored/` to `skills/personal/`. Fork composes the existing per-skill **Unlink origin** heal action with a bucket move and a source-axis flip — see the canonical operation definitions in [`UBIQUITOUS_LANGUAGE.md`](../UBIQUITOUS_LANGUAGE.md). The atomicity, collision, and trigger invariants of the `forkSkill` primitive are pinned in [ADR-0006](adr/ADR-0006-fork-primitive-invariants.md).
 
 ## Safekeeping
 

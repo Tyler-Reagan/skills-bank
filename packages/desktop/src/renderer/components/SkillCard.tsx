@@ -351,7 +351,7 @@ function PublishBadge({
       <span
         className="skill-state-badge drift"
         title={
-          entry.source.upstream?.kind === "github"
+          entry.source.origin?.kind === "github"
             ? "You've edited this skill since the last Origin fetch. Open to unlink the Origin (keep edits) or reset to Origin (discard edits)."
             : "You've edited this bundled skill. Open to re-baseline or accept the drift."
         }
@@ -365,41 +365,30 @@ function PublishBadge({
       <span
         className="skill-state-badge update"
         title={`An update is available from ${
-          entry.source.upstream?.repo ?? "Origin"
+          entry.source.origin?.repo ?? "Origin"
         }. Open to apply.`}
       >
         UPDATE
       </span>
     );
   }
-  if (!isRegistered) {
+  if (entry.source.source === "curated") {
     return (
       <span
-        className="skill-origin-badge yours"
-        title="Exists in an agent dir but isn't in the registry. Register from the Installed tab."
-      >
-        YOURS
-      </span>
-    );
-  }
-  if (entry.source.source === "bundled") {
-    return (
-      <span
-        className="skill-origin-badge bundled"
+        className="skill-origin-badge curated"
         title="Part of the curated set this app ships with. Sync keeps it current."
       >
-        BUNDLED
+        CURATED
       </span>
     );
   }
-  return (
-    <span
-      className="skill-origin-badge yours"
-      title="You added this. Sync will never touch it."
-    >
-      YOURS
-    </span>
-  );
+  // Phase 2: dropped the YOURS badge (and the unregistered-fallback
+  // YOURS chip). The "Mine" filter on the Registry tab is the
+  // single surface for "show me only my skills." User-source and
+  // unregistered skills render without a provenance chip — other
+  // state badges (MISSING / EDITED / UPDATE) still take priority
+  // when applicable.
+  return null;
 }
 
 function StatusChip({
