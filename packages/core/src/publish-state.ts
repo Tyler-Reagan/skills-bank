@@ -209,19 +209,30 @@ export interface DetectPublishStateModeContext {
  * transient git failure in dev mode doesn't silently flip the
  * consumer to the remote path.
  *
- * Returns `null` when neither mode is viable (not in git, not
- * linked to a remote, no token for a private repo, etc.). The
- * caller treats every skill as `unknown` in that case.
+ * Priority — linked repo wins:
+ *   1. If a linked repo is configured, use remote mode. The user
+ *      cares about "is this skill on my linked repo?", which only
+ *      the remote tree probe can answer. The maintainer's local
+ *      working-tree-of-skills-bank case is the same surface —
+ *      `linkedRepo` is set to the curated repo there too.
+ *   2. Otherwise (no linked repo), use git mode when the registry
+ *      IS a git working tree. Covers the rare "I'm running against
+ *      a local-only registry root" case.
+ *   3. Otherwise null — caller treats every skill as `unknown`.
+ *
+ * Returns `null` when neither mode is viable.
  */
 export function detectPublishStateMode(
   registryRoot: string,
   ctx: DetectPublishStateModeContext,
 ): PublishStateMode | null {
-  // Git mode wins when the registry IS a git working tree. The
-  // execSync calls are bit-equivalent across packaged + dev, but
-  // packaged Electron's GUI-launch path doesn't carry $PATH, so
-  // we still guard on the .git dir's existence + a quick git
-  // version probe (cheap; one exec).
+  if (ctx.linkedRepo) {
+    return {
+      kind: "remote",
+      repo: ctx.linkedRepo.fullName,
+      token: ctx.token,
+    };
+  }
   if (fs.existsSync(path.join(registryRoot, ".git"))) {
     try {
       execSync("git --version", {
@@ -231,16 +242,8 @@ export function detectPublishStateMode(
       });
       return { kind: "git" };
     } catch {
-      // `git` not on PATH — fall through to remote-API mode if a
-      // linked repo is configured.
+      // `git` not on PATH — no mode viable.
     }
-  }
-  if (ctx.linkedRepo) {
-    return {
-      kind: "remote",
-      repo: ctx.linkedRepo.fullName,
-      token: ctx.token,
-    };
   }
   return null;
 }

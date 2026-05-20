@@ -223,10 +223,19 @@ describe("computePublishStatesFromRemote", () => {
 // ─── detectPublishStateMode ─────────────────────────────────────────
 
 describe("detectPublishStateMode", () => {
-  test("git working tree → git mode", () => {
-    // Create a `.git` dir so the existence check passes (we don't
-    // need a real repo; the function only calls `git --version`,
-    // which is host-installed).
+  test("linkedRepo present → remote mode (wins over local git)", () => {
+    // Even if the registry IS a git working tree, having a linked
+    // repo means the user cares about "is this on my linked repo?"
+    // — the local git tree's upstream is irrelevant in that case.
+    fs.mkdirSync(path.join(registryRoot, ".git"), { recursive: true });
+    const r = detectPublishStateMode(registryRoot, {
+      linkedRepo: { fullName: "u/r" },
+      token: "tok",
+    });
+    expect(r).toEqual({ kind: "remote", repo: "u/r", token: "tok" });
+  });
+
+  test("no linked repo + git working tree → git mode", () => {
     fs.mkdirSync(path.join(registryRoot, ".git"), { recursive: true });
     const r = detectPublishStateMode(registryRoot, {
       linkedRepo: null,
@@ -235,15 +244,7 @@ describe("detectPublishStateMode", () => {
     expect(r?.kind).toBe("git");
   });
 
-  test("no git, linkedRepo present → remote mode", () => {
-    const r = detectPublishStateMode(registryRoot, {
-      linkedRepo: { fullName: "u/r" },
-      token: "tok",
-    });
-    expect(r).toEqual({ kind: "remote", repo: "u/r", token: "tok" });
-  });
-
-  test("no git, no linked repo → null", () => {
+  test("no linked repo + no git → null", () => {
     const r = detectPublishStateMode(registryRoot, {
       linkedRepo: null,
       token: null,
@@ -251,7 +252,7 @@ describe("detectPublishStateMode", () => {
     expect(r).toBeNull();
   });
 
-  test("no git, linkedRepo with null token → remote mode with null token", () => {
+  test("linkedRepo with null token → remote mode with null token", () => {
     const r = detectPublishStateMode(registryRoot, {
       linkedRepo: { fullName: "u/r" },
       token: null,

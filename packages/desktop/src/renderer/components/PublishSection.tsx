@@ -128,7 +128,10 @@ export function PublishSection({
 
   return (
     <div style={section}>
-      <h3 style={sectionHeading}>Linked repo</h3>
+      <div style={headingRow}>
+        <h3 style={sectionHeading}>Linked repo</h3>
+        <PublishChip state={publishState} />
+      </div>
       <p style={hint}>
         Push this skill to <code>{linkedRepoName}</code> as a pull
         request. {flow?.flow === "safekeeping"
@@ -153,7 +156,6 @@ export function PublishSection({
             "Publish"
           )}
         </button>
-        <PublishChip state={publishState} />
         {flow?.flow === "fork" && (
           <span style={forkBadge} title="Publishing this skill forks it from its origin">
             <Icon name="alert-triangle" size="sm" /> Fork
@@ -290,6 +292,12 @@ const sectionHeading: React.CSSProperties = {
   letterSpacing: "0.04em",
   textTransform: "uppercase",
   color: "var(--text-3)",
+  margin: 0,
+};
+const headingRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
   margin: "0 0 6px 0",
 };
 const hint: React.CSSProperties = {
