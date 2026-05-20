@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T19:29:29.857Z",
+  "generatedAt": "2026-05-20T21:11:35.855Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -27,7 +27,8 @@
         "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
       },
       "bucket": "vendored",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     }
   ]
 }

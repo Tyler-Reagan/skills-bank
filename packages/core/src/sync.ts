@@ -4,8 +4,14 @@ import path from "node:path";
 import * as tar from "tar";
 import { writeUpstreamCanonNames } from "./canon.js";
 import { applyConflictDecision } from "./conflict.js";
+import { discoverSkillsInTree } from "./discovery.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import { getStateDir } from "./paths.js";
+import {
+  findSkillFolder,
+  walkSkills,
+  type SkillBucket,
+} from "./registry.js";
 import {
   readSkillSource,
   writeSkillSource,
@@ -97,6 +103,27 @@ export interface SyncReport {
    * Empty on a sync where the user hadn't yet chosen actions.
    */
   resolved: ResolvedEntry[];
+  /**
+   * Discovery-time anomalies from the source tree. Surfaced rather
+   * than auto-resolved — when either array is non-empty the caller
+   * should decide whether to proceed or abort the link/sync.
+   * `collisions`: same skill name found at >1 location in the
+   * source tree. `nested`: a skill folder located inside another
+   * skill folder (outer mounts; inner is suppressed).
+   */
+  discoveryCollisions?: { name: string; paths: string[] }[];
+  discoveryNested?: { outer: string; inner: string }[];
+}
+
+export interface ApplyCanonicalSyncOptions {
+  /**
+   * Which local bucket the synced skills mount into. The call site
+   * encodes the policy:
+   *   - `vendored` — sync from the curated/bundled repo (IPC.syncCanonical).
+   *   - `personal` — link a user's own GitHub repo (IPC.reposReplaceRegistry).
+   * No default: every caller must declare intent.
+   */
+  mountTo: SkillBucket;
 }
 
 export type ConflictAction = "keep-mine" | "use-canonical" | "rename-mine";
@@ -193,16 +220,17 @@ export async function applyCanonicalSync(
   extractedRoot: string,
   commitSha: string,
   decisions: SyncDecisions = {},
+  opts: ApplyCanonicalSyncOptions = { mountTo: "vendored" },
 ): Promise<SyncReport> {
-  const canonicalSkillsDir = path.join(extractedRoot, "skills");
-  if (!fs.existsSync(canonicalSkillsDir)) {
-    throw new Error(
-      `canonical tarball missing skills/ directory at ${canonicalSkillsDir}`,
-    );
-  }
+  const { mountTo } = opts;
+  const localBucketDir = path.join(registryRoot, "skills", mountTo);
+  fs.mkdirSync(localBucketDir, { recursive: true });
 
-  const localSkillsDir = path.join(registryRoot, "skills");
-  fs.mkdirSync(localSkillsDir, { recursive: true });
+  // Discovery walks the entire extracted tree by file convention,
+  // so flat repos / bucketed repos / docs-nested repos all work.
+  // Anomalies (collisions, nested) surface in the report; callers
+  // decide whether to proceed.
+  const discovery = discoverSkillsInTree(extractedRoot);
 
   const syncedAt = new Date().toISOString();
   const upserted: string[] = [];
@@ -210,20 +238,24 @@ export async function applyCanonicalSync(
   const resolved: ResolvedEntry[] = [];
 
   const canonicalNames = new Set<string>();
-  for (const ent of fs.readdirSync(canonicalSkillsDir, {
-    withFileTypes: true,
-  })) {
-    if (!ent.isDirectory()) continue;
-    const name = ent.name;
+  for (const skill of discovery.discoveries) {
+    const { name, sourceDir } = skill;
     canonicalNames.add(name);
-    const canonicalPath = path.join(canonicalSkillsDir, name);
-    const localPath = path.join(localSkillsDir, name);
+
+    // Local lookup walks both buckets so a skill that pre-exists in
+    // the OTHER bucket is treated as an existing entry, not silently
+    // duplicated under the mount bucket.
+    const existing = findSkillFolder(registryRoot, name);
+    const localPath =
+      existing?.dir ?? path.join(localBucketDir, name);
+    const localExists = existing !== null;
 
     // Capture local tags before any destructive step so a canonical
     // overwrite preserves the user's tag edits. Tags are a local-only
     // dimension; Sync never overwrites them.
     let preservedTags: string[] | null = null;
-    if (fs.existsSync(localPath)) {
+    let preservedSource: SkillSource | null = null;
+    if (localExists) {
       preservedTags = readMetaTags(localPath);
       const existingSource = readSkillSource(localPath);
       if (existingSource.source !== "bundled") {
@@ -233,7 +265,7 @@ export async function applyCanonicalSync(
           // keep-mine skips the canonical write entirely; the other
           // two arms fall through to the cpSync below.
           const effect = applyConflictDecision({
-            localSkillsDir,
+            localSkillsDir: path.dirname(localPath),
             localPath,
             name,
             decision,
@@ -252,39 +284,58 @@ export async function applyCanonicalSync(
             resolved.push({ name, action: "use-canonical" });
           }
         } else {
-          conflicts.push({ name, localSource: existingSource, canonicalPath });
+          conflicts.push({
+            name,
+            localSource: existingSource,
+            canonicalPath: sourceDir,
+          });
           continue;
         }
       } else {
-        // Canonical → canonical: overwrite in place.
+        // Canonical → canonical: overwrite in place. Preserve the
+        // existing source's `upstream` pointer (and any other axes)
+        // across the wipe so per-skill origin attribution survives.
+        preservedSource = existingSource;
         fs.rmSync(localPath, { recursive: true, force: true });
       }
     }
 
-    fs.cpSync(canonicalPath, localPath, { recursive: true });
+    // Mount path is always under `mountTo`, even if `existing` was in
+    // the other bucket — the conflict arms above handled the
+    // non-bundled-other-bucket case; this branch is a fresh write.
+    const mountPath = path.join(localBucketDir, name);
+    fs.mkdirSync(path.dirname(mountPath), { recursive: true });
+    fs.cpSync(sourceDir, mountPath, { recursive: true });
     if (preservedTags !== null) {
-      writeMetaTags(localPath, preservedTags);
+      writeMetaTags(mountPath, preservedTags);
     }
-    writeSkillSource(localPath, {
+    // Read whatever source-axis state the mirrored .skills-bank.json
+    // carries so per-skill `upstream` survives the sync stamp. Without
+    // this spread, every sync silently wipes upstream attribution
+    // (pre-existing oddity since v0.11.3).
+    const mirroredSource = readSkillSource(mountPath);
+    const merged: SkillSource = {
+      ...(preservedSource ?? mirroredSource),
       source: "bundled",
       syncedFromCommit: commitSha,
       syncedAt,
-    });
+    };
+    writeSkillSource(mountPath, merged);
     // Snapshot content hash so future builds can detect local edits
     // to bundled copies (the edited-without-origin heal state).
-    const h = hashSkillFolder(localPath);
-    if (h) writeSyncedHash(localPath, h);
+    const h = hashSkillFolder(mountPath);
+    if (h) writeSyncedHash(mountPath, h);
     upserted.push(name);
   }
 
-  // Orphans: local skills marked canonical that no longer appear upstream.
+  // Orphans: local skills marked canonical that no longer appear in
+  // discovery. Walk via the bucket-aware helper so we don't mistake
+  // the bucket directories themselves for skills.
   const orphaned: string[] = [];
-  for (const ent of fs.readdirSync(localSkillsDir, { withFileTypes: true })) {
-    if (!ent.isDirectory()) continue;
-    if (canonicalNames.has(ent.name)) continue;
-    const local = path.join(localSkillsDir, ent.name);
-    if (readSkillSource(local).source === "bundled") {
-      orphaned.push(ent.name);
+  for (const ref of walkSkills(registryRoot)) {
+    if (canonicalNames.has(ref.name)) continue;
+    if (readSkillSource(ref.dir).source === "bundled") {
+      orphaned.push(ref.name);
     }
   }
 
@@ -295,6 +346,12 @@ export async function applyCanonicalSync(
     commitSha,
     syncedAt,
     resolved,
+    ...(discovery.collisions.length > 0
+      ? { discoveryCollisions: discovery.collisions }
+      : {}),
+    ...(discovery.nested.length > 0
+      ? { discoveryNested: discovery.nested }
+      : {}),
   };
 
   // Persist the report and any pending conflicts so the renderer can

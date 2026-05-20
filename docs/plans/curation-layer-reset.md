@@ -34,10 +34,15 @@ codebase; Phase 2 renames the `bundled`/`yours` source-axis values to
 4. Zero-effort backup via `userData` auto-snapshots (rotating last
    five), so the manifest concept lands for every user — including
    those with no linked repo.
-5. Documentation reflects the universal bucket pattern: every
-   **Registry** uses `skills/{personal,vendored}/<name>/`, but any
-   specific registry may use only one bucket as a matter of
-   composition.
+5. The bucket layout (`skills/{personal,vendored}/<name>/`) is an
+   **app-internal** convention used by the active registry root the
+   app manages. Remote repos — origin repos, linked repos, the
+   curated/bundled repo itself — may use any layout. The app
+   discovers skills in remotes by file convention (presence of
+   `SKILL.md` and/or `meta.json`) and mounts each into the local
+   registry under the appropriate bucket on link. A linked repo that
+   pre-existed Skills Bank does not have to reshape its tree to be
+   linkable.
 
 ## Non-goals
 
@@ -106,10 +111,14 @@ Branch/tag topology does not transfer; that's acceptable per
 ADR-style "history preserved at commit level" precedent.
 
 After the split, `skills/personal/` no longer exists in the curation
-layer. The **Bucket** UL definition was already updated inline
-during the Phase 1 grill to clarify that this is a *compositional*
-absence, not a structural change — the bucket pattern remains
-universal across registry types.
+layer. The four skills live at the root of `Tyler-Reagan/skills` —
+`<repo-root>/<skill-name>/` — because `git subtree split --prefix`
+strips the prefix on extraction. That flat layout is intentionally
+preserved: scope item 10 below makes the link/sync flow discover
+skills by file convention, so the four skills are findable wherever
+the maintainer puts them inside the repo. The **Bucket** UL
+definition is being narrowed in this same scope expansion to refer
+only to the app-internal layout (per goal #5).
 
 `Tyler-Reagan/skills` is, in UL terms, simultaneously:
 
@@ -332,6 +341,172 @@ Verify references to deleted concepts are clean. The Persona section
 remains as-is for Phase 1 (Phase 2 collapses it). No proactive
 rewrite.
 
+### 10. Discovery-based linked-repo mount
+
+The remote-layout invariant goes away. The link/sync flow walks
+whatever tree the remote provides, identifies skill folders by file
+convention, and mounts each into the local bucketed registry. A
+remote repo that was authored long before Skills Bank existed — or
+one with an arbitrary layout (`<name>/`, `skills/<name>/`,
+`docs/skills/<category>/<name>/`, anything) — is linkable as-is.
+
+#### New core primitive: `discoverSkillsInTree`
+
+New file `packages/core/src/discovery.ts` (kept separate from
+`sync.ts` so the discovery walker has no incidental dependency on
+the tarball-fetch surface):
+
+```ts
+export interface SkillDiscovery {
+  /** Skill name. From meta.json.name if present, else SKILL.md
+   *  frontmatter `name`, else the folder basename. */
+  name: string;
+  /** Absolute path of the skill folder in the source tree. */
+  sourceDir: string;
+  /** Path relative to the source-tree root. Stamped into
+   *  `upstream.skillPath` so updates re-fetch from this location. */
+  relPath: string;
+  /** Path to SKILL.md within sourceDir, or null when only meta.json
+   *  is present. Stored for diagnostic display only. */
+  skillMdRelPath: string | null;
+}
+
+export interface DiscoveryReport {
+  discoveries: SkillDiscovery[];
+  /** Skill-name collisions across the tree. Surface — never auto-pick a
+   *  winner. */
+  collisions: { name: string; paths: string[] }[];
+  /** A SKILL.md / meta.json found inside another skill folder. Surface
+   *  — refusing to mount silently nested artifacts. */
+  nested: { outer: string; inner: string }[];
+}
+
+export interface DiscoveryOptions {
+  /** Directory basenames to skip. Default: `.git`, `node_modules`,
+   *  `dist`, `build`, plus any name starting with `.`. */
+  skipDirs?: Set<string>;
+  /** Max walk depth. Default 8 — accommodates `docs/skills/<cat>/<name>/`
+   *  while still terminating on accidental loops. */
+  maxDepth?: number;
+}
+
+export function discoverSkillsInTree(
+  root: string,
+  opts?: DiscoveryOptions,
+): DiscoveryReport;
+```
+
+A "skill folder" is any directory containing `SKILL.md` and/or
+`meta.json`. Discovery stops descending once it finds a skill folder
+— the `nested` report catches the case where a downstream walker
+would otherwise emit both the outer and inner as separate skills.
+
+#### Refactor `applyCanonicalSync`
+
+`packages/core/src/sync.ts:191` today reads
+`<extractedRoot>/skills/` and treats each top-level entry as a skill,
+which silently mishandles bucketed remotes (writes `.skills-bank.json`
+markers at the bucket-directory level — a pre-existing oddity since
+v0.11.3). The refactor:
+
+1. Replace the top-level `readdirSync(canonicalSkillsDir)` with
+   `discoverSkillsInTree(extractedRoot)` over the whole extracted
+   tarball.
+2. Add a new parameter `mountTo: SkillBucket` to
+   `applyCanonicalSync` (no default — every caller must declare its
+   intent).
+3. Compute each skill's destination as
+   `<localRoot>/skills/<mountTo>/<discovery.name>/`. Wipe + `cpSync`
+   from `discovery.sourceDir` (not from a synthetic
+   `canonicalSkillsDir/<name>`).
+4. Stamp `source.upstream.skillPath = discovery.relPath +
+   "/SKILL.md"` (or `discovery.skillMdRelPath` when that's already
+   the full path). Future `applyOriginUpdate` calls now re-fetch
+   from the discovered remote location, not a hard-coded
+   `skills/<name>/`.
+
+Conflict + tag-preservation semantics carry over unchanged — they
+already key off the discovered name, which is what `discoverSkillsInTree`
+emits.
+
+Add a discovery-report-aware error path: if the report carries
+`collisions` or `nested` entries, abort before any local mutation
+and surface them in `SyncReport` for the renderer to display. This
+trades a slightly noisier failure mode for a guarantee that a
+malformed remote never produces a half-mirrored local registry.
+
+#### IPC call-site updates
+
+Two existing channels pass through `applyCanonicalSync`:
+
+- `IPC.syncCanonical` (the bundled-set sync from the curated repo)
+  passes `mountTo: "vendored"`. The curated repo's skills are
+  `source: "bundled"` in the local registry; they belong in the
+  vendored bucket per the bucket UL.
+- `IPC.reposReplaceRegistry` (the user linking their own GitHub
+  repo) passes `mountTo: "personal"`. The user's skills are
+  `source: "yours"` locally; they belong in the personal bucket.
+
+The discriminator is the call site, not anything stamped in the
+remote — both repos look the same to the discovery walker. The
+distinction surfaces only in where the mounted skills land and how
+`writeSkillSource` stamps the `source` axis.
+
+#### Conflict audit
+
+- **Curated-set sync at the bucketed remote** (today's
+  `Tyler-Reagan/skills-bank` — `skills/{personal,vendored}/<name>/`):
+  Discovery walks the buckets, emits each skill once with
+  `relPath = skills/vendored/<name>` (or whatever bucket the remote
+  has it in). Local mounts under `skills/vendored/<name>/` per
+  `mountTo: "vendored"`. Round-trip identity preserved; the
+  pre-existing `.skills-bank.json`-at-bucket-level oddity stops
+  happening.
+- **Personal-repo link at a flat remote** (the post-Phase-1
+  `Tyler-Reagan/skills` — `<repo-root>/<name>/`): Discovery walks
+  the root, emits each top-level skill folder. Local mounts under
+  `skills/personal/<name>/` per `mountTo: "personal"`. The four
+  authored skills become reachable via the persona flow.
+- **Personal-repo link at a nested remote** (e.g., a repo where
+  skills live at `docs/skills/<category>/<name>/`): Discovery walks
+  deeper, finds each skill, mounts each into
+  `skills/personal/<name>/` locally. The remote layout is preserved
+  in `upstream.skillPath` for round-trip updates.
+- **Maintainer scenario where linkedRepo equals curated repo**: the
+  call site decides the bucket. If the maintainer uses
+  `IPC.reposReplaceRegistry` to link skills-bank as their personal
+  registry, skills mount under `personal/`. If they use
+  `IPC.syncCanonical` for the bundled-set workflow, skills mount
+  under `vendored/`. Both flows are intentional and surface in the
+  UI separately; the user picks.
+- **Phase 5 in-app-publish round-trip**: future publishes need to
+  decide where in the remote a new skill lands. Out of scope for
+  Phase 1; Phase 5 will resolve this by either matching the
+  remote's existing convention (if any skills are discovered, use
+  the most-common path prefix) or defaulting to `<repo-root>/<name>/`.
+
+#### Tests
+
+Add `packages/core/src/discovery.test.ts`:
+
+- Flat remote (`<root>/<name>/SKILL.md`) → one discovery per skill.
+- Bucketed remote (`<root>/skills/{personal,vendored}/<name>/`) →
+  every skill discovered exactly once.
+- Nested remote (`docs/skills/<cat>/<name>/SKILL.md`) → each skill
+  discovered with the deep `relPath`.
+- Skill name collision across paths → `collisions` populated, no
+  discovery emitted for the colliding name.
+- Nested skill (SKILL.md inside another skill folder) → `nested`
+  populated, outer emitted as a regular discovery, inner suppressed.
+- meta.json-only folder (no SKILL.md) → discovered with
+  `skillMdRelPath: null`.
+- `.git`, `node_modules`, dot-dirs skipped.
+- Depth cap honored (synthetic deeply-nested tree).
+
+Extend `packages/core/src/sync.test.ts` with a `mountTo`-parametrized
+suite: one case per call-site (sync = vendored, link = personal),
+asserting destination paths and stamped `upstream.skillPath` values.
+
 ## Maintainer migration approach
 
 This plan deliberately defers the maintainer's personal continuity
@@ -367,9 +542,16 @@ install):
 
 1. Fresh dev-mode install (`rm -rf ~/.skills-bank-dev && pnpm dev`).
 2. Link `Tyler-Reagan/skills` via the "Your own registry" persona
-   path; verify the four authored skills populate.
+   path. Discovery walks the flat-rooted remote, finds the four
+   authored skills, and mounts each at
+   `~/.skills-bank-dev/userData/registry/skills/personal/<name>/`.
+   Verify all four are visible in the registry view. Verify each
+   skill's `.skills-bank.json` carries `upstream.skillPath` pointing
+   at the discovered remote location (`<name>/SKILL.md`, since the
+   remote is flat).
 3. Install one of them in Claude; verify the symlink lands at
-   `~/.skills-bank-dev/.claude/skills/<name>`.
+   `~/.skills-bank-dev/.claude/skills/<name>` and resolves to the
+   `skills/personal/<name>/` mount point.
 4. Export the registry manifest from Settings; verify the JSON
    shape matches the schema in this plan.
 5. Wipe dev userData; re-link; import the manifest; verify the
@@ -420,3 +602,19 @@ install):
   `skills/personal/` is preserved in `Tyler-Reagan/skills` even
   after deletion from `skills-bank`. The split is not destructive
   to history; it's a topology change.
+- **If the discovery walker's file-convention rule turns out to be
+  too lax** (e.g., a third-party repo accidentally surfaces folders
+  that aren't really skills), tighten the rule. Candidates: require
+  both `SKILL.md` AND `meta.json`; require `meta.json` to validate
+  against the schema; gate behind a per-link "include experimental
+  matches" toggle. Today's bias is toward inclusivity — the user
+  can always Hide what discovery surfaces in error.
+- **If a linked repo also has a non-skill `skills/` directory** that
+  isn't structured for Skills Bank (e.g., a repo with a `skills/`
+  folder for entirely different content), discovery will walk it
+  along with everything else. The file-convention rule prevents
+  false positives there, but a maintainer with a name collision
+  between their own `<some-skill>/` and an unrelated `<some-skill>/`
+  in the same repo would hit the collision report. The fix is
+  renaming on the user's side; the app surfaces the conflict
+  without picking a winner.

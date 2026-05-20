@@ -2569,6 +2569,10 @@ async function runSync(): Promise<{
         fetched.extractedRoot,
         fetched.commitSha,
         decisions,
+        // syncCanonical mirrors the curated/bundled repo; its
+        // discovered skills land in the vendored bucket per the
+        // bucket UL (curated origin → vendored locally).
+        { mountTo: "vendored" },
       );
       broadcastSyncStatus({
         kind: "done",
@@ -2827,14 +2831,6 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
     broadcastSyncStatus({ kind: "fetching" });
     const fetched = await fetchCanonicalTarball({ owner, repo, token });
     try {
-      const skillsDir = path.join(fetched.extractedRoot, "skills");
-      if (!fs.existsSync(skillsDir)) {
-        broadcastSyncStatus({ kind: "idle" });
-        return {
-          ok: false,
-          message: `${fullName} has no skills/ directory at the repo root`,
-        };
-      }
       // Re-stamp any pre-diff-before-apply legacy markers before the
       // diff so they don't surface as fake conflicts.
       migrateLegacyGithubMarkers(registryRoot);
@@ -2846,7 +2842,22 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
         fetched.extractedRoot,
         fetched.commitSha,
         decisions,
+        // Linking a user's own GitHub repo: discovered skills land
+        // in the personal bucket. Discovery walks the whole repo
+        // tree by file convention, so flat / bucketed / nested
+        // remote layouts all link cleanly.
+        { mountTo: "personal" },
       );
+      if (report.upserted.length === 0 && report.conflicts.length === 0) {
+        broadcastSyncStatus({ kind: "idle" });
+        const detail = (report.discoveryCollisions ?? []).length > 0
+          ? ` (${report.discoveryCollisions!.length} name collision${report.discoveryCollisions!.length === 1 ? "" : "s"} in the source tree)`
+          : "";
+        return {
+          ok: false,
+          message: `${fullName} has no skills the app can recognize${detail}. A skill folder needs a SKILL.md or meta.json.`,
+        };
+      }
       broadcastSyncStatus({
         kind: "done",
         upserted: report.upserted.length,
