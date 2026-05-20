@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T04:26:18.531Z",
+  "generatedAt": "2026-05-20T05:00:55.209Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -643,9 +643,14 @@
         }
       },
       "adopted": true,
+      "lastCommit": {
+        "sha": "4ece993b5de43c2a4edb501db2719b384e7d3613",
+        "date": "2026-05-19 21:28:07 -0700",
+        "message": "sweep: Tier 1 — dead code, foundation note, github-actions-docs bucket fix"
+      },
       "bucket": "vendored",
-      "publishState": "untracked",
-      "canon": false
+      "publishState": "pushed",
+      "canon": true
     },
     {
       "name": "gitlab-ci-inspector",
@@ -801,9 +806,6 @@
         }
       },
       "adopted": true,
-      "warnings": [
-        "missing meta.json (using SKILL.md frontmatter)"
-      ],
       "lastCommit": {
         "sha": "71d4c9403cc9770d6ce7f6f6784e28e90bab87fb",
         "date": "2026-05-18 16:48:00 -0700",
@@ -811,7 +813,8 @@
       },
       "bucket": "vendored",
       "publishState": "pushed",
-      "canon": true
+      "canon": true,
+      "drift": true
     },
     {
       "name": "hero-generator",
@@ -873,7 +876,7 @@
     },
     {
       "name": "impeccable",
-      "description": "",
+      "description": "Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks.",
       "tags": [
         "UI"
       ],
@@ -893,10 +896,6 @@
         }
       },
       "adopted": true,
-      "warnings": [
-        "meta.json /description: must NOT have fewer than 1 characters",
-        "missing description"
-      ],
       "lastCommit": {
         "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
         "date": "2026-05-18 09:25:01 -0700",
@@ -904,7 +903,8 @@
       },
       "bucket": "vendored",
       "publishState": "pushed",
-      "canon": true
+      "canon": true,
+      "drift": true
     },
     {
       "name": "improve-codebase-architecture",

@@ -4,7 +4,7 @@
 
 ### Vertical Rhythm
 
-Your line-height should be the base unit for ALL vertical spacing. If body text has `line-height: 1.5` on `16px` type (= 24px), spacing values should be multiples of 24px. This creates subconscious harmony—text and space share a mathematical foundation.
+Your line-height should be the base unit for ALL vertical spacing. If body text has `line-height: 1.5` on `16px` type (= 24px), spacing values should be multiples of 24px. This creates subconscious harmony; text and space share a mathematical foundation.
 
 ### Modular Scale & Hierarchy
 
@@ -12,19 +12,19 @@ The common mistake: too many font sizes that are too close together (14px, 15px,
 
 **Use fewer sizes with more contrast.** A 5-size system covers most needs:
 
-| Role | Typical Ratio | Use Case               |
-| ---- | ------------- | ---------------------- |
-| xs   | 0.75rem       | Captions, legal        |
-| sm   | 0.875rem      | Secondary UI, metadata |
-| base | 1rem          | Body text              |
-| lg   | 1.25-1.5rem   | Subheadings, lead text |
-| xl+  | 2-4rem        | Headlines, hero text   |
+| Role | Typical Ratio | Use Case |
+|------|---------------|----------|
+| xs | 0.75rem | Captions, legal |
+| sm | 0.875rem | Secondary UI, metadata |
+| base | 1rem | Body text |
+| lg | 1.25-1.5rem | Subheadings, lead text |
+| xl+ | 2-4rem | Headlines, hero text |
 
 Popular ratios: 1.25 (major third), 1.333 (perfect fourth), 1.5 (perfect fifth). Pick one and commit.
 
 ### Readability & Measure
 
-Use `ch` units for character-based measure (`max-width: 65ch`). Line-height scales inversely with line length—narrow columns need tighter leading, wide columns need more.
+Use `ch` units for character-based measure (`max-width: 65ch`). Line-height scales inversely with line length: narrow columns need tighter leading, wide columns need more.
 
 **Non-obvious**: Light text on dark backgrounds needs compensation on three axes, not just one. Bump line-height by 0.05–0.1, add a touch of letter-spacing (0.01–0.02em), and optionally step the body weight up one notch (regular → medium). The perceived weight drops across all three; fix all three.
 
@@ -48,7 +48,6 @@ The tactical selection procedure and the reflex-reject list live in [reference/b
 **The non-obvious truth**: You often don't need a second font. One well-chosen font family in multiple weights creates cleaner hierarchy than two competing typefaces. Only add a second font when you need genuine contrast (e.g., display headlines + body serif).
 
 When pairing, contrast on multiple axes:
-
 - Serif + Sans (structure contrast)
 - Geometric + Humanist (personality contrast)
 - Condensed display + Wide body (proportion contrast)
@@ -62,23 +61,23 @@ The layout shift problem: fonts load late, text reflows, and users see content j
 ```css
 /* 1. Use font-display: swap for visibility */
 @font-face {
-  font-family: "CustomFont";
-  src: url("font.woff2") format("woff2");
+  font-family: 'CustomFont';
+  src: url('font.woff2') format('woff2');
   font-display: swap;
 }
 
 /* 2. Match fallback metrics to minimize shift */
 @font-face {
-  font-family: "CustomFont-Fallback";
-  src: local("Arial");
-  size-adjust: 105%; /* Scale to match x-height */
-  ascent-override: 90%; /* Match ascender height */
-  descent-override: 20%; /* Match descender depth */
-  line-gap-override: 10%; /* Match line spacing */
+  font-family: 'CustomFont-Fallback';
+  src: local('Arial');
+  size-adjust: 105%;        /* Scale to match x-height */
+  ascent-override: 90%;     /* Match ascender height */
+  descent-override: 20%;    /* Match descender depth */
+  line-gap-override: 10%;   /* Match line spacing */
 }
 
 body {
-  font-family: "CustomFont", "CustomFont-Fallback", sans-serif;
+  font-family: 'CustomFont', 'CustomFont-Fallback', sans-serif;
 }
 ```
 
@@ -94,11 +93,11 @@ Tools like [Fontaine](https://github.com/unjs/fontaine) calculate these override
 
 ### Fluid Type
 
-Fluid typography via `clamp(min, preferred, max)` scales text smoothly with the viewport. The middle value (e.g., `5vw + 1rem`) controls scaling rate—higher vw = faster scaling. Add a rem offset so it doesn't collapse to 0 on small screens.
+Fluid typography via `clamp(min, preferred, max)` scales text smoothly with the viewport. The middle value (e.g., `5vw + 1rem`) controls scaling rate (higher vw = faster scaling). Add a rem offset so it doesn't collapse to 0 on small screens.
 
 **Use fluid type for**: Headings and display text on marketing/content pages where text dominates the layout and needs to breathe across viewport sizes.
 
-**Use fixed `rem` scales for**: App UIs, dashboards, and data-dense interfaces. No major app design system (Material, Polaris, Primer, Carbon) uses fluid type in product UI — fixed scales with optional breakpoint adjustments give the spatial predictability that container-based layouts need. Body text should also be fixed even on marketing pages, since the size difference across viewports is too small to warrant it.
+**Use fixed `rem` scales for**: App UIs, dashboards, and data-dense interfaces. No major app design system (Material, Polaris, Primer, Carbon) uses fluid type in product UI; fixed scales with optional breakpoint adjustments give the spatial predictability that container-based layouts need. Body text should also be fixed even on marketing pages, since the size difference across viewports is too small to warrant it.
 
 **Bound your clamp()**: keep `max-size ≤ ~2.5 × min-size`. Wider ratios break the browser's zoom and reflow behaviour and make large viewports feel like the page is shouting.
 
@@ -110,29 +109,19 @@ Most developers don't know these exist. Use them for polish:
 
 ```css
 /* Tabular numbers for data alignment */
-.data-table {
-  font-variant-numeric: tabular-nums;
-}
+.data-table { font-variant-numeric: tabular-nums; }
 
 /* Proper fractions */
-.recipe-amount {
-  font-variant-numeric: diagonal-fractions;
-}
+.recipe-amount { font-variant-numeric: diagonal-fractions; }
 
 /* Small caps for abbreviations */
-abbr {
-  font-variant-caps: all-small-caps;
-}
+abbr { font-variant-caps: all-small-caps; }
 
 /* Disable ligatures in code */
-code {
-  font-variant-ligatures: none;
-}
+code { font-variant-ligatures: none; }
 
 /* Enable kerning (usually on by default, but be explicit) */
-body {
-  font-kerning: normal;
-}
+body { font-kerning: normal; }
 ```
 
 Check what features your font supports at [Wakamai Fondue](https://wakamaifondue.com/).
@@ -141,21 +130,13 @@ Check what features your font supports at [Wakamai Fondue](https://wakamaifondue
 
 ```css
 /* Even out heading line lengths (browser picks better break points) */
-h1,
-h2,
-h3 {
-  text-wrap: balance;
-}
+h1, h2, h3 { text-wrap: balance; }
 
 /* Reduce orphans and ragged endings in long prose */
-article p {
-  text-wrap: pretty;
-}
+article p { text-wrap: pretty; }
 
 /* Variable fonts: pick the right optical-size master automatically */
-body {
-  font-optical-sizing: auto;
-}
+body { font-optical-sizing: auto; }
 ```
 
 **ALL-CAPS tracking**: capitals sit too close at default spacing. Add 5–12% letter-spacing (`letter-spacing: 0.05em` to `0.12em`) to short all-caps labels, eyebrows, and small headings. Real small caps (via `font-variant-caps`) need the same treatment, slightly gentler.
