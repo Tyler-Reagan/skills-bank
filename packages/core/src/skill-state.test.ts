@@ -170,6 +170,85 @@ const ROWS: Row[] = [
     expectedPrimary: "accept-drift",
     expectedCaps: { canUpdate: false },
   },
+  // v1.4: origin-unreachable.
+  {
+    label: "originUnreachable + github origin → origin-unreachable",
+    entry: entry({
+      originUnreachable: true,
+      source: {
+        source: "user",
+        origin: {
+          kind: "github",
+          repo: "u/r",
+          skillPath: "skills/test/SKILL.md",
+        },
+      },
+    }),
+    installed: [],
+    isRegistered: true,
+    expectedState: "origin-unreachable",
+    expectedPrimary: "retry-probe",
+    expectedCaps: {
+      canRetryOriginProbe: true,
+      canAcceptDrift: true,
+    },
+  },
+  {
+    label:
+      "originUnreachable + origin.kind === none → NOT origin-unreachable (state requires github)",
+    entry: entry({
+      originUnreachable: true,
+      source: { source: "user", origin: { kind: "none" } },
+    }),
+    installed: [],
+    isRegistered: true,
+    // Falls through to registered-available since no other state matches.
+    expectedState: "registered-available",
+    expectedPrimary: "install",
+    expectedCaps: { canRetryOriginProbe: false },
+  },
+  {
+    label:
+      "drift + originUnreachable → drift wins (drift implies reachable-recently)",
+    entry: entry({
+      drift: true,
+      originUnreachable: true,
+      source: {
+        source: "user",
+        origin: {
+          kind: "github",
+          repo: "u/r",
+          skillPath: "skills/test/SKILL.md",
+        },
+      },
+    }),
+    installed: [],
+    isRegistered: true,
+    expectedState: "edited-with-origin",
+    expectedPrimary: "accept-drift",
+    expectedCaps: { canRetryOriginProbe: false },
+  },
+  {
+    label:
+      "originUnreachable + originUpdateAvailable → unreachable wins (can't update what we can't probe)",
+    entry: entry({
+      originUnreachable: true,
+      originUpdateAvailable: true,
+      source: {
+        source: "user",
+        origin: {
+          kind: "github",
+          repo: "u/r",
+          skillPath: "skills/test/SKILL.md",
+        },
+      },
+    }),
+    installed: [],
+    isRegistered: true,
+    expectedState: "origin-unreachable",
+    expectedPrimary: "retry-probe",
+    expectedCaps: { canRetryOriginProbe: true, canUpdate: false },
+  },
 
   // ── Unregistered branch ─────────────────────────────────
   {

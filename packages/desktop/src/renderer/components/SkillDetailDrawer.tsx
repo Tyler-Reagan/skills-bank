@@ -150,6 +150,7 @@ type ActionState =
   | "accepting-drift"
   | "taking-canonical"
   | "resetting-to-origin"
+  | "retrying-probe"
   | "updating"
   | "forgetting"
   | "repointing";
@@ -1005,6 +1006,68 @@ export function SkillDetailDrawer({
             </>
           )}
 
+          {/* Origin-unreachable heal — N consecutive probe failures
+              on the per-skill origin. The local copy under
+              skills/.../<name>/ is intact; the user picks Keep this
+              skill (unlink origin, stop checking) or Retry probe
+              (re-run the probe pass). The classifier also sets
+              canAcceptDrift on this state so the existing main
+              dispatch routes through unlinkOrigin for github origins.
+              v1.4. */}
+          {caps.canRetryOriginProbe && onAcceptDrift && (
+            <>
+              <button
+                className="btn primary"
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("retrying-probe");
+                  void window.skillsBank
+                    .originProbe()
+                    .finally(() => setAction(null));
+                }}
+                title="Re-run the origin probe pass for every github-origin skill. If this skill's origin is reachable again, the unreachable state clears."
+              >
+                {action === "retrying-probe" ? (
+                  <>
+                    <span className="spinner inline" /> Retrying…
+                  </>
+                ) : (
+                  "Retry probe"
+                )}
+              </button>
+              <button
+                className="btn"
+                disabled={action !== null}
+                onClick={() => {
+                  setAction("accepting-drift");
+                  void Promise.resolve(onAcceptDrift()).finally(() =>
+                    setAction(null),
+                  );
+                }}
+                title={`Stop checking ${
+                  entry.source.origin?.repo ?? "the origin"
+                } for updates. Your local copy stays; the origin pointer clears.`}
+              >
+                {action === "accepting-drift" ? (
+                  <>
+                    <span className="spinner inline" /> Unlinking…
+                  </>
+                ) : (
+                  "Keep this skill"
+                )}
+              </button>
+              <p className="drawer-action-hint">
+                The origin{" "}
+                <code>{entry.source.origin?.repo ?? "Origin"}</code> hasn't
+                been reachable for the last few probes. Your local copy is
+                intact.
+                <strong> Retry probe</strong> re-runs the check.
+                <strong> Keep this skill</strong> clears the origin pointer
+                — future probes won't surface this skill again.
+              </p>
+            </>
+          )}
+
           {/* Drift heal — fan-out by source axis. The classifier emits
               `canAcceptDrift` for both bundled-sync drift and upstream-
               pointer drift; render the sub-arm and hint copy that
@@ -1013,7 +1076,7 @@ export function SkillDetailDrawer({
               Copy migrated to the canonical glossary verbs:
                 edited-with-origin:  [Reset to origin] (primary, danger)  [Unlink origin]
                 edited-without-origin:       [Re-baseline]     (primary)          [Accept drift] */}
-          {caps.canAcceptDrift && onAcceptDrift && (
+          {caps.canAcceptDrift && onAcceptDrift && !caps.canRetryOriginProbe && (
             <>
               {caps.canResetToOrigin && onTakeUpstream && (
                 <button

@@ -7,7 +7,9 @@ import {
   type RateLimitInfo,
 } from "./upstream.js";
 import { buildRegistryIndex } from "./build.js";
+import { readRuntimeState, writeRuntimeState } from "./heal.js";
 import { getStateDir } from "./paths.js";
+import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
 
 /**
  * The upstream-probe scheduler. Lifted from
@@ -162,6 +164,62 @@ function persistCache(
   }
 }
 
+/**
+ * v1.4: increment a skill's runtime `probeFailureCount` after a
+ * non-rate-limit probe failure. Saturates at the unreachable
+ * threshold so the counter doesn't grow unboundedly — once the
+ * drawer state has flipped, the precise value above the threshold
+ * isn't meaningful, and skipping the disk write after saturation
+ * avoids churning the runtime sidecar on every probe pass.
+ *
+ * Exported for the dedicated test suite (`upstream-probe.test.ts`);
+ * production callers are inside this module's probe loop.
+ */
+export function recordProbeFailure(
+  registryRoot: string,
+  skill: { path: string },
+): void {
+  try {
+    const skillDir = path.resolve(registryRoot, skill.path);
+    const runtime = readRuntimeState(skillDir);
+    const current = runtime.probeFailureCount ?? 0;
+    if (current >= ORIGIN_UNREACHABLE_THRESHOLD) return;
+    writeRuntimeState(skillDir, {
+      ...runtime,
+      probeFailureCount: current + 1,
+      lastProbeFailureAt: new Date().toISOString(),
+    });
+  } catch {
+    // Counter is purely an indicator — don't surface failures from
+    // the runtime sidecar back into the probe loop.
+  }
+}
+
+/**
+ * v1.4: reset a skill's runtime `probeFailureCount` after a
+ * successful per-skill probe. No-op when the counter is already
+ * zero — avoid unnecessary sidecar writes.
+ *
+ * Exported for the dedicated test suite (`upstream-probe.test.ts`).
+ */
+export function recordProbeSuccess(
+  registryRoot: string,
+  skill: { path: string },
+): void {
+  try {
+    const skillDir = path.resolve(registryRoot, skill.path);
+    const runtime = readRuntimeState(skillDir);
+    if (!runtime.probeFailureCount) return;
+    const { probeFailureCount: _drop, lastProbeFailureAt: _drop2, ...rest } =
+      runtime;
+    void _drop;
+    void _drop2;
+    writeRuntimeState(skillDir, rest);
+  } catch {
+    // See recordProbeFailure.
+  }
+}
+
 export function createOriginProbeRunner(
   opts: OriginProbeRunnerOpts,
 ): OriginProbeRunner {
@@ -245,10 +303,17 @@ export function createOriginProbeRunner(
           if (res.status === 429 && res.rateLimit) {
             // First rate-limit hit wins — all carry the same window
             // state (limit/remaining/resetAt are repo-agnostic for
-            // unauth-per-IP).
+            // unauth-per-IP). v1.4: rate-limit doesn't reflect origin
+            // reachability, so per-skill counters are untouched.
             if (!rateLimitInfo) rateLimitInfo = res.rateLimit;
           } else {
             failedRepos.push(repo);
+            // v1.4: persistent non-429 failure on the per-repo tree
+            // fetch counts as a probe failure for every skill in
+            // that repo.
+            for (const skill of skills) {
+              recordProbeFailure(root, skill);
+            }
           }
           continue;
         }
@@ -260,14 +325,26 @@ export function createOriginProbeRunner(
         const origin = skill.source.origin!;
         const folderPath = folderPathFromSkillPath(origin.skillPath!);
         const currentHash = cache.folderHashes.get(folderPath);
-        if (currentHash && currentHash !== origin.skillFolderHash) {
-          probedUpdates.set(skill.name, {
-            latestHash: currentHash,
-            probedAt: now,
-          });
-          updates++;
+        if (currentHash) {
+          // Probe surfaced a folder hash — origin is reachable. Reset
+          // any pre-existing failure counter even when the hashes
+          // match (no update). v1.4.
+          recordProbeSuccess(root, skill);
+          if (currentHash !== origin.skillFolderHash) {
+            probedUpdates.set(skill.name, {
+              latestHash: currentHash,
+              probedAt: now,
+            });
+            updates++;
+          } else {
+            probedUpdates.delete(skill.name);
+          }
         } else {
+          // Tree fetch succeeded but the skill's folder isn't in it
+          // — moved, renamed, or removed upstream. Per-skill probe
+          // failure. v1.4.
           probedUpdates.delete(skill.name);
+          recordProbeFailure(root, skill);
         }
       }
     }

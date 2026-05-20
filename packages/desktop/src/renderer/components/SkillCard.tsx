@@ -360,6 +360,19 @@ function PublishBadge({
       </span>
     );
   }
+  if (
+    entry.originUnreachable &&
+    entry.source.origin?.kind === "github"
+  ) {
+    return (
+      <span
+        className="skill-state-badge missing"
+        title={`Origin ${entry.source.origin.repo ?? ""} hasn't been reachable for the last few probes. Your local copy is intact. Open to keep this skill or retry the probe.`}
+      >
+        UNREACHABLE
+      </span>
+    );
+  }
   if (entry.originUpdateAvailable) {
     return (
       <span
