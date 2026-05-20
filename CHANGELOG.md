@@ -3,6 +3,41 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.2.0
+
+Phase 1 of the post-v1.0 roadmap ([curation-layer-reset](docs/plans/curation-layer-reset.md)). Resets the bundled set to a deliberate MVP, extracts the maintainer's authored skills into their own origin repo, ships a metadata-only registry-manifest export/import flow with zero-effort `userData` auto-snapshots, and drops the remote-layout invariant so any GitHub repo (flat / bucketed / nested) is linkable as-is.
+
+### Added
+
+- **Registry manifest export/import.** New `exportRegistryManifest` / `importRegistryManifest` primitives in `packages/core/src/manifest.ts` produce a metadata-only JSON snapshot (per-skill source axis, origin pointer, tags, dismissed/hidden, `lastInstalledOn` per agent). Import re-fetches each skill's content from its GitHub origin via `mirrorSkillFolder`, restores tags + hide state, and surfaces an `installHints` list for a single user-confirmed batch install. Settings → **Export registry manifest** / **Import registry manifest**; post-import confirm modal batches the hint-driven installs. `bank:exportManifest`, `bank:importManifest`, `bank:installFromManifestHint` IPC channels.
+- **`userData` auto-snapshots.** Every registry-mutating IPC handler now flows through a `mutatingHandle` wrapper that writes a `RegistryManifest` snapshot to `<userData>/registry-snapshots/snapshot-<timestamp>.json`, rotating to the last five by mtime. The manifest concept lands for every user — including those without a linked repo — as a zero-effort backup.
+- **Discovery-based linked-repo mount.** New `discoverSkillsInTree` core primitive in `packages/core/src/discovery.ts` walks any source tree by file convention (presence of `SKILL.md` and/or `meta.json`), surfacing name collisions and nested-skill anomalies for the caller to handle. `applyCanonicalSync` now takes a `mountTo: SkillBucket` parameter — `IPC.syncCanonical` → `mountTo: "vendored"`, `IPC.reposReplaceRegistry` → `mountTo: "personal"`. Remote repos no longer need a `skills/` directory at the root; flat layouts, single-bucket layouts, and deeply nested layouts (`docs/skills/<category>/<name>/`) all link cleanly.
+- **`Tyler-Reagan/skills`.** New origin repo for the four authored skills (`gitlab-ci-inspector`, `gitlab-mr-writing`, `pretty-mermaid`, `terraform-plan-summary`), extracted from the curation layer via `git subtree split`. Linkable in-app via "Your own registry."
+
+### Changed
+
+- **Curation layer reset.** `skills/vendored/` shipped with one canonical MVP — `find-skills` — instead of the prior 63 accumulated entries. The displaced skills retain upstream-origin validity; they are reinstallable via Discover when Phase 3 (`in-app-install-from-discover.md`) ships. `skills/personal/` no longer exists in the curation layer; the maintainer's authored skills live in their own linked repo.
+- **Bucket UL** narrowed to the **app-internal** layout. Goal #5 reframed: every registry the app manages uses `skills/{personal,vendored}/<name>/`, but remote repos (linked, origin, curated) can use any layout — discovery is by file convention. Section 10 of the plan captures the design.
+- **`applyCanonicalSync` upstream preservation.** Pre-existing v0.11.3 oddity fixed in passing: per-skill `upstream` pointers no longer get silently wiped across every sync. Source axes spread first; only registry-level axes (`source`, `syncedFromCommit`, `syncedAt`) are overwritten.
+- **`pnpm reset:seed`** narrowed to `skills/vendored/` only. `skills/personal/` no longer exists in the curation layer, so the seed step skips that half entirely.
+
+### Deprecated
+
+- **`exportRegistry`** (content-bearing zip in `packages/core/src/export.ts`). Marked `@deprecated`; canonical replacement is `exportRegistryManifest`. Removal targeted at v1.3 per post-1.0 backcompat discipline. `exportSkill` / `getExportInfo` are unaffected.
+
+### Removed
+
+- **`pnpm stamp:self-authored`.** Decommissioned. Targets (the four authored skills) moved to their own origin repo.
+
+### Fixed
+
+- **Manifest import never surfaced the install-hint modal after `rm -rf ~/.skills-bank-dev` + re-link.** The agent-dir intersection in `importRegistryManifest` silently dropped every hint when no agent dirs existed yet. Dropped the intersection — `installSkill` creates dirs on demand and a stray symlink under an unused agent is harmless.
+- **Manifest export / import feedback was trapped inside the Settings modal.** Both flows now flash a confirmation toast via `useRegistryHost`, so closing Settings doesn't hide the result.
+
+### Maintainer migration
+
+The maintainer's continuity for the 62 displaced vendored skills is deliberately deferred to Phase 5 (`in-app-publish.md` bulk safekeeping). During Phases 1–4 development, daily use continues via the pre-Phase-1 packaged install; dev-mode runs in `~/.skills-bank-dev/` isolation.
+
 ## v1.1.0
 
 Three new maintenance flows + a Registry-tab bulk-install affordance + the
