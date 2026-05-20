@@ -47,10 +47,10 @@ import {
   hashSkillFolder,
   mirrorSkillFolder,
   readSkillSource,
-  UPSTREAM_KIND_GITHUB,
+  ORIGIN_KIND_GITHUB,
   writeSkillSource,
   writeSyncedHash,
-  type UpstreamPointer,
+  type OriginPointer,
 } from "../packages/core/src/index.js";
 
 const execFileAsync = promisify(execFile);
@@ -190,11 +190,11 @@ async function resolveSkillPath(
   skillId: string,
   token: string | null,
 ): Promise<string | null> {
-  const { probeRepoTree, findFolderHash } = await import(
+  const { probeOriginTree, findFolderHash } = await import(
     "../packages/core/src/index.js"
   );
   void findFolderHash; // silence unused-import in this scope; mirror handles it
-  const probe = await probeRepoTree(repo, token);
+  const probe = await probeOriginTree(repo, token);
   if (!probe.ok || probe.truncated) return null;
   const skillMd = probe.tree.filter(
     (e) =>
@@ -414,8 +414,8 @@ async function main(): Promise<void> {
 
   // Write marker + baseline.
   const now = new Date().toISOString();
-  const pointer: UpstreamPointer = {
-    kind: UPSTREAM_KIND_GITHUB,
+  const pointer: OriginPointer = {
+    kind: ORIGIN_KIND_GITHUB,
     repo: args.repo,
     sourceUrl: `https://github.com/${args.repo}.git`,
     skillPath,

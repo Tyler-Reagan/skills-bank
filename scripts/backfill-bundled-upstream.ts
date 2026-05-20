@@ -28,11 +28,11 @@ import { fileURLToPath } from "node:url";
 import {
   hashSkillFolder,
   readSkillSource,
-  UPSTREAM_KIND_GITHUB,
+  ORIGIN_KIND_GITHUB,
   walkSkills,
   writeSkillSource,
   writeSyncedHash,
-  type UpstreamPointer,
+  type OriginPointer,
 } from "../packages/core/src/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -85,8 +85,8 @@ function main(): void {
       continue;
     }
 
-    const upstream: UpstreamPointer = {
-      kind: UPSTREAM_KIND_GITHUB,
+    const upstream: OriginPointer = {
+      kind: ORIGIN_KIND_GITHUB,
       repo: entry.repo,
       skillPath: entry.skillPath,
     };
