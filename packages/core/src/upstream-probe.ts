@@ -312,10 +312,3 @@ export function createOriginProbeRunner(
   };
 }
 
-// v0.11.10 deprecation aliases. Drop in v0.12.0.
-/** @deprecated use `createOriginProbeRunner` */
-export const createUpstreamProbeRunner = createOriginProbeRunner;
-/** @deprecated use `OriginProbeRunnerOpts` */
-export type UpstreamProbeRunnerOpts = OriginProbeRunnerOpts;
-/** @deprecated use `OriginProbeRunner` */
-export type UpstreamProbeRunner = OriginProbeRunner;

@@ -532,12 +532,3 @@ function synthesizeMetaJson(
   );
 }
 
-// v0.11.10 deprecation aliases. Drop in v0.12.0.
-/** @deprecated use `probeOriginTree` */
-export const probeRepoTree = probeOriginTree;
-/** @deprecated use `applyOriginUpdate` */
-export const applyUpstreamUpdate = applyOriginUpdate;
-/** @deprecated use `OriginUpdateResult` */
-export type UpstreamUpdateResult = OriginUpdateResult;
-/** @deprecated use `OriginUpdateContext` */
-export type UpstreamUpdateContext = OriginUpdateContext;

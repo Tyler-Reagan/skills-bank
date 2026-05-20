@@ -4,26 +4,26 @@
 
 Timing matters more than easing. These durations feel right for most UI:
 
-| Duration      | Use Case            | Examples                           |
-| ------------- | ------------------- | ---------------------------------- |
-| **100-150ms** | Instant feedback    | Button press, toggle, color change |
-| **200-300ms** | State changes       | Menu open, tooltip, hover states   |
-| **300-500ms** | Layout changes      | Accordion, modal, drawer           |
-| **500-800ms** | Entrance animations | Page load, hero reveals            |
+| Duration | Use Case | Examples |
+|----------|----------|----------|
+| **100-150ms** | Instant feedback | Button press, toggle, color change |
+| **200-300ms** | State changes | Menu open, tooltip, hover states |
+| **300-500ms** | Layout changes | Accordion, modal, drawer |
+| **500-800ms** | Entrance animations | Page load, hero reveals |
 
-**Exit animations are faster than entrances**—use ~75% of enter duration.
+**Exit animations are faster than entrances.** Use ~75% of enter duration.
 
 ## Easing: Pick the Right Curve
 
 **Don't use `ease`.** It's a compromise that's rarely optimal. Instead:
 
-| Curve           | Use For                      | CSS                              |
-| --------------- | ---------------------------- | -------------------------------- |
-| **ease-out**    | Elements entering            | `cubic-bezier(0.16, 1, 0.3, 1)`  |
-| **ease-in**     | Elements leaving             | `cubic-bezier(0.7, 0, 0.84, 0)`  |
+| Curve | Use For | CSS |
+|-------|---------|-----|
+| **ease-out** | Elements entering | `cubic-bezier(0.16, 1, 0.3, 1)` |
+| **ease-in** | Elements leaving | `cubic-bezier(0.7, 0, 0.84, 0)` |
 | **ease-in-out** | State toggles (there → back) | `cubic-bezier(0.65, 0, 0.35, 1)` |
 
-**For micro-interactions, use exponential curves**—they feel natural because they mimic real physics (friction, deceleration):
+**For micro-interactions, use exponential curves.** They feel natural because they mimic real physics (friction, deceleration):
 
 ```css
 /* Quart out - smooth, refined (recommended default) */
@@ -36,7 +36,7 @@ Timing matters more than easing. These durations feel right for most UI:
 --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 ```
 
-**Avoid bounce and elastic curves.** They were trendy in 2015 but now feel tacky and amateurish. Real objects don't bounce when they stop—they decelerate smoothly. Overshoot effects draw attention to the animation itself rather than the content.
+**Avoid bounce and elastic curves.** They were trendy in 2015 but now feel tacky and amateurish. Real objects don't bounce when they stop; they decelerate smoothly. Overshoot effects draw attention to the animation itself rather than the content.
 
 ## Premium Motion Materials
 
@@ -54,7 +54,7 @@ The hard rule is not "transform and opacity only." The hard rule is: avoid anima
 
 ## Staggered Animations
 
-Use CSS custom properties for cleaner stagger: `animation-delay: calc(var(--i, 0) * 50ms)` with `style="--i: 0"` on each item. **Cap total stagger time**—10 items at 50ms = 500ms total. For many items, reduce per-item delay or cap staggered count.
+Use CSS custom properties for cleaner stagger: `animation-delay: calc(var(--i, 0) * 50ms)` with `style="--i: 0"` on each item. **Cap total stagger time**: 10 items at 50ms = 500ms total. For many items, reduce per-item delay or cap staggered count.
 
 ## Reduced Motion
 
@@ -69,34 +69,32 @@ This is not optional. Vestibular disorders affect ~35% of adults over 40.
 /* Provide alternative for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .card {
-    animation: fade-in 200ms ease-out; /* Crossfade instead of motion */
+    animation: fade-in 200ms ease-out;  /* Crossfade instead of motion */
   }
 }
 
 /* Or disable entirely */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
 }
 ```
 
-**What to preserve**: Functional animations like progress bars, loading spinners (slowed down), and focus indicators should still work—just without spatial movement.
+**What to preserve**: Functional animations like progress bars, loading spinners (slowed down), and focus indicators should still work, just without spatial movement.
 
 ## Perceived Performance
 
-**Nobody cares how fast your site is—just how fast it feels.** Perception can be as effective as actual performance.
+**Nobody cares how fast your site is, just how fast it feels.** Perception can be as effective as actual performance.
 
 **The 80ms threshold**: Our brains buffer sensory input for ~80ms to synchronize perception. Anything under 80ms feels instant and simultaneous. This is your target for micro-interactions.
 
 **Active vs passive time**: Passive waiting (staring at a spinner) feels longer than active engagement. Strategies to shift the balance:
 
 - **Preemptive start**: Begin transitions immediately while loading (iOS app zoom, skeleton UI). Users perceive work happening.
-- **Early completion**: Show content progressively—don't wait for everything. Video buffering, progressive images, streaming HTML.
-- **Optimistic UI**: Update the interface immediately, handle failures gracefully. Instagram likes work offline—the UI updates instantly, syncs later. Use for low-stakes actions; avoid for payments or destructive operations.
+- **Early completion**: Show content progressively, don't wait for everything. Video buffering, progressive images, streaming HTML.
+- **Optimistic UI**: Update the interface immediately, handle failures gracefully. Instagram likes work offline; the UI updates instantly, syncs later. Use for low-stakes actions; avoid for payments or destructive operations.
 
 **Easing affects perceived duration**: Ease-in (accelerating toward completion) makes tasks feel shorter because the peak-end effect weights final moments heavily. Ease-out feels satisfying for entrances, but ease-in toward a task's end compresses perceived time.
 
@@ -104,7 +102,7 @@ This is not optional. Vestibular disorders affect ~35% of adults over 40.
 
 ## Performance
 
-Don't use `will-change` preemptively—only when animation is imminent (`:hover`, `.animating`). For scroll-triggered animations, use Intersection Observer instead of scroll events; unobserve after animating once. Create motion tokens for consistency (durations, easings, common transitions).
+Don't use `will-change` preemptively, only when animation is imminent (`:hover`, `.animating`). For scroll-triggered animations, use Intersection Observer instead of scroll events; unobserve after animating once. Create motion tokens for consistency (durations, easings, common transitions).
 
 ---
 

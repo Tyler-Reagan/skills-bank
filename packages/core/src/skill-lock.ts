@@ -9,9 +9,9 @@ import {
 import { walkSkills } from "./registry.js";
 import {
   readSkillSource,
-  UPSTREAM_KIND_GITHUB,
+  ORIGIN_KIND_GITHUB,
   writeSkillSource,
-  type UpstreamPointer,
+  type OriginPointer,
 } from "./source.js";
 
 /**
@@ -117,16 +117,16 @@ export function readSkillLockFile(filePath: string): SkillLockFile | null {
 export function inferUpstreamForSkill(
   skillName: string,
   lock: SkillLockFile,
-): UpstreamPointer | null {
+): OriginPointer | null {
   const entry = lock.skills[skillName];
   if (!entry) return null;
-  if (entry.sourceType && entry.sourceType !== UPSTREAM_KIND_GITHUB) {
+  if (entry.sourceType && entry.sourceType !== ORIGIN_KIND_GITHUB) {
     return null;
   }
   if (typeof entry.source !== "string") return null;
   if (typeof entry.skillPath !== "string") return null;
-  const out: UpstreamPointer = {
-    kind: UPSTREAM_KIND_GITHUB,
+  const out: OriginPointer = {
+    kind: ORIGIN_KIND_GITHUB,
     repo: entry.source,
     skillPath: entry.skillPath,
   };
@@ -139,7 +139,7 @@ export function inferUpstreamForSkill(
   }
   // `fetchedAt` is persisted in `.skills-bank-runtime.json` (ADR-0002)
   // — scanAndStampUpstreamFromLock writes the lock's `updatedAt` to
-  // that sidecar separately. Don't include it in the UpstreamPointer
+  // that sidecar separately. Don't include it in the OriginPointer
   // that gets written to the committed `.skills-bank.json`.
   return out;
 }

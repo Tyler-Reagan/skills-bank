@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T18:06:54.076Z",
+  "generatedAt": "2026-05-20T05:00:55.209Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -627,6 +627,32 @@
       "canon": true
     },
     {
+      "name": "github-actions-docs",
+      "description": "Use when users ask how to write, explain, customize, migrate, secure, or troubleshoot GitHub Actions workflows, workflow syntax, triggers, matrices, runners, reusable workflows, artifacts, caching, secrets, OIDC, deployments, custom actions, or Actions Runner Controller, especially when they need official GitHub documentation, exact links, or docs-grounded YAML guidance.",
+      "path": "skills/vendored/github-actions-docs",
+      "source": {
+        "source": "yours",
+        "upstream": {
+          "kind": "github",
+          "repo": "xixu-me/skills",
+          "sourceUrl": "https://github.com/xixu-me/skills.git",
+          "skillPath": "skills/github-actions-docs/SKILL.md",
+          "skillFolderHash": "518c85da555f91c346813aa5bb3cc62f9db8bfb3",
+          "installedAt": "2026-05-19T20:37:06.794Z",
+          "fetchedAt": "2026-05-19T20:37:06.794Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4ece993b5de43c2a4edb501db2719b384e7d3613",
+        "date": "2026-05-19 21:28:07 -0700",
+        "message": "sweep: Tier 1 — dead code, foundation note, github-actions-docs bucket fix"
+      },
+      "bucket": "vendored",
+      "publishState": "pushed",
+      "canon": true
+    },
+    {
       "name": "gitlab-ci-inspector",
       "description": "Inspect GitLab CI/CD job results, fetch job logs, and diagnose pipeline failures. Use when the user shares a GitLab job URL, pipeline URL, asks about CI/CD job output, wants to check why a pipeline failed, or needs to review build/deploy logs.",
       "path": "skills/personal/gitlab-ci-inspector",
@@ -706,7 +732,8 @@
       },
       "bucket": "personal",
       "publishState": "pushed",
-      "canon": true
+      "canon": true,
+      "drift": true
     },
     {
       "name": "golang-testing",
@@ -773,9 +800,9 @@
           "repo": "mattpocock/skills",
           "sourceUrl": "https://github.com/mattpocock/skills.git",
           "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
-          "skillFolderHash": "3c4ac970c404e8d32c24f2725bfe679e455a925b",
+          "skillFolderHash": "2c6aa7079cc705a6e0c319fcf23a0fa39968de29",
           "installedAt": "2026-05-18T05:30:44.422Z",
-          "fetchedAt": "2026-05-19T17:40:40.300Z"
+          "fetchedAt": "2026-05-19T18:45:53.735Z"
         }
       },
       "adopted": true,
@@ -863,9 +890,9 @@
           "repo": "pbakaus/impeccable",
           "sourceUrl": "https://github.com/pbakaus/impeccable.git",
           "skillPath": ".agents/skills/impeccable/SKILL.md",
-          "skillFolderHash": "acf2d1c8e0fc8a5388c67a6add3d45e1d2ec90fb",
+          "skillFolderHash": "0e0d5857d98abc56bbc3e34c7bfddbd24f6e471b",
           "installedAt": "2026-05-18T08:09:53.421Z",
-          "fetchedAt": "2026-05-19T17:41:14.320Z"
+          "fetchedAt": "2026-05-19T18:46:21.502Z"
         }
       },
       "adopted": true,

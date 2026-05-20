@@ -53,15 +53,6 @@ export interface OriginPointer {
   fetchedAt?: string;
 }
 
-// v0.11.10 deprecation aliases — one minor cycle of softness for
-// downstream consumers (CLI users, future SDK adopters). Drop in v0.12.0.
-/** @deprecated use `OriginKind` */
-export type UpstreamKind = OriginKind;
-/** @deprecated use `ORIGIN_KIND_GITHUB` */
-export const UPSTREAM_KIND_GITHUB = ORIGIN_KIND_GITHUB;
-/** @deprecated use `OriginPointer` */
-export type UpstreamPointer = OriginPointer;
-
 export interface SkillSource {
   source: SkillOrigin;
   /** Commit SHA of the bundled repo this skill was last synced from. */
@@ -73,8 +64,14 @@ export interface SkillSource {
    * lineage" and the fallback scanner may try to classify on next
    * index walk. Set explicitly to `{ kind: "none" }` to suppress
    * scanner attempts (the manual "this is mine" stamp).
+   *
+   * Field name retained as `upstream` per the v0.11.10 origin-rename-pass
+   * deferral — the JSON wire format on `.skills-bank.json` (committed
+   * across the bank) cannot be changed without an ADR-0002 amendment.
+   * The type is the canonical `OriginPointer`; UL canon calls this
+   * concept "origin" in all prose.
    */
-  upstream?: UpstreamPointer;
+  upstream?: OriginPointer;
 }
 
 export const SKILL_SOURCE_FILENAME = ".skills-bank.json";

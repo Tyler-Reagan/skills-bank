@@ -734,16 +734,3 @@ declare global {
   }
 }
 
-// v0.11.10 deprecation aliases for the renamed IPC types. Drop in v0.12.0.
-/** @deprecated use `OriginManualChoice` */
-export type UpstreamManualChoice = OriginManualChoice;
-/** @deprecated use `OriginUpdateResult` */
-export type UpstreamUpdateResult = OriginUpdateResult;
-/** @deprecated use `OriginProbeCompleteEvent` */
-export type UpstreamProbeCompleteEvent = OriginProbeCompleteEvent;
-/** @deprecated use `OriginProbeResult` */
-export type UpstreamProbeResult = OriginProbeResult;
-/** @deprecated use `OriginRepoMetadata` */
-export type UpstreamRepoMetadata = OriginRepoMetadata;
-/** @deprecated use `OriginLastCommit` */
-export type UpstreamLastCommit = OriginLastCommit;

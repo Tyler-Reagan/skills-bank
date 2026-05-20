@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@skills-bank/core": "workspace:*",
-    "diff": "^9.0.0",
     "dompurify": "^3.2.4",
     "electron-updater": "^6.3.9",
     "marked": "^15.0.7"

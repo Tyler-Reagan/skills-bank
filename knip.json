@@ -14,7 +14,6 @@
     "packages/desktop": {
       "entry": [
         "src/main/main.ts",
-        "src/main/preload.mts",
         "src/renderer/index.html"
       ],
       "project": "src/**/*.{ts,tsx,mts}"

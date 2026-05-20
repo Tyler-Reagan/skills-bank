@@ -5,6 +5,31 @@ description: Author GitLab merge request descriptions and technical reviewer gui
 
 # GitLab MR Writing
 
+## Calibrate scope before drafting
+
+**Default to brief.** Most MRs are focused bug fixes, single-file refactors, or
+small features — those deserve a description that fits on one screen, not a
+reviewer guide. Reach for the verbose form only when the change is genuinely
+architectural (cross-package convergence, new service boundary, multi-week
+refactor lands as one merge, etc.).
+
+Calibrate by classifying the change before drafting:
+
+| Class | Examples | Description target |
+|---|---|---|
+| **Focused** | Bug fix, single helper, one-component frontend change, doc-only update | ~20–30 lines. Motivation + headline changes + 1–2 references. No theme-group bullets, no reviewer-focus checklist. |
+| **Multi-theme** | New feature touching 2–3 packages, refactor with cleanup, infra rollout | ~50–80 lines. Theme groups become useful here. Still no reviewer guide unless requested. |
+| **Architectural** | Cross-package convergence, new service, version migration, multi-week deep change | The full structure below — opening framing, theme groups, optional Technical Reviewer Guide. |
+
+When the user gives an explicit length or shape constraint in the prompt
+("keep under 25 lines", "brief", "just motivation"), that override is
+authoritative regardless of class. Do not pad to fill structure.
+
+The "Body structure", "Theme group labels", and "Technical Reviewer Guide"
+sections below are written for the Architectural class. For Focused MRs,
+drop them — a one-paragraph motivation, a short bullet list of headline
+changes, and 1–2 references is sufficient.
+
 ## One, possibly two, artifacts
 
 Every significant merge produces up to two documents, but at least one:
@@ -13,6 +38,8 @@ Every significant merge produces up to two documents, but at least one:
 2. **Technical Reviewer Guide** — one optional document covering the full change; consumed by an assigned reviewer doing a deep review
 
 Produce only the MR Description unless the user specifies otherwise.
+The Technical Reviewer Guide is for Architectural-class changes; do not
+generate one for Focused or Multi-theme MRs even when running this skill.
 
 ---
 
@@ -32,11 +59,15 @@ State this explicitly in the reviewer guide header. All claims must describe the
 
 ### Title
 
-- 4–8 words, no verbs — use noun phrases only
-- Comma-separated themes in priority order
-- Examples:
+- Noun phrases only, no verbs.
+- **Focused MR:** 4–10 words, one topic. Optional `[TICKET-ID]` prefix when the work links to a tracker issue. Examples:
+  - `[SW-26047] chat-server inline rendering of MCP image artifacts`
+  - `chatbff API key resolver revalidation`
+- **Architectural MR:** 8–15 words, comma-separated themes in priority order. Examples:
   - `Data pipeline v3 integration, source architecture convergence, and codebase cleanup`
   - `Loader v3 integration, credential centralization, and tiered codebase cleanup`
+
+Do not invent comma-separated themes to make a Focused MR look bigger than it is.
 
 ### Body structure
 
@@ -133,8 +164,10 @@ Write a separate titled section per repo/package (`## viewer-shared`, `## viewer
 | Reference real file paths and function names | Use vague abstractions ("the service", "the helper") |
 | State end-states as facts                    | Describe intermediate steps or history               |
 | Use active, direct language                  | Use passive voice                                    |
-| Be exhaustive within a section               | Combine unrelated concerns in one bullet             |
+| Be thorough within scope                     | Pad to fill structure; combine unrelated concerns    |
 | Match technical depth to the audience        | Over-explain well-known concepts                     |
+| Trust the diff — say what's NOT obvious      | Restate what the diff already shows file-by-file     |
+| Limit brittle references (md plan docs etc.) | Add cross-doc paths that rot when files move         |
 
 ---
 
@@ -174,10 +207,20 @@ From the script output, assign each directory cluster to a theme group:
 - High-churn modified files → identify the convergence or refactor they represent
 - Deleted files → note what was removed and why (cleanup, superseded, dead code)
 
-### Step 3: Draft the MR description
+### Step 3: Classify and draft the MR description
 
-Write one description per package/repo being merged (see Body structure above).
-Use the file names and paths from the script output as the raw material for bullets.
+Before drafting, classify the change per the "Calibrate scope before drafting"
+table above. Pick the matching shape and length target. If the diff summary
+shows ≤2 files modified in a single package, default to **Focused**. If 3–5
+files across one package, default to **Multi-theme**. Only ≥6 files across
+multiple packages, or a stated cross-cutting architectural intent in the
+user's prompt, triggers **Architectural**.
+
+For Focused MRs: motivation paragraph → 3–5 bullets of headline changes →
+1–2 references. No theme-group headers, no reviewer-focus checklist.
+
+For Multi-theme / Architectural MRs: use the Body structure above. Reference
+real file paths from the diff summary as raw material for bullets.
 
 ### Step 4: If requested, draft the technical reviewer guide
 

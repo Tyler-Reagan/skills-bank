@@ -34,13 +34,13 @@ import { fileURLToPath } from "node:url";
 import {
   hashSkillFolder,
   readSkillSource,
-  UPSTREAM_KIND_GITHUB,
+  ORIGIN_KIND_GITHUB,
   walkSkills,
   writeSkillSource,
   writeSyncedHash,
   type SkillFolderRef,
   type SkillOrigin,
-  type UpstreamPointer,
+  type OriginPointer,
 } from "../packages/core/src/index.js";
 import { BUNDLED_REPO } from "../packages/desktop/src/shared/ipc.js";
 
@@ -96,8 +96,8 @@ function main(): void {
   for (const ref of candidates) {
     const base = readSkillSource(ref.dir);
     const skillPath = `${ref.relPath}/SKILL.md`;
-    const pointer: UpstreamPointer = {
-      kind: UPSTREAM_KIND_GITHUB,
+    const pointer: OriginPointer = {
+      kind: ORIGIN_KIND_GITHUB,
       repo: BUNDLED_REPO,
       sourceUrl: `https://github.com/${BUNDLED_REPO}.git`,
       skillPath,

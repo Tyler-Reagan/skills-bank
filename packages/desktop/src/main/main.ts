@@ -91,11 +91,11 @@ import {
   type SkillDiffResult,
   type SyncStatus,
   type UpdateStatus,
-  type UpstreamLastCommit,
-  type UpstreamManualChoice,
-  type UpstreamProbeCompleteEvent,
-  type UpstreamProbeResult,
-  type UpstreamRepoMetadata,
+  type OriginLastCommit,
+  type OriginManualChoice,
+  type OriginProbeCompleteEvent,
+  type OriginProbeResult,
+  type OriginRepoMetadata,
   type UserRepo,
 } from "../shared/ipc.js";
 import {
@@ -452,12 +452,12 @@ const probeRunner = createOriginProbeRunner({
   },
 });
 
-async function runUpstreamProbe(): Promise<UpstreamProbeResult> {
+async function runUpstreamProbe(): Promise<OriginProbeResult> {
   return probeRunner.run();
 }
 
 function notifyProbeComplete(
-  event: UpstreamProbeCompleteEvent = {},
+  event: OriginProbeCompleteEvent = {},
 ): void {
   // Re-emit through the runner's onComplete so empty refresh nudges
   // and probe results follow the same channel.
@@ -515,7 +515,7 @@ ipcMain.handle(IPC.originProbe, async () => runUpstreamProbe());
  */
 async function applyUpstreamUpdate(
   name: string,
-): Promise<import("../shared/ipc.js").UpstreamUpdateResult> {
+): Promise<import("../shared/ipc.js").OriginUpdateResult> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   // Core owns the disk-level mirror + marker rewrite. Desktop layers
   // on the probe-cache cleanup + notification (UI concerns).
@@ -545,19 +545,19 @@ ipcMain.handle(IPC.originUpdate, async (_e, name: string) =>
 // chips.
 
 interface RepoMetadataCacheEntry {
-  metadata: UpstreamRepoMetadata;
+  metadata: OriginRepoMetadata;
   fetchedAt: number;
 }
 
 const repoMetadataCache = new Map<string, RepoMetadataCacheEntry>();
 const REPO_METADATA_TTL_MS = 15 * 60 * 1000;
 
-async function getRepoMetadata(repo: string): Promise<UpstreamRepoMetadata> {
+async function getRepoMetadata(repo: string): Promise<OriginRepoMetadata> {
   const cached = repoMetadataCache.get(repo);
   if (cached && Date.now() - cached.fetchedAt < REPO_METADATA_TTL_MS) {
     return cached.metadata;
   }
-  const empty: UpstreamRepoMetadata = {
+  const empty: OriginRepoMetadata = {
     stars: null,
     description: null,
     defaultBranch: null,
@@ -582,7 +582,7 @@ async function getRepoMetadata(repo: string): Promise<UpstreamRepoMetadata> {
       description?: string | null;
       default_branch?: string;
     };
-    const metadata: UpstreamRepoMetadata = {
+    const metadata: OriginRepoMetadata = {
       stars: typeof body.stargazers_count === "number"
         ? body.stargazers_count
         : null,
@@ -606,7 +606,7 @@ ipcMain.handle(IPC.originRepoMetadata, async (_e, repo: string) =>
 );
 
 interface LastCommitCacheEntry {
-  commit: UpstreamLastCommit;
+  commit: OriginLastCommit;
   fetchedAt: number;
 }
 
@@ -616,13 +616,13 @@ const LAST_COMMIT_TTL_MS = 15 * 60 * 1000;
 async function getLastCommit(
   repo: string,
   skillPath: string,
-): Promise<UpstreamLastCommit> {
+): Promise<OriginLastCommit> {
   const key = `${repo}:${skillPath}`;
   const cached = lastCommitCache.get(key);
   if (cached && Date.now() - cached.fetchedAt < LAST_COMMIT_TTL_MS) {
     return cached.commit;
   }
-  const empty: UpstreamLastCommit = {
+  const empty: OriginLastCommit = {
     sha: null,
     date: null,
     message: null,
@@ -660,7 +660,7 @@ async function getLastCommit(
     }
     const top = body[0]!;
     const message = top.commit?.message;
-    const commit: UpstreamLastCommit = {
+    const commit: OriginLastCommit = {
       sha: typeof top.sha === "string" ? top.sha : null,
       date: typeof top.commit?.author?.date === "string"
         ? top.commit.author.date
@@ -690,7 +690,7 @@ ipcMain.handle(
  */
 async function setManualUpstream(
   name: string,
-  choice: UpstreamManualChoice,
+  choice: OriginManualChoice,
 ): Promise<{ ok: boolean; message: string }> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   // Look up the bucket via walkSkills; setManualUpstream is invoked
@@ -754,7 +754,7 @@ async function setManualUpstream(
 
 ipcMain.handle(
   IPC.originSetManual,
-  async (_e, name: string, choice: UpstreamManualChoice) =>
+  async (_e, name: string, choice: OriginManualChoice) =>
     setManualUpstream(name, choice),
 );
 

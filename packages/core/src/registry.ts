@@ -176,3 +176,41 @@ export function walkSkills(registryRoot: string): SkillFolderRef[] {
 
   return out;
 }
+
+/**
+ * Locate a skill folder by name across both buckets. Returns the
+ * `SkillFolderRef` for whichever bucket currently houses it, or null
+ * if no bucket has a folder of that name. Throws
+ * `SkillNameCollisionError` when both buckets have it — same
+ * invariant `walkSkills` enforces, surfaced eagerly for single-name
+ * lookups so callers don't silently prefer one bucket over the other.
+ *
+ * Used by the Register / repair / conflict-resolution paths to ask
+ * "where does this skill live in the registry?" without re-walking
+ * the entire `skills/` tree. Pre-v0.11.3 these paths joined
+ * `skills/<name>/` directly — that path no longer exists post-bucket-
+ * split, so the lookup has to consult both subdirectories.
+ */
+export function findSkillFolder(
+  registryRoot: string,
+  name: string,
+): SkillFolderRef | null {
+  const matches: SkillFolderRef[] = [];
+  for (const bucket of SKILL_BUCKETS) {
+    const dir = path.join(registryRoot, "skills", bucket, name);
+    if (!fs.existsSync(dir)) continue;
+    matches.push({
+      name,
+      bucket,
+      dir,
+      relPath: `skills/${bucket}/${name}`,
+    });
+  }
+  if (matches.length > 1) {
+    throw new SkillNameCollisionError(
+      name,
+      matches.map((m) => m.bucket),
+    );
+  }
+  return matches[0] ?? null;
+}

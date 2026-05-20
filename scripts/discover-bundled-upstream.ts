@@ -38,14 +38,14 @@ import {
   findFolderHash,
   folderPathFromSkillPath,
   hashSkillFolder,
-  probeRepoTree,
+  probeOriginTree,
   readSkillSource,
-  UPSTREAM_KIND_GITHUB,
+  ORIGIN_KIND_GITHUB,
   walkSkills,
   writeSkillSource,
   writeSyncedHash,
   type SkillOrigin,
-  type UpstreamPointer,
+  type OriginPointer,
 } from "../packages/core/src/index.js";
 
 const execFileAsync = promisify(execFile);
@@ -165,7 +165,7 @@ function pickMatch(
   return exact[0]!;
 }
 
-type ProbeTree = ReturnType<typeof probeRepoTree> extends Promise<infer R>
+type ProbeTree = ReturnType<typeof probeOriginTree> extends Promise<infer R>
   ? R extends { ok: true; tree: infer T }
     ? T
     : never
@@ -239,12 +239,12 @@ async function discoverPhase(): Promise<CandidateMap> {
   const token = process.env["GITHUB_TOKEN"] ?? null;
   const treeCache = new Map<
     string,
-    Awaited<ReturnType<typeof probeRepoTree>>
+    Awaited<ReturnType<typeof probeOriginTree>>
   >();
 
   async function probeCached(repo: string) {
     if (treeCache.has(repo)) return treeCache.get(repo)!;
-    const r = await probeRepoTree(repo, token);
+    const r = await probeOriginTree(repo, token);
     treeCache.set(repo, r);
     return r;
   }
@@ -335,8 +335,8 @@ function applyPhase(cand: CandidateMap, sourceDefault: SkillOrigin): void {
       console.warn(`skip ${name}: already stamped`);
       continue;
     }
-    const pointer: UpstreamPointer = {
-      kind: UPSTREAM_KIND_GITHUB,
+    const pointer: OriginPointer = {
+      kind: ORIGIN_KIND_GITHUB,
       repo: c.repo,
       sourceUrl: `https://github.com/${c.repo}.git`,
       skillPath: c.skillPath,

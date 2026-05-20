@@ -82,9 +82,6 @@ importers:
       '@skills-bank/core':
         specifier: workspace:*
         version: link:../core
-      diff:
-        specifier: ^9.0.0
-        version: 9.0.0
       dompurify:
         specifier: ^3.2.4
         version: 3.4.2

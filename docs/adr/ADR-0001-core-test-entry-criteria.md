@@ -44,6 +44,13 @@ foundation:
    regressions are the cheapest UX bugs to ship; the table is the
    defense.
 
+The "and only these five" pin applies to **the v0.11.7 foundation**.
+Post-v1.0 primitives may extend the foundation per their own ADR —
+see ADR-0006 (`forkSkill`, Suite 6) and ADR-0007 (`pushSkillFolder`,
+Suite 7) for the precedent. Each extension names a specific
+contract (atomicity, partial-failure, error vocabulary) the new
+suite exists to pin; future additions follow the same pattern.
+
 **Explicitly out of scope** for v0.11.7:
 
 - IPC handlers (`packages/desktop`) — tested at the integration

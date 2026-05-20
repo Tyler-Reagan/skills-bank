@@ -3,10 +3,9 @@
   "upstream": {
     "kind": "github",
     "repo": "mattpocock/skills",
-    "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
     "sourceUrl": "https://github.com/mattpocock/skills.git",
-    "skillFolderHash": "3c4ac970c404e8d32c24f2725bfe679e455a925b",
-    "installedAt": "2026-05-18T05:30:44.422Z",
-    "fetchedAt": "2026-05-18T05:30:44.422Z"
+    "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+    "skillFolderHash": "2c6aa7079cc705a6e0c319fcf23a0fa39968de29",
+    "installedAt": "2026-05-18T05:30:44.422Z"
   }
 }

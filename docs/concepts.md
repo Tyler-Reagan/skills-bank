@@ -2,6 +2,9 @@
 
 The vocabulary the app uses, defined in one place. Skim this once and the rest of the docs (and the UI itself) become a lot more obvious.
 
+> [!NOTE]
+> This document is the user-facing concept guide. The engineering glossary — including precise "aliases to avoid" lists, the canonical operation verbs, and flagged ambiguities the codebase has worked through — lives in [`UBIQUITOUS_LANGUAGE.md`](../UBIQUITOUS_LANGUAGE.md) at the repo root. When the two documents disagree, UL is canonical; this doc gets rewritten to match.
+
 ## Taxonomy
 
 Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
@@ -186,3 +189,31 @@ A taxonomy axis on each registry entry. True when the skill's files physically l
 ## Finalize
 
 Collapse a symlinked top-level agent dir (e.g. `~/.claude/skills` → `~/.agents/skills`) back into a real directory of its own. Used when you want each agent to own its skills independently after previously sharing.
+
+## Vendor
+
+Pulling a third-party skill from its origin GitHub repo into the bank, preserving the origin pointer so future updates from the original author still surface via the update probe. Vendored skills live under `skills/vendored/<name>/`. The CLI counterpart is `pnpm vendor:skill`; the bulk-refresh counterpart is `pnpm vendor:refresh`. Vendoring does NOT take ownership — the user is mirroring, not forking.
+
+## Publish
+
+Pushing a skill from the local registry to the user's linked repo as a pull request. Three sub-flows by trigger condition:
+
+- **New skill** — no origin, user-authored. Published to `skills/personal/`, `source: yours`.
+- **Vendored skill (safekeeping)** — has origin, no local drift. Published to `skills/vendored/` with the origin pointer preserved. The point is to deposit the third-party content into the user's own repo so it survives if the origin goes dark — see [Safekeeping](#safekeeping).
+- **Edited vendored skill** — has origin, drift detected. Forces the user to confirm a [Fork](#fork) before publishing; the publish is blocked otherwise.
+
+The action is always PR-only — the linked repo's default branch is never written directly. Subsequent publishes of the same skill while a prior PR is still open append commits to the existing branch (the PR auto-updates); publishes after the prior PR is merged or closed clean up the stale branch and open a fresh one. Counterpart CLI is `pnpm update:skill` (maintainer-only, no PR — direct working-tree mutation in the repo itself).
+
+The atomicity, branch-resolution, rate-limit, and PR-metadata invariants of the `pushSkillFolder` primitive are pinned in [ADR-0007](adr/ADR-0007-push-skill-folder-invariants.md). The dual-mode publish-state computation that drives the chip and the canon gate is pinned in [ADR-0008](adr/ADR-0008-publish-state-source-agnostic.md). Implementation order across all three primitives lives in [`docs/plans/in-app-publish.md`](plans/in-app-publish.md).
+
+## Fork
+
+Unlinking a vendored skill's origin and taking ownership locally. Triggered when the user publishes edits to a vendored skill: a confirmation modal makes the unlink explicit, since the action drops the origin pointer and stops the update probe from surfacing future changes from the original author. After confirmation the skill's `source` flips `bundled → yours`, the origin pointer is dropped, and the folder moves from `skills/vendored/` to `skills/personal/` — the skill is the user's now, indistinguishable from one they authored.
+
+Forking is irreversible without re-vendoring from scratch. Fork composes the existing per-skill **Unlink origin** heal action with a bucket move and a source-axis flip — see the canonical operation definitions in [`UBIQUITOUS_LANGUAGE.md`](../UBIQUITOUS_LANGUAGE.md). The atomicity, collision, and trigger invariants of the `forkSkill` primitive are pinned in [ADR-0006](adr/ADR-0006-fork-primitive-invariants.md).
+
+## Safekeeping
+
+The reason vendoring-and-publishing is a flow distinct from forking. A user vendors a third-party skill, then publishes the (unedited) vendored copy to their linked repo. The copy in the linked repo is the safekept version — if the origin is deleted, transferred, or otherwise goes dark, the user still has the content. The origin pointer is preserved so future-author updates remain visible; the local copy is fallback storage, not a replacement source of truth.
+
+Related: the post-v1.0 [`bank-mode-persistence`](plans/bank-mode-persistence.md) plan adds an additional, registry-local cache for the same purpose at the install layer.
