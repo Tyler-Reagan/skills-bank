@@ -60,6 +60,21 @@ origin-rename deprecation cycle (SDK-surface change).
   0006 / 0007 / 0008 follow).
 - **`docs/concepts.md`** cross-references `UBIQUITOUS_LANGUAGE.md` as the
   canonical engineering glossary; when the two disagree, UL is canonical.
+- **`@skills-bank/core` exports** `parseSkillFrontmatter`,
+  `synthesizeSkillMeta`, `validateSkillMeta`, `SKILL_META_SCHEMA`.
+  All four are discoverable from the SDK so maintainer scripts, the in-app
+  runtime, and external consumers share one contract for "what makes a
+  valid skill meta.json." Tests in `packages/core/src/skill-meta.test.ts`
+  (18) pin the frontmatter parser, the synthesis decision tree, the
+  validation discriminated union, and `SKILL_META_SCHEMA` parity with
+  `docs/meta-schema.json`.
+- **Stash-and-restore rollback** in `applyOriginUpdate`. The pre-mirror
+  skill folder is stashed to
+  `<registryRoot>/.skills-bank/scratch/origin-update-<rand>/` before the
+  network fetch; if post-mirror invariants (synthesis + validation) fail,
+  the function restores from the stash. Extends ADR-0001 Suite 4's
+  no-mutation discipline beyond `mirrorSkillFolder` itself to the full
+  Update operation.
 
 ### Changed
 
@@ -102,6 +117,24 @@ origin-rename deprecation cycle (SDK-surface change).
   `unregistered-foreign` with `primary: register`. Combined with the bucket
   fix, clicking Register heals the stale layout by relocating the folder
   into the correct bucket.
+- **In-app Origin Update synthesizes `meta.json` when upstream lacks one.**
+  Symptom: a user clicks Update on a vendored skill whose upstream no longer
+  ships `meta.json`; the local copy ends up without one; `pnpm validate`
+  fails on the next run. The CLI path (`vendor:skill`) already synthesized
+  from SKILL.md frontmatter; the runtime in-app path didn't carry the same
+  logic. Fix: extracted the synthesis into a shared `synthesizeSkillMeta` in
+  `@skills-bank/core`; both call sites now route through it.
+  ([bug report](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/bug-reports/2026-05-19-origin-update-missing-meta-synthesis.md))
+- **In-app Origin Update validates `meta.json` after mirror and rolls back
+  on schema failure.** Symptom: an upstream `meta.json` with an empty
+  description (or any other schema violation) gets baselined into
+  `.skills-bank.json` as the new canonical state; drift detection then
+  treats the broken state as "the new normal." Fix: `applyOriginUpdate`
+  now stashes the pre-mirror skill folder to a scratch dir, runs synthesis
+  + `validateSkillMeta` after mirror, and restores from scratch if
+  validation fails. The Update result surfaces the specific Ajv error
+  messages so the user knows what's wrong upstream.
+  ([bug report](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/bug-reports/2026-05-19-origin-update-missing-validation.md))
 
 ### Removed
 
@@ -119,8 +152,13 @@ origin-rename deprecation cycle (SDK-surface change).
 - Two bug reports filed under `docs/bug-reports/` for in-app Origin Update
   gaps surfaced during working-tree cleanup
   (`2026-05-19-origin-update-missing-meta-synthesis.md` and
-  `2026-05-19-origin-update-missing-validation.md`). Fix queued for the
-  next release.
+  `2026-05-19-origin-update-missing-validation.md`); both fixes shipped in
+  this release (see Added → `@skills-bank/core` exports and
+  stash-and-restore rollback; see Fixed → synthesizes / validates).
+- Test count: 82 (was 64 — +18 for `skill-meta.test.ts`).
+- ~100 lines of duplicated frontmatter parsing and validation removed from
+  `scripts/vendor-skill.ts` and `scripts/update-skill.ts`; both now import
+  the shared helpers from `@skills-bank/core`.
 
 ---
 
