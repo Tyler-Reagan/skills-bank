@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T05:00:55.209Z",
+  "generatedAt": "2026-05-20T05:23:17.004Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -726,9 +726,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
-        "date": "2026-05-18 09:25:01 -0700",
-        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+        "sha": "07a8ff46b9a57819e3e06c55218cbf7ece53f13e",
+        "date": "2026-05-19 22:01:23 -0700",
+        "message": "chore(vendored): apply in-app origin updates for impeccable + grill-with-docs"
       },
       "bucket": "personal",
       "publishState": "pushed",
@@ -807,9 +807,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "71d4c9403cc9770d6ce7f6f6784e28e90bab87fb",
-        "date": "2026-05-18 16:48:00 -0700",
-        "message": "polish(v0.11.7): drawer width 540 + reconcile 6 vendored markers to bundled"
+        "sha": "07a8ff46b9a57819e3e06c55218cbf7ece53f13e",
+        "date": "2026-05-19 22:01:23 -0700",
+        "message": "chore(vendored): apply in-app origin updates for impeccable + grill-with-docs"
       },
       "bucket": "vendored",
       "publishState": "pushed",
@@ -897,9 +897,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
-        "date": "2026-05-18 09:25:01 -0700",
-        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+        "sha": "07a8ff46b9a57819e3e06c55218cbf7ece53f13e",
+        "date": "2026-05-19 22:01:23 -0700",
+        "message": "chore(vendored): apply in-app origin updates for impeccable + grill-with-docs"
       },
       "bucket": "vendored",
       "publishState": "pushed",
