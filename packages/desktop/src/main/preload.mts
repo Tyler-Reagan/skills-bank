@@ -88,6 +88,10 @@ const api = {
   importRegistryMerge: () => ipcRenderer.invoke(IPC.importRegistryMerge),
   importRegistryMergeApply: (sourcePath: string, decisions: unknown) =>
     ipcRenderer.invoke(IPC.importRegistryMergeApply, sourcePath, decisions),
+  exportManifest: () => ipcRenderer.invoke(IPC.exportManifest),
+  importManifest: () => ipcRenderer.invoke(IPC.importManifest),
+  installFromManifestHint: (payload: unknown) =>
+    ipcRenderer.invoke(IPC.installFromManifestHint, payload),
   repairBrokenLinks: (name: string) =>
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>

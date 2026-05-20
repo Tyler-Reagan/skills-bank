@@ -22,7 +22,7 @@ Today's structure is flat — 66 sibling folders with no visual signal about whe
 2. Every code site that walks `<root>/skills/<name>/` is refactored to descend through the bucket level — exactly once, via a single shared helper.
 3. Names remain globally unique across buckets (a skill named `foo` can only exist in one bucket). Validation surfaces collisions at index-build time.
 4. The maintainer-facing `pnpm vendor:skill` defaults to writing into `skills/vendored/`; future self-authoring goes into `skills/personal/`.
-5. Forward-compatible to the eventual `Tyler-Reagan/personal-skills` repo split: `git subtree split --prefix=skills/personal -b personal-skills` extracts the personal subtree in one command.
+5. Forward-compatible to the eventual `Tyler-Reagan/skills` repo split: `git subtree split --prefix=skills/personal -b skills-export` extracts the personal subtree in one command. (Realized in v1.1 per `curation-layer-reset.md`.)
 
 ## Non-goals
 

@@ -75,12 +75,20 @@ export function resolveEntryPath(
 /**
  * Spatial categorization of a skill folder under `<root>/skills/`.
  *
- *   - `personal` — authored by the maintainer in this repo. Includes
- *     skills whose `upstream` is self-referential
- *     (`repo === BUNDLED_REPO`), `kind: "none"`, or absent. Future
- *     `Tyler-Reagan/personal-skills` split extracts this subtree.
+ *   - `personal` — authored by the registry owner. In the canonical
+ *     curation layer, these are skills whose `upstream` is
+ *     self-referential (`repo === BUNDLED_REPO`), `kind: "none"`, or
+ *     absent.
  *   - `vendored` — harvested from external authors' repos. `upstream`
  *     points at someone else's repo.
+ *
+ * The pattern is universal across registry types (curation layer,
+ * linked repo, installed user bank). A specific registry may use only
+ * one bucket as a matter of composition — post-v1.1 the curation
+ * layer `Tyler-Reagan/skills-bank` uses only `vendored/`, because the
+ * maintainer's authored skills live in their own linked repo
+ * `Tyler-Reagan/skills`. The unused bucket simply isn't materialized
+ * on disk; `walkSkills` tolerates missing buckets.
  *
  * Buckets are NOT stored in `.skills-bank.json` — they're purely a
  * path-level concept derived from where the folder lives on disk.

@@ -16,7 +16,7 @@ The shift was vetted via `/grill-me` before this plan; see the inline rationale 
 2. The bundled repo's role is "ships content with the .dmg." It is never auto-stamped as an Origin for any skill it didn't itself author.
 3. End-user "Update" pulls SKILL.md (and folder siblings) directly from the upstream via GitHub's API. No reliance on `npx skills update`, no writes to `~/.agents/.skill-lock.json`.
 4. The bundled set's existing 66 skills get correct upstream pointers, populated by maintainer-time tooling (lock-file scanner + new `npx skills find` discovery script) and committed to the bundled repo, so end users inherit them via the .dmg.
-5. The design supports a future split where self-authored skills move into a dedicated `Tyler-Reagan/personal-skills` repo without schema or migration churn.
+5. The design supports a future split where self-authored skills move into a dedicated `Tyler-Reagan/skills` repo without schema or migration churn. (Realized in v1.1 per `curation-layer-reset.md`.)
 
 ## Non-goals
 
@@ -64,7 +64,7 @@ Three categories of skill, each with a single uniform marker shape:
 
 The desktop app's probe, drawer, and update logic does not distinguish categories — they're a uniform "fetch the folder hash from `upstream.repo`'s tree, compare to recorded hash" loop. The categorization is an artifact of how the marker got created, not a runtime branch.
 
-**Forward-compatibility for the eventual (c) split** (rationale, grill Q2): when self-authored skills migrate into `Tyler-Reagan/personal-skills`, the only change is sweeping the bundled repo's checked-in markers from `repo: "Tyler-Reagan/skills-bank"` to `repo: "Tyler-Reagan/personal-skills"`. No code changes; no schema change. The `BUNDLED_REPO` constant in `packages/desktop/src/shared/ipc.ts` is solely for the registry-source default (linkedRepo). It is never hard-coded into upstream-resolution logic.
+**Forward-compatibility for the eventual (c) split** (rationale, grill Q2): when self-authored skills migrate into `Tyler-Reagan/skills`, the only change is sweeping the bundled repo's checked-in markers from `repo: "Tyler-Reagan/skills-bank"` to `repo: "Tyler-Reagan/skills"`. No code changes; no schema change. The `BUNDLED_REPO` constant in `packages/desktop/src/shared/ipc.ts` is solely for the registry-source default (linkedRepo). It is never hard-coded into upstream-resolution logic. (Realized in v1.1 per `curation-layer-reset.md`.)
 
 ## Scope
 
@@ -210,7 +210,7 @@ interface UpstreamPointer {
 }
 ```
 
-The reframe doesn't add or remove fields; it changes only what *values* go into `repo` for the bundled set's markers (true upstream rather than the bundled repo). Schema-level changes for the eventual (c) personal-skills split are likewise not needed — only the values change.
+The reframe doesn't add or remove fields; it changes only what *values* go into `repo` for the bundled set's markers (true upstream rather than the bundled repo). Schema-level changes for the eventual (c) `Tyler-Reagan/skills` split are likewise not needed — only the values change.
 
 ## Execution order
 

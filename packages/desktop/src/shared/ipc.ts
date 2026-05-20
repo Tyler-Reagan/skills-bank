@@ -9,11 +9,13 @@ import type {
   ExportInfo,
   ExportResult,
   FinalizeResult,
+  ImportRegistryManifestResult,
   InstalledSkill,
   MergeImportReport,
   RegistrationAction,
   RegistrationResult,
   RegistryEntry,
+  RegistryManifest,
   ScanReport,
   SyncDecisions,
   SyncReport,
@@ -83,6 +85,9 @@ export const IPC = {
   importRegistry: "skills:importRegistry",
   importRegistryMerge: "skills:importRegistryMerge",
   importRegistryMergeApply: "skills:importRegistryMergeApply",
+  exportManifest: "bank:exportManifest",
+  importManifest: "bank:importManifest",
+  installFromManifestHint: "bank:installFromManifestHint",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
@@ -659,6 +664,44 @@ interface SkillsBankAPI {
     message: string;
     skillCount?: number;
   }>;
+  /**
+   * Phase 1 manifest export. Saves a metadata-only JSON manifest of
+   * the active registry to a user-picked location. The legacy
+   * `exportRegistry` (content-bearing zip) is `@deprecated` in favor
+   * of this path. Manifest reliability depends on origin reachability
+   * during a future import — Phase 5 closes the loop with a
+   * safekeep fallback.
+   */
+  exportManifest(): Promise<{
+    ok: boolean;
+    message: string;
+    skillCount?: number;
+    destPath?: string;
+  }>;
+  /**
+   * Phase 1 manifest import. Reads a JSON manifest the user picks
+   * from disk, mirrors each skill's content from its Origin, and
+   * restores per-skill tags + hide state. Returns the per-skill
+   * outcomes plus `installHints` so the renderer can surface a
+   * single user-confirmed batch install via `installFromManifestHint`.
+   */
+  importManifest(): Promise<
+    | { ok: false; message: string; error?: AppError }
+    | {
+        ok: true;
+        message: string;
+        result: ImportRegistryManifestResult;
+      }
+  >;
+  /**
+   * Apply a manifest's install hints — one user-confirmed batch.
+   * Calls the existing install path for each `{ name, agents }`
+   * pair. Never auto-invoked by `importManifest`.
+   */
+  installFromManifestHint(payload: {
+    names: string[];
+    agents: AgentId[];
+  }): Promise<{ ok: boolean; message: string; installedCount: number; errors: string[] }>;
   importRegistry(): Promise<{
     ok: boolean;
     message: string;

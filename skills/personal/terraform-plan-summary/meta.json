@@ -1,4 +1,0 @@
-{
-  "name": "terraform-plan-summary",
-  "description": "Parses noisy Terraform or GitLab CI job logs and produces a concise impact summary (add/change/destroy counts, per-resource actions, grouped repetitive changes, key attribute diffs, warnings). Use when summarizing terraform plan output, CI plan jobs, long job logs, or when the user asks what a plan would change."
-}

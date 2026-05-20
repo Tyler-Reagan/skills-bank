@@ -7,6 +7,8 @@ export * from "./install.js";
 export * from "./installed.js";
 export * from "./import.js";
 export * from "./export.js";
+export * from "./manifest.js";
+export * from "./discovery.js";
 export * from "./build.js";
 export * from "./source.js";
 export * from "./upstream.js";
