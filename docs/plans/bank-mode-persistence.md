@@ -1,184 +1,274 @@
-# Bank-mode persistence (planned)
+# Bank-mode persistence — origin-unreachable recovery (planned, v1.4)
 
-When a skill's upstream becomes unreachable — the maintainer deletes the skills.sh package, transfers their source repo to a private org, or the package is pulled for any reason — the user shouldn't lose access to skills they've installed. This plan adds a registry-local cache: every successful upstream fetch lands content into `<registryRoot>/.skills-bank/cache/<package>/<version>/` alongside its destination. If the upstream later disappears, the cache is the source of truth and the user can promote it to "their own" without losing the skill.
+Phase 3 of the post-v1.0 roadmap. Single PR against
+`Tyler-Reagan/skills-bank`.
 
-The framing: **skills you've installed stay safe with you, even if their upstream goes dark.** This is the operative meaning of "bank" in the product name — your skills are deposited and held, not just streamed.
+## What changed since the original plan
+
+This file previously specified a per-skill `bankSnapshot` cache
+under `<registryRoot>/.skills-bank/cache/<package>/<version>/`, an
+"npx skills add" install path, and a separate BankCacheModal for
+managing snapshots. **That design was retired during the v1.2 Phase
+1 grill** (see `docs/plans/curation-layer-reset.md` section 9,
+Flagged section).
+
+The retirement was correct. The product promise — "your installed
+skills survive upstream loss" — turned out to be met already by the
+v1.2 architecture, with no separate cache layer needed:
+
+- Skills live at `<registryRoot>/skills/{personal,vendored}/<name>/`.
+  The local copy *is* the user's authoritative content.
+- The `origin` pointer (renamed from `upstream` in v1.3) is a
+  re-fetch hint, not a content source. Origin loss doesn't delete
+  local content; it just means future Updates will fail.
+- The v1.2 manifest export/import + `userData` auto-snapshots cover
+  the registry-metadata side of persistence.
+- v1.5 (in-app-publish) safekeeping covers the remote-pinned-backup
+  side via push-to-linked-repo.
+
+What v1.2 did not ship is the **recovery UX** when an origin probe
+persistently fails. Today, repeated probe failures surface as a
+sticky rate-limit/error toast and the skill stays in
+`origin-update-available: undefined` / `drift: undefined` limbo. The
+user has no in-app surface that says "your local copy is intact;
+drop the origin pointer and stop checking" — they'd have to
+manually invoke `unlinkOrigin` via the drawer's heal flow (which
+itself is only reachable when there's drift or an update marker, not
+on persistent unreachable).
+
+Phase 3 lands that recovery surface and the probe-failure tracking
+it depends on. Nothing else.
 
 ## Depends on
 
-Plan 03 (per-skill upstream foundation). Builds on the schema, the update path, and the drift-attribution drawer states.
+- v1.3.0 shipped. The `unlinkOrigin` rename + `origin` wire-field
+  rename are already on `main`. This plan composes both.
+- No hard deps on Phase 4+.
 
 ## Goals
 
-1. Every successful upstream fetch lands a content snapshot in a registry-local cache.
-2. If a probe fails persistently for a known-upstream skill, the user gets a recovery surface — keep the local copy, sever the upstream, no data loss.
-3. Cache survives `reposReplaceRegistry` (github-mode re-fetch). The cache belongs to the user, not the linked upstream registry repo.
-4. Export-registry includes the cache; import-registry restores it. Bank persistence travels with the user across machines.
-5. Default-on behavior with a user-visible setting and a cache-management modal so users can inspect and free space when they want.
+1. The desktop runner's origin-probe pass tracks consecutive
+   failures per skill, persisted across sessions, with a tolerant
+   reset on success.
+2. After a configurable threshold of consecutive failures, the
+   skill enters a new drawer state `origin-unreachable`.
+3. The drawer surfaces a recovery banner: _"This skill's origin is
+   no longer reachable. Your local copy is intact."_ Two actions:
+   **Keep this skill (unlink origin)** and **Retry probe**.
+4. The probe-failure counter persists in the existing runtime
+   sidecar `.skills-bank-runtime.json` (ADR-0002) — it's runtime
+   state by definition (never committed). Auto-resets when a
+   probe succeeds.
+5. Phase 4 (`in-app-install-from-discover`) inherits the same
+   probe-failure handling for skills installed via Discover.
 
 ## Non-goals
 
-- Mirroring skills.sh content wholesale or pre-emptively. We cache content the user has _actually fetched_, not the catalog.
-- Recovering skills the user never installed (a "lost" community skill they wanted but never deposited).
-- Compression / dedup. Snapshots are uncompressed copies; skills are typically kB-scale.
+- **Per-skill content cache** (`bankSnapshot`, `.skills-bank/cache/`).
+  Retired in v1.2 grill. Local content under `skills/*/<name>/` *is*
+  the cache; a parallel cache layer would be redundant.
+- **`npx skills add` integration.** The v1.2 discovery-mount + the
+  `mirrorSkillFolder` primitive replaced this paradigm. Phase 4
+  will use `mirrorSkillFolder` directly for in-app install from a
+  GitHub origin.
+- **Cache management modal.** Without a parallel cache layer,
+  there's nothing to manage. The drawer's per-skill recovery is the
+  only surface.
+- **Export/import cache.** The v1.2 manifest already covers
+  metadata; content is re-mirrored from origin on import (or
+  preserved if the user is on the same machine).
+- **Sync's origin-unreachable handling.** Sync (curated-set pull)
+  is a different code path; its unreachable case is "Refresh
+  failed; try again" at the registry level, not per-skill. Out of
+  scope.
 
 ## Scope
 
-### Schema extension
+### 1. Probe-failure counter in runtime sidecar
 
-`packages/core/src/source.ts`:
+`.skills-bank-runtime.json` is the gitignored runtime sidecar (ADR-0002).
+Currently carries `fetchedAt`. Add a `probeFailureCount: number`
+field; increments on each consecutive failure; resets to 0 on
+success.
 
 ```ts
-interface BankSnapshot {
-  cachePath: string; // relative to registry root: ".skills-bank/cache/<pkg>/<ver>/"
-  contentHash: string; // SHA-256 at snapshot time
-  snapshotAt: string; // ISO-8601
+// packages/core/src/heal.ts (RuntimeState extension)
+export interface RuntimeState {
+  fetchedAt?: string;
+  /**
+   * Consecutive failed origin probes for this skill. Reset to 0
+   * on the next successful probe. Drives the
+   * `origin-unreachable` drawer state at threshold.
+   */
+  probeFailureCount?: number;
+  /** Last failure's timestamp. Diagnostic; not load-bearing. */
+  lastProbeFailureAt?: string;
 }
+```
 
-interface SkillSource {
-  source: SkillOrigin;
-  syncedFromCommit?: string;
-  syncedAt?: string;
-  upstream?: UpstreamPointer;
-  bankSnapshot?: BankSnapshot; // NEW
+`readRuntimeState` / `writeRuntimeState` round-trip the new fields.
+Backward-compatible: missing fields default to 0 / undefined.
+
+### 2. Probe-runner increments + resets the counter
+
+`packages/core/src/upstream-probe.ts` already runs per-skill probes
+via the desktop runner. Two hook points:
+
+- **On probe success** (current hash captured, no error): write
+  `probeFailureCount: 0` if it was previously non-zero. No-op if
+  already zero — avoid unnecessary sidecar writes.
+- **On probe failure** (network error, 404, rate-limit, anything
+  that didn't produce a usable hash): increment
+  `probeFailureCount` and stamp `lastProbeFailureAt`. Bound by
+  threshold-saturation logic (if already at 99, don't keep
+  incrementing — UI doesn't need the precise value above the
+  threshold).
+
+Rate-limit failures (429) are a special case: they don't reflect
+"origin gone," they reflect "we hit the ceiling." Do NOT increment
+the counter on 429. The existing sticky-error toast already handles
+that case.
+
+### 3. `origin-unreachable` drawer state
+
+`packages/core/src/skill-state.ts` adds:
+
+```ts
+export type DrawerState =
+  | ...existing...
+  | "origin-unreachable";  // NEW
+```
+
+Trigger condition: `entry.source.origin?.kind === "github"` AND
+`entry.runtime?.probeFailureCount >= ORIGIN_UNREACHABLE_THRESHOLD`.
+
+Threshold constant lives in `skill-state.ts` (so it's pure data
+the classifier owns):
+
+```ts
+export const ORIGIN_UNREACHABLE_THRESHOLD = 3 as const;
+```
+
+3 consecutive failures matches the probe cadence (every 6h by
+default in the desktop runner; user-triggered probes count too).
+That's ~18 hours of real-world unreachability before the state
+surfaces — long enough to ride out transient outages, short enough
+to be useful.
+
+The state takes priority over `origin-update-available` (the user
+can't update what we can't reach), but yields to the existing drift
+states (drift means we have a baseline hash to compare against, so
+the origin was reachable at least once recently).
+
+### 4. Drawer recovery banner + actions
+
+`packages/desktop/src/renderer/components/SkillDetailDrawer.tsx`
+adds an `origin-unreachable` banner rendered above the action set.
+Wording:
+
+> ⚠️ **This skill's origin is no longer reachable.** Your local
+> copy is intact. Updates from `<owner/repo>` will keep failing
+> until the origin is restored.
+>
+> [Keep this skill]  [Retry probe]
+
+- **Keep this skill** routes through the existing IPC
+  `IPC.acceptDrift` → which dispatches to `unlinkOrigin` for
+  skills with an origin pointer (v1.3 wired this already). The
+  origin pointer clears; the skill's `source` stays unchanged
+  (it remains `curated` or `user`, whichever it was).
+- **Retry probe** fires a one-shot probe against just this skill's
+  origin. On success, `probeFailureCount` resets and the banner
+  disappears. On failure, the counter increments (which can saturate
+  at the threshold; doesn't worsen the displayed state).
+
+A SkillCard chip (`UNREACHABLE`, danger color) surfaces the state at
+list level. Lower priority than `MISSING`; higher than `EDITED`.
+
+### 5. RegistryEntry surface
+
+`packages/core/src/types.ts`:
+
+```ts
+export interface RegistryEntry extends SkillMeta {
+  ...
+  /**
+   * Derived from the runtime sidecar's probeFailureCount field.
+   * True when the count meets or exceeds ORIGIN_UNREACHABLE_THRESHOLD.
+   * Only meaningful for skills with origin.kind === "github".
+   */
+  originUnreachable?: boolean;
 }
 ```
 
-`readSkillSource` / `writeSkillSource` round-trip the new field.
+`buildRegistryIndex` populates this from the runtime sidecar in the
+same pass that already merges `fetchedAt`. No new file reads.
 
-### Cache primitives
+### 6. IPC
 
-New module `packages/core/src/bank-cache.ts` exports:
+`IPC.retryOriginProbe(name: string)` — one-shot probe against a
+single skill's origin. Returns success/failure. Wired into the
+drawer's Retry button.
 
-- `snapshotPath(registryRoot, pointer)` — pure function returning the canonical cache path for a pointer.
-- `writeSnapshot(registryRoot, pointer, sourceDir)` — copies `sourceDir` into the cache; returns a `BankSnapshot` record.
-- `readSnapshot(registryRoot, snapshot)` — returns the cache dir path; verifies hash.
-- `restoreSnapshot(registryRoot, snapshot, destDir)` — copies the cached content back to `destDir`.
-- `listCache(registryRoot)` — returns inventory `[{ package, version, size, snapshotAt }]`.
-- `deleteCacheEntry(registryRoot, package, version)` — frees space.
+No new IPC for Keep this skill — reuses the existing
+`IPC.acceptDrift` since the `unlinkOrigin` dispatch is already
+correctly gated by `entry.source.origin?.kind === "github"` in
+main.ts (v1.3's Pass 3 work).
 
-Cache layout:
+### 7. Tests
 
-```
-<registryRoot>/.skills-bank/cache/
-├── skills-sh/
-│   ├── <package>/<version>/   (full skill contents)
-│   └── ...
-└── git/                       (reserved; no entries until git-upstream support lands)
-```
+New `packages/core/src/upstream-probe.test.ts` extension:
 
-### Snapshot on every successful upstream fetch
+- Probe success after a streak of failures resets the counter to 0.
+- Probe failure increments the counter; rate-limit (429) does not.
+- Counter saturates at the threshold (no unbounded growth).
 
-Plan 03's update path (`upstream:updateSkill`) writes a snapshot after successful fetch:
+`packages/core/src/skill-state.test.ts`:
 
-```ts
-// After npx skills add succeeds and content lands at <destDir>:
-const snapshot = bankCache.writeSnapshot(registryRoot, pointer, destDir);
-writeSkillSource(skillDir, { ...existingSource, upstream: { ... }, bankSnapshot: snapshot });
-```
+- Entry with `runtime.probeFailureCount >= ORIGIN_UNREACHABLE_THRESHOLD`
+  classifies as `origin-unreachable`.
+- Entry with the same count but `origin.kind: "none"` does NOT
+  classify as unreachable — the state requires a github origin.
+- `origin-unreachable` takes priority over `origin-update-available`
+  but yields to `edited-with-origin`.
 
-Gated on the Bank-mode setting (below). If disabled, no snapshot is written; existing snapshots are not deleted (the user can re-enable without losing prior captures).
+## Migration story
 
-### Bank-mode setting
+`probeFailureCount` is new; missing fields read as 0. No migration
+needed. The runtime sidecar is gitignored, so no committed-marker
+churn either.
 
-Add to Settings → general:
+## Consequences
 
-> **Bank mode — keep a local copy of every external skill (default: on).**
-> When an upstream becomes unreachable, your local copies stay usable and recoverable.
+- **For end users:** still none at this point (no external users).
+- **For the maintainer:** when a vendored skill's origin disappears
+  (the 62 displaced vendored skills are exactly this case once
+  re-installed via Phase 4 against their original repos), the
+  recovery flow becomes one click rather than manual sidecar
+  surgery.
+- **For Phase 4 (`in-app-install-from-discover`):** the same
+  drawer state covers Discover-installed skills out of the box.
+  Phase 4 doesn't need to ship parallel probe-failure handling.
+- **For Phase 5 (`in-app-publish`):** safekeeping remains a
+  separate, complementary path. A safekept skill whose origin
+  becomes unreachable still surfaces `origin-unreachable`; the
+  user can Keep this skill and the safekept copy at the linked
+  repo stays intact (safekeeping doesn't depend on origin).
+- **For ADR-0002:** the runtime sidecar grows two new fields. The
+  ADR's "runtime stays gitignored" invariant is preserved; no
+  amendment needed.
 
-Persisted in app config. Toggle effect is immediate for future fetches; doesn't retroactively populate or purge.
+## Re-opening this decision
 
-### Drawer states for upstream-unreachable
-
-Plan 03 doesn't yet handle persistent probe failure. This plan adds:
-
-- **`upstream-unreachable`** (`bankSnapshot` present) — capabilities: `canKeepInBank`, `canRetryProbe`.
-- **`upstream-unreachable-no-snapshot`** — capabilities: `canSeverUpstream`, `canRetryProbe`.
-
-Trigger: N consecutive probe failures (suggest 3; tunable). State surfaces a drawer banner: _"The upstream for this skill is no longer reachable. Your bank copy is intact."_ (or, for the no-snapshot case: _"...no cached copy is available; on-disk content is your only copy."_)
-
-### Recovery actions
-
-- **Keep in bank** (`upstream-unreachable`): clears the `upstream` pointer (preserves a `formerUpstream` audit trail for the user's reference), stamps `source: "yours"`, retains the snapshot in cache. Skill becomes the user's permanently.
-- **Sever upstream** (`upstream-unreachable-no-snapshot`): same as Keep in bank but no snapshot to fall back on; on-disk content is the source.
-- **Retry probe**: re-runs the probe; clears the unreachable state if the upstream is reachable again.
-
-### BankCacheModal
-
-A modal accessed from Settings → "Manage bank cache". Displays:
-
-- Total cache size.
-- Per-entry rows: package + version + skill name + snapshot date + size + Delete button.
-- Bulk: **Delete cache entries with no live skill** (snapshots whose corresponding skill is no longer in the registry).
-
-### Cache survives reposReplaceRegistry
-
-`packages/desktop/src/main/main.ts`'s `reposReplaceRegistry` today does:
-
-```ts
-fs.rmSync(localSkillsDir, { recursive: true, force: true });
-```
-
-That wipes `<registryRoot>/skills/` but leaves `<registryRoot>/.skills-bank/` untouched. The cache lives under `.skills-bank/cache/`, so existing code already preserves it. Add an explicit test asserting cache survives a Choose-registry-repo flow.
-
-### Export / import registry includes cache
-
-`packages/core/src/export.ts` and the corresponding import path: extend the bundle format to include `.skills-bank/cache/`. Import restores it to the destination registry root.
-
-Bundle size grows accordingly; document this in the modal copy.
-
-## Files this PR will touch
-
-- `packages/core/src/source.ts` — `BankSnapshot` type; schema round-trip.
-- **New**: `packages/core/src/bank-cache.ts` — cache primitives.
-- `packages/core/src/skill-state.ts` — new states + capabilities.
-- `packages/core/src/upstream.ts` — wire snapshot writes into the update path; track consecutive probe failures.
-- `packages/core/src/export.ts` — include `.skills-bank/cache/` in export bundle.
-- `packages/core/src/import.ts` (import-registry side) — restore cache from bundle.
-- `packages/desktop/src/main/main.ts` — IPC handlers for `bank:restore`, `bank:cacheList`, `bank:cacheDelete`; Bank-mode setting persistence; failure-count tracking for the probe.
-- `packages/desktop/src/shared/ipc.ts` — new channels + types.
-- `packages/desktop/src/renderer/components/SkillCard.tsx` — "Upstream unreachable" chip.
-- `packages/desktop/src/renderer/components/SkillDetailDrawer.tsx` — unreachable banner + Keep-in-bank / Sever-upstream / Retry actions.
-- `packages/desktop/src/renderer/components/SettingsModal.tsx` — Bank mode toggle + "Manage bank cache" entry.
-- **New**: `packages/desktop/src/renderer/components/BankCacheModal.tsx` — cache inventory.
-
-## Verification
-
-### Snapshot writes
-
-- Update a skill via the Update action. Verify a snapshot lands at `<registryRoot>/.skills-bank/cache/skills-sh/<pkg>/<new-version>/`.
-- The skill's `.skills-bank.json` has a `bankSnapshot` field referencing the cache path.
-
-### Bank-mode off
-
-- Toggle Bank mode off. Update another skill. No snapshot is written; existing snapshots are untouched.
-
-### Unreachable recovery
-
-- Block skills.sh in `/etc/hosts` (or use a test build pointing at a 404 endpoint). Run probes until N consecutive failures register.
-- Skill enters `upstream-unreachable`. Drawer shows "Your bank copy is intact." Keep in bank → skill transitions to `source: "yours"`, upstream cleared, snapshot retained.
-- Same scenario with Bank mode off and no pre-existing snapshot: skill enters `upstream-unreachable-no-snapshot`; Sever upstream is the only action.
-- Retry probe with the upstream restored: state clears, returns to normal.
-
-### Cache survives reposReplaceRegistry
-
-- Install a community skill (Bank mode on). Cache populated.
-- Choose registry repo → replace with a different repo's tarball.
-- Verify the cache is still present at `<registryRoot>/.skills-bank/cache/`; verify the snapshots reference valid content.
-
-### Export / import
-
-- Export the registry. Verify the bundle contains `.skills-bank/cache/`.
-- Import the bundle into a fresh registry root. Verify snapshots restore correctly and skills with `bankSnapshot` references find their cache content.
-
-### BankCacheModal
-
-- Open Settings → Manage bank cache. Modal lists snapshots with sizes.
-- Delete an entry; verify the cache dir is gone and the skill's `bankSnapshot` is cleared.
-- **Delete cache entries with no live skill** removes orphans correctly.
-
-## Open questions
-
-1. **Failure threshold N.** Three consecutive 6-hourly probes = 18 hours before surfacing unreachable. Is that the right cadence? Faster surfacing risks false positives from transient outages; slower delays user awareness.
-2. **Bundle size for export/import.** Including the cache could meaningfully grow export bundles for users with many community skills. Worth a toggle ("Include bank cache in export") if bundles grow uncomfortably large in practice.
-3. **Cache cleanup on uninstall.** If a user uninstalls a skill, should its cache entry be deleted automatically? Argument for keeping: re-installing later restores from cache without a re-fetch. Argument for deleting: orphan cleanup. Suggest keeping by default; surface **Delete orphans** in BankCacheModal as the explicit cleanup.
+- **If the 3-failure threshold turns out wrong** (false positives
+  from regional GitHub outages; missed legitimate origin losses),
+  it's a constant in `skill-state.ts`. A one-line PR adjusts it;
+  consider exposing as a Setting if telemetry surfaces a need.
+- **If users want to retain the original "cache layer" semantics**
+  for some workflow reason (offline installs, air-gapped use), the
+  bankSnapshot design can be revived as a separate plan. v1.4 ships
+  the recovery UX first; cache layer is reactive, not proactive.
+- **If origin loss turns out to be common enough that one-click
+  Keep is too friction-heavy**, the threshold-trigger + auto-unlink
+  flow could be optional. Default would still be one-click for
+  audit transparency; the auto path would just be a Setting.
