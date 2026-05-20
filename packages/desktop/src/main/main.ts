@@ -29,6 +29,10 @@ import {
   deleteUnregisteredSkill,
   exportSkill,
   exportRegistry,
+  exportRegistryManifest,
+  importRegistryManifest,
+  writeRegistrySnapshot,
+  type RegistryManifest,
   fetchCanonicalTarball,
   acceptDriftKeepLocal,
   acceptDriftSeverUpstream,
@@ -796,6 +800,52 @@ function persistConfig(): void {
   });
 }
 
+/**
+ * Best-effort registry snapshot writer — Phase 1 of the
+ * curation-layer-reset plan, section 6. Invoked from every IPC
+ * handler that mutates registry membership or per-skill metadata.
+ *
+ * Failures are intentionally swallowed: a snapshot rotation glitch
+ * must never break the user's actual mutation. The on-disk artifact
+ * is purely a backup affordance.
+ */
+function snapshotAfterMutation(): void {
+  if (!registryRoot) return;
+  try {
+    const manifest = exportRegistryManifest(registryRoot, {
+      sourceBankVersion: app.getVersion(),
+      registryRootLabel: linkedRepo?.fullName ?? undefined,
+    });
+    writeRegistrySnapshot({
+      userDataDir: app.getPath("userData"),
+      manifest,
+    });
+  } catch {
+    // Swallow — see JSDoc.
+  }
+}
+
+/**
+ * Wrap an IPC handler so that every invocation triggers a registry
+ * auto-snapshot in its `finally` block. Used in place of
+ * `ipcMain.handle` for any channel that mutates registry membership
+ * or per-skill metadata. The snapshot itself is best-effort
+ * (see `snapshotAfterMutation`'s JSDoc), so wrapping is non-fatal
+ * even on read-only no-op invocations.
+ */
+function mutatingHandle<P extends unknown[], R>(
+  channel: string,
+  handler: (event: Electron.IpcMainInvokeEvent, ...args: P) => R | Promise<R>,
+): void {
+  ipcMain.handle(channel, async (event, ...args) => {
+    try {
+      return await handler(event, ...(args as P));
+    } finally {
+      snapshotAfterMutation();
+    }
+  });
+}
+
 // Source PNG used for window/dock icons in dev. Packaged macOS builds use
 // the .icns embedded by electron-builder; Windows uses the .ico.
 const iconPng = path.join(__dirname, "..", "..", "build", "icon.png");
@@ -1313,7 +1363,7 @@ ipcMain.handle(
 );
 
 
-ipcMain.handle(
+mutatingHandle(
   IPC.install,
   (_e, name: string, force?: boolean, agents?: AgentId[]) => {
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, errors: [] };
@@ -1361,7 +1411,7 @@ ipcMain.handle(
 // is denied here that wasn't already denied by deregisterSkill's own
 // guards; M5 turns this into the real enforcement point for canon
 // protection.
-ipcMain.handle(IPC.deregister, (_e, name: string) => {
+mutatingHandle(IPC.deregister, (_e, name: string) => {
   if (!registryRoot) {
     return { ok: false, message: NO_ROOT_MSG, errors: [] };
   }
@@ -1396,7 +1446,7 @@ ipcMain.handle(IPC.deregister, (_e, name: string) => {
 // be unregistered or deleted from the UI (those would be irrecoverable
 // — the upstream owns them), so Hide is the only canon-side action a
 // non-power user can take.
-ipcMain.handle(IPC.hide, (_e, name: string) => {
+mutatingHandle(IPC.hide, (_e, name: string) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const index = buildRegistryIndex(registryRoot);
   const entry = index.entries.find((e) => e.name === name);
@@ -1420,7 +1470,7 @@ ipcMain.handle(IPC.hide, (_e, name: string) => {
   }
 });
 
-ipcMain.handle(IPC.unhide, (_e, name: string) => {
+mutatingHandle(IPC.unhide, (_e, name: string) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     unhideCanonSkill(registryRoot, name);
@@ -1436,7 +1486,7 @@ ipcMain.handle(IPC.unhide, (_e, name: string) => {
 // M6: canon-drift heal — keep local edits, clear the canonical
 // marker. After this, the skill is `source: user` and sync stops
 // trying to overwrite it.
-ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
+mutatingHandle(IPC.acceptDrift, (_e, name: string) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const index = buildRegistryIndex(registryRoot);
   const entry = index.entries.find((e) => e.name === name);
@@ -1483,7 +1533,7 @@ ipcMain.handle(IPC.acceptDrift, (_e, name: string) => {
 // own the skill. Distinct from acceptDrift (which detaches from
 // Sync). Use this when drift surfaced spuriously and the current
 // post-sync state is acceptable.
-ipcMain.handle(IPC.takeCanonical, (_e, name: string) => {
+mutatingHandle(IPC.takeCanonical, (_e, name: string) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const index = buildRegistryIndex(registryRoot);
   const entry = index.entries.find((e) => e.name === name);
@@ -1517,7 +1567,7 @@ ipcMain.handle(IPC.takeCanonical, (_e, name: string) => {
 // adopted (external), removes the external.json row. For adopted,
 // the entry naturally drops on the next index build (folder was
 // gone); we trigger that rebuild here.
-ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
+mutatingHandle(IPC.forgetMissing, (_e, name: string) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     const r = forgetMissingEntry(registryRoot, name);
@@ -1537,7 +1587,7 @@ ipcMain.handle(IPC.forgetMissing, (_e, name: string) => {
 // external-target-missing heal — let the user pick the new location
 // of a non-adopted skill they moved on disk. Picker → validate →
 // rewrite external.json target → rebuild index so `missing` clears.
-ipcMain.handle(IPC.repointExternal, async (_e, name: string) => {
+mutatingHandle(IPC.repointExternal, async (_e, name: string) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const win = BrowserWindow.getFocusedWindow();
   const picker = await dialog.showOpenDialog(win ?? undefined!, {
@@ -1567,7 +1617,7 @@ ipcMain.handle(IPC.repointExternal, async (_e, name: string) => {
 // skills. Refuses if the skill is registered — caller must
 // unregister first. Real-dir installations are rm-rf'd; symlinks
 // are unlinked (targets untouched, since they're user-owned).
-ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
+mutatingHandle(IPC.deleteUnregistered, (_e, name: string) => {
   if (!registryRoot) {
     return {
       ok: false,
@@ -1600,7 +1650,7 @@ ipcMain.handle(IPC.deleteUnregistered, (_e, name: string) => {
 // configured agents dir (default ~/.agents/skills/) and removes the
 // registry entry. Non-adopted skills just lose the entry; origin
 // files untouched.
-ipcMain.handle(
+mutatingHandle(
   IPC.unregister,
   (_e, name: string, destination: AgentId, force?: boolean) => {
     if (!registryRoot) {
@@ -1684,7 +1734,7 @@ ipcMain.handle(IPC.clearPendingConflicts, () => {
 // M7: optional agents array restricts the operation to a subset; the
 // rest of the agent dirs keep their symlinks. Empty/missing array
 // keeps the legacy "remove from every agent dir" behavior.
-ipcMain.handle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
+mutatingHandle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
   try {
     const r = uninstallSkill(
       name,
@@ -1725,7 +1775,7 @@ ipcMain.handle(IPC.scan, () => {
   return scanExistingInstalls(registryRoot);
 });
 
-ipcMain.handle(
+mutatingHandle(
   IPC.register,
   (_e, items: Array<{ name: string; action: RegistrationAction }>) => {
     if (!registryRoot) {
@@ -1773,7 +1823,7 @@ ipcMain.handle(
   },
 );
 
-ipcMain.handle(IPC.rebuildIndex, () => {
+mutatingHandle(IPC.rebuildIndex, () => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, entries: 0 };
   try {
     // Explicit user-triggered rebuild re-runs the upstream scanner —
@@ -1905,6 +1955,123 @@ ipcMain.handle(IPC.exportRegistry, async () => {
       return { ok: false, message: error.message, error };
     })();
   }
+});
+
+ipcMain.handle(IPC.exportManifest, async () => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    const win = BrowserWindow.getFocusedWindow();
+    const sourceBankVersion = app.getVersion();
+    const defaultName = `${sourceBankVersion}-registry.json`;
+    const result = await dialog.showSaveDialog(win ?? undefined!, {
+      title: "Export registry manifest",
+      defaultPath: defaultName,
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+    if (result.canceled || !result.filePath) {
+      return { ok: false, message: "export cancelled" };
+    }
+    const manifest = exportRegistryManifest(registryRoot, {
+      sourceBankVersion,
+      registryRootLabel: linkedRepo?.fullName ?? undefined,
+    });
+    fs.writeFileSync(result.filePath, JSON.stringify(manifest, null, 2) + "\n");
+    return {
+      ok: true,
+      message: `Exported ${manifest.skills.length} skill${manifest.skills.length === 1 ? "" : "s"} → ${result.filePath}`,
+      skillCount: manifest.skills.length,
+      destPath: result.filePath,
+    };
+  } catch (err) {
+    const error = fromCaught("ipc.unknown", err);
+    return { ok: false, message: error.message, error };
+  }
+});
+
+ipcMain.handle(IPC.importManifest, async () => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    const win = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showOpenDialog(win ?? undefined!, {
+      title: "Import registry manifest",
+      message: "Pick a manifest JSON file exported from another Skills Bank.",
+      properties: ["openFile"],
+      filters: [{ name: "JSON", extensions: ["json"] }],
+      defaultPath: app.getPath("home"),
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return { ok: false, message: "cancelled" };
+    }
+    const raw = fs.readFileSync(result.filePaths[0]!, "utf8");
+    let manifest: RegistryManifest;
+    try {
+      manifest = JSON.parse(raw) as RegistryManifest;
+    } catch (parseErr) {
+      const error = fromCaught("ipc.unknown", parseErr);
+      return { ok: false, message: `Invalid manifest JSON: ${error.message}`, error };
+    }
+    if (manifest.schemaVersion !== 1) {
+      return {
+        ok: false,
+        message: `Unsupported manifest schemaVersion ${String(manifest.schemaVersion)} — this build understands v1.`,
+      };
+    }
+    const importResult = await importRegistryManifest(registryRoot, manifest, {
+      token: getStoredToken(),
+    });
+    // Rebuild the index so the renderer's next listRegistry shows
+    // freshly registered skills without a manual refresh.
+    buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
+    snapshotAfterMutation();
+    const registered = importResult.outcomes.filter((o) => o.result === "registered").length;
+    const collisions = importResult.outcomes.filter((o) => o.result === "collision").length;
+    const unreachable = importResult.outcomes.filter((o) => o.result === "origin-unreachable").length;
+    const parts = [`${registered} restored`];
+    if (collisions > 0) parts.push(`${collisions} collision${collisions === 1 ? "" : "s"}`);
+    if (unreachable > 0) parts.push(`${unreachable} unreachable origin${unreachable === 1 ? "" : "s"}`);
+    return {
+      ok: true,
+      message: parts.join(", "),
+      result: importResult,
+    };
+  } catch (err) {
+    const error = fromCaught("ipc.unknown", err);
+    return { ok: false, message: error.message, error };
+  }
+});
+
+ipcMain.handle(IPC.installFromManifestHint, async (_e, payload: { names: string[]; agents: AgentId[] }) => {
+  if (!registryRoot) {
+    return { ok: false, message: NO_ROOT_MSG, installedCount: 0, errors: [NO_ROOT_MSG] };
+  }
+  const names = Array.isArray(payload?.names) ? payload.names : [];
+  const agents = Array.isArray(payload?.agents) ? payload.agents : [];
+  const errors: string[] = [];
+  let installedCount = 0;
+  for (const name of names) {
+    try {
+      const r = installSkill(name, {
+        registryRoot,
+        agents,
+      });
+      if (r.anyNew) installedCount++;
+      for (const e of r.errors) {
+        errors.push(`${name} → ${e.agent}: ${e.message}`);
+      }
+    } catch (err) {
+      errors.push(`${name}: ${(err as Error).message}`);
+    }
+  }
+  snapshotAfterMutation();
+  return {
+    ok: errors.length === 0,
+    message:
+      installedCount > 0
+        ? `Installed ${installedCount} skill${installedCount === 1 ? "" : "s"} across ${agents.length} agent${agents.length === 1 ? "" : "s"}.`
+        : `No new installs (${errors.length} error${errors.length === 1 ? "" : "s"}).`,
+    installedCount,
+    errors,
+  };
 });
 
 ipcMain.handle(IPC.importRegistry, async () => {
@@ -2151,7 +2318,7 @@ ipcMain.handle(IPC.openInFinder, async (_e, absolutePath: string) => {
   await shell.openPath(absolutePath);
 });
 
-ipcMain.handle(
+mutatingHandle(
   IPC.editTags,
   (
     _e,
@@ -2432,7 +2599,7 @@ async function runSync(): Promise<{
   }
 }
 
-ipcMain.handle(IPC.syncCanonical, () => runSync());
+mutatingHandle(IPC.syncCanonical, () => runSync());
 
 ipcMain.handle(IPC.getSyncReport, () => {
   if (!registryRoot) return null;
@@ -2447,7 +2614,7 @@ ipcMain.handle(IPC.getPendingConflicts, () => {
 // Persist user choices and immediately re-run sync so the resolutions
 // take effect without a separate user action. The re-run consumes the
 // just-written decisions via readSyncDecisions inside runSync.
-ipcMain.handle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
+mutatingHandle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     writeSyncDecisions(registryRoot, decisions);
@@ -2714,11 +2881,11 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
   }
 }
 
-ipcMain.handle(IPC.reposReplaceRegistry, async (_e, fullName: string) =>
+mutatingHandle(IPC.reposReplaceRegistry, async (_e, fullName: string) =>
   replaceRegistryWithRepo(fullName),
 );
 
-ipcMain.handle(IPC.reposRefreshCurrent, async () => {
+mutatingHandle(IPC.reposRefreshCurrent, async () => {
   // Refresh is universal: bundled-default users (`linkedRepo` null)
   // fall through to the canonical bundled repo, so the same diff-
   // before-apply path serves every refresh — no separate Sync code
@@ -2761,13 +2928,13 @@ ipcMain.handle(IPC.repairBrokenLinks, (_e, name: string) => {
   return repairBrokenLinks(registryRoot, name);
 });
 
-ipcMain.handle(IPC.removeBrokenLinks, (_e, name: string, agents: AgentId[]) => {
+mutatingHandle(IPC.removeBrokenLinks, (_e, name: string, agents: AgentId[]) => {
   if (!registryRoot)
     return { removed: [], errors: [{ agent: "claude", message: NO_ROOT_MSG }] };
   return removeBrokenLinks(registryRoot, name, agents);
 });
 
-ipcMain.handle(
+mutatingHandle(
   IPC.resolveSkillConflicts,
   (
     _e,

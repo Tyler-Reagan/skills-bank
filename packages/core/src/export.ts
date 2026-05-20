@@ -84,6 +84,12 @@ export interface RegistryExportResult {
  * Zip the entire skills/ directory of a registry into a single archive.
  * Intended for convenience-persona users who want to migrate their registry
  * to another machine (export here, import there).
+ *
+ * @deprecated v1.1 — use `exportRegistryManifest` for the canonical
+ * metadata-only export path (manifest re-fetches content from each
+ * skill's origin on import). The legacy content-bearing zip is kept
+ * for one minor cycle of backcompat per post-1.0 discipline; removal
+ * lands in v1.2.
  */
 export async function exportRegistry(
   registryRoot: string,

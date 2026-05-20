@@ -1,5 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
-import type { AgentId } from "@skills-bank/core";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import type {
+  AgentId,
+  ImportRegistryManifestResult,
+} from "@skills-bank/core";
 import {
   AGENT_LABELS,
   AGENT_PATHS,
@@ -120,6 +123,18 @@ export function SettingsModal({
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
 
+  // Registry manifest: in-flight state and last result message. The
+  // import path also surfaces a post-import confirm modal when the
+  // manifest carries install hints.
+  const [manifestBusy, setManifestBusy] = useState<"export" | "import" | null>(
+    null,
+  );
+  const [manifestStatus, setManifestStatus] = useState<string | null>(null);
+  const [manifestError, setManifestError] = useState<string | null>(null);
+  const [importHints, setImportHints] = useState<
+    ImportRegistryManifestResult | null
+  >(null);
+
   useEffect(() => {
     void window.skillsBank.listTopLevelSymlinks().then(setTopLevelSymlinks);
   }, []);
@@ -141,6 +156,42 @@ export function SettingsModal({
       }
     } finally {
       setFinalizing(false);
+    }
+  };
+
+  const runManifestExport = async () => {
+    setManifestBusy("export");
+    setManifestStatus(null);
+    setManifestError(null);
+    try {
+      const r = await window.skillsBank.exportManifest();
+      if (r.ok) {
+        setManifestStatus(r.message);
+      } else {
+        setManifestError(r.message);
+      }
+    } finally {
+      setManifestBusy(null);
+    }
+  };
+
+  const runManifestImport = async () => {
+    setManifestBusy("import");
+    setManifestStatus(null);
+    setManifestError(null);
+    setImportHints(null);
+    try {
+      const r = await window.skillsBank.importManifest();
+      if (!r.ok) {
+        setManifestError(r.message);
+        return;
+      }
+      setManifestStatus(r.message);
+      if (r.result.installHints.length > 0) {
+        setImportHints(r.result);
+      }
+    } finally {
+      setManifestBusy(null);
     }
   };
 
@@ -343,6 +394,64 @@ export function SettingsModal({
           </div>
         </section>
 
+        <section style={section}>
+          <h3 style={sectionTitle}>Registry manifest</h3>
+          <p style={hint}>
+            Export a metadata-only JSON snapshot of your registry so you
+            can restore it on another machine. Import re-fetches each
+            skill's content from its origin and restores your tags and
+            dismissed state. Installation into your agents is a separate
+            user-confirmed step.
+          </p>
+          <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+            <button
+              className="btn"
+              type="button"
+              disabled={manifestBusy !== null}
+              onClick={() => void runManifestExport()}
+            >
+              {manifestBusy === "export" ? (
+                <>
+                  <span className="spinner inline" /> Exporting
+                </>
+              ) : (
+                "Export registry manifest"
+              )}
+            </button>
+            <button
+              className="btn"
+              type="button"
+              disabled={manifestBusy !== null}
+              onClick={() => void runManifestImport()}
+            >
+              {manifestBusy === "import" ? (
+                <>
+                  <span className="spinner inline" /> Importing
+                </>
+              ) : (
+                "Import registry manifest"
+              )}
+            </button>
+          </div>
+          {manifestStatus && (
+            <p style={{ ...hint, marginTop: 8, color: "var(--text-2)" }}>
+              {manifestStatus}
+            </p>
+          )}
+          {manifestError && (
+            <p
+              style={{
+                ...hint,
+                marginTop: 8,
+                color: "var(--danger)",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {manifestError}
+            </p>
+          )}
+        </section>
+
         {topLevelSymlinks.length > 0 && (
           <section style={section}>
             <h3 style={sectionTitle}>Collapse symlinked agent dirs</h3>
@@ -490,6 +599,138 @@ export function SettingsModal({
           <button onClick={onClose}>Cancel</button>
           <button className="primary" onClick={apply}>
             Save
+          </button>
+        </div>
+      </div>
+      {importHints !== null && (
+        <ManifestImportConfirmModal
+          result={importHints}
+          onClose={() => setImportHints(null)}
+          onDone={(msg) => {
+            setImportHints(null);
+            if (msg) setManifestStatus(msg);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+interface ManifestImportConfirmModalProps {
+  result: ImportRegistryManifestResult;
+  onClose: () => void;
+  onDone: (statusMessage: string | null) => void;
+}
+
+function ManifestImportConfirmModal({
+  result,
+  onClose,
+  onDone,
+}: ManifestImportConfirmModalProps): React.ReactElement {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { names, agents, agentLabels } = useMemo(() => {
+    const nameSet = new Set<string>();
+    const agentSet = new Set<AgentId>();
+    for (const h of result.installHints) {
+      nameSet.add(h.name);
+      for (const a of h.agents) agentSet.add(a);
+    }
+    const agentArr = Array.from(agentSet);
+    return {
+      names: Array.from(nameSet),
+      agents: agentArr,
+      agentLabels: agentArr.map((id) => AGENT_LABELS[id]).join(", "),
+    };
+  }, [result]);
+
+  const runInstall = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await window.skillsBank.installFromManifestHint({
+        names,
+        agents,
+      });
+      if (r.ok) {
+        onDone(r.message);
+      } else {
+        setError(
+          r.errors.length > 0 ? r.errors.join("\n") : r.message ?? "install failed",
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={overlay}>
+      <div
+        style={{ ...modal, width: 480 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Confirm install from manifest"
+      >
+        <div style={modalHeader}>
+          <h2 style={{ margin: 0, fontSize: 16 }}>Install restored skills?</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+            style={closeBtn}
+          >
+            <Icon name="x" size="md" />
+          </button>
+        </div>
+        <p style={{ ...hint, marginTop: 8 }}>
+          {result.outcomes.filter((o) => o.result === "registered").length}{" "}
+          skill
+          {result.outcomes.filter((o) => o.result === "registered").length === 1
+            ? ""
+            : "s"}{" "}
+          restored. {names.length} of them{" "}
+          {names.length === 1 ? "was" : "were"} previously installed in{" "}
+          <strong>{agentLabels}</strong>. Install in your agents now? Your
+          registry is already restored either way.
+        </p>
+        {error && (
+          <pre
+            style={{
+              margin: "8px 0 0",
+              fontSize: 11,
+              color: "var(--danger)",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {error}
+          </pre>
+        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            marginTop: 16,
+          }}
+        >
+          <button onClick={onClose} disabled={busy}>
+            Skip
+          </button>
+          <button
+            className="primary"
+            onClick={() => void runInstall()}
+            disabled={busy}
+          >
+            {busy ? (
+              <>
+                <span className="spinner inline" /> Installing
+              </>
+            ) : (
+              "Install"
+            )}
           </button>
         </div>
       </div>
