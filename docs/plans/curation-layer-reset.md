@@ -211,7 +211,7 @@ export async function importRegistryManifest(
 
 export interface ImportRegistryManifestResult {
   outcomes: ImportSkillOutcome[];
-  installHints: { name: string; agents: AgentKind[] }[]; // intersected with destination's available agents
+  installHints: { name: string; agents: AgentKind[] }[]; // forwarded verbatim from each manifest entry's lastInstalledOn
 }
 
 export type ImportSkillOutcome =
@@ -230,11 +230,15 @@ export type ImportSkillOutcome =
   - Restore tags and dismissed/hidden state from the manifest.
   - **Does not install.** Installation is a separate user-initiated
     action.
-  - Returns `installHints`: per-skill `lastInstalledOn` intersected
-    with the destination machine's available agent dirs. A skill
-    that was installed in `[claude, cursor]` on machine A but
-    machine B doesn't have Cursor surfaces as `installHints[name] =
-    [claude]`.
+  - Returns `installHints`: per-skill `lastInstalledOn` carried
+    forward verbatim. An earlier draft intersected this against
+    agent dirs the destination machine already had on disk, but
+    the legit wipe-and-re-import workflow leaves no agent dirs
+    momentarily, which silently dropped every hint and left the
+    user staring at an empty modal. The cross-machine "destination
+    doesn't have Cursor" case is now handled at install time —
+    `installSkill` creates the agent dir on demand and a stray
+    symlink under an unused agent is harmless.
 
 #### IPC channels
 
@@ -286,8 +290,9 @@ After a successful `importRegistryManifest`, the renderer surfaces
 the import-result modal described above. The flow is option C from
 the grill: manifest carries `lastInstalledOn`; import surfaces a
 single user-confirmed batch install action; never auto-acts. The
-batch intersects with the destination machine's available agent
-dirs and reports any skipped agents in a summary line.
+batch installs into whichever agents the manifest recorded; the
+caller (installSkill) creates missing agent dirs on demand, so a
+freshly-wiped destination still surfaces meaningful hints.
 
 ### 8. `@deprecated` mark on content-bearing `exportRegistry`
 

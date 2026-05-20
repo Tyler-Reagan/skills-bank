@@ -10,6 +10,7 @@ import {
 } from "../agentDisplay.js";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import { useRegistryHost } from "../RegistryHostContext.js";
 import { Icon } from "./Icon.js";
 
 type GridColumns = "auto" | "2" | "3" | "4";
@@ -112,6 +113,7 @@ export function SettingsModal({
   useEscapeToClose(onClose);
   const modalRef = useRef<HTMLDivElement | null>(null);
   useInitialFocus(modalRef);
+  const { flash, flashError } = useRegistryHost();
   const [draft, setDraft] = useState<AppSettings>(settings);
 
   // Top-level agent dir symlinks — drives the conditional "Collapse
@@ -167,8 +169,16 @@ export function SettingsModal({
       const r = await window.skillsBank.exportManifest();
       if (r.ok) {
         setManifestStatus(r.message);
-      } else {
+        // User-cancelled save dialog returns ok:false; only flash on a
+        // real save. Cap the path to its basename so the toast stays
+        // readable.
+        const where = r.destPath ? ` (${basename(r.destPath)})` : "";
+        flash(
+          `Exported ${r.skillCount ?? 0} skill${r.skillCount === 1 ? "" : "s"}${where}`,
+        );
+      } else if (r.message && r.message !== "export cancelled") {
         setManifestError(r.message);
+        flashError(r.message);
       }
     } finally {
       setManifestBusy(null);
@@ -183,16 +193,33 @@ export function SettingsModal({
     try {
       const r = await window.skillsBank.importManifest();
       if (!r.ok) {
-        setManifestError(r.message);
+        if (r.message && r.message !== "cancelled") {
+          setManifestError(r.message);
+          flashError(r.message);
+        }
         return;
       }
       setManifestStatus(r.message);
+      const registered = r.result.outcomes.filter(
+        (o) => o.result === "registered",
+      ).length;
+      // Always confirm import via toast so feedback isn't trapped inside
+      // the Settings modal. The install-hint modal still drives the
+      // batch-install flow on top.
+      flash(
+        `Restored ${registered} skill${registered === 1 ? "" : "s"} from manifest`,
+      );
       if (r.result.installHints.length > 0) {
         setImportHints(r.result);
       }
     } finally {
       setManifestBusy(null);
     }
+  };
+
+  const basename = (p: string): string => {
+    const i = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+    return i >= 0 ? p.slice(i + 1) : p;
   };
 
   const toggleAgent = (id: AgentId) => {

@@ -402,10 +402,10 @@ describe("importRegistryManifest", () => {
     }
   });
 
-  test("installHints intersects manifest's lastInstalledOn with existing agent dirs", async () => {
-    fs.mkdirSync(path.join(fakeHome, ".claude", "skills"), { recursive: true });
-    // No cursor dir → cursor should be filtered out.
-
+  test("installHints carries lastInstalledOn forward verbatim (no agent-dir filter)", async () => {
+    // No agent dirs exist on disk — the wipe-and-re-import scenario.
+    // Earlier drafts filtered hints down to existing dirs and silently
+    // dropped everything here, breaking the post-import confirm modal.
     writeSkill("personal", "epsilon");
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
@@ -425,8 +425,30 @@ describe("importRegistryManifest", () => {
     };
     const result = await importRegistryManifest(registryRoot, manifest);
     expect(result.installHints).toEqual([
-      { name: "epsilon", agents: ["claude"] },
+      { name: "epsilon", agents: ["claude", "cursor"] },
     ]);
+  });
+
+  test("installHints omits skills with empty lastInstalledOn", async () => {
+    writeSkill("personal", "zeta");
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.1.0",
+      skills: [
+        {
+          name: "zeta",
+          source: "yours",
+          origin: { kind: "none" },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+      ],
+    };
+    const result = await importRegistryManifest(registryRoot, manifest);
+    expect(result.installHints).toEqual([]);
   });
 });
 

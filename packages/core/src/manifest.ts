@@ -155,10 +155,14 @@ export interface ImportRegistryManifestOptions {
  * origins surface as `collision` outcomes.
  *
  * Never installs into agent dirs. Returns `installHints` —
- * per-skill `lastInstalledOn` intersected with the destination
- * machine's available agent dirs — so the caller can surface a
- * single user-confirmed batch install (Option C from the plan
- * grill).
+ * the per-skill `lastInstalledOn` carried forward verbatim from
+ * the manifest. Earlier drafts intersected this against agent
+ * dirs that existed on disk, but the legit wipe-and-re-import
+ * workflow leaves no agent dirs present momentarily, which
+ * silently dropped every hint. The cross-machine "agent not
+ * present on destination" case is now handled at the install
+ * step (where dirs are created on demand and a stray symlink
+ * for an unused agent is harmless).
  */
 export async function importRegistryManifest(
   registryRoot: string,
@@ -167,15 +171,6 @@ export async function importRegistryManifest(
 ): Promise<ImportRegistryManifestResult> {
   const outcomes: ImportSkillOutcome[] = [];
   const installHints: { name: string; agents: AgentId[] }[] = [];
-  const existingAgents = new Set<AgentId>(
-    AGENTS.filter((a) => {
-      try {
-        return fs.statSync(getAgentSkillsDir(a)).isDirectory();
-      } catch {
-        return false;
-      }
-    }).map((a) => a.id),
-  );
 
   for (const skill of manifest.skills) {
     const existing = findSkillFolder(registryRoot, skill.name);
@@ -230,9 +225,11 @@ export async function importRegistryManifest(
       outcomes.push({ name: skill.name, result: "registered" });
     }
 
-    const wanted = skill.lastInstalledOn.filter((a) => existingAgents.has(a));
-    if (wanted.length > 0) {
-      installHints.push({ name: skill.name, agents: wanted });
+    if (skill.lastInstalledOn.length > 0) {
+      installHints.push({
+        name: skill.name,
+        agents: [...skill.lastInstalledOn],
+      });
     }
   }
 
