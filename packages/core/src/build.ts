@@ -12,12 +12,10 @@ import { readSkillSource } from "./source.js";
 import { readRuntimeState } from "./heal.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
 import type {
-  PublishState,
   RegistryEntry,
   RegistryIndex,
   SkillMeta,
 } from "./types.js";
-import { computePublishStates } from "./publish-state.js";
 
 export interface BuildIndexOptions {
   /**
@@ -39,13 +37,6 @@ export interface BuildIndexOptions {
    * fix the metadata in place.
    */
   strict?: boolean;
-  /**
-   * v0.11.9 M6: pre-computed publish-state map. When passed, build skips
-   * the in-tree `computePublishStates` git shellout entirely. Lets tests
-   * exercise the file walker without stubbing `child_process`. When
-   * omitted, build computes states inline (preserves legacy callers).
-   */
-  publishStates?: Map<string, PublishState>;
 }
 
 interface SchemaValidator {
@@ -90,21 +81,16 @@ export function buildRegistryIndex(
   const skillsDir = path.join(registryRoot, "skills");
   const validate = loadValidator(registryRoot);
   const entries: RegistryEntry[] = [];
-  // Compute publish state for every skill in one batched git pass —
-  // cheaper than per-skill git invocations from buildOneEntry.
-  // Honor the optional injection (v0.11.9 M6) so tests can skip the
-  // shellout entirely.
-  const publishStates = opts.publishStates ?? computePublishStates(registryRoot);
   // M6: read the prior persisted index so we can surface missing-
   // folder entries (registered names that don't exist on disk anymore).
   // Read happens BEFORE we potentially overwrite below.
   const priorNames = readPriorIndexNames(registryRoot);
-  // Resolve canon dynamically: union of the upstream snapshot
-  // (convenience persona, written by sync/seed) and skills currently
-  // reachable from the registry's upstream branch (power persona,
-  // publishState === "pushed"). Either path empty is fine; the union
-  // means switching repos always recomputes against the active
-  // upstream rather than trusting stale per-skill markers.
+  // v1.5 (ADR-0008): canon derivation lives in main.ts now, which
+  // calls computePublishStatesFromGit / FromRemote on demand + caches
+  // the tree for the remote path. The build pass no longer stores
+  // publishState on RegistryEntry; canon is computed against the
+  // upstream-canon snapshot only here and topped up at the IPC
+  // layer with the publish-state lookup.
   const upstreamCanon = readUpstreamCanonNames(registryRoot);
   const hiddenCanon = readHiddenCanonNames(registryRoot);
 
@@ -120,9 +106,11 @@ export function buildRegistryIndex(
       );
       if (built) {
         built.bucket = ref.bucket;
-        const ps = publishStates.get(ref.name);
-        if (ps) built.publishState = ps;
-        built.canon = upstreamCanon.has(ref.name) || ps === "pushed";
+        // v1.5 (ADR-0008): publish-state-derived canon is layered
+        // at the IPC level. Here we set canon only from the
+        // upstream-canon snapshot; main.ts unions the publish-state
+        // "pushed" set on top via the cached tree-probe path.
+        built.canon = upstreamCanon.has(ref.name);
         // Hide flag is only meaningful for canon entries (non-canon
         // skills are just unregisterable). Stale entries in the
         // hidden list for skills that lost canon status get ignored.

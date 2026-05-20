@@ -6,6 +6,7 @@ import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
+import { PublishSection } from "./PublishSection.js";
 import { classifyDrawerState } from "./skillState.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
@@ -137,6 +138,12 @@ interface Props {
    * external.json target. Only granted in external-target-missing.
    */
   onRepoint?: () => Promise<void> | void;
+  /**
+   * v1.5 Phase 5: full-name of the linked GitHub repo, or null
+   * when the user is on the bundled default. Drives the
+   * PublishSection's visibility — no linked repo → no Publish UI.
+   */
+  linkedRepoName?: string | null;
 }
 
 type ActionState =
@@ -176,6 +183,7 @@ export function SkillDetailDrawer({
   onUpdate,
   onForgetMissing,
   onRepoint,
+  linkedRepoName,
   showOriginActivity,
   onSetManualUpstream,
 }: Props): React.ReactElement {
@@ -1534,6 +1542,23 @@ export function SkillDetailDrawer({
                 "Unhide"
               )}
             </button>
+          )}
+          {/* Phase 5: Publish surface. Renders only when a linked
+              repo is configured. Owns its own fetch of publish-state
+              + classifier + Fork-confirm modal. */}
+          {linkedRepoName && (
+            <PublishSection
+              entry={entry}
+              linkedRepoName={linkedRepoName}
+              onPublished={() => {
+                // Close the drawer after a successful publish. The
+                // host's standard post-action refresh path picks up
+                // the fork-induced bucket change (vendored→personal)
+                // + the freshly-updated publish-state. No drawer-
+                // level refresh callback needed.
+                onClose();
+              }}
+            />
           )}
         </div>
       </aside>

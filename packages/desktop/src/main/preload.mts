@@ -94,6 +94,14 @@ const api = {
     ipcRenderer.invoke(IPC.installFromManifestHint, payload),
   installSkillFromGithub: (url: string) =>
     ipcRenderer.invoke(IPC.installSkillFromGithub, url),
+  classifySkillForPublish: (name: string) =>
+    ipcRenderer.invoke(IPC.classifySkillForPublish, name),
+  publishSkill: (name: string, options: unknown) =>
+    ipcRenderer.invoke(IPC.publishSkill, name, options),
+  getPublishState: (name: string) =>
+    ipcRenderer.invoke(IPC.getPublishState, name),
+  getPublishStates: (names: string[]) =>
+    ipcRenderer.invoke(IPC.getPublishStates, names),
   repairBrokenLinks: (name: string) =>
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>
