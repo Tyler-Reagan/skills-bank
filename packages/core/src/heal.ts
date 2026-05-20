@@ -231,6 +231,23 @@ export function unlinkOrigin(skillDir: string): void {
 export const acceptDriftSeverUpstream = unlinkOrigin;
 
 /**
+ * Flip a skill's source axis from `curated` → `user`. Idempotent
+ * on already-`user` skills. Composed by `forkSkill` (ADR-0006) on
+ * its scratch dir after `unlinkOrigin` has dropped the origin
+ * pointer; the pairing transitions a vendored-with-origin skill
+ * into a user-owned skill in one well-bounded sequence.
+ *
+ * Doesn't touch any other axis (`syncedFromCommit`, `syncedAt`).
+ * Preserves whatever else is in the marker — only the axis value
+ * changes. v1.5.
+ */
+export function flipSourceToUser(skillDir: string): void {
+  const src = readSkillSource(skillDir);
+  if (src.source === "user") return;
+  writeSkillSource(skillDir, { ...src, source: "user" });
+}
+
+/**
  * Heal action — revert on a edited-without-origin state. The user
  * acknowledges that the current on-disk content is the curated
  * baseline going forward: re-snapshot the hash so the next build
