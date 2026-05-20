@@ -10,6 +10,7 @@ import type {
   ExportResult,
   FinalizeResult,
   ImportRegistryManifestResult,
+  InstallFromGithubResult,
   InstalledSkill,
   MergeImportReport,
   RegistrationAction,
@@ -88,6 +89,7 @@ export const IPC = {
   exportManifest: "bank:exportManifest",
   importManifest: "bank:importManifest",
   installFromManifestHint: "bank:installFromManifestHint",
+  installSkillFromGithub: "bank:installSkillFromGithub",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
@@ -702,6 +704,19 @@ interface SkillsBankAPI {
     names: string[];
     agents: AgentId[];
   }): Promise<{ ok: boolean; message: string; installedCount: number; errors: string[] }>;
+  /**
+   * Phase 4 (v1.5): one-shot install from a GitHub URL. The
+   * renderer passes the raw URL string; the main process parses,
+   * composes the core install primitive, and returns either the
+   * `InstallFromGithubResult` (success) or a discriminated error
+   * including the `url-parse-error` arm for URLs that didn't
+   * pass `parseGithubSkillUrl`.
+   */
+  installSkillFromGithub(url: string): Promise<
+    | InstallFromGithubResult
+    | { ok: false; reason: "url-parse-error"; message: string }
+    | { ok: false; reason: "no-registry-root"; message: string }
+  >;
   importRegistry(): Promise<{
     ok: boolean;
     message: string;
