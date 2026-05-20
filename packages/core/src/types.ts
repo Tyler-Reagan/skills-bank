@@ -96,6 +96,16 @@ export interface RegistryEntry extends SkillMeta {
    */
   originUpdateAvailable?: boolean;
   /**
+   * Heal axis: this skill's origin probe has failed
+   * `ORIGIN_UNREACHABLE_THRESHOLD` consecutive times — see
+   * `skill-state.ts`. Set in `buildRegistryIndex` from the runtime
+   * sidecar's `probeFailureCount`. The classifier emits
+   * `origin-unreachable` when true and the skill has a GitHub origin.
+   * Lower priority than drift (drift implies reachable-recently);
+   * higher than `originUpdateAvailable`. v1.4.
+   */
+  originUnreachable?: boolean;
+  /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has
    * SKILL.md. Surface in the UI so users can fix metadata without

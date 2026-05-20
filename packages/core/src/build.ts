@@ -10,6 +10,7 @@ import { readHiddenCanonNames } from "./hide.js";
 import { readSkillMeta, walkSkills } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import { readRuntimeState } from "./heal.js";
+import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
 import type {
   PublishState,
   RegistryEntry,
@@ -142,6 +143,18 @@ export function buildRegistryIndex(
           if (recorded) {
             const live = hashSkillFolder(ref.dir);
             if (live && live !== recorded) built.drift = true;
+          }
+        }
+        // Phase 3 (v1.4): surface origin-unreachable when the per-
+        // skill probe-failure counter saturates the threshold. Pure
+        // read from the runtime sidecar; no extra disk hits since
+        // `mergeRuntimeFetchedAt` already consults it.
+        if (built.source.origin?.kind === "github") {
+          const runtime = readRuntimeState(ref.dir);
+          if (
+            (runtime.probeFailureCount ?? 0) >= ORIGIN_UNREACHABLE_THRESHOLD
+          ) {
+            built.originUnreachable = true;
           }
         }
         entries.push(built);

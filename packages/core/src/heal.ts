@@ -130,6 +130,16 @@ const RUNTIME_STATE_FILE = ".skills-bank-runtime.json";
 export interface RuntimeState {
   /** ISO-8601 timestamp of the last successful upstream fetch. */
   fetchedAt?: string;
+  /**
+   * Consecutive failed origin probes for this skill. Reset to 0 on
+   * the next successful probe; rate-limit (429) failures are not
+   * counted (they don't reflect origin reachability). Drives the
+   * `origin-unreachable` drawer state at threshold (see
+   * `ORIGIN_UNREACHABLE_THRESHOLD` in `skill-state.ts`). v1.4.
+   */
+  probeFailureCount?: number;
+  /** ISO-8601 timestamp of the most recent probe failure. Diagnostic. */
+  lastProbeFailureAt?: string;
 }
 
 export function readRuntimeState(skillDir: string): RuntimeState {
@@ -139,6 +149,12 @@ export function readRuntimeState(skillDir: string): RuntimeState {
     const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<RuntimeState>;
     const out: RuntimeState = {};
     if (typeof raw.fetchedAt === "string") out.fetchedAt = raw.fetchedAt;
+    if (typeof raw.probeFailureCount === "number" && raw.probeFailureCount > 0) {
+      out.probeFailureCount = raw.probeFailureCount;
+    }
+    if (typeof raw.lastProbeFailureAt === "string") {
+      out.lastProbeFailureAt = raw.lastProbeFailureAt;
+    }
     return out;
   } catch {
     return {};

@@ -31,8 +31,19 @@ export type DrawerState =
   | "edited-without-origin"
   | "edited-with-origin"
   | "origin-update-available"
+  | "origin-unreachable"
   | "registry-folder-missing"
   | "external-target-missing";
+
+/**
+ * Consecutive probe-failure threshold at which a GitHub-origin
+ * skill enters the `origin-unreachable` drawer state. Three failures
+ * matches the desktop runner's 6-hourly default probe cadence (~18
+ * hours of real-world unreachability) — long enough to ride out
+ * transient regional outages, short enough to be useful to the user.
+ * v1.4. See `docs/plans/bank-mode-persistence.md`.
+ */
+export const ORIGIN_UNREACHABLE_THRESHOLD = 3 as const;
 
 export type PrimaryAction =
   | "install"
@@ -45,6 +56,7 @@ export type PrimaryAction =
   | "accept-drift"
   | "take-upstream"
   | "update"
+  | "retry-probe"
   | "forget-missing"
   | "repoint";
 
@@ -107,6 +119,13 @@ export interface DrawerCapabilities {
    */
   canUpdate: boolean;
   /**
+   * `origin-unreachable` heal — re-run the per-skill origin probe.
+   * On success, the runtime sidecar's `probeFailureCount` resets and
+   * the state clears; on failure, the counter increments (capped at
+   * the threshold so the state doesn't degrade further). v1.4.
+   */
+  canRetryOriginProbe: boolean;
+  /**
    * Forget a missing entry — drop the registry/external record. For
    * adopted missing: the entry naturally drops on next index build
    * (folder was gone), so the action is mostly UI cleanup. For
@@ -167,6 +186,7 @@ const NEVER: DrawerCapabilities = {
   canTakeCanonical: false,
   canResetToOrigin: false,
   canUpdate: false,
+  canRetryOriginProbe: false,
   canForgetMissing: false,
   canRepoint: false,
   canResolveConflicts: false,
@@ -261,6 +281,36 @@ export function classifyDrawerState(
         canTakeCanonical: true,
         canExport: true,
         primary: "accept-drift",
+      },
+    };
+  }
+
+  // Origin probe persistently failing. Lower priority than drift —
+  // a baseline-hash mismatch implies the origin was reachable at
+  // least once recently, which is a stronger signal than "we
+  // couldn't reach the origin this pass." Higher priority than
+  // `origin-update-available` — we can't surface an update we
+  // couldn't probe for. v1.4.
+  if (
+    isRegistered &&
+    entry.originUnreachable === true &&
+    entry.source.origin?.kind === "github"
+  ) {
+    return {
+      state: "origin-unreachable",
+      brokenCount: 0,
+      conflictCount: 0,
+      capabilities: {
+        ...NEVER,
+        canRevealInFinder: true,
+        canManageLinks: true,
+        canExport: true,
+        // Keep this skill: route through acceptDrift which already
+        // dispatches to unlinkOrigin for github-origin entries (v1.3
+        // wired this).
+        canAcceptDrift: true,
+        canRetryOriginProbe: true,
+        primary: "retry-probe",
       },
     };
   }
