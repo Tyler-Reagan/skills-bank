@@ -3,6 +3,127 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.1.0
+
+Three new maintenance flows + a Registry-tab bulk-install affordance + the
+publish-feature design pinned in three new ADRs. Closes the v0.11.10
+origin-rename deprecation cycle (SDK-surface change).
+
+### Added
+
+- **`pnpm vendor:refresh`.** Bulk drift-detect + re-mirror script for vendored
+  skills. Default is review-only; `--apply` re-mirrors drifted skills and
+  re-baselines `skillFolderHash`. `--only foo,bar` scopes to a subset; `--json`
+  for machine-readable output. Per-skill opt-out via `"refresh": "manual"` in
+  `.skills-bank.json`. Missing/relocated upstreams surface as `missing` rather
+  than auto-deleted. Closes [#58](https://github.com/Tyler-Reagan/skills-bank/issues/58).
+- **`.github/workflows/vendor-refresh.yml`.** Schedulable companion to the
+  CLI — weekly Monday 09:00 UTC cron + manual `workflow_dispatch` (with `only`
+  filter and `apply` toggle). Opens a maintainer-review PR via
+  `peter-evans/create-pull-request` on the stable `chore/vendor-refresh`
+  branch. Re-runs update the same PR rather than stacking duplicates.
+- **`pnpm update:skill`.** Maintainer-only CLI for pulling a locally-edited
+  skill from `~/.claude/skills/<name>/` (override with `--from`) back into
+  this repo's `skills/personal/<name>/` or `skills/vendored/<name>/`. Bucket
+  is auto-detected when the skill already exists; pass `--bucket` for new
+  skills. Schema-validates `meta.json`. Preserves the destination's
+  `.skills-bank.json` / `.skills-bank-hash` provenance markers across the
+  content refresh. Closes [#59](https://github.com/Tyler-Reagan/skills-bank/issues/59).
+- **Bulk install on the Registry tab.** New "Bulk install" toggle switches
+  cards into select mode with leading checkboxes; an action bar offers
+  "Select all visible" + "Install N selected" and reports progress inline as
+  each skill installs. Skip-and-continue error handling with per-card status
+  chips (`▸` in-flight, `✓` installed, `✕` failed). Already-installed skills
+  render with a disabled checkbox so the user sees what bulk install will
+  skip. Reuses `settings.defaultInstallAgents` for agent routing. Closes
+  [#60](https://github.com/Tyler-Reagan/skills-bank/issues/60).
+- **Three new ADRs** pinning the design for the post-v1.0 in-app Publish
+  feature (planned; not yet implemented):
+  - **ADR-0006** — `forkSkill` invariants (scratch-dir atomic swap,
+    collision refusal, must-have-origin trigger).
+  - **ADR-0007** — `pushSkillFolder` invariants (ref-as-commit-point
+    atomicity, PR-state-aware branch resolution, rate-limit handling
+    matching `mirrorSkillFolder`).
+  - **ADR-0008** — Dual-mode publish-state computation (git + GitHub-API
+    paths, auto-detector, compute-on-call with 5-min tree cache, drops
+    `publishState` from `RegistryEntry`).
+- **`docs/plans/in-app-publish.md`.** Four-milestone implementation plan
+  tying the three ADRs together. Listed in CLAUDE.md's remaining-plans
+  table as post-v1.0.
+- **UBIQUITOUS_LANGUAGE.md vocabulary extension** for the in-app Publish
+  flow: `Publish` / `Fork` / `Safekeeping` / `Linked repo` as user-visible
+  verbs and concept, with explicit aliases-to-avoid columns and two new
+  Flagged ambiguities for the Fork-vs-Unlink-origin composition and the
+  Safekeeping-as-rationale-not-operation framing.
+- **`docs/adr/ADR-0001` amended** to note that post-v1.0 primitives may
+  extend the v0.11.7 test foundation per their own ADR (the precedent ADRs
+  0006 / 0007 / 0008 follow).
+- **`docs/concepts.md`** cross-references `UBIQUITOUS_LANGUAGE.md` as the
+  canonical engineering glossary; when the two disagree, UL is canonical.
+
+### Changed
+
+- **SDK surface — v0.11.10 origin-rename deprecation cycle closed.** All
+  `@deprecated` `Upstream*` aliases introduced in v0.11.10 have been removed.
+  Consumers of `@skills-bank/core` that reached for any of the following
+  must migrate to the canonical Origin* names:
+  - `UPSTREAM_KIND_GITHUB` → `ORIGIN_KIND_GITHUB`
+  - `UpstreamKind` → `OriginKind`
+  - `UpstreamPointer` → `OriginPointer`
+  - `probeRepoTree` → `probeOriginTree`
+  - `applyUpstreamUpdate` → `applyOriginUpdate`
+  - `createUpstreamProbeRunner` → `createOriginProbeRunner`
+  - `UpstreamUpdateResult` / `UpstreamUpdateContext` → `OriginUpdateResult`
+    / `OriginUpdateContext`
+  - `UpstreamProbeRunnerOpts` / `UpstreamProbeRunner` → `OriginProbeRunnerOpts`
+    / `OriginProbeRunner`
+  - `UpstreamManualChoice` / `UpstreamProbeCompleteEvent` /
+    `UpstreamProbeResult` / `UpstreamRepoMetadata` / `UpstreamLastCommit`
+    → respective `Origin*` names
+  Per CLAUDE.md's "post-1.0 backcompat-conscious" policy, the aliases shipped
+  with `@deprecated` re-exports through v1.0.x; v1.1.0 cuts them.
+
+### Fixed
+
+- **Register no longer adopts into the pre-v0.11.3 flat path.**
+  `adoptIntoRegistry`, `repairBrokenLinks`, and `resolveSkillConflicts` were
+  all joining `skills/<name>/` directly — the pre-bucket-split layout. The
+  walker only descends `skills/personal/` and `skills/vendored/`, so any
+  Register-flow adoption landed in a directory the index couldn't see.
+  Symptom: a registered skill stuck in "Fix broken link (0)" with no
+  actionable repair. Fix: new `findSkillFolder(root, name)` helper in
+  `registry.ts`; default adoption destination is `skills/personal/<name>/`;
+  existing-bucket detection preserves the location when the skill already
+  lives in one.
+- **`classifyDrawerState` no longer falls through to `unregistered-broken`
+  for `kind: "ours"` installs with no index entry.** A symlink whose target
+  resolves inside the registry tree but isn't tracked by any
+  `RegistryEntry` (the github-actions-docs symptom above) now routes to
+  `unregistered-foreign` with `primary: register`. Combined with the bucket
+  fix, clicking Register heals the stale layout by relocating the folder
+  into the correct bucket.
+
+### Removed
+
+- **Dead `diff` dependency** from `packages/desktop/package.json`. Knip-
+  flagged; no source reference.
+
+### Maintenance
+
+- 29 local + 23 remote stale branches deleted (all fully merged into main).
+- Knip output now zero — no unused dependencies, no unused exports, no
+  duplicate exports, no configuration hints.
+- ADR test foundation extended from 5 suites to 7+ (Suite 6: `forkSkill`,
+  Suite 7: `pushSkillFolder`; Suite 8 lands when the in-app-publish plan's
+  M1 ships).
+- Two bug reports filed under `docs/bug-reports/` for in-app Origin Update
+  gaps surfaced during working-tree cleanup
+  (`2026-05-19-origin-update-missing-meta-synthesis.md` and
+  `2026-05-19-origin-update-missing-validation.md`). Fix queued for the
+  next release.
+
+---
+
 ## v1.0.1
 
 Dev-experience hardening and two small visual fixes. No user-facing feature
