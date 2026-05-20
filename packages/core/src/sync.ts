@@ -310,13 +310,20 @@ export async function applyCanonicalSync(
       writeMetaTags(mountPath, preservedTags);
     }
     // Read whatever source-axis state the mirrored .skills-bank.json
-    // carries so per-skill `upstream` survives the sync stamp. Without
-    // this spread, every sync silently wipes upstream attribution
-    // (pre-existing oddity since v0.11.3).
+    // carries so per-skill `origin` survives the sync stamp. Without
+    // this spread, every sync silently wipes origin attribution
+    // (pre-existing oddity since v0.11.3, fixed in v1.2).
+    //
+    // v1.5: source axis is mountTo-derived. `vendored` (the
+    // curated-set sync) stamps `curated`; `personal` (the
+    // user-linked-repo sync) stamps `user`. Pre-Phase-1 logic
+    // hard-coded `curated` for every mount target, which
+    // mislabelled linked-repo skills as part of the curated set.
     const mirroredSource = readSkillSource(mountPath);
+    const sourceForBucket = mountTo === "vendored" ? "curated" : "user";
     const merged: SkillSource = {
       ...(preservedSource ?? mirroredSource),
-      source: "curated",
+      source: sourceForBucket,
       syncedFromCommit: commitSha,
       syncedAt,
     };

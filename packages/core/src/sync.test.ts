@@ -338,9 +338,33 @@ describe("applyCanonicalSync (mountTo: personal — linked-repo flow)", () => {
     const src = readSkillSource(
       path.join(registryRoot, "skills", "personal", "alpha"),
     );
-    expect(src.source).toBe("curated"); // sync stamps bundled
-    expect(src.origin?.repo).toBe("Tyler-Reagan/skills"); // upstream preserved
+    // v1.5: source axis is mountTo-derived. personal-mount → user
+    // (the user mounted the skill from their own linked repo, so
+    // it's theirs by the UL definition). Earlier behavior stamped
+    // curated regardless of bucket; that was the bug surfaced
+    // during Phase 5 QA.
+    expect(src.source).toBe("user");
+    expect(src.origin?.repo).toBe("Tyler-Reagan/skills"); // origin preserved
     expect(src.origin?.skillPath).toBe("alpha/SKILL.md");
+  });
+
+  test("source axis follows mountTo: vendored → curated (curated-set sync)", async () => {
+    writeCanonical(
+      "beta",
+      { "SKILL.md": "---\nname: beta\ndescription: x\n---\n# beta" },
+      { flat: true },
+    );
+    await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "sha",
+      {},
+      { mountTo: "vendored" },
+    );
+    const src = readSkillSource(
+      path.join(registryRoot, "skills", "vendored", "beta"),
+    );
+    expect(src.source).toBe("curated");
   });
 });
 

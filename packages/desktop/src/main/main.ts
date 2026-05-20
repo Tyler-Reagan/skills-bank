@@ -2814,38 +2814,6 @@ ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
 });
 
 /**
- * Pre-applyCanonicalSync migration for legacy github-linked registries.
- *
- * The pre-diff-before-apply implementation of `replaceRegistryWithRepo`
- * wiped the registry and re-imported every skill stamped
- * `source: "user"` with a `syncedFromCommit`. That's semantically wrong:
- * a skill from the linked upstream is `source: "curated"` in this
- * codebase's vocabulary (where "curated" means "from the registry's
- * canonical upstream," not literally "shipped in the app binary").
- *
- * Without this migration, the first re-fetch under the new code path
- * would surface every previously-imported skill as a conflict (because
- * applyCanonicalSync treats non-"curated" local sources as user-owned
- * and conflicts on overwrite). Re-stamping legacy entries fixes that
- * silently on the next refresh.
- *
- * Heuristic: `source: "user"` + `syncedFromCommit` present = legacy
- * github-linked import. User-authored skills don't carry
- * `syncedFromCommit`.
- *
- * Idempotent: after the first run every legacy skill is re-stamped,
- * subsequent calls are no-ops.
- */
-function migrateLegacyGithubMarkers(registryRoot: string): void {
-  for (const ref of walkSkills(registryRoot)) {
-    const src = readSkillSource(ref.dir);
-    if (src.source === "user" && src.syncedFromCommit) {
-      writeSkillSource(ref.dir, { ...src, source: "curated" });
-    }
-  }
-}
-
-/**
  * v0.11.9 M8: commit the github-linked-mode flip. Replacing the registry
  * with a repo, restoring a session after relaunch, and any future
  * re-link path all use this to atomically promote (registrySource,
@@ -2884,10 +2852,13 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
     broadcastSyncStatus({ kind: "fetching" });
     const fetched = await fetchCanonicalTarball({ owner, repo, token });
     try {
-      // Re-stamp any pre-diff-before-apply legacy markers before the
-      // diff so they don't surface as fake conflicts.
-      migrateLegacyGithubMarkers(registryRoot);
-
+      // v1.5: dropped the migrateLegacyGithubMarkers call. The
+      // pre-v0.11 heuristic ("source: user + syncedFromCommit ⇒
+      // legacy linked-repo entry ⇒ stamp curated") was inverted
+      // by Phase 1's mountTo policy — linked-repo skills are now
+      // correctly stamped `user`, so re-stamping them to `curated`
+      // is destructive. Any v0.10-era config that still needed the
+      // migration has been through multiple minor cycles by now.
       broadcastSyncStatus({ kind: "applying" });
       const decisions = readSyncDecisions(registryRoot);
       const report = await applyCanonicalSync(
