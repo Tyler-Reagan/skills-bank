@@ -1,115 +1,344 @@
-# In-app install from Discover tab (planned)
+# In-app install from GitHub URL (planned, v1.5)
 
-The Discover tab embeds skills.sh as a WebContentsView, but installing a skill still requires opening a terminal and running `npx skills add` by hand. The terminal popout was a workaround for not having in-app npx invocation; with that infrastructure established by per-skill upstream tracking, the install path can use the same primitive. This plan restores the original intent: the user discovers a skill on skills.sh inside the app, clicks Install, and it lands in their bank — no terminal context-switch.
+Phase 4 of the post-v1.0 roadmap. Single PR against
+`Tyler-Reagan/skills-bank`.
 
-Under this plan, **community skills come pre-banked, pre-registered, pre-upstream-tracked from second one.** They never pass through the "Not registered" state.
+## What changed since the original plan
+
+This file previously specified an `npx skills add` integration tied
+to scraping skills.sh URLs, with the install path going through
+`bank-cache.ts` and writing a `bankSnapshot` field. **Three layers
+of that are obsolete** post-v1.2/v1.3/v1.4:
+
+- `npx skills add` is no longer the canonical fetch primitive.
+  `mirrorSkillFolder` (v1.2 / curation-layer-reset) fetches skill
+  content directly from GitHub by `{repo, skillPath}`. skills.sh is
+  a discovery aggregator over GitHub repos, not a separate package
+  format; nothing in the install path actually requires npx.
+- `bank-cache.ts` and the `bankSnapshot` field were retired in the
+  v1.2 grill (the local content under `skills/.../<name>/` already
+  serves as "the cache" by virtue of v1.2's discovery mount).
+- Vocabulary: `upstream` → `origin` (v1.3), `bundled`/`yours` →
+  `curated`/`user` (v1.3).
+
+Plus a fresh scope reframe:
+
+- **Scraping skills.sh's URL scheme is fragile and orthogonal to the
+  product value.** The user-facing promise — "click Install once,
+  skill lands in my bank, no terminal" — works just as well against
+  arbitrary GitHub URLs. The user pastes a folder URL from
+  skills.sh, GitHub directly, or anywhere else; the app parses to
+  `{repo, skillPath}` and fetches. No site-specific knowledge in
+  the install code.
+
+This rewrite scopes Phase 4 to the **GitHub-URL install primitive +
+the Settings surface that exposes it**. A future v1.6 follow-up
+(see "Re-opening this decision") can layer skills.sh-specific URL
+detection on the Discover tab once the URL scheme is stable enough
+to special-case.
 
 ## Depends on
 
-- Plan 03 (per-skill upstream foundation). Reuses `packages/core/src/upstream.ts`'s npx invocation infrastructure.
-- Plan 04 (bank-mode persistence). Install-time snapshots use plan 04's cache primitives.
+- v1.4.0 shipped. The probe-failure recovery surface (Phase 3)
+  ensures Discover-installed skills get the same `origin-unreachable`
+  heal flow as any other github-origin skill — no parallel handling.
+- v1.2's discovery-mount + `mirrorSkillFolder` primitive in place
+  (`applyCanonicalSync` composes it for whole-repo links;
+  this plan composes it for single-skill installs).
 
 ## Goals
 
-1. The user can install any skill from skills.sh by clicking a button in the app — no terminal step required.
-2. Installs default to "adopted into the registry as bank-cached" with full upstream and snapshot stamping. Power users can opt into the alternative (install to agent dirs only, registry tracks the external path).
-3. The Discover-tab toolbar surfaces the Install button only when the user is on a skill detail page; URL parsing determines this.
-4. The terminal popout is reframed as a power-user escape hatch, not the primary install path.
+1. The user can install any skill from a GitHub URL by pasting it
+   into a Settings → "Install a skill from GitHub" entry. No
+   terminal step.
+2. The single-skill install path composes existing primitives:
+   `mirrorSkillFolder` for fetch, `writeSkillSource` for marker
+   stamping, `buildRegistryIndex` for registry visibility. No
+   parallel npx code path.
+3. Installed skills land in `skills/personal/<name>/` as `source:
+   "user"` with a stamped `origin` pointer. Future probes pick them
+   up automatically; future updates flow through the existing
+   `applyOriginUpdate`.
+4. The Discover tab's "Open Terminal" callout updates to surface
+   the new entry point: _"See a skill you want? Copy its source-repo
+   folder URL and use Settings → Install a skill from GitHub."_
 
 ## Non-goals
 
-- Installing from arbitrary GitHub URLs (non-skills.sh sources). Would require a git-kind upstream pointer with a probe and update path, which is deferred.
-- Bulk install. One skill per click; users who want multiple run multiple clicks.
-- A custom in-app browse experience competing with skills.sh's UI. We embed; we don't replace.
+- **skills.sh-specific URL scraping / Install button on Discover.**
+  Deferred to a follow-up plan (`discover-install-button.md`, when
+  it lands). The current Phase 4 ships value without speculating
+  on skills.sh's URL scheme stability.
+- **Bulk install.** One skill per paste. The Registry tab's bulk-
+  install feature (v1.1) handles already-registered skills; this
+  flow is for adding new ones.
+- **Non-GitHub origins.** GitLab, self-hosted gitea, etc. The
+  v1.2 architecture already supports `origin.kind: "github"` only;
+  expanding would touch `mirrorSkillFolder` and is its own scope.
+- **In-app GitHub authentication beyond what's already shipped.**
+  Authenticated users get 5000 reqs/hr; unauth gets 60/hr per IP.
+  Same constraint as elsewhere.
+- **Editing the URL after install** to point at a different folder
+  in the same repo. Re-install from the new URL; the existing
+  collision behavior handles the rest.
 
 ## Scope
 
-### URL detection
+### 1. URL parser
 
-When the embedded WebContentsView's URL changes, the main process sends the new URL to the renderer. The renderer matches it against skills.sh's skill-detail URL pattern (research item — see Open questions #1) and resolves the npx package name via:
+`packages/core/src/origin-url.ts` (new file):
 
-1. **URL-only path** (preferred). If the URL pattern unambiguously encodes the package name, extract it directly: `https://skills.sh/skills/<package>` → `package`.
-2. **API path** (fallback). If the URL doesn't encode the package but skills.sh exposes an API for resolving page → package (e.g. `GET /api/page-meta?url=<url>`), call it from the main process.
-3. **DOM-scrape path** (last resort). If neither of the above works, scrape the embedded page's DOM for the canonical install snippet (`npx skills add <pkg>`) and extract from there. Brittle but workable.
+```ts
+export interface ParsedSkillUrl {
+  /** GitHub `owner/repo`. */
+  repo: string;
+  /** Path within the repo, relative to the repo root. Always
+   *  ends with `/SKILL.md` so it round-trips with
+   *  `origin.skillPath`. */
+  skillPath: string;
+  /** Optional branch reference, if the URL encoded one (e.g.
+   *  /tree/<branch>/<path>). Falls back to `HEAD`. */
+  ref?: string;
+}
 
-The detection result either yields `{ installable: true, package, version? }` or `{ installable: false }`.
+export interface UrlParseError {
+  kind: "not-github" | "not-a-skill-folder" | "malformed";
+  message: string;
+}
 
-New IPC: `discover:detectInstallable(url)` → `Promise<{ installable: boolean; package?: string }>`.
+export function parseGithubSkillUrl(
+  url: string,
+): ParsedSkillUrl | UrlParseError;
+```
 
-### Install button in Discover toolbar
+Accepts (and resolves to a canonical shape):
 
-The Discover-tab chrome (today: Back / Reload / URL / Open Terminal / Open in browser) gains an **Install** button. Visible when the current URL is installable. Renders the inferred package name: e.g. `Install foo`.
+- `https://github.com/<owner>/<repo>/tree/<branch>/<path>` —
+  folder URL. Skill path = `<path>/SKILL.md`.
+- `https://github.com/<owner>/<repo>/blob/<branch>/<path>/SKILL.md` —
+  blob URL pointing at the SKILL.md file itself.
+- `https://github.com/<owner>/<repo>/tree/<branch>` — repo-root
+  URL. Treated as `not-a-skill-folder` unless the repo's root has
+  a `SKILL.md` (rare; users typically nest); the error message
+  guides the user to point at a specific folder.
+- `https://github.com/<owner>/<repo>` (no branch) — same as
+  repo-root URL above.
 
-Beside Install, a small disclosure button (`▾`) opens a menu:
+`not-github` for any URL that doesn't start with `https://github.com/`.
+`malformed` for anything that doesn't match the github URL shape.
+The error variant is structured so the renderer can render hints
+keyed on `kind`, not on string parsing.
 
-- **Install to my bank (default)** — adopt into registry, snapshot, stamp upstream.
-- **Install only to agent dirs** — npx runs against an agent dir as today's external-skill flow; registry tracks via `external.json`; no snapshot at install time (one will be created on first update, if Bank mode is on).
+The parser doesn't probe GitHub. It only does URL pattern matching
++ canonicalization. A follow-up probe at install time validates that
+the path actually contains a SKILL.md (existing `mirrorSkillFolder`
+already errors with a clear message if not).
 
-### Install flow
+### 2. Core install primitive
 
-1. User clicks Install (with default option). The renderer fires `upstream:installSkill` IPC with the package identifier.
-2. Main process runs `npx skills add <pkg>` in a temp working directory. The tool downloads the skill content.
-3. App resolves the fetched skill's name (from the SKILL.md frontmatter), computes its content hash, captures the version (from the tool's output or the fetched manifest).
-4. App moves the content into `<registryRoot>/skills/<name>/`, marks it adopted, writes the `SkillSource` record with `upstream` + (if Bank mode is on) `bankSnapshot`, records the skill in the registry index.
-5. App opens the standard install-to-agents follow-up (the existing flow when a newly-registered skill needs link decisions). User picks zero or more agent dirs; symlinks get written.
-6. Toast: _"Installed `<name>` into your bank."_
+`packages/core/src/install-from-github.ts` (new file):
 
-Errors at any step surface via the existing `AppError` / `ErrorPanel` infrastructure.
+```ts
+export interface InstallFromGithubOptions {
+  registryRoot: string;
+  repo: string;       // "owner/repo"
+  skillPath: string;  // "<path>/SKILL.md" — canonical from URL parser
+  /** Bucket the installed skill lands in. Default: `personal`
+   *  (`source: "user"` semantics). Pass `vendored` to mark
+   *  the skill as curated locally — only the maintainer's
+   *  use-case for the displaced 62 vendored skills. */
+  bucket?: "personal" | "vendored";
+  /** GitHub OAuth token for the fetch. Null = unauth (60/hr). */
+  token: string | null;
+}
 
-The "Install only to agent dirs" alternative skips step 4's adoption: npx runs against the agent dir picked in step 5, and step 4 records the path in `external.json` rather than copying files into the registry.
+export type InstallFromGithubResult =
+  | {
+      ok: true;
+      name: string;
+      bucket: "personal" | "vendored";
+      destDir: string;
+      folderHash: string;
+    }
+  | {
+      ok: false;
+      reason: "mirror-failed";
+      message: string;
+      rateLimit?: import("./upstream.js").RateLimitInfo;
+    }
+  | {
+      ok: false;
+      reason: "name-collision";
+      existingBucket: "personal" | "vendored";
+      existingDir: string;
+    }
+  | {
+      ok: false;
+      reason: "no-skill-md";
+      message: string;
+    };
 
-### Terminal popout reframing
+export async function installSkillFromGithub(
+  opts: InstallFromGithubOptions,
+): Promise<InstallFromGithubResult>;
+```
 
-The Discover tab's existing callout reads:
+Composition (no new fetch logic):
 
-> _"Anything you install via `npx skills add` will appear in your registry automatically."_
+1. Derive folder path: strip trailing `/SKILL.md` from `skillPath`.
+2. Resolve skill name: the canonical name lives in the source's
+   `meta.json.name` (preferred) or `SKILL.md` frontmatter. To get
+   it without a second fetch, use the URL's final folder segment as
+   the **provisional name**. Post-mirror, re-resolve from the
+   freshly-mirrored content via `readSkillMeta`; if the canonical
+   name differs from the provisional one, the destination directory
+   is renamed.
+3. Pre-flight collision check: walk both buckets via
+   `findSkillFolder(registryRoot, provisionalName)`. If a skill of
+   that name already exists, return `name-collision` — the user
+   resolves (uninstall the existing, rename, or cancel) before
+   re-attempting.
+4. Mirror: `mirrorSkillFolder(repo, folderPath, destDir, token)`
+   where `destDir = <registryRoot>/skills/<bucket>/<provisionalName>`.
+5. Validate: `readSkillMeta(destDir)`. If no SKILL.md or meta.json,
+   wipe the mirrored dir and return `no-skill-md` — the URL didn't
+   point at an actual skill folder.
+6. Re-resolve name; if different, rename the dir, update destDir,
+   re-check for collision at the canonical name (rare race —
+   handled by uninstalling the freshly-mirrored copy and surfacing
+   `name-collision`).
+7. Stamp `.skills-bank.json` with `source: "user"`, no
+   `syncedFromCommit` (this isn't a sync), `origin: { kind: "github",
+   repo, skillPath, skillFolderHash: mirror.folderHash, installedAt
+   }`. Baseline the synced-hash sidecar so probe-counter-reset works
+   from install onward (origin-unreachable would never fire on a
+   freshly-installed skill otherwise).
+8. Return `ok: true` with the canonical name + destDir.
 
-Replace with:
+### 3. IPC
 
-> _"Click Install in the app to add a skill to your bank. For raw npx commands, [Open Terminal]."_
+`packages/desktop/src/shared/ipc.ts`:
 
-The Open Terminal button stays but its title attribute updates to _"Run raw npx commands (advanced)."_
+```ts
+bank:installSkillFromGithub: "bank:installSkillFromGithub",
+```
 
-## Files this PR will touch
+`installSkillFromGithub(url: string): Promise<InstallSkillFromGithubResponse>`
 
-- `packages/desktop/src/renderer/components/DiscoverTab.tsx` — Install button + disclosure menu; URL-change handling; callout copy.
-- `packages/desktop/src/main/main.ts` — IPC handlers for `discover:detectInstallable` and `upstream:installSkill`; main-process URL parsing; main-process npx invocation in temp dir; move-into-registry-as-adopted logic; main-side wiring to the existing install-to-agents follow-up.
-- `packages/desktop/src/shared/ipc.ts` — new channels + types (`InstallableProbe`, `InstallSkillOptions`).
-- `packages/core/src/upstream.ts` — extend with `installSkill(package, target)` primitive; reuses npx invocation established in plan 03.
-- `packages/core/src/bank-cache.ts` — reused; no changes.
-- `packages/core/src/source.ts` — reused; no changes.
+The renderer-facing IPC accepts the raw URL string; the main
+process parses + composes the core primitive. Return shape mirrors
+`InstallFromGithubResult` plus an `ok: false; reason: "url-parse-error"`
+arm for URLs that didn't pass `parseGithubSkillUrl`.
 
-## Verification
+Wraps through `mutatingHandle` so install fires a userData
+auto-snapshot (Phase 1's contract).
 
-### URL detection
+### 4. Settings entry + modal
 
-- Navigate the Discover tab to a known skills.sh skill detail page. The Install button surfaces with the right package name.
-- Navigate to skills.sh's home page or a non-skill page. The Install button is hidden.
+`packages/desktop/src/renderer/components/SettingsModal.tsx`:
 
-### In-app install (default: adopted into bank)
+New "Install a skill from GitHub" button under the **Skills** group,
+adjacent to the existing **Default install agents** entry. Opens a
+new modal:
 
-- Click Install. Toast confirms install. Skill appears in the registry as adopted with `upstream` stamped and `bankSnapshot` written (assuming Bank mode is on).
-- The install-to-agents follow-up appears; pick a couple of agent dirs; verify symlinks land where expected.
-- Repeat with Bank mode off: install succeeds, upstream stamped, no snapshot written.
+`packages/desktop/src/renderer/components/InstallFromGithubModal.tsx`:
 
-### In-app install (alternative: tracked external)
+- Single text input: _"Paste a GitHub URL pointing at a skill folder
+  or its SKILL.md."_ Hint examples below the input show both URL
+  shapes the parser accepts.
+- **Install** button. Disabled when the input is empty. On click,
+  fires `IPC.installSkillFromGithub(url)`. Spinner during the
+  await.
+- On success: closes the modal; flashes a toast _"Installed
+  `<name>` into your bank."_; the registry list refreshes via
+  the existing post-mutation refresh.
+- On error: renders the `reason`-keyed message inline. `name-collision`
+  surfaces an additional **Open existing skill** action that closes
+  the modal and opens the drawer for the colliding entry.
 
-- Open the disclosure menu, pick **Install only to agent dirs**.
-- Install proceeds against the picked agent dir as today's external-skill flow.
-- Registry records the path in `external.json`; no copy in the registry root; upstream stamped; no snapshot.
+### 5. Discover-tab callout
 
-### Terminal popout
+`packages/desktop/src/renderer/components/DiscoverTab.tsx`:
 
-- Open Terminal still works; the title and callout reflect the new framing.
-- A user who installs via `npx skills add` in the popout terminal still sees the skill picked up by plan 03's fallback origin-capture scanner.
+The existing _"Anything you install via `npx skills add` will appear
+in your registry automatically"_ callout becomes:
 
-### Error handling
+> _"See a skill you want? Copy its source-repo folder URL, then
+> open Settings → **Install a skill from GitHub**. (For raw npx
+> commands, [Open Terminal].)"_
 
-- Install a non-existent package. `npx skills add` errors. The app surfaces a clear error via the existing ErrorPanel; no half-installed state remains in the registry.
-- Quit the app mid-install. On relaunch, the temp dir is cleaned up; no orphaned partial install.
+The Open Terminal button stays for power users. Its title attribute
+updates: _"Run raw npx commands (advanced). Most users prefer
+Settings → Install a skill from GitHub."_
 
-## Open questions
+### 6. Tests
 
-1. **skills.sh URL scheme & page → package resolution.** What's the URL pattern for a skill detail page on skills.sh today? Is the npx package name derivable from the URL alone, or does it require an API call or DOM scrape? Determines how robustly the Install button can light up. Fallback chain (URL → API → DOM) covers all three cases.
-2. **Disclosure menu UX.** Is "Install to my bank ▾" the right surface, or should the alternative be promoted (e.g. a Settings toggle "By default, install community skills into..." with bank/agent-dir choices)? Defer the question until Bank mode usage is measurable.
-3. **WebContentsView event for URL change.** Confirm the main-process can subscribe to the embedded view's URL-change events at acceptable granularity (every nav vs. every history push). May affect Install-button responsiveness on SPA pages.
+`packages/core/src/origin-url.test.ts` (new):
+
+- Folder URL `https://github.com/owner/repo/tree/main/skills/find-skills` →
+  `{ repo: "owner/repo", skillPath: "skills/find-skills/SKILL.md", ref: "main" }`.
+- Blob URL `https://github.com/owner/repo/blob/main/skills/find-skills/SKILL.md` →
+  same canonical shape.
+- Repo-root URL → `not-a-skill-folder`.
+- Non-github URL → `not-github`.
+- Malformed URL (typos, missing parts) → `malformed`.
+
+`packages/core/src/install-from-github.test.ts` (new):
+
+- Success path: mirrors content, stamps marker, baselines hash.
+  Uses `vi.stubGlobal("fetch", ...)` like the existing
+  `upstream.test.ts` for the GitHub API responses.
+- Name collision: pre-existing skill in the registry. Returns
+  `name-collision`; no mirror was attempted.
+- No SKILL.md at the target: mirror succeeds at the file level
+  but `readSkillMeta` returns null. Returns `no-skill-md`; the
+  mirrored content is cleaned up.
+- Rate-limit (429): `mirrorSkillFolder` returns the rate-limit
+  payload; install surfaces `reason: "mirror-failed"` with
+  `rateLimit` populated.
+- Canonical-name rename: meta.json has a different name than the
+  folder. Destination directory ends up at the canonical name.
+
+`packages/desktop/src/main/main.ts` IPC handler test: out of
+scope (the renderer-facing wrapper is thin; coverage is on the
+core primitive).
+
+## Migration story
+
+None — this is purely additive. No on-disk schema changes. The
+installed skills are indistinguishable from skills the maintainer
+linked via Settings → Account → Link a GitHub repository (which
+mounts a whole repo); this flow just mounts one folder at a time.
+
+## Consequences
+
+- **For end users:** zero terminal context-switch to install
+  community skills. Discoverability of the entry point depends on
+  the Settings reveal; the Discover-tab callout is the primary
+  hint.
+- **For the maintainer:** the 62 displaced vendored skills become
+  trivially re-installable. Paste each folder URL once; the
+  install lands in `personal/` with `source: "user"`. (Use the
+  `--bucket vendored` core-API option from a follow-up CLI surface
+  if the maintainer prefers them re-stamped as vendored — out of
+  scope here.)
+- **For Phase 5 (`in-app-publish`):** safekeeping a Discover-
+  installed skill works identically to any other github-origin
+  skill (the publish flow keys off `entry.source.origin`).
+- **For ADR-0002:** no new sidecars; no amendment needed.
+
+## Re-opening this decision
+
+- **If skills.sh's URL scheme is stable + simple**, a follow-up
+  plan (`discover-install-button.md`) can layer in-context
+  install on the Discover tab. The URL-parse + install primitives
+  in this plan are direct call sites for that follow-up. Mostly
+  UI work: detect the URL, surface the button, route to the
+  existing primitive.
+- **If users find the Settings entry point too hidden**, expose
+  the modal via a Header button or a Command Palette entry. Both
+  are mechanical layering on top of the IPC.
+- **If non-GitHub origins become a real demand** (GitLab, gitea,
+  bitbucket), the install primitive's `repo` param expands to a
+  full URL + the underlying fetcher (`mirrorSkillFolder`) grows a
+  host-aware code path. That's a Phase 4b reframe, not in scope.
