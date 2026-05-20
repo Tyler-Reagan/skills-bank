@@ -60,3 +60,30 @@ metadata either:
   that touches these files (the eventual `SkillRecord` type) without
   consolidating the *files* themselves. The type can read all three;
   the files stay split.
+
+## v1.3 amendment — wire-format vocabulary
+
+The ADR's stability claim is reframed from "stable absolutely" to
+"stable across renames via tolerant-read windows." Two specific
+changes land in v1.3 under that discipline (see
+`docs/plans/vocabulary-rename.md`):
+
+- **`.skills-bank.json` `source` axis values rename:** `bundled` →
+  `curated`, `yours` → `user`. Tolerant reads accept both for one
+  minor cycle (v1.3.x); writes use only the new values from v1.3
+  onward.
+- **`.skills-bank.json` field `upstream` → `origin`.** The renamed
+  TypeScript surface (v0.11.10 origin-rename-pass) gets matched on
+  the wire. Tolerant reads accept both keys for one minor cycle;
+  writes use only `origin` from v1.3 onward.
+
+The rule on no-fourth-sidecar stands. A rename inside an existing
+sidecar is not a fourth file; it's a vocabulary refinement of an
+existing one, and the tolerant-read window contains the blast
+radius. Removal of legacy readers targeted at v1.4.
+
+A maintainer pass-through (`scripts/migrate-source-markers.ts`)
+rewrites every committed marker to the new form in one PR, so the
+curation layer doesn't drip-migrate over weeks. Downstream
+registries — anything the app touches — drift toward the new form
+automatically as files are touched.

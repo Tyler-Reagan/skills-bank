@@ -258,8 +258,8 @@ export function SkillDetailDrawer({
   // don't re-hit GitHub. Result `null` until the fetch resolves;
   // the drawer omits the stars chip and description when fields
   // are null.
-  const upstreamRepo = entry.source.upstream?.repo;
-  const upstreamSkillPath = entry.source.upstream?.skillPath;
+  const upstreamRepo = entry.source.origin?.repo;
+  const upstreamSkillPath = entry.source.origin?.skillPath;
   useEffect(() => {
     setRepoMeta(null);
     if (!upstreamRepo) return;
@@ -668,7 +668,7 @@ export function SkillDetailDrawer({
 
           {isRegistered &&
             entry.adopted !== false &&
-            !entry.source.upstream &&
+            !entry.source.origin &&
             onSetManualUpstream && (
               <div className="drawer-section">
                 <h3>Origin</h3>
@@ -804,8 +804,8 @@ export function SkillDetailDrawer({
                 )}
               </div>
             )}
-          {entry.source.upstream?.kind === "github" &&
-            entry.source.upstream.repo && (
+          {entry.source.origin?.kind === "github" &&
+            entry.source.origin.repo && (
               <div className="drawer-section">
                 <h3>Origin</h3>
                 <div className="drawer-meta-row">
@@ -816,12 +816,12 @@ export function SkillDetailDrawer({
                       className="link-btn"
                       onClick={() =>
                         void window.skillsBank.openExternal(
-                          `https://github.com/${entry.source.upstream!.repo!}`,
+                          `https://github.com/${entry.source.origin!.repo!}`,
                         )
                       }
                       title="Open the source repo on GitHub"
                     >
-                      github.com/{entry.source.upstream.repo}
+                      github.com/{entry.source.origin.repo}
                     </button>
                     {repoMeta?.stars !== null &&
                       repoMeta?.stars !== undefined && (
@@ -849,7 +849,7 @@ export function SkillDetailDrawer({
                     </span>
                   </div>
                 )}
-                {entry.source.upstream.skillPath && (
+                {entry.source.origin.skillPath && (
                   <div className="drawer-meta-row">
                     <span className="drawer-meta-key">path in repo</span>
                     <span className="drawer-meta-value">
@@ -857,8 +857,8 @@ export function SkillDetailDrawer({
                         type="button"
                         className="link-btn"
                         onClick={() => {
-                          const repo = entry.source.upstream!.repo!;
-                          const skillPath = entry.source.upstream!.skillPath!;
+                          const repo = entry.source.origin!.repo!;
+                          const skillPath = entry.source.origin!.skillPath!;
                           // Strip the trailing /SKILL.md so the link
                           // opens the folder view rather than the file.
                           const folder = skillPath.replace(/\/SKILL\.md$/, "");
@@ -868,7 +868,7 @@ export function SkillDetailDrawer({
                         }}
                         title="Open the skill's folder on GitHub"
                       >
-                        {entry.source.upstream.skillPath.replace(
+                        {entry.source.origin.skillPath.replace(
                           /\/SKILL\.md$/,
                           "/",
                         )}
@@ -876,22 +876,22 @@ export function SkillDetailDrawer({
                     </span>
                   </div>
                 )}
-                {entry.source.upstream.skillFolderHash && (
+                {entry.source.origin.skillFolderHash && (
                   <div className="drawer-meta-row">
                     <span className="drawer-meta-key">fetched hash</span>
                     <span className="drawer-meta-value">
                       <code>
-                        {entry.source.upstream.skillFolderHash.slice(0, 7)}
+                        {entry.source.origin.skillFolderHash.slice(0, 7)}
                       </code>
                     </span>
                   </div>
                 )}
-                {entry.source.upstream.fetchedAt && (
+                {entry.source.origin.fetchedAt && (
                   <div className="drawer-meta-row">
                     <span className="drawer-meta-key">last fetched</span>
                     <span className="drawer-meta-value">
                       {new Date(
-                        entry.source.upstream.fetchedAt,
+                        entry.source.origin.fetchedAt,
                       ).toLocaleDateString()}
                     </span>
                   </div>
@@ -1025,7 +1025,7 @@ export function SkillDetailDrawer({
                       setAction(null),
                     );
                   }}
-                  title={`Discard local edits and re-fetch from ${entry.source.upstream?.repo ?? "Origin"}. Your changes are lost.`}
+                  title={`Discard local edits and re-fetch from ${entry.source.origin?.repo ?? "Origin"}. Your changes are lost.`}
                 >
                   {action === "resetting-to-origin" ? (
                     <>
@@ -1087,7 +1087,7 @@ export function SkillDetailDrawer({
                 {caps.canResetToOrigin ? (
                   <>
                     Your local copy diverges from{" "}
-                    {entry.source.upstream?.repo ?? "its Origin"}.
+                    {entry.source.origin?.repo ?? "its Origin"}.
                     <strong> Reset to origin</strong> discards your edits and
                     refetches.
                     <strong> Unlink origin</strong> keeps your edits and clears
@@ -1117,7 +1117,7 @@ export function SkillDetailDrawer({
                   );
                 }}
                 title={`Fetch the latest content from ${
-                  entry.source.upstream?.repo ?? "the Origin"
+                  entry.source.origin?.repo ?? "the Origin"
                 } and mirror it into this skill.`}
               >
                 {action === "updating" ? (
@@ -1130,7 +1130,7 @@ export function SkillDetailDrawer({
               </button>
               <p className="drawer-action-hint">
                 A newer version is available from{" "}
-                <code>{entry.source.upstream?.repo ?? "Origin"}</code>. Local
+                <code>{entry.source.origin?.repo ?? "Origin"}</code>. Local
                 content is unchanged since the last fetch, so the update applies
                 cleanly.
               </p>

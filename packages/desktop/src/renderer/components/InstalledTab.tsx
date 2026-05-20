@@ -225,7 +225,7 @@ export function InstalledTab({
       name: g.name,
       description: g.representative.target ?? g.representative.linkPath,
       path: g.representative.linkPath,
-      source: { source: "yours" },
+      source: { source: "user" },
     };
     return {
       g,

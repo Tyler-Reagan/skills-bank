@@ -386,15 +386,15 @@ export async function applyOriginUpdate(
   if (!entry) {
     return { ok: false, message: `${ctx.name} is not in the registry` };
   }
-  const upstream = entry.source.upstream;
-  if (upstream?.kind !== "github" || !upstream.repo || !upstream.skillPath) {
+  const origin = entry.source.origin;
+  if (origin?.kind !== "github" || !origin.repo || !origin.skillPath) {
     return {
       ok: false,
-      message: `${ctx.name} has no GitHub upstream — nothing to update`,
+      message: `${ctx.name} has no GitHub origin — nothing to update`,
     };
   }
 
-  const folderPath = folderPathFromSkillPath(upstream.skillPath);
+  const folderPath = folderPathFromSkillPath(origin.skillPath);
   const registrySkillDir = path.resolve(
     ctx.registryRoot,
     entry.path || `skills/${ctx.name}`,
@@ -441,7 +441,7 @@ export async function applyOriginUpdate(
   };
 
   const mirror = await mirrorSkillFolder(
-    upstream.repo,
+    origin.repo,
     folderPath,
     registrySkillDir,
     ctx.token,
@@ -466,8 +466,8 @@ export async function applyOriginUpdate(
       message: `Update failed: ${mirror.message}.${recoveryHint}`,
       diagnostic:
         `name=${ctx.name}\n` +
-        `repo=${upstream.repo}\n` +
-        `skillPath=${upstream.skillPath}\n` +
+        `repo=${origin.repo}\n` +
+        `skillPath=${origin.skillPath}\n` +
         `status=${mirror.status}\n` +
         `message=${mirror.message}`,
     };
@@ -501,12 +501,12 @@ export async function applyOriginUpdate(
     return {
       ok: false,
       message:
-        `Update from ${upstream.repo} fetched cleanly but failed meta.json validation; ` +
+        `Update from ${origin.repo} fetched cleanly but failed meta.json validation; ` +
         `local content restored. Cause: ${detail}.`,
       diagnostic:
         `name=${ctx.name}\n` +
-        `repo=${upstream.repo}\n` +
-        `skillPath=${upstream.skillPath}\n` +
+        `repo=${origin.repo}\n` +
+        `skillPath=${origin.skillPath}\n` +
         `reason=${metaCheck.reason}\n` +
         `detail=${detail}`,
     };
@@ -520,8 +520,8 @@ export async function applyOriginUpdate(
   const now = new Date().toISOString();
   writeSkillSource(registrySkillDir, {
     ...existingSource,
-    upstream: {
-      ...upstream,
+    origin: {
+      ...origin,
       skillFolderHash: mirror.folderHash,
     },
   });
@@ -541,7 +541,7 @@ export async function applyOriginUpdate(
   const newBaseline = hashSkillFolder(registrySkillDir);
   if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
 
-  return { ok: true, message: `Updated ${ctx.name} from ${upstream.repo}.` };
+  return { ok: true, message: `Updated ${ctx.name} from ${origin.repo}.` };
 }
 
 function readMetaTagsFromSkillDir(

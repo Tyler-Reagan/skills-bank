@@ -11,8 +11,8 @@ import type { ConflictDecision } from "./sync.js";
  *     `rename-mine`) that operates on the local path.
  *
  * They still differ on the post-action stamp: Sync writes
- * `source: "bundled"` with `syncedFromCommit`; Merge writes
- * `source: "yours"` with `syncedAt`. That post-stamp stays in the
+ * `source: "curated"` with `syncedFromCommit`; Merge writes
+ * `source: "user"` with `syncedAt`. That post-stamp stays in the
  * callers — this helper only resolves the on-disk preparation step.
  */
 

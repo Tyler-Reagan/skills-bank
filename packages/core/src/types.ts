@@ -78,7 +78,7 @@ export interface RegistryEntry extends SkillMeta {
   missing?: boolean;
   /**
    * Heal axis: the local content has drifted from the recorded
-   * baseline hash. Set when `source: "bundled"` (existing bundled-
+   * baseline hash. Set when `source: "curated"` (existing bundled-
    * sync drift) or when the skill carries an `upstream` pointer
    * (post-scanner drift). The classifier emits
    * `edited-without-origin` for the bundled case and

@@ -189,7 +189,6 @@ Delete the partial draft Release from the GitHub UI first if any artifacts uploa
 | Getting started (5 min)        | [`docs/getting-started.md`](docs/getting-started.md) |
 | Taxonomy and vocabulary        | [`docs/concepts.md`](docs/concepts.md)               |
 | End-to-end user guide          | [`docs/user-guide.md`](docs/user-guide.md)           |
-| Personas (bundled vs your-own) | [`docs/personas.md`](docs/personas.md)               |
 | Heal flows                     | [`docs/flows/heal.md`](docs/flows/heal.md)           |
 | Troubleshooting                | [`docs/troubleshooting.md`](docs/troubleshooting.md) |
 | Self-hosting                   | [`docs/self-host.md`](docs/self-host.md)             |

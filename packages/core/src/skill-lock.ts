@@ -167,11 +167,11 @@ export function scanAndStampUpstreamFromLock(registryRoot: string): {
   let stamped = 0;
   for (const ref of walkSkills(registryRoot)) {
     const base = readSkillSource(ref.dir);
-    if (base.upstream !== undefined) continue;
+    if (base.origin !== undefined) continue;
     const inferred = inferUpstreamForSkill(ref.name, lock);
     if (!inferred) continue;
     try {
-      writeSkillSource(ref.dir, { ...base, upstream: inferred });
+      writeSkillSource(ref.dir, { ...base, origin: inferred });
       // Persist the lock's `updatedAt` as the per-skill `fetchedAt` in
       // the runtime sidecar — keeps the value out of the committed
       // marker (ADR-0002) so unrelated metadata writes don't churn it.

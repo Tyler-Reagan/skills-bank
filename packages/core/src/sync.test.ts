@@ -106,7 +106,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
     const src = readSkillSource(
       path.join(registryRoot, "skills", "vendored", "alpha"),
     );
-    expect(src.source).toBe("bundled");
+    expect(src.source).toBe("curated");
     expect(src.syncedFromCommit).toBe("abc");
   });
 
@@ -115,7 +115,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       "vendored",
       "beta",
       { "SKILL.md": "# old canonical beta" },
-      { source: "bundled", syncedFromCommit: "old-sha" },
+      { source: "curated", syncedFromCommit: "old-sha" },
     );
     writeCanonical("beta", { "SKILL.md": "# new canonical beta" });
 
@@ -140,7 +140,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       "vendored",
       "gamma",
       { "SKILL.md": "# my edited gamma" },
-      { source: "yours" },
+      { source: "user" },
     );
     writeCanonical("gamma", { "SKILL.md": "# canonical gamma" });
 
@@ -158,7 +158,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       "vendored",
       "delta",
       { "SKILL.md": "# my delta" },
-      { source: "yours" },
+      { source: "user" },
     );
     writeCanonical("delta", { "SKILL.md": "# canonical delta" });
 
@@ -178,7 +178,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       "vendored",
       "epsilon",
       { "SKILL.md": "# my epsilon" },
-      { source: "yours" },
+      { source: "user" },
     );
     writeCanonical("epsilon", { "SKILL.md": "# canonical epsilon" });
 
@@ -195,7 +195,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
     const src = readSkillSource(
       path.join(registryRoot, "skills", "vendored", "epsilon"),
     );
-    expect(src.source).toBe("bundled");
+    expect(src.source).toBe("curated");
   });
 
   test("Branch 5: rename-mine renames local + writes canonical to original name", async () => {
@@ -203,7 +203,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       "vendored",
       "zeta",
       { "SKILL.md": "# my zeta" },
-      { source: "yours" },
+      { source: "user" },
     );
     writeCanonical("zeta", { "SKILL.md": "# canonical zeta" });
 
@@ -233,7 +233,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
           tags: ["mine-1", "mine-2"],
         }),
       },
-      { source: "bundled", syncedFromCommit: "old" },
+      { source: "curated", syncedFromCommit: "old" },
     );
     writeCanonical("eta", {
       "SKILL.md": "# canonical eta",
@@ -258,7 +258,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       "vendored",
       "theta",
       { "SKILL.md": "# stale bundled theta" },
-      { source: "bundled" },
+      { source: "curated" },
     );
 
     const report = await applyCanonicalSync(registryRoot, canonicalRoot, "sha");
@@ -273,7 +273,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       "vendored",
       "iota",
       { "SKILL.md": "# my iota" },
-      { source: "yours" },
+      { source: "user" },
     );
 
     const report = await applyCanonicalSync(registryRoot, canonicalRoot, "sha");
@@ -317,8 +317,8 @@ describe("applyCanonicalSync (mountTo: personal — linked-repo flow)", () => {
       {
         "SKILL.md": "# alpha",
         ".skills-bank.json": JSON.stringify({
-          source: "yours",
-          upstream: {
+          source: "user",
+          origin: {
             kind: "github",
             repo: "Tyler-Reagan/skills",
             skillPath: "alpha/SKILL.md",
@@ -338,9 +338,9 @@ describe("applyCanonicalSync (mountTo: personal — linked-repo flow)", () => {
     const src = readSkillSource(
       path.join(registryRoot, "skills", "personal", "alpha"),
     );
-    expect(src.source).toBe("bundled"); // sync stamps bundled
-    expect(src.upstream?.repo).toBe("Tyler-Reagan/skills"); // upstream preserved
-    expect(src.upstream?.skillPath).toBe("alpha/SKILL.md");
+    expect(src.source).toBe("curated"); // sync stamps bundled
+    expect(src.origin?.repo).toBe("Tyler-Reagan/skills"); // upstream preserved
+    expect(src.origin?.skillPath).toBe("alpha/SKILL.md");
   });
 });
 

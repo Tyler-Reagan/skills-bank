@@ -35,7 +35,7 @@ import {
   type RegistryManifest,
   fetchCanonicalTarball,
   acceptDriftKeepLocal,
-  acceptDriftSeverUpstream,
+  unlinkOrigin,
   hashSkillFolder,
   readSkillSource,
   writeSkillSource,
@@ -349,7 +349,7 @@ function seedManagedRegistryIfEmpty(root: string): void {
         const skillDir = path.join(root, "skills", e.name);
         if (!fs.existsSync(skillDir)) continue;
         writeSkillSource(skillDir, {
-          source: "bundled",
+          source: "curated",
           syncedAt: seededAt,
         });
       }
@@ -492,7 +492,7 @@ ipcMain.handle(IPC.originProbe, async () => runUpstreamProbe());
 
 /**
  * Update backend. Fetches the skill's folder content directly from
- * its authoritative upstream (`entry.source.upstream.repo`) via
+ * its authoritative upstream (`entry.source.origin.repo`) via
  * GitHub's REST API and mirrors it into our registry. Replaces the
  * prior `npx skills update <name>` shell-out (see PR γ of
  * docs/plans/origin-paradigm-reframe.md).
@@ -706,7 +706,7 @@ async function setManualUpstream(
   const skillDir = ref.dir;
   const existing = readSkillSource(skillDir);
   if (choice.kind === "none") {
-    writeSkillSource(skillDir, { ...existing, upstream: { kind: "none" } });
+    writeSkillSource(skillDir, { ...existing, origin: { kind: "none" } });
     return { ok: true, message: `Marked ${name} as not from any upstream.` };
   }
   if (!choice.repo || !choice.skillPath) {
@@ -735,12 +735,12 @@ async function setManualUpstream(
   const now = new Date().toISOString();
   writeSkillSource(skillDir, {
     ...existing,
-    upstream: {
+    origin: {
       kind: "github",
       repo: choice.repo,
       skillPath: choice.skillPath,
       skillFolderHash: folderHash,
-      installedAt: existing.upstream?.installedAt ?? now,
+      installedAt: existing.origin?.installedAt ?? now,
     },
   });
   writeRuntimeState(skillDir, { fetchedAt: now });
@@ -767,17 +767,18 @@ ipcMain.handle(
 // renderer can route to the two-card LoginScreen.
 //
 // Fresh installs no longer auto-coerce to "local" — the user picks
-// **Use the public skills bank** (→ "local", linkedRepo stays null) or
-// **Connect with GitHub** (→ Device Flow → RepoPickerModal with the
-// bundled repo pre-listed as Recommended). Existing users — anyone
-// with a config file from v0.10.0 or earlier — already have a
-// persisted value, so the LoginScreen path doesn't fire for them and
-// there's nothing to migrate. (See `docs/plans/github-first-onboarding.md`.)
-function resolveBootRegistrySource(): RegistrySource | null {
-  return readConfig().registrySource;
+// v1.3 persona collapse: fresh installs land directly on the
+// bundled-default ("local", linkedRepo: null) instead of routing to
+// the first-launch persona picker. GitHub linking moves to a
+// single entry point in Settings → Account. The legacy null state
+// (first-launch picker) is no longer reachable from new installs;
+// existing v1.2- configs that persist `null` get normalized to
+// "local" on the next boot.
+function resolveBootRegistrySource(): RegistrySource {
+  return readConfig().registrySource ?? "local";
 }
 
-let registrySource: RegistrySource | null = resolveBootRegistrySource();
+let registrySource: RegistrySource = resolveBootRegistrySource();
 
 let dismissedUpdateVersion: string | null = readConfig().dismissedUpdateVersion;
 let linkedRepo: LinkedRepoMetadata | null = readConfig().linkedRepo;
@@ -1499,16 +1500,16 @@ mutatingHandle(IPC.acceptDrift, (_e, name: string) => {
   }
   const skillDir = path.join(registryRoot, entry.path);
   // Dispatch based on the source axis carrying the drift signal.
-  // - Skills with a per-skill `upstream` pointer route through
-  //   `acceptDriftSeverUpstream` — clears the upstream and drops
-  //   the baseline so future probes don't surface it as having an
-  //   update available. Source axis (bundled/yours) is preserved.
-  // - Skills without an upstream (the original bundled-sync drift
+  // - Skills with a per-skill `origin` pointer route through
+  //   `unlinkOrigin` — clears the origin pointer and drops the
+  //   baseline so future probes don't surface it as having an
+  //   update available. Source axis (curated/user) is preserved.
+  // - Skills without an origin (the original curated-sync drift
   //   case) route through `acceptDriftKeepLocal` as before — flips
-  //   source to "yours" so future syncs leave the skill alone.
-  const isUpstream = entry.source.upstream?.kind === "github";
+  //   source to "user" so future syncs leave the skill alone.
+  const hasOrigin = entry.source.origin?.kind === "github";
   try {
-    if (isUpstream) acceptDriftSeverUpstream(skillDir);
+    if (hasOrigin) unlinkOrigin(skillDir);
     else acceptDriftKeepLocal(skillDir);
     buildRegistryIndex(registryRoot, {
       includeGitInfo: true,
@@ -1516,8 +1517,8 @@ mutatingHandle(IPC.acceptDrift, (_e, name: string) => {
     });
     return {
       ok: true,
-      message: isUpstream
-        ? `Severed upstream link on ${name}; future probes will leave it alone.`
+      message: hasOrigin
+        ? `Unlinked origin on ${name}; future probes will leave it alone.`
         : `Kept local edits to ${name}; future syncs will leave it alone.`,
     };
   } catch (err) {
@@ -2010,10 +2011,17 @@ ipcMain.handle(IPC.importManifest, async () => {
       const error = fromCaught("ipc.unknown", parseErr);
       return { ok: false, message: `Invalid manifest JSON: ${error.message}`, error };
     }
-    if (manifest.schemaVersion !== 1) {
+    // Accept v1 (auto-migrated by importRegistryManifest) and v2.
+    // Newer schemaVersions are refused so a future-incompatible
+    // manifest doesn't silently mismap fields. The schemaVersion
+    // field is typed as `2` post-narrowing; cast through unknown to
+    // inspect what was actually on disk.
+    const sv = (manifest as unknown as { schemaVersion: unknown })
+      .schemaVersion;
+    if (sv !== 1 && sv !== 2) {
       return {
         ok: false,
-        message: `Unsupported manifest schemaVersion ${String(manifest.schemaVersion)} — this build understands v1.`,
+        message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v1 and v2.`,
       };
     }
     const importResult = await importRegistryManifest(registryRoot, manifest, {
@@ -2769,18 +2777,18 @@ ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
  *
  * The pre-diff-before-apply implementation of `replaceRegistryWithRepo`
  * wiped the registry and re-imported every skill stamped
- * `source: "yours"` with a `syncedFromCommit`. That's semantically wrong:
- * a skill from the linked upstream is `source: "bundled"` in this
- * codebase's vocabulary (where "bundled" means "from the registry's
+ * `source: "user"` with a `syncedFromCommit`. That's semantically wrong:
+ * a skill from the linked upstream is `source: "curated"` in this
+ * codebase's vocabulary (where "curated" means "from the registry's
  * canonical upstream," not literally "shipped in the app binary").
  *
  * Without this migration, the first re-fetch under the new code path
  * would surface every previously-imported skill as a conflict (because
- * applyCanonicalSync treats non-"bundled" local sources as user-owned
+ * applyCanonicalSync treats non-"curated" local sources as user-owned
  * and conflicts on overwrite). Re-stamping legacy entries fixes that
  * silently on the next refresh.
  *
- * Heuristic: `source: "yours"` + `syncedFromCommit` present = legacy
+ * Heuristic: `source: "user"` + `syncedFromCommit` present = legacy
  * github-linked import. User-authored skills don't carry
  * `syncedFromCommit`.
  *
@@ -2790,8 +2798,8 @@ ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
 function migrateLegacyGithubMarkers(registryRoot: string): void {
   for (const ref of walkSkills(registryRoot)) {
     const src = readSkillSource(ref.dir);
-    if (src.source === "yours" && src.syncedFromCommit) {
-      writeSkillSource(ref.dir, { ...src, source: "bundled" });
+    if (src.source === "user" && src.syncedFromCommit) {
+      writeSkillSource(ref.dir, { ...src, source: "curated" });
     }
   }
 }

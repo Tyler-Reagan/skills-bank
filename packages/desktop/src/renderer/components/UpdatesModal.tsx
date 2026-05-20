@@ -112,8 +112,8 @@ export function UpdatesModal({
               <div key={e.name} style={row}>
                 <div style={rowMain}>
                   <strong style={rowName}>{e.name}</strong>
-                  {e.source.upstream?.repo && (
-                    <span style={rowRepo}>{e.source.upstream.repo}</span>
+                  {e.source.origin?.repo && (
+                    <span style={rowRepo}>{e.source.origin.repo}</span>
                   )}
                 </div>
                 <div style={rowActions}>

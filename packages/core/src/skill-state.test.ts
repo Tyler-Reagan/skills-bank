@@ -24,7 +24,7 @@ const baseEntry: RegistryEntry = {
   name: "test",
   description: "test skill",
   path: "skills/test",
-  source: { source: "yours" },
+  source: { source: "user" },
 };
 
 function entry(over: Partial<RegistryEntry> = {}): RegistryEntry {
@@ -92,8 +92,8 @@ const ROWS: Row[] = [
     entry: entry({
       drift: true,
       source: {
-        source: "yours",
-        upstream: {
+        source: "user",
+        origin: {
           kind: "github",
           repo: "u/r",
           sourceUrl: "https://github.com/u/r",
@@ -110,7 +110,7 @@ const ROWS: Row[] = [
   {
     label:
       "drift + bundled-no-upstream → edited-without-origin (Accept/TakeCanonical)",
-    entry: entry({ drift: true, source: { source: "bundled" } }),
+    entry: entry({ drift: true, source: { source: "curated" } }),
     installed: [],
     isRegistered: true,
     expectedState: "edited-without-origin",
@@ -123,8 +123,8 @@ const ROWS: Row[] = [
     entry: entry({
       drift: true,
       source: {
-        source: "bundled",
-        upstream: {
+        source: "curated",
+        origin: {
           kind: "github",
           repo: "u/r",
           sourceUrl: "https://github.com/u/r",
@@ -155,8 +155,8 @@ const ROWS: Row[] = [
       drift: true,
       originUpdateAvailable: true,
       source: {
-        source: "yours",
-        upstream: {
+        source: "user",
+        origin: {
           kind: "github",
           repo: "u/r",
           sourceUrl: "https://github.com/u/r",

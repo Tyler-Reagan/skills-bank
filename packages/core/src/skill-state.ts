@@ -222,20 +222,20 @@ export function classifyDrawerState(
 
   // Drift fan-out: local content has diverged from the recorded
   // baseline. Which heal flow applies depends on the source axis.
-  //   - Upstream-pointer skills (`source.upstream` set) →
+  //   - Upstream-pointer skills (`source.origin` set) →
   //     `edited-with-origin`. Two arms: Keep my edits
   //     (sever the upstream) or Revert to upstream (re-fetch via
   //     `npx skills update`).
   //   - Bundled skills without an upstream pointer → preserved
   //     `edited-without-origin` semantics (Keep mine / Re-baseline
   //     against bundled).
-  // An upstream-stamped skill that ALSO has `source: "bundled"` —
+  // An upstream-stamped skill that ALSO has `source: "curated"` —
   // possible when the user has the same name installed via raw npx
   // — routes to the upstream branch since that's the more specific
   // signal and its heal flow can fall back to clearing the bundled
   // marker if the user chooses Keep mine.
   if (isRegistered && entry.drift === true) {
-    if (entry.source.upstream?.kind === "github") {
+    if (entry.source.origin?.kind === "github") {
       return {
         state: "edited-with-origin",
         brokenCount: 0,

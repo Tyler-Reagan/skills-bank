@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   exportRegistryManifest,
   importRegistryManifest,
+  migrateManifestV1ToV2,
   writeRegistrySnapshot,
   MANIFEST_SCHEMA_VERSION,
   type RegistryManifest,
@@ -62,8 +63,8 @@ function writeSkill(
   opts: {
     description?: string;
     tags?: string[];
-    source?: "bundled" | "yours";
-    upstream?: { repo: string; skillPath: string; skillFolderHash?: string };
+    source?: "curated" | "user";
+    origin?: { repo: string; skillPath: string; skillFolderHash?: string };
   } = {},
 ): string {
   const dir = path.join(registryRoot, "skills", bucket, name);
@@ -78,17 +79,17 @@ function writeSkill(
   };
   if (opts.tags) meta["tags"] = opts.tags;
   fs.writeFileSync(path.join(dir, "meta.json"), JSON.stringify(meta, null, 2));
-  if (opts.source || opts.upstream) {
+  if (opts.source || opts.origin) {
     writeSkillSource(dir, {
-      source: opts.source ?? "yours",
-      ...(opts.upstream
+      source: opts.source ?? "user",
+      ...(opts.origin
         ? {
-            upstream: {
+            origin: {
               kind: "github",
-              repo: opts.upstream.repo,
-              skillPath: opts.upstream.skillPath,
-              ...(opts.upstream.skillFolderHash
-                ? { skillFolderHash: opts.upstream.skillFolderHash }
+              repo: opts.origin.repo,
+              skillPath: opts.origin.skillPath,
+              ...(opts.origin.skillFolderHash
+                ? { skillFolderHash: opts.origin.skillFolderHash }
                 : {}),
             },
           }
@@ -142,9 +143,9 @@ describe("exportRegistryManifest", () => {
   test("records each skill's source, origin, tags, dismissed/hidden", () => {
     writeSkill("personal", "alpha", { tags: ["a", "b"] });
     writeSkill("vendored", "beta", {
-      source: "bundled",
+      source: "curated",
       tags: [],
-      upstream: {
+      origin: {
         repo: "owner/repo",
         skillPath: "skills/beta/SKILL.md",
         skillFolderHash: "deadbeef",
@@ -161,14 +162,14 @@ describe("exportRegistryManifest", () => {
     expect(m.skills.map((s) => s.name).sort()).toEqual(["alpha", "beta"]);
 
     const alpha = m.skills.find((s) => s.name === "alpha")!;
-    expect(alpha.source).toBe("yours");
+    expect(alpha.source).toBe("user");
     expect(alpha.origin).toEqual({ kind: "none" });
     expect(alpha.tags).toEqual(["a", "b"]);
     expect(alpha.hidden).toBe(false);
     expect(alpha.dismissed).toBe(false);
 
     const beta = m.skills.find((s) => s.name === "beta")!;
-    expect(beta.source).toBe("bundled");
+    expect(beta.source).toBe("curated");
     expect(beta.origin).toEqual({
       kind: "github",
       repo: "owner/repo",
@@ -216,7 +217,7 @@ describe("importRegistryManifest", () => {
       skills: [
         {
           name: "alpha",
-          source: "yours",
+          source: "user",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -248,11 +249,11 @@ describe("importRegistryManifest", () => {
       fs.readFileSync(path.join(destDir, ".skills-bank.json"), "utf8"),
     ) as {
       source: string;
-      upstream?: { repo?: string; skillFolderHash?: string };
+      origin?: { repo?: string; skillFolderHash?: string };
     };
-    expect(marker.source).toBe("yours");
-    expect(marker.upstream?.repo).toBe("owner/repo");
-    expect(marker.upstream?.skillFolderHash).toBe("foldersha");
+    expect(marker.source).toBe("user");
+    expect(marker.origin?.repo).toBe("owner/repo");
+    expect(marker.origin?.skillFolderHash).toBe("foldersha");
     // Synced-hash sidecar baselined so drift is clean from the start.
     expect(
       fs.readFileSync(path.join(destDir, ".skills-bank-hash"), "utf8").trim(),
@@ -278,7 +279,7 @@ describe("importRegistryManifest", () => {
       skills: [
         {
           name: "beta",
-          source: "bundled",
+          source: "curated",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -309,7 +310,7 @@ describe("importRegistryManifest", () => {
       skills: [
         {
           name: "ghost",
-          source: "yours",
+          source: "user",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -325,8 +326,8 @@ describe("importRegistryManifest", () => {
 
   test("same-origin existing skill returns `registered`, restores hidden state", async () => {
     const dir = writeSkill("vendored", "gamma", {
-      source: "bundled",
-      upstream: { repo: "owner/repo", skillPath: "skills/gamma/SKILL.md" },
+      source: "curated",
+      origin: { repo: "owner/repo", skillPath: "skills/gamma/SKILL.md" },
     });
     writeSyncedHash(dir, "baseline");
     writeUpstreamCanonNames(registryRoot, ["gamma"], "synced");
@@ -338,7 +339,7 @@ describe("importRegistryManifest", () => {
       skills: [
         {
           name: "gamma",
-          source: "bundled",
+          source: "curated",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -369,8 +370,8 @@ describe("importRegistryManifest", () => {
 
   test("surfaces collision when local origin differs from manifest", async () => {
     writeSkill("vendored", "delta", {
-      source: "bundled",
-      upstream: { repo: "other/repo", skillPath: "skills/delta/SKILL.md" },
+      source: "curated",
+      origin: { repo: "other/repo", skillPath: "skills/delta/SKILL.md" },
     });
 
     const manifest: RegistryManifest = {
@@ -380,7 +381,7 @@ describe("importRegistryManifest", () => {
       skills: [
         {
           name: "delta",
-          source: "bundled",
+          source: "curated",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -414,7 +415,7 @@ describe("importRegistryManifest", () => {
       skills: [
         {
           name: "epsilon",
-          source: "yours",
+          source: "user",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -438,7 +439,7 @@ describe("importRegistryManifest", () => {
       skills: [
         {
           name: "zeta",
-          source: "yours",
+          source: "user",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -495,5 +496,94 @@ describe("writeRegistrySnapshot", () => {
       .readdirSync(dir)
       .filter((n) => n.startsWith("snapshot-"));
     expect(remaining.length).toBe(3);
+  });
+});
+
+describe("migrateManifestV1ToV2", () => {
+  test("renames per-skill source axis values: bundled → curated, yours → user", () => {
+    const v1 = {
+      schemaVersion: 1 as const,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.2.0",
+      registryRoot: "Tyler-Reagan/skills",
+      skills: [
+        {
+          name: "alpha",
+          source: "bundled" as const,
+          origin: { kind: "github" as const, repo: "owner/repo" },
+          tags: ["t1"],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+        {
+          name: "beta",
+          source: "yours" as const,
+          origin: { kind: "none" as const },
+          tags: [],
+          dismissed: true,
+          hidden: true,
+          lastInstalledOn: ["claude" as const],
+        },
+      ],
+    };
+    const v2 = migrateManifestV1ToV2(v1);
+    expect(v2.schemaVersion).toBe(2);
+    expect(v2.registryRoot).toBe("Tyler-Reagan/skills");
+    expect(v2.skills[0]!.source).toBe("curated");
+    expect(v2.skills[1]!.source).toBe("user");
+    // Tags / hide / lastInstalledOn / origin pass through unchanged.
+    expect(v2.skills[0]!.tags).toEqual(["t1"]);
+    expect(v2.skills[1]!.hidden).toBe(true);
+    expect(v2.skills[1]!.lastInstalledOn).toEqual(["claude"]);
+  });
+});
+
+describe("importRegistryManifest — schema migration head", () => {
+  test("v1 manifest imports via migration head, registers with renamed source values", async () => {
+    let call = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        call++;
+        if (call === 1) return makeTreeResponse("skills/zeta");
+        if (call === 2) return makeBlobResponse("# zeta migrated");
+        throw new Error(`unexpected call #${call}`);
+      }),
+    );
+
+    // Construct a v1-shaped manifest with legacy "bundled" source value.
+    const v1Manifest = {
+      schemaVersion: 1 as const,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.2.0",
+      skills: [
+        {
+          name: "zeta",
+          source: "bundled" as const,
+          origin: {
+            kind: "github" as const,
+            repo: "owner/repo",
+            skillPath: "skills/zeta/SKILL.md",
+          },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+      ],
+    };
+
+    const result = await importRegistryManifest(
+      registryRoot,
+      // Cast: import accepts both shapes via the migration head.
+      v1Manifest as unknown as RegistryManifest,
+    );
+    expect(result.outcomes).toEqual([{ name: "zeta", result: "registered" }]);
+    // Imported skill mounts under skills/vendored/ because source was
+    // migrated to "curated" (which routes vendored, not personal).
+    expect(
+      fs.existsSync(path.join(registryRoot, "skills", "vendored", "zeta")),
+    ).toBe(true);
   });
 });

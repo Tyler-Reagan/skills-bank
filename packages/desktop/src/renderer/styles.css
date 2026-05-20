@@ -839,18 +839,13 @@ select {
   text-transform: uppercase;
   flex-shrink: 0;
 }
-.skill-origin-badge.yours {
-  /* Accent — the user added this. Distinct from the calmer BUNDLED
-     so the user can scan their own additions at a glance. */
-  color: var(--accent);
-  background: var(--surface-hi);
-  border: 1px solid var(--accent);
-}
-.skill-origin-badge.bundled {
-  /* Calm default — BUNDLED is the majority case and rendering it as
+.skill-origin-badge.curated {
+  /* Calm default — CURATED is the majority case and rendering it as
      the loudest badge would create visual noise. Muted text + subtle
-     border reads as "in good standing" while still distinguishing
-     from YOURS. */
+     border reads as "in good standing." Phase 2 dropped the YOURS
+     badge entirely; user-source skills render without a provenance
+     chip, and the "Mine" filter is the single surface for "show me
+     only my skills." */
   color: var(--text-3);
   background: var(--surface-hi);
   border: 1px solid var(--border);
