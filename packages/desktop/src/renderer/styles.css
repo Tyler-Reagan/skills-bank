@@ -1245,7 +1245,7 @@ select {
   align-items: center;
   gap: var(--s2);
   padding: var(--s2) var(--s3);
-  margin: 0 var(--s4);
+  margin: var(--s2) var(--s4);
   border-radius: var(--r-sm);
   font-size: 13px;
   border: 1px solid var(--border);
