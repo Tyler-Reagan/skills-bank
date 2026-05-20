@@ -409,6 +409,37 @@ export async function applyOriginUpdate(
   const fs = await import("node:fs");
   const preservedTags = readMetaTagsFromSkillDir(registrySkillDir, fs);
 
+  // Stash the pre-mirror skill folder so we can roll back if the
+  // post-mirror invariants check fails (synthesis can't fill in,
+  // validation rejects). Without this stash a broken upstream would
+  // poison the local copy and the new baseline hash would freeze
+  // the broken state as "the new normal" — see
+  // docs/bug-reports/2026-05-19-origin-update-missing-validation.md.
+  const crypto = await import("node:crypto");
+  const scratchRoot = path.resolve(
+    ctx.registryRoot,
+    ".skills-bank",
+    "scratch",
+  );
+  const scratchPath = path.join(
+    scratchRoot,
+    `origin-update-${crypto.randomBytes(8).toString("hex")}`,
+  );
+  fs.mkdirSync(scratchRoot, { recursive: true });
+  if (fs.existsSync(registrySkillDir)) {
+    fs.cpSync(registrySkillDir, scratchPath, { recursive: true });
+  }
+  const restoreFromScratch = (): void => {
+    if (!fs.existsSync(scratchPath)) return;
+    fs.rmSync(registrySkillDir, { recursive: true, force: true });
+    fs.renameSync(scratchPath, registrySkillDir);
+  };
+  const cleanupScratch = (): void => {
+    if (fs.existsSync(scratchPath)) {
+      fs.rmSync(scratchPath, { recursive: true, force: true });
+    }
+  };
+
   const mirror = await mirrorSkillFolder(
     upstream.repo,
     folderPath,
@@ -416,6 +447,9 @@ export async function applyOriginUpdate(
     ctx.token,
   );
   if (!mirror.ok) {
+    // Mirror itself didn't mutate destDir (ADR-0001 Suite 4); just
+    // discard the scratch and propagate.
+    cleanupScratch();
     if (mirror.status === 429 && mirror.rateLimit) {
       return {
         ok: false,
@@ -439,6 +473,46 @@ export async function applyOriginUpdate(
     };
   }
 
+  // Post-mirror invariants check (synthesis + validation). The
+  // mirror's wipe-and-recopy may have left the registry copy without
+  // a meta.json (upstream didn't ship one) or with an invalid one
+  // (upstream's meta.json has an empty description, missing required
+  // fields, etc.). Both bugs were filed alongside this fix:
+  //   - docs/bug-reports/2026-05-19-origin-update-missing-meta-synthesis.md
+  //   - docs/bug-reports/2026-05-19-origin-update-missing-validation.md
+  // Synthesis attempts to fill the gap from SKILL.md frontmatter;
+  // validation then runs the schema check.
+  const { synthesizeSkillMeta, validateSkillMeta } = await import(
+    "./skill-meta.js"
+  );
+  synthesizeSkillMeta(registrySkillDir);
+  const metaCheck = validateSkillMeta(registrySkillDir);
+  if (!metaCheck.ok) {
+    // Roll back: discard the mirrored content, restore from stash.
+    // The user retries Update once the upstream-side issue is fixed,
+    // or accepts the existing local copy via heal.
+    restoreFromScratch();
+    const detail =
+      metaCheck.reason === "schema-violation"
+        ? metaCheck.errors.join("; ")
+        : metaCheck.reason === "invalid-json"
+          ? metaCheck.message
+          : metaCheck.reason;
+    return {
+      ok: false,
+      message:
+        `Update from ${upstream.repo} fetched cleanly but failed meta.json validation; ` +
+        `local content restored. Cause: ${detail}.`,
+      diagnostic:
+        `name=${ctx.name}\n` +
+        `repo=${upstream.repo}\n` +
+        `skillPath=${upstream.skillPath}\n` +
+        `reason=${metaCheck.reason}\n` +
+        `detail=${detail}`,
+    };
+  }
+  cleanupScratch();
+
   // Refresh marker with the new probed folder hash. `fetchedAt` lives
   // in the gitignored runtime sidecar (ADR-0002) so this write doesn't
   // churn the committed `.skills-bank.json` when only the timestamp
@@ -454,10 +528,8 @@ export async function applyOriginUpdate(
   // Restore user tags. Two cases:
   //   - Upstream shipped meta.json → splice tags in (preserve other
   //     upstream-curated fields like description).
-  //   - Upstream didn't ship meta.json → synthesize a minimal file
-  //     from SKILL.md frontmatter + the user's tags so the warning
-  //     "missing meta.json" doesn't surface for a skill the user
-  //     actually had metadata for.
+  //   - Upstream didn't ship meta.json → synthesis above produced one;
+  //     splice tags in so the user's curated tag list survives.
   if (preservedTags !== null && preservedTags.length > 0) {
     restoreMetaTags(registrySkillDir, preservedTags, ctx.name, fs);
   }

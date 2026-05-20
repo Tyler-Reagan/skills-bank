@@ -48,6 +48,7 @@ import {
   mirrorSkillFolder,
   readSkillSource,
   ORIGIN_KIND_GITHUB,
+  synthesizeSkillMeta,
   writeSkillSource,
   writeSyncedHash,
   type OriginPointer,
@@ -234,102 +235,6 @@ async function resolveSkillPath(
   return null;
 }
 
-/**
- * Parse the YAML frontmatter block at the top of a SKILL.md into a
- * flat record. Supports scalar `key: value` lines plus inline-array
- * tags (`tags: [a, b]`) and block-array tags (one `- item` per line
- * after a `tags:` header). Anything else is silently dropped — we
- * only need a small fixed set of fields for meta.json synthesis.
- */
-function parseSkillFrontmatter(skillMdPath: string): Record<
-  string,
-  string | string[]
-> | null {
-  if (!fs.existsSync(skillMdPath)) return null;
-  const content = fs.readFileSync(skillMdPath, "utf8");
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-  const out: Record<string, string | string[]> = {};
-  const lines = match[1].split("\n");
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i]!;
-    i++;
-    if (!line.trim() || line.trim().startsWith("#")) continue;
-    const idx = line.indexOf(":");
-    if (idx === -1) continue;
-    const key = line.slice(0, idx).trim();
-    if (!key) continue;
-    const rest = line.slice(idx + 1).trim();
-    // Inline array: `tags: [a, b, c]`.
-    if (rest.startsWith("[") && rest.endsWith("]")) {
-      const inner = rest.slice(1, -1).trim();
-      if (!inner) {
-        out[key] = [];
-      } else {
-        out[key] = inner
-          .split(",")
-          .map((s) => s.trim().replace(/^["']|["']$/g, ""))
-          .filter(Boolean);
-      }
-      continue;
-    }
-    // Block array: header line is empty, subsequent `- item` lines.
-    if (rest === "" && i < lines.length && lines[i]!.trim().startsWith("-")) {
-      const arr: string[] = [];
-      while (i < lines.length && lines[i]!.trim().startsWith("-")) {
-        const item = lines[i]!
-          .trim()
-          .replace(/^-\s*/, "")
-          .replace(/^["']|["']$/g, "");
-        if (item) arr.push(item);
-        i++;
-      }
-      out[key] = arr;
-      continue;
-    }
-    // Scalar (strip surrounding quotes, drop trailing comment).
-    const stripped = rest.replace(/^["']|["']$/g, "");
-    out[key] = stripped;
-  }
-  return out;
-}
-
-/**
- * Synthesize a meta.json into `destDir` from the SKILL.md frontmatter
- * if (a) meta.json doesn't already exist and (b) the frontmatter
- * yields at minimum a `name` and `description`. No-op otherwise.
- * Returns the path written (or null when skipped).
- *
- * Field set is the maintainable subset of `SkillMeta` plus optional
- * `license` — schema's `additionalProperties: true` lets us round-trip
- * a license field through validate.
- */
-function synthesizeMetaJson(destDir: string): string | null {
-  const metaPath = path.join(destDir, "meta.json");
-  if (fs.existsSync(metaPath)) return null;
-  const fm = parseSkillFrontmatter(path.join(destDir, "SKILL.md"));
-  if (!fm) return null;
-  const name = typeof fm["name"] === "string" ? fm["name"] : null;
-  const description =
-    typeof fm["description"] === "string" ? fm["description"] : null;
-  if (!name || !description) return null;
-  const meta: Record<string, string | string[]> = { name, description };
-  const version = typeof fm["version"] === "string" ? fm["version"] : "0.1.0";
-  meta["version"] = version;
-  if (Array.isArray(fm["tags"]) && fm["tags"].length > 0) {
-    meta["tags"] = fm["tags"];
-  }
-  if (typeof fm["license"] === "string" && fm["license"]) {
-    meta["license"] = fm["license"];
-  }
-  if (typeof fm["author"] === "string" && fm["author"]) {
-    meta["author"] = fm["author"];
-  }
-  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + "\n", "utf8");
-  return metaPath;
-}
-
 async function main(): Promise<void> {
   const args = parseArgs();
   const token = process.env["GITHUB_TOKEN"] ?? null;
@@ -406,8 +311,8 @@ async function main(): Promise<void> {
   // would immediately register as drifted. Skipped via
   // `--no-synthesize-meta` and a no-op when meta.json already exists.
   if (args.synthesizeMeta) {
-    const written = synthesizeMetaJson(destDir);
-    if (written) {
+    const result = synthesizeSkillMeta(destDir);
+    if (result.ok && result.written) {
       console.log(`  synthesized meta.json from SKILL.md frontmatter`);
     }
   }
