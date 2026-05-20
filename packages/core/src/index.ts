@@ -22,6 +22,7 @@ export * from "./heal.js";
 export * from "./hide.js";
 export * from "./merge.js";
 export * from "./publish-state.js";
+export * from "./skill-meta.js";
 export * from "./skill-record.js";
 export * from "./skill-state.js";
 export * from "./skill-state-server.js";

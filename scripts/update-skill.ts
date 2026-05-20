@@ -37,8 +37,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
+import { validateSkillMeta } from "../packages/core/src/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -148,38 +147,21 @@ function validateSourceFolder(
   if (!fs.existsSync(path.join(folder, "SKILL.md"))) {
     return { ok: false, reason: `missing SKILL.md in ${folder}` };
   }
-  const metaPath = path.join(folder, "meta.json");
-  if (!fs.existsSync(metaPath)) {
+  const meta = validateSkillMeta(folder);
+  if (meta.ok) return { ok: true };
+  if (meta.reason === "missing-meta-json") {
     return {
       ok: false,
       reason: `missing meta.json in ${folder} — every bank skill ships one`,
     };
   }
-  let meta: unknown;
-  try {
-    meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
-  } catch (err) {
-    return {
-      ok: false,
-      reason: `meta.json is invalid JSON: ${(err as Error).message}`,
-    };
+  if (meta.reason === "invalid-json") {
+    return { ok: false, reason: `meta.json is invalid JSON: ${meta.message}` };
   }
-  const schemaPath = path.join(repoRoot, "docs", "meta-schema.json");
-  const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
-  const ajv = new (Ajv as unknown as {
-    new (opts: object): {
-      compile: (s: unknown) => (d: unknown) => boolean;
-    };
-  })({ allErrors: true, strict: false });
-  (addFormats as unknown as (a: unknown) => void)(ajv);
-  const validate = ajv.compile(schema);
-  if (!validate(meta)) {
-    return {
-      ok: false,
-      reason: `meta.json fails schema validation against docs/meta-schema.json`,
-    };
-  }
-  return { ok: true };
+  return {
+    ok: false,
+    reason: `meta.json fails schema validation: ${meta.errors.join("; ")}`,
+  };
 }
 
 // Wipe the destination and copy. Mirrors the semantics of

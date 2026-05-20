@@ -3,6 +3,56 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.1.1
+
+Patch release closing two related correctness gaps in the in-app Origin
+Update flow surfaced during the v1.1.0 working-tree cleanup. Both bugs
+were filed under `docs/bug-reports/` (2026-05-19) and fix bundled here.
+
+### Fixed
+
+- **In-app Origin Update synthesizes `meta.json` when upstream lacks
+  one.** Symptom: a user clicks Update on a vendored skill whose
+  upstream no longer ships `meta.json`; the local copy ends up without
+  one; `pnpm validate` fails on the next run. The CLI path
+  (`vendor:skill`) already synthesizes from SKILL.md frontmatter; the
+  runtime in-app path didn't carry the same logic. Fix: extracted the
+  synthesis into a shared `synthesizeSkillMeta` in
+  `@skills-bank/core`; both call sites now route through it.
+- **In-app Origin Update validates `meta.json` after mirror and rolls
+  back on schema failure.** Symptom: an upstream `meta.json` with an
+  empty description (or any other schema violation) gets baselined
+  into `.skills-bank.json` as the new canonical state; drift
+  detection then treats the broken state as "the new normal." Fix:
+  `applyOriginUpdate` now stashes the pre-mirror skill folder to a
+  scratch dir, runs synthesis + `validateSkillMeta` after mirror, and
+  restores from scratch if validation fails. The Update toast surfaces
+  the specific reason (Ajv error messages) so the user knows to ping
+  the upstream's maintainer or accept their local copy via heal.
+
+### Added
+
+- **`@skills-bank/core` exports** `parseSkillFrontmatter`,
+  `synthesizeSkillMeta`, `validateSkillMeta`, `SKILL_META_SCHEMA`.
+  All four are discoverable from `@skills-bank/core` so the
+  maintainer scripts, the in-app runtime, and external SDK consumers
+  share one contract for "what makes a valid skill meta.json."
+- **Test suite** in `packages/core/src/skill-meta.test.ts` (18 tests)
+  pinning the frontmatter parser, the synthesis decision tree, the
+  validation discriminated union, and parity between `SKILL_META_SCHEMA`
+  (the runtime-bundled copy) and `docs/meta-schema.json` (the canonical
+  published version).
+
+### Changed
+
+- **`scripts/vendor-skill.ts` and `scripts/update-skill.ts`** now
+  import the shared helpers instead of carrying local copies of the
+  frontmatter parser, the synthesis function, and the validation
+  logic. The CLI path's behavior is unchanged; the implementation
+  moved.
+
+---
+
 ## v1.0.1
 
 Dev-experience hardening and two small visual fixes. No user-facing feature
