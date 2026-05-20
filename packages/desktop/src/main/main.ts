@@ -31,6 +31,8 @@ import {
   exportRegistry,
   exportRegistryManifest,
   importRegistryManifest,
+  installSkillFromGithub,
+  parseGithubSkillUrl,
   writeRegistrySnapshot,
   type RegistryManifest,
   fetchCanonicalTarball,
@@ -2080,6 +2082,33 @@ ipcMain.handle(IPC.installFromManifestHint, async (_e, payload: { names: string[
     installedCount,
     errors,
   };
+});
+
+// Phase 4 (v1.5): one-shot install from a pasted GitHub URL.
+// Parses the URL, composes the core install primitive, rebuilds
+// the registry index so the new skill is immediately visible.
+mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
+  if (!registryRoot) {
+    return { ok: false, reason: "no-registry-root", message: NO_ROOT_MSG } as const;
+  }
+  const parsed = parseGithubSkillUrl(url);
+  if ("kind" in parsed) {
+    return {
+      ok: false,
+      reason: "url-parse-error",
+      message: parsed.message,
+    } as const;
+  }
+  const result = await installSkillFromGithub({
+    registryRoot,
+    repo: parsed.repo,
+    skillPath: parsed.skillPath,
+    token: getStoredToken(),
+  });
+  if (result.ok) {
+    buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
+  }
+  return result;
 });
 
 ipcMain.handle(IPC.importRegistry, async () => {

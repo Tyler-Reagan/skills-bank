@@ -48,6 +48,7 @@ import { DrawerHost } from "./components/DrawerHost.js";
 import { DeleteUnregisteredConfirm } from "./components/DeleteUnregisteredConfirm.js";
 import { UpdateNotesModal } from "./components/UpdateNotesModal.js";
 import { ConnectGithubModal } from "./components/ConnectGithubModal.js";
+import { InstallFromGithubModal } from "./components/InstallFromGithubModal.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
 import { AccountModal } from "./components/AccountModal.js";
 import { UpdatesModal } from "./components/UpdatesModal.js";
@@ -296,6 +297,7 @@ function AppContent(): React.ReactElement {
   > | null>(null);
   const [settings, setSettingsState] = useState<AppSettings>(readSettings);
   const [showSettings, setShowSettings] = useState(false);
+  const [showInstallFromGithub, setShowInstallFromGithub] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [showConnectGithub, setShowConnectGithub] = useState(false);
@@ -1656,6 +1658,10 @@ function AppContent(): React.ReactElement {
             settings={settings}
             onSave={saveSettings}
             onClose={() => setShowSettings(false)}
+            onOpenInstallFromGithub={() => {
+              setShowSettings(false);
+              setShowInstallFromGithub(true);
+            }}
             hiddenCanon={registry.filter((e) => e.hidden).map((e) => e.name)}
             onUnhide={async (name) => {
               const r = await window.skillsBank.unhide(name);
@@ -1663,6 +1669,15 @@ function AppContent(): React.ReactElement {
               await refresh();
             }}
             isAuthed={Boolean(authStatus?.user)}
+          />
+        )}
+        {showInstallFromGithub && (
+          <InstallFromGithubModal
+            onClose={() => setShowInstallFromGithub(false)}
+            onInstalled={() => {
+              setShowInstallFromGithub(false);
+              void refresh();
+            }}
           />
         )}
 

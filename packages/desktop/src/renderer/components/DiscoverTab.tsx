@@ -129,8 +129,9 @@ export function DiscoverTab({
         role="note"
         aria-label="How discovered skills land in your registry"
       >
-        Anything you install via <code>npx skills add</code> will appear in your
-        registry automatically.
+        See a skill you want? Copy its source-repo folder URL and use{" "}
+        <strong>Settings → Install a skill from GitHub</strong>. For raw{" "}
+        <code>npx</code> commands, use <strong>Open Terminal</strong>.
       </div>
       <div
         className="discover-chrome"
@@ -168,7 +169,7 @@ export function DiscoverTab({
           type="button"
           className="btn ghost"
           onClick={onOpenTerminal}
-          title="Open a terminal to run install commands (e.g. npx skillsadd ...)"
+          title="Run raw npx commands (advanced). Most users prefer Settings → Install a skill from GitHub."
         >
           Open Terminal ↗
         </button>
