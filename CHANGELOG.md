@@ -3,6 +3,34 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.6.1
+
+Bug fix + UX cleanup on the registry-data move surface. Importing a registry manifest now refreshes the registry automatically (the pre-fix path required a manual Rescan), and the manifest ops join the content ops under one converged "Move my registry" section in Account.
+
+### Fixed
+
+- **Manifest import didn't refresh the registry.** The `Import registry manifest` handler lived in `SettingsModal` and flashed a toast on success but never called App's `refresh()`. Sibling content-import handlers (`Import from disk`, `Merge from disk`) in `App.tsx` already called `refresh()` after success — the manifest path was an outlier because it was plumbed through a child component that didn't have the refresh callback in scope. Hoisted the manifest handlers up to App.tsx; the post-import install-hint follow-up modal is hoisted too. Imported skills now appear in the Registry tab immediately.
+
+### Changed
+
+- **Account / Settings seam clarified.** Pre-fix, "move my registry" was split across two modals: Account had content ops (Import / Merge / Export folder), Settings had manifest ops (Import / Export JSON pointer list). Both move registry data; the split was technically real (bulk content vs pointer list) but arbitrary from a user's mental model.
+
+  Converged into AccountModal under a single **Move my registry** section with two clearly-labelled subgroups:
+  - **Content** — Import from disk (replace) · Merge from disk · Export as folder
+  - **Manifest** — Import manifest · Export manifest
+
+  The seam now reads cleanly:
+  - **Account** = identity + where my registry lives + how I move it
+  - **Settings** = app preferences (default install agents, density, debounce, agent-dir collapse)
+
+- `SettingsModal`'s "Registry manifest" section, its handlers, and its local `ManifestImportConfirmModal` sub-component all moved out (~120 lines removed from SettingsModal). The confirm modal is now a standalone component (`packages/desktop/src/renderer/components/ManifestImportConfirmModal.tsx`) rendered at App level so it doesn't depend on Settings being open.
+
+### Compatibility
+
+- No `packages/core` SDK-surface changes.
+- No on-disk schema changes.
+- Renderer CSS class names unchanged.
+
 ## v1.6.0
 
 CLI-minimal. The `skills-bank` CLI gets stripped to five commands shaped for shell composition; four commands tied to interactive flows are removed and replaced with redirect-stubs that point at the in-app equivalent. The desktop app is unchanged.
