@@ -1801,13 +1801,17 @@ mutatingHandle(
       }));
     }
     const report = scanExistingInstalls(registryRoot);
-    // Prefer the most actionable entry per name when a skill exists in
-    // multiple agent dirs. Adopt and setAgents both need a usable
-    // source, so prioritise: real-directory (actual content) > ours
-    // (working symlink to registry) > foreign-symlink > broken-symlink.
-    // Without this, a naive Map keyed by name silently overwrites the
-    // useful real-dir entry with whatever sorted last (often a broken
-    // claude symlink), making realpath calls explode downstream.
+    // When the same skill name appears in multiple agent dirs, the
+    // renderer (post-fix) sends a per-entry action with `agent` (and
+    // `customDir` for non-agent custom scans) attached so we can route
+    // to the exact entry the user picked. For legacy callers that send
+    // name only, fall back to a kindRank-based dedup that prefers the
+    // most actionable entry: real-directory > ours > foreign-symlink >
+    // broken-symlink. The legacy fallback masked entries — that's the
+    // bug the wire-format addition fixes — so the renderer should
+    // always send `agent` now; we keep the fallback for back-compat
+    // with any external IPC caller and for the setAgents action which
+    // is intentionally name-only (it fans out across agents).
     const kindRank: Record<InstalledKind, number> = {
       "real-directory": 4,
       ours: 3,
@@ -1821,8 +1825,24 @@ mutatingHandle(
         byName.set(e.name, e);
       }
     }
+    const findEntry = (
+      name: string,
+      target: { agent?: string; customDir?: string },
+    ): (typeof report.entries)[number] | undefined => {
+      if (target.agent === undefined) return byName.get(name);
+      return report.entries.find(
+        (e) =>
+          e.name === name &&
+          e.agent === target.agent &&
+          (e.customDir ?? undefined) === (target.customDir ?? undefined),
+      );
+    };
     return items.map(({ name, action }) => {
-      const entry = byName.get(name);
+      const target =
+        action.type === "setAgents"
+          ? {}
+          : { agent: action.agent, customDir: action.customDir };
+      const entry = findEntry(name, target);
       if (!entry) {
         return {
           action,

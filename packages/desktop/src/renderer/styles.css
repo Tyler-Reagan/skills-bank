@@ -1961,6 +1961,12 @@ select {
   font-family: var(--font-mono);
 }
 
+.tag.tag-soft {
+  background: transparent;
+  color: var(--text-3);
+  border-color: var(--border);
+}
+
 /* RegisterModal still uses className="primary" / "danger" on bare buttons. */
 button.primary {
   background: var(--accent-dim);

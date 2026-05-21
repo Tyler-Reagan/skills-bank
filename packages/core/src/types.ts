@@ -177,10 +177,24 @@ export interface FinalizeResult {
   blockingEntries?: string[];
 }
 
+/**
+ * Optional disambiguator for actions that act on a specific scan entry
+ * when the same skill name exists in multiple agent dirs. Without this,
+ * the bulk-register handler had to dedupe by name and pick a single
+ * representative — which masked entries (e.g. a real-directory in
+ * `~/.agents/skills/` got eaten by a broken-symlink with the same name
+ * in `~/.cursor/skills/`). When set, the handler looks up the exact
+ * entry; when omitted, it falls back to the kindRank-based dedup.
+ */
+export interface ActionTarget {
+  agent?: import("./agents.js").AgentId;
+  customDir?: string;
+}
+
 export type RegistrationAction =
-  | { type: "skip"; name: string }
-  | { type: "remove"; name: string }
-  | {
+  | ({ type: "skip"; name: string } & ActionTarget)
+  | ({ type: "remove"; name: string } & ActionTarget)
+  | ({
       type: "register";
       name: string;
       /**
@@ -191,7 +205,7 @@ export type RegistrationAction =
        * `register-external` action variants into this single shape.
        */
       adopt: boolean;
-    }
+    } & ActionTarget)
   | {
       type: "setAgents";
       name: string;
