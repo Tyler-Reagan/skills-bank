@@ -514,6 +514,7 @@ export function SkillDetailDrawer({
           </button>
         </div>
 
+        <div className="drawer-main">
         <div className="drawer-body">
           {entry.warnings && entry.warnings.length > 0 && (
             <div className="drawer-warnings">
@@ -1549,6 +1550,7 @@ export function SkillDetailDrawer({
               }}
             />
           )}
+        </div>
         </div>
       </aside>
       {repairState.kind === "confirm-delete" && (
