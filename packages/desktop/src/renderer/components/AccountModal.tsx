@@ -24,6 +24,16 @@ interface Props {
   onImportRegistry: () => void | Promise<void>;
   onMergeRegistry: () => void | Promise<void>;
   onExportRegistry: () => void | Promise<void>;
+  /**
+   * Manifest-shaped moves. Pointer-only — origin pointers per skill,
+   * not content. Importing re-fetches each skill from its origin.
+   * Merged into the Account surface (was split across Settings pre-
+   * v1.6) so registry ops have one home and the seam is clear:
+   * Account = "move my registry / sign in", Settings = "app
+   * preferences."
+   */
+  onImportManifest: () => void | Promise<void>;
+  onExportManifest: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
   onCheckForUpdates: () => void | Promise<void>;
   onConnectGithub: () => void;
@@ -38,6 +48,8 @@ export function AccountModal({
   onImportRegistry,
   onMergeRegistry,
   onExportRegistry,
+  onImportManifest,
+  onExportManifest,
   onSignOut,
   onCheckForUpdates,
   onConnectGithub,
@@ -186,39 +198,61 @@ export function AccountModal({
         </section>
 
         <section style={section}>
-          <h3 style={sectionTitle}>Registry operations</h3>
+          <h3 style={sectionTitle}>Move my registry</h3>
           <p style={hint}>
-            Move your registry to another machine, bring in skills from another
-            bank, or replace your registry with one from disk.
+            Two shapes you can move between machines. <strong>Content</strong>{" "}
+            moves the entire skills tree — drop-in restore, no network needed.{" "}
+            <strong>Manifest</strong> moves a JSON snapshot of origin pointers;
+            on import each skill is re-fetched from its origin, so transfers
+            are tiny but require the origins to still be reachable.
           </p>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-              marginTop: 8,
-            }}
-          >
+
+          <div style={subGroupHeader}>
+            <span style={subGroupLabel}>Content</span>
+            <span style={subGroupHint}>The skills tree itself</span>
+          </div>
+          <div style={btnStack}>
             <button
               className="btn"
               type="button"
               onClick={() => void onImportRegistry()}
             >
-              Import a registry from disk (replace)
+              Import from disk (replace)
             </button>
             <button
               className="btn"
               type="button"
               onClick={() => void onMergeRegistry()}
             >
-              Merge a registry into mine
+              Merge from disk
             </button>
             <button
               className="btn"
               type="button"
               onClick={() => void onExportRegistry()}
             >
-              Export registry
+              Export as folder
+            </button>
+          </div>
+
+          <div style={subGroupHeader}>
+            <span style={subGroupLabel}>Manifest</span>
+            <span style={subGroupHint}>Origin pointers, JSON</span>
+          </div>
+          <div style={btnStack}>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => void onImportManifest()}
+            >
+              Import manifest
+            </button>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => void onExportManifest()}
+            >
+              Export manifest
             </button>
           </div>
         </section>
@@ -311,6 +345,33 @@ const hint: React.CSSProperties = {
   color: "var(--text-3)",
   margin: "4px 0",
   lineHeight: 1.5,
+};
+
+const subGroupHeader: React.CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  justifyContent: "space-between",
+  marginTop: 16,
+  marginBottom: 6,
+};
+
+const subGroupLabel: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  color: "var(--text-2)",
+};
+
+const subGroupHint: React.CSSProperties = {
+  fontSize: 11,
+  color: "var(--text-3)",
+};
+
+const btnStack: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
 };
 
 const sourceRow: React.CSSProperties = {
