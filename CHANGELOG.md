@@ -3,6 +3,28 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.7.0
+
+Cancel-able manifest import with an AccountModal busy state, plus two correctness fixes: the upstream-probe completion event and duplicate description warnings on manifest-imported skills.
+
+### Added
+
+- **Cancel-able manifest import** (#77). New IPC channel `bank:importManifestCancel`. `importRegistryManifest` accepts an optional `AbortSignal` and checks it between per-skill iterations; already-mirrored skills are preserved on cancel (no rollback). Result type gains an optional `cancelled?: boolean` flag.
+- **AccountModal busy + Cancel affordance during import** (#77). The Import manifest button shows a busy spinner during the in-flight IPC. Corruption-risking buttons (Import folder, Refresh from repo, Merge registry, Sign out, Connect GitHub / Repo picker) disable for the duration. Read-only buttons (Export folder, Export manifest, Check for updates) stay enabled. A new "Cancel import" button appears next to Import manifest, visible only during the import. Modal-close moves to after the import resolves so the busy state remains visible.
+- **`readSkillMdFrontmatter` helper** exported from `packages/core/src/registry.ts` (#76). Parses YAML frontmatter from SKILL.md only — bypasses `readSkillMeta`'s meta.json-first preference. Useful for callers that need frontmatter as a distinct source from meta.json.
+
+### Fixed
+
+- **Probe `runOnce` exit paths emit completion events** (#75). The three early-return paths (no registry root, `buildRegistryIndex` throws, zero github-origin candidates) previously returned without firing `opts.onComplete`, leaving the renderer's Rescan-button state machine stuck on `working` indefinitely. The zero-candidates case was the common trigger — a registry with no baselined `skillFolderHash` markers. Each path now emits an empty `onComplete({})` so the renderer transitions to `done` normally.
+- **Manifest-import description warnings** (#76). Two compounding bugs surfaced as duplicate `missing description` warnings on every manifest-imported skill. `restoreAuxState` always wrote a fresh `meta.json` containing only `{ name, tags? }`, dropping description even when present in the upstream's mirrored SKILL.md frontmatter; and `readSkillMeta`'s strict "meta.json wins" preference meant `buildEntry`'s fallback couldn't recover from a description-less-but-valid meta.json. Fix: `restoreAuxState` now reads SKILL.md frontmatter and merges `description` / `version` / `author` into the meta.json it writes. Additionally, `build.ts` filters AJV `required`-keyword violations for `name` and `description` since those fields are recovered by the existing SKILL.md fallback and the human-readable warnings already convey the same complaint. Net effect: manifest-imported skills produce zero description warnings; genuinely description-less skills produce exactly one warning instead of two.
+
+### Compatibility
+
+- `readSkillMeta` contract unchanged (strict "meta.json wins").
+- `ImportRegistryManifestOptions` gained optional `signal?: AbortSignal`. `ImportRegistryManifestResult` gained optional `cancelled?: boolean`. Both additions are non-breaking.
+- New IPC channel `bank:importManifestCancel` exposed on `SkillsBankApi` as `importManifestCancel()`.
+- The persistent header indicator + mid-import AccountModal close are out of scope for this release; tracked as a follow-up PR on top of this baseline.
+
 ## v1.6.2
 
 Docs-only release. Cleans up the documentation tree to match the post-v1.6 state.
