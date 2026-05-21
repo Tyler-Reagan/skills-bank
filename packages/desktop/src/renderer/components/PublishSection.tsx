@@ -154,8 +154,8 @@ export function PublishSection({
       {flowLabel && targetPath && (
         <div style={metaRow}>
           <span style={flowTag}>{flowLabel}</span>
-          <span style={{ color: "var(--text-3)" }}>→</span>
           <code style={metaCode}>
+            <span style={{ color: "var(--text-3)" }}>→ </span>
             {linkedRepoName}/{targetPath}/
           </code>
         </div>
@@ -324,7 +324,8 @@ const headingRow: React.CSSProperties = {
 };
 const metaRow: React.CSSProperties = {
   display: "flex",
-  alignItems: "center",
+  alignItems: "flex-start",
+  flexWrap: "wrap",
   gap: 6,
   margin: "0 0 6px 0",
   fontSize: 12,
@@ -340,6 +341,9 @@ const flowTag: React.CSSProperties = {
 const metaCode: React.CSSProperties = {
   color: "var(--text-2)",
   fontSize: 11,
+  overflowWrap: "anywhere",
+  flex: "1 1 100%",
+  lineHeight: 1.4,
 };
 const actionRow: React.CSSProperties = {
   display: "flex",

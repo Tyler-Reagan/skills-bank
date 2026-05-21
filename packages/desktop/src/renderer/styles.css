@@ -1670,8 +1670,20 @@ select {
   color: var(--text);
   font-family: var(--font-mono);
   text-align: right;
-  word-break: break-all;
+  /* Prefer word/slash boundaries; only break inside a token if it's
+     too long for any line. `break-all` was forcing splits inside
+     ordinary English words (e.g. "desktop" → "de | sktop"). */
+  overflow-wrap: anywhere;
   flex: 1;
+  min-width: 0;
+}
+.drawer-meta-value.prose {
+  /* For sentence text (repo "about" descriptions, commit messages)
+     we want normal prose wrap, no mono, no right-align. */
+  font-family: var(--font-sans);
+  text-align: left;
+  font-style: italic;
+  color: var(--text-2);
 }
 .drawer-actions {
   /* Right rail of the two-column dialog body. Vertical stack of

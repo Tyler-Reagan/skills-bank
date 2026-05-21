@@ -879,10 +879,7 @@ export function SkillDetailDrawer({
                 {repoMeta?.description && (
                   <div className="drawer-meta-row">
                     <span className="drawer-meta-key">about</span>
-                    <span
-                      className="drawer-meta-value"
-                      style={{ fontStyle: "italic" }}
-                    >
+                    <span className="drawer-meta-value prose">
                       {repoMeta.description}
                     </span>
                   </div>
