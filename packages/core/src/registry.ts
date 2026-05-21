@@ -21,6 +21,38 @@ export function findEntry(
 }
 
 /**
+ * Read SKILL.md YAML frontmatter as a flat key/value map. Returns
+ * null if the file is absent or has no recognizable frontmatter
+ * block. Pure read of the SKILL.md file — does NOT consult meta.json.
+ *
+ * Exported so callers like `restoreAuxState` can recover descriptions
+ * from frontmatter when they're about to write a fresh meta.json, in
+ * which case the meta.json-first preference baked into `readSkillMeta`
+ * would shadow the frontmatter values they need.
+ */
+export function readSkillMdFrontmatter(
+  skillDir: string,
+): Record<string, string> | null {
+  const skillMd = path.join(skillDir, "SKILL.md");
+  if (!fs.existsSync(skillMd)) return null;
+  const content = fs.readFileSync(skillMd, "utf8");
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match || !match[1]) return null;
+  const fm: Record<string, string> = {};
+  for (const line of match[1].split("\n")) {
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const val = line
+      .slice(idx + 1)
+      .trim()
+      .replace(/^["']|["']$/g, "");
+    if (key) fm[key] = val;
+  }
+  return fm;
+}
+
+/**
  * Reads SkillMeta for a skill folder. Prefers meta.json; falls back to YAML
  * frontmatter in SKILL.md. Returns null if neither is parseable.
  */
@@ -33,31 +65,14 @@ export function readSkillMeta(skillDir: string): SkillMeta | null {
       // fall through
     }
   }
-  const skillMd = path.join(skillDir, "SKILL.md");
-  if (fs.existsSync(skillMd)) {
-    const content = fs.readFileSync(skillMd, "utf8");
-    const match = content.match(/^---\n([\s\S]*?)\n---/);
-    if (match && match[1]) {
-      const fm: Record<string, string> = {};
-      for (const line of match[1].split("\n")) {
-        const idx = line.indexOf(":");
-        if (idx === -1) continue;
-        const key = line.slice(0, idx).trim();
-        const val = line
-          .slice(idx + 1)
-          .trim()
-          .replace(/^["']|["']$/g, "");
-        if (key) fm[key] = val;
-      }
-      if (fm["name"] && fm["description"]) {
-        return {
-          name: fm["name"],
-          description: fm["description"],
-          ...(fm["version"] ? { version: fm["version"] } : {}),
-          ...(fm["author"] ? { author: fm["author"] } : {}),
-        };
-      }
-    }
+  const fm = readSkillMdFrontmatter(skillDir);
+  if (fm && fm["name"] && fm["description"]) {
+    return {
+      name: fm["name"],
+      description: fm["description"],
+      ...(fm["version"] ? { version: fm["version"] } : {}),
+      ...(fm["author"] ? { author: fm["author"] } : {}),
+    };
   }
   return null;
 }
