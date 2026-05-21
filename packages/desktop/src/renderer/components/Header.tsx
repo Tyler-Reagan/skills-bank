@@ -7,17 +7,17 @@ export type Theme = "dark" | "light";
 export type Density = "comfortable" | "compact";
 
 /**
- * Three-phase state of the Rescan affordance. Drives a single button
- * through both the synchronous rebuild and the async upstream probe
- * so the user has unbroken feedback for the entire "did anything
- * change?" cycle.
+ * Three-phase state of the "Check for updates" affordance. Drives a
+ * single button through both the synchronous rebuild and the async
+ * upstream probe so the user has unbroken feedback for the entire
+ * "did anything change?" cycle.
  *
- *   - `idle`     ↻ Rescan
- *   - `working`  ◐ Checking upstream…
- *   - `done`     ✓ Up to date  /  ✓ N updates found
+ *   - `idle`     ↻ Check for updates
+ *   - `working`  ◐ Checking for updates…
+ *   - `done`     ✓ Up to date  /  ✓ N updates · View
  *
  * Boot probes and the 6h periodic probe never set this — the renderer
- * gates with a local `userTriggeredProbe` flag so background syncs
+ * gates with a local `userTriggeredProbe` flag so background probes
  * stay silent.
  */
 export type RescanState =
@@ -232,21 +232,21 @@ export function Header({
             aria-busy={rescanState.phase === "working" || undefined}
             title={
               rescanState.phase === "working"
-                ? "Checking Origins for updates"
+                ? "Checking each skill's authoritative GitHub Origin for newer content"
                 : rescanState.phase === "done" && rescanState.updates > 0
                   ? `${rescanState.updates} update${
                       rescanState.updates === 1 ? "" : "s"
-                    } found. Click to view in the registry.`
-                  : "Re-scan the registry, agent directories, and probe Origins for updates"
+                    } available. Click to view in the registry.`
+                  : "Check each skill's authoritative GitHub Origin for newer content. Surfaces available updates as chips on the cards — does not download anything. To apply an update, click the chip on the card itself."
             }
             aria-label={
               rescanState.phase === "working"
-                ? "Checking Origins for updates"
+                ? "Checking for updates"
                 : rescanState.phase === "done"
                   ? rescanState.updates === 0
                     ? "Up to date"
-                    : `${rescanState.updates} update${rescanState.updates === 1 ? "" : "s"} found — view in registry`
-                  : "Rescan registry and check for Origin updates"
+                    : `${rescanState.updates} update${rescanState.updates === 1 ? "" : "s"} available — view in registry`
+                  : "Check for updates"
             }
             onClick={
               rescanState.phase === "done" && rescanState.updates > 0
@@ -257,7 +257,7 @@ export function Header({
             {rescanState.phase === "working" ? (
               <>
                 <span className="spinner inline" aria-hidden="true" />{" "}
-                Checking Origins…
+                Checking for updates…
               </>
             ) : rescanState.phase === "done" ? (
               rescanState.updates === 0 ? (
@@ -268,14 +268,14 @@ export function Header({
                 <>
                   <Icon name="check" size="md" />{" "}
                   {rescanState.updates === 1
-                    ? "1 update found"
-                    : `${rescanState.updates} updates found`}
+                    ? "1 update"
+                    : `${rescanState.updates} updates`}
                   <span className="rescan-view-cta"> · View</span>
                 </>
               )
             ) : (
               <>
-                <Icon name="refresh" size="md" /> Rescan
+                <Icon name="refresh" size="md" /> Check for updates
               </>
             )}
           </button>
