@@ -3,6 +3,30 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.8.0
+
+Header rationalization release. The polymorphic `Refresh from {bank | owner/repo}` button is decomposed, Rescan is renamed for clarity, and the manifest-import indicator from v1.7.0's cancel infrastructure gets a persistent home in the header that survives modal close.
+
+### Added
+
+- **Persistent manifest-import indicator in the header** (#78). New `<ImportIndicator />` component renders to the right of the action cluster, left of the avatar. Visible whenever an import is in flight, regardless of modal state. Carries the inline spinner, `Importing manifest…` label, and a small × cancel button that calls the same abort path as AccountModal's "Cancel import" button. Users can now dismiss AccountModal mid-import and retain a visible status + one-click cancel.
+- **Mid-import AccountModal close support** (#78). The modal's existing close paths (X / Escape / backdrop) already complete synchronously without awaiting the import; this PR confirms and documents that — closing the modal does NOT cancel the running import. PR #77's `await importManifest()` close path remains in place for the success-flow, but other close paths now visibly leave the import running.
+- **Curated skills section in Settings** (#79). Read-only. Lists each curated entry (currently just `find-skills` post-v1.2 minimization), shows a `Last checked: <timestamp>` line from `getSyncReport().syncedAt`, and subtext `Curated skills update automatically on app restart.` making the refresh mechanism explicit.
+
+### Changed
+
+- **Header `Refresh from {bank | owner/repo}` decomposed** (#79). The polymorphic button is gone. The bundled-default branch is dropped entirely — when no GitHub repo is linked, the header simply doesn't render the button. The surviving linked-repo branch is renamed to `Pull from owner/repo` with: working state `Pulling…`, a brief `✓ Pulled` confirmation auto-fading after 1.5s, and a clarified tooltip explaining the diff-before-apply guarantee.
+- **Header `Rescan` renamed to `Check for updates`** (#80). Universal product-update vocabulary matches App Store / OS conventions and contrasts clearly with the Pull content-action. State labels: `Check for updates` / `Checking for updates…` / `Up to date` / `N updates · View` (dropped the "found" word for terseness; · separator unchanged). Behavior unchanged — same probe-and-flag flow, same per-card chip apply mechanism.
+- **`Rescan` button tooltip rewritten** (#80). Drops the stale "agent directories" claim (that role is moving to the planned local-diagnostics button) and explicitly states what does NOT happen: "does not download anything." That was the most-confused-about aspect of the prior copy.
+- **BrowseTab copy sweep** (#80, follow-up). `REGISTRY_TOOLTIP`, the tab-intro paragraph, and the empty-state helper text all referenced the retired `Refresh from <repo>` button name; updated to `Pull from <repo>` with the linked-repo conditional clause.
+- **Curated set auto-refreshes on app launch** (#79). A silent `runSync()` fires shortly after the boot probe (roughly 7s into launch). Errors are swallowed by design — the user sees a stale `Last checked` timestamp in Settings and the next launch retries. The previous manual user lever is retired.
+
+### Compatibility
+
+- `RescanState` type and `useRescanController` internals are unchanged. The Rescan rename is strings-only.
+- The `Pull from owner/repo` button uses the existing `reposRefreshCurrent` IPC under the hood — no new IPC channel for the rename.
+- `AccountModal` props gained `importingManifest` and `onCancelImport` already in v1.7.0 (via PR #77); PR #78 added their downstream consumers in the header without changing the AccountModal shape.
+
 ## v1.7.0
 
 Cancel-able manifest import with an AccountModal busy state, plus two correctness fixes: the upstream-probe completion event and duplicate description warnings on manifest-imported skills.
