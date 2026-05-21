@@ -1,5 +1,8 @@
 # Skills Bank user guide
 
+> [!NOTE]
+> Screenshots in the user docs predate the v1.5.1 dialog redesign and the v1.6.0 Account-vs-Settings reshuffle. Copy is current; the visuals are not.
+
 This page is an index. Pick whichever doc matches what you're trying to do.
 
 ![The Registry tab — the default view of the desktop app](images/registry.png)
@@ -7,7 +10,7 @@ This page is an index. Pick whichever doc matches what you're trying to do.
 ## Start here
 
 - **[`getting-started.md`](getting-started.md)** — From "I downloaded the app" to "I'm using a skill in Claude Code" in five minutes.
-- **[`concepts.md`](concepts.md)** — The vocabulary the UI uses: skill, registry, persona, source, publish state, conflict, …
+- **[`concepts.md`](concepts.md)** — The vocabulary the UI uses: skill, registry, linked repo, source, publish state, conflict, …
 
 ## A quick tour
 
@@ -26,9 +29,9 @@ The desktop app is organized into three tabs in the header:
 </tr>
 </table>
 
-Click any card to open its detail drawer:
+Click any card to open its detail dialog:
 
-![Skill detail drawer open over the Registry tab](images/skill-detail.png)
+![Skill detail dialog open over the Registry tab](images/skill-detail.png)
 
 ## Day-to-day flows
 
@@ -38,7 +41,7 @@ Click any card to open its detail drawer:
 - [`flows/manage-links.md`](flows/manage-links.md) — Add or drop a skill from individual agent dirs.
 - [`flows/heal.md`](flows/heal.md) — Recover from any bad state (conflicts, broken links, missing files, canon drift).
 - [`flows/sync.md`](flows/sync.md) — Pull upstream registry updates (local-bundled).
-- [`flows/login.md`](flows/login.md) — The first-launch persona choice and how to switch later.
+- [`flows/login.md`](flows/login.md) — Signing in with GitHub and linking a registry repo.
 
 ### Managing canon skills
 

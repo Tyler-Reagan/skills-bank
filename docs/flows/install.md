@@ -1,5 +1,9 @@
 # Install a registry skill
 
+> [!NOTE]
+> Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](../user-guide.md) for context.
+
+
 The everyday flow. Browse the **Registry** tab, find a skill, link it into your agents.
 
 ![The Registry tab — search, tag filters, and Installed-only toggle](../images/registry.png)
@@ -8,9 +12,9 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 
 1. Open the **Registry** tab (it's the default tab).
 2. Use the search bar or tag filters to narrow the list. Toggle **Installed only** to filter to skills you've already linked.
-3. Click any card to open its detail drawer. The drawer shows the full `SKILL.md` preview, tags, source, and warnings if any.
+3. Click any card to open its detail dialog. The dialog shows the full `SKILL.md` preview, tags, source, and warnings if any.
 
-   ![Skill detail drawer with SKILL.md preview, Install, Manage agent links](../images/skill-detail.png)
+   ![Skill detail dialog with SKILL.md preview, Install, Manage agent links](../images/skill-detail.png)
 
 4. Click **Install**.
 5. Skills Bank creates a symlink at `<agent-dir>/<skill-name>` for every supported agent directory you have set up. By default, every existing agent dir gets a link.
@@ -22,7 +26,7 @@ Open the account menu → **Settings…** → set **Default install agents** to 
 
 ![Settings modal — Default install agents, card grid columns, search debounce](../images/settings.png)
 
-You can override per-skill from the drawer's **Manage agent links…** action — pick exactly which agents this one skill goes into.
+You can override per-skill from the dialog's **Manage agent links…** action — pick exactly which agents this one skill goes into.
 
 ## What gets created
 
@@ -37,7 +41,7 @@ Both symlinks point at the same source folder. Edits to the registry copy are im
 
 ## Uninstall
 
-Open the drawer for an installed skill → **Manage agent links…** → untick every agent → **Apply**. The symlinks are removed; the registry copy is left untouched. Reinstall any time without losing changes.
+Open the dialog for an installed skill → **Manage agent links…** → untick every agent → **Apply**. The symlinks are removed; the registry copy is left untouched. Reinstall any time without losing changes.
 
 ### Selective uninstall
 

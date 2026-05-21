@@ -5,8 +5,8 @@
 ## Context
 
 Before v0.11.7, `packages/core` had zero `.test.ts` files. The v0.11.4
-architecture audit (`docs/audits/v0.11.4-architecture.md`) flagged this
-as the single biggest risk to v0.11.8+ refactor work: the security
+architecture audit flagged this as the single biggest risk to v0.11.8+
+refactor work: the security
 hardening (v0.11.8) and the core consolidation (v0.11.9) both involve
 moving load-bearing primitives across module boundaries, and a green
 typecheck alone doesn't prove the byte-equality invariants in

@@ -17,8 +17,8 @@ The **Sync skills** button in the header pulls the latest bundled skills from up
 
 Sync is **upsert**:
 
-- **Refreshed** — skills with `source: "bundled"`. Their content matches upstream after sync.
-- **Never touched** — skills with `source: "yours"`. Anything you authored or brought in stays exactly as it was.
+- **Refreshed** — skills with `source: "curated"`. Their content matches upstream after sync.
+- **Never touched** — skills with `source: "user"`. Anything you authored or brought in stays exactly as it was.
 - **Removed** — bundled skills that disappear from upstream are deleted locally. Your local-authored skills are never deleted by sync.
 
 Sync also refreshes the internal bundled-name snapshot: the set of names the upstream currently considers part of the bundled set. The app uses this to decide which skills get destructive-action protection. Switching to a different registry replaces the snapshot — bundled-ness is always evaluated against the active linked repo, never carried over from a previous one.
@@ -45,6 +45,6 @@ You can update one without the other.
 Two modes (account menu):
 
 - **Import a registry (replace)…** — point the app at a different folder; the active registry root is swapped. Use when you're switching to a different upstream entirely or restoring from a fresh `git clone`.
-- **Merge a registry into mine…** — additive. Scans the picked folder's `skills/`, adds non-colliding entries to your active registry, and surfaces collisions through the same modal Sync uses (default: keep yours). Merged-in skills are marked `source: yours` — they're functionally identical to skills you authored locally and won't become part of the bundled set under your active registry.
+- **Merge a registry into mine…** — additive. Scans the picked folder's `skills/`, adds non-colliding entries to your active registry, and surfaces collisions through the same modal Sync uses (default: keep yours). Merged-in skills are marked `source: user` — they're functionally identical to skills you authored locally and won't become part of the bundled set under your active registry.
 
 Both modes accept any folder with a `skills/` subdirectory. The merge path is the right fit when you want to bring a handful of skills from another registry (say, a coworker's export) into your active set without rebasing your whole layout.

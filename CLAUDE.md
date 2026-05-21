@@ -76,38 +76,9 @@ pnpm knip
 
 ## Plans
 
-Filenames are stable descriptive IDs; the contents of each plan file record the as-shipped state for completed plans and the open scope for remaining ones.
+The historical record of shipped work lives in [`CHANGELOG.md`](./CHANGELOG.md). The `docs/plans/` directory (one markdown file per planned milestone) was retired in v1.6 once every plan through Phase 5 + the CLI-minimal cleanup had shipped — the implementation drafts had become parallel-but-stale to the CHANGELOG entries they fed into.
 
-### Shipped
-
-| Plan                                                                              | Release  |
-| --------------------------------------------------------------------------------- | -------- |
-| [`github-mode-coherence.md`](docs/plans/github-mode-coherence.md)                 | v0.10.x  |
-| [`github-first-onboarding.md`](docs/plans/github-first-onboarding.md)             | v0.10.x  |
-| [`per-skill-upstream-foundation.md`](docs/plans/per-skill-upstream-foundation.md) | v0.11.2  |
-| [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | v0.11.2  |
-| [`skills-directory-split.md`](docs/plans/skills-directory-split.md)               | v0.11.3  |
-| [`drift-update-ux-consistency.md`](docs/plans/drift-update-ux-consistency.md)     | v0.11.4  |
-| [`v0.11.4-polish.md`](docs/plans/v0.11.4-polish.md)                               | v0.11.4 follow-on |
-| [`a11y-polish.md`](docs/plans/a11y-polish.md)                                     | v0.11.5  |
-| [`renderer-state-architecture.md`](docs/plans/renderer-state-architecture.md)     | v0.11.6 (M1+M2), v0.11.6 follow-up (M3 DrawerHost). M3's remaining host extractions (UpdateHost / ConflictHost / RegistryHost) deferred as low-priority cleanup. |
-| [`core-test-foundation.md`](docs/plans/core-test-foundation.md)                   | v0.11.7  |
-| [`security-hardening.md`](docs/plans/security-hardening.md)                       | v0.11.8  |
-| [`core-architecture-refactor.md`](docs/plans/core-architecture-refactor.md)       | v0.11.9  |
-| [`origin-rename-pass.md`](docs/plans/origin-rename-pass.md)                       | v0.11.10 (deferred: `SkillSource.upstream` JSON-field rename and the heal-action renames — see plan file) |
-| [`curation-layer-reset.md`](docs/plans/curation-layer-reset.md)                   | v1.2.0 (Phase 1) |
-| [`vocabulary-rename.md`](docs/plans/vocabulary-rename.md)                         | v1.3.0 (Phase 2) |
-| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | v1.4.0 (Phase 3, rewritten before implementation to drop the pre-v1.0 bankSnapshot/cache-layer design) |
-| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | v1.4.0 (Phase 4, rewritten before implementation to drop the npx-skills coupling) |
-| [`in-app-publish.md`](docs/plans/in-app-publish.md)                               | v1.5.0 (Phase 5 M1–M4) — pins ADRs 0006 / 0007 / 0008. Deferred from M3: PR-meta-edit modal, collision-resolve modal, drawer h3 re-sectioning, open-PR sub-chip. |
-| Scan + drawer polish                                                              | v1.5.1 (no plan file — landed via PR #71) |
-| [`cli-minimal.md`](docs/plans/cli-minimal.md)                                     | v1.6.0  |
-
-### Remaining
-
-None. All planned work through Phase 5 + the CLI-minimal housekeeping is shipped. Future plans get added here.
-
-When starting work on a plan, create a `feat/<plan-slug>` branch following the recent commit pattern in `git log`.
+For new multi-milestone work: drop a focused plan doc directly into a feature branch's commit message or PR description, or — if it warrants a permanent record — capture the design as an [ADR](./docs/adr/). Branch naming convention is `feat/<plan-slug>` for new feature work, `fix/<bug-slug>` for fixes, following recent commits in `git log`.
 
 ## Conventions specific to this repo
 
@@ -149,4 +120,4 @@ done
 
 Run from the repo root. Symlinks whose name no longer exists in either bucket are uninstalled skills — list them and leave them alone.
 
-**Unstaged churn in `skills/**/.skills-bank.json` after running the app.** Diff vs `HEAD`: if `skillFolderHash` (or `installedAt`/`repo`/`skillPath`) changed, that's a legitimate baseline shift — commit. If only `fetchedAt` changed, it's runtime probe noise — `git restore` and capture details in `docs/bug-reports/` for the probe path to fix. For deleted `meta.json` files, run `pnpm validate` in both states: missing meta.json fails validation, so restore.
+**Unstaged churn in `skills/**/.skills-bank.json` after running the app.** Diff vs `HEAD`: if `skillFolderHash` (or `installedAt`/`repo`/`skillPath`) changed, that's a legitimate baseline shift — commit. If only `fetchedAt` changed, that's runtime probe noise — the v0.11.7 probe-path fix moved `fetchedAt` to the runtime sidecar; a re-appearance means a regression worth investigating. For deleted `meta.json` files, run `pnpm validate` in both states: missing meta.json fails validation, so restore.

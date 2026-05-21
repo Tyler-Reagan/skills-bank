@@ -65,8 +65,8 @@ metadata either:
 
 The ADR's stability claim is reframed from "stable absolutely" to
 "stable across renames via tolerant-read windows." Two specific
-changes land in v1.3 under that discipline (see
-`docs/plans/vocabulary-rename.md`):
+changes land in v1.3 under that discipline (see the CHANGELOG v1.3.0
+entry for the full surface):
 
 - **`.skills-bank.json` `source` axis values rename:** `bundled` →
   `curated`, `yours` → `user`. Tolerant reads accept both for one
