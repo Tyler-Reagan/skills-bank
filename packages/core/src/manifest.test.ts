@@ -560,6 +560,91 @@ describe("importRegistryManifest", () => {
     ).toBe(false);
   });
 
+  test("onProgress fires per iteration with cumulative counts and the name list on first call", async () => {
+    // Tier 2 contract: first event carries manifestNames; subsequent
+    // events update completed + currentName; terminal event lands after
+    // the loop with completed === total. Sources are user skills that
+    // already exist locally (no GitHub mirroring) so the test runs pure
+    // in-process.
+    writeSkill("personal", "alpha");
+    writeSkill("personal", "beta");
+    writeSkill("personal", "gamma");
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.1.0",
+      skills: [
+        {
+          name: "alpha",
+          source: "user",
+          origin: { kind: "none" },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+        {
+          name: "beta",
+          source: "user",
+          origin: { kind: "none" },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+        {
+          name: "gamma",
+          source: "user",
+          origin: { kind: "none" },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+      ],
+    };
+    const events: Array<{
+      completed: number;
+      total: number;
+      currentName: string;
+      names?: string[];
+    }> = [];
+    await importRegistryManifest(registryRoot, manifest, {
+      onProgress: (e) => {
+        events.push({
+          completed: e.completed,
+          total: e.total,
+          currentName: e.currentName,
+          ...(e.manifestNames ? { names: e.manifestNames } : {}),
+        });
+      },
+    });
+    // Three per-iteration events + one terminal = 4
+    expect(events).toHaveLength(4);
+    expect(events[0]).toEqual({
+      completed: 0,
+      total: 3,
+      currentName: "alpha",
+      names: ["alpha", "beta", "gamma"],
+    });
+    expect(events[1]).toEqual({
+      completed: 1,
+      total: 3,
+      currentName: "beta",
+    });
+    expect(events[2]).toEqual({
+      completed: 2,
+      total: 3,
+      currentName: "gamma",
+    });
+    // Terminal: completed === total, currentName = last processed
+    expect(events[3]).toEqual({
+      completed: 3,
+      total: 3,
+      currentName: "gamma",
+    });
+  });
+
   test("installHints omits skills with empty lastInstalledOn", async () => {
     writeSkill("personal", "zeta");
     const manifest: RegistryManifest = {

@@ -2074,6 +2074,12 @@ ipcMain.handle(IPC.importManifest, async () => {
       importResult = await importRegistryManifest(registryRoot, manifest, {
         token: getStoredToken(),
         signal: controller.signal,
+        onProgress: (event) => {
+          for (const win of BrowserWindow.getAllWindows()) {
+            if (!win.isDestroyed())
+              win.webContents.send(IPC.manifestImportProgress, event);
+          }
+        },
       });
     } finally {
       inFlightImportAbort = null;
