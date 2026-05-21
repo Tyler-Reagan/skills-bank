@@ -1,9 +1,15 @@
 import pc from "picocolors";
-import { getAgent, installSkill, resolveRegistryRoot } from "@skills-bank/core";
+import {
+  getAgent,
+  installSkill,
+  resolveRegistryRoot,
+  type AgentId,
+} from "@skills-bank/core";
 
 interface InstallCmdOptions {
   force?: boolean;
   root?: string;
+  agent?: string;
 }
 
 export function installCommand(name: string, opts: InstallCmdOptions): void {
@@ -11,6 +17,7 @@ export function installCommand(name: string, opts: InstallCmdOptions): void {
   const result = installSkill(name, {
     registryRoot: root,
     force: opts.force ?? false,
+    ...(opts.agent ? { agents: [opts.agent as AgentId] } : {}),
   });
   if (result.installs.length === 0) {
     console.log(

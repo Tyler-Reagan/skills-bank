@@ -320,7 +320,7 @@ function adoptIntoRegistry(
   if (!fs.existsSync(metaPath)) {
     const meta = readSkillMeta(destDir) ?? {
       name: entry.name,
-      description: "(adopted via skills-bank import; description missing)",
+      description: "(adopted via Register existing skills; description missing)",
     };
     fs.writeFileSync(
       metaPath,
