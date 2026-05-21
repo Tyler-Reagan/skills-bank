@@ -535,7 +535,7 @@ export function SkillDetailDrawer({
             </div>
           )}
 
-          <div className="drawer-section">
+          <div className="drawer-section lede">
             <h3>Description</h3>
             {description ? (
               <>

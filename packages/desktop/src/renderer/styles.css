@@ -1649,6 +1649,15 @@ select {
   color: var(--text);
   line-height: 1.6;
 }
+/* Description is the lede — slightly larger leading so it reads as
+   the entry point rather than as one more sibling section. The skill
+   has a name (header h2), a description (lede), then progressively
+   more reference-y material. */
+.drawer-section.lede p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+}
 .drawer-meta-row {
   /* No per-row borders. The list reads as a single block separated
      from siblings by section margin, not by horizontal rules. */
@@ -1748,15 +1757,19 @@ select {
   font-size: 11px;
 }
 .skill-md-preview {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: var(--s3) var(--s4);
+  /* The preview is the primary content surface on this dialog —
+     treat it as content, not as a card. Dropping the surface chrome
+     lets the rendered Markdown read as continuous body text instead
+     of a nested card-in-a-card. A thin left-rail keeps the section
+     legibly bounded. */
+  border-left: 2px solid var(--border);
+  padding: var(--s2) 0 var(--s2) var(--s4);
   color: var(--text-2);
-  max-height: 320px;
+  max-height: 360px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 .skill-md-preview.md > * + * {
   margin-top: var(--s2);
