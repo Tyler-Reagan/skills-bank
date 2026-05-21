@@ -12,6 +12,7 @@ import type {
   ImportRegistryManifestResult,
   InstallFromGithubResult,
   InstalledSkill,
+  ManifestImportProgressEvent,
   MergeImportReport,
   PublishState,
   RateLimitInfo,
@@ -92,6 +93,7 @@ export const IPC = {
   exportManifest: "bank:exportManifest",
   importManifest: "bank:importManifest",
   importManifestCancel: "bank:importManifestCancel",
+  manifestImportProgress: "bank:manifestImportProgress",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
   classifySkillForPublish: "publish:classify",
@@ -879,6 +881,18 @@ interface SkillsBankAPI {
   originProbe(): Promise<OriginProbeResult>;
   onOriginProbeComplete(
     cb: (event: OriginProbeCompleteEvent) => void,
+  ): () => void;
+  /**
+   * Subscribe to per-skill progress events emitted by a running
+   * manifest import. Fires once at the top of each iteration in the
+   * core's per-skill loop. The first event of an import carries
+   * `manifestNames` for Tier-3 ghost-card pre-rendering; subsequent
+   * events update the cumulative `completed` count and surface
+   * per-skill failures via `lastError`. Returns an unsubscribe
+   * function — caller invokes on unmount to detach.
+   */
+  onManifestImportProgress(
+    cb: (event: ManifestImportProgressEvent) => void,
   ): () => void;
   originUpdate(name: string): Promise<OriginUpdateResult>;
   originRepoMetadata(repo: string): Promise<OriginRepoMetadata>;

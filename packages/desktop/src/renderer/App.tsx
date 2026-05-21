@@ -923,8 +923,47 @@ function AppContent(): React.ReactElement {
   // failed import returns the UI to its idle state.
   const [importingManifest, setImportingManifest] = useState(false);
 
+  // Tier 2 per-skill progress. Tracks the currently-in-flight manifest
+  // import's progress so the ImportIndicator chip can render `N/total`
+  // and (Tier 3) BrowseTab can place ghost cards. Cleared in the
+  // `finally` after import resolves so a fresh import starts clean.
+  const [manifestImportProgress, setManifestImportProgress] = useState<{
+    completed: number;
+    total: number;
+    currentName: string;
+    manifestNames: string[];
+    errors: Map<string, string>;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!window.skillsBank.onManifestImportProgress) return;
+    return window.skillsBank.onManifestImportProgress((event) => {
+      setManifestImportProgress((prev) => {
+        const errors = new Map(prev?.errors ?? []);
+        if (event.lastError) {
+          // lastError is "name: reason" — extract name for the map key
+          const idx = event.lastError.indexOf(": ");
+          const failedName =
+            idx > 0 ? event.lastError.slice(0, idx) : event.lastError;
+          const reason =
+            idx > 0 ? event.lastError.slice(idx + 2) : event.lastError;
+          errors.set(failedName, reason);
+        }
+        return {
+          completed: event.completed,
+          total: event.total,
+          currentName: event.currentName,
+          manifestNames:
+            event.manifestNames ?? prev?.manifestNames ?? [],
+          errors,
+        };
+      });
+    });
+  }, []);
+
   const importManifest = useCallback(async () => {
     setImportingManifest(true);
+    setManifestImportProgress(null);
     try {
       const r = await window.skillsBank.importManifest();
       if (!r.ok) {
@@ -951,6 +990,7 @@ function AppContent(): React.ReactElement {
       }
     } finally {
       setImportingManifest(false);
+      setManifestImportProgress(null);
     }
   }, [flash, flashError, refresh]);
 
@@ -1129,6 +1169,7 @@ function AppContent(): React.ReactElement {
           onViewRescanUpdates={() => undefined}
           importingManifest={false}
           onCancelImport={() => undefined}
+          manifestImportProgress={null}
         />
         <Tabs
           active="browse"
@@ -1177,6 +1218,14 @@ function AppContent(): React.ReactElement {
           onViewRescanUpdates={rescan.onViewUpdates}
           importingManifest={importingManifest}
           onCancelImport={cancelManifestImport}
+          manifestImportProgress={
+            manifestImportProgress
+              ? {
+                  completed: manifestImportProgress.completed,
+                  total: manifestImportProgress.total,
+                }
+              : null
+          }
         />
         {appErrors.length > 0 && (
           <div className="error-panel-stack">
