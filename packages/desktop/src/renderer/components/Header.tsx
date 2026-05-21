@@ -94,7 +94,23 @@ export function Header({
   const sourceChipText = isBundledDefault
     ? "Bundled"
     : linkedRepo!.fullName;
-  const syncTarget = isBundledDefault ? BUNDLED_REPO : linkedRepo!.fullName;
+
+  // Brief "Pulled" done-state on syncing→idle transition. Auto-fades
+  // after 1.5s so a successful pull with zero content delta still has
+  // a visible "operation completed" signal — without it, the spinner
+  // stops and the grid looks unchanged.
+  const [pullDoneAt, setPullDoneAt] = React.useState<number | null>(null);
+  const prevSyncingRef = React.useRef(syncing);
+  React.useEffect(() => {
+    const wasSyncing = prevSyncingRef.current;
+    prevSyncingRef.current = syncing;
+    if (wasSyncing && !syncing) {
+      setPullDoneAt(Date.now());
+      const t = setTimeout(() => setPullDoneAt(null), 1500);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [syncing]);
   return (
     <header className="header">
       <h1 className="visually-hidden">skills-bank</h1>
@@ -159,29 +175,37 @@ export function Header({
           >
             <Icon name={theme === "dark" ? "sun" : "moon"} size="md" />
           </button>
-          <button
-            className="refresh-btn"
-            disabled={syncing}
-            title={`Refresh registry contents from ${syncTarget}. Your local edits and added skills are preserved through the diff-before-apply flow.`}
-            aria-label={
-              syncing
-                ? `Refreshing from ${syncTarget}`
-                : `Refresh from ${syncTarget}`
-            }
-            onClick={onSync}
-          >
-            {syncing ? (
-              <>
-                <span className="spinner inline" aria-hidden="true" />{" "}
-                Refreshing…
-              </>
-            ) : (
-              <>
-                <Icon name="download" size="md" /> Refresh from{" "}
-                {isBundledDefault ? "bank" : linkedRepo!.fullName}
-              </>
-            )}
-          </button>
+          {!isBundledDefault && (
+            <button
+              className="refresh-btn"
+              disabled={syncing}
+              title={`Pull the latest content from ${linkedRepo!.fullName} into your local bank. Local edits, added skills, and provenance markers are preserved via the diff-before-apply flow.`}
+              aria-label={
+                syncing
+                  ? `Pulling from ${linkedRepo!.fullName}`
+                  : pullDoneAt !== null
+                    ? `Pulled from ${linkedRepo!.fullName}`
+                    : `Pull from ${linkedRepo!.fullName}`
+              }
+              onClick={onSync}
+            >
+              {syncing ? (
+                <>
+                  <span className="spinner inline" aria-hidden="true" />{" "}
+                  Pulling…
+                </>
+              ) : pullDoneAt !== null ? (
+                <>
+                  <Icon name="check" size="md" /> Pulled
+                </>
+              ) : (
+                <>
+                  <Icon name="download" size="md" /> Pull from{" "}
+                  {linkedRepo!.fullName}
+                </>
+              )}
+            </button>
+          )}
           <button
             className={`refresh-btn rescan-${rescanState.phase}${
               rescanState.phase === "done" && rescanState.updates > 0
