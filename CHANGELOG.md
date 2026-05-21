@@ -3,6 +3,47 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.6.2
+
+Docs-only release. Cleans up the documentation tree to match the post-v1.6 state.
+
+### Removed
+
+- **`docs/plans/`** (20 files). The plan files were implementation drafts; every plan through Phase 5 + cli-minimal had shipped. The CHANGELOG is the as-shipped record.
+- **`docs/audits/`** (7 files). v0.11.x snapshot analyses, superseded by current code state.
+- **`docs/bug-reports/`** (3 files). All three bugs resolved in shipped releases:
+  - `2026-05-18-fetchedAt-churn` — fixed in v0.11.7 (`f8d9a3f`).
+  - `2026-05-19-origin-update-missing-meta-synthesis` — fixed in `c2fea10`.
+  - `2026-05-19-origin-update-missing-validation` — same commit.
+
+### Changed
+
+- **User docs vocabulary swept** to current vocabulary throughout:
+  - `drawer` → `dialog` in user-facing prose where it describes the visual element. CSS class names stay `.drawer-*` internally.
+  - `source: "yours"` / `"bundled"` → `"user"` / `"curated"` where the literal axis values appeared.
+  - `bundled` / `yours` (axis adjectives) → `curated` / `user`. Noun phrases like "bundled default" (the unauth-mode startup state) stay — that's the UI's wording for the mode.
+  - "Persona" references (v1.2 first-launch picker, collapsed in v1.3) → "linked repo vs bundled default" framing.
+- **README CLI section** rewritten (done in v1.6.0; this release captures the trailing follow-on edits).
+- **Getting started**: Intel DMG filename corrected to `-x64.dmg` to match actual release assets.
+- **Troubleshooting**: persona-tagged "Registry tab is empty" causes rewritten as bundled-default-vs-custom-repo; bug-report template updated to the v1.6.x Account-vs-Settings shape.
+- **Self-host**: dropped the "power-persona registry-replacement" pointer; redirects to Account → Sign in with GitHub.
+- **CLAUDE.md**: the 20-row plans-tracking table collapsed to one paragraph pointing at the CHANGELOG. Repo-orientation list no longer mentions the retired `docs/plans/` directory. Multi-milestone-plans convention rewritten to point at PR descriptions / ADRs.
+- **UBIQUITOUS_LANGUAGE.md**: inbound links to the deleted `docs/plans/` files rewritten to CHANGELOG anchors + inline version references.
+- **ADR-0001 / ADR-0002**: references to the deleted audits/plans dirs rewritten to inline context or CHANGELOG anchors.
+
+### Documentation surface
+
+- 22 docs files post-cleanup (was 51 pre-cleanup).
+- Every doc that embeds a screenshot now carries a `> [!NOTE]` declaring the visuals predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. Screenshots themselves were intentionally not updated in this pass.
+
+### Pretty-mermaid fix
+
+A YAML-scalar artifact in `pretty-mermaid`'s `meta.json` (description value was literally `"|"`) was corrected in both this repo's local copy and the maintainer's `Tyler-Reagan/skills` linked repo. Not formally part of this release — out-of-band fix to the registry content.
+
+### Compatibility
+
+- No code changes. Zero impact on `packages/core` SDK surface or on-disk schemas.
+
 ## v1.6.1
 
 Bug fix + UX cleanup on the registry-data move surface. Importing a registry manifest now refreshes the registry automatically (the pre-fix path required a manual Rescan), and the manifest ops join the content ops under one converged "Move my registry" section in Account.
