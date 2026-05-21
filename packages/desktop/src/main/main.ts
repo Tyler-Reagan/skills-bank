@@ -3134,6 +3134,19 @@ void app.whenReady().then(() => {
   setInterval(() => {
     void runUpstreamProbe();
   }, PROBE_CADENCE_MS);
+  // Curated auto-refresh on boot. Per v1.3 persona collapse, curated is
+  // an app-managed dependency rather than a primary user surface — the
+  // manual "Refresh from bank" button retired in v1.7+. A silent runSync
+  // a beat after the probe keeps curated fresh against
+  // Tyler-Reagan/skills-bank without a user lever. Surfaced read-only
+  // in Settings → Curated skills via getSyncReport().syncedAt.
+  setTimeout(() => {
+    void runSync().catch(() => {
+      // Auto-refresh failure stays silent; the user sees the stale
+      // `Last checked` timestamp in Settings and can rerun on next
+      // app launch.
+    });
+  }, PROBE_BOOT_DELAY_MS + 2_000);
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

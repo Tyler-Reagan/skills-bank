@@ -128,8 +128,28 @@ export function SettingsModal({
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
 
+  // Curated skills snapshot. Read-only display; curated is an
+  // app-managed dependency post-v1.3 — content refresh runs silently
+  // on app launch via runSync.
+  const [curatedSkills, setCuratedSkills] = useState<
+    Array<{ name: string; description: string }>
+  >([]);
+  const [curatedLastCheckedAt, setCuratedLastCheckedAt] = useState<
+    string | null
+  >(null);
+
   useEffect(() => {
     void window.skillsBank.listTopLevelSymlinks().then(setTopLevelSymlinks);
+    void window.skillsBank.listRegistry().then((entries) => {
+      setCuratedSkills(
+        entries
+          .filter((e) => e.source.source === "curated")
+          .map((e) => ({ name: e.name, description: e.description })),
+      );
+    });
+    void window.skillsBank.getSyncReport().then((report) => {
+      setCuratedLastCheckedAt(report?.syncedAt ?? null);
+    });
   }, []);
 
   const runFinalize = async () => {
@@ -320,6 +340,47 @@ export function SettingsModal({
           >
             Install a skill from GitHub
           </button>
+        </section>
+
+        <section style={section}>
+          <h3 style={sectionTitle}>Curated skills</h3>
+          <p style={hint}>
+            Skills bundled with the app, maintained centrally. Read-only —
+            curated skills update automatically on app restart.
+          </p>
+          {curatedSkills.length === 0 ? (
+            <p style={{ ...hint, fontStyle: "italic" }}>
+              None present in this registry.
+            </p>
+          ) : (
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: "6px 0 8px",
+                fontSize: 12,
+                color: "var(--text-2)",
+              }}
+            >
+              {curatedSkills.map((s) => (
+                <li key={s.name} style={{ marginBottom: 4 }}>
+                  <code>{s.name}</code>
+                  {s.description ? (
+                    <span style={{ color: "var(--text-3)" }}>
+                      {" "}
+                      — {s.description}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+            Last checked:{" "}
+            {curatedLastCheckedAt
+              ? new Date(curatedLastCheckedAt).toLocaleString()
+              : "never"}
+          </p>
         </section>
 
         <h3 style={groupHeading}>Display</h3>
