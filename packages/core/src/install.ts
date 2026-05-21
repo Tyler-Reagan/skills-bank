@@ -109,7 +109,7 @@ export function installSkill(
       } else {
         errors.push({
           agent: agent.id,
-          message: `${linkPath} exists and is not a symlink. Use \`skills-bank import\` to register.`,
+          message: `${linkPath} exists and is not a symlink. Open Register existing skills in the desktop app to adopt it.`,
         });
         continue;
       }

@@ -8,7 +8,7 @@ Monorepo (pnpm workspaces):
 
 - **`packages/core`** — pure TypeScript registry/install logic. Consumed by both desktop and CLI; no Electron, no DOM dependencies.
 - **`packages/desktop`** — Electron app (main + renderer). The primary product.
-- **`packages/cli`** — Node CLI. Small surface; the `cli-minimal` plan strips it further.
+- **`packages/cli`** — Node CLI. Five-command scripting surface (`list`, `installed`, `install`, `uninstall`, `path`) with hidden redirect-stubs for the four commands removed in v1.6 (`import`, `export`, `finalize`, `sync-installed`). Not feature-parity with the desktop app — interactive flows live there.
 - **`skills/`** — bundled skill content. Houses the **Curated set** the app ships under `skills/vendored/<name>/`. The post-Phase-1 (v1.1) Curated set is intentionally minimal — just `find-skills` — per `docs/plans/curation-layer-reset.md`. The bucket layout (`skills/{personal,vendored}/<name>/`) is universal across registries (see `UBIQUITOUS_LANGUAGE.md`), but the curation layer uses only `vendored/` by composition: the maintainer's authored skills live in their own origin repo, `Tyler-Reagan/skills` (extracted from the former `skills/personal/` via `git subtree split` in v1.1). The maintainer's end-user flow links `Tyler-Reagan/skills` via the "Your own registry" persona path.
 - **`docs/plans/`** — implementation plans. Filenames are descriptive (not numbered) so the IDs don't conflate with execution order; see the **Plans** section below for the canonical sequence.
 - **`scripts/`** — maintenance + agent operations (validation, index build, reset, etc.).
@@ -78,7 +78,7 @@ pnpm knip
 
 Filenames are stable descriptive IDs; the contents of each plan file record the as-shipped state for completed plans and the open scope for remaining ones.
 
-### Shipped through v1.0.0
+### Shipped
 
 | Plan                                                                              | Release  |
 | --------------------------------------------------------------------------------- | -------- |
@@ -88,21 +88,24 @@ Filenames are stable descriptive IDs; the contents of each plan file record the 
 | [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | v0.11.2  |
 | [`skills-directory-split.md`](docs/plans/skills-directory-split.md)               | v0.11.3  |
 | [`drift-update-ux-consistency.md`](docs/plans/drift-update-ux-consistency.md)     | v0.11.4  |
+| [`v0.11.4-polish.md`](docs/plans/v0.11.4-polish.md)                               | v0.11.4 follow-on |
 | [`a11y-polish.md`](docs/plans/a11y-polish.md)                                     | v0.11.5  |
 | [`renderer-state-architecture.md`](docs/plans/renderer-state-architecture.md)     | v0.11.6 (M1+M2), v0.11.6 follow-up (M3 DrawerHost). M3's remaining host extractions (UpdateHost / ConflictHost / RegistryHost) deferred as low-priority cleanup. |
 | [`core-test-foundation.md`](docs/plans/core-test-foundation.md)                   | v0.11.7  |
 | [`security-hardening.md`](docs/plans/security-hardening.md)                       | v0.11.8  |
 | [`core-architecture-refactor.md`](docs/plans/core-architecture-refactor.md)       | v0.11.9  |
 | [`origin-rename-pass.md`](docs/plans/origin-rename-pass.md)                       | v0.11.10 (deferred: `SkillSource.upstream` JSON-field rename and the heal-action renames — see plan file) |
+| [`curation-layer-reset.md`](docs/plans/curation-layer-reset.md)                   | v1.2.0 (Phase 1) |
+| [`vocabulary-rename.md`](docs/plans/vocabulary-rename.md)                         | v1.3.0 (Phase 2) |
+| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | v1.4.0 (Phase 3, rewritten before implementation to drop the pre-v1.0 bankSnapshot/cache-layer design) |
+| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | v1.4.0 (Phase 4, rewritten before implementation to drop the npx-skills coupling) |
+| [`in-app-publish.md`](docs/plans/in-app-publish.md)                               | v1.5.0 (Phase 5 M1–M4) — pins ADRs 0006 / 0007 / 0008. Deferred from M3: PR-meta-edit modal, collision-resolve modal, drawer h3 re-sectioning, open-PR sub-chip. |
+| Scan + drawer polish                                                              | v1.5.1 (no plan file — landed via PR #71) |
+| [`cli-minimal.md`](docs/plans/cli-minimal.md)                                     | v1.6.0  |
 
 ### Remaining
 
-| Plan                                                                              | Hard dependency                                           |
-| --------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | none (post-v1.0)                                          |
-| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | `bank-mode-persistence`                                   |
-| [`in-app-publish.md`](docs/plans/in-app-publish.md)                               | none (post-v1.0) — pins ADRs 0006 / 0007 / 0008           |
-| [`cli-minimal.md`](docs/plans/cli-minimal.md)                                     | none — housekeeping; anytime                              |
+None. All planned work through Phase 5 + the CLI-minimal housekeeping is shipped. Future plans get added here.
 
 When starting work on a plan, create a `feat/<plan-slug>` branch following the recent commit pattern in `git log`.
 

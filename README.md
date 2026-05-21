@@ -27,7 +27,7 @@ A **skill** is a folder of instructions (`SKILL.md` + optional `meta.json`) that
 - **Canon protection.** Skills from your linked upstream are exempt from Unregister and Delete; **Hide** is the canon-only way to tuck one away.
 - **Heal flows.** Explicit recovery for canon drift, missing folders, broken external paths, and conflicting installs.
 - **Sync without losing your edits.** Upstream pulls refresh canonical skills; your authored tags and unmanaged skills are never touched.
-- **Desktop app and CLI.** The same operations through either surface.
+- **Desktop app for humans, CLI for scripts.** Interactive flows — discover, heal, register, sync — live in the desktop app. The CLI is the scripting surface: five commands shaped for shell composition (dotfiles, CI, piping into `jq`).
 
 ## Get started
 
@@ -52,17 +52,32 @@ Defaults for which agent directories an Install action targets live in **Setting
 
 ### CLI
 
+The CLI is the scripting surface for Skills Bank. Interactive flows — discover, heal, register, sync — live in the desktop app. Five commands cover the entire scriptable surface, with `--json` on both read commands for shell composition.
+
 ```bash
 pnpm install
 pnpm run build
-node packages/cli/dist/index.js list
-node packages/cli/dist/index.js install <name>     # broadcasts to every existing agent dir
-node packages/cli/dist/index.js installed
-node packages/cli/dist/index.js uninstall <name>
-node packages/cli/dist/index.js import             # adopt pre-existing skills outside the registry
-node packages/cli/dist/index.js finalize           # collapse a symlinked top-level agent dir
-node packages/cli/dist/index.js export <name>      # raw .md (standalone) or .zip (bundled)
+node packages/cli/dist/index.js list [--json]                       # registered skills
+node packages/cli/dist/index.js installed [--json]                  # what's wired into which agent
+node packages/cli/dist/index.js install <name> [--agent <id>]       # broadcasts unless --agent scopes
+node packages/cli/dist/index.js uninstall <name> [--agent <id>]     # inverse of install
+node packages/cli/dist/index.js path <name>                         # absolute path; use with cd / $EDITOR
 ```
+
+Examples:
+
+```bash
+# Shell composition — open a skill's SKILL.md in your editor
+$EDITOR "$(node packages/cli/dist/index.js path frontend-design)/SKILL.md"
+
+# CI bootstrap — install a specific skill into a single agent dir
+node packages/cli/dist/index.js install frontend-design --agent claude
+
+# Scriptable listing
+node packages/cli/dist/index.js list --json | jq '.[].name'
+```
+
+The removed CLI commands (`import`, `export`, `finalize`, `sync-installed`) now print a one-line redirect to the in-app equivalent and exit non-zero, so scripts that called them surface the change loudly.
 
 ## What's in this repo
 

@@ -4,36 +4,39 @@ import { listCommand } from "./commands/list.js";
 import { installedCommand } from "./commands/installed.js";
 import { installCommand } from "./commands/install.js";
 import { uninstallCommand } from "./commands/uninstall.js";
-import { importCommand } from "./commands/import.js";
-import { finalizeCommand } from "./commands/finalize.js";
-import { exportCommand } from "./commands/export.js";
-import { syncInstalledCommand } from "./commands/sync-installed.js";
+import { pathCommand } from "./commands/path.js";
 
 const program = new Command();
 
 program
   .name("skills-bank")
-  .description("CLI for the skills-bank Claude Code skill registry")
+  .description(
+    "Scripting surface for Skills Bank. Interactive flows (discover, heal, register, sync) live in the desktop app.",
+  )
   .version("0.1.0");
 
 program
   .command("list")
   .description("List skills available in the registry")
-  .option("--json", "Output JSON")
+  .option("--json", "Output JSON (array of registry entries)")
   .option("--root <path>", "Path to skills-bank registry root")
   .action(listCommand);
 
 program
   .command("installed")
-  .description("List skills currently installed under ~/.claude/skills")
-  .option("--json", "Output JSON")
+  .description("List skills currently wired into agent dirs")
+  .option("--json", "Output JSON (one entry per (skill, agent) installation)")
   .option("--root <path>", "Path to skills-bank registry root")
   .action(installedCommand);
 
 program
   .command("install <name>")
   .description(
-    "Install a registry skill (creates a symlink in ~/.claude/skills)",
+    "Install a registry skill. Broadcasts to every existing agent dir unless --agent scopes it.",
+  )
+  .option(
+    "--agent <id>",
+    "Install only into this agent (claude, cursor, gemini, copilot, continue, cline, codex, agents)",
   )
   .option("--force", "Replace an existing symlink at the target")
   .option("--root <path>", "Path to skills-bank registry root")
@@ -41,47 +44,59 @@ program
 
 program
   .command("uninstall <name>")
-  .description("Remove a skill symlink from ~/.claude/skills")
+  .description("Remove a skill symlink. Broadcasts unless --agent scopes it.")
+  .option(
+    "--agent <id>",
+    "Uninstall only from this agent (claude, cursor, gemini, copilot, continue, cline, codex, agents)",
+  )
   .action(uninstallCommand);
 
 program
-  .command("import")
+  .command("path <name>")
   .description(
-    "Scan ~/.claude/skills for pre-existing entries and register them into skills-bank",
+    "Print the absolute path to a registered skill. Enables `cd $(skills-bank path foo)` and `$EDITOR $(skills-bank path foo)/SKILL.md`.",
   )
-  .option("--dry-run", "Report what would change; make no filesystem changes")
-  .option("--adopt-all", "Adopt every real-directory and copy foreign symlinks")
-  .option("--yes", "Skip confirmation prompts")
   .option("--root <path>", "Path to skills-bank registry root")
-  .action(importCommand);
+  .action(pathCommand);
 
-program
-  .command("sync-installed")
-  .description(
-    "After pulling new registry skills, swap each ~/.claude/skills foreign symlink whose name matches a registry skill for the registry version. Real-directory entries are surfaced for the import flow.",
-  )
-  .option("--dry-run", "Print the plan; make no changes")
-  .option("--yes", "Skip confirmation prompt")
-  .option("--root <path>", "Path to skills-bank registry root")
-  .action(syncInstalledCommand);
-
-program
-  .command("export <name>")
-  .description(
-    "Export a registry skill. Standalone skills (just SKILL.md) export as raw .md; bundled skills (with examples/, evals/, references/, etc.) export as a .zip.",
-  )
-  .option("-o, --out <path>", "Output path (default: <name>.{md,zip} in cwd)")
-  .option("--root <path>", "Path to skills-bank registry root")
-  .action(exportCommand);
-
-program
-  .command("finalize")
-  .description(
-    "If ~/.claude/skills is itself a symlink (e.g. → ~/.agents/skills), replace it with a real directory containing the same per-skill symlinks (eliminates double-hop indirection).",
-  )
-  .option("--yes", "Skip confirmation prompt")
-  .option("--root <path>", "Path to skills-bank registry root")
-  .action(finalizeCommand);
+// Redirect-and-exit stubs for commands removed in v1.6. The CLI is now
+// the scripting surface; interactive / bulk flows live in the desktop
+// app. Keeping these registered (rather than letting commander emit
+// "unknown command") gives scripts a one-line pointer to the in-app
+// equivalent.
+const removed: Array<{ name: string; replacement: string }> = [
+  {
+    name: "import",
+    replacement:
+      "Use Register existing skills in the desktop app (or Account → Import a registry for a manifest).",
+  },
+  {
+    name: "export",
+    replacement:
+      "Use Account → Export current registry in the desktop app.",
+  },
+  {
+    name: "finalize",
+    replacement:
+      "Use Settings → Collapse symlinked agent dirs in the desktop app.",
+  },
+  {
+    name: "sync-installed",
+    replacement:
+      "The desktop app rewires installations automatically; no CLI equivalent.",
+  },
+];
+for (const { name, replacement } of removed) {
+  program
+    .command(name, { hidden: true })
+    .description(`(removed) ${replacement}`)
+    .action(() => {
+      console.error(
+        `\`skills-bank ${name}\` was removed in v1.6. ${replacement}`,
+      );
+      process.exit(2);
+    });
+}
 
 program.parseAsync(process.argv).catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : String(err));
