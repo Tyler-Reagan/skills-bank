@@ -113,6 +113,7 @@ export function DrawerHost({
       showOriginActivity={
         settings.showOriginActivity && Boolean(authStatus?.user)
       }
+      linkedRepoName={authStatus?.linkedRepo?.fullName ?? null}
       onSetManualUpstream={async (choice: OriginManualChoice) => {
         const r = await window.skillsBank.originSetManual(
           selected.name,

@@ -119,7 +119,7 @@ export function InstallFromGithubModal({
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://github.com/..."
+          placeholder="https://github.com/owner/repo/tree/main/path"
           disabled={busy}
           style={input}
           onKeyDown={(e) => {

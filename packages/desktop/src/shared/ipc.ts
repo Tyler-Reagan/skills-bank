@@ -13,11 +13,14 @@ import type {
   InstallFromGithubResult,
   InstalledSkill,
   MergeImportReport,
+  PublishState,
+  RateLimitInfo,
   RegistrationAction,
   RegistrationResult,
   RegistryEntry,
   RegistryManifest,
   ScanReport,
+  SkillPublishFlow,
   SyncDecisions,
   SyncReport,
 } from "@skills-bank/core";
@@ -90,6 +93,10 @@ export const IPC = {
   importManifest: "bank:importManifest",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
+  classifySkillForPublish: "publish:classify",
+  publishSkill: "publish:skill",
+  getPublishState: "publish:state",
+  getPublishStates: "publish:states",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
@@ -467,6 +474,71 @@ interface UnregisterIPCResult extends IPCFailureFields {
   wasAdopted: boolean;
 }
 
+/**
+ * Phase 5 (v1.5): options for the `publishSkill` IPC.
+ */
+export interface PublishSkillOptions {
+  /**
+   * Required for Flow 3 (fork) confirmation. The classifier
+   * surfaces the fork case; the renderer shows a confirmation
+   * modal; the user accepting flips this to `true` on the
+   * subsequent publishSkill call. Without it, fork-eligible
+   * skills surface a `fork-confirmation-required` error.
+   */
+  confirmFork?: boolean;
+  /** Editable PR metadata overriding the classifier's defaults. */
+  prMeta?: { title?: string; body?: string };
+}
+
+/**
+ * Phase 5 (v1.5): the orchestrated publish result. Composes
+ * `forkSkill` (Flow 3 only) with `pushSkillFolder`. Discriminated
+ * by `reason` so the renderer keys its toast / error UI cleanly.
+ */
+export type PublishSkillResult =
+  | {
+      ok: true;
+      prUrl: string;
+      prNumber: number;
+      updated: boolean;
+      flow: "new" | "safekeeping" | "fork";
+    }
+  | { ok: false; reason: "no-linked-repo"; message: string }
+  | { ok: false; reason: "missing-auth"; message: string }
+  | { ok: false; reason: "not-publishable"; message: string }
+  | {
+      ok: false;
+      reason: "fork-confirmation-required";
+      message: string;
+    }
+  | {
+      ok: false;
+      reason: "fork-collision";
+      message: string;
+      existingDir: string;
+    }
+  | { ok: false; reason: "fork-no-origin"; message: string }
+  | { ok: false; reason: "fork-swap-failed"; message: string }
+  | {
+      ok: false;
+      reason: "rate-limit";
+      message: string;
+      rateLimit: RateLimitInfo;
+    }
+  | {
+      ok: false;
+      reason: "push-failed";
+      message: string;
+      step: 1 | 2 | 3 | 4 | 5 | 6;
+      /** Set when step 5 succeeded but step 6 (PR creation) failed. */
+      branchUrl?: string;
+    }
+  | {
+      ok: false;
+      reason: "branch-resolution-failed";
+      message: string;
+    };
+
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
   /**
@@ -717,6 +789,33 @@ interface SkillsBankAPI {
     | { ok: false; reason: "url-parse-error"; message: string }
     | { ok: false; reason: "no-registry-root"; message: string }
   >;
+  /**
+   * Phase 5 (v1.5): classify a skill into one of three publish
+   * sub-flows (new / safekeeping / fork) or `not-publishable`.
+   * Pure call; doesn't mutate anything. The drawer calls this on
+   * open to decide which Publish UI surface to render.
+   */
+  classifySkillForPublish(name: string): Promise<
+    | { ok: true; flow: SkillPublishFlow }
+    | { ok: false; message: string }
+  >;
+  /**
+   * Phase 5 (v1.5): execute the publish flow. Orchestrates
+   * forkSkill (Flow 3 only, after confirmation) and pushSkillFolder.
+   * Returns the discriminated PublishResult so the renderer can
+   * key its toast / error UI on `reason`.
+   */
+  publishSkill(
+    name: string,
+    options: PublishSkillOptions,
+  ): Promise<PublishSkillResult>;
+  /** Phase 5 (v1.5): publish state for one skill. Uses the cached
+   *  tree probe in remote-API mode (5-min TTL per ADR-0008). */
+  getPublishState(name: string): Promise<PublishState>;
+  /** Phase 5 (v1.5): publish state for many skills in one call.
+   *  Cheaper than N round-trips when the drawer or registry view
+   *  wants chips for a batch of entries. */
+  getPublishStates(names: string[]): Promise<Record<string, PublishState>>;
   importRegistry(): Promise<{
     ok: boolean;
     message: string;

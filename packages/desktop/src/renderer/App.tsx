@@ -1729,12 +1729,19 @@ function AppContent(): React.ReactElement {
             onConnected={(status) => {
               setShowConnectGithub(false);
               setAuthStatus(status);
-              // Identity update only — `linkedRepo` is preserved. Users
-              // already past onboarding don't need to re-pick a repo
-              // just because they signed back in; the explicit "Change
-              // linked repo" action covers that intent. The first-launch
-              // path (where RepoPicker should pop) goes through
-              // LoginScreen's onStatusChanged, not this handler.
+              // First-link case: user just authed and has no linked
+              // repo yet → auto-prompt RepoPicker as the obvious
+              // next step. Sign-in's payoff is linking a repo;
+              // making the user hunt for "Link a GitHub repository"
+              // after Device Flow is bad UX.
+              //
+              // Re-auth case: user already has a linkedRepo → leave
+              // it untouched. They just refreshed credentials; the
+              // explicit "Change linked repo" action in Account
+              // covers the rare "actually swap the repo" intent.
+              if (!status.linkedRepo) {
+                setShowRepoPicker(true);
+              }
               void refresh();
             }}
           />

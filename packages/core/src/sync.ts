@@ -258,7 +258,17 @@ export async function applyCanonicalSync(
     if (localExists) {
       preservedTags = readMetaTags(localPath);
       const existingSource = readSkillSource(localPath);
-      if (existingSource.source !== "curated") {
+      // v1.5: conflict detection keys off `syncedFromCommit`, not
+      // the source axis. Pre-v1.5 used `source !== "curated"` as a
+      // proxy for "is this user-authored?", which worked when every
+      // sync stamped curated. With v1.5's mountTo policy
+      // (linked-repo syncs stamp `source: user`), the proxy
+      // misfires: legitimately-previously-synced linked-repo skills
+      // surface as fake conflicts because their source is `user`.
+      // The correct discriminator is `syncedFromCommit` presence —
+      // every sync stamps it; user-authored skills don't carry one.
+      const isPreviouslySynced = !!existingSource.syncedFromCommit;
+      if (!isPreviouslySynced) {
         const decision = decisions[name];
         if (decision) {
           // Apply the stored resolution via the shared primitive.
@@ -310,13 +320,20 @@ export async function applyCanonicalSync(
       writeMetaTags(mountPath, preservedTags);
     }
     // Read whatever source-axis state the mirrored .skills-bank.json
-    // carries so per-skill `upstream` survives the sync stamp. Without
-    // this spread, every sync silently wipes upstream attribution
-    // (pre-existing oddity since v0.11.3).
+    // carries so per-skill `origin` survives the sync stamp. Without
+    // this spread, every sync silently wipes origin attribution
+    // (pre-existing oddity since v0.11.3, fixed in v1.2).
+    //
+    // v1.5: source axis is mountTo-derived. `vendored` (the
+    // curated-set sync) stamps `curated`; `personal` (the
+    // user-linked-repo sync) stamps `user`. Pre-Phase-1 logic
+    // hard-coded `curated` for every mount target, which
+    // mislabelled linked-repo skills as part of the curated set.
     const mirroredSource = readSkillSource(mountPath);
+    const sourceForBucket = mountTo === "vendored" ? "curated" : "user";
     const merged: SkillSource = {
       ...(preservedSource ?? mirroredSource),
-      source: "curated",
+      source: sourceForBucket,
       syncedFromCommit: commitSha,
       syncedAt,
     };
@@ -328,13 +345,20 @@ export async function applyCanonicalSync(
     upserted.push(name);
   }
 
-  // Orphans: local skills marked canonical that no longer appear in
-  // discovery. Walk via the bucket-aware helper so we don't mistake
-  // the bucket directories themselves for skills.
+  // Orphans: local skills that previously came from a sync (any
+  // sync — curated or linked-repo) but no longer appear in the
+  // current discovery. v1.5: discriminate on syncedFromCommit
+  // presence, not the source axis. Pre-fix this used
+  // `source === "curated"`, which missed linked-repo orphans
+  // (skills removed from the user's linked repo carry
+  // `source: user + syncedFromCommit`, so the proxy missed them).
+  // Same family of bug as the source-axis-stamp + conflict-gate
+  // fixes; this is the third call site that needed the same
+  // proxy → syncedFromCommit migration.
   const orphaned: string[] = [];
   for (const ref of walkSkills(registryRoot)) {
     if (canonicalNames.has(ref.name)) continue;
-    if (readSkillSource(ref.dir).source === "curated") {
+    if (readSkillSource(ref.dir).syncedFromCommit) {
       orphaned.push(ref.name);
     }
   }

@@ -25,13 +25,6 @@ export interface RegistryEntry extends SkillMeta {
    */
   source: import("./source.js").SkillSource;
   /**
-   * Whether the skill's latest commit is reachable from the upstream
-   * remote. Populated by buildRegistryIndex when includeGitInfo is true
-   * (already the CI/CLI default). "unknown" when the registry isn't a
-   * git working tree.
-   */
-  publishState?: PublishState;
-  /**
    * Taxonomy axis: true when the skill's files physically live under
    * `<registryRoot>/skills/<bucket>/<name>/`. False when the registry
    * entry tracks an external location (the symlink-mode register path).

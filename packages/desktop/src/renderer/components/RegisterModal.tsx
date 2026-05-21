@@ -140,7 +140,9 @@ export function RegisterModal({
         <div style={modal} role="dialog" aria-modal="true">
           <h2 style={{ marginTop: 0 }}>Nothing to register</h2>
           <p style={{ color: "var(--text-2)", fontSize: 13 }}>
-            Scanned <code>{report.claudeSkillsDir}</code> and found no entries.
+            Scanned every agent directory (Claude, Cursor, Gemini,
+            Copilot, Continue, Cline, Codex, shared) and found no
+            entries.
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button className="primary" onClick={() => void onClose()}>

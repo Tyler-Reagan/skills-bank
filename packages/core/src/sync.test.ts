@@ -253,22 +253,24 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
     expect(meta.tags).toEqual(["mine-1", "mine-2"]);
   });
 
-  test("Orphan reporting — bundled local skill not in canonical set is reported, not deleted", async () => {
+  test("Orphan reporting — previously-curated-synced local skill not in canonical set is reported, not deleted", async () => {
     writeLocal(
       "vendored",
       "theta",
-      { "SKILL.md": "# stale bundled theta" },
-      { source: "curated" },
+      { "SKILL.md": "# stale curated theta" },
+      // Real curated syncs stamp both source AND syncedFromCommit;
+      // orphan detection v1.5 keys off the latter.
+      { source: "curated", syncedFromCommit: "old-sha" },
     );
 
     const report = await applyCanonicalSync(registryRoot, canonicalRoot, "sha");
     expect(report.orphaned).toEqual(["theta"]);
     expect(readLocal("vendored", "theta", "SKILL.md")).toBe(
-      "# stale bundled theta",
+      "# stale curated theta",
     );
   });
 
-  test("Orphan reporting ignores `yours` skills (only bundled get orphan-reported)", async () => {
+  test("Orphan reporting ignores user-authored skills (no syncedFromCommit)", async () => {
     writeLocal(
       "vendored",
       "iota",
@@ -338,9 +340,121 @@ describe("applyCanonicalSync (mountTo: personal — linked-repo flow)", () => {
     const src = readSkillSource(
       path.join(registryRoot, "skills", "personal", "alpha"),
     );
-    expect(src.source).toBe("curated"); // sync stamps bundled
-    expect(src.origin?.repo).toBe("Tyler-Reagan/skills"); // upstream preserved
+    // v1.5: source axis is mountTo-derived. personal-mount → user
+    // (the user mounted the skill from their own linked repo, so
+    // it's theirs by the UL definition). Earlier behavior stamped
+    // curated regardless of bucket; that was the bug surfaced
+    // during Phase 5 QA.
+    expect(src.source).toBe("user");
+    expect(src.origin?.repo).toBe("Tyler-Reagan/skills"); // origin preserved
     expect(src.origin?.skillPath).toBe("alpha/SKILL.md");
+  });
+
+  test("source axis follows mountTo: vendored → curated (curated-set sync)", async () => {
+    writeCanonical(
+      "beta",
+      { "SKILL.md": "---\nname: beta\ndescription: x\n---\n# beta" },
+      { flat: true },
+    );
+    await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "sha",
+      {},
+      { mountTo: "vendored" },
+    );
+    const src = readSkillSource(
+      path.join(registryRoot, "skills", "vendored", "beta"),
+    );
+    expect(src.source).toBe("curated");
+  });
+
+  test("re-sync of an already-linked repo: previously-synced skills overwrite cleanly, NOT surfaced as conflicts", async () => {
+    // Pre-stage: skill exists locally with `source: user +
+    // syncedFromCommit` (the post-v1.5 linked-repo-sync footprint).
+    writeLocal(
+      "personal",
+      "gamma",
+      { "SKILL.md": "# old gamma" },
+      {
+        source: "user",
+        syncedFromCommit: "old-sha",
+      },
+    );
+    writeCanonical(
+      "gamma",
+      { "SKILL.md": "---\nname: gamma\ndescription: x\n---\n# new gamma" },
+      { flat: true },
+    );
+
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "new-sha",
+      {},
+      { mountTo: "personal" },
+    );
+    // Previously-synced skill is overwritten in place — not a
+    // conflict. v1.5 regression test: pre-fix this surfaced as
+    // a fake conflict because `source: user !== curated`.
+    expect(report.upserted).toEqual(["gamma"]);
+    expect(report.conflicts).toEqual([]);
+    expect(readLocal("personal", "gamma", "SKILL.md")).toBe(
+      "---\nname: gamma\ndescription: x\n---\n# new gamma",
+    );
+  });
+
+  test("linked-repo-orphan: skill previously synced from this repo, now removed upstream → orphan", async () => {
+    // Pre-stage: skill previously linked-repo-synced (source: user
+    // + syncedFromCommit), but NOT in the incoming tree.
+    writeLocal(
+      "personal",
+      "iota",
+      { "SKILL.md": "# stale iota" },
+      {
+        source: "user",
+        syncedFromCommit: "old-sha",
+      },
+    );
+    // canonicalRoot has no skills — `iota` was upstream-removed.
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "sha",
+      {},
+      { mountTo: "personal" },
+    );
+    // Surfaced as orphan. Pre-fix this was missed because
+    // source: user !== "curated".
+    expect(report.orphaned).toEqual(["iota"]);
+    // Local copy untouched.
+    expect(readLocal("personal", "iota", "SKILL.md")).toBe("# stale iota");
+  });
+
+  test("user-authored skill (no syncedFromCommit) collides with incoming → conflict", async () => {
+    writeLocal(
+      "personal",
+      "delta",
+      { "SKILL.md": "# my delta" },
+      // No syncedFromCommit — user authored this locally.
+      { source: "user" },
+    );
+    writeCanonical(
+      "delta",
+      { "SKILL.md": "---\nname: delta\ndescription: x\n---\n# incoming delta" },
+      { flat: true },
+    );
+
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "sha",
+      {},
+      { mountTo: "personal" },
+    );
+    expect(report.upserted).toEqual([]);
+    expect(report.conflicts).toHaveLength(1);
+    expect(report.conflicts[0]!.name).toBe("delta");
   });
 });
 

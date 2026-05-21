@@ -1245,7 +1245,7 @@ select {
   align-items: center;
   gap: var(--s2);
   padding: var(--s2) var(--s3);
-  margin: 0 var(--s4);
+  margin: var(--s2) var(--s4);
   border-radius: var(--r-sm);
   font-size: 13px;
   border: 1px solid var(--border);
@@ -2883,4 +2883,32 @@ button:disabled {
 .markdown-body img {
   max-width: 100%;
   border-radius: 6px;
+}
+
+/* Phase 5 publish chip — calm by default; pushed lights up. */
+.publish-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: var(--surface-hi);
+  color: var(--text-3);
+}
+.publish-chip.pushed {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.publish-chip.draft {
+  color: var(--warning, var(--text-2));
+}
+.publish-chip.untracked {
+  color: var(--text-2);
+}
+.publish-chip.unknown {
+  opacity: 0.7;
 }
