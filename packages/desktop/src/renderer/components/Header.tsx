@@ -1,6 +1,7 @@
 import React from "react";
 import { BUNDLED_REPO, type AuthStatus } from "../../shared/ipc.js";
 import { Icon } from "./Icon.js";
+import { ImportIndicator } from "./ImportIndicator.js";
 
 export type Theme = "dark" | "light";
 export type Density = "comfortable" | "compact";
@@ -65,6 +66,19 @@ interface Props {
    * fires (or the user clicks Rescan again) — no auto-fade.
    */
   onViewRescanUpdates: () => void;
+  /**
+   * True while a manifest import is in flight (initiated from
+   * AccountModal but tracked at App.tsx so the indicator survives
+   * modal close). Drives the persistent `<ImportIndicator />` chip
+   * in the header action cluster.
+   */
+  importingManifest: boolean;
+  /**
+   * Cancels the in-flight manifest import. Same callback the modal's
+   * "Cancel import" button uses — both funnel into the v1.7.0 cancel
+   * IPC.
+   */
+  onCancelImport: () => void;
 }
 
 export function Header({
@@ -84,6 +98,8 @@ export function Header({
   pendingSkillUpdates,
   onShowUpdates,
   onViewRescanUpdates,
+  importingManifest,
+  onCancelImport,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -239,6 +255,10 @@ export function Header({
               </>
             )}
           </button>
+          <ImportIndicator
+            importingManifest={importingManifest}
+            onCancelImport={onCancelImport}
+          />
           <button
             className="header-trigger account-trigger"
             type="button"

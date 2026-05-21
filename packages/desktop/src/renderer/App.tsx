@@ -1127,6 +1127,8 @@ function AppContent(): React.ReactElement {
           pendingSkillUpdates={0}
           onShowUpdates={() => undefined}
           onViewRescanUpdates={() => undefined}
+          importingManifest={false}
+          onCancelImport={() => undefined}
         />
         <Tabs
           active="browse"
@@ -1173,6 +1175,8 @@ function AppContent(): React.ReactElement {
           pendingSkillUpdates={pendingSkillUpdates.length}
           onShowUpdates={() => setShowUpdatesModal(true)}
           onViewRescanUpdates={rescan.onViewUpdates}
+          importingManifest={importingManifest}
+          onCancelImport={cancelManifestImport}
         />
         {appErrors.length > 0 && (
           <div className="error-panel-stack">

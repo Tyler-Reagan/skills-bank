@@ -382,6 +382,56 @@ select {
   outline: 2px solid var(--warn);
   outline-offset: 2px;
 }
+
+/* Persistent in-flight manifest-import affordance. Renders inside
+   `.header-stats`, to the right of the action buttons and to the
+   left of the account avatar trigger. Reads as a status chip
+   (matching `.updates-badge`) rather than an action button — the
+   inline spinner does the motion work; the trailing `×` is a
+   one-click cancel button that funnels into the v1.7.0 cancel IPC.
+   Only mounted when `importingManifest === true`, so the slot
+   collapses to zero width between runs. */
+.import-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 3px var(--s2) 3px var(--s3);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: var(--r-xl);
+  white-space: nowrap;
+}
+.import-indicator-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin-left: var(--s1);
+  border: none;
+  background: transparent;
+  color: inherit;
+  border-radius: var(--r);
+  cursor: pointer;
+  opacity: 0.75;
+  transition:
+    background var(--t) var(--ease),
+    opacity var(--t) var(--ease);
+}
+.import-indicator-cancel:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.import-indicator-cancel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
 .header-stats {
   display: flex;
   align-items: center;
