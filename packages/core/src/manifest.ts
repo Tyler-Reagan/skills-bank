@@ -205,6 +205,15 @@ export interface ManifestImportProgressEvent {
    * ghost-card placeholders. Subsequent events omit this field.
    */
   manifestNames?: string[];
+  /**
+   * Full manifest skill entries — same payload as
+   * `RegistryManifest.skills`. Sent on the FIRST progress event so
+   * Tier-3 ghost cards have the origin info they need to drive the
+   * per-skill retry action. Renderer-side payload size is
+   * proportional to manifest size; typical manifests (≤100 skills)
+   * remain well under any reasonable wire-format budget.
+   */
+  manifestSkills?: ManifestSkill[];
 }
 
 export interface ImportRegistryManifestOptions {
@@ -279,7 +288,7 @@ export async function importRegistryManifest(
         total,
         currentName: skill.name,
         ...(lastError ? { lastError } : {}),
-        ...(i === 0 ? { manifestNames } : {}),
+        ...(i === 0 ? { manifestNames, manifestSkills: v2.skills } : {}),
       });
     }
     // Reset per-iteration; only the most recent failure surfaces in

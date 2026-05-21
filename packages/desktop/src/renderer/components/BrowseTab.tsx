@@ -1,5 +1,10 @@
 import React, { useCallback, useMemo, useState } from "react";
-import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import type {
+  InstalledSkill,
+  ManifestSkill,
+  RegistryEntry,
+} from "@skills-bank/core";
+import { Icon } from "./Icon.js";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
 import { SkillsGrid } from "./SkillsGrid.js";
@@ -61,6 +66,25 @@ interface Props {
    */
   onBulkInstall?: (names: string[]) => Promise<void> | void;
   bulkInstall?: BulkInstallState | null;
+  /**
+   * Tier-3 (v1.9): live manifest-import progress used to render the
+   * "Incoming via manifest" ghost-card band at the top of this tab.
+   * Null when no import is in flight (or just settled and cleared).
+   */
+  manifestImportProgress?: {
+    completed: number;
+    total: number;
+    currentName: string;
+    manifestNames: string[];
+    manifestSkills: ManifestSkill[];
+    errors: Map<string, string>;
+    dismissed: Set<string>;
+    settled: Set<string>;
+  } | null;
+  /** Retry a failed ghost — re-mirrors the skill via the retry IPC. */
+  onRetryGhost?: (skill: ManifestSkill) => void;
+  /** Dismiss a failed (or pending) ghost; pure renderer-side state. */
+  onDismissGhost?: (name: string) => void;
 }
 
 export function BrowseTab({
@@ -83,6 +107,9 @@ export function BrowseTab({
   setRegistrySort,
   onBulkInstall,
   bulkInstall,
+  manifestImportProgress,
+  onRetryGhost,
+  onDismissGhost,
 }: Props): React.ReactElement {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedNames, setSelectedNames] = useState<ReadonlySet<string>>(
@@ -180,8 +207,32 @@ export function BrowseTab({
     installedOnly ||
     registryFilters.size > 0;
 
+  // Tier-3 ghost-card band. Filter to manifest entries not already
+  // in the registry (per design: ghosts only for net-new arrivals)
+  // and not dismissed by the user. Computed every render so each
+  // arrival/dismissal updates promptly. Cheap — typical manifests
+  // are small.
+  const registryNamesSet = useMemo(
+    () => new Set(registry.map((e) => e.name)),
+    [registry],
+  );
+  const ghostSkills =
+    manifestImportProgress?.manifestSkills.filter(
+      (s) =>
+        !registryNamesSet.has(s.name) &&
+        !manifestImportProgress.dismissed.has(s.name),
+    ) ?? [];
+
   return (
     <div>
+      {ghostSkills.length > 0 && manifestImportProgress && (
+        <GhostBand
+          skills={ghostSkills}
+          progress={manifestImportProgress}
+          {...(onRetryGhost ? { onRetry: onRetryGhost } : {})}
+          {...(onDismissGhost ? { onDismiss: onDismissGhost } : {})}
+        />
+      )}
       <div className="tab-intro">
         <span className="tab-intro-heading">
           <strong>Registry</strong>
@@ -413,6 +464,170 @@ function BulkInstallBar({
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Tier-3 ghost-card band rendered at the top of BrowseTab when a
+ * manifest import is in flight. One row per net-new manifest skill
+ * (existing registry entries are excluded — they don't ghost). Each
+ * row carries per-skill status:
+ *   - pending (default): shimmer skeleton, awaiting its turn
+ *   - current: highlighted, currently being mirrored
+ *   - errored: red border + Retry + Dismiss buttons
+ *   - settled (no error): faded check, awaiting band dissolution
+ *
+ * The band dissolves automatically when the host clears
+ * `manifestImportProgress` in the import's `finally` — at which
+ * point the registry has been refreshed and the new cards appear
+ * in their natural alphabetical positions in the main grid.
+ */
+function GhostBand({
+  skills,
+  progress,
+  onRetry,
+  onDismiss,
+}: {
+  skills: ManifestSkill[];
+  progress: {
+    completed: number;
+    total: number;
+    currentName: string;
+    errors: Map<string, string>;
+    settled: Set<string>;
+  };
+  onRetry?: (skill: ManifestSkill) => void;
+  onDismiss?: (name: string) => void;
+}): React.ReactElement {
+  return (
+    <section
+      className="ghost-band"
+      aria-label="Skills incoming via manifest import"
+    >
+      <header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 8,
+        }}
+      >
+        <h2 style={{ margin: 0, fontSize: 14 }}>
+          Incoming via manifest{" "}
+          <span style={{ color: "var(--text-3)", fontWeight: 400 }}>
+            ({progress.completed}/{progress.total})
+          </span>
+        </h2>
+      </header>
+      <ul
+        style={{
+          listStyle: "none",
+          padding: 0,
+          margin: 0,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+          gap: 8,
+        }}
+      >
+        {skills.map((skill) => {
+          const error = progress.errors.get(skill.name);
+          const isCurrent = progress.currentName === skill.name && !error;
+          const isSettled = progress.settled.has(skill.name) && !error;
+          const status = error
+            ? "errored"
+            : isCurrent
+              ? "current"
+              : isSettled
+                ? "settled"
+                : "pending";
+          return (
+            <li
+              key={skill.name}
+              className={`ghost-card ghost-${status}`}
+              style={{
+                padding: 10,
+                borderRadius: 6,
+                border:
+                  status === "errored"
+                    ? "1px solid var(--danger, #d33)"
+                    : "1px solid var(--border, #ccc)",
+                background: "var(--surface-2)",
+                fontSize: 12,
+                minHeight: 64,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontWeight: 500,
+                }}
+              >
+                {status === "pending" && (
+                  <span
+                    className="spinner inline"
+                    aria-hidden="true"
+                    style={{ opacity: 0.4 }}
+                  />
+                )}
+                {status === "current" && (
+                  <span className="spinner inline" aria-hidden="true" />
+                )}
+                {status === "settled" && (
+                  <Icon name="check" size="sm" aria-hidden={true} />
+                )}
+                {status === "errored" && (
+                  <Icon
+                    name="alert-triangle"
+                    size="sm"
+                    aria-hidden={true}
+                  />
+                )}
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {skill.name}
+                </span>
+              </div>
+              {error && (
+                <div
+                  style={{
+                    color: "var(--danger, #d33)",
+                    fontSize: 11,
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+              {error && (
+                <div style={{ display: "flex", gap: 4 }}>
+                  {onRetry && (
+                    <button
+                      type="button"
+                      className="btn small"
+                      onClick={() => onRetry(skill)}
+                    >
+                      Retry
+                    </button>
+                  )}
+                  {onDismiss && (
+                    <button
+                      type="button"
+                      className="btn small"
+                      onClick={() => onDismiss(skill.name)}
+                    >
+                      Dismiss
+                    </button>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
