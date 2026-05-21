@@ -469,9 +469,14 @@ export function SkillDetailDrawer({
     <>
       <div
         className="drawer-overlay"
-        onClick={overlayReady ? onClose : undefined}
-        aria-hidden="true"
-      />
+        // Backdrop click closes; click-on-dialog bubbles up here but
+        // the currentTarget check filters those out so the dialog body
+        // doesn't dismiss on every interaction.
+        onClick={(e) => {
+          if (!overlayReady) return;
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
       <aside
         ref={drawerRef}
         className="drawer"
@@ -1553,6 +1558,7 @@ export function SkillDetailDrawer({
         </div>
         </div>
       </aside>
+      </div>
       {repairState.kind === "confirm-delete" && (
         <div
           role="dialog"
