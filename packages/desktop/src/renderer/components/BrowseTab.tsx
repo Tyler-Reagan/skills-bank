@@ -110,8 +110,8 @@ export function BrowseTab({
         <p>
           Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
           <code>meta.json</code> or a <code>SKILL.md</code> with YAML
-          frontmatter, or click <strong>Refresh from &lt;repo&gt;</strong> in
-          the header to pull from your linked registry.
+          frontmatter, or click <strong>Pull from &lt;repo&gt;</strong> in the
+          header to pull from your linked registry.
         </p>
         <div style={{ marginTop: 16 }}>
           <button
