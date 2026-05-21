@@ -168,6 +168,14 @@ export type ImportSkillOutcome =
 export interface ImportRegistryManifestResult {
   outcomes: ImportSkillOutcome[];
   installHints: { name: string; agents: AgentId[] }[];
+  /**
+   * Set to `true` when the per-skill loop was aborted via the
+   * caller-supplied `AbortSignal`. Already-mirrored skills remain
+   * on disk and surface in `outcomes`; remaining manifest entries
+   * are simply not processed. Omitted when the import ran to
+   * completion.
+   */
+  cancelled?: boolean;
 }
 
 export interface ImportRegistryManifestOptions {
@@ -176,6 +184,13 @@ export interface ImportRegistryManifestOptions {
    * falls through to unauthenticated probes (60/hr rate limit).
    */
   token?: string | null;
+  /**
+   * Optional abort signal. When fired, the per-skill loop exits at
+   * the top of the next iteration. Already-mirrored skills stay on
+   * disk (no rollback) and are reflected in the returned outcomes;
+   * the result carries `cancelled: true`.
+   */
+  signal?: AbortSignal;
 }
 
 /**
@@ -209,8 +224,13 @@ export async function importRegistryManifest(
 
   const outcomes: ImportSkillOutcome[] = [];
   const installHints: { name: string; agents: AgentId[] }[] = [];
+  let cancelled = false;
 
   for (const skill of v2.skills) {
+    if (opts.signal?.aborted) {
+      cancelled = true;
+      break;
+    }
     const existing = findSkillFolder(registryRoot, skill.name);
     if (existing) {
       const localOrigin = originFromPointer(
@@ -271,7 +291,9 @@ export async function importRegistryManifest(
     }
   }
 
-  return { outcomes, installHints };
+  return cancelled
+    ? { outcomes, installHints, cancelled: true }
+    : { outcomes, installHints };
 }
 
 function originFromPointer(p: OriginPointer | undefined): ManifestOrigin {

@@ -916,26 +916,47 @@ function AppContent(): React.ReactElement {
   const [manifestImportHints, setManifestImportHints] = useState<
     import("@skills-bank/core").ImportRegistryManifestResult | null
   >(null);
+  // Tier 1 v2: tracks whether the manifest-import IPC is in flight,
+  // gating the AccountModal button matrix (busy state for Import
+  // manifest, disable for corruption-risking siblings, reveal of the
+  // Cancel import button). Cleared in the `finally` so an aborted or
+  // failed import returns the UI to its idle state.
+  const [importingManifest, setImportingManifest] = useState(false);
 
   const importManifest = useCallback(async () => {
-    const r = await window.skillsBank.importManifest();
-    if (!r.ok) {
-      if (r.message && r.message !== "cancelled") {
-        flashError(r.message);
+    setImportingManifest(true);
+    try {
+      const r = await window.skillsBank.importManifest();
+      if (!r.ok) {
+        if (r.message && r.message !== "cancelled") {
+          flashError(r.message);
+        }
+        return;
       }
-      return;
-    }
-    const registered = r.result.outcomes.filter(
-      (o) => o.result === "registered",
-    ).length;
-    flash(
-      `Restored ${registered} skill${registered === 1 ? "" : "s"} from manifest`,
-    );
-    await refresh();
-    if (r.result.installHints.length > 0) {
-      setManifestImportHints(r.result);
+      const registered = r.result.outcomes.filter(
+        (o) => o.result === "registered",
+      ).length;
+      if (r.result.cancelled) {
+        flash(
+          `Import cancelled. Restored ${registered} skill${registered === 1 ? "" : "s"}.`,
+        );
+      } else {
+        flash(
+          `Restored ${registered} skill${registered === 1 ? "" : "s"} from manifest`,
+        );
+      }
+      await refresh();
+      if (r.result.installHints.length > 0) {
+        setManifestImportHints(r.result);
+      }
+    } finally {
+      setImportingManifest(false);
     }
   }, [flash, flashError, refresh]);
+
+  const cancelManifestImport = useCallback(() => {
+    void window.skillsBank.importManifestCancel();
+  }, []);
 
   const exportManifest = useCallback(async () => {
     const r = await window.skillsBank.exportManifest();
@@ -1756,9 +1777,11 @@ function AppContent(): React.ReactElement {
               await exportRegistry();
             }}
             onImportManifest={async () => {
-              setShowAccount(false);
               await importManifest();
+              setShowAccount(false);
             }}
+            importingManifest={importingManifest}
+            onCancelImport={cancelManifestImport}
             onExportManifest={async () => {
               setShowAccount(false);
               await exportManifest();

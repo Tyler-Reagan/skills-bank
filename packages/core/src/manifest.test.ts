@@ -430,6 +430,72 @@ describe("importRegistryManifest", () => {
     ]);
   });
 
+  test("pre-aborted signal exits the loop before any iteration", async () => {
+    // Tier 1 v2: AbortSignal threading through importRegistryManifest.
+    // Pre-aborting the signal is the simplest proof that the top-of-
+    // iteration check fires; it avoids the timing scaffolding that
+    // would otherwise be needed to abort mid-loop. The mid-mirror
+    // cancel path shares the same check, so this covers the contract.
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.1.0",
+      skills: [
+        {
+          name: "alpha",
+          source: "user",
+          origin: {
+            kind: "github",
+            repo: "owner/repo",
+            skillPath: "skills/alpha/SKILL.md",
+          },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+        {
+          name: "beta",
+          source: "user",
+          origin: {
+            kind: "github",
+            repo: "owner/repo",
+            skillPath: "skills/beta/SKILL.md",
+          },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+        {
+          name: "gamma",
+          source: "user",
+          origin: {
+            kind: "github",
+            repo: "owner/repo",
+            skillPath: "skills/gamma/SKILL.md",
+          },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+      ],
+    };
+    const controller = new AbortController();
+    controller.abort();
+    const result = await importRegistryManifest(registryRoot, manifest, {
+      signal: controller.signal,
+    });
+    expect(result.cancelled).toBe(true);
+    expect(result.outcomes).toEqual([]);
+    expect(result.installHints).toEqual([]);
+    // Nothing mirrored.
+    expect(
+      fs.existsSync(path.join(registryRoot, "skills", "personal", "alpha")),
+    ).toBe(false);
+  });
+
   test("installHints omits skills with empty lastInstalledOn", async () => {
     writeSkill("personal", "zeta");
     const manifest: RegistryManifest = {
