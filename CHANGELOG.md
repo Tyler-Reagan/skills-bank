@@ -3,6 +3,40 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.5.1
+
+Bug fix + drawer redesign. One PR ([#71](https://github.com/Tyler-Reagan/skills-bank/pull/71)) covering both, since the redesign grew out of opening the drawer to test the bug fix. No new plan-phase work — this is polish on the v1.5 surface.
+
+### Fixed
+
+- **`scanExistingInstalls` per-agent collision.** When the same skill name lived in multiple agent dirs — e.g. a real directory at `~/.agents/skills/<name>` plus stale broken-symlinks in `~/.claude/skills/` and `~/.cursor/skills/` — `RegisterModal` keyed rows and choices by `e.name` alone, so React collapsed the duplicate keys and the user only saw one entry. From the user's perspective the scan "missed" the skill. The data layer was correct (`listInstalled` returns one row per `(agent, name)` pair); the wire format wasn't — `RegistrationAction` only carried a `name`, so the IPC handler had to dedupe with a `kindRank` tiebreaker that masked exactly the case the renderer needed to surface. New `installed.test.ts` pins the invariant.
+- **`unknown` publish-state chip** rendered as a misleading "Unknown" label, reading as "this skill is in an unknown state" rather than "the probe couldn't reach a verdict". Now renders as an unobtrusive `?` glyph with a tooltip explaining the cause (token expired / tree truncated / transient network error) and a Rescan hint.
+- **Mid-word text wrap** in `.drawer-meta-value`. `word-break: break-all` split ordinary English words ("desktop" → "de | sktop") in repo description rows. Switched to `overflow-wrap: anywhere` — only breaks when no word or slash boundary fits.
+
+### Added
+
+- **`RegistrationAction.agent` + `RegistrationAction.customDir`** (optional, additive) on the `register` / `remove` / `skip` variants. The IPC handler routes to the exact entry when the action carries an agent; legacy callers fall back to the existing `kindRank` dedup. SDK-surface addition, no break.
+- **`.drawer-meta-value.prose`** variant for sentence text (Origin repo description, etc.) — sans-serif, left-aligned, italic. Replaces the mono/right-aligned inheritance meant for paths and hashes.
+- **`.drawer-section.lede`** modifier applied to the Description section — 14px / 1.65 line-height so it reads as the entry point, not as one more sibling.
+
+### Changed
+
+- **Skill detail surface shape — drawer → centered dialog.** The right-anchored slide-out became a centered modal: `min(960px, 92vw)` × `min(820px, 88vh)`, rounded corners, scale-and-fade pop. The overlay doubles as a flex positioning container; backdrop click closes only when the click hits the overlay itself. Under 720px the layout falls back to a stacked column with a bottom-pinned action footer. Class names stay `.drawer-*` — the identifier now describes the role (contextual detail surface) more than the visual pattern.
+- **Two-column body** under the header: left column holds the reading content (Description → Tags → SKILL.md preview → Origin → Metadata), right rail (~280px) holds the action stack with hints. Each column scrolls independently — a long preview can no longer push the primary action below the fold.
+- **Content reorder.** SKILL.md preview promoted to immediately after Tags (content anchor first). Metadata demoted to last.
+- **`.drawer-meta-row` loses per-row bottom borders.** Rows align on a baseline with a min-width on the key column for tabular feel; the list reads as a single block separated from siblings by section margin, not by horizontal rules.
+- **SKILL.md preview drops its card-in-card chrome** (surface bg + border + radius) for inline content with a thin 2px left rail. Max-height bumped 320 → 360 for one-screen scanability.
+- **Linked repo section redesigned for the rail.** Editorial uppercase label replaces the boxed flow pill. Path shows the inside-repo destination only (`skills/personal/<name>/`); full path lives in the title tooltip. Fork flow gets the warn token + alert-triangle on the label (single visual cue); the duplicate Fork badge next to Publish is gone. Explicit `<owner>/<repo>` acknowledgement with a check icon sits under the section heading. Primary button stretches to full rail width.
+- **Ellipsis sweep on loading states.** 13 button strings (`Registering…`, `Installing…`, `Saving…`, etc.) lost the trailing `…`. The commit-message truncation case dropped its `+ "…"` too — the wrapper span already carries `title={lastCommit.message}` for the full text.
+- **a11y polish.** aria-labels on Tags Edit/Save/Cancel, Origin-picker Cancel, and SKILL.md empty-state buttons. The overlay no longer carries `aria-hidden="true"` (would have hidden the now-nested dialog from screen readers).
+- **Misleading scan copy** in `RegisterModal` ("Inspecting `~/.claude/skills/`") swept to match the existing "Nothing to register" copy that lists all eight agents.
+
+### Compatibility
+
+- `RegistrationAction` wire format change is additive (optional fields). IPC handler accepts both shapes. No deprecation cycle needed.
+- No on-disk schema changes.
+- Renderer CSS class names unchanged (`.drawer-*` kept for stability).
+
 ## v1.5.0
 
 Phases 4 and 5 of the post-v1.0 roadmap, shipped together: [in-app-install-from-discover](docs/plans/in-app-install-from-discover.md) (one PR) and [in-app-publish](docs/plans/in-app-publish.md) (M1 + M2+M3+M4). With Phase 5, every skill in the user's registry has a round-trip path to their linked GitHub repo — install from a URL on the way in, publish a PR on the way out. The two flows share `mirrorSkillFolder` (v1.2) on the install side and the new `pushSkillFolder` on the publish side; classification, fork, and publish-state pinning live in `packages/core` so the CLI can adopt the same primitives later.
