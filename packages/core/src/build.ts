@@ -41,7 +41,12 @@ export interface BuildIndexOptions {
 
 interface SchemaValidator {
   (data: unknown): boolean;
-  errors?: Array<{ instancePath: string; message?: string }> | null;
+  errors?: Array<{
+    instancePath: string;
+    message?: string;
+    keyword?: string;
+    params?: Record<string, unknown>;
+  }> | null;
 }
 
 let cachedValidator: SchemaValidator | null = null;
@@ -268,6 +273,21 @@ function buildOneEntry(
       if (validate && !validate(raw)) {
         if (opts.strict) return null;
         for (const e of validate.errors ?? []) {
+          // Suppress AJV `required`-keyword violations for `name` and
+          // `description`: those two fields are recovered via the
+          // SKILL.md fallback below, and the human-readable warnings
+          // emitted at the bottom of this function (`missing name`,
+          // `missing description`) already convey the same complaint
+          // in a single voice. Letting AJV also complain creates a
+          // duplicate warning per skill. Type mismatches, pattern
+          // violations, additional-property errors, etc. still emit.
+          if (
+            e.keyword === "required" &&
+            (e.params?.["missingProperty"] === "name" ||
+              e.params?.["missingProperty"] === "description")
+          ) {
+            continue;
+          }
           warnings.push(`meta.json ${e.instancePath || "/"}: ${e.message}`);
         }
       }

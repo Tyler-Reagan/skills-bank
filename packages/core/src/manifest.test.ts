@@ -260,6 +260,70 @@ describe("importRegistryManifest", () => {
     ).toBe("foldersha");
   });
 
+  test("populates description from SKILL.md frontmatter when upstream has no meta.json", async () => {
+    // Regression for the duplicate "missing description" warnings:
+    // restoreAuxState used to write a fresh meta.json with only
+    // {name, tags}, dropping the description that lived in the
+    // mirrored SKILL.md frontmatter. The on-disk meta.json must
+    // carry description (and version/author when present in
+    // frontmatter) so AJV schema validation passes downstream.
+    let call = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        call++;
+        if (call === 1) return makeTreeResponse("skills/described");
+        if (call === 2)
+          return makeBlobResponse(
+            "---\nname: described\ndescription: A skill whose description lives in SKILL.md frontmatter only\nversion: 1.2.3\nauthor: Test Author\n---\n# described\n",
+          );
+        throw new Error(`unexpected call #${call}`);
+      }),
+    );
+
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.1.0",
+      skills: [
+        {
+          name: "described",
+          source: "user",
+          origin: {
+            kind: "github",
+            repo: "owner/repo",
+            skillPath: "skills/described/SKILL.md",
+          },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+      ],
+    };
+
+    const result = await importRegistryManifest(registryRoot, manifest);
+    expect(result.outcomes).toEqual([
+      { name: "described", result: "registered" },
+    ]);
+
+    const destDir = path.join(registryRoot, "skills", "personal", "described");
+    const meta = JSON.parse(
+      fs.readFileSync(path.join(destDir, "meta.json"), "utf8"),
+    ) as {
+      name?: string;
+      description?: string;
+      version?: string;
+      author?: string;
+    };
+    expect(meta.name).toBe("described");
+    expect(meta.description).toBe(
+      "A skill whose description lives in SKILL.md frontmatter only",
+    );
+    expect(meta.version).toBe("1.2.3");
+    expect(meta.author).toBe("Test Author");
+  });
+
   test("places a `source: bundled` skill in skills/vendored/", async () => {
     let call = 0;
     vi.stubGlobal(

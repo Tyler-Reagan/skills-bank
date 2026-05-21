@@ -8,7 +8,7 @@ import {
 import { buildRegistryIndex } from "./build.js";
 import { writeSyncedHash } from "./heal.js";
 import { hideCanonSkill } from "./hide.js";
-import { findSkillFolder } from "./registry.js";
+import { findSkillFolder, readSkillMdFrontmatter } from "./registry.js";
 import {
   readSkillSource,
   writeSkillSource,
@@ -333,6 +333,25 @@ function restoreAuxState(
       >;
     } catch {
       meta = {};
+    }
+  }
+  // Recover description / version / author from the just-mirrored
+  // SKILL.md frontmatter when meta.json doesn't already supply them.
+  // Without this, restoring a skill whose upstream carries metadata
+  // only in SKILL.md (description in frontmatter, no meta.json) ends
+  // up writing a fresh meta.json that omits `description`, which then
+  // trips both the AJV `required` check and the human-readable
+  // "missing description" warning at build time.
+  const fm = readSkillMdFrontmatter(skillDir);
+  if (fm) {
+    if (!meta["description"] && fm["description"]) {
+      meta["description"] = fm["description"];
+    }
+    if (!meta["version"] && fm["version"]) {
+      meta["version"] = fm["version"];
+    }
+    if (!meta["author"] && fm["author"]) {
+      meta["author"] = fm["author"];
     }
   }
   if (skill.tags.length > 0) {
