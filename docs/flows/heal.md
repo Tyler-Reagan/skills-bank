@@ -1,6 +1,10 @@
 # Heal a skill in a bad state
 
-Skills can land in states where the registry, on-disk files, and agent symlinks disagree. The detail drawer surfaces a single primary action per bad state with explanatory copy when there's only one reasonable recovery, or a multi-option modal when several are legitimate.
+> [!NOTE]
+> Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](../user-guide.md) for context.
+
+
+Skills can land in states where the registry, on-disk files, and agent symlinks disagree. The detail dialog surfaces a single primary action per bad state with explanatory copy when there's only one reasonable recovery, or a multi-option modal when several are legitimate.
 
 Every heal flow is the user's call — Skills Bank never auto-deletes content that might be intentional.
 
@@ -19,25 +23,25 @@ Every heal flow is the user's call — Skills Bank never auto-deletes content th
 
 ## How heal flows are surfaced
 
-- **Single reasonable option**: the drawer renders one heal button with explanatory copy beneath it (no modal). Today this covers bundled-skill-edited, registry-folder-missing, and external-target-missing.
-- **Multiple reasonable options**: the drawer opens a modal where the user makes per-row choices. Today this covers install collisions and tracking ambiguity (per-agent decisions: replace / delete / keep).
-- **Hybrid (try-then-confirm)**: the drawer tries the cheap option first, then prompts if it fails. Today this covers broken symlinks: try to repoint at a usable source; if none, ask whether to delete.
+- **Single reasonable option**: the dialog renders one heal button with explanatory copy beneath it (no modal). Today this covers bundled-skill-edited, registry-folder-missing, and external-target-missing.
+- **Multiple reasonable options**: the dialog opens a modal where the user makes per-row choices. Today this covers install collisions and tracking ambiguity (per-agent decisions: replace / delete / keep).
+- **Hybrid (try-then-confirm)**: the dialog tries the cheap option first, then prompts if it fails. Today this covers broken symlinks: try to repoint at a usable source; if none, ask whether to delete.
 
-The drawer's heal state is resolved by the same module the IPC handlers consult, so the renderer can't bypass an in-flight bad state.
+The dialog's heal state is resolved by the same module the IPC handlers consult, so the renderer can't bypass an in-flight bad state.
 
-### Install collisions — surfaced through the drawer
+### Install collisions — surfaced through the dialog
 
-The drawer for an install collision replaces the usual Manage-agent-links primary action with a **Resolve install collision** button. The skill card behind the drawer carries a warning state.
+The dialog for an install collision replaces the usual Manage-agent-links primary action with a **Resolve install collision** button. The skill card behind the dialog carries a warning state.
 
-![Detail drawer surfacing Resolve install collision on a registered skill that has stragglers in another agent dir](../images/skill-detail-conflict.png)
+![Detail dialog surfacing Resolve install collision on a registered skill that has stragglers in another agent dir](../images/skill-detail-conflict.png)
 
 Clicking **Resolve install collision** opens a per-agent modal. Each row shows what's currently at that path (real folder, foreign symlink, broken symlink) and the choice for that row: **Replace** with a symlink to the registry copy, **Delete** the stranger, or **Keep** as-is (and skip linking that agent).
 
 ![Resolve install collision modal — per-row choices: replace with our symlink, delete the stranger, or keep as-is](../images/resolve-conflict.png)
 
-### Bundled-skill-edited — surfaced through the drawer
+### Bundled-skill-edited — surfaced through the dialog
 
-The drawer for a bundled skill you've edited replaces the usual destructive area with two heal buttons — **Keep my edits** and **Revert to bundled** — under explanatory copy. The card carries the `DRIFT` badge. Both buttons clear the badge; the difference is _which copy survives_: Keep my edits detaches the skill from Sync (the skill becomes yours), while Revert to bundled re-baselines the synced hash so Sync still owns the skill and the next pull may overwrite local edits.
+The dialog for a curated skill you've edited replaces the usual destructive area with two heal buttons — **Keep my edits** and **Revert to canon** — under explanatory copy. The card carries the `DRIFT` badge. Both buttons clear the badge; the difference is _which copy survives_: Keep my edits detaches the skill from Sync (the skill becomes yours), while Revert to bundled re-baselines the synced hash so Sync still owns the skill and the next pull may overwrite local edits.
 
 _Screenshot deferred — capture by editing a bundled skill's `SKILL.md` in the app's data dir (`~/Library/Application Support/@skills-bank/desktop/registry/skills/<name>/`) and refreshing the Registry tab._
 
@@ -46,8 +50,8 @@ _Screenshot deferred — capture by editing a bundled skill's `SKILL.md` in the 
 Three distinct collision types use distinct labels to avoid the overloaded "conflict" word:
 
 - **Sync collision** — your local and the upstream bundled set both have a skill with the same name and different content. Resolved via the **Resolve sync collisions** modal after a Sync run.
-- **Install collision** — a registered skill has a real-directory or foreign-symlink copy in an agent dir. Resolved via the **Resolve install collision** modal from the drawer.
-- **Tracking ambiguity** — multiple non-ours copies of the same name across agents; registration is unclear. Resolved via the same drawer modal, with the symlink-replace action hidden.
+- **Install collision** — a registered skill has a real-directory or foreign-symlink copy in an agent dir. Resolved via the **Resolve install collision** modal from the dialog.
+- **Tracking ambiguity** — multiple non-ours copies of the same name across agents; registration is unclear. Resolved via the same modal, with the symlink-replace action hidden.
 
 A fourth type — **Merge collision** when merging another bank's folder into your active registry — currently shares the sync-collision modal; a follow-up audit will give it its own surface.
 

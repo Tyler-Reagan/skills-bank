@@ -1,10 +1,14 @@
 # Manage agent links for a skill
 
+> [!NOTE]
+> Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](../user-guide.md) for context.
+
+
 A registered skill can be linked into any subset of your agent directories. Use the **Manage agent links** action when you want to add the skill to one more agent, drop it from a specific one, or audit exactly where it's live.
 
 ## Steps
 
-1. Open the drawer for a registered skill (Registry tab or the **Registered** section of the Installed tab).
+1. Open the dialog for a registered skill (Registry tab or the **Registered** section of the Installed tab).
 2. Click **Manage agent links…**.
 3. The modal shows a row per supported agent. Each row is one of:
    - **Linked** — the agent dir has a symlink to the registry copy. A checked checkbox.

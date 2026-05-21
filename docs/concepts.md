@@ -1,5 +1,9 @@
 # Concepts
 
+> [!NOTE]
+> Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](user-guide.md) for context.
+
+
 The vocabulary the app uses, defined in one place. Skim this once and the rest of the docs (and the UI itself) become a lot more obvious.
 
 > [!NOTE]
@@ -16,14 +20,14 @@ Every skill the app knows about sits on four orthogonal axes. Operations and UI 
 
 ### Derived rules
 
-- Bundled skills are registered by default. Unregister and delete of bundled skills are prohibited; the user-visible escape is **Dismiss from registry view**, scoped per linked-registry.
+- Curated skills are registered by default. Unregister and delete of curated skills are prohibited; the user-visible escape is **Dismiss from registry view**, scoped per linked-registry.
 - A registered but uninstalled `user` skill is valid. Re-install requires the original source (no upstream to pull from).
 - Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
 - Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
 
 ### Lifecycle
 
-The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder: **Unmanaged → Registered → Unregistered → Deleted**. Provenance (bundled/yours), Adopted, External, and Dismissed are _attributes_ of the Registered position, not separate lifecycle states. The diagram below shows that ladder and pulls the heal-pending states (highlighted) out as side arms so the recovery actions are visible.
+The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder: **Unmanaged → Registered → Unregistered → Deleted**. Provenance (curated/user), Adopted, External, and Dismissed are _attributes_ of the Registered position, not separate lifecycle states. The diagram below shows that ladder and pulls the heal-pending states (highlighted) out as side arms so the recovery actions are visible.
 
 ```mermaid
 ---
@@ -76,7 +80,7 @@ flowchart LR
     linkStyle default stroke:#94a3b8,stroke-width:1.5px,fill:none
 ```
 
-Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — _whether_ a Registered skill is bundled or yours, adopted or external — are read off the [Source (provenance)](#source-provenance) and [card badges](#card-badges) sections.
+Labels match the in-app vocabulary: nodes are lifecycle positions, transitions are the action buttons that move a skill between them. The dimensions the diagram doesn't show — _whether_ a Registered skill is curated or user, adopted or external — are read off the [Source (provenance)](#source-provenance) and [card badges](#card-badges) sections.
 
 ### Destructive-action ladder
 
@@ -84,13 +88,13 @@ Three actions form an escalation, with distinct file/recovery semantics. Each ti
 
 | Action                            | Where                                                                               | Files                                                               | Agent symlinks                                                          | Recovery                                      |
 | --------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
-| Manage agent links                | Drawer                                                                              | untouched                                                           | added/removed per-agent via checkboxes (untick all = full uninstall)    | re-add via the same modal                     |
-| [Unregister](flows/unregister.md) | Drawer                                                                              | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location                 |
-| Delete                            | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                       | bundled: re-pull; yours: gone (modulo export) |
+| Manage agent links                | Dialog                                                                              | untouched                                                           | added/removed per-agent via checkboxes (untick all = full uninstall)    | re-add via the same modal                     |
+| [Unregister](flows/unregister.md) | Dialog                                                                              | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location                 |
+| Delete                            | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                       | curated: re-pull; user: gone (modulo export)  |
 
 Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **Dismiss from registry view** instead.
 
-![Detail drawer for a non-canon, user-authored skill — Unregister is available as the mid-tier action](images/skill-detail-yours.png)
+![Detail dialog for a non-canon, user-authored skill — Unregister is available as the mid-tier action](images/skill-detail-yours.png)
 
 ## Skill
 
@@ -125,7 +129,7 @@ Every install starts on the **bundled default** — the app reads the canonical 
 
 Sign in via **Settings → Account** to either keep the curated set at a higher rate limit (5000/hr authenticated, plus access to private repos) or **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with `SKILL.md` and/or `meta.json`) — its layout doesn't have to match anything specific.
 
-This single configuration spectrum replaces the v1.2 "persona" first-launch picker (collapsed in v1.3 — see [`docs/plans/vocabulary-rename.md`](plans/vocabulary-rename.md)). Self-hosting (forking the entire app) remains a separate developer path; see [self-host.md](self-host.md).
+This single configuration spectrum replaces the v1.2 "persona" first-launch picker, which was collapsed in v1.3 (see the [CHANGELOG](../CHANGELOG.md) v1.3.0 entry). Self-hosting (forking the entire app) remains a separate developer path; see [self-host.md](self-host.md).
 
 ## Source (provenance)
 
@@ -139,7 +143,7 @@ Provenance is a binary on each registry skill — every skill is either **curate
 
 ### Tags are local
 
-Tags are a local-only dimension. You can add or remove tags on any skill — including the bundled ones — and Sync will preserve your tag edits on the next pull. No protection step required: Sync reads the existing local tag list before writing the bundled content and splices it back in.
+Tags are a local-only dimension. You can add or remove tags on any skill — including the curated ones — and Sync will preserve your tag edits on the next pull. No protection step required: Sync reads the existing local tag list before writing the curated content and splices it back in.
 
 ### Card badges
 
@@ -147,8 +151,8 @@ Each card surfaces a single badge. Actionable state badges take priority; proven
 
 Priority order, highest first:
 
-- **`MISSING`** _(danger)_ — files are gone. Open the drawer to **Forget this entry**.
-- **`EDITED`** _(warn)_ — you've edited a curated skill. Open the drawer to keep your edits or revert.
+- **`MISSING`** _(danger)_ — files are gone. Open the dialog to **Forget this entry**.
+- **`EDITED`** _(warn)_ — you've edited a curated skill. Open the dialog to keep your edits or revert.
 - **`UPDATE`** _(info)_ — an update is available from the skill's origin.
 - **`CURATED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the curated-only escape hatch.
 
@@ -166,11 +170,11 @@ The Installed tab uses these to decide which section a skill goes in (Registered
 
 ## Conflict
 
-A skill is in conflict when it's registered in Skills Bank **and** has stragglers — a real directory or foreign symlink with the same name in another agent dir. The drawer offers **Resolve conflicts** to clean them up: replace each duplicate with a symlink to the registry copy, keep it separate, or delete it.
+A skill is in conflict when it's registered in Skills Bank **and** has stragglers — a real directory or foreign symlink with the same name in another agent dir. The detail dialog offers **Resolve conflicts** to clean them up: replace each duplicate with a symlink to the registry copy, keep it separate, or delete it.
 
 ## Sync
 
-A one-click pull of upstream registry updates. Sync is **upsert**: curated skills refresh, skills with `source: user` are never touched. Name collisions surface a modal — keep yours, use curated, or rename yours.
+A one-click pull of upstream registry updates. Sync is **upsert**: curated skills refresh, skills with `source: user` are never touched. Name collisions surface a modal — keep mine, use curated, or rename mine.
 
 ## Register
 
@@ -203,11 +207,11 @@ Pushing a skill from the local registry to the user's linked repo as a pull requ
 
 The action is always PR-only — the linked repo's default branch is never written directly. Subsequent publishes of the same skill while a prior PR is still open append commits to the existing branch (the PR auto-updates); publishes after the prior PR is merged or closed clean up the stale branch and open a fresh one. Counterpart CLI is `pnpm update:skill` (maintainer-only, no PR — direct working-tree mutation in the repo itself).
 
-The atomicity, branch-resolution, rate-limit, and PR-metadata invariants of the `pushSkillFolder` primitive are pinned in [ADR-0007](adr/ADR-0007-push-skill-folder-invariants.md). The dual-mode publish-state computation that drives the chip and the canon gate is pinned in [ADR-0008](adr/ADR-0008-publish-state-source-agnostic.md). Implementation order across all three primitives lives in [`docs/plans/in-app-publish.md`](plans/in-app-publish.md).
+The atomicity, branch-resolution, rate-limit, and PR-metadata invariants of the `pushSkillFolder` primitive are pinned in [ADR-0007](adr/ADR-0007-push-skill-folder-invariants.md). The dual-mode publish-state computation that drives the chip and the canon gate is pinned in [ADR-0008](adr/ADR-0008-publish-state-source-agnostic.md). The full as-shipped Phase 5 surface is in the [CHANGELOG](../CHANGELOG.md) v1.5.0 entry.
 
 ## Fork
 
-Unlinking a vendored skill's origin and taking ownership locally. Triggered when the user publishes edits to a vendored skill: a confirmation modal makes the unlink explicit, since the action drops the origin pointer and stops the update probe from surfacing future changes from the original author. After confirmation the skill's `source` flips `bundled → yours`, the origin pointer is dropped, and the folder moves from `skills/vendored/` to `skills/personal/` — the skill is the user's now, indistinguishable from one they authored.
+Unlinking a vendored skill's origin and taking ownership locally. Triggered when the user publishes edits to a vendored skill: a confirmation modal makes the unlink explicit, since the action drops the origin pointer and stops the update probe from surfacing future changes from the original author. After confirmation the skill's `source` flips `curated → user`, the origin pointer is dropped, and the folder moves from `skills/vendored/` to `skills/personal/` — the skill is the user's now, indistinguishable from one they authored.
 
 Forking is irreversible without re-vendoring from scratch. After confirmation the skill's `source` flips `curated → user`, the origin pointer is dropped, and the folder moves from `skills/vendored/` to `skills/personal/`. Fork composes the existing per-skill **Unlink origin** heal action with a bucket move and a source-axis flip — see the canonical operation definitions in [`UBIQUITOUS_LANGUAGE.md`](../UBIQUITOUS_LANGUAGE.md). The atomicity, collision, and trigger invariants of the `forkSkill` primitive are pinned in [ADR-0006](adr/ADR-0006-fork-primitive-invariants.md).
 
@@ -215,4 +219,4 @@ Forking is irreversible without re-vendoring from scratch. After confirmation th
 
 The reason vendoring-and-publishing is a flow distinct from forking. A user vendors a third-party skill, then publishes the (unedited) vendored copy to their linked repo. The copy in the linked repo is the safekept version — if the origin is deleted, transferred, or otherwise goes dark, the user still has the content. The origin pointer is preserved so future-author updates remain visible; the local copy is fallback storage, not a replacement source of truth.
 
-Related: the post-v1.0 [`bank-mode-persistence`](plans/bank-mode-persistence.md) plan adds an additional, registry-local cache for the same purpose at the install layer.
+Related: v1.4's bank-mode-persistence work added an additional, registry-local cache for the same purpose at the install layer (per-skill probe-failure tracking + the origin-unreachable recovery surface). See the [CHANGELOG](../CHANGELOG.md) v1.4.0 entry.

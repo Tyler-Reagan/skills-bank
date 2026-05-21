@@ -4,14 +4,14 @@ Common problems and how to recover. If you hit something not on this list, open 
 
 ## "Skill is registered but I see Uninstall instead of Resolve conflicts"
 
-You may be on an older version where this was a bug. Update to the latest build via the GitHub Releases page. If you're already up to date, the drawer will show **Resolve conflicts (N)** when there are stragglers — see [flows/heal.md](flows/heal.md).
+You may be on an older version where this was a bug. Update to the latest build via the GitHub Releases page. If you're already up to date, the dialog will show **Resolve conflicts (N)** when there are stragglers — see [flows/heal.md](flows/heal.md).
 
 ## "The Registry tab is empty"
 
 A few causes:
 
-- **Convenience persona, first launch in progress** — the registry is being seeded. Wait a moment and click **Refresh**.
-- **Power persona, repo has no `skills/` directory** — the chosen repo must have skills under `skills/<name>/` at its root. Switch repos via account menu → **Choose registry repo…**.
+- **Bundled default, first launch in progress** — the registry is being seeded. Wait a moment and click **Refresh**.
+- **Linked custom repo with no `skills/` directory** — the chosen repo must have skill folders (each with `SKILL.md`) somewhere it can be walked by convention. Switch repos via Account → **Change linked repo**.
 - **Self-host build, missing seed** — see [self-host.md](self-host.md).
 
 If the **Refresh** button is showing in the empty state, click it. The app re-reads the registry from disk.
@@ -23,7 +23,7 @@ The skill's symlink resolves into the registry, but the registry copy isn't on d
 - The registry got moved or deleted out from under the app.
 - A GitHub-linked registry switch removed the skill (when Bundle 3 lands).
 
-Recovery: open the drawer → **Fix broken link(s)**. The repair flow either re-links the skill to a present registry copy or removes the broken symlinks.
+Recovery: open the dialog → **Fix broken link(s)**. The repair flow either re-links the skill to a present registry copy or removes the broken symlinks.
 
 ## "Reveal in Finder does nothing"
 
@@ -46,7 +46,7 @@ The app polls the GitHub Releases feed once on launch. If you've been running th
 Two reset scripts wipe local state (developer-oriented, but available to anyone running from source):
 
 ```bash
-pnpm reset          # clear persona + GitHub token
+pnpm reset          # clear dev-mode userData (registry source choice + auth token)
 pnpm reset:hard     # also wipe the app-managed registry directory (and re-seed)
 ```
 
@@ -62,8 +62,8 @@ Decisions are remembered per-skill. If the modal reappears, the upstream version
 
 Include:
 
-- App version (account menu → bottom of dropdown).
-- Persona (convenience / power / self-host).
+- App version (Account → About this app).
+- Registry source: bundled default vs linked custom repo (Account → Registry source).
 - Steps to reproduce.
 - The contents of `~/Library/Logs/Skills Bank/main.log` if relevant.
 

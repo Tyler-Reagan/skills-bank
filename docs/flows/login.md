@@ -31,7 +31,7 @@ When you click **Refresh from `<repo>`** (in the header or in Account):
 
 1. Skills Bank downloads a tarball of the linked repo's current commit.
 2. Diffs it against your current local registry.
-3. If any conflicts (you edited a tracked skill locally and the upstream also changed), opens a per-skill resolver where you pick **Keep mine** / **Use repo's** / **Rename mine**. Skills you've authored entirely yourself (`source: yours`) are protected from being silently overwritten.
+3. If any conflicts (you edited a tracked skill locally and the upstream also changed), opens a per-skill resolver where you pick **Keep mine** / **Use repo's** / **Rename mine**. Skills you've authored entirely yourself (`source: user`) are protected from being silently overwritten.
 4. If no conflicts, applies upstream changes silently with a toast.
 
 This flow is identical whether you're on the bundled default or a custom repo — same modal, same per-skill choices, just pointed at whichever repo is linked.
@@ -85,7 +85,7 @@ This has two practical consequences:
 - **To add or update skills in your repo, edit them in a git clone of the repo elsewhere on disk**, with your normal git workflow. Then click Refresh in Skills Bank to pull the new state.
 - **Skills you author in-app via Register** (e.g. dragging an external skill into the bank, or adopting a community install) **live in your local app-managed registry, not in your linked repo.** To move them into the repo, copy the skill's folder from `~/Library/Application Support/Skills Bank/registry/skills/<name>/` into your repo's `skills/` directory and commit.
 
-The asymmetry is a deliberate v1 choice — see [`docs/plans/github-mode-coherence.md`](../plans/github-mode-coherence.md) for the reasoning.
+The asymmetry is a deliberate v1 choice: the app reads from the linked repo but never writes to it directly. Publishing back to the repo flows through the in-app Publish action, which always opens a pull request — never a direct push. (Phase 5 / v1.5.0 in the [CHANGELOG](../../CHANGELOG.md).)
 
 ## Account panel surfaces
 

@@ -1,5 +1,8 @@
 # Getting started
 
+> [!NOTE]
+> Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account-vs-Settings reshuffle. They're left in place for layout reference; the copy is current.
+
 Skills Bank is a desktop app and CLI for managing [Claude Code](https://claude.ai/code) skills across every AI agent you use. This page gets you from "I downloaded the app" to "I'm using a skill in Claude Code" in five minutes.
 
 ## Install
@@ -7,7 +10,7 @@ Skills Bank is a desktop app and CLI for managing [Claude Code](https://claude.a
 Grab the latest DMG from the [Releases page](https://github.com/Tyler-Reagan/skills-bank/releases):
 
 - `Skills-Bank-<version>-arm64.dmg` for Apple Silicon Macs
-- `Skills-Bank-<version>.dmg` for Intel Macs
+- `Skills-Bank-<version>-x64.dmg` for Intel Macs
 
 Open the DMG, drag **Skills Bank** to Applications, then launch from Spotlight. Builds are signed with a Developer ID certificate and notarized through Apple, so Gatekeeper opens them on a normal double-click.
 
@@ -31,7 +34,7 @@ Want to fork the entire app and ship your own build? See [self-host.md](self-hos
 ![The Registry tab — the default view](images/registry.png)
 
 1. Open the **Registry** tab (it's the default).
-2. Click any card to open the detail drawer.
+2. Click any card to open the detail dialog.
 3. Click **Install**. Skills Bank symlinks the skill into every agent directory you have set up — `~/.claude/skills/`, `~/.cursor/skills/`, etc.
 4. Restart Claude Code (or Cursor, Gemini, …). The new skill is available next session.
 
@@ -50,7 +53,7 @@ Click any "Not registered" card to manage it: register it into Skills Bank, link
 
 ## Next steps
 
-- [`concepts.md`](concepts.md) — terms you'll see throughout the app (registry, persona, source, agent dir).
+- [`concepts.md`](concepts.md) — terms you'll see throughout the app (registry, linked repo, source, agent dir).
 - [`flows/`](flows/) — task-oriented walkthroughs for installing, registering, syncing, and resolving conflicts.
 - [`keyboard.md`](keyboard.md) — keyboard shortcuts reference.
 - [`troubleshooting.md`](troubleshooting.md) — common problems and how to recover.

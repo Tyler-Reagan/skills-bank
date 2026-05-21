@@ -1,10 +1,14 @@
 # Unregister a skill
 
+> [!NOTE]
+> Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](../user-guide.md) for context.
+
+
 You registered a skill into Skills Bank but want to back it out without nuking the files. Unregister is the mid-tier destructive action: it removes the registry entry and (for adopted skills) moves files out to your shared agents directory. Distinct from **Manage agent links** (which only adds or removes symlinks) and **Delete from Skills Bank** (which deletes files).
 
 ## Steps
 
-1. Open the skill's detail drawer from any tab.
+1. Open the skill's detail dialog from any tab.
 2. Click **Unregister** (between Reveal in Finder and Delete from Skills Bank).
 3. What happens next depends on the **Adopted** axis:
    - **Adopted skill** — files move from `<repo>/skills/<name>/` to `~/.agents/skills/<name>/` by default. Agent-dir symlinks that pointed at the old bank location are rewritten to point at the new location, so installed agents keep working.
@@ -25,7 +29,7 @@ Settings → **Unregister destination**. Defaults to **Agents (shared)** which m
 
 Use Unregister when you want to stop Skills Bank from managing a skill but keep the files around — either to hand the skill off to another tool, edit it directly outside of Skills Bank, or audit it before deletion. Delete is the bottom of the ladder and requires unregistration first; once unregistered, the skill appears in **Installed → Unregistered** with an inline **Delete** button (confirmation required).
 
-![Detail drawer for an unregistered skill — Register and Delete are inline; the drawer no longer shows the registry-managed action set](../images/skill-detail-unregistered.png)
+![Detail dialog for an unregistered skill — Register and Delete are inline; the dialog no longer shows the registry-managed action set](../images/skill-detail-unregistered.png)
 
 ## Canon skills
 

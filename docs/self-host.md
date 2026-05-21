@@ -10,7 +10,7 @@ Self-hosting transfers maintenance of **both the app binary and the registry** t
 - Your fork's `skills/` directory is the canonical registry that your installed app's "Sync" button pulls from.
 - You opt out of receiving upstream updates from `Tyler-Reagan/skills-bank`.
 
-If you only want a different registry (not a different app), you don't need self-host — pick **Authenticate with GitHub** on the login screen and use the power-persona registry-replacement flow instead.
+If you only want a different registry (not a different app), you don't need self-host — sign in with GitHub from Account and link your own repo as the registry source.
 
 ## Steps
 

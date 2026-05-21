@@ -9,8 +9,7 @@ Monorepo (pnpm workspaces):
 - **`packages/core`** — pure TypeScript registry/install logic. Consumed by both desktop and CLI; no Electron, no DOM dependencies.
 - **`packages/desktop`** — Electron app (main + renderer). The primary product.
 - **`packages/cli`** — Node CLI. Five-command scripting surface (`list`, `installed`, `install`, `uninstall`, `path`) with hidden redirect-stubs for the four commands removed in v1.6 (`import`, `export`, `finalize`, `sync-installed`). Not feature-parity with the desktop app — interactive flows live there.
-- **`skills/`** — bundled skill content. Houses the **Curated set** the app ships under `skills/vendored/<name>/`. The post-Phase-1 (v1.1) Curated set is intentionally minimal — just `find-skills` — per `docs/plans/curation-layer-reset.md`. The bucket layout (`skills/{personal,vendored}/<name>/`) is universal across registries (see `UBIQUITOUS_LANGUAGE.md`), but the curation layer uses only `vendored/` by composition: the maintainer's authored skills live in their own origin repo, `Tyler-Reagan/skills` (extracted from the former `skills/personal/` via `git subtree split` in v1.1). The maintainer's end-user flow links `Tyler-Reagan/skills` via the "Your own registry" persona path.
-- **`docs/plans/`** — implementation plans. Filenames are descriptive (not numbered) so the IDs don't conflate with execution order; see the **Plans** section below for the canonical sequence.
+- **`skills/`** — bundled skill content. Houses the **Curated set** the app ships under `skills/vendored/<name>/`. The post-Phase-1 (v1.1) Curated set is intentionally minimal — just `find-skills` — see the [CHANGELOG](./CHANGELOG.md) v1.2.0 entry. The bucket layout (`skills/{personal,vendored}/<name>/`) is universal across registries (see `UBIQUITOUS_LANGUAGE.md`), but the curation layer uses only `vendored/` by composition: the maintainer's authored skills live in their own origin repo, `Tyler-Reagan/skills` (extracted from the former `skills/personal/` via `git subtree split` in v1.1). The maintainer's end-user flow links `Tyler-Reagan/skills` as their registry from Account → Sign in with GitHub.
 - **`scripts/`** — maintenance + agent operations (validation, index build, reset, etc.).
 
 The desktop app is the product. The CLI is a scripting surface, not a feature-parity peer.
@@ -76,44 +75,15 @@ pnpm knip
 
 ## Plans
 
-Filenames are stable descriptive IDs; the contents of each plan file record the as-shipped state for completed plans and the open scope for remaining ones.
+The historical record of shipped work lives in [`CHANGELOG.md`](./CHANGELOG.md). The `docs/plans/` directory (one markdown file per planned milestone) was retired in v1.6 once every plan through Phase 5 + the CLI-minimal cleanup had shipped — the implementation drafts had become parallel-but-stale to the CHANGELOG entries they fed into.
 
-### Shipped
-
-| Plan                                                                              | Release  |
-| --------------------------------------------------------------------------------- | -------- |
-| [`github-mode-coherence.md`](docs/plans/github-mode-coherence.md)                 | v0.10.x  |
-| [`github-first-onboarding.md`](docs/plans/github-first-onboarding.md)             | v0.10.x  |
-| [`per-skill-upstream-foundation.md`](docs/plans/per-skill-upstream-foundation.md) | v0.11.2  |
-| [`origin-paradigm-reframe.md`](docs/plans/origin-paradigm-reframe.md)             | v0.11.2  |
-| [`skills-directory-split.md`](docs/plans/skills-directory-split.md)               | v0.11.3  |
-| [`drift-update-ux-consistency.md`](docs/plans/drift-update-ux-consistency.md)     | v0.11.4  |
-| [`v0.11.4-polish.md`](docs/plans/v0.11.4-polish.md)                               | v0.11.4 follow-on |
-| [`a11y-polish.md`](docs/plans/a11y-polish.md)                                     | v0.11.5  |
-| [`renderer-state-architecture.md`](docs/plans/renderer-state-architecture.md)     | v0.11.6 (M1+M2), v0.11.6 follow-up (M3 DrawerHost). M3's remaining host extractions (UpdateHost / ConflictHost / RegistryHost) deferred as low-priority cleanup. |
-| [`core-test-foundation.md`](docs/plans/core-test-foundation.md)                   | v0.11.7  |
-| [`security-hardening.md`](docs/plans/security-hardening.md)                       | v0.11.8  |
-| [`core-architecture-refactor.md`](docs/plans/core-architecture-refactor.md)       | v0.11.9  |
-| [`origin-rename-pass.md`](docs/plans/origin-rename-pass.md)                       | v0.11.10 (deferred: `SkillSource.upstream` JSON-field rename and the heal-action renames — see plan file) |
-| [`curation-layer-reset.md`](docs/plans/curation-layer-reset.md)                   | v1.2.0 (Phase 1) |
-| [`vocabulary-rename.md`](docs/plans/vocabulary-rename.md)                         | v1.3.0 (Phase 2) |
-| [`bank-mode-persistence.md`](docs/plans/bank-mode-persistence.md)                 | v1.4.0 (Phase 3, rewritten before implementation to drop the pre-v1.0 bankSnapshot/cache-layer design) |
-| [`in-app-install-from-discover.md`](docs/plans/in-app-install-from-discover.md)   | v1.4.0 (Phase 4, rewritten before implementation to drop the npx-skills coupling) |
-| [`in-app-publish.md`](docs/plans/in-app-publish.md)                               | v1.5.0 (Phase 5 M1–M4) — pins ADRs 0006 / 0007 / 0008. Deferred from M3: PR-meta-edit modal, collision-resolve modal, drawer h3 re-sectioning, open-PR sub-chip. |
-| Scan + drawer polish                                                              | v1.5.1 (no plan file — landed via PR #71) |
-| [`cli-minimal.md`](docs/plans/cli-minimal.md)                                     | v1.6.0  |
-
-### Remaining
-
-None. All planned work through Phase 5 + the CLI-minimal housekeeping is shipped. Future plans get added here.
-
-When starting work on a plan, create a `feat/<plan-slug>` branch following the recent commit pattern in `git log`.
+For new multi-milestone work: drop a focused plan doc directly into a feature branch's commit message or PR description, or — if it warrants a permanent record — capture the design as an [ADR](./docs/adr/). Branch naming convention is `feat/<plan-slug>` for new feature work, `fix/<bug-slug>` for fixes, following recent commits in `git log`.
 
 ## Conventions specific to this repo
 
 - **Post-1.0; backcompat-conscious for public surfaces.** `packages/core` exports are now considered part of the SDK surface — when renaming or removing, ship a `@deprecated` re-export for one minor cycle (see the v0.11.10 aliases for the pattern) before cutting. JSON wire formats (`.skills-bank.json`) tolerate a legacy read for one minor cycle when their shape changes. Renderer-internal types and component props stay flexible. (Pre-v1.0 the convention was "cut hard"; v1.0.0 flips the public-surface treatment.)
 - **Source axis values are `curated` / `user` post-v1.3** (legacy `bundled` / `yours` accepted on read through v1.3.x; writes always emit the new form). The `.skills-bank.json` field `origin` replaces `upstream` under the same tolerant-read window. The post-v1.3 persona-collapse means every install starts on the bundled-default; GitHub linking moves to Settings → Account.
-- **Persist multi-milestone plans before implementing.** Drop a `docs/plans/<slug>.md` first; one PR per plan; integrate rationale + conflict-audit inline rather than in side documents. Filenames are descriptive (no leading number); execution order is documented in the Plans section above.
+- **Capture multi-milestone designs in the PR description or as an ADR.** `docs/plans/` was retired in v1.6 (every plan had shipped and was already in the CHANGELOG). For new work, design rationale lives in the feature branch's PR description; if it warrants permanent reference, promote it to an [ADR](./docs/adr/). One PR per cohesive scope; integrate rationale + conflict-audit inline rather than in side documents.
 - **CI logs: read past the headline error.** Scan `##[warning]` lines too; the visible error may already be fixed by a prior step.
 - **Don't fabricate skill names or paths from training data.** Verify with `find` / `grep` before referring to a specific file.
 
@@ -149,4 +119,4 @@ done
 
 Run from the repo root. Symlinks whose name no longer exists in either bucket are uninstalled skills — list them and leave them alone.
 
-**Unstaged churn in `skills/**/.skills-bank.json` after running the app.** Diff vs `HEAD`: if `skillFolderHash` (or `installedAt`/`repo`/`skillPath`) changed, that's a legitimate baseline shift — commit. If only `fetchedAt` changed, it's runtime probe noise — `git restore` and capture details in `docs/bug-reports/` for the probe path to fix. For deleted `meta.json` files, run `pnpm validate` in both states: missing meta.json fails validation, so restore.
+**Unstaged churn in `skills/**/.skills-bank.json` after running the app.** Diff vs `HEAD`: if `skillFolderHash` (or `installedAt`/`repo`/`skillPath`) changed, that's a legitimate baseline shift — commit. If only `fetchedAt` changed, that's runtime probe noise — the v0.11.7 probe-path fix moved `fetchedAt` to the runtime sidecar; a re-appearance means a regression worth investigating. For deleted `meta.json` files, run `pnpm validate` in both states: missing meta.json fails validation, so restore.
