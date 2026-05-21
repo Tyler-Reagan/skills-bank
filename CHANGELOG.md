@@ -3,6 +3,46 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.6.0
+
+CLI-minimal. The `skills-bank` CLI gets stripped to five commands shaped for shell composition; four commands tied to interactive flows are removed and replaced with redirect-stubs that point at the in-app equivalent. The desktop app is unchanged.
+
+### Added
+
+- **`skills-bank path <name>`** — prints the absolute path to a registered skill. Enables `cd $(skills-bank path foo)` and `$EDITOR $(skills-bank path foo)/SKILL.md`. Exits non-zero on miss so subshell substitution fails fast.
+- **`--json`** flag on `list` and `installed` — first-class shell composition surface (`list --json | jq '.[].name'`).
+- **`--agent <id>`** on `install` and `uninstall` — scope to a single agent dir. Default behavior (broadcast to every existing agent dir) is unchanged when the flag is omitted.
+
+### Removed
+
+The CLI no longer exposes these four commands:
+
+- `skills-bank import` — interactive scan/register flow.
+- `skills-bank export <name>` — bulk export of a single skill as `.md`/`.zip`.
+- `skills-bank finalize` — top-level agent-dir symlink collapse.
+- `skills-bank sync-installed` — relink-after-pull pass.
+
+Each is kept as a hidden redirect-stub that prints a one-line pointer to the in-app equivalent and exits with code 2 — scripts calling them surface the change loudly rather than silently no-op'ing.
+
+| Removed CLI | Where the operation lives now |
+|---|---|
+| `import` | **Register existing skills** (desktop app) — or Account → Import a registry for a manifest |
+| `export` | **Account → Export current registry** (desktop app) |
+| `finalize` | **Settings → Collapse symlinked agent dirs** (desktop app) |
+| `sync-installed` | Automatic — the app rewires installations on its own; no CLI equivalent |
+
+### Changed
+
+- **CLI tagline** in the README and `--help` description: "Same operations through either surface" → "Desktop app for humans, CLI for scripts." The CLI is now explicitly the scripting surface; interactive flows live in the desktop app.
+- **`packages/core/src/install.ts`** error string: pointed at "Register existing skills in the desktop app" instead of the removed `skills-bank import`.
+- **`packages/core/src/import.ts`** synthesized-meta placeholder: matched copy.
+
+### Compatibility
+
+- The redirect-stubs are the deprecation-cycle equivalent for the four removed commands. They will not be removed before v2.0.0; scripts that called them will continue to fail loudly (exit 2) rather than silently.
+- No `packages/core` SDK-surface changes. The CLI now consumes only pure-TS exports that already existed (`installSkill`, `uninstallSkill`, `listInstalled`, `buildRegistryIndex`, `resolveRegistryRoot`, `getAgent`).
+- No on-disk schema changes.
+
 ## v1.5.1
 
 Bug fix + drawer redesign. One PR ([#71](https://github.com/Tyler-Reagan/skills-bank/pull/71)) covering both, since the redesign grew out of opening the drawer to test the bug fix. No new plan-phase work — this is polish on the v1.5 surface.
