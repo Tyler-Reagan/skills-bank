@@ -253,22 +253,24 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
     expect(meta.tags).toEqual(["mine-1", "mine-2"]);
   });
 
-  test("Orphan reporting — bundled local skill not in canonical set is reported, not deleted", async () => {
+  test("Orphan reporting — previously-curated-synced local skill not in canonical set is reported, not deleted", async () => {
     writeLocal(
       "vendored",
       "theta",
-      { "SKILL.md": "# stale bundled theta" },
-      { source: "curated" },
+      { "SKILL.md": "# stale curated theta" },
+      // Real curated syncs stamp both source AND syncedFromCommit;
+      // orphan detection v1.5 keys off the latter.
+      { source: "curated", syncedFromCommit: "old-sha" },
     );
 
     const report = await applyCanonicalSync(registryRoot, canonicalRoot, "sha");
     expect(report.orphaned).toEqual(["theta"]);
     expect(readLocal("vendored", "theta", "SKILL.md")).toBe(
-      "# stale bundled theta",
+      "# stale curated theta",
     );
   });
 
-  test("Orphan reporting ignores `yours` skills (only bundled get orphan-reported)", async () => {
+  test("Orphan reporting ignores user-authored skills (no syncedFromCommit)", async () => {
     writeLocal(
       "vendored",
       "iota",
@@ -400,6 +402,33 @@ describe("applyCanonicalSync (mountTo: personal — linked-repo flow)", () => {
     expect(readLocal("personal", "gamma", "SKILL.md")).toBe(
       "---\nname: gamma\ndescription: x\n---\n# new gamma",
     );
+  });
+
+  test("linked-repo-orphan: skill previously synced from this repo, now removed upstream → orphan", async () => {
+    // Pre-stage: skill previously linked-repo-synced (source: user
+    // + syncedFromCommit), but NOT in the incoming tree.
+    writeLocal(
+      "personal",
+      "iota",
+      { "SKILL.md": "# stale iota" },
+      {
+        source: "user",
+        syncedFromCommit: "old-sha",
+      },
+    );
+    // canonicalRoot has no skills — `iota` was upstream-removed.
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "sha",
+      {},
+      { mountTo: "personal" },
+    );
+    // Surfaced as orphan. Pre-fix this was missed because
+    // source: user !== "curated".
+    expect(report.orphaned).toEqual(["iota"]);
+    // Local copy untouched.
+    expect(readLocal("personal", "iota", "SKILL.md")).toBe("# stale iota");
   });
 
   test("user-authored skill (no syncedFromCommit) collides with incoming → conflict", async () => {

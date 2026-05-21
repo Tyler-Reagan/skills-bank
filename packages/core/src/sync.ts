@@ -345,13 +345,20 @@ export async function applyCanonicalSync(
     upserted.push(name);
   }
 
-  // Orphans: local skills marked canonical that no longer appear in
-  // discovery. Walk via the bucket-aware helper so we don't mistake
-  // the bucket directories themselves for skills.
+  // Orphans: local skills that previously came from a sync (any
+  // sync — curated or linked-repo) but no longer appear in the
+  // current discovery. v1.5: discriminate on syncedFromCommit
+  // presence, not the source axis. Pre-fix this used
+  // `source === "curated"`, which missed linked-repo orphans
+  // (skills removed from the user's linked repo carry
+  // `source: user + syncedFromCommit`, so the proxy missed them).
+  // Same family of bug as the source-axis-stamp + conflict-gate
+  // fixes; this is the third call site that needed the same
+  // proxy → syncedFromCommit migration.
   const orphaned: string[] = [];
   for (const ref of walkSkills(registryRoot)) {
     if (canonicalNames.has(ref.name)) continue;
-    if (readSkillSource(ref.dir).source === "curated") {
+    if (readSkillSource(ref.dir).syncedFromCommit) {
       orphaned.push(ref.name);
     }
   }
