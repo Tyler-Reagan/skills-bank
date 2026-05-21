@@ -366,6 +366,67 @@ describe("applyCanonicalSync (mountTo: personal — linked-repo flow)", () => {
     );
     expect(src.source).toBe("curated");
   });
+
+  test("re-sync of an already-linked repo: previously-synced skills overwrite cleanly, NOT surfaced as conflicts", async () => {
+    // Pre-stage: skill exists locally with `source: user +
+    // syncedFromCommit` (the post-v1.5 linked-repo-sync footprint).
+    writeLocal(
+      "personal",
+      "gamma",
+      { "SKILL.md": "# old gamma" },
+      {
+        source: "user",
+        syncedFromCommit: "old-sha",
+      },
+    );
+    writeCanonical(
+      "gamma",
+      { "SKILL.md": "---\nname: gamma\ndescription: x\n---\n# new gamma" },
+      { flat: true },
+    );
+
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "new-sha",
+      {},
+      { mountTo: "personal" },
+    );
+    // Previously-synced skill is overwritten in place — not a
+    // conflict. v1.5 regression test: pre-fix this surfaced as
+    // a fake conflict because `source: user !== curated`.
+    expect(report.upserted).toEqual(["gamma"]);
+    expect(report.conflicts).toEqual([]);
+    expect(readLocal("personal", "gamma", "SKILL.md")).toBe(
+      "---\nname: gamma\ndescription: x\n---\n# new gamma",
+    );
+  });
+
+  test("user-authored skill (no syncedFromCommit) collides with incoming → conflict", async () => {
+    writeLocal(
+      "personal",
+      "delta",
+      { "SKILL.md": "# my delta" },
+      // No syncedFromCommit — user authored this locally.
+      { source: "user" },
+    );
+    writeCanonical(
+      "delta",
+      { "SKILL.md": "---\nname: delta\ndescription: x\n---\n# incoming delta" },
+      { flat: true },
+    );
+
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "sha",
+      {},
+      { mountTo: "personal" },
+    );
+    expect(report.upserted).toEqual([]);
+    expect(report.conflicts).toHaveLength(1);
+    expect(report.conflicts[0]!.name).toBe("delta");
+  });
 });
 
 describe("applyCanonicalSync — discovery anomalies surface in report", () => {

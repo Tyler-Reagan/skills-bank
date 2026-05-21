@@ -258,7 +258,17 @@ export async function applyCanonicalSync(
     if (localExists) {
       preservedTags = readMetaTags(localPath);
       const existingSource = readSkillSource(localPath);
-      if (existingSource.source !== "curated") {
+      // v1.5: conflict detection keys off `syncedFromCommit`, not
+      // the source axis. Pre-v1.5 used `source !== "curated"` as a
+      // proxy for "is this user-authored?", which worked when every
+      // sync stamped curated. With v1.5's mountTo policy
+      // (linked-repo syncs stamp `source: user`), the proxy
+      // misfires: legitimately-previously-synced linked-repo skills
+      // surface as fake conflicts because their source is `user`.
+      // The correct discriminator is `syncedFromCommit` presence —
+      // every sync stamps it; user-authored skills don't carry one.
+      const isPreviouslySynced = !!existingSource.syncedFromCommit;
+      if (!isPreviouslySynced) {
         const decision = decisions[name];
         if (decision) {
           // Apply the stored resolution via the shared primitive.
