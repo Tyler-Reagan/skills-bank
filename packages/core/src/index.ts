@@ -17,6 +17,7 @@ export * from "./build.js";
 export * from "./source.js";
 export * from "./upstream.js";
 export * from "./upstream-probe.js";
+export * from "./local-diagnostics.js";
 export * from "./skill-lock.js";
 export * from "./sync.js";
 export * from "./agents.js";

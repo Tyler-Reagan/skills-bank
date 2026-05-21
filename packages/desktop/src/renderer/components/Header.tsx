@@ -25,6 +25,21 @@ export type RescanState =
   | { phase: "working" }
   | { phase: "done"; updates: number };
 
+/**
+ * Three-phase state of the "Scan local" affordance. Mirrors the
+ * Check-for-updates state machine but for the local-disk diagnostics
+ * pass (unregistered installs, broken symlinks, missing-files heal
+ * states). Local-only — no network.
+ *
+ *   - `idle`     ↻ Scan local
+ *   - `working`  ◐ Scanning…
+ *   - `done`     ✓ All clean  /  ✓ N items · Review
+ */
+export type LocalScanState =
+  | { phase: "idle" }
+  | { phase: "working" }
+  | { phase: "done"; count: number };
+
 interface Props {
   rescanState: RescanState;
   onRefresh: () => void;
@@ -80,6 +95,20 @@ interface Props {
    */
   onCancelImport: () => void;
   /**
+   * Three-phase state for the `Scan local` button. Click target runs
+   * the local-diagnostics IPC; on done with N>0 the user clicks
+   * Review to bounce to the Installed-tab "Needs attention" section.
+   */
+  localScanState: LocalScanState;
+  onLocalScan: () => void;
+  /**
+   * Invoked when the user clicks "Review" on the Scan-local done-state.
+   * Host bounces to Installed tab and scrolls to the diagnostics
+   * section. Button stays in done-state until this fires (or the user
+   * clicks Scan local again) — no auto-fade.
+   */
+  onViewLocalScan: () => void;
+  /**
    * Tier-2 (v1.9): per-skill progress count for the in-flight manifest
    * import. Passes through to the `<ImportIndicator />` chip so it
    * renders `Importing N/total` instead of the generic
@@ -108,6 +137,9 @@ export function Header({
   onViewRescanUpdates,
   importingManifest,
   onCancelImport,
+  localScanState,
+  onLocalScan,
+  onViewLocalScan,
   manifestImportProgress,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
@@ -285,6 +317,65 @@ export function Header({
             ) : (
               <>
                 <Icon name="refresh" size="md" /> Check for updates
+              </>
+            )}
+          </button>
+          <button
+            className={`refresh-btn local-scan-${localScanState.phase}${
+              localScanState.phase === "done" && localScanState.count > 0
+                ? " local-scan-done-actionable"
+                : ""
+            }`}
+            disabled={localScanState.phase === "working"}
+            aria-busy={localScanState.phase === "working" || undefined}
+            title={
+              localScanState.phase === "working"
+                ? "Scanning agent directories and registry for items needing attention"
+                : localScanState.phase === "done" && localScanState.count > 0
+                  ? `${localScanState.count} item${
+                      localScanState.count === 1 ? "" : "s"
+                    } need attention. Click to review.`
+                  : "Walk your agent directories and registry for items needing attention: unregistered installs, broken symlinks, missing files. Local-only — no network."
+            }
+            aria-label={
+              localScanState.phase === "working"
+                ? "Scanning local disk"
+                : localScanState.phase === "done"
+                  ? localScanState.count === 0
+                    ? "All clean"
+                    : `${localScanState.count} item${
+                        localScanState.count === 1 ? "" : "s"
+                      } need attention — review on Installed tab`
+                  : "Scan local disk for items needing attention"
+            }
+            onClick={
+              localScanState.phase === "done" && localScanState.count > 0
+                ? onViewLocalScan
+                : onLocalScan
+            }
+          >
+            {localScanState.phase === "working" ? (
+              <>
+                <span className="spinner inline" aria-hidden="true" />{" "}
+                Scanning…
+              </>
+            ) : localScanState.phase === "done" ? (
+              localScanState.count === 0 ? (
+                <>
+                  <Icon name="check" size="md" /> All clean
+                </>
+              ) : (
+                <>
+                  <Icon name="check" size="md" />{" "}
+                  {localScanState.count === 1
+                    ? "1 item"
+                    : `${localScanState.count} items`}
+                  <span className="rescan-view-cta"> · Review</span>
+                </>
+              )
+            ) : (
+              <>
+                <Icon name="search" size="md" /> Scan local
               </>
             )}
           </button>
