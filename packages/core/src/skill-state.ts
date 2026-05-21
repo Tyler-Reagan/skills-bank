@@ -256,7 +256,14 @@ export function classifyDrawerState(
   // marker if the user chooses Keep mine.
   if (isRegistered && entry.drift === true) {
     if (entry.source.origin?.kind === "github") {
-      return {
+      // canUnregister is granted here so a stuck drifted skill —
+      // typically one whose upstream is broken or has moved — can be
+      // removed without first severing the origin pointer. Without
+      // this, the only way out is Accept drift → transition state →
+      // Remove, which is a UX dead end when the origin probe itself
+      // is failing. applyCanonGate will strip Unregister for canon
+      // skills and grant Hide instead.
+      return applyCanonGate(entry, {
         state: "edited-with-origin",
         brokenCount: 0,
         conflictCount: 0,
@@ -266,11 +273,12 @@ export function classifyDrawerState(
           canAcceptDrift: true,
           canResetToOrigin: true,
           canExport: true,
+          canUnregister: true,
           primary: "accept-drift",
         },
-      };
+      });
     }
-    return {
+    return applyCanonGate(entry, {
       state: "edited-without-origin",
       brokenCount: 0,
       conflictCount: 0,
@@ -280,9 +288,10 @@ export function classifyDrawerState(
         canAcceptDrift: true,
         canTakeCanonical: true,
         canExport: true,
+        canUnregister: true,
         primary: "accept-drift",
       },
-    };
+    });
   }
 
   // Origin probe persistently failing. Lower priority than drift —
@@ -296,7 +305,7 @@ export function classifyDrawerState(
     entry.originUnreachable === true &&
     entry.source.origin?.kind === "github"
   ) {
-    return {
+    return applyCanonGate(entry, {
       state: "origin-unreachable",
       brokenCount: 0,
       conflictCount: 0,
@@ -310,16 +319,21 @@ export function classifyDrawerState(
         // wired this).
         canAcceptDrift: true,
         canRetryOriginProbe: true,
+        // Bail-out path. If the origin stays unreachable indefinitely
+        // (deleted upstream, repo renamed past our redirect window),
+        // the user needs a way to remove the registry entry without
+        // first navigating through Accept drift.
+        canUnregister: true,
         primary: "retry-probe",
       },
-    };
+    });
   }
 
   // Upstream update available with no local drift. The user can
   // apply the change in place. Drift takes priority above so this
   // arm only fires for clean local state.
   if (isRegistered && entry.originUpdateAvailable === true) {
-    return {
+    return applyCanonGate(entry, {
       state: "origin-update-available",
       brokenCount: 0,
       conflictCount: 0,
@@ -329,9 +343,10 @@ export function classifyDrawerState(
         canManageLinks: true,
         canExport: true,
         canUpdate: true,
+        canUnregister: true,
         primary: "update",
       },
-    };
+    });
   }
   // Only consider installations for THIS skill — the caller may pass
   // the full installed list, the registry view's full list, etc.

@@ -31,8 +31,7 @@ export function SyncBanner({
   if (status.kind === "fetching") {
     return (
       <div className="sync-banner active" role="status" aria-live="polite">
-        <span className="spinner inline" aria-hidden="true" /> Fetching bundled
-        skills
+        <span className="spinner inline" aria-hidden="true" /> Fetching latest
       </div>
     );
   }
@@ -53,7 +52,17 @@ export function SyncBanner({
       parts.push(
         `${status.conflicts} conflict${status.conflicts === 1 ? "" : "s"} pending`,
       );
-    if (status.orphaned > 0) parts.push(`${status.orphaned} orphaned`);
+    // "Orphaned" in sync.ts means: local skills that carry a
+    // syncedFromCommit marker but no longer appear in the upstream
+    // discovery — they were deleted upstream. The system never auto-
+    // deletes them locally, so the label needs to be informational, not
+    // alarming. "Orphaned" read like a problem requiring resolution;
+    // "no longer in source repo" describes the state without implying a
+    // pending action.
+    if (status.orphaned > 0)
+      parts.push(
+        `${status.orphaned} no longer in source repo`,
+      );
     if (parts.length === 0) parts.push("already up to date");
     return (
       <div className="sync-banner done" role="status">

@@ -31,6 +31,7 @@ import {
   exportRegistry,
   exportRegistryManifest,
   importRegistryManifest,
+  MANIFEST_SCHEMA_VERSION,
   installSkillFromGithub,
   parseGithubSkillUrl,
   writeRegistrySnapshot,
@@ -2124,7 +2125,7 @@ ipcMain.handle(
       return { ok: false, message: "invalid skill payload" };
     }
     const singleManifest: RegistryManifest = {
-      schemaVersion: 2,
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
       sourceBankVersion: app.getVersion(),
       skills: [skill],
@@ -2201,10 +2202,20 @@ mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
       message: parsed.message,
     } as const;
   }
+  // Bucket attribution: a skill whose origin repo matches the user's
+  // linked registry repo is their own authored content (→ personal);
+  // anything else is harvested from a third party (→ vendored). Without
+  // this, every GitHub-URL install landed in personal/ regardless of
+  // origin, which then propagated through manifest export/import (all
+  // entries stamped `source: user` → bucket inferred as personal on the
+  // receiving machine).
+  const ownsOriginRepo =
+    linkedRepo !== null && linkedRepo.fullName === parsed.repo;
   const result = await installSkillFromGithub({
     registryRoot,
     repo: parsed.repo,
     skillPath: parsed.skillPath,
+    bucket: ownsOriginRepo ? "personal" : "vendored",
     token: getStoredToken(),
   });
   if (result.ok) {

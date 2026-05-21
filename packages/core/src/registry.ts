@@ -39,15 +39,52 @@ export function readSkillMdFrontmatter(
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match || !match[1]) return null;
   const fm: Record<string, string> = {};
-  for (const line of match[1].split("\n")) {
+  const lines = match[1].split("\n");
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i]!;
+    i++;
+    if (!line.trim()) continue;
+    // Indented lines belong to the previous key's block scalar
+    // (handled inline below) — never starts a new key.
+    if (/^\s/.test(line)) continue;
     const idx = line.indexOf(":");
     if (idx === -1) continue;
     const key = line.slice(0, idx).trim();
-    const val = line
+    if (!key) continue;
+    let val = line
       .slice(idx + 1)
       .trim()
       .replace(/^["']|["']$/g, "");
-    if (key) fm[key] = val;
+    // YAML block scalars: `key: |` (literal — preserve newlines) or
+    // `key: >` (folded — newlines become spaces), with optional chomp
+    // indicator (`|-`, `|+`, `>-`, `>+`). Without this branch the
+    // captured value would be the literal indicator char (`|`), which
+    // then cascaded through restoreAuxState → meta.json with a
+    // one-character description and tripped drift detection downstream.
+    const blockMatch = val.match(/^([|>])[-+]?\s*$/);
+    if (blockMatch) {
+      const mode = blockMatch[1]!;
+      const body: string[] = [];
+      while (i < lines.length) {
+        const next = lines[i]!;
+        // Block ends at the first non-empty, un-indented line.
+        if (next.length > 0 && !/^\s/.test(next)) break;
+        body.push(next);
+        i++;
+      }
+      const nonEmpty = body.filter((l) => l.trim().length > 0);
+      const minIndent =
+        nonEmpty.length > 0
+          ? Math.min(...nonEmpty.map((l) => /^\s*/.exec(l)![0].length))
+          : 0;
+      const stripped = body.map((l) => l.slice(minIndent));
+      while (stripped.length > 0 && !stripped[stripped.length - 1]!.trim()) {
+        stripped.pop();
+      }
+      val = mode === ">" ? stripped.join(" ") : stripped.join("\n");
+    }
+    fm[key] = val;
   }
   return fm;
 }

@@ -105,7 +105,13 @@ const ROWS: Row[] = [
     isRegistered: true,
     expectedState: "edited-with-origin",
     expectedPrimary: "accept-drift",
-    expectedCaps: { canAcceptDrift: true, canResetToOrigin: true },
+    expectedCaps: {
+      canAcceptDrift: true,
+      canResetToOrigin: true,
+      // Bail-out: stuck drift (e.g. broken upstream) must be removable
+      // without first severing the origin.
+      canUnregister: true,
+    },
   },
   {
     label:
@@ -115,7 +121,11 @@ const ROWS: Row[] = [
     isRegistered: true,
     expectedState: "edited-without-origin",
     expectedPrimary: "accept-drift",
-    expectedCaps: { canAcceptDrift: true, canTakeCanonical: true },
+    expectedCaps: {
+      canAcceptDrift: true,
+      canTakeCanonical: true,
+      canUnregister: true,
+    },
   },
   {
     label:
@@ -191,6 +201,7 @@ const ROWS: Row[] = [
     expectedCaps: {
       canRetryOriginProbe: true,
       canAcceptDrift: true,
+      canUnregister: true,
     },
   },
   {
