@@ -21,19 +21,19 @@ const ACTIONS: { value: ConflictAction; label: string; description: string }[] =
       value: "keep-mine",
       label: "Keep mine",
       description:
-        "Skip the bundled version. Your skill stays; it won't be re-prompted.",
+        "Skip the curated version. Your skill stays; it won't be re-prompted.",
     },
     {
       value: "use-canonical",
-      label: "Use bundled (replaces mine)",
+      label: "Use curated (replaces mine)",
       description:
-        "Overwrite your version with the bundled one. Your changes are lost.",
+        "Overwrite your version with the curated one. Your changes are lost.",
     },
     {
       value: "rename-mine",
       label: "Rename mine to <name>-local",
       description:
-        "Move your version to a new name and accept bundled at the original. Both survive.",
+        "Move your version to a new name and accept the curated version at the original. Both survive.",
     },
   ];
 
@@ -155,7 +155,7 @@ export function ConflictResolutionModal({
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
           Sync collision: {conflicts.length} skill
           {conflicts.length === 1 ? "" : "s"} have name conflicts between your
-          local registry and the upstream bundled set. Pick an action for each.
+          local registry and the upstream curated set. Pick an action for each.
           Your choice is remembered for future syncs.
         </p>
 
@@ -179,7 +179,7 @@ export function ConflictResolutionModal({
             onClick={() => setAll("use-canonical")}
             disabled={submitting}
           >
-            Use all bundled
+            Use all curated
           </button>
           <button
             type="button"
@@ -200,7 +200,7 @@ export function ConflictResolutionModal({
           >
             {[
               counts.keep > 0 ? `Keep ${counts.keep}` : null,
-              counts.use > 0 ? `Use bundled ${counts.use}` : null,
+              counts.use > 0 ? `Use curated ${counts.use}` : null,
               counts.rename > 0 ? `Rename ${counts.rename}` : null,
             ]
               .filter(Boolean)
@@ -240,7 +240,7 @@ export function ConflictResolutionModal({
                 >
                   {expanded[c.name]
                     ? "Hide diff"
-                    : "Show diff (yours → bundled)"}
+                    : "Show diff (mine → curated)"}
                 </button>
               </div>
               {expanded[c.name] && (
