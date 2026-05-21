@@ -45,7 +45,7 @@ Click any card to open its detail dialog:
 
 ### Managing canon skills
 
-Canon skills (those that come from your linked registry's upstream) can't be unregistered or deleted from Skills Bank — those operations would be irrecoverable since the upstream owns them. Use **Hide** in the detail drawer to tuck a canon skill out of the default Browse view while keeping its installations and metadata intact. Manage your hide list in Settings → **Hidden canon skills**.
+Canon skills (those that come from your linked registry's upstream) can't be unregistered or deleted from Skills Bank — those operations would be irrecoverable since the upstream owns them. Use **Hide** in the detail dialog to tuck a canon skill out of the default Browse view while keeping its installations and metadata intact. Manage your hide list in Settings → **Hidden canon skills**.
 
 ## Reference
 
