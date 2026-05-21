@@ -932,7 +932,17 @@ function AppContent(): React.ReactElement {
     total: number;
     currentName: string;
     manifestNames: string[];
+    manifestSkills: import("@skills-bank/core").ManifestSkill[];
     errors: Map<string, string>;
+    /** Names the user has explicitly dismissed via the ghost-card × button. */
+    dismissed: Set<string>;
+    /**
+     * Per-skill completion status driven by the progress events. A skill
+     * moves to "settled" the moment the iteration AFTER it fires (so the
+     * previous skill's outcome is observed). Used to drive ghost → real
+     * card transitions and the band's "all settled" dissolution.
+     */
+    settled: Set<string>;
   } | null>(null);
 
   useEffect(() => {
@@ -949,17 +959,87 @@ function AppContent(): React.ReactElement {
             idx > 0 ? event.lastError.slice(idx + 2) : event.lastError;
           errors.set(failedName, reason);
         }
+        // Mark the previous in-flight skill as settled when this event
+        // fires — we can't observe its outcome directly from progress,
+        // but the fact that the loop advanced means its iteration
+        // closed. The last terminal event (completed === total) settles
+        // the final skill.
+        const settled = new Set(prev?.settled ?? []);
+        if (prev?.currentName && prev.currentName !== event.currentName) {
+          settled.add(prev.currentName);
+        }
+        if (event.completed === event.total && event.currentName) {
+          settled.add(event.currentName);
+        }
         return {
           completed: event.completed,
           total: event.total,
           currentName: event.currentName,
           manifestNames:
             event.manifestNames ?? prev?.manifestNames ?? [],
+          manifestSkills:
+            event.manifestSkills ?? prev?.manifestSkills ?? [],
           errors,
+          dismissed: prev?.dismissed ?? new Set(),
+          settled,
         };
       });
     });
   }, []);
+
+  const dismissGhost = useCallback((name: string) => {
+    setManifestImportProgress((prev) => {
+      if (!prev) return prev;
+      const dismissed = new Set(prev.dismissed);
+      dismissed.add(name);
+      return { ...prev, dismissed };
+    });
+  }, []);
+
+  const retryGhost = useCallback(
+    async (skill: import("@skills-bank/core").ManifestSkill) => {
+      const r = await window.skillsBank.manifestImportRetrySkill(skill);
+      if (r.ok && r.outcome) {
+        // Clear the error for this skill regardless of new outcome —
+        // the renderer's terminal state is now whatever the outcome
+        // says (registered / collision / origin-unreachable).
+        setManifestImportProgress((prev) => {
+          if (!prev) return prev;
+          const errors = new Map(prev.errors);
+          if (r.outcome!.result === "registered") {
+            errors.delete(skill.name);
+            // Mark as settled so the band transitions it from
+            // ghost-error → real card on the next refresh.
+            const settled = new Set(prev.settled);
+            settled.add(skill.name);
+            return { ...prev, errors, settled };
+          }
+          // Retry produced another failure (or a collision). Keep the
+          // error visible so the user can retry again or dismiss.
+          if (r.outcome!.result === "origin-unreachable") {
+            errors.set(
+              skill.name,
+              r.outcome!.reason ?? "origin unreachable",
+            );
+          }
+          return { ...prev, errors };
+        });
+        if (r.outcome.result === "registered") {
+          await refresh();
+          flash(`Retried ${skill.name}`);
+        } else if (r.outcome.result === "collision") {
+          flashError(
+            `${skill.name}: skill already exists with a different origin`,
+          );
+        } else if (r.outcome.result === "origin-unreachable") {
+          flashError(`${skill.name}: ${r.outcome.reason ?? "unreachable"}`);
+        }
+      } else if (r.message) {
+        flashError(r.message);
+      }
+    },
+    [flash, flashError, refresh],
+  );
 
   const importManifest = useCallback(async () => {
     setImportingManifest(true);
@@ -1314,6 +1394,9 @@ function AppContent(): React.ReactElement {
                 setRegistrySort={setRegistrySort}
                 onBulkInstall={runBulkInstall}
                 bulkInstall={bulkInstall}
+                manifestImportProgress={manifestImportProgress}
+                onRetryGhost={(skill) => void retryGhost(skill)}
+                onDismissGhost={dismissGhost}
               />
             )}
             {tab === "installed" && (

@@ -150,6 +150,9 @@ const api = {
     ipcRenderer.on(IPC.originProbe, listener);
     return () => ipcRenderer.removeListener(IPC.originProbe, listener);
   },
+  manifestImportRetrySkill: (
+    skill: import("@skills-bank/core").ManifestSkill,
+  ) => ipcRenderer.invoke(IPC.manifestImportRetrySkill, skill),
   onManifestImportProgress: (
     cb: (
       event: import("@skills-bank/core").ManifestImportProgressEvent,

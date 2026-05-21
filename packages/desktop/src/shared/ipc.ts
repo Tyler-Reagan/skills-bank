@@ -11,8 +11,10 @@ import type {
   FinalizeResult,
   ImportRegistryManifestResult,
   InstallFromGithubResult,
+  ImportSkillOutcome,
   InstalledSkill,
   ManifestImportProgressEvent,
+  ManifestSkill,
   MergeImportReport,
   PublishState,
   RateLimitInfo,
@@ -94,6 +96,7 @@ export const IPC = {
   importManifest: "bank:importManifest",
   importManifestCancel: "bank:importManifestCancel",
   manifestImportProgress: "bank:manifestImportProgress",
+  manifestImportRetrySkill: "bank:manifestImportRetrySkill",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
   classifySkillForPublish: "publish:classify",
@@ -894,6 +897,17 @@ interface SkillsBankAPI {
   onManifestImportProgress(
     cb: (event: ManifestImportProgressEvent) => void,
   ): () => void;
+  /**
+   * Tier-3 retry: re-mirror a single skill that errored during a
+   * manifest import. Wraps the entry in a one-skill manifest and
+   * runs it through `importRegistryManifest` (no progress events
+   * fire — retry is single-shot, the renderer awaits the IPC's
+   * single outcome). Returns the single outcome of that
+   * one-skill import.
+   */
+  manifestImportRetrySkill(
+    skill: ManifestSkill,
+  ): Promise<{ ok: boolean; outcome?: ImportSkillOutcome; message?: string }>;
   originUpdate(name: string): Promise<OriginUpdateResult>;
   originRepoMetadata(repo: string): Promise<OriginRepoMetadata>;
   originLastCommit(
