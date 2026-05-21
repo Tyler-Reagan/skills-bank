@@ -81,6 +81,7 @@ import {
   uninstallSkill,
   removeBrokenLinks,
   repairBrokenLinks,
+  scanLocalDiagnostics,
   resolveSkillConflicts,
   unhideCanonSkill,
   unregisterSkill,
@@ -3010,6 +3011,18 @@ mutatingHandle(IPC.removeBrokenLinks, (_e, name: string, agents: AgentId[]) => {
     return { removed: [], errors: [{ agent: "claude", message: NO_ROOT_MSG }] };
   return removeBrokenLinks(registryRoot, name, agents);
 });
+
+ipcMain.handle(
+  IPC.localDiagnosticsScan,
+  (_e, customDirs?: string[]) => {
+    if (!registryRoot) {
+      return { items: [], scannedAt: new Date().toISOString() };
+    }
+    return scanLocalDiagnostics(registryRoot, {
+      ...(customDirs ? { customSkillsDirs: customDirs } : {}),
+    });
+  },
+);
 
 mutatingHandle(
   IPC.resolveSkillConflicts,

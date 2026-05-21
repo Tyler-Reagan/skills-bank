@@ -8,6 +8,8 @@ import React, {
 import type {
   AgentId,
   ConflictEntry,
+  DiagnosticItem,
+  DiagnosticReport,
   InstalledSkill,
   RegistryEntry,
 } from "@skills-bank/core";
@@ -21,6 +23,7 @@ import { RegisterModal } from "./components/RegisterModal.js";
 import {
   Header,
   type Density,
+  type LocalScanState,
   type Theme,
 } from "./components/Header.js";
 import { ConflictResolveModal } from "./components/ConflictResolveModal.js";
@@ -656,6 +659,112 @@ function AppContent(): React.ReactElement {
     }, [dismissToast]),
   });
 
+  // Local-disk diagnostics state. Mirrors the rescan controller's
+  // three-phase shape but stays inline since the scan is single-shot
+  // (no async probe-complete event to coordinate).
+  const [localScanState, setLocalScanState] = useState<LocalScanState>({
+    phase: "idle",
+  });
+  const [diagnostics, setDiagnostics] = useState<DiagnosticReport | null>(null);
+  const localScanDoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  useEffect(
+    () => () => {
+      if (localScanDoneTimerRef.current)
+        clearTimeout(localScanDoneTimerRef.current);
+    },
+    [],
+  );
+
+  const runLocalScan = useCallback(async () => {
+    if (localScanDoneTimerRef.current)
+      clearTimeout(localScanDoneTimerRef.current);
+    setLocalScanState({ phase: "working" });
+    try {
+      const report = await window.skillsBank.localDiagnosticsScan(
+        settings.customSkillsDirs,
+      );
+      setDiagnostics(report);
+      setLocalScanState({ phase: "done", count: report.items.length });
+      // Done-zero auto-fades after 1.5s; done-N>0 stays persistent so
+      // the user can click Review at their own pace.
+      if (report.items.length === 0) {
+        localScanDoneTimerRef.current = setTimeout(
+          () => setLocalScanState({ phase: "idle" }),
+          1500,
+        );
+      }
+    } catch {
+      setLocalScanState({ phase: "idle" });
+    }
+  }, [settings.customSkillsDirs]);
+
+  const refreshDiagnostics = useCallback(async () => {
+    try {
+      const report = await window.skillsBank.localDiagnosticsScan(
+        settings.customSkillsDirs,
+      );
+      setDiagnostics(report);
+    } catch {
+      // Failure leaves the prior report visible; user can rescan
+      // manually via Button C.
+    }
+  }, [settings.customSkillsDirs]);
+
+  const onViewLocalScan = useCallback(() => {
+    if (localScanDoneTimerRef.current)
+      clearTimeout(localScanDoneTimerRef.current);
+    setTabPersisted("installed");
+    setLocalScanState({ phase: "idle" });
+    // Scroll content to top after React commits the tab change — the
+    // Needs-attention section lives at the top of InstalledTab.
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(".content");
+      if (el) el.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
+  }, [setTabPersisted]);
+
+  const onFixDiagnosticItem = useCallback(
+    async (item: DiagnosticItem) => {
+      if (item.category === "unregistered-installs") {
+        // Open the unified detail drawer with a synthetic entry so
+        // the user picks the registration action (adopt vs external).
+        // Matches the InstalledTab card's onRegisterOne path.
+        const synthetic: RegistryEntry = registryByName.get(item.name) ?? {
+          name: item.name,
+          description: item.detail,
+          path: item.name,
+          source: { source: "user" },
+        };
+        setSelected(synthetic);
+        return;
+      }
+      if (item.category === "broken-symlinks") {
+        const agent = (item.agent ?? "claude") as AgentId;
+        const r = await window.skillsBank.removeBrokenLinks(item.name, [agent]);
+        if (r.errors.length > 0) {
+          flashError(r.errors.map((e) => e.message).join("; "));
+        } else {
+          flash(`Removed broken link for ${item.name}`);
+        }
+        await refresh();
+        await refreshDiagnostics();
+        return;
+      }
+      // external-target-missing OR registry-folder-missing: same path.
+      const r = await window.skillsBank.forgetMissing(item.name);
+      if (r.ok) {
+        flash(r.message);
+      } else {
+        flashError(r.message);
+      }
+      await refresh();
+      await refreshDiagnostics();
+    },
+    [registryByName, flash, flashError, refresh, refreshDiagnostics],
+  );
+
   // Common post-action plumbing for unregister retries: dismiss the
   // originating panel on success, flash, refresh. Failures route the
   // new structured error back through the panel.
@@ -1129,6 +1238,9 @@ function AppContent(): React.ReactElement {
           onViewRescanUpdates={() => undefined}
           importingManifest={false}
           onCancelImport={() => undefined}
+          localScanState={{ phase: "idle" }}
+          onLocalScan={() => undefined}
+          onViewLocalScan={() => undefined}
         />
         <Tabs
           active="browse"
@@ -1177,6 +1289,9 @@ function AppContent(): React.ReactElement {
           onViewRescanUpdates={rescan.onViewUpdates}
           importingManifest={importingManifest}
           onCancelImport={cancelManifestImport}
+          localScanState={localScanState}
+          onLocalScan={() => void runLocalScan()}
+          onViewLocalScan={onViewLocalScan}
         />
         {appErrors.length > 0 && (
           <div className="error-panel-stack">
@@ -1425,6 +1540,8 @@ function AppContent(): React.ReactElement {
                     });
                   })();
                 }}
+                diagnostics={diagnostics}
+                onFixDiagnosticItem={(item) => void onFixDiagnosticItem(item)}
               />
             )}
           </div>

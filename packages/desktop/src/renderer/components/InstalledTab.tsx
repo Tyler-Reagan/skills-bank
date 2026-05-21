@@ -1,5 +1,12 @@
 import React from "react";
-import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import type {
+  AgentId,
+  DiagnosticCategory,
+  DiagnosticItem,
+  DiagnosticReport,
+  InstalledSkill,
+  RegistryEntry,
+} from "@skills-bank/core";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
 import { Icon } from "./Icon.js";
@@ -146,6 +153,25 @@ interface Props {
    * alone) before calling the underlying delete IPC.
    */
   onInlineDelete?: (group: InstalledGroup) => void;
+  /**
+   * v1.9 Button C: latest local-diagnostics scan report. When non-null
+   * and `items.length > 0`, renders a "From last local scan" section
+   * at the top of the tab grouping items by category with per-item
+   * fix actions. Parallel to the existing classifier-driven
+   * Needs-attention section — both stay rendered. Null suppresses
+   * the section.
+   */
+  diagnostics?: import("@skills-bank/core").DiagnosticReport | null;
+  /**
+   * Dispatch a fix action for a diagnostic item. Routing per category
+   * is handled by the host (open register flow for unregistered, call
+   * removeBrokenLinks for broken-symlink, call forgetMissing for
+   * external/registry-missing). Host refreshes the diagnostic report
+   * after the action completes.
+   */
+  onFixDiagnosticItem?: (
+    item: import("@skills-bank/core").DiagnosticItem,
+  ) => void;
 }
 
 export function InstalledTab({
@@ -164,6 +190,8 @@ export function InstalledTab({
   onRepairAllBroken,
   onInlineRegister,
   onInlineDelete,
+  diagnostics,
+  onFixDiagnosticItem,
 }: Props): React.ReactElement {
   const registerTooltip = REGISTER_TOOLTIP;
   if (installed.length === 0) {
@@ -289,6 +317,12 @@ export function InstalledTab({
           )}
         </span>
       </div>
+      {diagnostics && diagnostics.items.length > 0 && onFixDiagnosticItem && (
+        <LocalScanResultsSection
+          diagnostics={diagnostics}
+          onFix={onFixDiagnosticItem}
+        />
+      )}
       {needsAttention.length > 0 &&
         (() => {
           // Bulk-resolve only applies to registered conflicts (the
@@ -618,6 +652,120 @@ function CustomSkillsDirs({
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+const CATEGORY_LABELS: Record<DiagnosticCategory, string> = {
+  "unregistered-installs": "Unregistered installs",
+  "broken-symlinks": "Broken symlinks",
+  "external-target-missing": "External target missing",
+  "registry-folder-missing": "Registry folder missing",
+};
+
+const CATEGORY_FIX_LABELS: Record<DiagnosticCategory, string> = {
+  "unregistered-installs": "Register",
+  "broken-symlinks": "Remove broken link",
+  "external-target-missing": "Forget",
+  "registry-folder-missing": "Forget",
+};
+
+const CATEGORY_ORDER: DiagnosticCategory[] = [
+  "unregistered-installs",
+  "broken-symlinks",
+  "external-target-missing",
+  "registry-folder-missing",
+];
+
+/**
+ * v1.9 Button C: surface for the latest local-diagnostics scan result.
+ * Groups items by category with per-item fix actions. Parallel to the
+ * existing classifier-driven Needs-attention section — both stay
+ * rendered so items can appear in both without functional impact.
+ */
+function LocalScanResultsSection({
+  diagnostics,
+  onFix,
+}: {
+  diagnostics: DiagnosticReport;
+  onFix: (item: DiagnosticItem) => void;
+}): React.ReactElement {
+  const grouped = new Map<DiagnosticCategory, DiagnosticItem[]>();
+  for (const cat of CATEGORY_ORDER) grouped.set(cat, []);
+  for (const item of diagnostics.items) {
+    grouped.get(item.category)!.push(item);
+  }
+  const scannedAt = new Date(diagnostics.scannedAt).toLocaleTimeString();
+  return (
+    <section className="local-scan-results">
+      <header className="section-header">
+        <div>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="alert-triangle" size="sm" /> From last local scan{" "}
+            <span className="count">({diagnostics.items.length})</span>
+          </h2>
+          <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--text-3)" }}>
+            Scanned at {scannedAt}. Local-only — no network. Items grouped
+            by category. Fix one at a time; the report refreshes after
+            each action.
+          </p>
+        </div>
+      </header>
+      {CATEGORY_ORDER.filter((cat) => grouped.get(cat)!.length > 0).map((cat) => (
+        <div key={cat} style={{ marginBottom: 12 }}>
+          <h3
+            style={{
+              margin: "8px 0 4px",
+              fontSize: 13,
+              color: "var(--text-2)",
+            }}
+          >
+            {CATEGORY_LABELS[cat]}{" "}
+            <span style={{ color: "var(--text-3)" }}>
+              ({grouped.get(cat)!.length})
+            </span>
+          </h3>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+            }}
+          >
+            {grouped.get(cat)!.map((item) => (
+              <li
+                key={item.itemId}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  padding: "6px 8px",
+                  borderRadius: 4,
+                  background: "var(--surface-2)",
+                  fontSize: 12,
+                }}
+              >
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <strong>{item.name}</strong>{" "}
+                  <span style={{ color: "var(--text-3)" }}>— {item.detail}</span>
+                </span>
+                <button
+                  className="btn small"
+                  type="button"
+                  onClick={() => onFix(item)}
+                  style={{ flexShrink: 0 }}
+                >
+                  {CATEGORY_FIX_LABELS[cat]}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </section>
   );
 }
