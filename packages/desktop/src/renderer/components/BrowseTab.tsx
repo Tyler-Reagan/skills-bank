@@ -26,10 +26,10 @@ export interface BulkInstallState {
 
 const REGISTRY_TOOLTIP =
   "Skills in your registry — the curated bundled set by default, or a " +
-  "GitHub repo you've linked. Click Refresh from <repo> in the header to " +
-  "pull the latest; your local edits and added skills are preserved through " +
-  "the diff-before-apply flow. Skills you install elsewhere appear in the " +
-  "Installed tab.";
+  "GitHub repo you've linked. When linked, click Pull from <repo> in the " +
+  "header to pull the latest; your local edits and added skills are preserved " +
+  "through the diff-before-apply flow. Skills you install elsewhere appear " +
+  "in the Installed tab.";
 
 interface Props {
   registry: RegistryEntry[];
@@ -190,8 +190,8 @@ export function BrowseTab({
             label="What is the registry?"
           />
         </span>{" "}
-        Browse and install skills from your registry. Click{" "}
-        <strong>Refresh from &lt;repo&gt;</strong> in the header to pull the
+        Browse and install skills from your registry. When linked, click{" "}
+        <strong>Pull from &lt;repo&gt;</strong> in the header to pull the
         latest; your local edits and added skills are preserved. Click any card
         to view its details, then <strong>Install</strong> to link it into the
         agent directories you use (Claude Code, Cursor, etc.).
