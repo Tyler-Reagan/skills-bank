@@ -155,6 +155,10 @@ export function PublishSection({
         <h3 style={sectionHeading}>Linked repo</h3>
         <PublishChip state={publishState} />
       </div>
+      <div style={repoLine} title={`Connected to github.com/${linkedRepoName}`}>
+        <Icon name="check" size="sm" />
+        <span>{linkedRepoName}</span>
+      </div>
       {flowLabel && targetPath && (
         <div style={flowBlock}>
           <span style={isFork ? flowLabelTextWarn : flowLabelText}>
@@ -226,11 +230,27 @@ function PublishChip({
   state: PublishState | null;
 }): React.ReactElement | null {
   if (!state) return null;
-  const labels: Record<PublishState, { label: string; cls: string }> = {
+  // `unknown` means the publish-state probe couldn't reach a verdict
+  // (token expired, GitHub tree truncated, transient network error,
+  // etc.) — that's a system limitation, not a state worth labeling.
+  // Showing "Unknown" reads as "this skill is in an unknown state"
+  // which is misleading. Surface a small status hint via title=
+  // instead, no chip body.
+  if (state === "unknown") {
+    return (
+      <span
+        className="publish-chip unknown"
+        title="Couldn't reach a verdict on publish state — token expired, tree probe truncated, or transient network error. Try Rescan."
+        aria-label="Publish state unknown"
+      >
+        ?
+      </span>
+    );
+  }
+  const labels: Record<Exclude<PublishState, "unknown">, { label: string; cls: string }> = {
     pushed: { label: "Pushed", cls: "pushed" },
     draft: { label: "Draft", cls: "draft" },
     untracked: { label: "Untracked", cls: "untracked" },
-    unknown: { label: "Unknown", cls: "unknown" },
   };
   const { label, cls } = labels[state];
   return (
@@ -329,7 +349,21 @@ const headingRow: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 8,
+  margin: "0 0 var(--s2, 8px) 0",
+};
+const repoLine: React.CSSProperties = {
+  // Explicit "you're linked to X" acknowledgement. The check icon
+  // confirms the connection visually; the repo name reads as the
+  // destination. Sits just under the section heading so the eye
+  // anchors on context before scanning the action affordances.
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  fontSize: 12,
+  fontFamily: "var(--font-mono)",
+  color: "var(--text-2)",
   margin: "0 0 var(--s3, 12px) 0",
+  overflowWrap: "anywhere",
 };
 const flowBlock: React.CSSProperties = {
   display: "flex",
