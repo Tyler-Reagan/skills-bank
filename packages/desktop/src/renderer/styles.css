@@ -1524,31 +1524,66 @@ select {
 
 /* ── Drawer ──────────────────────────────────────────── */
 .drawer-overlay {
+  /* Centered-dialog shell. The overlay doubles as a flex
+     positioning container so the dialog stays centered without
+     transform-translate hacks (which break sub-pixel rendering and
+     fixed-position children inside the dialog body). */
   position: fixed;
   inset: 0;
   background: var(--scrim);
   z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s5);
   animation: fadeIn var(--t) var(--ease) both;
 }
 .drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  /* 540px clears long mono skill names + the Origin block's
-     `<repo>/<skillPath>` line at the design font sizes without
-     wrapping. Caps at 100vw on narrow windows. */
-  width: min(540px, 100vw);
+  /* Detail dialog. Sized for a two-column body: left column holds
+     long-form content (Description, Tags, SKILL.md preview, Origin,
+     Metadata) and the right rail holds Actions + their hints. The
+     split widens the reading column compared to the old stacked
+     layout while keeping the action affordances above the fold. */
+  position: relative;
+  width: min(960px, 92vw);
+  height: min(820px, 88vh);
   background: var(--bg);
-  border-left: 1px solid var(--border);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-hover);
   z-index: 201;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Spring-ish overshoot — natural feel without disorienting bounce. */
-  animation: slideInRight 0.28s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+  animation: dialogPop 0.22s cubic-bezier(0.32, 1.1, 0.6, 1) both;
   will-change: transform, opacity;
+}
+.drawer-main {
+  /* Two-column shell under the header: content scroller on the
+     left, action rail on the right. Each column scrolls independently
+     so a long SKILL.md preview never pushes the primary action below
+     the fold. */
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+/* Stack vertically on narrow viewports — at < 720px the rail eats
+   too much of the reading column. The body grows; the action rail
+   shrinks back to a bottom-pinned footer. */
+@media (max-width: 720px) {
+  .drawer-main {
+    flex-direction: column;
+  }
+}
+@keyframes dialogPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 .drawer-header {
   padding: var(--s5);
@@ -1577,67 +1612,131 @@ select {
   background: var(--surface-hi);
 }
 .drawer-body {
-  flex: 1;
+  /* Left column of the two-column dialog body. Scrolls
+     independently from the action rail so a long preview can't push
+     the primary action below the fold. */
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-y: auto;
   /* Stop scroll-chain from leaking into the underlying document when
-     the drawer body bottoms/tops out. */
+     the body bottoms/tops out. */
   overscroll-behavior: contain;
   padding: var(--s5);
-  /* Reveal contents just after the panel arrives so the eye lands on
-     a settled card rather than scrolling content while it slides. */
   animation: drawerBodyFade var(--t) var(--ease) 0.12s both;
 }
 .drawer-section {
-  margin-bottom: var(--s5);
+  /* Sections are visually grouped via spacing rhythm rather than
+     rules — denser within a section, generous between. */
+  margin-bottom: var(--s6);
+}
+.drawer-section + .drawer-section {
+  margin-top: 0;
 }
 .drawer-section h3 {
+  /* Editorial subhead: small, muted, but readable as title rather
+     than an uppercase tracked label. The label treatment competed
+     with content; this lets content lead. */
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-3);
-  margin-bottom: var(--s2);
+  margin-bottom: var(--s3);
 }
 .drawer-section p,
 .drawer-section li {
   font-size: 13px;
   color: var(--text);
-  line-height: 1.55;
+  line-height: 1.6;
+}
+/* Description is the lede — slightly larger leading so it reads as
+   the entry point rather than as one more sibling section. The skill
+   has a name (header h2), a description (lede), then progressively
+   more reference-y material. */
+.drawer-section.lede p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
 }
 .drawer-meta-row {
+  /* No per-row borders. The list reads as a single block separated
+     from siblings by section margin, not by horizontal rules. */
   display: flex;
   justify-content: space-between;
-  gap: var(--s3);
-  padding: var(--s2) 0;
-  border-bottom: 1px solid var(--border);
+  align-items: baseline;
+  gap: var(--s4);
+  padding: 2px 0;
   font-size: 12px;
-}
-.drawer-meta-row:last-child {
-  border-bottom: none;
+  line-height: 1.5;
 }
 .drawer-meta-key {
   color: var(--text-3);
+  /* Tabular alignment cue — keys stay flush so values line up. */
+  flex-shrink: 0;
+  min-width: 88px;
 }
 .drawer-meta-value {
   color: var(--text);
   font-family: var(--font-mono);
   text-align: right;
-  word-break: break-all;
+  /* Prefer word/slash boundaries; only break inside a token if it's
+     too long for any line. `break-all` was forcing splits inside
+     ordinary English words (e.g. "desktop" → "de | sktop"). */
+  overflow-wrap: anywhere;
+  flex: 1;
+  min-width: 0;
+}
+.drawer-meta-value.prose {
+  /* For sentence text (repo "about" descriptions, commit messages)
+     we want normal prose wrap, no mono, no right-align. */
+  font-family: var(--font-sans);
+  text-align: left;
+  font-style: italic;
+  color: var(--text-2);
 }
 .drawer-actions {
-  padding: var(--s4) var(--s5);
-  border-top: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Right rail of the two-column dialog body. Vertical stack of
+     actions with their inline hints. Scrolls independently from the
+     content column. */
+  flex: 0 0 280px;
+  max-width: 320px;
+  padding: var(--s5);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
   gap: var(--s2);
   background: var(--surface);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 720px) {
+  .drawer-actions {
+    /* Stacked mode: act like the old bottom-pinned footer again. */
+    flex: 0 0 auto;
+    max-width: none;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: var(--s4) var(--s5);
+  }
+}
+/* Allow secondary buttons to share a row when they're adjacent —
+   the JSX wraps secondary clusters in `.drawer-actions-row` so the
+   primary action stays full-width on its own. */
+.drawer-actions-row {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+.drawer-actions-row > button,
+.drawer-actions-row > .btn {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .drawer-action-hint {
-  grid-column: 1 / -1;
   margin: 0;
   font-size: 11px;
   color: var(--text-3);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 .drawer-warnings {
   background: var(--warn-dim);
@@ -1658,15 +1757,19 @@ select {
   font-size: 11px;
 }
 .skill-md-preview {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: var(--s3) var(--s4);
+  /* The preview is the primary content surface on this dialog —
+     treat it as content, not as a card. Dropping the surface chrome
+     lets the rendered Markdown read as continuous body text instead
+     of a nested card-in-a-card. A thin left-rail keeps the section
+     legibly bounded. */
+  border-left: 2px solid var(--border);
+  padding: var(--s2) 0 var(--s2) var(--s4);
   color: var(--text-2);
-  max-height: 320px;
+  max-height: 360px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 .skill-md-preview.md > * + * {
   margin-top: var(--s2);
@@ -1959,6 +2062,12 @@ select {
   text-transform: lowercase;
   letter-spacing: 0.04em;
   font-family: var(--font-mono);
+}
+
+.tag.tag-soft {
+  background: transparent;
+  color: var(--text-3);
+  border-color: var(--border);
 }
 
 /* RegisterModal still uses className="primary" / "danger" on bare buttons. */

@@ -136,14 +136,18 @@ export function PublishSection({
         : flowKind === "new"
           ? "New skill"
           : null;
+  // Tighter copy for the narrow rail. Full prose lives in tooltips
+  // (title=) where the user can dwell to read more, keeping the
+  // visible surface scannable.
   const flowExplain =
     flowKind === "safekeeping"
-      ? "Deposits the vendored copy at the linked repo so it survives if the origin disappears."
+      ? "Deposits the vendored copy so it survives if the origin disappears."
       : flowKind === "fork"
-        ? "Severs the origin link and converts the skill to a user-owned copy in personal/."
+        ? "Severs the origin link and moves the skill to personal/."
         : flowKind === "new"
-          ? "Lands a new user-authored skill on the linked repo."
+          ? "Lands this skill on the linked repo as a new entry."
           : null;
+  const isFork = flowKind === "fork";
 
   return (
     <div style={section}>
@@ -151,12 +155,20 @@ export function PublishSection({
         <h3 style={sectionHeading}>Linked repo</h3>
         <PublishChip state={publishState} />
       </div>
+      <div style={repoLine} title={`Connected to github.com/${linkedRepoName}`}>
+        <Icon name="check" size="sm" />
+        <span>{linkedRepoName}</span>
+      </div>
       {flowLabel && targetPath && (
-        <div style={metaRow}>
-          <span style={flowTag}>{flowLabel}</span>
-          <span style={{ color: "var(--text-3)" }}>→</span>
-          <code style={metaCode}>
-            {linkedRepoName}/{targetPath}/
+        <div style={flowBlock}>
+          <span style={isFork ? flowLabelTextWarn : flowLabelText}>
+            {isFork && (
+              <Icon name="alert-triangle" size="sm" />
+            )}
+            {flowLabel}
+          </span>
+          <code style={pathLine} title={`${linkedRepoName}/${targetPath}/`}>
+            {targetPath}/
           </code>
         </div>
       )}
@@ -167,7 +179,12 @@ export function PublishSection({
           type="button"
           disabled={busy || !flow || flow.flow === "not-publishable"}
           onClick={() => void onClickPublish()}
-          title="Open a pull request on the linked repo with this skill"
+          title={
+            isFork
+              ? "Fork and open a pull request on the linked repo. Severs the origin pointer."
+              : "Open a pull request on the linked repo with this skill"
+          }
+          style={{ width: "100%" }}
         >
           {busy ? (
             <>
@@ -177,11 +194,6 @@ export function PublishSection({
             "Publish"
           )}
         </button>
-        {flow?.flow === "fork" && (
-          <span style={forkBadge} title="Publishing this skill forks it from its origin">
-            <Icon name="alert-triangle" size="sm" /> Fork
-          </span>
-        )}
       </div>
       {error && (
         <p
@@ -218,11 +230,27 @@ function PublishChip({
   state: PublishState | null;
 }): React.ReactElement | null {
   if (!state) return null;
-  const labels: Record<PublishState, { label: string; cls: string }> = {
+  // `unknown` means the publish-state probe couldn't reach a verdict
+  // (token expired, GitHub tree truncated, transient network error,
+  // etc.) — that's a system limitation, not a state worth labeling.
+  // Showing "Unknown" reads as "this skill is in an unknown state"
+  // which is misleading. Surface a small status hint via title=
+  // instead, no chip body.
+  if (state === "unknown") {
+    return (
+      <span
+        className="publish-chip unknown"
+        title="Couldn't reach a verdict on publish state — token expired, tree probe truncated, or transient network error. Try Rescan."
+        aria-label="Publish state unknown"
+      >
+        ?
+      </span>
+    );
+  }
+  const labels: Record<Exclude<PublishState, "unknown">, { label: string; cls: string }> = {
     pushed: { label: "Pushed", cls: "pushed" },
     draft: { label: "Draft", cls: "draft" },
     untracked: { label: "Untracked", cls: "untracked" },
-    unknown: { label: "Unknown", cls: "unknown" },
   };
   const { label, cls } = labels[state];
   return (
@@ -303,14 +331,15 @@ function ForkConfirmModal({
 }
 
 const section: React.CSSProperties = {
-  marginTop: 16,
-  paddingTop: 12,
-  borderTop: "1px solid var(--border)",
+  // No top border. The rail's surface + the section's own spacing
+  // are enough separation; the divider was creating visual noise in
+  // a column that already segments via empty space.
+  marginTop: 12,
 };
 const sectionHeading: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 11,
   fontWeight: 600,
-  letterSpacing: "0.04em",
+  letterSpacing: "0.06em",
   textTransform: "uppercase",
   color: "var(--text-3)",
   margin: 0,
@@ -320,48 +349,72 @@ const headingRow: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 8,
-  margin: "0 0 8px 0",
+  margin: "0 0 var(--s2, 8px) 0",
 };
-const metaRow: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  margin: "0 0 6px 0",
-  fontSize: 12,
-};
-const flowTag: React.CSSProperties = {
-  padding: "1px 6px",
-  borderRadius: 4,
-  background: "var(--surface-hi)",
-  border: "1px solid var(--border)",
-  color: "var(--text-2)",
-  fontWeight: 600,
-};
-const metaCode: React.CSSProperties = {
-  color: "var(--text-2)",
-  fontSize: 11,
-};
-const actionRow: React.CSSProperties = {
-  display: "flex",
-  gap: 8,
-  alignItems: "center",
-  marginTop: 10,
-};
-const hint: React.CSSProperties = {
-  fontSize: 12,
-  color: "var(--text-2)",
-  margin: "4px 0",
-};
-const forkBadge: React.CSSProperties = {
+const repoLine: React.CSSProperties = {
+  // Explicit "you're linked to X" acknowledgement. The check icon
+  // confirms the connection visually; the repo name reads as the
+  // destination. Sits just under the section heading so the eye
+  // anchors on context before scanning the action affordances.
   display: "inline-flex",
   alignItems: "center",
   gap: 4,
-  padding: "2px 6px",
-  borderRadius: 4,
-  background: "var(--surface-hi)",
-  color: "var(--warning, var(--text-2))",
-  border: "1px solid var(--border)",
+  fontSize: 12,
+  fontFamily: "var(--font-mono)",
+  color: "var(--text-2)",
+  margin: "0 0 var(--s3, 12px) 0",
+  overflowWrap: "anywhere",
+};
+const flowBlock: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 4,
+  margin: "0 0 var(--s2, 8px) 0",
+};
+const flowLabelText: React.CSSProperties = {
+  // Editorial label: small, weighted, no chrome box. Pairs visually
+  // with the section heading rather than competing with the
+  // PublishChip.
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
   fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  color: "var(--text-2)",
+};
+const flowLabelTextWarn: React.CSSProperties = {
+  ...({
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+  } as React.CSSProperties),
+  // Fork is irreversible — surface the cost in the label color
+  // rather than as a duplicate badge next to the button.
+  color: "var(--warn, var(--text-2))",
+};
+const pathLine: React.CSSProperties = {
+  // Inside-repo path only; the linked-repo owner/name is already in
+  // the dialog/header context. Full path lives in the title tooltip
+  // for users who want it.
+  color: "var(--text-2)",
+  fontSize: 11,
+  overflowWrap: "anywhere",
+  lineHeight: 1.5,
+};
+const actionRow: React.CSSProperties = {
+  marginTop: 12,
+};
+const hint: React.CSSProperties = {
+  fontSize: 11,
+  color: "var(--text-3)",
+  lineHeight: 1.5,
+  margin: "0 0 var(--s2, 8px) 0",
 };
 const overlay: React.CSSProperties = {
   position: "fixed",
