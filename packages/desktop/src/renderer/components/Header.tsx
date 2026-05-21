@@ -108,6 +108,14 @@ interface Props {
    * clicks Scan local again) — no auto-fade.
    */
   onViewLocalScan: () => void;
+  /**
+   * Tier-2 (v1.9): per-skill progress count for the in-flight manifest
+   * import. Passes through to the `<ImportIndicator />` chip so it
+   * renders `Importing N/total` instead of the generic
+   * `Importing manifest…`. Null/undefined during the brief window
+   * before the first progress event arrives.
+   */
+  manifestImportProgress?: { completed: number; total: number } | null;
 }
 
 export function Header({
@@ -132,6 +140,7 @@ export function Header({
   localScanState,
   onLocalScan,
   onViewLocalScan,
+  manifestImportProgress,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
   const nextDensity: Density =
@@ -373,6 +382,7 @@ export function Header({
           <ImportIndicator
             importingManifest={importingManifest}
             onCancelImport={onCancelImport}
+            progress={manifestImportProgress ?? null}
           />
           <button
             className="header-trigger account-trigger"

@@ -178,6 +178,44 @@ export interface ImportRegistryManifestResult {
   cancelled?: boolean;
 }
 
+/**
+ * Per-skill progress event fired by `importRegistryManifest` via the
+ * `onProgress` callback. The `completed` count reflects how many of
+ * the manifest's `total` skills have finished processing (registered,
+ * collision, OR origin-unreachable). `currentName` is the skill the
+ * loop is ABOUT to process next; consumers can render it as "Importing
+ * 7/23: foo-skill". `lastError` is set when the prior iteration ended
+ * in failure (origin-unreachable), carrying the same reason message
+ * that landed in the outcomes array.
+ *
+ * The first event of an import fires before any per-skill work starts:
+ * `completed: 0`, `currentName` = the first skill. The final event
+ * fires when the loop exits cleanly with `completed === total` (and
+ * `currentName` set to the last processed skill, retained for the
+ * renderer's terminal state).
+ */
+export interface ManifestImportProgressEvent {
+  completed: number;
+  total: number;
+  currentName: string;
+  lastError?: string;
+  /**
+   * Full ordered list of skill names in the manifest. Sent on the FIRST
+   * progress event of an import so the renderer can pre-render
+   * ghost-card placeholders. Subsequent events omit this field.
+   */
+  manifestNames?: string[];
+  /**
+   * Full manifest skill entries — same payload as
+   * `RegistryManifest.skills`. Sent on the FIRST progress event so
+   * Tier-3 ghost cards have the origin info they need to drive the
+   * per-skill retry action. Renderer-side payload size is
+   * proportional to manifest size; typical manifests (≤100 skills)
+   * remain well under any reasonable wire-format budget.
+   */
+  manifestSkills?: ManifestSkill[];
+}
+
 export interface ImportRegistryManifestOptions {
   /**
    * GitHub OAuth token for mirroring GitHub-origin skills. `null`
@@ -191,6 +229,15 @@ export interface ImportRegistryManifestOptions {
    * the result carries `cancelled: true`.
    */
   signal?: AbortSignal;
+  /**
+   * Optional per-skill progress callback. Fired at the top of each
+   * iteration with the cumulative `completed` count and the
+   * `currentName` about to be processed. First fire of an import
+   * carries `manifestNames` (the full ordered name list) so the
+   * renderer can pre-render Tier-3 ghost cards before any per-skill
+   * mirroring starts. See `ManifestImportProgressEvent`.
+   */
+  onProgress?: (event: ManifestImportProgressEvent) => void;
 }
 
 /**
@@ -225,12 +272,29 @@ export async function importRegistryManifest(
   const outcomes: ImportSkillOutcome[] = [];
   const installHints: { name: string; agents: AgentId[] }[] = [];
   let cancelled = false;
+  const total = v2.skills.length;
+  const manifestNames = v2.skills.map((s) => s.name);
+  let lastError: string | undefined;
 
-  for (const skill of v2.skills) {
+  for (let i = 0; i < v2.skills.length; i++) {
+    const skill = v2.skills[i]!;
     if (opts.signal?.aborted) {
       cancelled = true;
       break;
     }
+    if (opts.onProgress) {
+      opts.onProgress({
+        completed: i,
+        total,
+        currentName: skill.name,
+        ...(lastError ? { lastError } : {}),
+        ...(i === 0 ? { manifestNames, manifestSkills: v2.skills } : {}),
+      });
+    }
+    // Reset per-iteration; only the most recent failure surfaces in
+    // the NEXT iteration's event so the renderer can mark exactly
+    // the offending skill's ghost as errored.
+    lastError = undefined;
     const existing = findSkillFolder(registryRoot, skill.name);
     if (existing) {
       const localOrigin = originFromPointer(
@@ -253,11 +317,13 @@ export async function importRegistryManifest(
         !skill.origin.repo ||
         !skill.origin.skillPath
       ) {
+        const reason = "manifest entry has no GitHub origin pointer";
         outcomes.push({
           name: skill.name,
           result: "origin-unreachable",
-          reason: "manifest entry has no GitHub origin pointer",
+          reason,
         });
+        lastError = `${skill.name}: ${reason}`;
         continue;
       }
       const bucket = skill.source === "user" ? "personal" : "vendored";
@@ -276,6 +342,7 @@ export async function importRegistryManifest(
           result: "origin-unreachable",
           reason: mirror.message,
         });
+        lastError = `${skill.name}: ${mirror.message}`;
         continue;
       }
       stampOriginMarker(destDir, skill, mirror.folderHash);
@@ -289,6 +356,18 @@ export async function importRegistryManifest(
         agents: [...skill.lastInstalledOn],
       });
     }
+  }
+
+  // Final terminal progress event so consumers can flip to a
+  // "done" UI state without polling the result promise.
+  if (opts.onProgress && !cancelled && v2.skills.length > 0) {
+    const lastSkill = v2.skills[v2.skills.length - 1]!;
+    opts.onProgress({
+      completed: outcomes.length,
+      total,
+      currentName: lastSkill.name,
+      ...(lastError ? { lastError } : {}),
+    });
   }
 
   return cancelled

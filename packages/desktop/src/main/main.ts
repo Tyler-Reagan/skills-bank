@@ -34,6 +34,7 @@ import {
   installSkillFromGithub,
   parseGithubSkillUrl,
   writeRegistrySnapshot,
+  type ManifestSkill,
   type RegistryManifest,
   // Phase 5 / publish flow
   classifySkillForPublish,
@@ -2075,6 +2076,12 @@ ipcMain.handle(IPC.importManifest, async () => {
       importResult = await importRegistryManifest(registryRoot, manifest, {
         token: getStoredToken(),
         signal: controller.signal,
+        onProgress: (event) => {
+          for (const win of BrowserWindow.getAllWindows()) {
+            if (!win.isDestroyed())
+              win.webContents.send(IPC.manifestImportProgress, event);
+          }
+        },
       });
     } finally {
       inFlightImportAbort = null;
@@ -2104,6 +2111,46 @@ ipcMain.handle(IPC.importManifestCancel, () => {
   inFlightImportAbort?.abort();
   return { ok: true };
 });
+
+// Tier-3 retry: re-mirror a single skill that errored during a prior
+// import. Wraps the entry in a one-skill manifest so it reuses the
+// full mirror + stamp + aux-state pipeline. No progress events fire —
+// retry is single-shot; renderer awaits the IPC's single outcome.
+ipcMain.handle(
+  IPC.manifestImportRetrySkill,
+  async (_e, skill: ManifestSkill) => {
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    if (!skill || typeof skill !== "object" || typeof skill.name !== "string") {
+      return { ok: false, message: "invalid skill payload" };
+    }
+    const singleManifest: RegistryManifest = {
+      schemaVersion: 2,
+      exportedAt: new Date().toISOString(),
+      sourceBankVersion: app.getVersion(),
+      skills: [skill],
+    };
+    try {
+      const result = await importRegistryManifest(
+        registryRoot,
+        singleManifest,
+        { token: getStoredToken() },
+      );
+      buildRegistryIndex(registryRoot, {
+        includeGitInfo: true,
+        writeFile: true,
+      });
+      snapshotAfterMutation();
+      const outcome = result.outcomes[0];
+      if (!outcome) {
+        return { ok: false, message: "no outcome returned" };
+      }
+      return { ok: true, outcome };
+    } catch (err) {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message };
+    }
+  },
+);
 
 ipcMain.handle(IPC.installFromManifestHint, async (_e, payload: { names: string[]; agents: AgentId[] }) => {
   if (!registryRoot) {

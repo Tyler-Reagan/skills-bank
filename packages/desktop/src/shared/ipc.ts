@@ -12,7 +12,10 @@ import type {
   FinalizeResult,
   ImportRegistryManifestResult,
   InstallFromGithubResult,
+  ImportSkillOutcome,
   InstalledSkill,
+  ManifestImportProgressEvent,
+  ManifestSkill,
   MergeImportReport,
   PublishState,
   RateLimitInfo,
@@ -93,6 +96,8 @@ export const IPC = {
   exportManifest: "bank:exportManifest",
   importManifest: "bank:importManifest",
   importManifestCancel: "bank:importManifestCancel",
+  manifestImportProgress: "bank:manifestImportProgress",
+  manifestImportRetrySkill: "bank:manifestImportRetrySkill",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
   classifySkillForPublish: "publish:classify",
@@ -889,6 +894,29 @@ interface SkillsBankAPI {
   onOriginProbeComplete(
     cb: (event: OriginProbeCompleteEvent) => void,
   ): () => void;
+  /**
+   * Subscribe to per-skill progress events emitted by a running
+   * manifest import. Fires once at the top of each iteration in the
+   * core's per-skill loop. The first event of an import carries
+   * `manifestNames` for Tier-3 ghost-card pre-rendering; subsequent
+   * events update the cumulative `completed` count and surface
+   * per-skill failures via `lastError`. Returns an unsubscribe
+   * function — caller invokes on unmount to detach.
+   */
+  onManifestImportProgress(
+    cb: (event: ManifestImportProgressEvent) => void,
+  ): () => void;
+  /**
+   * Tier-3 retry: re-mirror a single skill that errored during a
+   * manifest import. Wraps the entry in a one-skill manifest and
+   * runs it through `importRegistryManifest` (no progress events
+   * fire — retry is single-shot, the renderer awaits the IPC's
+   * single outcome). Returns the single outcome of that
+   * one-skill import.
+   */
+  manifestImportRetrySkill(
+    skill: ManifestSkill,
+  ): Promise<{ ok: boolean; outcome?: ImportSkillOutcome; message?: string }>;
   originUpdate(name: string): Promise<OriginUpdateResult>;
   originRepoMetadata(repo: string): Promise<OriginRepoMetadata>;
   originLastCommit(

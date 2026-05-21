@@ -152,6 +152,26 @@ const api = {
     ipcRenderer.on(IPC.originProbe, listener);
     return () => ipcRenderer.removeListener(IPC.originProbe, listener);
   },
+  manifestImportRetrySkill: (
+    skill: import("@skills-bank/core").ManifestSkill,
+  ) => ipcRenderer.invoke(IPC.manifestImportRetrySkill, skill),
+  onManifestImportProgress: (
+    cb: (
+      event: import("@skills-bank/core").ManifestImportProgressEvent,
+    ) => void,
+  ) => {
+    const listener = (
+      _e: Electron.IpcRendererEvent,
+      payload: unknown,
+    ): void => {
+      if (payload && typeof payload === "object") {
+        cb(payload as import("@skills-bank/core").ManifestImportProgressEvent);
+      }
+    };
+    ipcRenderer.on(IPC.manifestImportProgress, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC.manifestImportProgress, listener);
+  },
   originUpdate: (name: string) =>
     ipcRenderer.invoke(IPC.originUpdate, name),
   originRepoMetadata: (repo: string) =>
