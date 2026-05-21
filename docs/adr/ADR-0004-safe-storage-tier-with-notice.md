@@ -46,9 +46,9 @@ Implementation outline:
   `config.json` alongside the encrypted token blob.
 - On boot, if `backend === "basic_text"` and the user hasn't already
   dismissed the warning for this storage realm, the renderer
-  surfaces a sticky error toast: *"Your system has no usable keyring
+  surfaces a sticky error toast: _"Your system has no usable keyring
   — the GitHub token is stored with weak encryption. Sign out when
-  you're done."* Toast carries a Sign-out action that routes to the
+  you're done."_ Toast carries a Sign-out action that routes to the
   same handler the account modal uses.
 - Dismissal is persistent (`weakStorageNoticeDismissedFor: <backend>`
   in `config.json`). Re-shown if the backend changes (e.g. user
@@ -67,8 +67,8 @@ Implementation outline:
 - The detection is cheap (one IPC call at boot); the toast is the
   only UI surface.
 - Future hardening (M3 — encrypt device-flow.json) is independent;
-  this ADR governs the *user notice* policy, not the *what gets
-  encrypted* policy.
+  this ADR governs the _user notice_ policy, not the _what gets
+  encrypted_ policy.
 
 ## Re-opening this decision
 

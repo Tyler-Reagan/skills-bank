@@ -1,9 +1,5 @@
 import pc from "picocolors";
-import {
-  getAgent,
-  uninstallSkill,
-  type AgentId,
-} from "@skills-bank/core";
+import { getAgent, uninstallSkill, type AgentId } from "@skills-bank/core";
 
 interface UninstallCmdOptions {
   agent?: string;

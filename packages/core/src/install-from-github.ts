@@ -80,7 +80,10 @@ export async function installSkillFromGithub(
   // their canonical names; the rename case is uncommon but handled
   // for correctness.)
   const provisionalName =
-    folderPath.split("/").filter((s) => s.length > 0).pop() ?? "skill";
+    folderPath
+      .split("/")
+      .filter((s) => s.length > 0)
+      .pop() ?? "skill";
 
   const existing = findSkillFolder(opts.registryRoot, provisionalName);
   if (existing) {
@@ -147,12 +150,7 @@ export async function installSkillFromGithub(
         existingDir: collide.dir,
       };
     }
-    const renamed = path.join(
-      opts.registryRoot,
-      "skills",
-      bucket,
-      meta.name,
-    );
+    const renamed = path.join(opts.registryRoot, "skills", bucket, meta.name);
     fs.renameSync(destDir, renamed);
     finalName = meta.name;
     finalDir = renamed;

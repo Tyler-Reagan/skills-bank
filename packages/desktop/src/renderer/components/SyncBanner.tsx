@@ -60,9 +60,7 @@ export function SyncBanner({
     // "no longer in source repo" describes the state without implying a
     // pending action.
     if (status.orphaned > 0)
-      parts.push(
-        `${status.orphaned} no longer in source repo`,
-      );
+      parts.push(`${status.orphaned} no longer in source repo`);
     if (parts.length === 0) parts.push("already up to date");
     return (
       <div className="sync-banner done" role="status">

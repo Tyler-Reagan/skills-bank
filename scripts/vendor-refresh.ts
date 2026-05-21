@@ -73,7 +73,12 @@ function parseArgs(): Args {
         console.error("--only requires a comma-separated list of skill names");
         process.exit(1);
       }
-      out.only = new Set(v.split(",").map((s) => s.trim()).filter(Boolean));
+      out.only = new Set(
+        v
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      );
     } else if (a === "--help" || a === "-h") {
       console.log(
         "usage: pnpm vendor:refresh [--apply] [--only name1,name2] [--json]",

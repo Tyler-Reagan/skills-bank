@@ -40,10 +40,13 @@ function treeResponse(folder: string, files: string[]): Response {
       sha: `blob${i + 1}`,
     })),
   ];
-  return new Response(JSON.stringify({ sha: "rootsha", tree, truncated: false }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ sha: "rootsha", tree, truncated: false }),
+    {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    },
+  );
 }
 
 function blobResponse(content: string): Response {
@@ -63,7 +66,8 @@ describe("installSkillFromGithub", () => {
       "fetch",
       vi.fn(async () => {
         call++;
-        if (call === 1) return treeResponse("skills/alpha", ["SKILL.md", "meta.json"]);
+        if (call === 1)
+          return treeResponse("skills/alpha", ["SKILL.md", "meta.json"]);
         if (call === 2) return blobResponse("# alpha");
         if (call === 3)
           return blobResponse(
@@ -102,9 +106,7 @@ describe("installSkillFromGithub", () => {
     expect(marker.origin.skillFolderHash).toBe("foldersha");
     // Synced-hash sidecar baselined.
     expect(
-      fs
-        .readFileSync(path.join(destDir, ".skills-bank-hash"), "utf8")
-        .trim(),
+      fs.readFileSync(path.join(destDir, ".skills-bank-hash"), "utf8").trim(),
     ).toBe("foldersha");
   });
 
@@ -133,7 +135,13 @@ describe("installSkillFromGithub", () => {
     expect(r.bucket).toBe("vendored");
     const marker = JSON.parse(
       fs.readFileSync(
-        path.join(registryRoot, "skills", "vendored", "beta", ".skills-bank.json"),
+        path.join(
+          registryRoot,
+          "skills",
+          "vendored",
+          "beta",
+          ".skills-bank.json",
+        ),
         "utf8",
       ),
     ) as { source: string };
@@ -142,10 +150,9 @@ describe("installSkillFromGithub", () => {
 
   test("name-collision before fetch: refuses, no mirror attempted", async () => {
     // Pre-existing skill in personal/.
-    fs.mkdirSync(
-      path.join(registryRoot, "skills", "personal", "alpha"),
-      { recursive: true },
-    );
+    fs.mkdirSync(path.join(registryRoot, "skills", "personal", "alpha"), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(registryRoot, "skills", "personal", "alpha", "SKILL.md"),
       "# pre-existing",

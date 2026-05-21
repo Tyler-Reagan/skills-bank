@@ -26,7 +26,10 @@ beforeEach(() => {
   // Mirror the real meta-schema into the scratch registry so AJV
   // validation kicks in the same way it does in production.
   fs.mkdirSync(path.join(registryRoot, "docs"), { recursive: true });
-  fs.copyFileSync(realSchemaPath, path.join(registryRoot, "docs", "meta-schema.json"));
+  fs.copyFileSync(
+    realSchemaPath,
+    path.join(registryRoot, "docs", "meta-schema.json"),
+  );
 });
 
 afterEach(() => {
@@ -103,11 +106,7 @@ describe("buildRegistryIndex — description warning convergence", () => {
     );
     fs.writeFileSync(
       path.join(dir, "meta.json"),
-      JSON.stringify(
-        { name: "GAMMA-UPPERCASE", description: "ok" },
-        null,
-        2,
-      ),
+      JSON.stringify({ name: "GAMMA-UPPERCASE", description: "ok" }, null, 2),
     );
 
     const index = buildRegistryIndex(registryRoot);

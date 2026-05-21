@@ -171,7 +171,10 @@ function validateSourceFolder(
 // source-side `.skills-bank.json` / `.skills-bank-hash` sidecars —
 // those are install-state markers that don't belong in the bank
 // copy.
-function syncFolder(src: string, dest: string): { copied: number; removed: number } {
+function syncFolder(
+  src: string,
+  dest: string,
+): { copied: number; removed: number } {
   let removed = 0;
   if (fs.existsSync(dest)) {
     // Preserve `.skills-bank.json` and `.skills-bank-hash` on the

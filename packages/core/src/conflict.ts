@@ -16,10 +16,7 @@ import type { ConflictDecision } from "./sync.js";
  * callers — this helper only resolves the on-disk preparation step.
  */
 
-export function resolveRenameTarget(
-  skillsDir: string,
-  name: string,
-): string {
+export function resolveRenameTarget(skillsDir: string, name: string): string {
   const base = `${name}-local`;
   if (!fs.existsSync(path.join(skillsDir, base))) return base;
   for (let i = 2; i < 1000; i++) {

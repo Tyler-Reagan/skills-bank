@@ -48,7 +48,10 @@ export function parseGithubSkillUrl(
     };
   }
 
-  if (parsed.hostname !== "github.com" && parsed.hostname !== "www.github.com") {
+  if (
+    parsed.hostname !== "github.com" &&
+    parsed.hostname !== "www.github.com"
+  ) {
     return {
       kind: "not-github",
       message:
@@ -125,7 +128,9 @@ export function parseGithubSkillUrl(
   // Folder URL — canonicalize to <path>/SKILL.md.
   return {
     repo,
-    skillPath: rawPath.endsWith("/") ? `${rawPath}SKILL.md` : `${rawPath}/SKILL.md`,
+    skillPath: rawPath.endsWith("/")
+      ? `${rawPath}SKILL.md`
+      : `${rawPath}/SKILL.md`,
     ref,
   };
 }

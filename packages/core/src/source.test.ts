@@ -62,10 +62,7 @@ describe("readSkillSource — Phase 2 tolerant-read", () => {
   });
 
   test("malformed JSON degrades to `user`", () => {
-    fs.writeFileSync(
-      path.join(scratch, SKILL_SOURCE_FILENAME),
-      "{ not json",
-    );
+    fs.writeFileSync(path.join(scratch, SKILL_SOURCE_FILENAME), "{ not json");
     expect(readSkillSource(scratch).source).toBe("user");
   });
 

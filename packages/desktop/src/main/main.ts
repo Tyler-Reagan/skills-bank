@@ -486,9 +486,7 @@ async function runUpstreamProbe(): Promise<OriginProbeResult> {
   return probeRunner.run();
 }
 
-function notifyProbeComplete(
-  event: OriginProbeCompleteEvent = {},
-): void {
+function notifyProbeComplete(event: OriginProbeCompleteEvent = {}): void {
   // Re-emit through the runner's onComplete so empty refresh nudges
   // and probe results follow the same channel.
   if (Object.keys(event).length === 0) {
@@ -613,15 +611,14 @@ async function getRepoMetadata(repo: string): Promise<OriginRepoMetadata> {
       default_branch?: string;
     };
     const metadata: OriginRepoMetadata = {
-      stars: typeof body.stargazers_count === "number"
-        ? body.stargazers_count
-        : null,
-      description: typeof body.description === "string"
-        ? body.description
-        : null,
-      defaultBranch: typeof body.default_branch === "string"
-        ? body.default_branch
-        : null,
+      stars:
+        typeof body.stargazers_count === "number"
+          ? body.stargazers_count
+          : null,
+      description:
+        typeof body.description === "string" ? body.description : null,
+      defaultBranch:
+        typeof body.default_branch === "string" ? body.default_branch : null,
     };
     repoMetadataCache.set(repo, { metadata, fetchedAt: Date.now() });
     return metadata;
@@ -692,12 +689,14 @@ async function getLastCommit(
     const message = top.commit?.message;
     const commit: OriginLastCommit = {
       sha: typeof top.sha === "string" ? top.sha : null,
-      date: typeof top.commit?.author?.date === "string"
-        ? top.commit.author.date
-        : null,
-      message: typeof message === "string"
-        ? message.split("\n")[0]?.slice(0, 120) ?? null
-        : null,
+      date:
+        typeof top.commit?.author?.date === "string"
+          ? top.commit.author.date
+          : null,
+      message:
+        typeof message === "string"
+          ? (message.split("\n")[0]?.slice(0, 120) ?? null)
+          : null,
     };
     lastCommitCache.set(key, { commit, fetchedAt: Date.now() });
     return commit;
@@ -1389,7 +1388,6 @@ ipcMain.handle(
   },
 );
 
-
 mutatingHandle(
   IPC.install,
   (_e, name: string, force?: boolean, agents?: AgentId[]) => {
@@ -2055,7 +2053,11 @@ ipcMain.handle(IPC.importManifest, async () => {
       manifest = JSON.parse(raw) as RegistryManifest;
     } catch (parseErr) {
       const error = fromCaught("ipc.unknown", parseErr);
-      return { ok: false, message: `Invalid manifest JSON: ${error.message}`, error };
+      return {
+        ok: false,
+        message: `Invalid manifest JSON: ${error.message}`,
+        error,
+      };
     }
     // Accept v1 (auto-migrated by importRegistryManifest) and v2.
     // Newer schemaVersions are refused so a future-incompatible
@@ -2091,12 +2093,22 @@ ipcMain.handle(IPC.importManifest, async () => {
     // freshly registered skills without a manual refresh.
     buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
     snapshotAfterMutation();
-    const registered = importResult.outcomes.filter((o) => o.result === "registered").length;
-    const collisions = importResult.outcomes.filter((o) => o.result === "collision").length;
-    const unreachable = importResult.outcomes.filter((o) => o.result === "origin-unreachable").length;
+    const registered = importResult.outcomes.filter(
+      (o) => o.result === "registered",
+    ).length;
+    const collisions = importResult.outcomes.filter(
+      (o) => o.result === "collision",
+    ).length;
+    const unreachable = importResult.outcomes.filter(
+      (o) => o.result === "origin-unreachable",
+    ).length;
     const parts = [`${registered} restored`];
-    if (collisions > 0) parts.push(`${collisions} collision${collisions === 1 ? "" : "s"}`);
-    if (unreachable > 0) parts.push(`${unreachable} unreachable origin${unreachable === 1 ? "" : "s"}`);
+    if (collisions > 0)
+      parts.push(`${collisions} collision${collisions === 1 ? "" : "s"}`);
+    if (unreachable > 0)
+      parts.push(
+        `${unreachable} unreachable origin${unreachable === 1 ? "" : "s"}`,
+      );
     return {
       ok: true,
       message: parts.join(", "),
@@ -2153,46 +2165,58 @@ ipcMain.handle(
   },
 );
 
-ipcMain.handle(IPC.installFromManifestHint, async (_e, payload: { names: string[]; agents: AgentId[] }) => {
-  if (!registryRoot) {
-    return { ok: false, message: NO_ROOT_MSG, installedCount: 0, errors: [NO_ROOT_MSG] };
-  }
-  const names = Array.isArray(payload?.names) ? payload.names : [];
-  const agents = Array.isArray(payload?.agents) ? payload.agents : [];
-  const errors: string[] = [];
-  let installedCount = 0;
-  for (const name of names) {
-    try {
-      const r = installSkill(name, {
-        registryRoot,
-        agents,
-      });
-      if (r.anyNew) installedCount++;
-      for (const e of r.errors) {
-        errors.push(`${name} → ${e.agent}: ${e.message}`);
-      }
-    } catch (err) {
-      errors.push(`${name}: ${(err as Error).message}`);
+ipcMain.handle(
+  IPC.installFromManifestHint,
+  async (_e, payload: { names: string[]; agents: AgentId[] }) => {
+    if (!registryRoot) {
+      return {
+        ok: false,
+        message: NO_ROOT_MSG,
+        installedCount: 0,
+        errors: [NO_ROOT_MSG],
+      };
     }
-  }
-  snapshotAfterMutation();
-  return {
-    ok: errors.length === 0,
-    message:
-      installedCount > 0
-        ? `Installed ${installedCount} skill${installedCount === 1 ? "" : "s"} across ${agents.length} agent${agents.length === 1 ? "" : "s"}.`
-        : `No new installs (${errors.length} error${errors.length === 1 ? "" : "s"}).`,
-    installedCount,
-    errors,
-  };
-});
+    const names = Array.isArray(payload?.names) ? payload.names : [];
+    const agents = Array.isArray(payload?.agents) ? payload.agents : [];
+    const errors: string[] = [];
+    let installedCount = 0;
+    for (const name of names) {
+      try {
+        const r = installSkill(name, {
+          registryRoot,
+          agents,
+        });
+        if (r.anyNew) installedCount++;
+        for (const e of r.errors) {
+          errors.push(`${name} → ${e.agent}: ${e.message}`);
+        }
+      } catch (err) {
+        errors.push(`${name}: ${(err as Error).message}`);
+      }
+    }
+    snapshotAfterMutation();
+    return {
+      ok: errors.length === 0,
+      message:
+        installedCount > 0
+          ? `Installed ${installedCount} skill${installedCount === 1 ? "" : "s"} across ${agents.length} agent${agents.length === 1 ? "" : "s"}.`
+          : `No new installs (${errors.length} error${errors.length === 1 ? "" : "s"}).`,
+      installedCount,
+      errors,
+    };
+  },
+);
 
 // Phase 4 (v1.5): one-shot install from a pasted GitHub URL.
 // Parses the URL, composes the core install primitive, rebuilds
 // the registry index so the new skill is immediately visible.
 mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
   if (!registryRoot) {
-    return { ok: false, reason: "no-registry-root", message: NO_ROOT_MSG } as const;
+    return {
+      ok: false,
+      reason: "no-registry-root",
+      message: NO_ROOT_MSG,
+    } as const;
   }
   const parsed = parseGithubSkillUrl(url);
   if ("kind" in parsed) {
@@ -2975,9 +2999,10 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
       );
       if (report.upserted.length === 0 && report.conflicts.length === 0) {
         broadcastSyncStatus({ kind: "idle" });
-        const detail = (report.discoveryCollisions ?? []).length > 0
-          ? ` (${report.discoveryCollisions!.length} name collision${report.discoveryCollisions!.length === 1 ? "" : "s"} in the source tree)`
-          : "";
+        const detail =
+          (report.discoveryCollisions ?? []).length > 0
+            ? ` (${report.discoveryCollisions!.length} name collision${report.discoveryCollisions!.length === 1 ? "" : "s"} in the source tree)`
+            : "";
         return {
           ok: false,
           message: `${fullName} has no skills the app can recognize${detail}. A skill folder needs a SKILL.md or meta.json.`,
@@ -3070,17 +3095,14 @@ mutatingHandle(IPC.removeBrokenLinks, (_e, name: string, agents: AgentId[]) => {
   return removeBrokenLinks(registryRoot, name, agents);
 });
 
-ipcMain.handle(
-  IPC.localDiagnosticsScan,
-  (_e, customDirs?: string[]) => {
-    if (!registryRoot) {
-      return { items: [], scannedAt: new Date().toISOString() };
-    }
-    return scanLocalDiagnostics(registryRoot, {
-      ...(customDirs ? { customSkillsDirs: customDirs } : {}),
-    });
-  },
-);
+ipcMain.handle(IPC.localDiagnosticsScan, (_e, customDirs?: string[]) => {
+  if (!registryRoot) {
+    return { items: [], scannedAt: new Date().toISOString() };
+  }
+  return scanLocalDiagnostics(registryRoot, {
+    ...(customDirs ? { customSkillsDirs: customDirs } : {}),
+  });
+});
 
 mutatingHandle(
   IPC.resolveSkillConflicts,
@@ -3310,10 +3332,7 @@ ipcMain.handle(IPC.classifySkillForPublish, async (_e, name: string) => {
   }
   const states = await getCachedPublishStates();
   const publishState = states.get(name) ?? "unknown";
-  const existingPersonal = findSkillFolder(
-    registryRoot,
-    name,
-  );
+  const existingPersonal = findSkillFolder(registryRoot, name);
   const personalNameInUse =
     !!existingPersonal && existingPersonal.bucket === "personal";
   const flow = classifySkillForPublish({

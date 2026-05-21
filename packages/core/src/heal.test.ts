@@ -168,7 +168,9 @@ describe("runtime state sidecar (.skills-bank-runtime.json)", () => {
 
   test("write + read round-trips fetchedAt", () => {
     fs.mkdirSync(path.join(scratch, "a"), { recursive: true });
-    writeRuntimeState(path.join(scratch, "a"), { fetchedAt: "2026-05-18T12:00:00Z" });
+    writeRuntimeState(path.join(scratch, "a"), {
+      fetchedAt: "2026-05-18T12:00:00Z",
+    });
     expect(readRuntimeState(path.join(scratch, "a"))).toEqual({
       fetchedAt: "2026-05-18T12:00:00Z",
     });
@@ -232,10 +234,7 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
         fetchedAt: "2026-05-18T12:00:00Z",
       },
     });
-    const first = fs.readFileSync(
-      path.join(dir, ".skills-bank.json"),
-      "utf8",
-    );
+    const first = fs.readFileSync(path.join(dir, ".skills-bank.json"), "utf8");
     writeSkillSource(dir, {
       source: "curated",
       origin: {
@@ -245,10 +244,7 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
         fetchedAt: "2026-05-18T22:33:44Z", // fresh wall-clock
       },
     });
-    const second = fs.readFileSync(
-      path.join(dir, ".skills-bank.json"),
-      "utf8",
-    );
+    const second = fs.readFileSync(path.join(dir, ".skills-bank.json"), "utf8");
     expect(first).toBe(second);
   });
 

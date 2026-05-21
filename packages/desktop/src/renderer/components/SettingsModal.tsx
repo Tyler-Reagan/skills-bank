@@ -245,7 +245,13 @@ export function SettingsModal({
             API call per skill — heavy registries can pressure your rate-limit
             budget, so it's off by default.
           </p>
-          <label style={{ ...checkboxRow, marginTop: 8, opacity: isAuthed ? 1 : 0.5 }}>
+          <label
+            style={{
+              ...checkboxRow,
+              marginTop: 8,
+              opacity: isAuthed ? 1 : 0.5,
+            }}
+          >
             <input
               type="checkbox"
               checked={draft.showOriginActivity && isAuthed}
@@ -326,11 +332,10 @@ export function SettingsModal({
         <section style={section}>
           <h3 style={sectionTitle}>Install a skill from GitHub</h3>
           <p style={hint}>
-            Paste a GitHub folder URL (or a SKILL.md blob URL) and the
-            app fetches the skill directly into your bank — no terminal,
-            no npx. The skill lands as <code>source: user</code> with its
-            origin stamped, so future updates flow through the standard
-            update path.
+            Paste a GitHub folder URL (or a SKILL.md blob URL) and the app
+            fetches the skill directly into your bank — no terminal, no npx. The
+            skill lands as <code>source: user</code> with its origin stamped, so
+            future updates flow through the standard update path.
           </p>
           <button
             className="btn"

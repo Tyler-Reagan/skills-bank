@@ -51,10 +51,7 @@ export type ForkSkillResult =
  * the caller (typically the Publish IPC handler) maps the variants
  * to user-facing surfaces.
  */
-export function forkSkill(
-  registryRoot: string,
-  name: string,
-): ForkSkillResult {
+export function forkSkill(registryRoot: string, name: string): ForkSkillResult {
   // Step 1 — input validation. Direct fs checks against each
   // bucket so a cross-bucket-collision state (both vendored AND
   // personal have the name — pathological, but possible if a prior
@@ -62,18 +59,8 @@ export function forkSkill(
   // SkillNameCollisionError. Order: vendored existence →
   // not-vendored (personal-only) → personal collision → origin
   // pointer. Each pre-check is bucket-local + cheap.
-  const vendoredDir = path.join(
-    registryRoot,
-    "skills",
-    "vendored",
-    name,
-  );
-  const personalDest = path.join(
-    registryRoot,
-    "skills",
-    "personal",
-    name,
-  );
+  const vendoredDir = path.join(registryRoot, "skills", "vendored", name);
+  const personalDest = path.join(registryRoot, "skills", "personal", name);
   const vendoredExists = fs.existsSync(vendoredDir);
   const personalExists = fs.existsSync(personalDest);
 
@@ -111,11 +98,7 @@ export function forkSkill(
   // Step 2 — scratch-dir population. Lives under the gitignored
   // .skills-bank/ root so a partial copy can never accidentally
   // leak into source control.
-  const scratchRoot = path.join(
-    registryRoot,
-    ".skills-bank",
-    "scratch",
-  );
+  const scratchRoot = path.join(registryRoot, ".skills-bank", "scratch");
   const scratchDir = path.join(
     scratchRoot,
     `fork-${crypto.randomBytes(8).toString("hex")}`,

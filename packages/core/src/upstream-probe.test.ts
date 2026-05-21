@@ -80,11 +80,7 @@ describe("recordProbeFailure / recordProbeSuccess", () => {
 
   test("success on a zero counter does not write to disk", () => {
     // No prior failures — no sidecar should exist.
-    const sidecar = path.join(
-      scratch,
-      skillPath,
-      ".skills-bank-runtime.json",
-    );
+    const sidecar = path.join(scratch, skillPath, ".skills-bank-runtime.json");
     expect(fs.existsSync(sidecar)).toBe(false);
 
     recordProbeSuccess(scratch, { path: skillPath });

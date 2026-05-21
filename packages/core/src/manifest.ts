@@ -1,10 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-  AGENTS,
-  getAgentSkillsDir,
-  type AgentId,
-} from "./agents.js";
+import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
 import { buildRegistryIndex } from "./build.js";
 import { writeSyncedHash } from "./heal.js";
 import { hideCanonSkill } from "./hide.js";
@@ -15,10 +11,7 @@ import {
   type OriginPointer,
   type SkillOrigin,
 } from "./source.js";
-import {
-  folderPathFromSkillPath,
-  mirrorSkillFolder,
-} from "./upstream.js";
+import { folderPathFromSkillPath, mirrorSkillFolder } from "./upstream.js";
 
 /**
  * v1.1 Registry manifest (Phase 1 of the curation-layer-reset plan).
@@ -381,7 +374,10 @@ function stampOriginMarker(
   folderHash: string,
 ): void {
   if (skill.origin.kind !== "github") {
-    writeSkillSource(destDir, { source: skill.source, origin: { kind: "none" } });
+    writeSkillSource(destDir, {
+      source: skill.source,
+      origin: { kind: "none" },
+    });
     return;
   }
   const origin: OriginPointer = {

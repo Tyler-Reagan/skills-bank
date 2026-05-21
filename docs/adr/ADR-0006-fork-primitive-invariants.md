@@ -96,7 +96,7 @@ the user resolves explicitly).
 
 `forkSkill` returns `{ ok: false, reason: "no-origin" }` for skills
 without an origin pointer in their source marker. Fork is
-*specifically* the origin-unlinking operation; it is not a generic
+_specifically_ the origin-unlinking operation; it is not a generic
 "convert to yours" helper or "move bucket" helper.
 
 This keeps the contract narrow and testable: one shape of input

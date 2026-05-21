@@ -163,12 +163,12 @@ The CLI no longer exposes these four commands:
 
 Each is kept as a hidden redirect-stub that prints a one-line pointer to the in-app equivalent and exits with code 2 — scripts calling them surface the change loudly rather than silently no-op'ing.
 
-| Removed CLI | Where the operation lives now |
-|---|---|
-| `import` | **Register existing skills** (desktop app) — or Account → Import a registry for a manifest |
-| `export` | **Account → Export current registry** (desktop app) |
-| `finalize` | **Settings → Collapse symlinked agent dirs** (desktop app) |
-| `sync-installed` | Automatic — the app rewires installations on its own; no CLI equivalent |
+| Removed CLI      | Where the operation lives now                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `import`         | **Register existing skills** (desktop app) — or Account → Import a registry for a manifest |
+| `export`         | **Account → Export current registry** (desktop app)                                        |
+| `finalize`       | **Settings → Collapse symlinked agent dirs** (desktop app)                                 |
+| `sync-installed` | Automatic — the app rewires installations on its own; no CLI equivalent                    |
 
 ### Changed
 
@@ -270,7 +270,7 @@ Phase 3 of the post-v1.0 roadmap ([bank-mode-persistence](docs/plans/bank-mode-p
 
 ### Compatibility
 
-No new IPC channels. No new on-disk schema changes beyond the gitignored runtime sidecar's new fields (backward-compatible defaults). No cache layer; the local content under `skills/.../<name>/` *is* the cache by virtue of v1.2's discovery mount.
+No new IPC channels. No new on-disk schema changes beyond the gitignored runtime sidecar's new fields (backward-compatible defaults). No cache layer; the local content under `skills/.../<name>/` _is_ the cache by virtue of v1.2's discovery mount.
 
 ### Phase 4 inheritance
 
@@ -423,7 +423,7 @@ origin-rename deprecation cycle (SDK-surface change).
 - **SDK surface — v0.11.10 origin-rename deprecation cycle closed.** All
   `@deprecated` `Upstream*` aliases introduced in v0.11.10 have been removed.
   Consumers of `@skills-bank/core` that reached for any of the following
-  must migrate to the canonical Origin* names:
+  must migrate to the canonical Origin\* names:
   - `UPSTREAM_KIND_GITHUB` → `ORIGIN_KIND_GITHUB`
   - `UpstreamKind` → `OriginKind`
   - `UpstreamPointer` → `OriginPointer`
@@ -437,8 +437,8 @@ origin-rename deprecation cycle (SDK-surface change).
   - `UpstreamManualChoice` / `UpstreamProbeCompleteEvent` /
     `UpstreamProbeResult` / `UpstreamRepoMetadata` / `UpstreamLastCommit`
     → respective `Origin*` names
-  Per CLAUDE.md's "post-1.0 backcompat-conscious" policy, the aliases shipped
-  with `@deprecated` re-exports through v1.0.x; v1.1.0 cuts them.
+    Per CLAUDE.md's "post-1.0 backcompat-conscious" policy, the aliases shipped
+    with `@deprecated` re-exports through v1.0.x; v1.1.0 cuts them.
 
 ### Fixed
 
@@ -473,10 +473,10 @@ origin-rename deprecation cycle (SDK-surface change).
   `.skills-bank.json` as the new canonical state; drift detection then
   treats the broken state as "the new normal." Fix: `applyOriginUpdate`
   now stashes the pre-mirror skill folder to a scratch dir, runs synthesis
-  + `validateSkillMeta` after mirror, and restores from scratch if
-  validation fails. The Update result surfaces the specific Ajv error
-  messages so the user knows what's wrong upstream.
-  ([bug report](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/bug-reports/2026-05-19-origin-update-missing-validation.md))
+  - `validateSkillMeta` after mirror, and restores from scratch if
+    validation fails. The Update result surfaces the specific Ajv error
+    messages so the user knows what's wrong upstream.
+    ([bug report](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/bug-reports/2026-05-19-origin-update-missing-validation.md))
 
 ### Removed
 
@@ -563,7 +563,7 @@ stability for `packages/core` and the IPC surface.
 - **Account header avatar no longer fails to load.** CSP `img-src` was implicit
   `default-src 'self'`, blocking the GitHub avatar fetched from
   `avatars.githubusercontent.com`. Explicit `img-src 'self' data:
-  https://avatars.githubusercontent.com` allows it.
+https://avatars.githubusercontent.com` allows it.
 
 ### Carried forward
 

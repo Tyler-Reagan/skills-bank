@@ -56,10 +56,7 @@ export function readSkillRecord(skillDir: string): SkillRecord {
  * runtime sidecar" reads better than "I'm writing the whole record
  * but only changed runtime").
  */
-export function writeSkillRecord(
-  skillDir: string,
-  record: SkillRecord,
-): void {
+export function writeSkillRecord(skillDir: string, record: SkillRecord): void {
   writeSkillSource(skillDir, record.source);
   if (record.syncedHash !== null) {
     writeSyncedHash(skillDir, record.syncedHash);

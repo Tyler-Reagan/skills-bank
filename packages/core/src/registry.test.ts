@@ -81,8 +81,9 @@ describe("readSkillMdFrontmatter — block scalars", () => {
 
   test("chomp indicator (`|-`) parses and strips trailing blank lines", () => {
     const dir = writeSkillMd(
-      ["---", "name: chomp", "description: |-", "  body", "", "---"].join("\n") +
+      ["---", "name: chomp", "description: |-", "  body", "", "---"].join(
         "\n",
+      ) + "\n",
     );
     const fm = readSkillMdFrontmatter(dir);
     expect(fm!["description"]).toBe("body");

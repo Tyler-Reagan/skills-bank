@@ -111,17 +111,13 @@ interface FindResult {
 async function npxFind(name: string): Promise<FindResult[]> {
   let stdout: string;
   try {
-    const r = await execFileAsync(
-      "npx",
-      ["-y", "skills", "find", name],
-      {
-        // Empty stdin so the CLI's interactive prompt short-circuits.
-        input: "",
-        timeout: 30_000,
-        // The CLI emits ANSI; we strip below. `FORCE_COLOR=0` would also
-        // work but is brittler across versions.
-      } as Parameters<typeof execFileAsync>[2],
-    );
+    const r = await execFileAsync("npx", ["-y", "skills", "find", name], {
+      // Empty stdin so the CLI's interactive prompt short-circuits.
+      input: "",
+      timeout: 30_000,
+      // The CLI emits ANSI; we strip below. `FORCE_COLOR=0` would also
+      // work but is brittler across versions.
+    } as Parameters<typeof execFileAsync>[2]);
     stdout = r.stdout;
   } catch (err) {
     // Some `find` invocations exit non-zero when there are no matches.
@@ -165,11 +161,12 @@ function pickMatch(
   return exact[0]!;
 }
 
-type ProbeTree = ReturnType<typeof probeOriginTree> extends Promise<infer R>
-  ? R extends { ok: true; tree: infer T }
-    ? T
-    : never
-  : never;
+type ProbeTree =
+  ReturnType<typeof probeOriginTree> extends Promise<infer R>
+    ? R extends { ok: true; tree: infer T }
+      ? T
+      : never
+    : never;
 
 /**
  * Locate the SKILL.md path for `skillId` within the repo's tree.
@@ -279,7 +276,12 @@ async function discoverPhase(): Promise<CandidateMap> {
       continue;
     }
 
-    const skillPath = await findSkillPath(repo, probe.tree, best.skillId, token);
+    const skillPath = await findSkillPath(
+      repo,
+      probe.tree,
+      best.skillId,
+      token,
+    );
     if (!skillPath) {
       process.stderr.write(`SKILL.md not located in tree\n`);
       unresolved.push(name);

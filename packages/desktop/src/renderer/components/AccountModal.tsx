@@ -75,8 +75,7 @@ export function AccountModal({
   const user = authStatus?.user ?? null;
   const linkedRepo = authStatus?.linkedRepo ?? null;
   const isAuthed = Boolean(user);
-  const isBundledDefault =
-    !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
+  const isBundledDefault = !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
   const linkedLabel = isBundledDefault
     ? `Bundled (${BUNDLED_REPO})`
     : `github.com/${linkedRepo!.fullName}`;
@@ -218,8 +217,8 @@ export function AccountModal({
             Two shapes you can move between machines. <strong>Content</strong>{" "}
             moves the entire skills tree — drop-in restore, no network needed.{" "}
             <strong>Manifest</strong> moves a JSON snapshot of origin pointers;
-            on import each skill is re-fetched from its origin, so transfers
-            are tiny but require the origins to still be reachable.
+            on import each skill is re-fetched from its origin, so transfers are
+            tiny but require the origins to still be reachable.
           </p>
 
           <div style={subGroupHeader}>
@@ -272,11 +271,7 @@ export function AccountModal({
               )}
             </button>
             {importingManifest && (
-              <button
-                className="btn"
-                type="button"
-                onClick={onCancelImport}
-              >
+              <button className="btn" type="button" onClick={onCancelImport}>
                 Cancel import
               </button>
             )}

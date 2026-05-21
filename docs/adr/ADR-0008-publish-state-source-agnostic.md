@@ -77,14 +77,12 @@ export function computePublishStatesFromGit(
   registryRoot: string,
 ): Map<string, PublishState>;
 
-export function computePublishStatesFromRemote(
-  opts: {
-    registryRoot: string;
-    repo: string;          // "owner/name" of the linked repo
-    token: string | null;
-    baseBranch?: string;   // defaults to "main"
-  },
-): Promise<Map<string, PublishState>>;
+export function computePublishStatesFromRemote(opts: {
+  registryRoot: string;
+  repo: string; // "owner/name" of the linked repo
+  token: string | null;
+  baseBranch?: string; // defaults to "main"
+}): Promise<Map<string, PublishState>>;
 
 export type PublishStateMode =
   | { kind: "git" }
@@ -93,7 +91,7 @@ export type PublishStateMode =
 export function detectPublishStateMode(
   registryRoot: string,
   ctx: { linkedRepo: LinkedRepoMetadata | null; token: string | null },
-): PublishStateMode | null;  // null when neither mode is viable
+): PublishStateMode | null; // null when neither mode is viable
 ```
 
 `detectPublishStateMode` is the single place that decides which path

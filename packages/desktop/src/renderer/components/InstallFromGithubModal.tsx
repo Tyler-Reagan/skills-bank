@@ -100,9 +100,9 @@ export function InstallFromGithubModal({
           </button>
         </div>
         <p style={hint}>
-          Paste a GitHub URL pointing at a skill folder (or its SKILL.md
-          file). The app fetches the folder, registers the skill in your
-          bank, and stamps the origin so future Updates work.
+          Paste a GitHub URL pointing at a skill folder (or its SKILL.md file).
+          The app fetches the folder, registers the skill in your bank, and
+          stamps the origin so future Updates work.
         </p>
         <p style={{ ...hint, fontSize: 11, color: "var(--text-3)" }}>
           Examples:

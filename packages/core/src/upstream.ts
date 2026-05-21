@@ -114,9 +114,10 @@ export async function probeOriginTree(
     if (res.status === 403 && remainingHdr === "0") {
       const limit = Number(res.headers.get("x-ratelimit-limit") ?? "0") || 60;
       const resetEpoch = Number(res.headers.get("x-ratelimit-reset") ?? "0");
-      const resetAt = resetEpoch > 0
-        ? new Date(resetEpoch * 1000).toISOString()
-        : new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      const resetAt =
+        resetEpoch > 0
+          ? new Date(resetEpoch * 1000).toISOString()
+          : new Date(Date.now() + 60 * 60 * 1000).toISOString();
       const unauthenticated = !token;
       return {
         ok: false,
@@ -355,9 +356,7 @@ export interface OriginUpdateResultErr {
   diagnostic?: string;
 }
 
-export type OriginUpdateResult =
-  | OriginUpdateResultOk
-  | OriginUpdateResultErr;
+export type OriginUpdateResult = OriginUpdateResultOk | OriginUpdateResultErr;
 
 export interface OriginUpdateContext {
   registryRoot: string;
@@ -376,9 +375,8 @@ export async function applyOriginUpdate(
   // dependency graph that buildRegistryIndex pulls in.
   const { buildRegistryIndex } = await import("./build.js");
   const { readSkillSource, writeSkillSource } = await import("./source.js");
-  const { hashSkillFolder, writeRuntimeState, writeSyncedHash } = await import(
-    "./heal.js"
-  );
+  const { hashSkillFolder, writeRuntimeState, writeSyncedHash } =
+    await import("./heal.js");
   const path = await import("node:path");
 
   const index = buildRegistryIndex(ctx.registryRoot);
@@ -416,11 +414,7 @@ export async function applyOriginUpdate(
   // the broken state as "the new normal" — see
   // docs/bug-reports/2026-05-19-origin-update-missing-validation.md.
   const crypto = await import("node:crypto");
-  const scratchRoot = path.resolve(
-    ctx.registryRoot,
-    ".skills-bank",
-    "scratch",
-  );
+  const scratchRoot = path.resolve(ctx.registryRoot, ".skills-bank", "scratch");
   const scratchPath = path.join(
     scratchRoot,
     `origin-update-${crypto.randomBytes(8).toString("hex")}`,
@@ -482,9 +476,8 @@ export async function applyOriginUpdate(
   //   - docs/bug-reports/2026-05-19-origin-update-missing-validation.md
   // Synthesis attempts to fill the gap from SKILL.md frontmatter;
   // validation then runs the schema check.
-  const { synthesizeSkillMeta, validateSkillMeta } = await import(
-    "./skill-meta.js"
-  );
+  const { synthesizeSkillMeta, validateSkillMeta } =
+    await import("./skill-meta.js");
   synthesizeSkillMeta(registrySkillDir);
   const metaCheck = validateSkillMeta(registrySkillDir);
   if (!metaCheck.ok) {
@@ -725,8 +718,7 @@ async function ghFetch<T>(
   }
   if (
     res.status === 429 ||
-    (res.status === 403 &&
-      res.headers.get("x-ratelimit-remaining") === "0")
+    (res.status === 403 && res.headers.get("x-ratelimit-remaining") === "0")
   ) {
     const limit = Number(res.headers.get("x-ratelimit-limit") ?? "0") || 5000;
     const resetEpoch = Number(res.headers.get("x-ratelimit-reset") ?? "0");
@@ -1123,11 +1115,8 @@ function walkSourceFiles(
     if (ent.isDirectory()) {
       walkSourceFiles(rootDir, childRel, out, fsMod, pathMod);
     } else if (ent.isFile()) {
-      const content = fsMod.readFileSync(
-        pathMod.join(current, ent.name),
-      );
+      const content = fsMod.readFileSync(pathMod.join(current, ent.name));
       out.push({ relPath: childRel, content });
     }
   }
 }
-

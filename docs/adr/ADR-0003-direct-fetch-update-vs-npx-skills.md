@@ -32,7 +32,7 @@ app.** When the desktop app runs as a `.dmg`-installed binary:
 - The user's shell `$PATH` (which would normally find `npx`) isn't
   inherited — login shells aren't sourced by GUI-launched apps on
   macOS.
-- Even when `npx` *is* findable, the npm cache, registry config, and
+- Even when `npx` _is_ findable, the npm cache, registry config, and
   per-user `~/.npmrc` may not match the maintainer's dev environment,
   producing silent install drift.
 
@@ -57,7 +57,7 @@ Other consequences of the direct-fetch approach:
 
 ## Re-opening this decision
 
-A future refactor *could* be valid if all three are true:
+A future refactor _could_ be valid if all three are true:
 
 1. `npx` (or some equivalent) becomes reliably available inside a
    packaged Electron app on every supported platform.

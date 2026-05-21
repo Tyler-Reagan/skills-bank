@@ -1,7 +1,4 @@
-import {
-  buildRegistryIndex,
-  resolveRegistryRoot,
-} from "@skills-bank/core";
+import { buildRegistryIndex, resolveRegistryRoot } from "@skills-bank/core";
 import path from "node:path";
 import fs from "node:fs";
 

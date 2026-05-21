@@ -3,7 +3,6 @@
 > [!NOTE]
 > Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](user-guide.md) for context.
 
-
 The vocabulary the app uses, defined in one place. Skim this once and the rest of the docs (and the UI itself) become a lot more obvious.
 
 > [!NOTE]
@@ -86,11 +85,11 @@ Labels match the in-app vocabulary: nodes are lifecycle positions, transitions a
 
 Three actions form an escalation, with distinct file/recovery semantics. Each tier physically separates from the next: Delete is only reachable on **unregistered** skills, so the user must Unregister first.
 
-| Action                            | Where                                                                               | Files                                                               | Agent symlinks                                                          | Recovery                                      |
-| --------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
-| Manage agent links                | Dialog                                                                              | untouched                                                           | added/removed per-agent via checkboxes (untick all = full uninstall)    | re-add via the same modal                     |
-| [Unregister](flows/unregister.md) | Dialog                                                                              | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location                 |
-| Delete                            | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                       | curated: re-pull; user: gone (modulo export)  |
+| Action                            | Where                                                                               | Files                                                               | Agent symlinks                                                          | Recovery                                     |
+| --------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------- |
+| Manage agent links                | Dialog                                                                              | untouched                                                           | added/removed per-agent via checkboxes (untick all = full uninstall)    | re-add via the same modal                    |
+| [Unregister](flows/unregister.md) | Dialog                                                                              | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at the new location; non-adopted: untouched | re-register from new location                |
+| Delete                            | Installed tab → Unregistered section (inline button on the card, with confirmation) | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                       | curated: re-pull; user: gone (modulo export) |
 
 Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **Dismiss from registry view** instead.
 

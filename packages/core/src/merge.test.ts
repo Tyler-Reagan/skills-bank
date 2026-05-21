@@ -118,11 +118,7 @@ describe("mergeImportRegistry", () => {
   });
 
   test("rename-mine renames local to <name>-local-* + imports to original name", () => {
-    writeActive(
-      "epsilon",
-      { "SKILL.md": "# my epsilon" },
-      { source: "user" },
-    );
+    writeActive("epsilon", { "SKILL.md": "# my epsilon" }, { source: "user" });
     writeSource("epsilon", { "SKILL.md": "# imported epsilon" });
 
     const report = mergeImportRegistry(activeRoot, sourceRoot, {
@@ -158,14 +154,19 @@ describe("mergeImportRegistry", () => {
   test("source root with no skills/ throws", () => {
     fs.rmSync(path.join(sourceRoot, "skills"), { recursive: true });
     expect(() => mergeImportRegistry(activeRoot, sourceRoot)).toThrow(
-      /no skills\// ,
+      /no skills\//,
     );
   });
 
   test("imported skill writes a baseline hash sidecar", () => {
     writeSource("eta", { "SKILL.md": "# imported eta" });
     mergeImportRegistry(activeRoot, sourceRoot);
-    const hashPath = path.join(activeRoot, "skills", "eta", ".skills-bank-hash");
+    const hashPath = path.join(
+      activeRoot,
+      "skills",
+      "eta",
+      ".skills-bank-hash",
+    );
     expect(fs.existsSync(hashPath)).toBe(true);
     const hash = fs.readFileSync(hashPath, "utf8").trim();
     expect(hash).toMatch(/^[0-9a-f]{64}$/);

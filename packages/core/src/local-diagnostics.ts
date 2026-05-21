@@ -91,9 +91,7 @@ export function scanLocalDiagnostics(
 
     installed = listInstalled(registryRoot, {
       index,
-      ...(opts.customSkillsDirs
-        ? { customDirs: opts.customSkillsDirs }
-        : {}),
+      ...(opts.customSkillsDirs ? { customDirs: opts.customSkillsDirs } : {}),
     });
   } catch {
     // Index build failure leaves diagnostics empty — the renderer

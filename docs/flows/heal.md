@@ -3,7 +3,6 @@
 > [!NOTE]
 > Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](../user-guide.md) for context.
 
-
 Skills can land in states where the registry, on-disk files, and agent symlinks disagree. The detail dialog surfaces a single primary action per bad state with explanatory copy when there's only one reasonable recovery, or a multi-option modal when several are legitimate.
 
 Every heal flow is the user's call — Skills Bank never auto-deletes content that might be intentional.

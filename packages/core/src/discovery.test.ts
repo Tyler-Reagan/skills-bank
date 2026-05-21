@@ -39,7 +39,11 @@ describe("discoverSkillsInTree", () => {
     writeSkill("gamma", { "meta.json": JSON.stringify({ name: "gamma" }) });
 
     const r = discoverSkillsInTree(scratch);
-    expect(r.discoveries.map((d) => d.name)).toEqual(["alpha", "beta", "gamma"]);
+    expect(r.discoveries.map((d) => d.name)).toEqual([
+      "alpha",
+      "beta",
+      "gamma",
+    ]);
     expect(r.collisions).toEqual([]);
     expect(r.nested).toEqual([]);
     expect(r.discoveries[0]!.relPath).toBe("alpha");
@@ -84,9 +88,7 @@ describe("discoverSkillsInTree", () => {
     const r = discoverSkillsInTree(scratch);
     expect(r.discoveries).toHaveLength(1);
     expect(r.discoveries[0]!.name).toBe("meta-name");
-    expect(r.discoveries[0]!.sourceDir).toBe(
-      path.join(scratch, "folder-name"),
-    );
+    expect(r.discoveries[0]!.sourceDir).toBe(path.join(scratch, "folder-name"));
   });
 
   test("name collision across paths → dropped from discoveries, surfaced in collisions", () => {

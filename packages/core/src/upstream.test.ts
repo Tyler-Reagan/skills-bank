@@ -127,9 +127,9 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
     expect(result.message).toContain(BLOB_PATHS[1]!);
 
     // The sentinel must still be there — no disk mutation on failure.
-    expect(
-      fs.readFileSync(path.join(destDir, "preexisting.txt"), "utf8"),
-    ).toBe("do not delete");
+    expect(fs.readFileSync(path.join(destDir, "preexisting.txt"), "utf8")).toBe(
+      "do not delete",
+    );
     // And the successful-fetched first blob must NOT have been written.
     expect(fs.existsSync(path.join(destDir, "SKILL.md"))).toBe(false);
   });
@@ -185,7 +185,10 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
       JSON.stringify({ sha: "x", tree: [], truncated: false }),
       { status: 200 },
     );
-    vi.stubGlobal("fetch", vi.fn(async () => emptyTree));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => emptyTree),
+    );
 
     const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(false);
@@ -214,7 +217,10 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
       }),
       { status: 200 },
     );
-    vi.stubGlobal("fetch", vi.fn(async () => truncated));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => truncated),
+    );
 
     const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(false);

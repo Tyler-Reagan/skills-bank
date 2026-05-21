@@ -41,14 +41,14 @@ foundation.
 
 The push operation is a six-step API sequence:
 
-| Step | Call | Phase |
-| --- | --- | --- |
-| 1 | `GET /repos/<owner>/<repo>/git/refs/heads/<base>` (resolve base SHA) | pre-commit |
-| 2 | `POST /repos/<owner>/<repo>/git/blobs` (× N files) | pre-commit |
-| 3 | `POST /repos/<owner>/<repo>/git/trees` | pre-commit |
-| 4 | `POST /repos/<owner>/<repo>/git/commits` | pre-commit |
-| 5 | `POST /repos/<owner>/<repo>/git/refs` (create `publish/<name>`) | **commit point** |
-| 6 | `POST /repos/<owner>/<repo>/pulls` (open PR) | best-effort post-commit |
+| Step | Call                                                                 | Phase                   |
+| ---- | -------------------------------------------------------------------- | ----------------------- |
+| 1    | `GET /repos/<owner>/<repo>/git/refs/heads/<base>` (resolve base SHA) | pre-commit              |
+| 2    | `POST /repos/<owner>/<repo>/git/blobs` (× N files)                   | pre-commit              |
+| 3    | `POST /repos/<owner>/<repo>/git/trees`                               | pre-commit              |
+| 4    | `POST /repos/<owner>/<repo>/git/commits`                             | pre-commit              |
+| 5    | `POST /repos/<owner>/<repo>/git/refs` (create `publish/<name>`)      | **commit point**        |
+| 6    | `POST /repos/<owner>/<repo>/pulls` (open PR)                         | best-effort post-commit |
 
 Failure anywhere in steps 1–4 leaves orphan blob/tree/commit objects
 on the remote with no ref pointing at them. GitHub GCs orphans
@@ -120,11 +120,11 @@ The primitive signature accepts `prMeta?: { title?: string; body?: string }`
 as optional. When omitted, the primitive generates defaults from the
 source folder's `meta.json` and the inferred publish flow:
 
-| Flow | Title format |
-| --- | --- |
-| New | `feat(personal): add <name>` |
+| Flow        | Title format                                         |
+| ----------- | ---------------------------------------------------- |
+| New         | `feat(personal): add <name>`                         |
 | Safekeeping | `chore(vendored): vendor <name> from <owner>/<repo>` |
-| Fork | `feat(personal): fork <name> from <owner>/<repo>` |
+| Fork        | `feat(personal): fork <name> from <owner>/<repo>`    |
 
 Body is a short structured paragraph naming the skill, quoting its
 description, explaining the flow, and citing the origin pointer
