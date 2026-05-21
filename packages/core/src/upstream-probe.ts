@@ -261,13 +261,22 @@ export function createOriginProbeRunner(
   async function runOnce(): Promise<ProbeResultSummary> {
     const probedAt = new Date().toISOString();
     const root = opts.registryRoot();
-    if (!root) return { probed: 0, updates: 0, probedAt };
+    if (!root) {
+      // Emit a no-updates completion so the renderer's Rescan state
+      // machine can advance from `working` → `done` → `idle`. Without
+      // this, an early return here leaves the button stuck spinning.
+      opts.onComplete({});
+      return { probed: 0, updates: 0, probedAt };
+    }
     ensureLoaded();
     let index;
     try {
       index = buildRegistryIndex(root);
     } catch (err) {
       console.warn("upstream probe: failed to read registry:", err);
+      // Same rationale as the no-root branch — the renderer is waiting
+      // on this event before it'll transition out of `working`.
+      opts.onComplete({});
       return { probed: 0, updates: 0, probedAt };
     }
     const candidates = index.entries.filter(
@@ -278,6 +287,10 @@ export function createOriginProbeRunner(
         typeof e.source.origin.skillFolderHash === "string",
     );
     if (candidates.length === 0) {
+      // Most-common early-return: registries with no baselined origin
+      // markers have nothing for the probe to do, but the renderer
+      // still needs a completion event to leave `working`.
+      opts.onComplete({});
       return { probed: 0, updates: 0, probedAt };
     }
     const byRepo = new Map<string, typeof candidates>();

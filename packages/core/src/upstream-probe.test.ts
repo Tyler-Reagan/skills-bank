@@ -3,8 +3,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  createOriginProbeRunner,
   recordProbeFailure,
   recordProbeSuccess,
+  type ProbeCompleteEvent,
 } from "./upstream-probe.js";
 import { readRuntimeState } from "./heal.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
@@ -99,5 +101,29 @@ describe("recordProbeFailure / recordProbeSuccess", () => {
     const r = read();
     expect(r.fetchedAt).toBe("2026-05-20T00:00:00Z");
     expect(r.probeFailureCount).toBe(1);
+  });
+});
+
+describe("runOnce — completion-event invariants", () => {
+  test("emits onComplete on the zero-candidates early-return path", async () => {
+    // A registry whose skills have no baselined github origin produces
+    // a zero-candidates filter result. Pre-fix this returned without
+    // firing onComplete, leaving the renderer's Rescan state machine
+    // stuck in `working`. Verify the empty-payload completion fires.
+    const events: ProbeCompleteEvent[] = [];
+    const runner = createOriginProbeRunner({
+      registryRoot: () => scratch,
+      token: () => null,
+      onComplete: (event) => {
+        events.push(event);
+      },
+    });
+
+    const result = await runner.run();
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual({});
+    expect(result.probed).toBe(0);
+    expect(result.updates).toBe(0);
   });
 });
