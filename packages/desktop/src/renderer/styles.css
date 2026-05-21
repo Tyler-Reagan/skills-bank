@@ -1588,56 +1588,80 @@ select {
   animation: drawerBodyFade var(--t) var(--ease) 0.12s both;
 }
 .drawer-section {
-  margin-bottom: var(--s5);
+  /* Sections are visually grouped via spacing rhythm rather than
+     rules — denser within a section, generous between. */
+  margin-bottom: var(--s6);
+}
+.drawer-section + .drawer-section {
+  margin-top: 0;
 }
 .drawer-section h3 {
+  /* Editorial subhead: small, muted, but readable as title rather
+     than an uppercase tracked label. The label treatment competed
+     with content; this lets content lead. */
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-3);
-  margin-bottom: var(--s2);
+  margin-bottom: var(--s3);
 }
 .drawer-section p,
 .drawer-section li {
   font-size: 13px;
   color: var(--text);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 .drawer-meta-row {
+  /* No per-row borders. The list reads as a single block separated
+     from siblings by section margin, not by horizontal rules. */
   display: flex;
   justify-content: space-between;
-  gap: var(--s3);
-  padding: var(--s2) 0;
-  border-bottom: 1px solid var(--border);
+  align-items: baseline;
+  gap: var(--s4);
+  padding: 2px 0;
   font-size: 12px;
-}
-.drawer-meta-row:last-child {
-  border-bottom: none;
+  line-height: 1.5;
 }
 .drawer-meta-key {
   color: var(--text-3);
+  /* Tabular alignment cue — keys stay flush so values line up. */
+  flex-shrink: 0;
+  min-width: 88px;
 }
 .drawer-meta-value {
   color: var(--text);
   font-family: var(--font-mono);
   text-align: right;
   word-break: break-all;
+  flex: 1;
 }
 .drawer-actions {
   padding: var(--s4) var(--s5);
   border-top: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--s2);
   background: var(--surface);
 }
+/* Allow secondary buttons to share a row when they're adjacent —
+   the JSX wraps secondary clusters in `.drawer-actions-row` so the
+   primary action stays full-width on its own. */
+.drawer-actions-row {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+.drawer-actions-row > button,
+.drawer-actions-row > .btn {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .drawer-action-hint {
-  grid-column: 1 / -1;
   margin: 0;
   font-size: 11px;
   color: var(--text-3);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 .drawer-warnings {
   background: var(--warn-dim);

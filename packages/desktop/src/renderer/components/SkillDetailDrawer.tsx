@@ -564,6 +564,7 @@ export function SkillDetailDrawer({
                 <button
                   className="link-btn"
                   onClick={() => setEditingTags(true)}
+                  aria-label="Edit tags"
                 >
                   Edit
                 </button>
@@ -573,6 +574,7 @@ export function SkillDetailDrawer({
                     className="link-btn"
                     onClick={cancelTagEdit}
                     disabled={savingTags}
+                    aria-label="Cancel tag edit"
                   >
                     Cancel
                   </button>
@@ -581,8 +583,9 @@ export function SkillDetailDrawer({
                     style={{ color: "var(--accent)" }}
                     onClick={() => void saveTags()}
                     disabled={savingTags}
+                    aria-label="Save tags"
                   >
-                    {savingTags ? "Saving…" : "Save"}
+                    {savingTags ? "Saving" : "Save"}
                   </button>
                 </div>
               )}
@@ -653,24 +656,43 @@ export function SkillDetailDrawer({
           </div>
 
           <div className="drawer-section">
-            <h3>Metadata</h3>
-            {entry.author && (
-              <div className="drawer-meta-row">
-                <span className="drawer-meta-key">author</span>
-                <span className="drawer-meta-value">{entry.author}</span>
+            <h3>SKILL.md preview</h3>
+            {skillMdLoading ? (
+              <div
+                aria-label="Loading SKILL.md preview"
+                aria-busy="true"
+                role="status"
+              >
+                {[100, 86, 92, 70, 96, 64].map((width, i) => (
+                  <div
+                    key={i}
+                    className="skeleton skeleton-line"
+                    style={{
+                      width: `${width}%`,
+                      animationDelay: `${i * 60}ms`,
+                    }}
+                  />
+                ))}
               </div>
-            )}
-            <div className="drawer-meta-row">
-              <span className="drawer-meta-key">path</span>
-              <span className="drawer-meta-value">{entry.path}</span>
-            </div>
-            {entry.lastCommit && (
-              <div className="drawer-meta-row">
-                <span className="drawer-meta-key">last commit</span>
-                <span className="drawer-meta-value">
-                  {new Date(entry.lastCommit.date).toLocaleDateString()} ·{" "}
-                  {entry.lastCommit.sha.slice(0, 7)}
-                </span>
+            ) : renderedMd ? (
+              <div
+                className="skill-md-preview md"
+                dangerouslySetInnerHTML={{ __html: renderedMd }}
+              />
+            ) : (
+              <div className="empty-inline">
+                <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
+                  No <code>SKILL.md</code> in this folder.
+                </p>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={reveal}
+                  disabled={!registryRoot}
+                  aria-label="Open the registry folder so you can create a SKILL.md"
+                >
+                  <Icon name="folder" size="sm" /> Open folder to create one
+                </button>
               </div>
             )}
           </div>
@@ -791,7 +813,7 @@ export function SkillDetailDrawer({
                       >
                         {pickerBusy ? (
                           <>
-                            <span className="spinner inline" /> Validating…
+                            <span className="spinner inline" /> Validating
                           </>
                         ) : (
                           "Link"
@@ -805,6 +827,7 @@ export function SkillDetailDrawer({
                           setPickerOpen(false);
                           setPickerError(null);
                         }}
+                        aria-label="Cancel linking an origin"
                       >
                         Cancel
                       </button>
@@ -923,7 +946,7 @@ export function SkillDetailDrawer({
                             title={lastCommit.message}
                           >
                             {lastCommit.message.length > 60
-                              ? lastCommit.message.slice(0, 60) + "…"
+                              ? lastCommit.message.slice(0, 60)
                               : lastCommit.message}
                           </span>
                         )}
@@ -934,42 +957,24 @@ export function SkillDetailDrawer({
             )}
 
           <div className="drawer-section">
-            <h3>SKILL.md preview</h3>
-            {skillMdLoading ? (
-              <div
-                aria-label="Loading SKILL.md preview"
-                aria-busy="true"
-                role="status"
-              >
-                {[100, 86, 92, 70, 96, 64].map((width, i) => (
-                  <div
-                    key={i}
-                    className="skeleton skeleton-line"
-                    style={{
-                      width: `${width}%`,
-                      animationDelay: `${i * 60}ms`,
-                    }}
-                  />
-                ))}
+            <h3>Metadata</h3>
+            {entry.author && (
+              <div className="drawer-meta-row">
+                <span className="drawer-meta-key">author</span>
+                <span className="drawer-meta-value">{entry.author}</span>
               </div>
-            ) : renderedMd ? (
-              <div
-                className="skill-md-preview md"
-                dangerouslySetInnerHTML={{ __html: renderedMd }}
-              />
-            ) : (
-              <div className="empty-inline">
-                <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
-                  No <code>SKILL.md</code> in this folder.
-                </p>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={reveal}
-                  disabled={!registryRoot}
-                >
-                  <Icon name="folder" size="sm" /> Open folder to create one
-                </button>
+            )}
+            <div className="drawer-meta-row">
+              <span className="drawer-meta-key">path</span>
+              <span className="drawer-meta-value">{entry.path}</span>
+            </div>
+            {entry.lastCommit && (
+              <div className="drawer-meta-row">
+                <span className="drawer-meta-key">last commit</span>
+                <span className="drawer-meta-value">
+                  {new Date(entry.lastCommit.date).toLocaleDateString()} ·{" "}
+                  {entry.lastCommit.sha.slice(0, 7)}
+                </span>
               </div>
             )}
           </div>
@@ -999,7 +1004,7 @@ export function SkillDetailDrawer({
               >
                 {action === "registering" ? (
                   <>
-                    <span className="spinner inline" /> Registering…
+                    <span className="spinner inline" /> Registering
                   </>
                 ) : (
                   "Register in registry"
@@ -1037,7 +1042,7 @@ export function SkillDetailDrawer({
               >
                 {action === "retrying-probe" ? (
                   <>
-                    <span className="spinner inline" /> Retrying…
+                    <span className="spinner inline" /> Retrying
                   </>
                 ) : (
                   "Retry probe"
@@ -1058,8 +1063,7 @@ export function SkillDetailDrawer({
               >
                 {action === "accepting-drift" ? (
                   <>
-                    <span className="spinner inline" /> Unlinking…
-                  </>
+                    <span className="spinner inline" /> Unlinking                  </>
                 ) : (
                   "Keep this skill"
                 )}
@@ -1100,8 +1104,7 @@ export function SkillDetailDrawer({
                 >
                   {action === "resetting-to-origin" ? (
                     <>
-                      <span className="spinner inline" /> Resetting…
-                    </>
+                      <span className="spinner inline" /> Resetting                    </>
                   ) : (
                     "Reset to origin"
                   )}
@@ -1121,8 +1124,7 @@ export function SkillDetailDrawer({
                 >
                   {action === "taking-canonical" ? (
                     <>
-                      <span className="spinner inline" /> Re-baselining…
-                    </>
+                      <span className="spinner inline" /> Re-baselining                    </>
                   ) : (
                     "Re-baseline"
                   )}
@@ -1193,8 +1195,7 @@ export function SkillDetailDrawer({
               >
                 {action === "updating" ? (
                   <>
-                    <span className="spinner inline" /> Updating…
-                  </>
+                    <span className="spinner inline" /> Updating                  </>
                 ) : (
                   "Update"
                 )}
@@ -1221,8 +1222,7 @@ export function SkillDetailDrawer({
             >
               {action === "repointing" ? (
                 <>
-                  <span className="spinner inline" /> Picking…
-                </>
+                  <span className="spinner inline" /> Picking                </>
               ) : (
                 "Pick new location"
               )}
@@ -1243,8 +1243,7 @@ export function SkillDetailDrawer({
               >
                 {action === "forgetting" ? (
                   <>
-                    <span className="spinner inline" /> Forgetting…
-                  </>
+                    <span className="spinner inline" /> Forgetting                  </>
                 ) : (
                   "Forget this skill"
                 )}
@@ -1274,7 +1273,7 @@ export function SkillDetailDrawer({
             >
               {repairState.kind === "running" ? (
                 <>
-                  <span className="spinner inline" /> Repairing…
+                  <span className="spinner inline" /> Repairing
                 </>
               ) : (
                 <>
@@ -1359,7 +1358,6 @@ export function SkillDetailDrawer({
                 role="separator"
                 aria-hidden="true"
                 style={{
-                  gridColumn: "1 / -1",
                   height: 1,
                   background: "var(--border)",
                   margin: "8px 0 4px",
@@ -1386,8 +1384,7 @@ export function SkillDetailDrawer({
             >
               {action === "installing" ? (
                 <>
-                  <span className="spinner inline" /> Installing…
-                </>
+                  <span className="spinner inline" /> Installing                </>
               ) : classification.state === "registered-broken" ? (
                 "Reinstall (fixes broken links)"
               ) : classification.state === "registered-conflicts" ? (
@@ -1426,7 +1423,7 @@ export function SkillDetailDrawer({
             >
               {repairState.kind === "running" ? (
                 <>
-                  <span className="spinner inline" /> Repairing…
+                  <span className="spinner inline" /> Repairing
                 </>
               ) : (
                 `Fix broken link${classification.brokenCount === 1 ? "" : "s"}`
@@ -1457,8 +1454,7 @@ export function SkillDetailDrawer({
             >
               {action === "exporting" ? (
                 <>
-                  <span className="spinner inline" /> Exporting…
-                </>
+                  <span className="spinner inline" /> Exporting                </>
               ) : (
                 "Export"
               )}
@@ -1468,7 +1464,6 @@ export function SkillDetailDrawer({
           {caps.canRevealInFinder && (
             <button
               className="btn ghost"
-              style={{ gridColumn: "1 / -1" }}
               onClick={reveal}
               disabled={!absPath}
             >
@@ -1479,7 +1474,6 @@ export function SkillDetailDrawer({
             <>
               <button
                 className="btn"
-                style={{ gridColumn: "1 / -1" }}
                 disabled={action !== null}
                 onClick={() => {
                   setAction("unregistering");
@@ -1491,8 +1485,7 @@ export function SkillDetailDrawer({
               >
                 {action === "unregistering" ? (
                   <>
-                    <span className="spinner inline" /> Removing…
-                  </>
+                    <span className="spinner inline" /> Removing                  </>
                 ) : (
                   "Remove from registry"
                 )}
@@ -1507,7 +1500,6 @@ export function SkillDetailDrawer({
           {caps.canHide && onHide && (
             <button
               className="btn"
-              style={{ gridColumn: "1 / -1" }}
               disabled={action !== null}
               onClick={() => {
                 setAction("hiding");
@@ -1517,8 +1509,7 @@ export function SkillDetailDrawer({
             >
               {action === "hiding" ? (
                 <>
-                  <span className="spinner inline" /> Hiding…
-                </>
+                  <span className="spinner inline" /> Hiding                </>
               ) : (
                 "Dismiss from registry view"
               )}
@@ -1527,7 +1518,6 @@ export function SkillDetailDrawer({
           {caps.canUnhide && onUnhide && (
             <button
               className="btn primary"
-              style={{ gridColumn: "1 / -1" }}
               disabled={action !== null}
               onClick={() => {
                 setAction("unhiding");
@@ -1536,8 +1526,7 @@ export function SkillDetailDrawer({
             >
               {action === "unhiding" ? (
                 <>
-                  <span className="spinner inline" /> Unhiding…
-                </>
+                  <span className="spinner inline" /> Unhiding                </>
               ) : (
                 "Unhide"
               )}
