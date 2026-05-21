@@ -51,6 +51,7 @@ import { ConnectGithubModal } from "./components/ConnectGithubModal.js";
 import { InstallFromGithubModal } from "./components/InstallFromGithubModal.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
 import { AccountModal } from "./components/AccountModal.js";
+import { ManifestImportConfirmModal } from "./components/ManifestImportConfirmModal.js";
 import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
@@ -906,6 +907,50 @@ function AppContent(): React.ReactElement {
     }
   }, [flash]);
 
+  // Manifest ops. Moved out of SettingsModal so the success path
+  // can call `refresh()` — the SettingsModal-resident version
+  // skipped the refresh and the user had to hit Rescan manually to
+  // see imported skills. Pairs the content ops above (importRegistry
+  // / mergeRegistry / exportRegistry) with their pointer-only
+  // equivalents and converges the seam on Account.
+  const [manifestImportHints, setManifestImportHints] = useState<
+    import("@skills-bank/core").ImportRegistryManifestResult | null
+  >(null);
+
+  const importManifest = useCallback(async () => {
+    const r = await window.skillsBank.importManifest();
+    if (!r.ok) {
+      if (r.message && r.message !== "cancelled") {
+        flashError(r.message);
+      }
+      return;
+    }
+    const registered = r.result.outcomes.filter(
+      (o) => o.result === "registered",
+    ).length;
+    flash(
+      `Restored ${registered} skill${registered === 1 ? "" : "s"} from manifest`,
+    );
+    await refresh();
+    if (r.result.installHints.length > 0) {
+      setManifestImportHints(r.result);
+    }
+  }, [flash, flashError, refresh]);
+
+  const exportManifest = useCallback(async () => {
+    const r = await window.skillsBank.exportManifest();
+    if (r.ok) {
+      const where = r.destPath
+        ? ` (${r.destPath.split("/").pop() ?? r.destPath})`
+        : "";
+      flash(
+        `Exported ${r.skillCount ?? 0} skill${r.skillCount === 1 ? "" : "s"}${where}`,
+      );
+    } else if (r.message && r.message !== "export cancelled") {
+      flashError(r.message);
+    }
+  }, [flash, flashError]);
+
   const pickRepo = useCallback(
     async (fullName: string) => {
       const r = await window.skillsBank.reposReplaceRegistry(fullName);
@@ -1710,6 +1755,14 @@ function AppContent(): React.ReactElement {
               setShowAccount(false);
               await exportRegistry();
             }}
+            onImportManifest={async () => {
+              setShowAccount(false);
+              await importManifest();
+            }}
+            onExportManifest={async () => {
+              setShowAccount(false);
+              await exportManifest();
+            }}
             onSignOut={async () => {
               setShowAccount(false);
               await signOut();
@@ -1718,6 +1771,17 @@ function AppContent(): React.ReactElement {
             onConnectGithub={() => {
               setShowAccount(false);
               setShowConnectGithub(true);
+            }}
+          />
+        )}
+
+        {manifestImportHints !== null && (
+          <ManifestImportConfirmModal
+            result={manifestImportHints}
+            onClose={() => setManifestImportHints(null)}
+            onDone={(msg) => {
+              setManifestImportHints(null);
+              if (msg) flash(msg);
             }}
           />
         )}
