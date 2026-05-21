@@ -428,6 +428,15 @@ function resolveBootRegistryRoot(): string {
 
 let registryRoot: string = resolveBootRegistryRoot();
 
+/**
+ * Tier 1 v2 manifest-import cancel infrastructure: main holds an
+ * at-most-one in-flight AbortController for the manifest-import
+ * IPC. Renderer calls `IPC.importManifestCancel` to abort. The
+ * import handler clears this back to null in its `finally`, so
+ * an early `cancel` while no import is running is a no-op.
+ */
+let inFlightImportAbort: AbortController | null = null;
+
 // Fallback origin-capture scanner: stamp upstream pointers onto any
 // registry skill that has a matching entry in the `vercel-labs/skills`
 // CLI's lock file but no existing `upstream` field. Run once at boot
@@ -2058,9 +2067,17 @@ ipcMain.handle(IPC.importManifest, async () => {
         message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v1 and v2.`,
       };
     }
-    const importResult = await importRegistryManifest(registryRoot, manifest, {
-      token: getStoredToken(),
-    });
+    const controller = new AbortController();
+    inFlightImportAbort = controller;
+    let importResult;
+    try {
+      importResult = await importRegistryManifest(registryRoot, manifest, {
+        token: getStoredToken(),
+        signal: controller.signal,
+      });
+    } finally {
+      inFlightImportAbort = null;
+    }
     // Rebuild the index so the renderer's next listRegistry shows
     // freshly registered skills without a manual refresh.
     buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
@@ -2080,6 +2097,11 @@ ipcMain.handle(IPC.importManifest, async () => {
     const error = fromCaught("ipc.unknown", err);
     return { ok: false, message: error.message, error };
   }
+});
+
+ipcMain.handle(IPC.importManifestCancel, () => {
+  inFlightImportAbort?.abort();
+  return { ok: true };
 });
 
 ipcMain.handle(IPC.installFromManifestHint, async (_e, payload: { names: string[]; agents: AgentId[] }) => {

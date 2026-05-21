@@ -90,6 +90,7 @@ const api = {
     ipcRenderer.invoke(IPC.importRegistryMergeApply, sourcePath, decisions),
   exportManifest: () => ipcRenderer.invoke(IPC.exportManifest),
   importManifest: () => ipcRenderer.invoke(IPC.importManifest),
+  importManifestCancel: () => ipcRenderer.invoke(IPC.importManifestCancel),
   installFromManifestHint: (payload: unknown) =>
     ipcRenderer.invoke(IPC.installFromManifestHint, payload),
   installSkillFromGithub: (url: string) =>

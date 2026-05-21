@@ -91,6 +91,7 @@ export const IPC = {
   importRegistryMergeApply: "skills:importRegistryMergeApply",
   exportManifest: "bank:exportManifest",
   importManifest: "bank:importManifest",
+  importManifestCancel: "bank:importManifestCancel",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
   classifySkillForPublish: "publish:classify",
@@ -767,6 +768,12 @@ interface SkillsBankAPI {
         result: ImportRegistryManifestResult;
       }
   >;
+  /**
+   * Abort the in-flight `importManifest` IPC. The per-skill loop
+   * exits at the top of the next iteration; already-mirrored
+   * skills stay on disk. No-op when no import is running.
+   */
+  importManifestCancel(): Promise<{ ok: boolean }>;
   /**
    * Apply a manifest's install hints — one user-confirmed batch.
    * Calls the existing install path for each `{ name, agents }`

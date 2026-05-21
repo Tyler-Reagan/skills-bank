@@ -37,6 +37,17 @@ interface Props {
   onSignOut: () => void | Promise<void>;
   onCheckForUpdates: () => void | Promise<void>;
   onConnectGithub: () => void;
+  /**
+   * Tier 1 v2 manifest-import affordance. When `true`:
+   *   - Import manifest swaps to a busy state + disables.
+   *   - Cancel import becomes visible next to Import manifest.
+   *   - Corruption-risking siblings (Import folder, Refresh from
+   *     repo, Merge registry, Sign out, repo affordances) disable.
+   *   - Read-only siblings (Export folder, Export manifest, Check
+   *     for updates) stay enabled.
+   */
+  importingManifest: boolean;
+  onCancelImport: () => void;
 }
 
 export function AccountModal({
@@ -53,6 +64,8 @@ export function AccountModal({
   onSignOut,
   onCheckForUpdates,
   onConnectGithub,
+  importingManifest,
+  onCancelImport,
 }: Props): React.ReactElement {
   useFocusReturn();
   useEscapeToClose(onClose);
@@ -125,6 +138,7 @@ export function AccountModal({
               className="btn primary"
               type="button"
               onClick={() => void onRefreshRegistry()}
+              disabled={importingManifest}
             >
               Refresh from{" "}
               {isBundledDefault ? BUNDLED_REPO : linkedRepo!.fullName}
@@ -133,7 +147,7 @@ export function AccountModal({
               className="btn"
               type="button"
               onClick={() => void onChangeRegistry()}
-              disabled={!isAuthed}
+              disabled={!isAuthed || importingManifest}
               title={
                 isAuthed
                   ? "Pick a different GitHub repo to mirror."
@@ -160,6 +174,7 @@ export function AccountModal({
                   className="btn danger"
                   type="button"
                   onClick={() => void onSignOut()}
+                  disabled={importingManifest}
                 >
                   Sign out of GitHub
                 </button>
@@ -177,7 +192,7 @@ export function AccountModal({
                   className="btn"
                   type="button"
                   onClick={onConnectGithub}
-                  disabled={!authStatus?.isAuthConfigured}
+                  disabled={!authStatus?.isAuthConfigured || importingManifest}
                   title={
                     authStatus?.isAuthConfigured
                       ? "Authenticate with GitHub via Device Flow."
@@ -216,6 +231,7 @@ export function AccountModal({
               className="btn"
               type="button"
               onClick={() => void onImportRegistry()}
+              disabled={importingManifest}
             >
               Import from disk (replace)
             </button>
@@ -223,6 +239,7 @@ export function AccountModal({
               className="btn"
               type="button"
               onClick={() => void onMergeRegistry()}
+              disabled={importingManifest}
             >
               Merge from disk
             </button>
@@ -244,9 +261,25 @@ export function AccountModal({
               className="btn"
               type="button"
               onClick={() => void onImportManifest()}
+              disabled={importingManifest}
             >
-              Import manifest
+              {importingManifest ? (
+                <>
+                  <span className="spinner inline" /> Importing
+                </>
+              ) : (
+                "Import manifest"
+              )}
             </button>
+            {importingManifest && (
+              <button
+                className="btn"
+                type="button"
+                onClick={onCancelImport}
+              >
+                Cancel import
+              </button>
+            )}
             <button
               className="btn"
               type="button"
