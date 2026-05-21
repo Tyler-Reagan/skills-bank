@@ -126,21 +126,42 @@ export function PublishSection({
     await fireFinalPublish(false);
   };
 
+  const flowKind = flow?.flow;
+  const targetPath = flow && "targetPath" in flow ? flow.targetPath : null;
+  const flowLabel =
+    flowKind === "safekeeping"
+      ? "Safekeeping"
+      : flowKind === "fork"
+        ? "Fork"
+        : flowKind === "new"
+          ? "New skill"
+          : null;
+  const flowExplain =
+    flowKind === "safekeeping"
+      ? "Deposits the vendored copy at the linked repo so it survives if the origin disappears."
+      : flowKind === "fork"
+        ? "Severs the origin link and converts the skill to a user-owned copy in personal/."
+        : flowKind === "new"
+          ? "Lands a new user-authored skill on the linked repo."
+          : null;
+
   return (
     <div style={section}>
       <div style={headingRow}>
         <h3 style={sectionHeading}>Linked repo</h3>
         <PublishChip state={publishState} />
       </div>
-      <p style={hint}>
-        Push this skill to <code>{linkedRepoName}</code> as a pull
-        request. {flow?.flow === "safekeeping"
-          ? "Safekeeping: the vendored copy gets deposited at vendored/ on the linked repo."
-          : flow?.flow === "fork"
-            ? "Forking: your edits sever this skill from its origin and convert it to a user-owned skill in personal/."
-            : "New skill: lands at personal/ on the linked repo."}
-      </p>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+      {flowLabel && targetPath && (
+        <div style={metaRow}>
+          <span style={flowTag}>{flowLabel}</span>
+          <span style={{ color: "var(--text-3)" }}>→</span>
+          <code style={metaCode}>
+            {linkedRepoName}/{targetPath}/
+          </code>
+        </div>
+      )}
+      {flowExplain && <p style={hint}>{flowExplain}</p>}
+      <div style={actionRow}>
         <button
           className="btn primary"
           type="button"
@@ -297,8 +318,34 @@ const sectionHeading: React.CSSProperties = {
 const headingRow: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
+  justifyContent: "space-between",
   gap: 8,
+  margin: "0 0 8px 0",
+};
+const metaRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
   margin: "0 0 6px 0",
+  fontSize: 12,
+};
+const flowTag: React.CSSProperties = {
+  padding: "1px 6px",
+  borderRadius: 4,
+  background: "var(--surface-hi)",
+  border: "1px solid var(--border)",
+  color: "var(--text-2)",
+  fontWeight: 600,
+};
+const metaCode: React.CSSProperties = {
+  color: "var(--text-2)",
+  fontSize: 11,
+};
+const actionRow: React.CSSProperties = {
+  display: "flex",
+  gap: 8,
+  alignItems: "center",
+  marginTop: 10,
 };
 const hint: React.CSSProperties = {
   fontSize: 12,
