@@ -3,6 +3,30 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.9.0
+
+Three feature bundles ship together: the third header action (local-disk diagnostics), per-skill progress events for manifest import, and the ghost-card band that surfaces incoming skills during a manifest pull.
+
+### Added
+
+- **`Scan local` — third header action button** (#81). Walks agent dirs + the registry index and surfaces items needing attention across four categories: unregistered installs, broken symlinks, external-target-missing entries, registry-folder-missing entries. Local-only — no network. Mirrors the existing three-phase state machine: `Scan local` → `Scanning…` → `All clean` (auto-fade 1.5s) or `N items · Review` (persistent; click bounces to Installed tab + scrolls to top).
+- **`From last local scan` section on the Installed tab** (#81). Categorized list of every item the most recent local scan surfaced, with per-item fix buttons: Register (opens the existing drawer for the synthetic entry), Remove broken link (calls `removeBrokenLinks`), Forget (calls `forgetMissing` for missing-files heal states). Diagnostics refresh after each fix. Parallel to the existing classifier-driven Needs-attention section — both stay rendered.
+- **New core module `scanLocalDiagnostics`** (#81). Returns a categorized `DiagnosticReport`. Reuses existing primitives (`buildRegistryIndex`'s `missing: true` flag drives missing-files categories; `listInstalled`'s `InstalledKind` drives unregistered + broken-symlink categories).
+- **Per-skill progress events on manifest import** (#82). `importRegistryManifest` accepts optional `onProgress(event)`. Fires at the top of each per-skill iteration with cumulative `completed`, `currentName`, and `lastError` from the previous iteration's failure. The first event carries `manifestNames` + `manifestSkills` for downstream ghost-card pre-rendering. A terminal event lands after the loop with `completed === total`.
+- **`ImportIndicator` chip shows N/total** (#82). The persistent header chip transitions from the brief generic `Importing manifest…` to `Importing N/total` once the first progress event arrives. Per-skill detail stays out of the chip — that's the ghost band's job.
+- **`Incoming via manifest` ghost-card band on BrowseTab** (#83). A band at the top of the registry surface during a manifest import, one row per net-new manifest skill. Each row tracks per-skill status: pending (shimmer), current (highlighted), errored (red border + Retry + Dismiss), settled (faded check). Band dissolves automatically when the import resolves and the registry refreshes.
+- **`manifestImportRetrySkill` IPC** (#83). Single-shot retry path for a failed ghost. Main wraps the entry in a one-skill manifest and runs the existing `importRegistryManifest` pipeline; returns the single outcome. Renderer updates ghost state from the result (clear error + settle on success; update error on repeated failure; toast on collision).
+
+### Changed
+
+- **New IPC surface entries** on `SkillsBankApi`: `localDiagnosticsScan`, `onManifestImportProgress`, `manifestImportRetrySkill`. All additive; existing consumers unaffected.
+- **`ManifestImportProgressEvent` is now a public type** exported from `@skills-bank/core`. Consumed by the desktop renderer's manifest UI; intentionally kept stable for any future CLI / API equivalents.
+
+### Compatibility
+
+- `importRegistryManifest`'s options gained optional `onProgress?`. Non-breaking — existing callers (CLI, tests) that don't pass the callback get the same behavior as before.
+- The local-diagnostics surface and the ghost-card band are net-new. No existing UI removed, including the InstalledTab classifier-driven Needs-attention section (intentionally parallel to give the v1.9 surfaces room to prove their value before any consolidation).
+
 ## v1.8.0
 
 Header rationalization release. The polymorphic `Refresh from {bank | owner/repo}` button is decomposed, Rescan is renamed for clarity, and the manifest-import indicator from v1.7.0's cancel infrastructure gets a persistent home in the header that survives modal close.
