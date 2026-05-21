@@ -3,6 +3,42 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.5.0
+
+Phases 4 and 5 of the post-v1.0 roadmap, shipped together: [in-app-install-from-discover](docs/plans/in-app-install-from-discover.md) (one PR) and [in-app-publish](docs/plans/in-app-publish.md) (M1 + M2+M3+M4). With Phase 5, every skill in the user's registry has a round-trip path to their linked GitHub repo — install from a URL on the way in, publish a PR on the way out. The two flows share `mirrorSkillFolder` (v1.2) on the install side and the new `pushSkillFolder` on the publish side; classification, fork, and publish-state pinning live in `packages/core` so the CLI can adopt the same primitives later.
+
+### Added — install (Phase 4)
+
+- **One-shot GitHub-URL install.** Paste any GitHub folder URL containing a `SKILL.md` (skills.sh deep link, repo browse URL, raw GitHub URL); the app parses to `{repo, ref, skillPath}`, validates the manifest, and mirrors via the existing `mirrorSkillFolder` path. No `npx`, no terminal, no skills.sh-specific scraping.
+- **Settings → Install from GitHub URL** entry point with paste field, dry-run preview, and inline validation.
+
+### Added — publish (Phase 5)
+
+- **`forkSkill` core primitive** (`packages/core/src/fork.ts`). Scratch-dir + atomic-swap; refuse-on-collision; flips `source: curated` → `source: user`, calls `unlinkOrigin`, relocates `vendored/<name>` → `personal/<name>`. Per [ADR-0006](docs/adr/ADR-0006-fork-atomicity.md).
+- **`pushSkillFolder` core primitive** (`packages/core/src/upstream.ts`). Six-step push (tree → commit → ref → PR) with ref-as-commit-point atomicity, PR-state-aware branch resolution, rate-limit handling that mirrors `mirrorSkillFolder`. PR-only — the linked repo's default branch is never written directly. Subsequent publishes append commits to an open PR. Per [ADR-0007](docs/adr/ADR-0007-push-atomicity.md).
+- **`publish-state.ts` dual-mode rewrite.** `computePublishStatesFromGit` (local, fast) and `computePublishStatesFromRemote` (GitHub Trees, packaged-app-safe). The remote mode fixes a silent canon-gate bug where packaged installs without `git` on PATH defaulted every skill to `unknown`. Per [ADR-0008](docs/adr/ADR-0008-publish-state-pinning.md).
+- **`publish-classify.ts`** — routes each publish into one of three sub-flows (new skill / safekeeping / fork) from `{source, origin, syncedFromCommit, drift, publishState}`.
+- **Publish IPC channels.** `publish:classify`, `publish:fork`, `publish:push`, `publish:state` — four new channels in `packages/desktop/src/shared/ipc.ts`. Main orchestrator caches the linked-repo tree per session, invalidates on linked-repo change.
+- **Drawer Publish surface.** `PublishSection` mounts in `SkillDetailDrawer`'s Linked-repo section: pre-flight chip (`READY` / `DRAFT` / `IN SYNC` / `BLOCKED`), Publish button, Fork-confirm modal for vendored-with-edits skills. The classifier and canon gate share `publish-state.ts`'s output so chip and button never disagree.
+- **Auto-prompt RepoPicker after Device Flow** when the user signs in with no `linkedRepo` yet — avoids the dead-end "signed in, now what?" state.
+
+### Changed
+
+- **Sync conflict + orphan detection now key off `syncedFromCommit` presence.** Three call sites in `applyCanonicalSync` previously used `source === "curated"` as a proxy for "previously synced from somewhere," which broke once Phase 1's `mountTo: "personal"` started stamping linked-repo skills as `source: "user"`. The discriminator is `!!syncedFromCommit`; the source axis is now derived from the `mountTo` param the caller supplies. (See `syncedFromCommit` notes in [`UBIQUITOUS_LANGUAGE.md`](UBIQUITOUS_LANGUAGE.md) and the curated-proxy bug-family entry in [`CLAUDE.md`](CLAUDE.md).)
+- **`ConflictResolutionModal` vocabulary** — `bundled` references swept to `curated` to match v1.3's vocabulary rename.
+- **Linked-repo drawer section restructured.** Heading row + flow-type tag + target path as code + tighter purpose-line hint + separated action row. Less prose, more scanability.
+- **`RegisterModal` scan copy** lists all eight agents the scan walks; `SyncBanner` gets vertical breathing room from the header; `InstallFromGithubModal` placeholder loses its ellipsis (UI-text convention).
+
+### Removed
+
+- **`RegistryEntry.publishState`.** The pre-flight publish state lives in `publish-state.ts` and is read on demand by the drawer surface; no need to thread it through the registry index.
+- **`migrateLegacyGithubMarkers`.** The one-cycle legacy-marker migration carved out in v1.3 has fully aged out; tolerant-read on the source-marker reader remains.
+
+### Compatibility
+
+- **Public-surface deprecations.** Per the v1.0 backcompat policy, the removed `publishState` field on `RegistryEntry` and the dropped `migrateLegacyGithubMarkers` export are SDK-surface changes; both were never public-API-stable (`publishState` was added and removed within an unreleased Phase 5 window).
+- **No on-disk schema changes.** `.skills-bank.json`, `.skills-bank-runtime.json`, and the manifest are all unchanged.
+
 ## v1.4.0
 
 Phase 3 of the post-v1.0 roadmap ([bank-mode-persistence](docs/plans/bank-mode-persistence.md)). Originally scoped much larger; trimmed during plan rewrite (commit `2182788`) to align with the post-v1.2/v1.3 ground state. The product promise — "skills you've installed stay safe with you, even if their upstream goes dark" — was already met by v1.2's discovery-mount + local-content-copy architecture; what was missing was the **recovery UX** for skills whose origin probe persistently fails. v1.4 lands exactly that.
