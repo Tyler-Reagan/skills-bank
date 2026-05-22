@@ -61,7 +61,7 @@ There is **no `index.json` to maintain** — the app generates one locally from 
 5. **In Skills Bank**: open the Account panel → **Change linked repo** (or **Choose a different repo** if you already have one linked) → pick your repo (sign in first if you haven't).
 6. The app fetches a tarball of your repo's current commit, replaces the local registry, and you're done.
 
-After that initial link, edits flow as: edit in a git clone of your repo → commit → push → **Refresh from `<repo>`** pulls the new state.
+After that initial link, edits flow as: edit in a git clone of your repo → commit → push → **Pull from `<repo>`** (header button) pulls the new state.
 
 ### What this is _not_
 
@@ -72,7 +72,7 @@ After that initial link, edits flow as: edit in a git clone of your repo → com
 The Account panel shows the same surfaces for every user:
 
 - **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — what your registry mirrors, plus last-fetched relative time and short commit SHA.
-- **Refresh from `<repo>`** — re-fetch the linked repo (primary action).
+- **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — current registry source, last-fetched time, and short commit SHA. This is a status display, not a button — use the **Pull from `<repo>`** button in the app header to refresh.
 - **Change linked repo** / **Choose a different repo** — opens the repo picker (requires sign-in; label varies by current state).
 - **Identity row** — `@<login>` chip + **Sign out of GitHub** when signed in; **Sign in with GitHub** + rate-limit hint when not.
 - **Operations** — Import from disk (replace), Merge a registry into mine, Export as folder.
