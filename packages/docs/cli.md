@@ -134,10 +134,10 @@ The following commands were removed in v1.6. They now print a one-line redirect 
 
 | Old command | Replacement |
 |-------------|-------------|
-| `import` | Use **Account → Import a registry** in the desktop app |
-| `export` | Use **Account → Export registry** in the desktop app |
+| `import` | Use **Import from disk (replace)** in the Account panel |
+| `export` | Use **Export as folder** in the Account panel |
 | `finalize` | Use the Finalize flow in the desktop app |
-| `sync-installed` | Use **Pull from `<repo>`** in the desktop app |
+| `sync-installed` | No direct equivalent — the desktop app rewires installations automatically |
 
 ## Agent IDs
 

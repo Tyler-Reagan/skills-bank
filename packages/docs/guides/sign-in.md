@@ -58,10 +58,10 @@ There is **no `index.json` to maintain** — the app generates one locally from 
    - Copy a skill folder out of the [`Tyler-Reagan/skills-bank`](https://github.com/Tyler-Reagan/skills-bank) repo's `skills/` directory.
    - Hand-author a skill: create `skills/my-skill/SKILL.md` with standard frontmatter and prose.
 4. **Commit and push.**
-5. **In Skills Bank**: **Account → Change linked repo** → pick your repo (sign in first if you haven't).
+5. **In Skills Bank**: open the Account panel → **Change linked repo** (or **Choose a different repo** if you already have one linked) → pick your repo (sign in first if you haven't).
 6. The app fetches a tarball of your repo's current commit, replaces the local registry, and you're done.
 
-After that initial link, edits flow as: edit in a git clone of your repo → commit → push → **Pull from `<repo>`** pulls the new state.
+After that initial link, edits flow as: edit in a git clone of your repo → commit → push → **Refresh from `<repo>`** pulls the new state.
 
 ### What this is _not_
 
@@ -72,10 +72,10 @@ After that initial link, edits flow as: edit in a git clone of your repo → com
 The Account panel shows the same surfaces for every user:
 
 - **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — what your registry mirrors, plus last-fetched relative time and short commit SHA.
-- **Pull from `<repo>`** — re-fetch the linked repo (primary action).
-- **Change linked repo** — opens the repo picker (requires sign-in).
+- **Refresh from `<repo>`** — re-fetch the linked repo (primary action).
+- **Change linked repo** / **Choose a different repo** — opens the repo picker (requires sign-in; label varies by current state).
 - **Identity row** — `@<login>` chip + **Sign out of GitHub** when signed in; **Sign in with GitHub** + rate-limit hint when not.
-- **Operations** — Import a registry from disk (replace), Merge a registry into mine, Export registry.
+- **Operations** — Import from disk (replace), Merge a registry into mine, Export as folder.
 
 ## Self-host
 

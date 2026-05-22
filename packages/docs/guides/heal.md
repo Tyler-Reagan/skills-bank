@@ -36,18 +36,18 @@ Clicking **Resolve install collision** opens a per-agent modal. Each row shows w
 
 ### Edited-without-origin
 
-The dialog for a curated skill you've edited replaces the usual destructive area with two heal buttons — **Keep my edits** and **Revert to canon** — under explanatory copy. The card carries the `DRIFT` badge.
+The dialog for a curated skill you've edited replaces the usual destructive area with two heal buttons — **Keep my edits** and **Revert to canon** — under explanatory copy. The card carries the `EDITED` badge.
 
-- **Keep my edits** — detaches the skill from Pull (the skill becomes `source: user`); future pulls stop overwriting it.
-- **Revert to canon** — re-baselines the synced hash so Pull still owns the skill and the next pull may overwrite local edits.
+- **Keep my edits** — detaches the skill from Refresh (the skill becomes `source: user`); future refreshes stop overwriting it.
+- **Revert to canon** — re-baselines the synced hash so Refresh still owns the skill and the next refresh may overwrite local edits.
 
-Both buttons clear the `DRIFT` badge.
+Both buttons clear the `EDITED` badge.
 
 ## Conflict vocabulary
 
 Three distinct collision types use distinct labels:
 
-- **Sync collision** — your local and the upstream both have a skill with the same name and different content. Resolved via the **Resolve sync collisions** modal after a Pull run.
+- **Sync collision** — your local and the upstream both have a skill with the same name and different content. Resolved via the **Resolve sync collisions** modal after a Refresh run.
 - **Install collision** — a registered skill has a real-directory or foreign-symlink copy in an agent dir. Resolved via the **Resolve install collision** modal from the dialog.
 - **Tracking ambiguity** — multiple non-ours copies of the same name across agents; registration is unclear. Resolved via the same modal, with the symlink-replace action hidden.
 
