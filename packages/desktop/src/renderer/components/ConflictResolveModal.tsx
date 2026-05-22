@@ -194,18 +194,50 @@ export function ConflictResolveModal({
         <div
           style={{
             display: "flex",
+            alignItems: "center",
             gap: 6,
             marginTop: 12,
             marginBottom: 12,
+            padding: "6px 10px",
+            background: "var(--surface-2, rgba(0,0,0,0.03))",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
           }}
         >
+          <span
+            style={{
+              fontSize: 11,
+              color: "var(--text-3)",
+              marginRight: 2,
+              flexShrink: 0,
+            }}
+          >
+            Select all:
+          </span>
           {allowReplaceWithSymlink && (
-            <button onClick={() => setAll("replace-with-symlink")}>
-              Replace all with symlinks
+            <button
+              onClick={() => setAll("replace-with-symlink")}
+              style={{ fontSize: 12, padding: "2px 8px" }}
+            >
+              Replace
             </button>
           )}
-          <button onClick={() => setAll("delete")}>Delete all</button>
-          <button onClick={() => setAll("keep")}>Keep all</button>
+          <button
+            onClick={() => setAll("keep")}
+            style={{ fontSize: 12, padding: "2px 8px" }}
+          >
+            Keep
+          </button>
+          <button
+            onClick={() => setAll("delete")}
+            style={{
+              fontSize: 12,
+              padding: "2px 8px",
+              color: "var(--danger, #d04444)",
+            }}
+          >
+            Delete
+          </button>
         </div>
 
         <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
