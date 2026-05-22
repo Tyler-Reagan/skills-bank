@@ -3,6 +3,30 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.11.0
+
+VitePress docs site, sync conflict modal language overhaul, install collision modal UI polish, and a full screenshot refresh.
+
+### Added
+
+- **VitePress docs site** (`packages/docs`). Fourteen pages covering Getting Started, Concepts, Guides (install, register, manage links, sync, sign in, heal, unregister), Reference (CLI, keyboard shortcuts, meta.json schema, troubleshooting), and Self-hosting. Hot-reloads via `pnpm docs:dev`; builds to `packages/docs/dist/` via `pnpm docs:build`.
+
+### Changed
+
+- **Sync conflict modal language** (`ConflictResolutionModal.tsx`). Title changed from "Sync conflicts" to "Incoming update conflicts". Actions renamed: "Keep mine", "Use incoming (replaces mine)", "Rename mine to `<name>-local`". Bulk button "Use all curated" → "Use all incoming". Diff toggle "Show diff (mine → curated)" → "Compare changes". "Apply & re-sync" → "Apply".
+- **Install collision modal bulk-select** (`ConflictResolveModal.tsx`). Three bare buttons (Replace / Keep / Delete) reformatted into a labelled "Select all:" toolbar strip with consistent sizing and danger-colour scoping on Delete.
+- **First-launch copy in Getting Started** (`packages/docs/getting-started.md`). Removed stale two-option picker description (LoginScreen retired in Phase 2); replaced with accurate single-sentence boot description.
+
+### Fixed
+
+- **Six doc inaccuracies** across `guides/sync.md`, `guides/sign-in.md`, `guides/heal.md`, `guides/install.md`, and `cli.md`: button labels, badge names, modal titles, and removed-command desktop equivalents.
+- **Account panel "Refresh from repo" button** (`guides/sign-in.md`). Clarified that the canonical pull action is the **Pull from `<repo>`** header button; Account panel linked-repo row is a status display, not a button.
+
+### Docs
+
+- All screenshots replaced with current captures: registry, installed, skill detail (default, user-authored, collision), manage-links, settings (Default install agents), account, resolve-conflict.
+- Added `account.png` (previously missing). Removed `setup.png` and `skill-detail-unregistered.png` (no longer referenced).
+
 ## v1.10.3
 
 Four fixes: curated skills falsely flagged as orphaned on linked-repo pulls, tab-intro bottom margin halved, `Tyler-Reagan/skills-bank` removed as the recommended registry repo target, and the CSS margin change.
