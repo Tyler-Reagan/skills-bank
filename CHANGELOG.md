@@ -3,7 +3,7 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## v1.10.0
 
 Manifest schema v3, drift-state Unregister bail-out, frontmatter block-scalar parsing, and a stale-doc sweep — pulls correctness fixes across three independent surfaces that the v2-manifest-only path had been quietly blocking.
 
