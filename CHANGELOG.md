@@ -3,6 +3,29 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+Manifest schema v3, drift-state Unregister bail-out, frontmatter block-scalar parsing, and a stale-doc sweep — pulls correctness fixes across three independent surfaces that the v2-manifest-only path had been quietly blocking.
+
+### Added
+
+- **`coerceManifestToCurrent` — single quarantined version coercion** in `packages/core/src/manifest.ts` (#84). All version-gated logic lives in one function; the import body downstream treats v3 as the only manifest shape. v2 manifests coerce up by deriving `bucket` from origin (`origin.kind === "github" → vendored`; otherwise `personal`). v1 manifests are no longer readable — `MANIFEST_OLDEST_READABLE_VERSION` bumped from 1 to 2.
+- **`bucket: "personal" | "vendored"` on `ManifestSkill`** (#84). v3 schema decouples bucket from the source axis so a `source: user` skill harvested from a third-party origin can be exported and re-imported as `vendored/` instead of collapsing into `personal/` on every receiving machine. Export reads `entry.bucket` directly; import reads `skill.bucket` directly.
+- **YAML block-scalar parsing in `readSkillMdFrontmatter`** (#84). Handles `description: |` (literal, newlines preserved) and `description: >` (folded, newlines → spaces) with chomp indicators (`|-`, `|+`, `>-`, `>+`). Pre-fix the parser captured the indicator char as the value, which then propagated through `restoreAuxState` into a malformed `meta.json` and tripped drift detection downstream — `fix-knip-unused-exports` was the canonical case.
+
+### Changed
+
+- **`installSkillFromGithub` IPC derives bucket from origin** (#84). Compares `parsed.repo` against `linkedRepo.fullName` — same repo → `personal/`, anything else → `vendored/`. Future GitHub-URL installs land in the correct bucket from the start instead of every install defaulting to `personal/`.
+- **Drift states surface `canUnregister`** (#84). `edited-with-origin`, `edited-without-origin`, `origin-unreachable`, and `origin-update-available` now grant the capability so a stuck skill with a broken upstream can be removed without first severing the origin pointer. All four states wrapped in `applyCanonGate` so canon skills strip Unregister and grant Hide instead.
+- **Sync banner copy** (#84). Replaces `Fetching bundled skills` with `Fetching latest` (the banner fires for any pull, curated or linked-repo). Renames `N orphaned` → `N no longer in source repo` — defends the underlying concept (local skills carrying a `syncedFromCommit` marker but absent from the current upstream discovery) without the alarming connotation that triggered "did something get deleted?" confusion.
+- **`InstalledTab` local-scan results — unregistered-installs category collapses to a summary line** (#84). The category was duplicating the dedicated Unregistered section below it with per-card Register / Delete buttons; the collapsed line points readers to the existing surface instead of rendering the same skills twice.
+- **Stale-doc sweep** (#84). `docs/flows/sync.md` rewritten for the universal Pull flow (the standalone `Sync skills` button retired post-v1.3); `docs/flows/heal.md` and `docs/flows/unregister.md` get a vocab pass (`bundled-skill-edited` → `edited-without-origin`, `bundled` / `yours` → `curated` / `user`). CLAUDE.md and UBIQUITOUS_LANGUAGE.md updated to reflect the current state of the source-axis deprecation and the new v3 manifest schema.
+
+### Compatibility
+
+- **v1 registry manifests no longer readable.** The original deprecation window targeted v1.4; we're four minor releases past that. v2 manifests still coerce up transparently through `coerceManifestToCurrent`. v2 imports with skills authored in the linked repo will mis-bucket as `vendored/` (the coercer has no signal to identify "self" origins); fix-up is `pnpm update:skill <name> --bucket personal`.
+- **`canUnregister: true` on drift states** is additive — no caller that previously expected `canUnregister: false` in those states will silently break, but renderer surfaces that gated UI on this flag will now surface a button they didn't before.
+
 ## v1.9.0
 
 Three feature bundles ship together: the third header action (local-disk diagnostics), per-skill progress events for manifest import, and the ghost-card band that surfaces incoming skills during a manifest pull.
