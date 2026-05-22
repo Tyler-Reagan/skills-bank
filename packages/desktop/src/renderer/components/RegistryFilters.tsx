@@ -19,11 +19,10 @@ import { TagFilter } from "./TagFilter.js";
  *   - Tag dropdown ("Tags ▾") — anchored multi-select rendered via
  *     `TagFilter` in panel form; selection count shows on the trigger.
  *
- * Cross-category combinations the model allows but the data forbids
- * (e.g. Bundled AND Yours, Personal AND Vendored) collapse to an
- * empty result set; the user sees "0 of N" and figures out which
- * chip to remove. No internal validation — the chip strip is
- * declarative.
+ * Cross-category combinations that are mutually exclusive (e.g.
+ * Personal AND Vendored) collapse to an empty result set; the user
+ * sees "0 of N" and removes the conflicting chip. No internal
+ * validation — the chip strip is declarative.
  *
  * Sort: orthogonal to filters. Two modes — "name" (alphabetical) and
  * "age" (by `lastCommit.date`, ascending = oldest first to surface
@@ -35,8 +34,6 @@ export type RegistryFilterTag =
   | "updates"
   | "edited"
   | "missing"
-  | "curated"
-  | "user"
   | "personal"
   | "vendored";
 
@@ -74,18 +71,6 @@ const CHIP_DEFS: readonly ChipDef[] = [
     label: "Missing",
     title: "Skills whose files are gone on disk.",
     matches: (e) => e.missing === true,
-  },
-  {
-    tag: "curated",
-    label: "Curated",
-    title: "Skills curated as part of the bank's set — managed by Sync.",
-    matches: (e) => e.source.source === "curated",
-  },
-  {
-    tag: "user",
-    label: "Mine",
-    title: "Skills you authored or unlinked from a curated set.",
-    matches: (e) => e.source.source === "user",
   },
   {
     tag: "personal",
@@ -382,8 +367,7 @@ export function RegistryFilters({
               aria-label="Filter chip glossary"
             >
               <p className="filter-glossary-intro">
-                Chips combine with <strong>AND</strong>. The chips fall on three
-                independent axes — a skill can match one from each.
+                Chips combine with <strong>AND</strong> across two axes.
               </p>
               <dl className="filter-glossary-list">
                 <dt>State</dt>
@@ -399,28 +383,17 @@ export function RegistryFilters({
                   <strong>Missing</strong> — the skill's files are gone on disk.
                 </dd>
                 <dd>
-                  <strong>Installed only</strong> — currently installed in one
-                  of your agent dirs.
-                </dd>
-                <dt>Provenance — where the bytes came from</dt>
-                <dd>
-                  <strong>Bundled</strong> — shipped with the app's curation
-                  set; managed by Sync.
-                </dd>
-                <dd>
-                  <strong>Yours</strong> — you added it (merge-import) or
-                  detached it from the curation set.
+                  <strong>Installed only</strong> — currently linked into one of
+                  your agent dirs.
                 </dd>
                 <dt>
-                  Location — folder bucket under <code>skills/</code>
+                  Location — bucket under <code>skills/</code>
                 </dt>
                 <dd>
-                  <strong>Personal</strong> — authored in this repo
-                  (self-referential Origin or no Origin).
+                  <strong>Personal</strong> — authored in this repo.
                 </dd>
                 <dd>
-                  <strong>Vendored</strong> — harvested from external authors'
-                  repos.
+                  <strong>Vendored</strong> — harvested from an external repo.
                 </dd>
               </dl>
               <p className="filter-glossary-note">
