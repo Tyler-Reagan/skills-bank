@@ -21,19 +21,19 @@ const ACTIONS: { value: ConflictAction; label: string; description: string }[] =
       value: "keep-mine",
       label: "Keep mine",
       description:
-        "Skip the curated version. Your skill stays; it won't be re-prompted.",
+        "Your local version stays. The incoming update for this skill is skipped.",
     },
     {
       value: "use-canonical",
-      label: "Use curated (replaces mine)",
+      label: "Use incoming (replaces mine)",
       description:
-        "Overwrite your version with the curated one. Your changes are lost.",
+        "The incoming version replaces yours. Your local changes are lost.",
     },
     {
       value: "rename-mine",
       label: "Rename mine to <name>-local",
       description:
-        "Move your version to a new name and accept the curated version at the original. Both survive.",
+        "Your version moves to <name>-local and the incoming version takes the original name. Both are kept.",
     },
   ];
 
@@ -85,7 +85,7 @@ export function ConflictResolutionModal({
         leftPath: `${registryRoot}/skills/${c.name}`,
         rightPath: c.canonicalPath,
         leftLabel: "Yours",
-        rightLabel: "Bundled",
+        rightLabel: "Incoming",
       })
       .then((result) => {
         setDiffs((prev) => ({
@@ -149,14 +149,14 @@ export function ConflictResolutionModal({
         style={modal}
         role="dialog"
         aria-modal="true"
-        aria-label="Resolve sync collisions"
+        aria-label="Incoming update conflicts"
       >
-        <h2 style={{ marginTop: 0 }}>Resolve sync collisions</h2>
+        <h2 style={{ marginTop: 0 }}>Incoming update conflicts</h2>
         <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          Sync collision: {conflicts.length} skill
-          {conflicts.length === 1 ? "" : "s"} have name conflicts between your
-          local registry and the upstream curated set. Pick an action for each.
-          Your choice is remembered for future syncs.
+          {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} changed
+          in both your local registry and the incoming update. Choose what to
+          keep for each — your decision is saved and won't be asked again unless
+          the upstream changes.
         </p>
 
         <div
@@ -179,7 +179,7 @@ export function ConflictResolutionModal({
             onClick={() => setAll("use-canonical")}
             disabled={submitting}
           >
-            Use all curated
+            Use all incoming
           </button>
           <button
             type="button"
@@ -200,7 +200,7 @@ export function ConflictResolutionModal({
           >
             {[
               counts.keep > 0 ? `Keep ${counts.keep}` : null,
-              counts.use > 0 ? `Use curated ${counts.use}` : null,
+              counts.use > 0 ? `Use incoming ${counts.use}` : null,
               counts.rename > 0 ? `Rename ${counts.rename}` : null,
             ]
               .filter(Boolean)
@@ -240,7 +240,7 @@ export function ConflictResolutionModal({
                 >
                   {expanded[c.name]
                     ? "Hide diff"
-                    : "Show diff (mine → curated)"}
+                    : "Compare changes"}
                 </button>
               </div>
               {expanded[c.name] && (
@@ -309,7 +309,7 @@ export function ConflictResolutionModal({
             onClick={() => void apply()}
             disabled={submitting}
           >
-            {submitting ? "Applying" : "Apply & re-sync"}
+            {submitting ? "Applying…" : "Apply"}
           </button>
         </div>
       </div>

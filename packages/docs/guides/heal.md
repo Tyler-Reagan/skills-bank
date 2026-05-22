@@ -47,7 +47,7 @@ Both buttons clear the `EDITED` badge.
 
 Three distinct collision types use distinct labels:
 
-- **Sync collision** — your local and the upstream both have a skill with the same name and different content. Resolved via the **Resolve sync collisions** modal after a Pull run.
+- **Incoming update conflict** — your local and the upstream both have a skill with the same name and different content. Resolved via the **Incoming update conflicts** modal after a Pull run.
 - **Install collision** — a registered skill has a real-directory or foreign-symlink copy in an agent dir. Resolved via the **Resolve install collision** modal from the dialog.
 - **Tracking ambiguity** — multiple non-ours copies of the same name across agents; registration is unclear. Resolved via the same modal, with the symlink-replace action hidden.
 
