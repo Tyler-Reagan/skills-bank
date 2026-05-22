@@ -3,6 +3,22 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.11.1
+
+Bug-fix release. Restores click-outside dismiss, hides the embedded skills.sh browser for every modal, aligns Register's agent fan-out with Install, finishes the v1.11.0 bulk-toolbar treatment on the sync conflict modal, and lands the docs site as the canonical source of truth.
+
+### Fixed
+
+- **Click-outside dismiss restored on 14 modals** plus the `PublishSection` fork prompt: `AccountModal`, `SettingsModal`, `RepoPickerModal`, `ManifestImportConfirmModal`, `InstallFromGithubModal`, `InstallConflictModal`, `ConflictResolutionModal`, `ConflictResolveModal`, `RegisterModal`, `ManageLinksModal`, `UpdatesModal`, `UpdateNotesModal`, `DeleteUnregisteredConfirm`, `ConnectGithubModal`. Matches the existing `ConfirmDialog` / `DestinationPickerDialog` / `KeyboardShortcutsOverlay` pattern (overlay `onClick={onClose}` + child `stopPropagation`).
+- **Embedded skills.sh browser occluding modals** (`App.tsx`). The `modalOpen` OR-chain driving `discoverHideSync()` was missing `installConflict`, `manifestImportHints`, `showUpdatesModal`, `showInstallFromGithub`, and `isUpdateModalOpen` — opening any of them (most visibly the Updates modal from the Rescan-done badge) left the WebContentsView rendering above the scrim.
+- **Install vs Register agent set divergence**. The `InstallConflictModal` force-install path no longer falls through to "every existing agent dir"; it threads `settings.defaultInstallAgents` like every other install entry point. `RegistrationAction.register` gained an optional `agents?: AgentId[]`; when set with `adopt: true`, `applyRegistration` calls `setAgentLinks` post-adopt so Register lands the skill in exactly the agent set Install would have. Wired through `DrawerHost` and `RegisterModal` (new `defaultInstallAgents` prop).
+- **`ConflictResolutionModal` bulk-select strip** missed the v1.11.0 toolbar treatment that `ConflictResolveModal` received. Applied the same "Select all:" labelled strip (subtle surface + border, compact labels, smaller font) so the bulk shortcuts no longer compete visually with Apply.
+
+### Docs
+
+- **Vercel deployment for `packages/docs/`** (`vercel.json`, Root-Directory + workspace-install configuration). The VitePress docs site now ships at [skills-bank-desktop.vercel.app](https://skills-bank-desktop.vercel.app/).
+- **Docs site is the source of truth.** Deleted the diverged repo-root `docs/concepts.md`, `getting-started.md`, `keyboard.md`, `self-host.md`, `troubleshooting.md`, `user-guide.md` and the retired `TAXONOMY_ALIGNMENT_PLAN.md`. README and the desktop app's `SELF_HOST_URL` now point at the live site. Added `cleanUrls: true` to `vercel.json` so deep-links like `/concepts` stop 404'ing.
+
 ## v1.11.0
 
 VitePress docs site, sync conflict modal language overhaul, install collision modal UI polish, and a full screenshot refresh.
