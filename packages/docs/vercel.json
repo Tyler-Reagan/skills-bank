@@ -1,0 +1,6 @@
+{
+  "buildCommand": "pnpm --filter @skills-bank/docs build",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install",
+  "framework": null
+}

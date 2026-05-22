@@ -2,7 +2,6 @@ node_modules/
 dist/
 dist-electron/
 dist-main/
-packages/docs/dist/
 packages/docs/.vitepress/cache/
 .DS_Store
 *.log
