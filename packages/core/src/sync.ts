@@ -340,20 +340,17 @@ export async function applyCanonicalSync(
     upserted.push(name);
   }
 
-  // Orphans: local skills that previously came from a sync (any
-  // sync — curated or linked-repo) but no longer appear in the
-  // current discovery. v1.5: discriminate on syncedFromCommit
-  // presence, not the source axis. Pre-fix this used
-  // `source === "curated"`, which missed linked-repo orphans
-  // (skills removed from the user's linked repo carry
-  // `source: user + syncedFromCommit`, so the proxy missed them).
-  // Same family of bug as the source-axis-stamp + conflict-gate
-  // fixes; this is the third call site that needed the same
-  // proxy → syncedFromCommit migration.
+  // Scope orphan detection to the current sync channel. Curated syncs
+  // only orphan `source: "curated"` skills; linked-repo syncs only
+  // orphan `source: "user"` skills. Without this gate, curated skills
+  // like find-skills (curated + syncedFromCommit) are falsely flagged
+  // when pulling from a linked repo that doesn't include them.
+  const expectedSource = mountTo === "vendored" ? "curated" : "user";
   const orphaned: string[] = [];
   for (const ref of walkSkills(registryRoot)) {
     if (canonicalNames.has(ref.name)) continue;
-    if (readSkillSource(ref.dir).syncedFromCommit) {
+    const src = readSkillSource(ref.dir);
+    if (src.syncedFromCommit && src.source === expectedSource) {
       orphaned.push(ref.name);
     }
   }
