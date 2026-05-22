@@ -3,6 +3,16 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.10.2
+
+Three bug fixes: manifest import falsely flagging every skill as edited, local scan results not updating the installed list, and orphaned skill names missing from the sync banner.
+
+### Fixed
+
+- **Manifest import marks all skills as "edited"** (`packages/core/src/manifest.ts`). `stampOriginMarker` was writing `mirror.folderHash` (a GitHub tree SHA-1, 40 chars) to `.skills-bank-hash`, but drift detection reads that file and compares it against `hashSkillFolder()` output (SHA-256, 64 chars). Different algorithms, different lengths — they can never match, so every imported skill appeared "edited" immediately after import. Fix: compute `hashSkillFolder()` after `restoreAuxState()` (which writes `meta.json`) and write that local SHA-256 as the baseline — mirroring the pattern already used in the sync path in `upstream.ts`.
+- **Local scan does not update the installed list** (`packages/desktop/src/renderer/App.tsx`). `runLocalScan()` stored the diagnostic report but never refreshed the `installed` state. Skills detected as unregistered installs appeared in the "From last local scan" section but not in the Unregistered section or counts, because `installed` was stale from the last full refresh. Fix: run `listInstalled()` in parallel with `localDiagnosticsScan()` and update `installed` state before rendering results.
+- **Orphaned skill names missing from sync banner** (`packages/desktop/src/shared/ipc.ts`, `main.ts`, `SyncBanner.tsx`). `SyncStatus.orphaned` was a count (`number`); only "N no longer in source repo" appeared after a pull. Widened to `string[]` and passed the full name list through so the banner names the specific skills (≤3 listed individually; >3 collapses to a count).
+
 ## v1.10.1
 
 Hotfix: v3 manifests were rejected at the IPC gate before reaching the coercion layer.
