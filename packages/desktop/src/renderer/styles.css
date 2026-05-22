@@ -578,7 +578,7 @@ select {
 
 /* ── Tab intro ───────────────────────────────────────── */
 .tab-intro {
-  margin-bottom: var(--s5);
+  margin-bottom: 10px;
   padding: var(--s3) var(--s4);
   background: var(--surface);
   border: 1px solid var(--border);
