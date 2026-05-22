@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
 import { buildRegistryIndex } from "./build.js";
-import { writeSyncedHash } from "./heal.js";
+import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import { hideCanonSkill } from "./hide.js";
 import { findSkillFolder, readSkillMdFrontmatter } from "./registry.js";
 import {
@@ -321,6 +321,12 @@ export async function importRegistryManifest(
       }
       stampOriginMarker(destDir, skill, mirror.folderHash);
       restoreAuxState(registryRoot, destDir, skill);
+      // Re-hash AFTER restoreAuxState so the baseline covers meta.json
+      // and any other aux files. Mirrors the sync path in upstream.ts.
+      // Uses SHA-256 (hashSkillFolder), not the GitHub tree SHA-1
+      // (mirror.folderHash), which is what drift detection compares.
+      const localHash = hashSkillFolder(destDir);
+      if (localHash) writeSyncedHash(destDir, localHash);
       outcomes.push({ name: skill.name, result: "registered" });
     }
 
@@ -389,10 +395,6 @@ function stampOriginMarker(
   if (skill.origin.sourceUrl) origin.sourceUrl = skill.origin.sourceUrl;
   if (skill.origin.skillPath) origin.skillPath = skill.origin.skillPath;
   writeSkillSource(destDir, { source: skill.source, origin });
-  // Baseline the synced-hash sidecar so drift detection starts clean
-  // from the just-mirrored snapshot. Without this, the first probe
-  // would compare against an empty hash and surface false drift.
-  writeSyncedHash(destDir, folderHash);
 }
 
 function restoreAuxState(

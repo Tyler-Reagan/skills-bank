@@ -13,7 +13,7 @@ import {
 import { hideCanonSkill } from "./hide.js";
 import { writeUpstreamCanonNames } from "./canon.js";
 import { writeSkillSource } from "./source.js";
-import { writeSyncedHash } from "./heal.js";
+import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 
 /**
  * Phase 1 manifest contract:
@@ -255,10 +255,13 @@ describe("importRegistryManifest", () => {
     expect(marker.source).toBe("user");
     expect(marker.origin?.repo).toBe("owner/repo");
     expect(marker.origin?.skillFolderHash).toBe("foldersha");
-    // Synced-hash sidecar baselined so drift is clean from the start.
+    // Synced-hash sidecar baselined with the local SHA-256 (not the
+    // GitHub tree SHA-1) so drift detection starts clean.
+    const expectedLocalHash = hashSkillFolder(destDir);
+    expect(expectedLocalHash).not.toBeNull();
     expect(
       fs.readFileSync(path.join(destDir, ".skills-bank-hash"), "utf8").trim(),
-    ).toBe("foldersha");
+    ).toBe(expectedLocalHash);
   });
 
   test("populates description from SKILL.md frontmatter when upstream has no meta.json", async () => {

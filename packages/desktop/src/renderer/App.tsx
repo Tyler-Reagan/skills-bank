@@ -675,9 +675,11 @@ function AppContent(): React.ReactElement {
       clearTimeout(localScanDoneTimerRef.current);
     setLocalScanState({ phase: "working" });
     try {
-      const report = await window.skillsBank.localDiagnosticsScan(
-        settings.customSkillsDirs,
-      );
+      const [report, i] = await Promise.all([
+        window.skillsBank.localDiagnosticsScan(settings.customSkillsDirs),
+        window.skillsBank.listInstalled(settings.customSkillsDirs),
+      ]);
+      setInstalled(i);
       setDiagnostics(report);
       setLocalScanState({ phase: "done", count: report.items.length });
       // Done-zero auto-fades after 1.5s; done-N>0 stays persistent so
