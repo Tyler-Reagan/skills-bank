@@ -2059,17 +2059,17 @@ ipcMain.handle(IPC.importManifest, async () => {
         error,
       };
     }
-    // Accept v1 (auto-migrated by importRegistryManifest) and v2.
-    // Newer schemaVersions are refused so a future-incompatible
-    // manifest doesn't silently mismap fields. The schemaVersion
-    // field is typed as `2` post-narrowing; cast through unknown to
-    // inspect what was actually on disk.
+    // Accept v2 and v3 (coerced by importRegistryManifest). v1 is no
+    // longer readable per MANIFEST_OLDEST_READABLE_VERSION. Newer
+    // schemaVersions are refused so a future-incompatible manifest
+    // doesn't silently mismap fields. Cast through unknown to inspect
+    // what was actually on disk.
     const sv = (manifest as unknown as { schemaVersion: unknown })
       .schemaVersion;
-    if (sv !== 1 && sv !== 2) {
+    if (sv !== 2 && sv !== 3) {
       return {
         ok: false,
-        message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v1 and v2.`,
+        message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v2 and v3.`,
       };
     }
     const controller = new AbortController();
