@@ -6,7 +6,7 @@
 
 The in-app Publish flow (planned post-v1.0) has three sub-flows by
 trigger condition — new / safekeeping / fork — defined in
-[`docs/concepts.md`](../concepts.md#publish). The fork sub-flow is the
+[Concepts → Publish](https://skills-bank-desktop.vercel.app/concepts#publish). The fork sub-flow is the
 delicate one: a user has vendored a third-party skill, edited it
 locally, and now wants to push their edits to their linked repo.
 Publishing the edits without disclaimer would silently desync the

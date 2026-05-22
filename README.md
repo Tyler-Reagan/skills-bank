@@ -27,8 +27,8 @@ Download the latest DMG from the [Releases page](https://github.com/Tyler-Reagan
 
 Drag to Applications, launch from Spotlight. Signed and notarized — Gatekeeper opens on a normal double-click. Auto-updates on launch.
 
-> [!NOTE]
-> Full walkthrough in the **[docs](packages/docs/)** — start with [`getting-started.md`](packages/docs/getting-started.md).
+> [!TIP]
+> **📖 Read the docs: [skills-bank-desktop.vercel.app](https://skills-bank-desktop.vercel.app/)** — the source of truth for getting started, concepts, guides, and reference. The markdown sources live under [`packages/docs/`](packages/docs/) if you want to edit them.
 
 ### CLI
 

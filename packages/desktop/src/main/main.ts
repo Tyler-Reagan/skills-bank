@@ -3125,14 +3125,13 @@ mutatingHandle(
   },
 );
 
-// Open docs/self-host.md. Prefer the GitHub-hosted URL (renders nicely
-// for installed users post-merge) and fall back to the locally bundled
-// copy if GitHub returns 404 (the docs file isn't on main yet) or the
-// user is offline. The docs/ tree is bundled via electron-builder's
-// `extraResources` for packaged builds; in dev we resolve relative to
-// the desktop package's app path (`<repo>/packages/desktop/`).
-const SELF_HOST_URL =
-  "https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/self-host.md";
+// Open the self-host docs. Prefer the live docs site (the source of
+// truth for user-facing docs) and fall back to the bundled markdown
+// copy if the site is unreachable (offline). The self-host.md file
+// ships via electron-builder's `extraResources` for packaged builds;
+// in dev we resolve relative to the desktop package's app path
+// (`<repo>/packages/desktop/`).
+const SELF_HOST_URL = "https://skills-bank-desktop.vercel.app/self-host";
 
 async function selfHostUrlReachable(): Promise<boolean> {
   try {
@@ -3155,7 +3154,7 @@ ipcMain.handle(IPC.openSelfHostDocs, async () => {
   }
   const docPath = app.isPackaged
     ? path.join(process.resourcesPath, "docs", "self-host.md")
-    : path.join(app.getAppPath(), "..", "..", "docs", "self-host.md");
+    : path.join(app.getAppPath(), "..", "docs", "self-host.md");
   if (!fs.existsSync(docPath)) {
     return { ok: false, message: `self-host docs not found at ${docPath}` };
   }

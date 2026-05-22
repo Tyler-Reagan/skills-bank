@@ -54,8 +54,8 @@
     ],
     "extraResources": [
       {
-        "from": "../../docs",
-        "to": "docs"
+        "from": "../docs/self-host.md",
+        "to": "docs/self-host.md"
       },
       {
         "from": "../../skills",
