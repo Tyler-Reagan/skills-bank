@@ -391,7 +391,7 @@ export type SyncStatus =
       kind: "done";
       upserted: number;
       conflicts: number;
-      orphaned: number;
+      orphaned: string[];
       commitSha: string;
     }
   | { kind: "error"; message: string };

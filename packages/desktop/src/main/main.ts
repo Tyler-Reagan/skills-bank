@@ -2752,7 +2752,7 @@ async function runSync(): Promise<{
         kind: "done",
         upserted: report.upserted.length,
         conflicts: report.conflicts.length,
-        orphaned: report.orphaned.length,
+        orphaned: report.orphaned,
         commitSha: report.commitSha,
       });
       return {
@@ -3012,7 +3012,7 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
         kind: "done",
         upserted: report.upserted.length,
         conflicts: report.conflicts.length,
-        orphaned: report.orphaned.length,
+        orphaned: report.orphaned,
         commitSha: report.commitSha,
       });
       // v0.11.9 M8: linkage commit step extracted so other paths

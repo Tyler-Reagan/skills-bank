@@ -56,11 +56,15 @@ export function SyncBanner({
     // syncedFromCommit marker but no longer appear in the upstream
     // discovery — they were deleted upstream. The system never auto-
     // deletes them locally, so the label needs to be informational, not
-    // alarming. "Orphaned" read like a problem requiring resolution;
-    // "no longer in source repo" describes the state without implying a
-    // pending action.
-    if (status.orphaned > 0)
-      parts.push(`${status.orphaned} no longer in source repo`);
+    // alarming. List names when ≤3; collapse to a count above that.
+    if (status.orphaned.length > 0) {
+      const names = status.orphaned;
+      const label =
+        names.length <= 3
+          ? `${names.join(", ")} no longer in source repo`
+          : `${names.length} skills no longer in source repo`;
+      parts.push(label);
+    }
     if (parts.length === 0) parts.push("already up to date");
     return (
       <div className="sync-banner done" role="status">
