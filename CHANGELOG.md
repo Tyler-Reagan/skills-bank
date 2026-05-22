@@ -3,6 +3,16 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.10.3
+
+Four fixes: curated skills falsely flagged as orphaned on linked-repo pulls, tab-intro bottom margin halved, `Tyler-Reagan/skills-bank` removed as the recommended registry repo target, and the CSS margin change.
+
+### Fixed
+
+- **Curated skills falsely flagged as "no longer in source repo"** (`packages/core/src/sync.ts`). Orphan detection was keyed on `syncedFromCommit` presence alone, so curated skills like `find-skills` (which carry `source: "curated"` + `syncedFromCommit` from the bundled sync) were reported as orphaned when pulling from a linked repo that doesn't include them. Fix: scope the check to the current sync channel — curated syncs only orphan `source: "curated"` skills; linked-repo syncs only orphan `source: "user"` skills.
+- **`Tyler-Reagan/skills-bank` surfaced as recommended registry repo** (`packages/desktop/src/renderer/components/RepoPickerModal.tsx`). The repo picker injected the app's own source repo as a pinned "Recommended" row. Users should link their own skills repo; the curated set ships with the app and needs no GitHub link.
+- **Tab-intro bottom margin** (`packages/desktop/src/renderer/styles.css`). Reduced from `--s5` (20px) to 10px.
+
 ## v1.10.2
 
 Three bug fixes: manifest import falsely flagging every skill as edited, local scan results not updating the installed list, and orphaned skill names missing from the sync banner.
