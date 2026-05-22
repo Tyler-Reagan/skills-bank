@@ -3,6 +3,14 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.10.1
+
+Hotfix: v3 manifests were rejected at the IPC gate before reaching the coercion layer.
+
+### Fixed
+
+- **v3 manifest import blocked by stale IPC guard** (`packages/desktop/src/main/main.ts`). The `bank:importManifest` handler checked `sv !== 1 && sv !== 2` and returned an "Unsupported schemaVersion" error for any v3 export, even though `coerceManifestToCurrent` (introduced in v1.10.0) handles v3 correctly. Guard updated to `sv !== 2 && sv !== 3`; v1 is no longer accepted consistent with `MANIFEST_OLDEST_READABLE_VERSION = 2`.
+
 ## v1.10.0
 
 Manifest schema v3, drift-state Unregister bail-out, frontmatter block-scalar parsing, and a stale-doc sweep — pulls correctness fixes across three independent surfaces that the v2-manifest-only path had been quietly blocking.
