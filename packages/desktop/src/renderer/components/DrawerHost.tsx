@@ -150,6 +150,10 @@ export function DrawerHost({
       onRegister={
         caps.canRegister
           ? async () => {
+              const fanoutAgents =
+                settings.defaultInstallAgents.length > 0
+                  ? settings.defaultInstallAgents
+                  : undefined;
               const results = await window.skillsBank.register([
                 {
                   name: selected.name,
@@ -157,6 +161,7 @@ export function DrawerHost({
                     type: "register",
                     name: selected.name,
                     adopt: settings.registerAdopts,
+                    agents: fanoutAgents,
                   },
                 },
               ]);

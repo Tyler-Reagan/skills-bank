@@ -81,10 +81,11 @@ export function AccountModal({
     : `github.com/${linkedRepo!.fullName}`;
 
   return (
-    <div style={overlay}>
+    <div style={overlay} onClick={onClose} role="presentation">
       <div
         ref={modalRef}
         style={modal}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Account"

@@ -46,8 +46,13 @@ export function InstallConflictModal({
   };
 
   return (
-    <div style={overlay}>
-      <div style={modal} role="dialog" aria-modal="true">
+    <div style={overlay} onClick={onClose} role="presentation">
+      <div
+        style={modal}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <h2 style={{ marginTop: 0 }}>
           <Icon name="alert-triangle" size="sm" /> Install conflict — {name}
         </h2>

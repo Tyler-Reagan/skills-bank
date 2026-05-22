@@ -114,7 +114,33 @@ export function applyRegistration(
       }
 
       case "register": {
-        return registerSkill(entry, { ...opts, adopt: action.adopt });
+        const result = registerSkill(entry, { ...opts, adopt: action.adopt });
+        if (!result.ok || !action.adopt || !action.agents) return result;
+        // Post-adoption fan-out: synthesize an InstalledSkill rooted at
+        // the new registry copy so setAgentLinks can converge the
+        // requested agent set. Without this, Register adopts the files
+        // but only repoints whichever agent dir originally held the
+        // stray install — which is why Install and Register surfaced
+        // different link sets prior to v1.12.
+        const found = findSkillFolder(opts.registryRoot, entry.name);
+        const actualDir =
+          found?.dir ??
+          path.join(opts.registryRoot, "skills", "personal", entry.name);
+        if (!fs.existsSync(actualDir)) return result;
+        const synthetic: InstalledSkill = {
+          ...entry,
+          kind: "ours",
+          linkPath: actualDir,
+          target: actualDir,
+        };
+        const fanout = setAgentLinks(synthetic, action.agents);
+        return {
+          action,
+          ok: result.ok && fanout.ok,
+          message: fanout.ok
+            ? `${result.message}; ${fanout.message}`
+            : `${result.message}; fan-out failed: ${fanout.message}`,
+        };
       }
 
       case "setAgents": {

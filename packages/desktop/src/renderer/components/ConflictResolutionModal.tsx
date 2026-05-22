@@ -144,9 +144,10 @@ export function ConflictResolutionModal({
   })();
 
   return (
-    <div style={overlay}>
+    <div style={overlay} onClick={onClose} role="presentation">
       <div
         style={modal}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Incoming update conflicts"
@@ -162,38 +163,56 @@ export function ConflictResolutionModal({
         <div
           style={{
             display: "flex",
+            alignItems: "center",
             flexWrap: "wrap",
             gap: 6,
             marginTop: 12,
+            padding: "6px 10px",
+            background: "var(--surface-2, rgba(0,0,0,0.03))",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
           }}
         >
+          <span
+            style={{
+              fontSize: 11,
+              color: "var(--text-3)",
+              marginRight: 2,
+              flexShrink: 0,
+            }}
+          >
+            Select all:
+          </span>
           <button
             type="button"
             onClick={() => setAll("keep-mine")}
             disabled={submitting}
+            style={{ fontSize: 12, padding: "2px 8px" }}
           >
-            Keep all mine
+            Keep mine
           </button>
           <button
             type="button"
             onClick={() => setAll("use-canonical")}
             disabled={submitting}
+            style={{ fontSize: 12, padding: "2px 8px" }}
           >
-            Use all incoming
+            Use incoming
           </button>
           <button
             type="button"
             onClick={() => setAll("rename-mine")}
             disabled={submitting}
+            style={{ fontSize: 12, padding: "2px 8px" }}
           >
-            Rename all to <code>&lt;name&gt;-local</code>
+            Rename to <code>&lt;name&gt;-local</code>
           </button>
           <span
             style={{
               flex: 1,
               textAlign: "right",
               alignSelf: "center",
-              fontSize: 12,
+              fontSize: 11,
               color: "var(--text-3)",
             }}
             aria-live="polite"

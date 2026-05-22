@@ -72,9 +72,10 @@ export function ManifestImportConfirmModal({
   ).length;
 
   return (
-    <div style={overlay}>
+    <div style={overlay} onClick={onClose} role="presentation">
       <div
         style={sharedModal(480)}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Confirm install from manifest"

@@ -1463,7 +1463,12 @@ function AppContent(): React.ReactElement {
             !!pickDestinationTarget ||
             !!overwriteTarget ||
             !!bulkRepairPrompt ||
-            !!selected
+            !!selected ||
+            !!installConflict ||
+            !!manifestImportHints ||
+            showUpdatesModal ||
+            showInstallFromGithub ||
+            isUpdateModalOpen
           }
           terminalApp={settings.terminalApp}
         />
@@ -1675,6 +1680,11 @@ function AppContent(): React.ReactElement {
           }}
           onFlash={flash}
           registerAdopts={settings.registerAdopts}
+          defaultInstallAgents={
+            settings.defaultInstallAgents.length > 0
+              ? settings.defaultInstallAgents
+              : undefined
+          }
         />
       )}
 
@@ -1885,6 +1895,9 @@ function AppContent(): React.ReactElement {
             const r = await window.skillsBank.install(
               installConflict.name,
               true,
+              settings.defaultInstallAgents.length > 0
+                ? settings.defaultInstallAgents
+                : undefined,
             );
             flash(r.message);
             setInstallConflict(null);

@@ -275,9 +275,10 @@ function ForkConfirmModal({
   onConfirm,
 }: ForkConfirmModalProps): React.ReactElement {
   return (
-    <div style={overlay}>
+    <div style={overlay} onClick={onCancel} role="presentation">
       <div
         style={modal}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Confirm fork"

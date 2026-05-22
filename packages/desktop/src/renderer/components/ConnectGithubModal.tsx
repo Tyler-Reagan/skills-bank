@@ -136,10 +136,15 @@ export function ConnectGithubModal({
 
   if (!isAuthConfigured) {
     return (
-      <div style={overlay}>
+      <div
+        style={overlay}
+        onClick={() => void cancel()}
+        role="presentation"
+      >
         <div
           ref={modalRef}
           style={modalStyle(520)}
+          onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
           aria-label="Connect to GitHub"
@@ -166,10 +171,15 @@ export function ConnectGithubModal({
       Math.floor((resumable.expiresAt - Date.now()) / 60000),
     );
     return (
-      <div style={overlay}>
+      <div
+        style={overlay}
+        onClick={() => void cancel()}
+        role="presentation"
+      >
         <div
           ref={modalRef}
           style={modalStyle(520)}
+          onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
           aria-label="Resume GitHub authentication"
@@ -217,10 +227,11 @@ export function ConnectGithubModal({
   }
 
   return (
-    <div style={overlay}>
+    <div style={overlay} onClick={() => void cancel()} role="presentation">
       <div
         ref={modalRef}
         style={modalStyle(520)}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Connect to GitHub"

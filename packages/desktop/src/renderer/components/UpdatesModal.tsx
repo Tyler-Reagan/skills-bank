@@ -66,10 +66,11 @@ export function UpdatesModal({
   };
 
   return (
-    <div style={overlay}>
+    <div style={overlay} onClick={onClose} role="presentation">
       <div
         ref={modalRef}
         style={modal}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Skill updates"

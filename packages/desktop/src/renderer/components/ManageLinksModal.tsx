@@ -106,8 +106,20 @@ export function ManageLinksModal({
 
   if (phase.kind === "result") {
     return (
-      <div style={overlay}>
-        <div style={modal} role="dialog" aria-modal="true">
+      <div
+        style={overlay}
+        onClick={() => {
+          onFlash(phase.result.message);
+          void onClose();
+        }}
+        role="presentation"
+      >
+        <div
+          style={modal}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
           <h2 style={{ marginTop: 0 }}>
             {phase.result.ok ? "Links updated" : "Update failed"}
           </h2>
@@ -140,9 +152,14 @@ export function ManageLinksModal({
   }
 
   return (
-    <div style={overlay}>
+    <div
+      style={overlay}
+      onClick={() => void onClose()}
+      role="presentation"
+    >
       <div
         style={modal}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Manage agent links"

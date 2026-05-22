@@ -76,10 +76,11 @@ export function InstallFromGithubModal({
   };
 
   return (
-    <div style={overlay}>
+    <div style={overlay} onClick={onClose} role="presentation">
       <div
         ref={ref}
         style={modal}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Install a skill from GitHub"

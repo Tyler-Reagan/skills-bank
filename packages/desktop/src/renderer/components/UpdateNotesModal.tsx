@@ -45,8 +45,14 @@ export function UpdateNotesModal({
   const { title, subtitle } = headerCopy(status);
 
   return (
-    <div style={overlay}>
-      <div style={modal} role="dialog" aria-modal="true" aria-label={title}>
+    <div style={overlay} onClick={onClose} role="presentation">
+      <div
+        style={modal}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
         <h2 style={{ marginTop: 0 }}>{title}</h2>
         {status.releaseName && status.releaseName !== `v${status.version}` && (
           <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: -8 }}>

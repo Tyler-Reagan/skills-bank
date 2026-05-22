@@ -205,6 +205,17 @@ export type RegistrationAction =
        * `register-external` action variants into this single shape.
        */
       adopt: boolean;
+      /**
+       * Optional post-adoption fan-out. When provided AND `adopt` is
+       * true, applyRegistration reconciles agent links after the adopt
+       * sweep so the registered skill ends up linked into exactly this
+       * agent set. The same shape consumed by `installSkill` — this is
+       * what makes Register the inverse of Install (install creates
+       * links from a registry entry; register adopts a stray install
+       * then mirrors the same link set). Undefined preserves the
+       * legacy behavior of only repointing pre-existing links.
+       */
+      agents?: import("./agents.js").AgentId[];
     } & ActionTarget)
   | {
       type: "setAgents";
