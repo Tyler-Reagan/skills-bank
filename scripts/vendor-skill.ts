@@ -191,9 +191,8 @@ async function resolveSkillPath(
   skillId: string,
   token: string | null,
 ): Promise<string | null> {
-  const { probeOriginTree, findFolderHash } = await import(
-    "../packages/core/src/index.js"
-  );
+  const { probeOriginTree, findFolderHash } =
+    await import("../packages/core/src/index.js");
   void findFolderHash; // silence unused-import in this scope; mirror handles it
   const probe = await probeOriginTree(repo, token);
   if (!probe.ok || probe.truncated) return null;
@@ -294,12 +293,7 @@ async function main(): Promise<void> {
 
   console.log(`vendoring ${args.repo}/${folderPath} → ${destRel}/ ...`);
 
-  const mirror = await mirrorSkillFolder(
-    args.repo,
-    folderPath,
-    destDir,
-    token,
-  );
+  const mirror = await mirrorSkillFolder(args.repo, folderPath, destDir, token);
   if (!mirror.ok) {
     console.error(`mirror failed: ${mirror.message}`);
     process.exit(1);

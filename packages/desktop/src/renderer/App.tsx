@@ -350,9 +350,7 @@ function AppContent(): React.ReactElement {
     import("./components/RegistryFilters.js").RegistrySortState
   >({ by: "name", direction: "asc" });
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
-  const [bulkInstall, setBulkInstall] = useState<BulkInstallState | null>(
-    null,
-  );
+  const [bulkInstall, setBulkInstall] = useState<BulkInstallState | null>(null);
   const [theme, setTheme] = useState<Theme>(readInitialTheme);
   const [density, setDensity] = useState<Density>(readInitialDensity);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ kind: "idle" });
@@ -613,10 +611,7 @@ function AppContent(): React.ReactElement {
           }
         } catch (err) {
           failed = new Map(failed);
-          failed.set(
-            name,
-            err instanceof Error ? err.message : String(err),
-          );
+          failed.set(name, err instanceof Error ? err.message : String(err));
         }
         setBulkInstall({
           queue,
@@ -636,9 +631,7 @@ function AppContent(): React.ReactElement {
       } else if (okCount === 0) {
         flash(`Bulk install failed for all ${failCount} skill(s)`);
       } else {
-        flash(
-          `Installed ${okCount}, ${failCount} failed — see card badges`,
-        );
+        flash(`Installed ${okCount}, ${failCount} failed — see card badges`);
       }
     },
     [settings.defaultInstallAgents, refresh, flash],
@@ -1084,10 +1077,8 @@ function AppContent(): React.ReactElement {
           completed: event.completed,
           total: event.total,
           currentName: event.currentName,
-          manifestNames:
-            event.manifestNames ?? prev?.manifestNames ?? [],
-          manifestSkills:
-            event.manifestSkills ?? prev?.manifestSkills ?? [],
+          manifestNames: event.manifestNames ?? prev?.manifestNames ?? [],
+          manifestSkills: event.manifestSkills ?? prev?.manifestSkills ?? [],
           errors,
           dismissed: prev?.dismissed ?? new Set(),
           settled,
@@ -1126,10 +1117,7 @@ function AppContent(): React.ReactElement {
           // Retry produced another failure (or a collision). Keep the
           // error visible so the user can retry again or dismiss.
           if (r.outcome!.result === "origin-unreachable") {
-            errors.set(
-              skill.name,
-              r.outcome!.reason ?? "origin unreachable",
-            );
+            errors.set(skill.name, r.outcome!.reason ?? "origin unreachable");
           }
           return { ...prev, errors };
         });
@@ -1389,950 +1377,945 @@ function AppContent(): React.ReactElement {
 
   return (
     <div className="app">
-        <Header
-          rescanState={rescan.state}
-          onRefresh={() => void rescan.onRefreshClick()}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          density={density}
-          onToggleDensity={toggleDensity}
-          syncing={
-            syncStatus.kind === "fetching" || syncStatus.kind === "applying"
+      <Header
+        rescanState={rescan.state}
+        onRefresh={() => void rescan.onRefreshClick()}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        density={density}
+        onToggleDensity={toggleDensity}
+        syncing={
+          syncStatus.kind === "fetching" || syncStatus.kind === "applying"
+        }
+        onSync={() => void refreshLinkedRepo()}
+        authStatus={authStatus}
+        onOpenAccount={() => setShowAccount(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        pendingUpdateVersion={pendingUpdateVersion}
+        onShowUpdate={openUpdateModal}
+        pendingSkillUpdates={pendingSkillUpdates.length}
+        onShowUpdates={() => setShowUpdatesModal(true)}
+        onViewRescanUpdates={rescan.onViewUpdates}
+        importingManifest={importingManifest}
+        onCancelImport={cancelManifestImport}
+        localScanState={localScanState}
+        onLocalScan={() => void runLocalScan()}
+        onViewLocalScan={onViewLocalScan}
+        manifestImportProgress={
+          manifestImportProgress
+            ? {
+                completed: manifestImportProgress.completed,
+                total: manifestImportProgress.total,
+              }
+            : null
+        }
+      />
+      {appErrors.length > 0 && (
+        <div className="error-panel-stack">
+          {appErrors.map(({ id, error }) => (
+            <ErrorPanel
+              key={id}
+              error={error}
+              onDismiss={() => dismissAppError(id)}
+              onSuggestedAction={(kind) =>
+                handleSuggestedAction(error, id, kind)
+              }
+            />
+          ))}
+        </div>
+      )}
+      <SyncBanner
+        status={syncStatus}
+        pendingConflicts={pendingConflicts}
+        onDismiss={() => setSyncStatus({ kind: "idle" })}
+        onResolveConflicts={() => void openConflictModal()}
+        onResetPending={() => {
+          void (async () => {
+            const r = await window.skillsBank.clearPendingConflicts();
+            flash(r.message);
+            setPendingConflicts(0);
+            await refresh();
+          })();
+        }}
+      />
+      <Tabs
+        active={tab}
+        onChange={setTabPersisted}
+        registryCount={registry.length}
+        installedCount={uniqueInstalledCount}
+      />
+      {tab === "discover" ? (
+        <DiscoverTab
+          modalOpen={
+            showRegister ||
+            !!manageLinksTarget ||
+            !!conflictTarget ||
+            !!deleteTarget ||
+            !!mergeConflictTarget ||
+            showSettings ||
+            showShortcuts ||
+            showAccount ||
+            showConnectGithub ||
+            !!conflictModalEntries ||
+            showRepoPicker ||
+            !!pickDestinationTarget ||
+            !!overwriteTarget ||
+            !!bulkRepairPrompt ||
+            !!selected
           }
-          onSync={() => void refreshLinkedRepo()}
-          authStatus={authStatus}
-          onOpenAccount={() => setShowAccount(true)}
-          onOpenSettings={() => setShowSettings(true)}
-          pendingUpdateVersion={pendingUpdateVersion}
-          onShowUpdate={openUpdateModal}
-          pendingSkillUpdates={pendingSkillUpdates.length}
-          onShowUpdates={() => setShowUpdatesModal(true)}
-          onViewRescanUpdates={rescan.onViewUpdates}
-          importingManifest={importingManifest}
-          onCancelImport={cancelManifestImport}
-          localScanState={localScanState}
-          onLocalScan={() => void runLocalScan()}
-          onViewLocalScan={onViewLocalScan}
-          manifestImportProgress={
-            manifestImportProgress
-              ? {
-                  completed: manifestImportProgress.completed,
-                  total: manifestImportProgress.total,
+          terminalApp={settings.terminalApp}
+        />
+      ) : (
+        <div
+          className="content"
+          role="tabpanel"
+          id={`tabpanel-${tab}`}
+          aria-labelledby={`tab-${tab}`}
+        >
+          {tab === "browse" && (
+            <BrowseTab
+              // M5: filter hidden canon entries from the default
+              // Browse view. They remain in `registry` for lookups,
+              // installations, and the Settings → Hidden canon
+              // skills section. Memoized above as `visibleRegistry`.
+              registry={visibleRegistry}
+              installed={installed}
+              search={search}
+              setSearch={setSearch}
+              selectedTags={selectedTags}
+              setSelectedTags={setSelectedTags}
+              installedOnly={installedOnly}
+              setInstalledOnly={setInstalledOnly}
+              onSelect={(e) => setSelected(e)}
+              onSaveTags={saveCardTags}
+              onRebuild={rebuild}
+              rebuilding={rebuilding}
+              searchInputRef={searchInputRef}
+              registryFilters={registryFilters}
+              setRegistryFilters={setRegistryFilters}
+              registrySort={registrySort}
+              setRegistrySort={setRegistrySort}
+              onBulkInstall={runBulkInstall}
+              bulkInstall={bulkInstall}
+              manifestImportProgress={manifestImportProgress}
+              onRetryGhost={(skill) => void retryGhost(skill)}
+              onDismissGhost={dismissGhost}
+            />
+          )}
+          {tab === "installed" && (
+            <InstalledTab
+              installed={installed}
+              registry={registry}
+              customSkillsDirs={settings.customSkillsDirs}
+              onAddCustomSkillsDir={addCustomSkillsDir}
+              onRemoveCustomSkillsDir={removeCustomSkillsDir}
+              onSwitchToBrowse={() => setTabPersisted("browse")}
+              onRegisterAll={() => setShowRegister(true)}
+              onRegisterOne={(s) => {
+                // Open the unified detail drawer with a synthetic registry
+                // entry so the user gets the same Register / Manage-links /
+                // Remove action surface as a registered skill — the two
+                // operations are now distinct buttons, not a radio group.
+                const synthetic: RegistryEntry = registryByName.get(s.name) ?? {
+                  name: s.name,
+                  description: s.target ?? s.linkPath,
+                  path: s.linkPath,
+                  source: { source: "user" },
+                };
+                setSelected(synthetic);
+              }}
+              onSelectIntegrated={(e) => setSelected(e)}
+              onResolveConflicts={(g) => {
+                // Level routing: a registered skill resolves via the
+                // replace/delete/keep flow; an unregistered skill
+                // (multi-install) resolves via delete/keep ONLY so the
+                // act of resolving doesn't also register (level pollution).
+                // Broken installations are excluded for registered (they
+                // have a dedicated Repair flow) but included for
+                // unregistered (the user picks a canonical and removes
+                // dead siblings in the same pass).
+                const isRegistered = registryByName.has(g.name);
+                const conflicts = isRegistered
+                  ? g.conflicts.filter(
+                      (c) => c.kind !== "ours" && c.kind !== "broken-symlink",
+                    )
+                  : g.conflicts.filter((c) => c.kind !== "ours");
+                setConflictTarget({
+                  name: g.name,
+                  conflicts,
+                  allowReplaceWithSymlink: isRegistered,
+                });
+              }}
+              onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
+              onRepairAllBroken={async (gs) => {
+                // Bulk Fix-broken-link(s) sweep. Mirrors the
+                // drawer-level onRepairBroken behavior: try repair
+                // first; for skills whose links can't be repaired
+                // (registry copy is gone), prompt to remove the
+                // dead symlinks across all affected skills in a
+                // single confirm.
+                type Unrepairable = {
+                  name: string;
+                  entries: Array<{ agent: string; linkPath: string }>;
+                };
+                const unrepairableBySkill: Unrepairable[] = [];
+                let repaired = 0;
+                for (const g of gs) {
+                  const report = await window.skillsBank.repairBrokenLinks(
+                    g.name,
+                  );
+                  if (report.unrepairable.length > 0) {
+                    unrepairableBySkill.push({
+                      name: g.name,
+                      entries: report.unrepairable.map((e) => ({
+                        agent: e.agent,
+                        linkPath: e.linkPath,
+                      })),
+                    });
+                  } else {
+                    repaired += 1;
+                  }
                 }
-              : null
-          }
-        />
-        {appErrors.length > 0 && (
-          <div className="error-panel-stack">
-            {appErrors.map(({ id, error }) => (
-              <ErrorPanel
-                key={id}
-                error={error}
-                onDismiss={() => dismissAppError(id)}
-                onSuggestedAction={(kind) =>
-                  handleSuggestedAction(error, id, kind)
+                await refresh();
+
+                if (unrepairableBySkill.length === 0) {
+                  flash(
+                    `Repaired ${repaired} skill${repaired === 1 ? "" : "s"}.`,
+                  );
+                  return;
                 }
-              />
-            ))}
-          </div>
-        )}
-        <SyncBanner
-          status={syncStatus}
-          pendingConflicts={pendingConflicts}
-          onDismiss={() => setSyncStatus({ kind: "idle" })}
-          onResolveConflicts={() => void openConflictModal()}
-          onResetPending={() => {
-            void (async () => {
-              const r = await window.skillsBank.clearPendingConflicts();
-              flash(r.message);
-              setPendingConflicts(0);
-              await refresh();
-            })();
-          }}
-        />
-        <Tabs
-          active={tab}
-          onChange={setTabPersisted}
-          registryCount={registry.length}
-          installedCount={uniqueInstalledCount}
-        />
-        {tab === "discover" ? (
-          <DiscoverTab
-            modalOpen={
-              showRegister ||
-              !!manageLinksTarget ||
-              !!conflictTarget ||
-              !!deleteTarget ||
-              !!mergeConflictTarget ||
-              showSettings ||
-              showShortcuts ||
-              showAccount ||
-              showConnectGithub ||
-              !!conflictModalEntries ||
-              showRepoPicker ||
-              !!pickDestinationTarget ||
-              !!overwriteTarget ||
-              !!bulkRepairPrompt ||
-              !!selected
-            }
-            terminalApp={settings.terminalApp}
-          />
-        ) : (
-          <div
-            className="content"
-            role="tabpanel"
-            id={`tabpanel-${tab}`}
-            aria-labelledby={`tab-${tab}`}
-          >
-            {tab === "browse" && (
-              <BrowseTab
-                // M5: filter hidden canon entries from the default
-                // Browse view. They remain in `registry` for lookups,
-                // installations, and the Settings → Hidden canon
-                // skills section. Memoized above as `visibleRegistry`.
-                registry={visibleRegistry}
-                installed={installed}
-                search={search}
-                setSearch={setSearch}
-                selectedTags={selectedTags}
-                setSelectedTags={setSelectedTags}
-                installedOnly={installedOnly}
-                setInstalledOnly={setInstalledOnly}
-                onSelect={(e) => setSelected(e)}
-                onSaveTags={saveCardTags}
-                onRebuild={rebuild}
-                rebuilding={rebuilding}
-                searchInputRef={searchInputRef}
-                registryFilters={registryFilters}
-                setRegistryFilters={setRegistryFilters}
-                registrySort={registrySort}
-                setRegistrySort={setRegistrySort}
-                onBulkInstall={runBulkInstall}
-                bulkInstall={bulkInstall}
-                manifestImportProgress={manifestImportProgress}
-                onRetryGhost={(skill) => void retryGhost(skill)}
-                onDismissGhost={dismissGhost}
-              />
-            )}
-            {tab === "installed" && (
-              <InstalledTab
-                installed={installed}
-                registry={registry}
-                customSkillsDirs={settings.customSkillsDirs}
-                onAddCustomSkillsDir={addCustomSkillsDir}
-                onRemoveCustomSkillsDir={removeCustomSkillsDir}
-                onSwitchToBrowse={() => setTabPersisted("browse")}
-                onRegisterAll={() => setShowRegister(true)}
-                onRegisterOne={(s) => {
-                  // Open the unified detail drawer with a synthetic registry
-                  // entry so the user gets the same Register / Manage-links /
-                  // Remove action surface as a registered skill — the two
-                  // operations are now distinct buttons, not a radio group.
-                  const synthetic: RegistryEntry = registryByName.get(
-                    s.name,
-                  ) ?? {
-                    name: s.name,
-                    description: s.target ?? s.linkPath,
-                    path: s.linkPath,
-                    source: { source: "user" },
-                  };
-                  setSelected(synthetic);
-                }}
-                onSelectIntegrated={(e) => setSelected(e)}
-                onResolveConflicts={(g) => {
-                  // Level routing: a registered skill resolves via the
-                  // replace/delete/keep flow; an unregistered skill
-                  // (multi-install) resolves via delete/keep ONLY so the
-                  // act of resolving doesn't also register (level pollution).
-                  // Broken installations are excluded for registered (they
-                  // have a dedicated Repair flow) but included for
-                  // unregistered (the user picks a canonical and removes
-                  // dead siblings in the same pass).
-                  const isRegistered = registryByName.has(g.name);
-                  const conflicts = isRegistered
-                    ? g.conflicts.filter(
-                        (c) => c.kind !== "ours" && c.kind !== "broken-symlink",
-                      )
-                    : g.conflicts.filter((c) => c.kind !== "ours");
-                  setConflictTarget({
-                    name: g.name,
-                    conflicts,
-                    allowReplaceWithSymlink: isRegistered,
-                  });
-                }}
-                onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
-                onRepairAllBroken={async (gs) => {
-                  // Bulk Fix-broken-link(s) sweep. Mirrors the
-                  // drawer-level onRepairBroken behavior: try repair
-                  // first; for skills whose links can't be repaired
-                  // (registry copy is gone), prompt to remove the
-                  // dead symlinks across all affected skills in a
-                  // single confirm.
-                  type Unrepairable = {
-                    name: string;
-                    entries: Array<{ agent: string; linkPath: string }>;
-                  };
-                  const unrepairableBySkill: Unrepairable[] = [];
-                  let repaired = 0;
-                  for (const g of gs) {
-                    const report = await window.skillsBank.repairBrokenLinks(
-                      g.name,
+
+                // Hand off to the styled ConfirmDialog. The dialog's
+                // onConfirm runs the removal sweep; cancel surfaces a
+                // partial-success toast.
+                setBulkRepairPrompt({
+                  repaired,
+                  unrepairable: unrepairableBySkill,
+                });
+              }}
+              onInlineDelete={(group) => {
+                // M9b: stash the group on deleteTarget so the
+                // confirmation modal can preview which paths get
+                // touched. Actual deletion fires only after the
+                // user confirms.
+                const mine = installed.filter((i) => i.name === group.name);
+                setDeleteTarget({ name: group.name, installations: mine });
+              }}
+              onInlineRegister={(group) => {
+                // Unregistered-section shortcut. Registers the only
+                // installation into the registry — same operation the
+                // drawer's onRegister performs. Single-installation is
+                // guaranteed by the partition (multi-install lives in
+                // Needs attention), so there is no "which copy" ambiguity.
+                // adopt-vs-symlink mode follows the global setting.
+                void (async () => {
+                  const results = await window.skillsBank.register([
+                    {
+                      name: group.name,
+                      action: {
+                        type: "register",
+                        name: group.name,
+                        adopt: settings.registerAdopts,
+                      },
+                    },
+                  ]);
+                  const r = results[0]!;
+                  flash(r.message);
+                  await refresh();
+                })();
+              }}
+              onRepairBroken={(g) => {
+                void (async () => {
+                  const report = await window.skillsBank.repairBrokenLinks(
+                    g.name,
+                  );
+                  if (report.unrepairable.length === 0) {
+                    flash(
+                      report.repaired.length > 0
+                        ? `Repaired ${report.repaired.length} broken link(s) for ${g.name}`
+                        : `No broken links for ${g.name}`,
                     );
-                    if (report.unrepairable.length > 0) {
-                      unrepairableBySkill.push({
+                    await refresh();
+                    return;
+                  }
+                  // Route through the same ConfirmDialog the bulk
+                  // sweep uses so the per-card and bulk flows look
+                  // identical. The dialog's onConfirm calls
+                  // removeBrokenLinks for each entry; onCancel
+                  // surfaces a "left unresolved" toast.
+                  await refresh();
+                  setBulkRepairPrompt({
+                    repaired: report.repaired.length > 0 ? 1 : 0,
+                    unrepairable: [
+                      {
                         name: g.name,
                         entries: report.unrepairable.map((e) => ({
                           agent: e.agent,
                           linkPath: e.linkPath,
                         })),
-                      });
-                    } else {
-                      repaired += 1;
-                    }
-                  }
-                  await refresh();
-
-                  if (unrepairableBySkill.length === 0) {
-                    flash(
-                      `Repaired ${repaired} skill${repaired === 1 ? "" : "s"}.`,
-                    );
-                    return;
-                  }
-
-                  // Hand off to the styled ConfirmDialog. The dialog's
-                  // onConfirm runs the removal sweep; cancel surfaces a
-                  // partial-success toast.
-                  setBulkRepairPrompt({
-                    repaired,
-                    unrepairable: unrepairableBySkill,
-                  });
-                }}
-                onInlineDelete={(group) => {
-                  // M9b: stash the group on deleteTarget so the
-                  // confirmation modal can preview which paths get
-                  // touched. Actual deletion fires only after the
-                  // user confirms.
-                  const mine = installed.filter((i) => i.name === group.name);
-                  setDeleteTarget({ name: group.name, installations: mine });
-                }}
-                onInlineRegister={(group) => {
-                  // Unregistered-section shortcut. Registers the only
-                  // installation into the registry — same operation the
-                  // drawer's onRegister performs. Single-installation is
-                  // guaranteed by the partition (multi-install lives in
-                  // Needs attention), so there is no "which copy" ambiguity.
-                  // adopt-vs-symlink mode follows the global setting.
-                  void (async () => {
-                    const results = await window.skillsBank.register([
-                      {
-                        name: group.name,
-                        action: {
-                          type: "register",
-                          name: group.name,
-                          adopt: settings.registerAdopts,
-                        },
                       },
-                    ]);
-                    const r = results[0]!;
-                    flash(r.message);
-                    await refresh();
-                  })();
-                }}
-                onRepairBroken={(g) => {
-                  void (async () => {
-                    const report = await window.skillsBank.repairBrokenLinks(
-                      g.name,
-                    );
-                    if (report.unrepairable.length === 0) {
-                      flash(
-                        report.repaired.length > 0
-                          ? `Repaired ${report.repaired.length} broken link(s) for ${g.name}`
-                          : `No broken links for ${g.name}`,
-                      );
-                      await refresh();
-                      return;
-                    }
-                    // Route through the same ConfirmDialog the bulk
-                    // sweep uses so the per-card and bulk flows look
-                    // identical. The dialog's onConfirm calls
-                    // removeBrokenLinks for each entry; onCancel
-                    // surfaces a "left unresolved" toast.
-                    await refresh();
-                    setBulkRepairPrompt({
-                      repaired: report.repaired.length > 0 ? 1 : 0,
-                      unrepairable: [
-                        {
-                          name: g.name,
-                          entries: report.unrepairable.map((e) => ({
-                            agent: e.agent,
-                            linkPath: e.linkPath,
-                          })),
-                        },
-                      ],
-                    });
-                  })();
-                }}
-                diagnostics={diagnostics}
-                onFixDiagnosticItem={(item) => void onFixDiagnosticItem(item)}
-              />
-            )}
-          </div>
-        )}
+                    ],
+                  });
+                })();
+              }}
+              diagnostics={diagnostics}
+              onFixDiagnosticItem={(item) => void onFixDiagnosticItem(item)}
+            />
+          )}
+        </div>
+      )}
 
-        {showRegister && (
-          <RegisterModal
-            onClose={async () => {
-              setShowRegister(false);
-              await refresh();
-            }}
-            onFlash={flash}
-            registerAdopts={settings.registerAdopts}
-          />
-        )}
+      {showRegister && (
+        <RegisterModal
+          onClose={async () => {
+            setShowRegister(false);
+            await refresh();
+          }}
+          onFlash={flash}
+          registerAdopts={settings.registerAdopts}
+        />
+      )}
 
-        {manageLinksTarget && (
-          <ManageLinksModal
-            name={manageLinksTarget.name}
-            installations={manageLinksTarget.installations}
-            onClose={async () => {
-              setManageLinksTarget(null);
-              await refresh();
-            }}
-            onFlash={flash}
-          />
-        )}
+      {manageLinksTarget && (
+        <ManageLinksModal
+          name={manageLinksTarget.name}
+          installations={manageLinksTarget.installations}
+          onClose={async () => {
+            setManageLinksTarget(null);
+            await refresh();
+          }}
+          onFlash={flash}
+        />
+      )}
 
-        {conflictTarget && (
-          <ConflictResolveModal
-            name={conflictTarget.name}
-            conflicts={conflictTarget.conflicts}
-            allowReplaceWithSymlink={conflictTarget.allowReplaceWithSymlink}
-            onClose={async () => {
-              setConflictTarget(null);
-              await refresh();
-            }}
-            onFlash={flash}
-          />
-        )}
+      {conflictTarget && (
+        <ConflictResolveModal
+          name={conflictTarget.name}
+          conflicts={conflictTarget.conflicts}
+          allowReplaceWithSymlink={conflictTarget.allowReplaceWithSymlink}
+          onClose={async () => {
+            setConflictTarget(null);
+            await refresh();
+          }}
+          onFlash={flash}
+        />
+      )}
 
-        {resolveAllTarget && (
+      {resolveAllTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "var(--scrim)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1100,
+          }}
+        >
           <div
-            role="dialog"
-            aria-modal="true"
             style={{
-              position: "fixed",
-              inset: 0,
-              background: "var(--scrim)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1100,
+              background: "var(--surface)",
+              border: "1px solid var(--border-hi)",
+              borderRadius: 8,
+              padding: 24,
+              width: 520,
+              maxWidth: "90vw",
             }}
           >
-            <div
+            <h3 style={{ marginTop: 0 }}>
+              Resolve all conflicts ({resolveAllTarget.length})?
+            </h3>
+            <p style={{ color: "var(--text-2)", fontSize: 13 }}>
+              For each skill below, every duplicate or stale agent-dir entry
+              will be replaced with a symlink to the Skills Bank copy. This is
+              the same as picking "Replace with symlink" for each conflict.
+            </p>
+            <ul
               style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border-hi)",
-                borderRadius: 8,
-                padding: 24,
-                width: 520,
-                maxWidth: "90vw",
+                margin: "8px 0 12px",
+                padding: "8px 12px",
+                background: "var(--surface-hi)",
+                borderRadius: 4,
+                fontSize: 12,
+                color: "var(--text-2)",
+                listStyle: "none",
+                maxHeight: 200,
+                overflowY: "auto",
               }}
             >
-              <h3 style={{ marginTop: 0 }}>
-                Resolve all conflicts ({resolveAllTarget.length})?
-              </h3>
-              <p style={{ color: "var(--text-2)", fontSize: 13 }}>
-                For each skill below, every duplicate or stale agent-dir entry
-                will be replaced with a symlink to the Skills Bank copy. This is
-                the same as picking "Replace with symlink" for each conflict.
-              </p>
-              <ul
-                style={{
-                  margin: "8px 0 12px",
-                  padding: "8px 12px",
-                  background: "var(--surface-hi)",
-                  borderRadius: 4,
-                  fontSize: 12,
-                  color: "var(--text-2)",
-                  listStyle: "none",
-                  maxHeight: 200,
-                  overflowY: "auto",
-                }}
-              >
-                {resolveAllTarget.map((g) => {
-                  const skillErrors = resolveAllErrors?.[g.name];
-                  return (
-                    <li key={g.name} style={{ padding: "3px 0" }}>
-                      <code
+              {resolveAllTarget.map((g) => {
+                const skillErrors = resolveAllErrors?.[g.name];
+                return (
+                  <li key={g.name} style={{ padding: "3px 0" }}>
+                    <code
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        color: skillErrors
+                          ? "var(--danger, #d04444)"
+                          : "var(--text-1)",
+                      }}
+                    >
+                      {g.name}
+                    </code>{" "}
+                    <span style={{ color: "var(--text-3)" }}>
+                      — {g.conflicts.length} conflict
+                      {g.conflicts.length === 1 ? "" : "s"}
+                    </span>
+                    {skillErrors && (
+                      <ul
                         style={{
+                          margin: "4px 0 0 12px",
+                          padding: 0,
+                          listStyle: "none",
+                          color: "var(--danger, #d04444)",
+                          fontSize: 11,
                           fontFamily: "var(--font-mono)",
-                          color: skillErrors
-                            ? "var(--danger, #d04444)"
-                            : "var(--text-1)",
                         }}
                       >
-                        {g.name}
-                      </code>{" "}
-                      <span style={{ color: "var(--text-3)" }}>
-                        — {g.conflicts.length} conflict
-                        {g.conflicts.length === 1 ? "" : "s"}
-                      </span>
-                      {skillErrors && (
-                        <ul
-                          style={{
-                            margin: "4px 0 0 12px",
-                            padding: 0,
-                            listStyle: "none",
-                            color: "var(--danger, #d04444)",
-                            fontSize: 11,
-                            fontFamily: "var(--font-mono)",
-                          }}
-                        >
-                          {skillErrors.map((m, i) => (
-                            <li key={i} style={{ padding: "1px 0" }}>
-                              · {m}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: 8,
+                        {skillErrors.map((m, i) => (
+                          <li key={i} style={{ padding: "1px 0" }}>
+                            · {m}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+              }}
+            >
+              <button
+                className="btn"
+                onClick={() => {
+                  setResolveAllTarget(null);
+                  setResolveAllErrors(null);
+                }}
+                disabled={resolveAllRunning}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn warn"
+                disabled={resolveAllRunning}
+                onClick={() => {
+                  void (async () => {
+                    setResolveAllRunning(true);
+                    setResolveAllErrors(null);
+                    let okCount = 0;
+                    let failCount = 0;
+                    const errs: Record<string, string[]> = {};
+                    for (const g of resolveAllTarget) {
+                      const decisions = g.conflicts.map((c) => ({
+                        agent: c.agent,
+                        action: "replace-with-symlink" as const,
+                      }));
+                      try {
+                        const r = await window.skillsBank.resolveSkillConflicts(
+                          g.name,
+                          decisions,
+                        );
+                        okCount += r.applied.length;
+                        failCount += r.errors.length;
+                        if (r.errors.length > 0) {
+                          errs[g.name] = r.errors.map(
+                            (e) => `${e.agent}: ${e.message}`,
+                          );
+                        }
+                      } catch (err) {
+                        failCount += 1;
+                        errs[g.name] = [(err as Error).message];
+                      }
+                    }
+                    setResolveAllRunning(false);
+                    if (failCount === 0) {
+                      // Total success — close, toast, and refresh.
+                      setResolveAllTarget(null);
+                      flash(
+                        `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} across ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}.`,
+                      );
+                      await refresh();
+                    } else {
+                      // Keep the modal open so per-skill errors stay
+                      // visible. The user can dismiss explicitly via
+                      // Cancel or hit Retry after addressing the
+                      // underlying issue (e.g. registry copy missing).
+                      setResolveAllErrors(errs);
+                      flash(
+                        okCount === 0
+                          ? `Couldn't resolve ${failCount} conflict${failCount === 1 ? "" : "s"} (see details)`
+                          : `Resolved ${okCount}; ${failCount} failed (see details)`,
+                      );
+                      await refresh();
+                    }
+                  })();
                 }}
               >
-                <button
-                  className="btn"
-                  onClick={() => {
-                    setResolveAllTarget(null);
-                    setResolveAllErrors(null);
-                  }}
-                  disabled={resolveAllRunning}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn warn"
-                  disabled={resolveAllRunning}
-                  onClick={() => {
-                    void (async () => {
-                      setResolveAllRunning(true);
-                      setResolveAllErrors(null);
-                      let okCount = 0;
-                      let failCount = 0;
-                      const errs: Record<string, string[]> = {};
-                      for (const g of resolveAllTarget) {
-                        const decisions = g.conflicts.map((c) => ({
-                          agent: c.agent,
-                          action: "replace-with-symlink" as const,
-                        }));
-                        try {
-                          const r =
-                            await window.skillsBank.resolveSkillConflicts(
-                              g.name,
-                              decisions,
-                            );
-                          okCount += r.applied.length;
-                          failCount += r.errors.length;
-                          if (r.errors.length > 0) {
-                            errs[g.name] = r.errors.map(
-                              (e) => `${e.agent}: ${e.message}`,
-                            );
-                          }
-                        } catch (err) {
-                          failCount += 1;
-                          errs[g.name] = [(err as Error).message];
-                        }
-                      }
-                      setResolveAllRunning(false);
-                      if (failCount === 0) {
-                        // Total success — close, toast, and refresh.
-                        setResolveAllTarget(null);
-                        flash(
-                          `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} across ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}.`,
-                        );
-                        await refresh();
-                      } else {
-                        // Keep the modal open so per-skill errors stay
-                        // visible. The user can dismiss explicitly via
-                        // Cancel or hit Retry after addressing the
-                        // underlying issue (e.g. registry copy missing).
-                        setResolveAllErrors(errs);
-                        flash(
-                          okCount === 0
-                            ? `Couldn't resolve ${failCount} conflict${failCount === 1 ? "" : "s"} (see details)`
-                            : `Resolved ${okCount}; ${failCount} failed (see details)`,
-                        );
-                        await refresh();
-                      }
-                    })();
-                  }}
-                >
-                  {resolveAllRunning ? (
-                    <>
-                      <span className="spinner inline" /> Resolving
-                    </>
-                  ) : resolveAllErrors ? (
-                    "Retry"
-                  ) : (
-                    `Resolve ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}`
-                  )}
-                </button>
-              </div>
+                {resolveAllRunning ? (
+                  <>
+                    <span className="spinner inline" /> Resolving
+                  </>
+                ) : resolveAllErrors ? (
+                  "Retry"
+                ) : (
+                  `Resolve ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}`
+                )}
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {installConflict && (
-          <InstallConflictModal
-            name={installConflict.name}
-            errors={installConflict.errors}
-            onClose={() => setInstallConflict(null)}
-            onForce={async () => {
-              const r = await window.skillsBank.install(
-                installConflict.name,
-                true,
-              );
-              flash(r.message);
-              setInstallConflict(null);
-              await refresh();
-            }}
-            onResolve={() => {
-              // Hand off to ConflictResolveModal using the current
-              // installed snapshot for the same name. The user picks
-              // per-agent actions there.
-              const conflicts = installed.filter(
-                (i) =>
-                  i.name === installConflict.name &&
-                  i.kind !== "ours" &&
-                  i.kind !== "broken-symlink",
-              );
-              // Force-install conflicts only occur for registered skills
-              // (force-install is a registered-level action), so the
-              // resolution always allows the symlink-to-registry path.
-              setConflictTarget({
-                name: installConflict.name,
-                conflicts,
-                allowReplaceWithSymlink: true,
-              });
-              setInstallConflict(null);
-            }}
-          />
-        )}
-
-        {mergeConflictTarget && (
-          <ConflictResolutionModal
-            conflicts={mergeConflictTarget.conflicts}
-            onClose={() => {
-              const prior = mergeConflictTarget.priorReport;
-              setMergeConflictTarget(null);
-              const parts: string[] = [];
-              if (prior.imported.length > 0)
-                parts.push(`${prior.imported.length} imported`);
-              if (prior.renamed.length > 0)
-                parts.push(`${prior.renamed.length} renamed`);
-              if (prior.keptMine.length > 0)
-                parts.push(`${prior.keptMine.length} kept yours`);
-              flash(
-                `Merge cancelled${parts.length > 0 ? ` (${parts.join(", ")})` : ""}.`,
-              );
-              void refresh();
-            }}
-            onResolve={async (decisions) => {
-              const target = mergeConflictTarget;
-              setMergeConflictTarget(null);
-              const r = await window.skillsBank.importRegistryMergeApply(
-                target.sourcePath,
-                decisions,
-              );
-              flash(r.message);
-              await refresh();
-            }}
-          />
-        )}
-
-        {deleteTarget && (
-          <DeleteUnregisteredConfirm
-            name={deleteTarget.name}
-            installations={deleteTarget.installations}
-            onCancel={() => setDeleteTarget(null)}
-            onConfirm={async () => {
-              const target = deleteTarget;
-              setDeleteTarget(null);
-              const r = await window.skillsBank.deleteUnregistered(target.name);
-              flash(r.message);
-              await refresh();
-            }}
-          />
-        )}
-
-        {showSettings && (
-          <SettingsModal
-            settings={settings}
-            onSave={saveSettings}
-            onClose={() => setShowSettings(false)}
-            onOpenInstallFromGithub={() => {
-              setShowSettings(false);
-              setShowInstallFromGithub(true);
-            }}
-            hiddenCanon={registry.filter((e) => e.hidden).map((e) => e.name)}
-            onUnhide={async (name) => {
-              const r = await window.skillsBank.unhide(name);
-              flash(r.message);
-              await refresh();
-            }}
-            isAuthed={Boolean(authStatus?.user)}
-          />
-        )}
-        {showInstallFromGithub && (
-          <InstallFromGithubModal
-            onClose={() => setShowInstallFromGithub(false)}
-            onInstalled={() => {
-              setShowInstallFromGithub(false);
-              void refresh();
-            }}
-          />
-        )}
-
-        {showShortcuts && (
-          <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
-        )}
-
-        {showAccount && (
-          <AccountModal
-            authStatus={authStatus}
-            appVersion={"dev"}
-            onClose={() => setShowAccount(false)}
-            onChangeRegistry={async () => {
-              setShowAccount(false);
-              await changeRegistry();
-            }}
-            onRefreshRegistry={async () => {
-              setShowAccount(false);
-              await refreshLinkedRepo();
-            }}
-            onImportRegistry={async () => {
-              setShowAccount(false);
-              await importRegistryFromDisk();
-            }}
-            onMergeRegistry={async () => {
-              setShowAccount(false);
-              await mergeRegistry();
-            }}
-            onExportRegistry={async () => {
-              setShowAccount(false);
-              await exportRegistry();
-            }}
-            onImportManifest={async () => {
-              await importManifest();
-              setShowAccount(false);
-            }}
-            importingManifest={importingManifest}
-            onCancelImport={cancelManifestImport}
-            onExportManifest={async () => {
-              setShowAccount(false);
-              await exportManifest();
-            }}
-            onSignOut={async () => {
-              setShowAccount(false);
-              await signOut();
-            }}
-            onCheckForUpdates={checkForUpdates}
-            onConnectGithub={() => {
-              setShowAccount(false);
-              setShowConnectGithub(true);
-            }}
-          />
-        )}
-
-        {manifestImportHints !== null && (
-          <ManifestImportConfirmModal
-            result={manifestImportHints}
-            onClose={() => setManifestImportHints(null)}
-            onDone={(msg) => {
-              setManifestImportHints(null);
-              if (msg) flash(msg);
-            }}
-          />
-        )}
-
-        {showConnectGithub && authStatus && (
-          <ConnectGithubModal
-            isAuthConfigured={authStatus.isAuthConfigured}
-            onClose={() => setShowConnectGithub(false)}
-            onConnected={(status) => {
-              setShowConnectGithub(false);
-              setAuthStatus(status);
-              // First-link case: user just authed and has no linked
-              // repo yet → auto-prompt RepoPicker as the obvious
-              // next step. Sign-in's payoff is linking a repo;
-              // making the user hunt for "Link a GitHub repository"
-              // after Device Flow is bad UX.
-              //
-              // Re-auth case: user already has a linkedRepo → leave
-              // it untouched. They just refreshed credentials; the
-              // explicit "Change linked repo" action in Account
-              // covers the rare "actually swap the repo" intent.
-              if (!status.linkedRepo) {
-                setShowRepoPicker(true);
-              }
-              void refresh();
-            }}
-          />
-        )}
-
-        {showUpdatesModal && (
-          <UpdatesModal
-            entries={pendingSkillUpdates}
-            onClose={() => setShowUpdatesModal(false)}
-            onUpdate={async (name) => {
-              const r = await window.skillsBank.originUpdate(name);
-              handleUpdateResult(r);
-              await refresh();
-              return r;
-            }}
-            onView={(entry) => {
-              setShowUpdatesModal(false);
-              setSelected(entry);
-            }}
-            onRefresh={async () => {
-              await window.skillsBank.originProbe();
-              await refresh();
-            }}
-          />
-        )}
-
-        <DestinationPickerDialog
-          open={pickDestinationTarget !== null}
-          skillName={pickDestinationTarget?.name ?? ""}
-          currentDestination={
-            pickDestinationTarget?.currentDestination ??
-            settings.unregisterDestinationAgent
-          }
-          onCancel={() => setPickDestinationTarget(null)}
-          onPick={async (next, persistAsDefault) => {
-            if (!pickDestinationTarget) return;
-            const target = pickDestinationTarget;
-            setPickDestinationTarget(null);
-            if (persistAsDefault) {
-              saveSettings({
-                ...settings,
-                unregisterDestinationAgent: next,
-              });
-            }
-            const r = await window.skillsBank.unregister(target.name, next);
-            await handleUnregisterResult(target.errorId, r);
+      {installConflict && (
+        <InstallConflictModal
+          name={installConflict.name}
+          errors={installConflict.errors}
+          onClose={() => setInstallConflict(null)}
+          onForce={async () => {
+            const r = await window.skillsBank.install(
+              installConflict.name,
+              true,
+            );
+            flash(r.message);
+            setInstallConflict(null);
+            await refresh();
+          }}
+          onResolve={() => {
+            // Hand off to ConflictResolveModal using the current
+            // installed snapshot for the same name. The user picks
+            // per-agent actions there.
+            const conflicts = installed.filter(
+              (i) =>
+                i.name === installConflict.name &&
+                i.kind !== "ours" &&
+                i.kind !== "broken-symlink",
+            );
+            // Force-install conflicts only occur for registered skills
+            // (force-install is a registered-level action), so the
+            // resolution always allows the symlink-to-registry path.
+            setConflictTarget({
+              name: installConflict.name,
+              conflicts,
+              allowReplaceWithSymlink: true,
+            });
+            setInstallConflict(null);
           }}
         />
+      )}
 
-        <ConfirmDialog
-          open={overwriteTarget !== null}
-          title={`Overwrite existing folder?`}
-          body={
+      {mergeConflictTarget && (
+        <ConflictResolutionModal
+          conflicts={mergeConflictTarget.conflicts}
+          onClose={() => {
+            const prior = mergeConflictTarget.priorReport;
+            setMergeConflictTarget(null);
+            const parts: string[] = [];
+            if (prior.imported.length > 0)
+              parts.push(`${prior.imported.length} imported`);
+            if (prior.renamed.length > 0)
+              parts.push(`${prior.renamed.length} renamed`);
+            if (prior.keptMine.length > 0)
+              parts.push(`${prior.keptMine.length} kept yours`);
+            flash(
+              `Merge cancelled${parts.length > 0 ? ` (${parts.join(", ")})` : ""}.`,
+            );
+            void refresh();
+          }}
+          onResolve={async (decisions) => {
+            const target = mergeConflictTarget;
+            setMergeConflictTarget(null);
+            const r = await window.skillsBank.importRegistryMergeApply(
+              target.sourcePath,
+              decisions,
+            );
+            flash(r.message);
+            await refresh();
+          }}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteUnregisteredConfirm
+          name={deleteTarget.name}
+          installations={deleteTarget.installations}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            const target = deleteTarget;
+            setDeleteTarget(null);
+            const r = await window.skillsBank.deleteUnregistered(target.name);
+            flash(r.message);
+            await refresh();
+          }}
+        />
+      )}
+
+      {showSettings && (
+        <SettingsModal
+          settings={settings}
+          onSave={saveSettings}
+          onClose={() => setShowSettings(false)}
+          onOpenInstallFromGithub={() => {
+            setShowSettings(false);
+            setShowInstallFromGithub(true);
+          }}
+          hiddenCanon={registry.filter((e) => e.hidden).map((e) => e.name)}
+          onUnhide={async (name) => {
+            const r = await window.skillsBank.unhide(name);
+            flash(r.message);
+            await refresh();
+          }}
+          isAuthed={Boolean(authStatus?.user)}
+        />
+      )}
+      {showInstallFromGithub && (
+        <InstallFromGithubModal
+          onClose={() => setShowInstallFromGithub(false)}
+          onInstalled={() => {
+            setShowInstallFromGithub(false);
+            void refresh();
+          }}
+        />
+      )}
+
+      {showShortcuts && (
+        <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
+      )}
+
+      {showAccount && (
+        <AccountModal
+          authStatus={authStatus}
+          appVersion={"dev"}
+          onClose={() => setShowAccount(false)}
+          onChangeRegistry={async () => {
+            setShowAccount(false);
+            await changeRegistry();
+          }}
+          onRefreshRegistry={async () => {
+            setShowAccount(false);
+            await refreshLinkedRepo();
+          }}
+          onImportRegistry={async () => {
+            setShowAccount(false);
+            await importRegistryFromDisk();
+          }}
+          onMergeRegistry={async () => {
+            setShowAccount(false);
+            await mergeRegistry();
+          }}
+          onExportRegistry={async () => {
+            setShowAccount(false);
+            await exportRegistry();
+          }}
+          onImportManifest={async () => {
+            await importManifest();
+            setShowAccount(false);
+          }}
+          importingManifest={importingManifest}
+          onCancelImport={cancelManifestImport}
+          onExportManifest={async () => {
+            setShowAccount(false);
+            await exportManifest();
+          }}
+          onSignOut={async () => {
+            setShowAccount(false);
+            await signOut();
+          }}
+          onCheckForUpdates={checkForUpdates}
+          onConnectGithub={() => {
+            setShowAccount(false);
+            setShowConnectGithub(true);
+          }}
+        />
+      )}
+
+      {manifestImportHints !== null && (
+        <ManifestImportConfirmModal
+          result={manifestImportHints}
+          onClose={() => setManifestImportHints(null)}
+          onDone={(msg) => {
+            setManifestImportHints(null);
+            if (msg) flash(msg);
+          }}
+        />
+      )}
+
+      {showConnectGithub && authStatus && (
+        <ConnectGithubModal
+          isAuthConfigured={authStatus.isAuthConfigured}
+          onClose={() => setShowConnectGithub(false)}
+          onConnected={(status) => {
+            setShowConnectGithub(false);
+            setAuthStatus(status);
+            // First-link case: user just authed and has no linked
+            // repo yet → auto-prompt RepoPicker as the obvious
+            // next step. Sign-in's payoff is linking a repo;
+            // making the user hunt for "Link a GitHub repository"
+            // after Device Flow is bad UX.
+            //
+            // Re-auth case: user already has a linkedRepo → leave
+            // it untouched. They just refreshed credentials; the
+            // explicit "Change linked repo" action in Account
+            // covers the rare "actually swap the repo" intent.
+            if (!status.linkedRepo) {
+              setShowRepoPicker(true);
+            }
+            void refresh();
+          }}
+        />
+      )}
+
+      {showUpdatesModal && (
+        <UpdatesModal
+          entries={pendingSkillUpdates}
+          onClose={() => setShowUpdatesModal(false)}
+          onUpdate={async (name) => {
+            const r = await window.skillsBank.originUpdate(name);
+            handleUpdateResult(r);
+            await refresh();
+            return r;
+          }}
+          onView={(entry) => {
+            setShowUpdatesModal(false);
+            setSelected(entry);
+          }}
+          onRefresh={async () => {
+            await window.skillsBank.originProbe();
+            await refresh();
+          }}
+        />
+      )}
+
+      <DestinationPickerDialog
+        open={pickDestinationTarget !== null}
+        skillName={pickDestinationTarget?.name ?? ""}
+        currentDestination={
+          pickDestinationTarget?.currentDestination ??
+          settings.unregisterDestinationAgent
+        }
+        onCancel={() => setPickDestinationTarget(null)}
+        onPick={async (next, persistAsDefault) => {
+          if (!pickDestinationTarget) return;
+          const target = pickDestinationTarget;
+          setPickDestinationTarget(null);
+          if (persistAsDefault) {
+            saveSettings({
+              ...settings,
+              unregisterDestinationAgent: next,
+            });
+          }
+          const r = await window.skillsBank.unregister(target.name, next);
+          await handleUnregisterResult(target.errorId, r);
+        }}
+      />
+
+      <ConfirmDialog
+        open={overwriteTarget !== null}
+        title={`Overwrite existing folder?`}
+        body={
+          <>
+            <p style={{ margin: 0 }}>
+              A folder already exists at <code>{overwriteTarget?.destDir}</code>
+              . Continuing will permanently delete it and move{" "}
+              <code>{overwriteTarget?.name}</code> in its place.
+            </p>
+            <p
+              style={{
+                marginTop: 10,
+                marginBottom: 0,
+                fontSize: 12,
+                color: "var(--text-3)",
+              }}
+            >
+              This cannot be undone.
+            </p>
+          </>
+        }
+        confirmLabel="Overwrite and unregister"
+        tone="danger"
+        onCancel={() => setOverwriteTarget(null)}
+        onConfirm={async () => {
+          if (!overwriteTarget) return;
+          const target = overwriteTarget;
+          setOverwriteTarget(null);
+          const r = await window.skillsBank.unregister(
+            target.name,
+            settings.unregisterDestinationAgent,
+            true,
+          );
+          await handleUnregisterResult(target.errorId, r);
+        }}
+      />
+
+      <ConfirmDialog
+        open={bulkRepairPrompt !== null}
+        title="Remove dead symlinks?"
+        body={(() => {
+          if (!bulkRepairPrompt) return null;
+          const { repaired, unrepairable } = bulkRepairPrompt;
+          const totalLinks = unrepairable.reduce(
+            (acc, u) => acc + u.entries.length,
+            0,
+          );
+          return (
             <>
               <p style={{ margin: 0 }}>
-                A folder already exists at{" "}
-                <code>{overwriteTarget?.destDir}</code>. Continuing will
-                permanently delete it and move{" "}
-                <code>{overwriteTarget?.name}</code> in its place.
+                Repaired {repaired} skill{repaired === 1 ? "" : "s"}.{" "}
+                {unrepairable.length} skill
+                {unrepairable.length === 1 ? "" : "s"} couldn't be repaired
+                because the registry copy is gone.
               </p>
               <p
                 style={{
-                  marginTop: 10,
-                  marginBottom: 0,
+                  margin: "10px 0 6px 0",
                   fontSize: 12,
                   color: "var(--text-3)",
                 }}
               >
-                This cannot be undone.
+                Remove the {totalLinks} dead symlink
+                {totalLinks === 1 ? "" : "s"}? The agent dirs lose the symlink.
+                Because the registry copy is already gone, these skills will
+                also disappear from the registry — there are no source files
+                left to back them.
               </p>
+              <ul
+                style={{
+                  margin: "8px 0 0 0",
+                  paddingLeft: 18,
+                  fontSize: 12,
+                  color: "var(--text-2)",
+                  maxHeight: 160,
+                  overflowY: "auto",
+                }}
+              >
+                {unrepairable.map((u) => (
+                  <li key={u.name}>
+                    <strong>{u.name}</strong> ({u.entries.length} link
+                    {u.entries.length === 1 ? "" : "s"})
+                  </li>
+                ))}
+              </ul>
             </>
-          }
-          confirmLabel="Overwrite and unregister"
-          tone="danger"
-          onCancel={() => setOverwriteTarget(null)}
-          onConfirm={async () => {
-            if (!overwriteTarget) return;
-            const target = overwriteTarget;
-            setOverwriteTarget(null);
-            const r = await window.skillsBank.unregister(
-              target.name,
-              settings.unregisterDestinationAgent,
-              true,
-            );
-            await handleUnregisterResult(target.errorId, r);
-          }}
-        />
-
-        <ConfirmDialog
-          open={bulkRepairPrompt !== null}
-          title="Remove dead symlinks?"
-          body={(() => {
-            if (!bulkRepairPrompt) return null;
-            const { repaired, unrepairable } = bulkRepairPrompt;
-            const totalLinks = unrepairable.reduce(
-              (acc, u) => acc + u.entries.length,
-              0,
-            );
-            return (
-              <>
-                <p style={{ margin: 0 }}>
-                  Repaired {repaired} skill{repaired === 1 ? "" : "s"}.{" "}
-                  {unrepairable.length} skill
-                  {unrepairable.length === 1 ? "" : "s"} couldn't be repaired
-                  because the registry copy is gone.
-                </p>
-                <p
-                  style={{
-                    margin: "10px 0 6px 0",
-                    fontSize: 12,
-                    color: "var(--text-3)",
-                  }}
-                >
-                  Remove the {totalLinks} dead symlink
-                  {totalLinks === 1 ? "" : "s"}? The agent dirs lose the
-                  symlink. Because the registry copy is already gone, these
-                  skills will also disappear from the registry — there are no
-                  source files left to back them.
-                </p>
-                <ul
-                  style={{
-                    margin: "8px 0 0 0",
-                    paddingLeft: 18,
-                    fontSize: 12,
-                    color: "var(--text-2)",
-                    maxHeight: 160,
-                    overflowY: "auto",
-                  }}
-                >
-                  {unrepairable.map((u) => (
-                    <li key={u.name}>
-                      <strong>{u.name}</strong> ({u.entries.length} link
-                      {u.entries.length === 1 ? "" : "s"})
-                    </li>
-                  ))}
-                </ul>
-              </>
-            );
-          })()}
-          confirmLabel="Remove dead links"
-          tone="danger"
-          onCancel={() => {
-            if (!bulkRepairPrompt) return;
-            const { repaired, unrepairable } = bulkRepairPrompt;
-            setBulkRepairPrompt(null);
-            flash(
-              `Repaired ${repaired}; ${unrepairable.length} left unresolved.`,
-            );
-          }}
-          onConfirm={async () => {
-            if (!bulkRepairPrompt) return;
-            const { repaired, unrepairable } = bulkRepairPrompt;
-            setBulkRepairPrompt(null);
-            const results = await Promise.allSettled(
-              unrepairable.map((u) =>
-                window.skillsBank
-                  .removeBrokenLinks(
-                    u.name,
-                    u.entries.map((e) => e.agent) as AgentId[],
-                  )
-                  .then(() => u.name),
-              ),
-            );
-            let removed = 0;
-            results.forEach((r, i) => {
-              if (r.status === "fulfilled") {
-                removed += 1;
-              } else {
-                const name = unrepairable[i]!.name;
-                pushAppError({
-                  code: "remove-broken.threw",
-                  message: `${name}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`,
-                  copyableDetails: { name },
-                });
-              }
-            });
-            await refresh();
-            flash(
-              `Repaired ${repaired}; removed dead links and dropped ${removed} unbacked registry entr${
-                removed === 1 ? "y" : "ies"
-              }.`,
-            );
-          }}
-        />
-
-        {isUpdateModalOpen &&
-          latestUpdateStatus &&
-          (latestUpdateStatus.kind === "available" ||
-            latestUpdateStatus.kind === "downloading" ||
-            latestUpdateStatus.kind === "downloaded") && (
-            <UpdateNotesModal
-              status={latestUpdateStatus}
-              onClose={() => setIsUpdateModalOpen(false)}
-              onSkip={(version) => {
-                setDismissedUpdateVersion(version);
-                void window.skillsBank.setDismissedUpdateVersion(version);
-                setIsUpdateModalOpen(false);
-              }}
-              onDownload={() => {
-                void window.skillsBank.downloadUpdate().then((r) => {
-                  if (!r.ok) flash(r.message);
-                });
-              }}
-              onRestart={() => {
-                setIsUpdateModalOpen(false);
-                void window.skillsBank.quitAndInstallUpdate();
-              }}
-            />
-          )}
-
-        {conflictModalEntries && (
-          <ConflictResolutionModal
-            conflicts={conflictModalEntries}
-            onClose={() => setConflictModalEntries(null)}
-            onResolve={resolveConflicts}
-          />
-        )}
-
-        {showRepoPicker && (
-          <RepoPickerModal
-            onClose={() => setShowRepoPicker(false)}
-            onPicked={pickRepo}
-            onSignOut={signOut}
-          />
-        )}
-
-        <DrawerHost
-          selected={selected}
-          onClose={() => setSelected(null)}
-          registryByName={registryByName}
-          installed={installed}
-          registryRoot={registryRoot}
-          settings={settings}
-          authStatus={authStatus}
-          refresh={refresh}
-          onUpdateResult={handleUpdateResult}
-          onOpenManageLinks={(t) => setManageLinksTarget(t)}
-          onOpenConflicts={(t) => setConflictTarget(t)}
-          onInstallConflict={(p) => setInstallConflict(p)}
-          unregisterHintShown={() =>
-            localStorage.getItem(LS_KEYS.unregisterHintShown) === "1"
-          }
-          markUnregisterHintShown={() => {
-            try {
-              localStorage.setItem(LS_KEYS.unregisterHintShown, "1");
-            } catch {
-              // ignore
+          );
+        })()}
+        confirmLabel="Remove dead links"
+        tone="danger"
+        onCancel={() => {
+          if (!bulkRepairPrompt) return;
+          const { repaired, unrepairable } = bulkRepairPrompt;
+          setBulkRepairPrompt(null);
+          flash(
+            `Repaired ${repaired}; ${unrepairable.length} left unresolved.`,
+          );
+        }}
+        onConfirm={async () => {
+          if (!bulkRepairPrompt) return;
+          const { repaired, unrepairable } = bulkRepairPrompt;
+          setBulkRepairPrompt(null);
+          const results = await Promise.allSettled(
+            unrepairable.map((u) =>
+              window.skillsBank
+                .removeBrokenLinks(
+                  u.name,
+                  u.entries.map((e) => e.agent) as AgentId[],
+                )
+                .then(() => u.name),
+            ),
+          );
+          let removed = 0;
+          results.forEach((r, i) => {
+            if (r.status === "fulfilled") {
+              removed += 1;
+            } else {
+              const name = unrepairable[i]!.name;
+              pushAppError({
+                code: "remove-broken.threw",
+                message: `${name}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`,
+                copyableDetails: { name },
+              });
             }
-          }}
-        />
+          });
+          await refresh();
+          flash(
+            `Repaired ${repaired}; removed dead links and dropped ${removed} unbacked registry entr${
+              removed === 1 ? "y" : "ies"
+            }.`,
+          );
+        }}
+      />
 
+      {isUpdateModalOpen &&
+        latestUpdateStatus &&
+        (latestUpdateStatus.kind === "available" ||
+          latestUpdateStatus.kind === "downloading" ||
+          latestUpdateStatus.kind === "downloaded") && (
+          <UpdateNotesModal
+            status={latestUpdateStatus}
+            onClose={() => setIsUpdateModalOpen(false)}
+            onSkip={(version) => {
+              setDismissedUpdateVersion(version);
+              void window.skillsBank.setDismissedUpdateVersion(version);
+              setIsUpdateModalOpen(false);
+            }}
+            onDownload={() => {
+              void window.skillsBank.downloadUpdate().then((r) => {
+                if (!r.ok) flash(r.message);
+              });
+            }}
+            onRestart={() => {
+              setIsUpdateModalOpen(false);
+              void window.skillsBank.quitAndInstallUpdate();
+            }}
+          />
+        )}
+
+      {conflictModalEntries && (
+        <ConflictResolutionModal
+          conflicts={conflictModalEntries}
+          onClose={() => setConflictModalEntries(null)}
+          onResolve={resolveConflicts}
+        />
+      )}
+
+      {showRepoPicker && (
+        <RepoPickerModal
+          onClose={() => setShowRepoPicker(false)}
+          onPicked={pickRepo}
+          onSignOut={signOut}
+        />
+      )}
+
+      <DrawerHost
+        selected={selected}
+        onClose={() => setSelected(null)}
+        registryByName={registryByName}
+        installed={installed}
+        registryRoot={registryRoot}
+        settings={settings}
+        authStatus={authStatus}
+        refresh={refresh}
+        onUpdateResult={handleUpdateResult}
+        onOpenManageLinks={(t) => setManageLinksTarget(t)}
+        onOpenConflicts={(t) => setConflictTarget(t)}
+        onInstallConflict={(p) => setInstallConflict(p)}
+        unregisterHintShown={() =>
+          localStorage.getItem(LS_KEYS.unregisterHintShown) === "1"
+        }
+        markUnregisterHintShown={() => {
+          try {
+            localStorage.setItem(LS_KEYS.unregisterHintShown, "1");
+          } catch {
+            // ignore
+          }
+        }}
+      />
     </div>
   );
 }

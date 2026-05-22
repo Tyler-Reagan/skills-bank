@@ -82,9 +82,7 @@ describe("forkSkill", () => {
     expect(marker.origin).toBeUndefined();
 
     // Synced-hash sidecar dropped by unlinkOrigin.
-    expect(fs.existsSync(path.join(r.newDir, ".skills-bank-hash"))).toBe(
-      false,
-    );
+    expect(fs.existsSync(path.join(r.newDir, ".skills-bank-hash"))).toBe(false);
 
     // Scratch cleaned up.
     const scratchRoot = path.join(registryRoot, ".skills-bank", "scratch");
@@ -95,12 +93,7 @@ describe("forkSkill", () => {
 
   test("collision: personal/<name> exists → no mutation, structured error", () => {
     const vendoredDir = writeVendoredWithOrigin("beta");
-    const personalDir = path.join(
-      registryRoot,
-      "skills",
-      "personal",
-      "beta",
-    );
+    const personalDir = path.join(registryRoot, "skills", "personal", "beta");
     fs.mkdirSync(personalDir, { recursive: true });
     fs.writeFileSync(path.join(personalDir, "SKILL.md"), "# pre-existing");
 
@@ -113,9 +106,9 @@ describe("forkSkill", () => {
 
     // Vendored copy untouched.
     expect(fs.existsSync(vendoredDir)).toBe(true);
-    expect(
-      fs.readFileSync(path.join(personalDir, "SKILL.md"), "utf8"),
-    ).toBe("# pre-existing");
+    expect(fs.readFileSync(path.join(personalDir, "SKILL.md"), "utf8")).toBe(
+      "# pre-existing",
+    );
   });
 
   test("no-origin: vendored skill without origin pointer is refused", () => {
@@ -167,10 +160,9 @@ describe("forkSkill", () => {
     // not-vendored → no-origin → collision. Any failure short-
     // circuits BEFORE the scratch dir is even created.
     const vendoredDir = writeVendoredWithOrigin("epsilon");
-    fs.mkdirSync(
-      path.join(registryRoot, "skills", "personal", "epsilon"),
-      { recursive: true },
-    );
+    fs.mkdirSync(path.join(registryRoot, "skills", "personal", "epsilon"), {
+      recursive: true,
+    });
     const r = forkSkill(registryRoot, "epsilon");
     expect(r.ok).toBe(false);
 

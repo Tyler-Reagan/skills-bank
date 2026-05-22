@@ -184,6 +184,7 @@ Version source of truth is [`packages/desktop/package.json`](packages/desktop/pa
    - `latest-mac.yml` (the auto-update manifest — without this, existing installs won't see the release)
 
    Download at least one DMG and smoke-test launch locally before publishing.
+
 8. **Publish from the GitHub UI.** Open the draft, write release notes, click **Publish**. Existing installs poll the Releases feed on launch and will auto-update on next start.
 
 ### If the release build fails or ships wrong artifacts
@@ -199,14 +200,14 @@ Delete the partial draft Release from the GitHub UI first if any artifacts uploa
 
 ## Documentation
 
-| Topic                          | File                                                 |
-| ------------------------------ | ---------------------------------------------------- |
-| Getting started (5 min)        | [`docs/getting-started.md`](docs/getting-started.md) |
-| Taxonomy and vocabulary        | [`docs/concepts.md`](docs/concepts.md)               |
-| End-to-end user guide          | [`docs/user-guide.md`](docs/user-guide.md)           |
-| Heal flows                     | [`docs/flows/heal.md`](docs/flows/heal.md)           |
-| Troubleshooting                | [`docs/troubleshooting.md`](docs/troubleshooting.md) |
-| Self-hosting                   | [`docs/self-host.md`](docs/self-host.md)             |
+| Topic                   | File                                                 |
+| ----------------------- | ---------------------------------------------------- |
+| Getting started (5 min) | [`docs/getting-started.md`](docs/getting-started.md) |
+| Taxonomy and vocabulary | [`docs/concepts.md`](docs/concepts.md)               |
+| End-to-end user guide   | [`docs/user-guide.md`](docs/user-guide.md)           |
+| Heal flows              | [`docs/flows/heal.md`](docs/flows/heal.md)           |
+| Troubleshooting         | [`docs/troubleshooting.md`](docs/troubleshooting.md) |
+| Self-hosting            | [`docs/self-host.md`](docs/self-host.md)             |
 
 ## Scripts reference
 

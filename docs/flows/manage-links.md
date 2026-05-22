@@ -3,7 +3,6 @@
 > [!NOTE]
 > Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](../user-guide.md) for context.
 
-
 A registered skill can be linked into any subset of your agent directories. Use the **Manage agent links** action when you want to add the skill to one more agent, drop it from a specific one, or audit exactly where it's live.
 
 ## Steps

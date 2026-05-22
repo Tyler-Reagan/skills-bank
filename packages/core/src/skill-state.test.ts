@@ -87,8 +87,7 @@ const ROWS: Row[] = [
     expectedCaps: { canForgetMissing: true, canRepoint: true },
   },
   {
-    label:
-      "drift + upstream-github → edited-with-origin (Accept/TakeUpstream)",
+    label: "drift + upstream-github → edited-with-origin (Accept/TakeUpstream)",
     entry: entry({
       drift: true,
       source: {
@@ -105,7 +104,13 @@ const ROWS: Row[] = [
     isRegistered: true,
     expectedState: "edited-with-origin",
     expectedPrimary: "accept-drift",
-    expectedCaps: { canAcceptDrift: true, canResetToOrigin: true },
+    expectedCaps: {
+      canAcceptDrift: true,
+      canResetToOrigin: true,
+      // Bail-out: stuck drift (e.g. broken upstream) must be removable
+      // without first severing the origin.
+      canUnregister: true,
+    },
   },
   {
     label:
@@ -115,7 +120,11 @@ const ROWS: Row[] = [
     isRegistered: true,
     expectedState: "edited-without-origin",
     expectedPrimary: "accept-drift",
-    expectedCaps: { canAcceptDrift: true, canTakeCanonical: true },
+    expectedCaps: {
+      canAcceptDrift: true,
+      canTakeCanonical: true,
+      canUnregister: true,
+    },
   },
   {
     label:
@@ -149,8 +158,7 @@ const ROWS: Row[] = [
     expectedCaps: { canUpdate: true, canAcceptDrift: false },
   },
   {
-    label:
-      "drift + originUpdateAvailable → drift wins (edited-with-origin)",
+    label: "drift + originUpdateAvailable → drift wins (edited-with-origin)",
     entry: entry({
       drift: true,
       originUpdateAvailable: true,
@@ -191,6 +199,7 @@ const ROWS: Row[] = [
     expectedCaps: {
       canRetryOriginProbe: true,
       canAcceptDrift: true,
+      canUnregister: true,
     },
   },
   {
@@ -254,21 +263,16 @@ const ROWS: Row[] = [
   {
     label: "unregistered + 1 real-dir → unregistered-real (Register)",
     entry: entry(),
-    installed: [
-      inst({ kind: "real-directory", target: null }),
-    ],
+    installed: [inst({ kind: "real-directory", target: null })],
     isRegistered: false,
     expectedState: "unregistered-real",
     expectedPrimary: "register",
     expectedCaps: { canRegister: true },
   },
   {
-    label:
-      "unregistered + 1 foreign-symlink → unregistered-foreign (Register)",
+    label: "unregistered + 1 foreign-symlink → unregistered-foreign (Register)",
     entry: entry(),
-    installed: [
-      inst({ kind: "foreign-symlink", target: "/elsewhere/test" }),
-    ],
+    installed: [inst({ kind: "foreign-symlink", target: "/elsewhere/test" })],
     isRegistered: false,
     expectedState: "unregistered-foreign",
     expectedPrimary: "register",
@@ -316,9 +320,7 @@ const ROWS: Row[] = [
   {
     label: "unregistered + only broken → unregistered-broken (Repair)",
     entry: entry(),
-    installed: [
-      inst({ kind: "broken-symlink", target: null }),
-    ],
+    installed: [inst({ kind: "broken-symlink", target: null })],
     isRegistered: false,
     expectedState: "unregistered-broken",
     expectedPrimary: "repair-broken",
@@ -331,7 +333,8 @@ const ROWS: Row[] = [
     // but `isRegistered` was false → fell into `unregistered-broken`
     // with brokenCount=0 ("Fix broken link (0)"). Branch added above
     // routes this to `unregistered-foreign` so Register is offered.
-    label: "unregistered + ours (no index entry) → unregistered-foreign (Register)",
+    label:
+      "unregistered + ours (no index entry) → unregistered-foreign (Register)",
     entry: entry(),
     installed: [inst()],
     isRegistered: false,
@@ -367,9 +370,7 @@ const ROWS: Row[] = [
     label:
       "registered + conflict (non-ours real-dir) → registered-conflicts (Resolve)",
     entry: entry(),
-    installed: [
-      inst({ kind: "real-directory", target: null }),
-    ],
+    installed: [inst({ kind: "real-directory", target: null })],
     isRegistered: true,
     expectedState: "registered-conflicts",
     expectedPrimary: "resolve-conflicts",
@@ -378,9 +379,7 @@ const ROWS: Row[] = [
   {
     label: "registered + only broken → registered-broken (Repair)",
     entry: entry(),
-    installed: [
-      inst({ kind: "broken-symlink", target: null }),
-    ],
+    installed: [inst({ kind: "broken-symlink", target: null })],
     isRegistered: true,
     expectedState: "registered-broken",
     expectedPrimary: "repair-broken",
@@ -407,8 +406,7 @@ const ROWS: Row[] = [
 
   // ── Canon protection (applyCanonGate) ──────────────────
   {
-    label:
-      "registered + healthy + canon → Unregister/Delete swapped for Hide",
+    label: "registered + healthy + canon → Unregister/Delete swapped for Hide",
     entry: entry({ canon: true }),
     installed: [inst()],
     isRegistered: true,
@@ -423,9 +421,7 @@ const ROWS: Row[] = [
   {
     label: "registered + conflicts + canon → Hide instead of Delete",
     entry: entry({ canon: true }),
-    installed: [
-      inst({ kind: "real-directory", target: null }),
-    ],
+    installed: [inst({ kind: "real-directory", target: null })],
     isRegistered: true,
     expectedState: "registered-conflicts",
     expectedPrimary: "resolve-conflicts",

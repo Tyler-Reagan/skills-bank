@@ -186,7 +186,9 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       registryRoot,
       canonicalRoot,
       "sha",
-      { epsilon: { action: "use-canonical", decidedAt: "2026-05-18T00:00:00Z" } },
+      {
+        epsilon: { action: "use-canonical", decidedAt: "2026-05-18T00:00:00Z" },
+      },
     );
     expect(report.upserted).toEqual(["epsilon"]);
     expect(readLocal("vendored", "epsilon", "SKILL.md")).toBe(

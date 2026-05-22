@@ -65,9 +65,7 @@ export function PublishSection({
       );
       if (r.ok) {
         flash(
-          r.updated
-            ? `Updated PR #${r.prNumber}`
-            : `Opened PR #${r.prNumber}`,
+          r.updated ? `Updated PR #${r.prNumber}` : `Opened PR #${r.prNumber}`,
         );
         onPublished();
         return;
@@ -162,9 +160,7 @@ export function PublishSection({
       {flowLabel && targetPath && (
         <div style={flowBlock}>
           <span style={isFork ? flowLabelTextWarn : flowLabelText}>
-            {isFork && (
-              <Icon name="alert-triangle" size="sm" />
-            )}
+            {isFork && <Icon name="alert-triangle" size="sm" />}
             {flowLabel}
           </span>
           <code style={pathLine} title={`${linkedRepoName}/${targetPath}/`}>
@@ -247,7 +243,10 @@ function PublishChip({
       </span>
     );
   }
-  const labels: Record<Exclude<PublishState, "unknown">, { label: string; cls: string }> = {
+  const labels: Record<
+    Exclude<PublishState, "unknown">,
+    { label: string; cls: string }
+  > = {
     pushed: { label: "Pushed", cls: "pushed" },
     draft: { label: "Draft", cls: "draft" },
     untracked: { label: "Untracked", cls: "untracked" },
@@ -277,7 +276,12 @@ function ForkConfirmModal({
 }: ForkConfirmModalProps): React.ReactElement {
   return (
     <div style={overlay}>
-      <div style={modal} role="dialog" aria-modal="true" aria-label="Confirm fork">
+      <div
+        style={modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Confirm fork"
+      >
         <div style={modalHeader}>
           <h2 style={{ margin: 0, fontSize: 16 }}>
             Fork <code>{name}</code>?
@@ -297,15 +301,15 @@ function ForkConfirmModal({
           <code>{originRepo}</code>. The local copy moves from{" "}
           <code>skills/vendored/</code> to <code>skills/personal/</code>, the
           origin pointer clears, and future updates from{" "}
-          <code>{originRepo}</code> stop surfacing. This is irreversible
-          without re-vendoring.
+          <code>{originRepo}</code> stop surfacing. This is irreversible without
+          re-vendoring.
         </p>
         {willCollide && (
           <p style={{ ...hint, color: "var(--danger)" }}>
             ⚠️ A skill named <code>{name}</code> already exists in{" "}
             <code>skills/personal/</code>. The fork will refuse until you
-            resolve the collision (revert your edits, rename the existing
-            skill, or delete it).
+            resolve the collision (revert your edits, rename the existing skill,
+            or delete it).
           </p>
         )}
         <div

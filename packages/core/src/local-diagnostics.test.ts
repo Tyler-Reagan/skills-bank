@@ -65,10 +65,7 @@ describe("scanLocalDiagnostics", () => {
 
     const report = scanLocalDiagnostics(registryRoot);
     const categories = report.items.map((i) => i.category).sort();
-    expect(categories).toEqual([
-      "broken-symlinks",
-      "unregistered-installs",
-    ]);
+    expect(categories).toEqual(["broken-symlinks", "unregistered-installs"]);
 
     const broken = report.items.find((i) => i.category === "broken-symlinks");
     expect(broken?.name).toBe("ghost");

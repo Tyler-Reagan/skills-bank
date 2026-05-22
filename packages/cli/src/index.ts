@@ -72,8 +72,7 @@ const removed: Array<{ name: string; replacement: string }> = [
   },
   {
     name: "export",
-    replacement:
-      "Use Account → Export current registry in the desktop app.",
+    replacement: "Use Account → Export current registry in the desktop app.",
   },
   {
     name: "finalize",

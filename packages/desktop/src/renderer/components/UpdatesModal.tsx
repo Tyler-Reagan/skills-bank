@@ -77,8 +77,7 @@ export function UpdatesModal({
       >
         <div style={modalHeader}>
           <h2 style={{ margin: 0 }}>
-            Skill updates{" "}
-            <span style={countBadge}>{entries.length}</span>
+            Skill updates <span style={countBadge}>{entries.length}</span>
           </h2>
           <button
             type="button"
@@ -95,8 +94,8 @@ export function UpdatesModal({
           These skills have a newer version available from their{" "}
           <strong>Origin</strong>. Updating fetches the latest content directly
           from each skill's Origin and mirrors it into your registry — local
-          edits are not preserved, so skills you've edited surface via the
-          Drift heal flow (Reset to origin / Unlink origin) instead.
+          edits are not preserved, so skills you've edited surface via the Drift
+          heal flow (Reset to origin / Unlink origin) instead.
         </p>
 
         <div style={list}>

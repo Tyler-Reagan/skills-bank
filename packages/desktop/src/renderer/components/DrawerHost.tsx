@@ -1,9 +1,5 @@
 import React from "react";
-import type {
-  AgentId,
-  InstalledSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 // Renderer-only subpath import — the main barrel transitively pulls
 // `build.ts` which imports `node:child_process` and blows up the
 // vite browser build. See `components/skillState.ts` for the shim.

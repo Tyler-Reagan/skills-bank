@@ -704,68 +704,106 @@ function LocalScanResultsSection({
             <Icon name="alert-triangle" size="sm" /> From last local scan{" "}
             <span className="count">({diagnostics.items.length})</span>
           </h2>
-          <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--text-3)" }}>
-            Scanned at {scannedAt}. Local-only — no network. Items grouped
-            by category. Fix one at a time; the report refreshes after
-            each action.
+          <p
+            style={{ margin: "4px 0 0", fontSize: 11, color: "var(--text-3)" }}
+          >
+            Scanned at {scannedAt}. Local-only — no network. Items grouped by
+            category. Fix one at a time; the report refreshes after each action.
           </p>
         </div>
       </header>
-      {CATEGORY_ORDER.filter((cat) => grouped.get(cat)!.length > 0).map((cat) => (
-        <div key={cat} style={{ marginBottom: 12 }}>
-          <h3
-            style={{
-              margin: "8px 0 4px",
-              fontSize: 13,
-              color: "var(--text-2)",
-            }}
-          >
-            {CATEGORY_LABELS[cat]}{" "}
-            <span style={{ color: "var(--text-3)" }}>
-              ({grouped.get(cat)!.length})
-            </span>
-          </h3>
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-            }}
-          >
-            {grouped.get(cat)!.map((item) => (
-              <li
-                key={item.itemId}
+      {CATEGORY_ORDER.filter((cat) => grouped.get(cat)!.length > 0).map(
+        (cat) => {
+          const items = grouped.get(cat)!;
+          // Unregistered installs already get a dedicated section with
+          // per-card Register/Delete actions below. Collapse this category
+          // to a single summary line so the scan results stay informative
+          // without duplicating every name twice on the same screen.
+          if (cat === "unregistered-installs") {
+            return (
+              <div key={cat} style={{ marginBottom: 12 }}>
+                <h3
+                  style={{
+                    margin: "8px 0 4px",
+                    fontSize: 13,
+                    color: "var(--text-2)",
+                  }}
+                >
+                  {CATEGORY_LABELS[cat]}{" "}
+                  <span style={{ color: "var(--text-3)" }}>
+                    ({items.length})
+                  </span>
+                </h3>
+                <p
+                  style={{
+                    margin: "4px 0 0",
+                    fontSize: 12,
+                    color: "var(--text-3)",
+                  }}
+                >
+                  Listed individually in the Unregistered section below —
+                  register or delete each from there.
+                </p>
+              </div>
+            );
+          }
+          return (
+            <div key={cat} style={{ marginBottom: 12 }}>
+              <h3
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 8,
-                  padding: "6px 8px",
-                  borderRadius: 4,
-                  background: "var(--surface-2)",
-                  fontSize: 12,
+                  margin: "8px 0 4px",
+                  fontSize: 13,
+                  color: "var(--text-2)",
                 }}
               >
-                <span style={{ minWidth: 0, flex: 1 }}>
-                  <strong>{item.name}</strong>{" "}
-                  <span style={{ color: "var(--text-3)" }}>— {item.detail}</span>
-                </span>
-                <button
-                  className="btn small"
-                  type="button"
-                  onClick={() => onFix(item)}
-                  style={{ flexShrink: 0 }}
-                >
-                  {CATEGORY_FIX_LABELS[cat]}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+                {CATEGORY_LABELS[cat]}{" "}
+                <span style={{ color: "var(--text-3)" }}>({items.length})</span>
+              </h3>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                }}
+              >
+                {items.map((item) => (
+                  <li
+                    key={item.itemId}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      padding: "6px 8px",
+                      borderRadius: 4,
+                      background: "var(--surface-2)",
+                      fontSize: 12,
+                    }}
+                  >
+                    <span style={{ minWidth: 0, flex: 1 }}>
+                      <strong>{item.name}</strong>{" "}
+                      <span style={{ color: "var(--text-3)" }}>
+                        — {item.detail}
+                      </span>
+                    </span>
+                    <button
+                      className="btn small"
+                      type="button"
+                      onClick={() => onFix(item)}
+                      style={{ flexShrink: 0 }}
+                    >
+                      {CATEGORY_FIX_LABELS[cat]}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        },
+      )}
     </section>
   );
 }

@@ -1,11 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import {
-  hashSkillFolder,
-  writeRuntimeState,
-  writeSyncedHash,
-} from "./heal.js";
+import { hashSkillFolder, writeRuntimeState, writeSyncedHash } from "./heal.js";
 import { walkSkills } from "./registry.js";
 import {
   readSkillSource,

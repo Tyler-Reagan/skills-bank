@@ -106,7 +106,9 @@ function loadPersistedCache(
   const p = path.join(getStateDir(registryRoot), CACHE_FILE);
   if (!fs.existsSync(p)) return out;
   try {
-    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<PersistedCache>;
+    const raw = JSON.parse(
+      fs.readFileSync(p, "utf8"),
+    ) as Partial<PersistedCache>;
     if (!raw.entries || typeof raw.entries !== "object") return out;
     for (const [repo, entry] of Object.entries(raw.entries)) {
       if (
@@ -210,8 +212,11 @@ export function recordProbeSuccess(
     const skillDir = path.resolve(registryRoot, skill.path);
     const runtime = readRuntimeState(skillDir);
     if (!runtime.probeFailureCount) return;
-    const { probeFailureCount: _drop, lastProbeFailureAt: _drop2, ...rest } =
-      runtime;
+    const {
+      probeFailureCount: _drop,
+      lastProbeFailureAt: _drop2,
+      ...rest
+    } = runtime;
     void _drop;
     void _drop2;
     writeRuntimeState(skillDir, rest);
@@ -401,4 +406,3 @@ export function createOriginProbeRunner(
     },
   };
 }
-

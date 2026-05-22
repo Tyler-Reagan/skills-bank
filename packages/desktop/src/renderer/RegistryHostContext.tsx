@@ -115,28 +115,25 @@ export function RegistryHostProvider({
     [],
   );
 
-  const flashError = useCallback(
-    (msg: string, opts: FlashErrorOpts = {}) => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      const diagnostic = opts.diagnostic ?? msg;
-      const copyAction: ToastAction = {
-        label: "Copy details",
-        onClick: () => {
-          void navigator.clipboard.writeText(diagnostic);
-        },
-      };
-      setToast({
-        message: msg,
-        sticky: true,
-        severity: "error",
-        action: opts.action,
-        secondaryAction: copyAction,
-        diagnostic,
-      });
-      // No timer — sticky toasts persist until the user dismisses.
-    },
-    [],
-  );
+  const flashError = useCallback((msg: string, opts: FlashErrorOpts = {}) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    const diagnostic = opts.diagnostic ?? msg;
+    const copyAction: ToastAction = {
+      label: "Copy details",
+      onClick: () => {
+        void navigator.clipboard.writeText(diagnostic);
+      },
+    };
+    setToast({
+      message: msg,
+      sticky: true,
+      severity: "error",
+      action: opts.action,
+      secondaryAction: copyAction,
+      diagnostic,
+    });
+    // No timer — sticky toasts persist until the user dismisses.
+  }, []);
 
   const pushAppError = useCallback((e: AppError): number => {
     const id = ++appErrorIdRef.current;

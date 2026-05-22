@@ -160,7 +160,8 @@ export function BrowseTab({
   }
 
   const installedNames = useMemo(
-    () => new Set(installed.filter((i) => i.kind === "ours").map((i) => i.name)),
+    () =>
+      new Set(installed.filter((i) => i.kind === "ours").map((i) => i.name)),
     [installed],
   );
   // Compose in this order: chip-filters narrow the registry by the
@@ -236,10 +237,7 @@ export function BrowseTab({
       <div className="tab-intro">
         <span className="tab-intro-heading">
           <strong>Registry</strong>
-          <InfoTooltip
-            text={REGISTRY_TOOLTIP}
-            label="What is the registry?"
-          />
+          <InfoTooltip text={REGISTRY_TOOLTIP} label="What is the registry?" />
         </span>{" "}
         Browse and install skills from your registry. When linked, click{" "}
         <strong>Pull from &lt;repo&gt;</strong> in the header to pull the
@@ -440,8 +438,7 @@ function BulkInstallBar({
         {running && bulkInstall
           ? `Installing ${done + 1} of ${total} — ${bulkInstall.current ?? ""}`
           : bulkInstall &&
-              (bulkInstall.succeeded.size > 0 ||
-                bulkInstall.failed.size > 0)
+              (bulkInstall.succeeded.size > 0 || bulkInstall.failed.size > 0)
             ? `Finished: ${bulkInstall.succeeded.size} installed, ${bulkInstall.failed.size} failed`
             : `${selectedInstallable.length} selected (already-installed skills are skipped)`}
       </span>
@@ -581,13 +578,15 @@ function GhostBand({
                   <Icon name="check" size="sm" aria-hidden={true} />
                 )}
                 {status === "errored" && (
-                  <Icon
-                    name="alert-triangle"
-                    size="sm"
-                    aria-hidden={true}
-                  />
+                  <Icon name="alert-triangle" size="sm" aria-hidden={true} />
                 )}
-                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                <span
+                  style={{
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {skill.name}
                 </span>
               </div>

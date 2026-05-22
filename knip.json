@@ -12,10 +12,7 @@
       "project": "src/**/*.ts"
     },
     "packages/desktop": {
-      "entry": [
-        "src/main/main.ts",
-        "src/renderer/index.html"
-      ],
+      "entry": ["src/main/main.ts", "src/renderer/index.html"],
       "project": "src/**/*.{ts,tsx,mts}"
     }
   }

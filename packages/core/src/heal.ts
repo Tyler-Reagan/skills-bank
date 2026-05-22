@@ -149,7 +149,10 @@ export function readRuntimeState(skillDir: string): RuntimeState {
     const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<RuntimeState>;
     const out: RuntimeState = {};
     if (typeof raw.fetchedAt === "string") out.fetchedAt = raw.fetchedAt;
-    if (typeof raw.probeFailureCount === "number" && raw.probeFailureCount > 0) {
+    if (
+      typeof raw.probeFailureCount === "number" &&
+      raw.probeFailureCount > 0
+    ) {
       out.probeFailureCount = raw.probeFailureCount;
     }
     if (typeof raw.lastProbeFailureAt === "string") {
@@ -161,10 +164,7 @@ export function readRuntimeState(skillDir: string): RuntimeState {
   }
 }
 
-export function writeRuntimeState(
-  skillDir: string,
-  state: RuntimeState,
-): void {
+export function writeRuntimeState(skillDir: string, state: RuntimeState): void {
   fs.mkdirSync(skillDir, { recursive: true });
   fs.writeFileSync(
     path.join(skillDir, RUNTIME_STATE_FILE),

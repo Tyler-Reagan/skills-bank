@@ -90,7 +90,8 @@ const CHIP_DEFS: readonly ChipDef[] = [
   {
     tag: "personal",
     label: "Personal",
-    title: "Skills authored in this repo (self-referential Origin or no Origin).",
+    title:
+      "Skills authored in this repo (self-referential Origin or no Origin).",
     matches: (e) => e.bucket === "personal",
   },
   {
@@ -329,8 +330,7 @@ export function RegistryFilters({
                 aria-pressed={isActive}
                 title={def.title}
               >
-                {def.label}{" "}
-                <span className="filter-chip-count">({count})</span>
+                {def.label} <span className="filter-chip-count">({count})</span>
               </button>
             );
           })();
@@ -382,49 +382,50 @@ export function RegistryFilters({
               aria-label="Filter chip glossary"
             >
               <p className="filter-glossary-intro">
-                Chips combine with <strong>AND</strong>. The chips fall on
-                three independent axes — a skill can match one from each.
+                Chips combine with <strong>AND</strong>. The chips fall on three
+                independent axes — a skill can match one from each.
               </p>
               <dl className="filter-glossary-list">
                 <dt>State</dt>
                 <dd>
-                  <strong>Updates</strong> — newer version available from
-                  the skill's Origin.
+                  <strong>Updates</strong> — newer version available from the
+                  skill's Origin.
                 </dd>
                 <dd>
-                  <strong>Edited</strong> — local content has drifted from
-                  the recorded baseline.
+                  <strong>Edited</strong> — local content has drifted from the
+                  recorded baseline.
                 </dd>
                 <dd>
-                  <strong>Missing</strong> — the skill's files are gone on
-                  disk.
+                  <strong>Missing</strong> — the skill's files are gone on disk.
                 </dd>
                 <dd>
-                  <strong>Installed only</strong> — currently installed in
-                  one of your agent dirs.
+                  <strong>Installed only</strong> — currently installed in one
+                  of your agent dirs.
                 </dd>
                 <dt>Provenance — where the bytes came from</dt>
                 <dd>
-                  <strong>Bundled</strong> — shipped with the app's
-                  curation set; managed by Sync.
+                  <strong>Bundled</strong> — shipped with the app's curation
+                  set; managed by Sync.
                 </dd>
                 <dd>
                   <strong>Yours</strong> — you added it (merge-import) or
                   detached it from the curation set.
                 </dd>
-                <dt>Location — folder bucket under <code>skills/</code></dt>
+                <dt>
+                  Location — folder bucket under <code>skills/</code>
+                </dt>
                 <dd>
                   <strong>Personal</strong> — authored in this repo
                   (self-referential Origin or no Origin).
                 </dd>
                 <dd>
-                  <strong>Vendored</strong> — harvested from external
-                  authors' repos.
+                  <strong>Vendored</strong> — harvested from external authors'
+                  repos.
                 </dd>
               </dl>
               <p className="filter-glossary-note">
-                Chips that match every skill or no skills auto-hide — only
-                the ones that actually narrow the view show.
+                Chips that match every skill or no skills auto-hide — only the
+                ones that actually narrow the view show.
               </p>
             </div>
           )}
@@ -478,39 +479,39 @@ export function RegistryFilters({
           role="group"
           aria-label="Sort registry"
         >
-        <button
-          type="button"
-          className="filter-chip sort-chip"
-          onClick={toggleSortBy}
-          title={
-            sort.by === "name"
-              ? "Sorting alphabetically. Click to sort by age (last commit date) — surfaces stale skills."
-              : "Sorting by age (last commit date). Click to sort alphabetically."
-          }
-        >
-          <Icon name={sort.by === "name" ? "sort-az" : "clock"} size="sm" />{" "}
-          {sort.by === "name" ? "Name" : "Age"}
-        </button>
-        <button
-          type="button"
-          className="filter-chip sort-chip"
-          onClick={toggleSortDirection}
-          title={
-            sort.direction === "asc"
-              ? sort.by === "name"
-                ? "A-Z. Click to flip to Z-A."
-                : "Oldest first (stale at top). Click to flip to newest first."
-              : sort.by === "name"
-                ? "Z-A. Click to flip to A-Z."
-                : "Newest first. Click to flip to oldest first."
-          }
-          aria-label={`Sort direction: ${sort.direction === "asc" ? "ascending" : "descending"}`}
-        >
-          <Icon
-            name={sort.direction === "asc" ? "arrow-up" : "arrow-down"}
-            size="sm"
-          />
-        </button>
+          <button
+            type="button"
+            className="filter-chip sort-chip"
+            onClick={toggleSortBy}
+            title={
+              sort.by === "name"
+                ? "Sorting alphabetically. Click to sort by age (last commit date) — surfaces stale skills."
+                : "Sorting by age (last commit date). Click to sort alphabetically."
+            }
+          >
+            <Icon name={sort.by === "name" ? "sort-az" : "clock"} size="sm" />{" "}
+            {sort.by === "name" ? "Name" : "Age"}
+          </button>
+          <button
+            type="button"
+            className="filter-chip sort-chip"
+            onClick={toggleSortDirection}
+            title={
+              sort.direction === "asc"
+                ? sort.by === "name"
+                  ? "A-Z. Click to flip to Z-A."
+                  : "Oldest first (stale at top). Click to flip to newest first."
+                : sort.by === "name"
+                  ? "Z-A. Click to flip to A-Z."
+                  : "Newest first. Click to flip to oldest first."
+            }
+            aria-label={`Sort direction: ${sort.direction === "asc" ? "ascending" : "descending"}`}
+          >
+            <Icon
+              name={sort.direction === "asc" ? "arrow-up" : "arrow-down"}
+              size="sm"
+            />
+          </button>
         </div>
       </div>
     </div>

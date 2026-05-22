@@ -11,11 +11,7 @@ import { readSkillMeta, walkSkills } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import { readRuntimeState } from "./heal.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
-import type {
-  RegistryEntry,
-  RegistryIndex,
-  SkillMeta,
-} from "./types.js";
+import type { RegistryEntry, RegistryIndex, SkillMeta } from "./types.js";
 
 export interface BuildIndexOptions {
   /**
@@ -456,7 +452,6 @@ function readPriorIndexNames(registryRoot: string): PriorIndexEntry[] {
     return [];
   }
 }
-
 
 function getLastCommit(
   registryRoot: string,

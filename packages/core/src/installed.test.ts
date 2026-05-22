@@ -43,7 +43,11 @@ afterEach(() => {
 });
 
 function agentDir(agent: string): string {
-  const dir = path.join(fakeHome, `.${agent === "agents" ? "agents" : agent}`, "skills");
+  const dir = path.join(
+    fakeHome,
+    `.${agent === "agents" ? "agents" : agent}`,
+    "skills",
+  );
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -62,8 +66,14 @@ describe("listInstalled — same-name across agent dirs", () => {
     // Stale broken symlinks left behind in ~/.claude/skills/ and
     // ~/.cursor/skills/ from prior installs. Targets do not exist.
     const missingTarget = path.join(scratch, "deleted-content");
-    fs.symlinkSync(missingTarget, path.join(agentDir("claude"), "ui-ux-pro-max"));
-    fs.symlinkSync(missingTarget, path.join(agentDir("cursor"), "ui-ux-pro-max"));
+    fs.symlinkSync(
+      missingTarget,
+      path.join(agentDir("claude"), "ui-ux-pro-max"),
+    );
+    fs.symlinkSync(
+      missingTarget,
+      path.join(agentDir("cursor"), "ui-ux-pro-max"),
+    );
 
     const entries = listInstalled(registryRoot);
     const ours = entries.filter((e) => e.name === "ui-ux-pro-max");
@@ -72,12 +82,13 @@ describe("listInstalled — same-name across agent dirs", () => {
     // that they did, but the renderer's name-only React key collapsed
     // them. The data layer's contract is the per-(agent,name) row set.
     expect(ours).toHaveLength(3);
-    expect(ours.map((e) => ({ agent: e.agent, kind: e.kind })).sort(byAgent))
-      .toEqual([
-        { agent: "agents", kind: "real-directory" },
-        { agent: "claude", kind: "broken-symlink" },
-        { agent: "cursor", kind: "broken-symlink" },
-      ]);
+    expect(
+      ours.map((e) => ({ agent: e.agent, kind: e.kind })).sort(byAgent),
+    ).toEqual([
+      { agent: "agents", kind: "real-directory" },
+      { agent: "claude", kind: "broken-symlink" },
+      { agent: "cursor", kind: "broken-symlink" },
+    ]);
   });
 });
 

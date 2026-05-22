@@ -63,10 +63,7 @@ describe("parseSkillFrontmatter", () => {
 
   test("parses inline array tags", () => {
     const p = path.join(scratch, "inline-tags.md");
-    fs.writeFileSync(
-      p,
-      "---\nname: x\ndescription: y\ntags: [a, b, c]\n---\n",
-    );
+    fs.writeFileSync(p, "---\nname: x\ndescription: y\ntags: [a, b, c]\n---\n");
     const fm = parseSkillFrontmatter(p);
     expect(fm?.["tags"]).toEqual(["a", "b", "c"]);
   });
@@ -129,10 +126,7 @@ describe("synthesizeSkillMeta", () => {
       "---\nname: my-skill\ndescription: New desc\n---\n",
     );
     const existing = { name: "my-skill", description: "Pre-existing" };
-    fs.writeFileSync(
-      path.join(scratch, "meta.json"),
-      JSON.stringify(existing),
-    );
+    fs.writeFileSync(path.join(scratch, "meta.json"), JSON.stringify(existing));
     const r = synthesizeSkillMeta(scratch);
     expect(r.ok && !r.written && r.reason).toBe("meta-already-exists");
     const after = JSON.parse(

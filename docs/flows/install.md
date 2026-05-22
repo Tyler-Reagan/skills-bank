@@ -3,7 +3,6 @@
 > [!NOTE]
 > Screenshots on this page predate the v1.5.1 dialog redesign and the v1.6.0 Account/Settings reshuffle. See [user-guide.md](../user-guide.md) for context.
 
-
 The everyday flow. Browse the **Registry** tab, find a skill, link it into your agents.
 
 ![The Registry tab — search, tag filters, and Installed-only toggle](../images/registry.png)

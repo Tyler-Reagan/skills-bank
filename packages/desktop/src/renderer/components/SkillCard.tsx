@@ -360,10 +360,7 @@ function PublishBadge({
       </span>
     );
   }
-  if (
-    entry.originUnreachable &&
-    entry.source.origin?.kind === "github"
-  ) {
+  if (entry.originUnreachable && entry.source.origin?.kind === "github") {
     return (
       <span
         className="skill-state-badge missing"

@@ -132,8 +132,7 @@ describe("pushSkillFolder (Suite 7)", () => {
         // 5: commit
         if (n === 5) return jsonResponse({ sha: "commitSha2" });
         // 6: patch ref (atomic update)
-        if (n === 6)
-          return jsonResponse({ object: { sha: "commitSha2" } });
+        if (n === 6) return jsonResponse({ object: { sha: "commitSha2" } });
         throw new Error(`unexpected call #${n}`);
       }),
     );

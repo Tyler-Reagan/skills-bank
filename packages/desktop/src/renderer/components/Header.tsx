@@ -146,11 +146,8 @@ export function Header({
   const nextDensity: Density =
     density === "comfortable" ? "compact" : "comfortable";
   const linkedRepo = authStatus?.linkedRepo ?? null;
-  const isBundledDefault =
-    !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
-  const sourceChipText = isBundledDefault
-    ? "Bundled"
-    : linkedRepo!.fullName;
+  const isBundledDefault = !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
+  const sourceChipText = isBundledDefault ? "Bundled" : linkedRepo!.fullName;
 
   // Brief "Pulled" done-state on syncing→idle transition. Auto-fades
   // after 1.5s so a successful pull with zero content delta still has
@@ -297,8 +294,8 @@ export function Header({
           >
             {rescanState.phase === "working" ? (
               <>
-                <span className="spinner inline" aria-hidden="true" />{" "}
-                Checking for updates…
+                <span className="spinner inline" aria-hidden="true" /> Checking
+                for updates…
               </>
             ) : rescanState.phase === "done" ? (
               rescanState.updates === 0 ? (
@@ -356,8 +353,7 @@ export function Header({
           >
             {localScanState.phase === "working" ? (
               <>
-                <span className="spinner inline" aria-hidden="true" />{" "}
-                Scanning…
+                <span className="spinner inline" aria-hidden="true" /> Scanning…
               </>
             ) : localScanState.phase === "done" ? (
               localScanState.count === 0 ? (

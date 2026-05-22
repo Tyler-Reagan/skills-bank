@@ -789,7 +789,12 @@ interface SkillsBankAPI {
   installFromManifestHint(payload: {
     names: string[];
     agents: AgentId[];
-  }): Promise<{ ok: boolean; message: string; installedCount: number; errors: string[] }>;
+  }): Promise<{
+    ok: boolean;
+    message: string;
+    installedCount: number;
+    errors: string[];
+  }>;
   /**
    * Phase 4 (v1.5): one-shot install from a GitHub URL. The
    * renderer passes the raw URL string; the main process parses,
@@ -798,7 +803,9 @@ interface SkillsBankAPI {
    * including the `url-parse-error` arm for URLs that didn't
    * pass `parseGithubSkillUrl`.
    */
-  installSkillFromGithub(url: string): Promise<
+  installSkillFromGithub(
+    url: string,
+  ): Promise<
     | InstallFromGithubResult
     | { ok: false; reason: "url-parse-error"; message: string }
     | { ok: false; reason: "no-registry-root"; message: string }
@@ -809,9 +816,10 @@ interface SkillsBankAPI {
    * Pure call; doesn't mutate anything. The drawer calls this on
    * open to decide which Publish UI surface to render.
    */
-  classifySkillForPublish(name: string): Promise<
-    | { ok: true; flow: SkillPublishFlow }
-    | { ok: false; message: string }
+  classifySkillForPublish(
+    name: string,
+  ): Promise<
+    { ok: true; flow: SkillPublishFlow } | { ok: false; message: string }
   >;
   /**
    * Phase 5 (v1.5): execute the publish flow. Orchestrates
@@ -919,10 +927,7 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; outcome?: ImportSkillOutcome; message?: string }>;
   originUpdate(name: string): Promise<OriginUpdateResult>;
   originRepoMetadata(repo: string): Promise<OriginRepoMetadata>;
-  originLastCommit(
-    repo: string,
-    skillPath: string,
-  ): Promise<OriginLastCommit>;
+  originLastCommit(repo: string, skillPath: string): Promise<OriginLastCommit>;
   originSetManual(
     name: string,
     choice: OriginManualChoice,
@@ -934,4 +939,3 @@ declare global {
     skillsBank: SkillsBankAPI;
   }
 }
-

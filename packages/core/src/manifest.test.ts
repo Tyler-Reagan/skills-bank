@@ -3,9 +3,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  coerceManifestToCurrent,
   exportRegistryManifest,
   importRegistryManifest,
-  migrateManifestV1ToV2,
   writeRegistrySnapshot,
   MANIFEST_SCHEMA_VERSION,
   type RegistryManifest,
@@ -218,6 +218,7 @@ describe("importRegistryManifest", () => {
         {
           name: "alpha",
           source: "user",
+          bucket: "personal",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -289,6 +290,7 @@ describe("importRegistryManifest", () => {
         {
           name: "described",
           source: "user",
+          bucket: "personal",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -344,6 +346,7 @@ describe("importRegistryManifest", () => {
         {
           name: "beta",
           source: "curated",
+          bucket: "vendored",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -375,6 +378,7 @@ describe("importRegistryManifest", () => {
         {
           name: "ghost",
           source: "user",
+          bucket: "personal",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -404,6 +408,7 @@ describe("importRegistryManifest", () => {
         {
           name: "gamma",
           source: "curated",
+          bucket: "vendored",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -446,6 +451,7 @@ describe("importRegistryManifest", () => {
         {
           name: "delta",
           source: "curated",
+          bucket: "vendored",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -480,6 +486,7 @@ describe("importRegistryManifest", () => {
         {
           name: "epsilon",
           source: "user",
+          bucket: "personal",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -508,6 +515,7 @@ describe("importRegistryManifest", () => {
         {
           name: "alpha",
           source: "user",
+          bucket: "personal",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -521,6 +529,7 @@ describe("importRegistryManifest", () => {
         {
           name: "beta",
           source: "user",
+          bucket: "personal",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -534,6 +543,7 @@ describe("importRegistryManifest", () => {
         {
           name: "gamma",
           source: "user",
+          bucket: "personal",
           origin: {
             kind: "github",
             repo: "owner/repo",
@@ -577,6 +587,7 @@ describe("importRegistryManifest", () => {
         {
           name: "alpha",
           source: "user",
+          bucket: "personal",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -586,6 +597,7 @@ describe("importRegistryManifest", () => {
         {
           name: "beta",
           source: "user",
+          bucket: "personal",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -595,6 +607,7 @@ describe("importRegistryManifest", () => {
         {
           name: "gamma",
           source: "user",
+          bucket: "personal",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -655,6 +668,7 @@ describe("importRegistryManifest", () => {
         {
           name: "zeta",
           source: "user",
+          bucket: "personal",
           origin: { kind: "none" },
           tags: [],
           dismissed: false,
@@ -714,18 +728,22 @@ describe("writeRegistrySnapshot", () => {
   });
 });
 
-describe("migrateManifestV1ToV2", () => {
-  test("renames per-skill source axis values: bundled → curated, yours → user", () => {
-    const v1 = {
-      schemaVersion: 1 as const,
+describe("coerceManifestToCurrent", () => {
+  test("v2 manifest: github origins → vendored, no-origin entries → personal", () => {
+    const v2 = {
+      schemaVersion: 2 as const,
       exportedAt: "2026-05-20T00:00:00Z",
       sourceBankVersion: "1.2.0",
       registryRoot: "Tyler-Reagan/skills",
       skills: [
         {
           name: "alpha",
-          source: "bundled" as const,
-          origin: { kind: "github" as const, repo: "owner/repo" },
+          source: "user" as const,
+          origin: {
+            kind: "github" as const,
+            repo: "kostja94/marketing-skills",
+            skillPath: "skills/alpha/SKILL.md",
+          },
           tags: ["t1"],
           dismissed: false,
           hidden: false,
@@ -733,7 +751,7 @@ describe("migrateManifestV1ToV2", () => {
         },
         {
           name: "beta",
-          source: "yours" as const,
+          source: "user" as const,
           origin: { kind: "none" as const },
           tags: [],
           dismissed: true,
@@ -742,20 +760,23 @@ describe("migrateManifestV1ToV2", () => {
         },
       ],
     };
-    const v2 = migrateManifestV1ToV2(v1);
-    expect(v2.schemaVersion).toBe(2);
-    expect(v2.registryRoot).toBe("Tyler-Reagan/skills");
-    expect(v2.skills[0]!.source).toBe("curated");
-    expect(v2.skills[1]!.source).toBe("user");
-    // Tags / hide / lastInstalledOn / origin pass through unchanged.
-    expect(v2.skills[0]!.tags).toEqual(["t1"]);
-    expect(v2.skills[1]!.hidden).toBe(true);
-    expect(v2.skills[1]!.lastInstalledOn).toEqual(["claude"]);
+    const v3 = coerceManifestToCurrent(v2);
+    expect(v3.schemaVersion).toBe(3);
+    expect(v3.skills[0]!.bucket).toBe("vendored");
+    expect(v3.skills[1]!.bucket).toBe("personal");
+    expect(v3.skills[0]!.tags).toEqual(["t1"]);
+    expect(v3.skills[1]!.lastInstalledOn).toEqual(["claude"]);
+  });
+
+  test("rejects unsupported schemaVersion", () => {
+    expect(() =>
+      coerceManifestToCurrent({ schemaVersion: 1, skills: [] }),
+    ).toThrow(/unsupported schemaVersion 1/);
   });
 });
 
 describe("importRegistryManifest — schema migration head", () => {
-  test("v1 manifest imports via migration head, registers with renamed source values", async () => {
+  test("v2 manifest with github origin imports into vendored/", async () => {
     let call = 0;
     vi.stubGlobal(
       "fetch",
@@ -767,15 +788,14 @@ describe("importRegistryManifest — schema migration head", () => {
       }),
     );
 
-    // Construct a v1-shaped manifest with legacy "bundled" source value.
-    const v1Manifest = {
-      schemaVersion: 1 as const,
+    const v2Manifest = {
+      schemaVersion: 2 as const,
       exportedAt: "2026-05-20T00:00:00Z",
       sourceBankVersion: "1.2.0",
       skills: [
         {
           name: "zeta",
-          source: "bundled" as const,
+          source: "user" as const,
           origin: {
             kind: "github" as const,
             repo: "owner/repo",
@@ -789,14 +809,9 @@ describe("importRegistryManifest — schema migration head", () => {
       ],
     };
 
-    const result = await importRegistryManifest(
-      registryRoot,
-      // Cast: import accepts both shapes via the migration head.
-      v1Manifest as unknown as RegistryManifest,
-    );
+    const result = await importRegistryManifest(registryRoot, v2Manifest);
     expect(result.outcomes).toEqual([{ name: "zeta", result: "registered" }]);
-    // Imported skill mounts under skills/vendored/ because source was
-    // migrated to "curated" (which routes vendored, not personal).
+    // Pre-v3 fallback routes any github-origin entry into vendored/.
     expect(
       fs.existsSync(path.join(registryRoot, "skills", "vendored", "zeta")),
     ).toBe(true);

@@ -63,7 +63,7 @@ suite exists to pin; future additions follow the same pattern.
   release branch.
 
 Future architecture reviews that recommend "add tests" must name a
-*specific* contract not already covered above, with a stated invariant
+_specific_ contract not already covered above, with a stated invariant
 that would be broken by a plausible refactor. Generic coverage targets
 are explicitly rejected as actionable.
 
@@ -75,6 +75,6 @@ are explicitly rejected as actionable.
   extracts the probe scheduler, and unifies Sync + Merge. Without the
   Suite-2 and Suite-3 surface pinned, that work would be uncomfortable.
 - The maintainer accepts an ongoing tax: any new high-stakes contract
-  surfaces *must* land with a suite. The bar is "would a refactor that
+  surfaces _must_ land with a suite. The bar is "would a refactor that
   looks innocuous break this without us noticing." If yes, it gets a
   suite; if no, it doesn't.

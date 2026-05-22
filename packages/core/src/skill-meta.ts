@@ -73,7 +73,9 @@ function compiledValidator(): SchemaValidator {
   if (cachedValidator) return cachedValidator;
   const ajv = new Ajv({ allErrors: true, strict: false });
   addFormats(ajv);
-  cachedValidator = ajv.compile(SKILL_META_SCHEMA) as unknown as SchemaValidator;
+  cachedValidator = ajv.compile(
+    SKILL_META_SCHEMA,
+  ) as unknown as SchemaValidator;
   return cachedValidator;
 }
 
@@ -122,8 +124,7 @@ export function parseSkillFrontmatter(
     if (rest === "" && i < lines.length && lines[i]!.trim().startsWith("-")) {
       const arr: string[] = [];
       while (i < lines.length && lines[i]!.trim().startsWith("-")) {
-        const item = lines[i]!
-          .trim()
+        const item = lines[i]!.trim()
           .replace(/^-\s*/, "")
           .replace(/^["']|["']$/g, "");
         if (item) arr.push(item);
@@ -141,7 +142,14 @@ export function parseSkillFrontmatter(
 
 export type SynthesizeSkillMetaResult =
   | { ok: true; written: true; path: string }
-  | { ok: true; written: false; reason: "meta-already-exists" | "no-frontmatter" | "missing-name-or-description" };
+  | {
+      ok: true;
+      written: false;
+      reason:
+        | "meta-already-exists"
+        | "no-frontmatter"
+        | "missing-name-or-description";
+    };
 
 /**
  * Synthesize a `meta.json` into `skillDir` from the SKILL.md
@@ -157,7 +165,9 @@ export type SynthesizeSkillMetaResult =
  * don't ship a meta.json). Closes the gap reported in
  * `docs/bug-reports/2026-05-19-origin-update-missing-meta-synthesis.md`.
  */
-export function synthesizeSkillMeta(skillDir: string): SynthesizeSkillMetaResult {
+export function synthesizeSkillMeta(
+  skillDir: string,
+): SynthesizeSkillMetaResult {
   const metaPath = path.join(skillDir, "meta.json");
   if (fs.existsSync(metaPath)) {
     return { ok: true, written: false, reason: "meta-already-exists" };

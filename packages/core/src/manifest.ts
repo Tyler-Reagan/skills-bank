@@ -1,10 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-  AGENTS,
-  getAgentSkillsDir,
-  type AgentId,
-} from "./agents.js";
+import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
 import { buildRegistryIndex } from "./build.js";
 import { writeSyncedHash } from "./heal.js";
 import { hideCanonSkill } from "./hide.js";
@@ -15,10 +11,7 @@ import {
   type OriginPointer,
   type SkillOrigin,
 } from "./source.js";
-import {
-  folderPathFromSkillPath,
-  mirrorSkillFolder,
-} from "./upstream.js";
+import { folderPathFromSkillPath, mirrorSkillFolder } from "./upstream.js";
 
 /**
  * v1.1 Registry manifest (Phase 1 of the curation-layer-reset plan).
@@ -33,38 +26,17 @@ import {
  * `exportRegistry` zip. See `docs/plans/curation-layer-reset.md`
  * sections 5–7.
  */
-export const MANIFEST_SCHEMA_VERSION = 2 as const;
+export const MANIFEST_SCHEMA_VERSION = 3 as const;
 
 /**
- * Latest schemaVersion that import will accept. v1 manifests are
- * migrated to v2 transparently via `migrateManifestV1ToV2`. The
- * window stays open for one minor cycle (v1.3.x); v1 readers will
- * be removed in v1.4 alongside the legacy wire-format keys.
+ * Oldest manifest version `importRegistryManifest` will coerce up to
+ * the current schema. Pre-v2 manifests (the legacy `bundled`/`yours`
+ * source vocabulary) are no longer readable — drop a sentinel error
+ * before the migration head if encountered. v2 is the only legacy
+ * shape kept alive while users have manifests exported during the
+ * v1.x window.
  */
-export const MANIFEST_OLDEST_READABLE_VERSION = 1 as const;
-
-/**
- * v1 manifest shape, retained for the import-side migration head.
- * Differs from v2 only on `ManifestSkill.source` axis values
- * (`bundled`/`yours` → `curated`/`user`).
- */
-interface ManifestSkillV1 {
-  name: string;
-  source: "bundled" | "yours";
-  origin: ManifestOrigin;
-  tags: string[];
-  dismissed: boolean;
-  hidden: boolean;
-  lastInstalledOn: AgentId[];
-}
-
-interface RegistryManifestV1 {
-  schemaVersion: 1;
-  exportedAt: string;
-  sourceBankVersion: string;
-  registryRoot?: string;
-  skills: ManifestSkillV1[];
-}
+export const MANIFEST_OLDEST_READABLE_VERSION = 2 as const;
 
 export interface ManifestOrigin {
   kind: "github" | "none";
@@ -81,13 +53,14 @@ export interface ManifestOrigin {
 
 export interface ManifestSkill {
   name: string;
-  /**
-   * v2 vocabulary (`curated` / `user`). v1 manifests with the
-   * legacy `bundled` / `yours` values are migrated transparently
-   * on import via `migrateManifestV1ToV2`. Removal of v1 import
-   * support is targeted at v1.4.
-   */
   source: SkillOrigin;
+  /**
+   * On-disk bucket the skill lives in (`skills/<bucket>/<name>/`).
+   * Decoupled from the source axis: a `source: user` skill harvested
+   * from a third-party origin is still `vendored`. The export reads
+   * this directly from the registry index entry.
+   */
+  bucket: "personal" | "vendored";
   origin: ManifestOrigin;
   tags: string[];
   /**
@@ -141,6 +114,7 @@ export function exportRegistryManifest(
     return {
       name: entry.name,
       source: entry.source.source,
+      bucket: entry.bucket ?? "personal",
       origin: originFromPointer(entry.source.origin),
       tags,
       dismissed: hidden,
@@ -260,24 +234,20 @@ export interface ImportRegistryManifestOptions {
  */
 export async function importRegistryManifest(
   registryRoot: string,
-  manifest: RegistryManifest | RegistryManifestV1,
+  manifest: unknown,
   opts: ImportRegistryManifestOptions = {},
 ): Promise<ImportRegistryManifestResult> {
-  // v1 migration head — see `migrateManifestV1ToV2`. v2+ pass through.
-  const v2: RegistryManifest =
-    manifest.schemaVersion === 1
-      ? migrateManifestV1ToV2(manifest as RegistryManifestV1)
-      : (manifest as RegistryManifest);
+  const m = coerceManifestToCurrent(manifest);
 
   const outcomes: ImportSkillOutcome[] = [];
   const installHints: { name: string; agents: AgentId[] }[] = [];
   let cancelled = false;
-  const total = v2.skills.length;
-  const manifestNames = v2.skills.map((s) => s.name);
+  const total = m.skills.length;
+  const manifestNames = m.skills.map((s) => s.name);
   let lastError: string | undefined;
 
-  for (let i = 0; i < v2.skills.length; i++) {
-    const skill = v2.skills[i]!;
+  for (let i = 0; i < m.skills.length; i++) {
+    const skill = m.skills[i]!;
     if (opts.signal?.aborted) {
       cancelled = true;
       break;
@@ -288,7 +258,7 @@ export async function importRegistryManifest(
         total,
         currentName: skill.name,
         ...(lastError ? { lastError } : {}),
-        ...(i === 0 ? { manifestNames, manifestSkills: v2.skills } : {}),
+        ...(i === 0 ? { manifestNames, manifestSkills: m.skills } : {}),
       });
     }
     // Reset per-iteration; only the most recent failure surfaces in
@@ -326,8 +296,12 @@ export async function importRegistryManifest(
         lastError = `${skill.name}: ${reason}`;
         continue;
       }
-      const bucket = skill.source === "user" ? "personal" : "vendored";
-      const destDir = path.join(registryRoot, "skills", bucket, skill.name);
+      const destDir = path.join(
+        registryRoot,
+        "skills",
+        skill.bucket,
+        skill.name,
+      );
       fs.mkdirSync(path.dirname(destDir), { recursive: true });
       const folderPath = folderPathFromSkillPath(skill.origin.skillPath);
       const mirror = await mirrorSkillFolder(
@@ -360,8 +334,8 @@ export async function importRegistryManifest(
 
   // Final terminal progress event so consumers can flip to a
   // "done" UI state without polling the result promise.
-  if (opts.onProgress && !cancelled && v2.skills.length > 0) {
-    const lastSkill = v2.skills[v2.skills.length - 1]!;
+  if (opts.onProgress && !cancelled && m.skills.length > 0) {
+    const lastSkill = m.skills[m.skills.length - 1]!;
     opts.onProgress({
       completed: outcomes.length,
       total,
@@ -400,7 +374,10 @@ function stampOriginMarker(
   folderHash: string,
 ): void {
   if (skill.origin.kind !== "github") {
-    writeSkillSource(destDir, { source: skill.source, origin: { kind: "none" } });
+    writeSkillSource(destDir, {
+      source: skill.source,
+      origin: { kind: "none" },
+    });
     return;
   }
   const origin: OriginPointer = {
@@ -473,32 +450,66 @@ function restoreAuxState(
 }
 
 /**
- * Migrate a v1 manifest in place to v2 shape. Pure transformer —
- * no I/O, no manifest-level field changes other than `schemaVersion`
- * and the per-skill `source` axis values. Tags, hide state,
- * `lastInstalledOn`, and origin pointers pass through unchanged.
+ * Single quarantined chokepoint for version-gated logic. Coerces any
+ * accepted legacy manifest shape into the current `RegistryManifest`
+ * before the import body executes. The rest of the import path treats
+ * the result as the only manifest shape that exists — no per-version
+ * branches downstream of this function.
  *
- * Exported for the test suite; production import goes through the
- * `manifest.schemaVersion === 1` branch in `importRegistryManifest`.
+ * Pure transformer; no I/O. Throws on unsupported / malformed input
+ * so the import IPC can surface a clean error rather than partially
+ * mirroring against a half-coerced structure.
+ *
+ * Legacy fallbacks:
+ *   - v2 manifests lack `bucket`. Derive it from origin: any GitHub
+ *     origin → `vendored`; no-origin entries → `personal`. Skills
+ *     authored in the user's own linked repo will mis-bucket as
+ *     `vendored` and can be moved with `pnpm update:skill --bucket
+ *     personal`. The forward path (v3 export) carries bucket
+ *     explicitly so this only matters for one-time legacy imports.
  */
-export function migrateManifestV1ToV2(
-  manifest: RegistryManifestV1,
-): RegistryManifest {
-  return {
-    schemaVersion: MANIFEST_SCHEMA_VERSION,
-    exportedAt: manifest.exportedAt,
-    sourceBankVersion: manifest.sourceBankVersion,
-    ...(manifest.registryRoot ? { registryRoot: manifest.registryRoot } : {}),
-    skills: manifest.skills.map((s) => ({
-      name: s.name,
-      source: s.source === "bundled" ? "curated" : "user",
-      origin: s.origin,
-      tags: s.tags,
-      dismissed: s.dismissed,
-      hidden: s.hidden,
-      lastInstalledOn: s.lastInstalledOn,
-    })),
-  };
+// Quarantined legacy shapes. Only referenced by `coerceManifestToCurrent`.
+interface ManifestSkillV2 {
+  name: string;
+  source: SkillOrigin;
+  origin: ManifestOrigin;
+  tags: string[];
+  dismissed: boolean;
+  hidden: boolean;
+  lastInstalledOn: AgentId[];
+}
+interface RegistryManifestV2 {
+  schemaVersion: 2;
+  exportedAt: string;
+  sourceBankVersion: string;
+  registryRoot?: string;
+  skills: ManifestSkillV2[];
+}
+
+export function coerceManifestToCurrent(input: unknown): RegistryManifest {
+  if (typeof input !== "object" || input === null) {
+    throw new Error("manifest: input is not an object");
+  }
+  const m = input as { schemaVersion?: unknown };
+  if (m.schemaVersion === MANIFEST_SCHEMA_VERSION) {
+    return input as RegistryManifest;
+  }
+  if (m.schemaVersion === 2) {
+    const v2 = input as RegistryManifestV2;
+    return {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: v2.exportedAt,
+      sourceBankVersion: v2.sourceBankVersion,
+      ...(v2.registryRoot ? { registryRoot: v2.registryRoot } : {}),
+      skills: v2.skills.map((s) => ({
+        ...s,
+        bucket: s.origin.kind === "github" ? "vendored" : "personal",
+      })),
+    };
+  }
+  throw new Error(
+    `manifest: unsupported schemaVersion ${String(m.schemaVersion)} (oldest readable: ${MANIFEST_OLDEST_READABLE_VERSION})`,
+  );
 }
 
 function readInstalledAgentMap(): Map<string, AgentId[]> {

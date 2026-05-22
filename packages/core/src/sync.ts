@@ -7,11 +7,7 @@ import { applyConflictDecision } from "./conflict.js";
 import { discoverSkillsInTree } from "./discovery.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import { getStateDir } from "./paths.js";
-import {
-  findSkillFolder,
-  walkSkills,
-  type SkillBucket,
-} from "./registry.js";
+import { findSkillFolder, walkSkills, type SkillBucket } from "./registry.js";
 import {
   readSkillSource,
   writeSkillSource,
@@ -246,8 +242,7 @@ export async function applyCanonicalSync(
     // the OTHER bucket is treated as an existing entry, not silently
     // duplicated under the mount bucket.
     const existing = findSkillFolder(registryRoot, name);
-    const localPath =
-      existing?.dir ?? path.join(localBucketDir, name);
+    const localPath = existing?.dir ?? path.join(localBucketDir, name);
     const localExists = existing !== null;
 
     // Capture local tags before any destructive step so a canonical
