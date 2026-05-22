@@ -69,6 +69,8 @@ After that initial link, edits flow as: edit in a git clone of your repo → com
 
 ## Account panel surfaces
 
+![Account modal — Registry source, Identity, and Move my registry sections](/images/account.png)
+
 The Account panel shows the same surfaces for every user:
 
 - **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — what your registry mirrors, plus last-fetched relative time and short commit SHA.

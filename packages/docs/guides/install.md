@@ -18,9 +18,9 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 
 ## Choosing which agents get the link
 
-Open the account menu → **Settings…** → set **Default install agents** to a subset of agents. From then on, the Install button targets only those directories. Leave it empty to keep the default "broadcast to all existing dirs" behavior.
+Open the account menu → **Settings…** → scroll to **Default install agents** and tick the agents you want. From then on, the Install button targets only those directories. Leave all unchecked to keep the default "broadcast to all existing dirs" behavior.
 
-![Settings modal — Default install agents, card grid columns, search debounce](/images/settings.png)
+![Settings modal — Default install agents section with per-agent checkboxes](/images/settings.png)
 
 You can override per-skill from the dialog's **Manage agent links…** action — pick exactly which agents this one skill goes into.
 

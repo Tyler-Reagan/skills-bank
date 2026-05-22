@@ -15,14 +15,7 @@ The app auto-updates by polling the GitHub Releases feed on launch — when a ne
 
 ## First launch
 
-On first launch you pick a starting point:
-
-![First-launch onboarding screen](/images/setup.png)
-
-- **Use the public skills bank** — browse and install from the curated `Tyler-Reagan/skills-bank` repo. No GitHub account needed. Refresh pulls the latest at the unauthenticated GitHub rate limit (60/hr).
-- **Connect with GitHub** — sign in via Device Flow. After signing in you pick a repo to back your registry. The curated bank is pre-listed as **Recommended** (same content, 5000/hr rate limit); or pick any repo of your own to host your own registry.
-
-Either way, the app boots into the Registry tab once you've picked. You can change your mind any time from **Account → Change linked repo**.
+The app boots straight into the **Registry** tab backed by the curated `Tyler-Reagan/skills-bank` repo — no account needed. You can sign in with GitHub any time from the Account panel to get 5000 requests/hr and link your own registry repo.
 
 Want to fork the entire app and ship your own build? See [Self-hosting](/self-host).
 
