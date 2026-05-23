@@ -5,6 +5,7 @@ import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { useRegisterModal } from "../ModalRegistryContext.js";
 import { Icon } from "./Icon.js";
 import { PublishSection } from "./PublishSection.js";
@@ -189,15 +190,7 @@ export function SkillDetailDrawer({
   showOriginActivity,
   onSetManualUpstream,
 }: Props): React.ReactElement {
-  const [skillMd, setSkillMd] = useState<string | null>(null);
-  const [skillMdLoading, setSkillMdLoading] = useState(true);
   const [action, setAction] = useState<ActionState>(null);
-  const [repoMeta, setRepoMeta] = useState<
-    import("../../shared/ipc.js").OriginRepoMetadata | null
-  >(null);
-  const [lastCommit, setLastCommit] = useState<
-    import("../../shared/ipc.js").OriginLastCommit | null
-  >(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerRepo, setPickerRepo] = useState("");
   const [pickerPath, setPickerPath] = useState("");
@@ -234,20 +227,10 @@ export function SkillDetailDrawer({
   // from the tag-reset effect prevents a re-fetch every time the parent
   // hands us a refreshed `entry` reference with the same `name` (e.g.
   // after a registry refresh that only bumped a sibling skill).
-  useEffect(() => {
-    let cancelled = false;
-    setSkillMd(null);
-    setSkillMdLoading(true);
-    void window.skillsBank.readSkillMd(entry.name).then((md) => {
-      if (!cancelled) {
-        setSkillMd(md);
-        setSkillMdLoading(false);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [entry.name]);
+  const { data: skillMd, loading: skillMdLoading } = useIpcQuery(
+    () => window.skillsBank.readSkillMd(entry.name),
+    [entry.name],
+  );
 
   // Reset drawer-local UI state when the selected entry changes
   // identity (a different skill, or the same skill with a refreshed
@@ -272,45 +255,25 @@ export function SkillDetailDrawer({
   // TTL so consecutive drawer opens for skills from the same repo
   // don't re-hit GitHub. Result `null` until the fetch resolves;
   // the drawer omits the stars chip and description when fields
-  // are null.
+  // are null. Errors degrade silently to no-enrichment.
   const upstreamRepo = entry.source.origin?.repo;
   const upstreamSkillPath = entry.source.origin?.skillPath;
-  useEffect(() => {
-    setRepoMeta(null);
-    if (!upstreamRepo) return;
-    let cancelled = false;
-    void window.skillsBank
-      .originRepoMetadata(upstreamRepo)
-      .then((m) => {
-        if (!cancelled) setRepoMeta(m);
-      })
-      .catch(() => {
-        // Errors degrade to no enrichment.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [upstreamRepo]);
+  const { data: repoMeta } = useIpcQuery(
+    () => window.skillsBank.originRepoMetadata(upstreamRepo!),
+    [upstreamRepo],
+    { enabled: Boolean(upstreamRepo) },
+  );
 
   // Per-skill last-commit fetch, opt-in via Settings. Costs 1 GitHub
   // API call per skill (no repo dedup) so it stays off by default.
-  useEffect(() => {
-    setLastCommit(null);
-    if (!showOriginActivity) return;
-    if (!upstreamRepo || !upstreamSkillPath) return;
-    let cancelled = false;
-    void window.skillsBank
-      .originLastCommit(upstreamRepo, upstreamSkillPath)
-      .then((c) => {
-        if (!cancelled) setLastCommit(c);
-      })
-      .catch(() => {
-        // Silent degrade.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [upstreamRepo, upstreamSkillPath, showOriginActivity]);
+  // Silent degrade on error.
+  const { data: lastCommit } = useIpcQuery(
+    () => window.skillsBank.originLastCommit(upstreamRepo!, upstreamSkillPath!),
+    [upstreamRepo, upstreamSkillPath, showOriginActivity],
+    {
+      enabled: Boolean(showOriginActivity && upstreamRepo && upstreamSkillPath),
+    },
+  );
 
   const [repairState, setRepairState] = useState<
     | { kind: "idle" }
