@@ -3,6 +3,26 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.11.2
+
+Internal-refactor release. Closes the four-MR component-redundancy housekeeping branch. No user-visible feature changes; one small visual convergence in the install-collision picker rows.
+
+### Changed (internal)
+
+- **Unified modal chrome behind a single `<Modal>` wrapper** (`modalStyles.tsx`). Owns scrim + dialog body + click-outside dismiss + focus return + Escape + initial focus + opt-in focus trap + auto-registration with a new `ModalRegistryContext`. Migrated 14 centered modals + `PublishSection`'s ForkConfirmModal; each lost its local `overlay` / `modal` / `closeBtn` style blocks and its three chrome-hook calls. `App.tsx`'s 20-line `modalOpen` OR-chain that drove `discoverHideSync()` collapsed to `useAnyModalOpen()` — new modals participate automatically, no opt-in step that can be forgotten. (#85)
+- **Extracted `<BulkSelectToolbar>` + `<ConflictActionPicker>`** shared by `ConflictResolutionModal` and `ConflictResolveModal`. The v1.11.0 / v1.11.1 drift between these two modals (one got the "Select all:" treatment, the other didn't; one got the language overhaul, the other didn't) becomes structurally impossible to repeat. Picker rows in `ConflictResolveModal` converged on the slightly-more-generous padding/font sizes already used by `ConflictResolutionModal`. (#86)
+- **Introduced `useIpcQuery` hook** wrapping the cancellation-aware `useEffect → window.skillsBank.foo() → setState → catch` boilerplate that appeared five times across `SkillDetailDrawer`, `PublishSection`, and `RepoPickerModal`. (#87)
+- **Lifted settings + registry state into dedicated contexts.** New `SettingsContext` owns `AppSettings` + `saveSettings` + `theme` + `density` + the dataset-write side effects. New `RegistryContext` (depending on `SettingsContext` for `customSkillsDirs`) owns `registry` + `installed` + derived maps + `refresh` / `rebuild` / `mutateRegistry`. App.tsx dropped 13 `useState` calls, 4 dataset-write `useEffect`s, and the local `saveSettings` / `refresh` / `rebuild` callbacks — net 129 lines lighter. (#88)
+
+### Fixed
+
+- **`saveCardTags` optimistic-paint flow** now reconciles through the new `RegistryContext.mutateRegistry` primitive instead of an inline `setRegistry` call. Behavior identical; the raw setter is no longer exposed on the context surface. (#88)
+
+### Audited (no changes)
+
+- All 7 `key={i}` sites in the renderer are correct: every one is in a static-list / never-reorder context (skeleton placeholders, immutable warnings/errors from a single render, diff line spans). Two were false positives — `i` was a variable named for "installation," not an array index.
+- Both `eslint-disable react-hooks/exhaustive-deps` directives carry inline justifications and are correct uses of the escape hatch.
+
 ## v1.11.1
 
 Bug-fix release. Restores click-outside dismiss, hides the embedded skills.sh browser for every modal, aligns Register's agent fan-out with Install, finishes the v1.11.0 bulk-toolbar treatment on the sync conflict modal, and lands the docs site as the canonical source of truth.
