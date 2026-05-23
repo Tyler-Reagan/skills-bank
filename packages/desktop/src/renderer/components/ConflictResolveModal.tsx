@@ -6,6 +6,11 @@ import type {
   InstalledSkill,
 } from "@skills-bank/core";
 import { AGENT_LABELS } from "../agentDisplay.js";
+import { BulkSelectToolbar, type BulkAction } from "./BulkSelectToolbar.js";
+import {
+  ConflictActionPicker,
+  type PickerOption,
+} from "./ConflictActionPicker.js";
 import { Icon } from "./Icon.js";
 import { Modal } from "./modalStyles.js";
 
@@ -32,11 +37,7 @@ interface Props {
   allowReplaceWithSymlink?: boolean;
 }
 
-const ALL_ACTIONS: {
-  value: ConflictResolveAction;
-  label: string;
-  description: string;
-}[] = [
+const ALL_ACTIONS: PickerOption<ConflictResolveAction>[] = [
   {
     value: "replace-with-symlink",
     label: "Replace with symlink to registry",
@@ -48,12 +49,24 @@ const ALL_ACTIONS: {
     label: "Delete entirely",
     description:
       "Remove the duplicate without creating a symlink. The agent will no longer have this skill.",
+    selectedTone: "danger",
   },
   {
     value: "keep",
     label: "Keep as-is",
     description: "Leave the entry alone. The conflict will resurface later.",
   },
+];
+
+const BULK_ACTIONS_FULL: BulkAction<ConflictResolveAction>[] = [
+  { value: "replace-with-symlink", label: "Replace" },
+  { value: "keep", label: "Keep" },
+  { value: "delete", label: "Delete", danger: true },
+];
+
+const BULK_ACTIONS_NO_REPLACE: BulkAction<ConflictResolveAction>[] = [
+  { value: "keep", label: "Keep" },
+  { value: "delete", label: "Delete", danger: true },
 ];
 
 /**
@@ -196,54 +209,12 @@ export function ConflictResolveModal({
           : `Tracking ambiguity: multiple copies of ${name} exist across agent directories — Skills Bank can't tell which one is the real one. All copies are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`}
       </p>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          marginTop: 12,
-          marginBottom: 12,
-          padding: "6px 10px",
-          background: "var(--surface-2, rgba(0,0,0,0.03))",
-          border: "1px solid var(--border)",
-          borderRadius: 6,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 11,
-            color: "var(--text-3)",
-            marginRight: 2,
-            flexShrink: 0,
-          }}
-        >
-          Select all:
-        </span>
-        {allowReplaceWithSymlink && (
-          <button
-            onClick={() => setAll("replace-with-symlink")}
-            style={{ fontSize: 12, padding: "2px 8px" }}
-          >
-            Replace
-          </button>
-        )}
-        <button
-          onClick={() => setAll("keep")}
-          style={{ fontSize: 12, padding: "2px 8px" }}
-        >
-          Keep
-        </button>
-        <button
-          onClick={() => setAll("delete")}
-          style={{
-            fontSize: 12,
-            padding: "2px 8px",
-            color: "var(--danger, #d04444)",
-          }}
-        >
-          Delete
-        </button>
-      </div>
+      <BulkSelectToolbar
+        actions={
+          allowReplaceWithSymlink ? BULK_ACTIONS_FULL : BULK_ACTIONS_NO_REPLACE
+        }
+        onSelectAll={setAll}
+      />
 
       <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
         {conflicts.map((c) => (
@@ -296,47 +267,14 @@ export function ConflictResolveModal({
                 {errorMessages[c.agent]}
               </div>
             )}
-            {ACTIONS.map((a) => (
-              <label
-                key={a.value}
-                style={{
-                  display: "block",
-                  padding: 6,
-                  marginBottom: 4,
-                  cursor: "pointer",
-                  // Selected-row background distinguishes safe picks
-                  // (keep / replace) from risky picks (delete) so the
-                  // user can scan the selection state at a glance.
-                  background:
-                    picks[c.agent] === a.value
-                      ? a.value === "delete"
-                        ? "var(--danger-dim, rgba(208, 68, 68, 0.18))"
-                        : "var(--accent-dim)"
-                      : "transparent",
-                  borderRadius: 4,
-                }}
-              >
-                <input
-                  type="radio"
-                  name={`conflict-${c.agent}`}
-                  checked={picks[c.agent] === a.value}
-                  onChange={() =>
-                    setPicks((prev) => ({ ...prev, [c.agent]: a.value }))
-                  }
-                  style={{ marginRight: 8 }}
-                />
-                <strong style={{ fontSize: 13 }}>{a.label}</strong>
-                <p
-                  style={{
-                    margin: "2px 0 0 24px",
-                    fontSize: 11,
-                    color: "var(--text-2)",
-                  }}
-                >
-                  {a.description}
-                </p>
-              </label>
-            ))}
+            <ConflictActionPicker
+              name={`conflict-${c.agent}`}
+              options={ACTIONS}
+              value={picks[c.agent] ?? defaultAction}
+              onChange={(next) =>
+                setPicks((prev) => ({ ...prev, [c.agent]: next }))
+              }
+            />
           </div>
         ))}
       </div>

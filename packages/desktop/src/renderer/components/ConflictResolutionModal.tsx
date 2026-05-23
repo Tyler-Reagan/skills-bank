@@ -5,6 +5,11 @@ import type {
   SyncDecisions,
 } from "@skills-bank/core";
 import type { SkillDiffResult } from "../../shared/ipc.js";
+import { BulkSelectToolbar, type BulkAction } from "./BulkSelectToolbar.js";
+import {
+  ConflictActionPicker,
+  type PickerOption,
+} from "./ConflictActionPicker.js";
 import { DiffViewer } from "./DiffViewer.js";
 import { Modal } from "./modalStyles.js";
 
@@ -14,27 +19,39 @@ interface Props {
   onResolve: (decisions: SyncDecisions) => Promise<void> | void;
 }
 
-const ACTIONS: { value: ConflictAction; label: string; description: string }[] =
-  [
-    {
-      value: "keep-mine",
-      label: "Keep mine",
-      description:
-        "Your local version stays. The incoming update for this skill is skipped.",
-    },
-    {
-      value: "use-canonical",
-      label: "Use incoming (replaces mine)",
-      description:
-        "The incoming version replaces yours. Your local changes are lost.",
-    },
-    {
-      value: "rename-mine",
-      label: "Rename mine to <name>-local",
-      description:
-        "Your version moves to <name>-local and the incoming version takes the original name. Both are kept.",
-    },
-  ];
+const ACTIONS: PickerOption<ConflictAction>[] = [
+  {
+    value: "keep-mine",
+    label: "Keep mine",
+    description:
+      "Your local version stays. The incoming update for this skill is skipped.",
+  },
+  {
+    value: "use-canonical",
+    label: "Use incoming (replaces mine)",
+    description:
+      "The incoming version replaces yours. Your local changes are lost.",
+  },
+  {
+    value: "rename-mine",
+    label: "Rename mine to <name>-local",
+    description:
+      "Your version moves to <name>-local and the incoming version takes the original name. Both are kept.",
+  },
+];
+
+const BULK_ACTIONS: BulkAction<ConflictAction>[] = [
+  { value: "keep-mine", label: "Keep mine" },
+  { value: "use-canonical", label: "Use incoming" },
+  {
+    value: "rename-mine",
+    label: (
+      <>
+        Rename to <code>&lt;name&gt;-local</code>
+      </>
+    ),
+  },
+];
 
 export function ConflictResolutionModal({
   conflicts,
@@ -155,72 +172,20 @@ export function ConflictResolutionModal({
         upstream changes.
       </p>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 6,
-          marginTop: 12,
-          padding: "6px 10px",
-          background: "var(--surface-2, rgba(0,0,0,0.03))",
-          border: "1px solid var(--border)",
-          borderRadius: 6,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 11,
-            color: "var(--text-3)",
-            marginRight: 2,
-            flexShrink: 0,
-          }}
-        >
-          Select all:
-        </span>
-        <button
-          type="button"
-          onClick={() => setAll("keep-mine")}
-          disabled={submitting}
-          style={{ fontSize: 12, padding: "2px 8px" }}
-        >
-          Keep mine
-        </button>
-        <button
-          type="button"
-          onClick={() => setAll("use-canonical")}
-          disabled={submitting}
-          style={{ fontSize: 12, padding: "2px 8px" }}
-        >
-          Use incoming
-        </button>
-        <button
-          type="button"
-          onClick={() => setAll("rename-mine")}
-          disabled={submitting}
-          style={{ fontSize: 12, padding: "2px 8px" }}
-        >
-          Rename to <code>&lt;name&gt;-local</code>
-        </button>
-        <span
-          style={{
-            flex: 1,
-            textAlign: "right",
-            alignSelf: "center",
-            fontSize: 11,
-            color: "var(--text-3)",
-          }}
-          aria-live="polite"
-        >
-          {[
+      <BulkSelectToolbar
+        actions={BULK_ACTIONS}
+        onSelectAll={setAll}
+        disabled={submitting}
+        tally={
+          [
             counts.keep > 0 ? `Keep ${counts.keep}` : null,
             counts.use > 0 ? `Use incoming ${counts.use}` : null,
             counts.rename > 0 ? `Rename ${counts.rename}` : null,
           ]
             .filter(Boolean)
-            .join(" · ") || "Nothing selected"}
-        </span>
-      </div>
+            .join(" · ") || "Nothing selected"
+        }
+      />
 
       <div style={{ marginTop: 12, maxHeight: "60vh", overflowY: "auto" }}>
         {conflicts.map((c) => (
@@ -264,43 +229,12 @@ export function ConflictResolutionModal({
                 />
               </div>
             )}
-            {ACTIONS.map((a) => (
-              <label
-                key={a.value}
-                style={{
-                  display: "block",
-                  padding: 8,
-                  marginBottom: 4,
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  background:
-                    picks[c.name] === a.value
-                      ? "var(--accent-dim)"
-                      : "transparent",
-                }}
-              >
-                <input
-                  type="radio"
-                  name={`conflict-${c.name}`}
-                  value={a.value}
-                  checked={picks[c.name] === a.value}
-                  onChange={() =>
-                    setPicks((p) => ({ ...p, [c.name]: a.value }))
-                  }
-                  style={{ marginRight: 8 }}
-                />
-                <span style={{ fontWeight: 500 }}>{a.label}</span>
-                <p
-                  style={{
-                    margin: "2px 0 0 24px",
-                    fontSize: 12,
-                    color: "var(--text-2)",
-                  }}
-                >
-                  {a.description}
-                </p>
-              </label>
-            ))}
+            <ConflictActionPicker
+              name={`conflict-${c.name}`}
+              options={ACTIONS}
+              value={picks[c.name] ?? "keep-mine"}
+              onChange={(next) => setPicks((p) => ({ ...p, [c.name]: next }))}
+            />
           </div>
         ))}
       </div>
