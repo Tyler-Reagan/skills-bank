@@ -1,8 +1,7 @@
-import React, { useRef } from "react";
+import React from "react";
 import { BUNDLED_REPO, type AuthStatus } from "../../shared/ipc.js";
-import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
+import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
 /**
  * Account-domain modal. Owns identity, registry source, and the
@@ -67,11 +66,6 @@ export function AccountModal({
   importingManifest,
   onCancelImport,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(onClose);
-  const modalRef = useRef<HTMLDivElement | null>(null);
-  useInitialFocus(modalRef);
-
   const user = authStatus?.user ?? null;
   const linkedRepo = authStatus?.linkedRepo ?? null;
   const isAuthed = Boolean(user);
@@ -81,278 +75,217 @@ export function AccountModal({
     : `github.com/${linkedRepo!.fullName}`;
 
   return (
-    <div style={overlay} onClick={onClose} role="presentation">
-      <div
-        ref={modalRef}
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Account"
-        tabIndex={-1}
-      >
-        <div style={modalHeader}>
-          <h2 style={{ margin: 0 }}>Account</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-            style={closeBtn}
-          >
-            <Icon name="x" size="md" />
-          </button>
-        </div>
-
-        <section style={section}>
-          <h3 style={sectionTitle}>Registry source</h3>
-          <p style={hint}>
-            The GitHub repo your registry mirrors. Refresh re-fetches its
-            contents; your local edits and added skills are preserved through
-            the diff-before-apply flow.
-          </p>
-          <div style={sourceRow}>
-            <span style={sourceChip}>{linkedLabel}</span>
-          </div>
-          {linkedRepo && (
-            <div style={{ ...hint, marginTop: 8 }}>
-              Last fetched: {formatRelativeTime(linkedRepo.lastFetchedAt)} ·{" "}
-              <code>{linkedRepo.syncedFromCommit.slice(0, 7)}</code>
-            </div>
-          )}
-          {!linkedRepo && (
-            <div style={{ ...hint, marginTop: 8 }}>
-              Last fetched: never — click <strong>Refresh</strong> to pull the
-              latest.
-            </div>
-          )}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-              marginTop: 10,
-            }}
-          >
-            <button
-              className="btn primary"
-              type="button"
-              onClick={() => void onRefreshRegistry()}
-              disabled={importingManifest}
-            >
-              Refresh from{" "}
-              {isBundledDefault ? BUNDLED_REPO : linkedRepo!.fullName}
-            </button>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => void onChangeRegistry()}
-              disabled={!isAuthed || importingManifest}
-              title={
-                isAuthed
-                  ? "Pick a different GitHub repo to mirror."
-                  : "Sign in with GitHub to pick a different repo."
-              }
-            >
-              {linkedRepo && !isBundledDefault
-                ? "Choose a different repo"
-                : "Change linked repo"}
-            </button>
-          </div>
-        </section>
-
-        <section style={section}>
-          <h3 style={sectionTitle}>Identity</h3>
-          {isAuthed ? (
-            <>
-              <div style={hint}>
-                Signed in as <strong>@{user!.login}</strong> · 5000 GitHub API
-                requests/hour available for Refresh.
-              </div>
-              <div style={{ marginTop: 8 }}>
-                <button
-                  className="btn danger"
-                  type="button"
-                  onClick={() => void onSignOut()}
-                  disabled={importingManifest}
-                >
-                  Sign out of GitHub
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={hint}>
-                Not signed in — Refresh uses the unauthenticated GitHub limit
-                (60 requests/hour). Sign in for 5000/hr and access to private
-                repos.
-              </div>
-              <div style={{ marginTop: 8 }}>
-                <button
-                  className="btn"
-                  type="button"
-                  onClick={onConnectGithub}
-                  disabled={!authStatus?.isAuthConfigured || importingManifest}
-                  title={
-                    authStatus?.isAuthConfigured
-                      ? "Authenticate with GitHub via Device Flow."
-                      : "GitHub OAuth isn't configured for this build."
-                  }
-                >
-                  Sign in with GitHub
-                </button>
-                {!authStatus?.isAuthConfigured && (
-                  <div style={{ ...hint, marginTop: 6, fontSize: 11 }}>
-                    GitHub OAuth Client ID not set. See{" "}
-                    <code>auth-config.ts</code>.
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </section>
-
-        <section style={section}>
-          <h3 style={sectionTitle}>Move my registry</h3>
-          <p style={hint}>
-            Two shapes you can move between machines. <strong>Content</strong>{" "}
-            moves the entire skills tree — drop-in restore, no network needed.{" "}
-            <strong>Manifest</strong> moves a JSON snapshot of origin pointers;
-            on import each skill is re-fetched from its origin, so transfers are
-            tiny but require the origins to still be reachable.
-          </p>
-
-          <div style={subGroupHeader}>
-            <span style={subGroupLabel}>Content</span>
-            <span style={subGroupHint}>The skills tree itself</span>
-          </div>
-          <div style={btnStack}>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => void onImportRegistry()}
-              disabled={importingManifest}
-            >
-              Import from disk (replace)
-            </button>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => void onMergeRegistry()}
-              disabled={importingManifest}
-            >
-              Merge from disk
-            </button>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => void onExportRegistry()}
-            >
-              Export as folder
-            </button>
-          </div>
-
-          <div style={subGroupHeader}>
-            <span style={subGroupLabel}>Manifest</span>
-            <span style={subGroupHint}>Origin pointers, JSON</span>
-          </div>
-          <div style={btnStack}>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => void onImportManifest()}
-              disabled={importingManifest}
-            >
-              {importingManifest ? (
-                <>
-                  <span className="spinner inline" /> Importing
-                </>
-              ) : (
-                "Import manifest"
-              )}
-            </button>
-            {importingManifest && (
-              <button className="btn" type="button" onClick={onCancelImport}>
-                Cancel import
-              </button>
-            )}
-            <button
-              className="btn"
-              type="button"
-              onClick={() => void onExportManifest()}
-            >
-              Export manifest
-            </button>
-          </div>
-        </section>
-
-        <section style={{ ...section, marginTop: 12 }}>
-          <h3 style={sectionTitle}>About this app</h3>
-          <div style={hint}>
-            Version <code>{appVersion}</code>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => void onCheckForUpdates()}
-            >
-              <Icon name="refresh" size="sm" /> Check for app updates
-            </button>
-          </div>
-        </section>
-
-        <div style={footer}>
-          <button className="btn primary" type="button" onClick={onClose}>
-            Done
-          </button>
-        </div>
+    <Modal label="Account" onClose={onClose} width={560}>
+      <div style={modalHeader}>
+        <h2 style={{ margin: 0 }}>Account</h2>
+        <ModalCloseButton onClose={onClose} />
       </div>
-    </div>
+
+      <section style={section}>
+        <h3 style={sectionTitle}>Registry source</h3>
+        <p style={hint}>
+          The GitHub repo your registry mirrors. Refresh re-fetches its
+          contents; your local edits and added skills are preserved through the
+          diff-before-apply flow.
+        </p>
+        <div style={sourceRow}>
+          <span style={sourceChip}>{linkedLabel}</span>
+        </div>
+        {linkedRepo && (
+          <div style={{ ...hint, marginTop: 8 }}>
+            Last fetched: {formatRelativeTime(linkedRepo.lastFetchedAt)} ·{" "}
+            <code>{linkedRepo.syncedFromCommit.slice(0, 7)}</code>
+          </div>
+        )}
+        {!linkedRepo && (
+          <div style={{ ...hint, marginTop: 8 }}>
+            Last fetched: never — click <strong>Refresh</strong> to pull the
+            latest.
+          </div>
+        )}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+            marginTop: 10,
+          }}
+        >
+          <button
+            className="btn primary"
+            type="button"
+            onClick={() => void onRefreshRegistry()}
+            disabled={importingManifest}
+          >
+            Refresh from{" "}
+            {isBundledDefault ? BUNDLED_REPO : linkedRepo!.fullName}
+          </button>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => void onChangeRegistry()}
+            disabled={!isAuthed || importingManifest}
+            title={
+              isAuthed
+                ? "Pick a different GitHub repo to mirror."
+                : "Sign in with GitHub to pick a different repo."
+            }
+          >
+            {linkedRepo && !isBundledDefault
+              ? "Choose a different repo"
+              : "Change linked repo"}
+          </button>
+        </div>
+      </section>
+
+      <section style={section}>
+        <h3 style={sectionTitle}>Identity</h3>
+        {isAuthed ? (
+          <>
+            <div style={hint}>
+              Signed in as <strong>@{user!.login}</strong> · 5000 GitHub API
+              requests/hour available for Refresh.
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <button
+                className="btn danger"
+                type="button"
+                onClick={() => void onSignOut()}
+                disabled={importingManifest}
+              >
+                Sign out of GitHub
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={hint}>
+              Not signed in — Refresh uses the unauthenticated GitHub limit (60
+              requests/hour). Sign in for 5000/hr and access to private repos.
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <button
+                className="btn"
+                type="button"
+                onClick={onConnectGithub}
+                disabled={!authStatus?.isAuthConfigured || importingManifest}
+                title={
+                  authStatus?.isAuthConfigured
+                    ? "Authenticate with GitHub via Device Flow."
+                    : "GitHub OAuth isn't configured for this build."
+                }
+              >
+                Sign in with GitHub
+              </button>
+              {!authStatus?.isAuthConfigured && (
+                <div style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+                  GitHub OAuth Client ID not set. See{" "}
+                  <code>auth-config.ts</code>.
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </section>
+
+      <section style={section}>
+        <h3 style={sectionTitle}>Move my registry</h3>
+        <p style={hint}>
+          Two shapes you can move between machines. <strong>Content</strong>{" "}
+          moves the entire skills tree — drop-in restore, no network needed.{" "}
+          <strong>Manifest</strong> moves a JSON snapshot of origin pointers; on
+          import each skill is re-fetched from its origin, so transfers are tiny
+          but require the origins to still be reachable.
+        </p>
+
+        <div style={subGroupHeader}>
+          <span style={subGroupLabel}>Content</span>
+          <span style={subGroupHint}>The skills tree itself</span>
+        </div>
+        <div style={btnStack}>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => void onImportRegistry()}
+            disabled={importingManifest}
+          >
+            Import from disk (replace)
+          </button>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => void onMergeRegistry()}
+            disabled={importingManifest}
+          >
+            Merge from disk
+          </button>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => void onExportRegistry()}
+          >
+            Export as folder
+          </button>
+        </div>
+
+        <div style={subGroupHeader}>
+          <span style={subGroupLabel}>Manifest</span>
+          <span style={subGroupHint}>Origin pointers, JSON</span>
+        </div>
+        <div style={btnStack}>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => void onImportManifest()}
+            disabled={importingManifest}
+          >
+            {importingManifest ? (
+              <>
+                <span className="spinner inline" /> Importing
+              </>
+            ) : (
+              "Import manifest"
+            )}
+          </button>
+          {importingManifest && (
+            <button className="btn" type="button" onClick={onCancelImport}>
+              Cancel import
+            </button>
+          )}
+          <button
+            className="btn"
+            type="button"
+            onClick={() => void onExportManifest()}
+          >
+            Export manifest
+          </button>
+        </div>
+      </section>
+
+      <section style={{ ...section, marginTop: 12 }}>
+        <h3 style={sectionTitle}>About this app</h3>
+        <div style={hint}>
+          Version <code>{appVersion}</code>
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => void onCheckForUpdates()}
+          >
+            <Icon name="refresh" size="sm" /> Check for app updates
+          </button>
+        </div>
+      </section>
+
+      <div style={footer}>
+        <button className="btn primary" type="button" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </Modal>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 560,
-  maxWidth: "90vw",
-  maxHeight: "85vh",
-  overflowY: "auto",
-  outline: "none",
-};
-
-const modalHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-  marginBottom: 4,
-};
-
-const closeBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--text-3)",
-  padding: 4,
-  borderRadius: 4,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
 
 const section: React.CSSProperties = {
   marginTop: 16,

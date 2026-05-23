@@ -2,8 +2,7 @@ import React, { useMemo } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { UpdateStatus } from "../../shared/ipc.js";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import { Modal } from "./modalStyles.js";
 
 // State machine for the modal. `available` is the awareness phase — bytes
 // haven't been pulled yet. `downloading` is post-consent (user clicked
@@ -30,9 +29,6 @@ export function UpdateNotesModal({
   onDownload,
   onRestart,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(onClose);
-
   const renderedNotes = useMemo(() => {
     if (!status.releaseNotes) return null;
     const html = marked.parse(status.releaseNotes, {
@@ -45,72 +41,73 @@ export function UpdateNotesModal({
   const { title, subtitle } = headerCopy(status);
 
   return (
-    <div style={overlay} onClick={onClose} role="presentation">
-      <div
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <h2 style={{ marginTop: 0 }}>{title}</h2>
-        {status.releaseName && status.releaseName !== `v${status.version}` && (
-          <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: -8 }}>
-            {status.releaseName}
+    <Modal
+      label={title}
+      onClose={onClose}
+      width={640}
+      bodyStyle={{
+        display: "flex",
+        flexDirection: "column",
+        overflowY: undefined,
+      }}
+    >
+      <h2 style={{ marginTop: 0 }}>{title}</h2>
+      {status.releaseName && status.releaseName !== `v${status.version}` && (
+        <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: -8 }}>
+          {status.releaseName}
+        </p>
+      )}
+      <p style={{ color: "var(--text-2)", fontSize: 13 }}>{subtitle}</p>
+
+      {status.kind === "downloading" && (
+        <DownloadProgress percent={status.percent} />
+      )}
+
+      <div style={notesScroll}>
+        {renderedNotes ? (
+          <div
+            className="markdown-body"
+            dangerouslySetInnerHTML={{ __html: renderedNotes }}
+          />
+        ) : (
+          <p style={{ color: "var(--text-3)", fontSize: 13 }}>
+            No release notes were attached to this release.
           </p>
         )}
-        <p style={{ color: "var(--text-2)", fontSize: 13 }}>{subtitle}</p>
+      </div>
 
-        {status.kind === "downloading" && (
-          <DownloadProgress percent={status.percent} />
-        )}
-
-        <div style={notesScroll}>
-          {renderedNotes ? (
-            <div
-              className="markdown-body"
-              dangerouslySetInnerHTML={{ __html: renderedNotes }}
-            />
-          ) : (
-            <p style={{ color: "var(--text-3)", fontSize: 13 }}>
-              No release notes were attached to this release.
-            </p>
+      <div style={footer}>
+        <button
+          onClick={() => onSkip(status.version)}
+          disabled={status.kind === "downloading"}
+          title={
+            status.kind === "downloading"
+              ? "Download in progress — cancel by quitting and relaunching"
+              : "Hide notifications for this version. A newer release will surface again."
+          }
+        >
+          Skip this version
+        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onClose}>Later</button>
+          {status.kind === "available" && (
+            <button className="primary" onClick={onDownload}>
+              Download &amp; install
+            </button>
+          )}
+          {status.kind === "downloading" && (
+            <button className="primary" disabled>
+              Downloading
+            </button>
+          )}
+          {status.kind === "downloaded" && (
+            <button className="primary" onClick={onRestart}>
+              Restart now
+            </button>
           )}
         </div>
-
-        <div style={footer}>
-          <button
-            onClick={() => onSkip(status.version)}
-            disabled={status.kind === "downloading"}
-            title={
-              status.kind === "downloading"
-                ? "Download in progress — cancel by quitting and relaunching"
-                : "Hide notifications for this version. A newer release will surface again."
-            }
-          >
-            Skip this version
-          </button>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={onClose}>Later</button>
-            {status.kind === "available" && (
-              <button className="primary" onClick={onDownload}>
-                Download &amp; install
-              </button>
-            )}
-            {status.kind === "downloading" && (
-              <button className="primary" disabled>
-                Downloading
-              </button>
-            )}
-            {status.kind === "downloaded" && (
-              <button className="primary" onClick={onRestart}>
-                Restart now
-              </button>
-            )}
-          </div>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -187,28 +184,6 @@ function DownloadProgress({
     </div>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 640,
-  maxWidth: "90vw",
-  maxHeight: "85vh",
-  display: "flex",
-  flexDirection: "column",
-};
 
 const notesScroll: React.CSSProperties = {
   flex: 1,

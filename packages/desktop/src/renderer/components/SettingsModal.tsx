@@ -1,13 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
 import {
   AGENT_LABELS,
   AGENT_PATHS,
   ALL_AGENT_IDS as ALL_AGENTS,
 } from "../agentDisplay.js";
-import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
+import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
 type GridColumns = "auto" | "2" | "3" | "4";
 type SearchDebounce = "off" | "100" | "250";
@@ -113,10 +112,6 @@ export function SettingsModal({
   onUnhide,
   isAuthed,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(onClose);
-  const modalRef = useRef<HTMLDivElement | null>(null);
-  useInitialFocus(modalRef);
   const [draft, setDraft] = useState<AppSettings>(settings);
 
   // Top-level agent dir symlinks — drives the conditional "Collapse
@@ -187,448 +182,391 @@ export function SettingsModal({
   };
 
   return (
-    <div style={overlay} onClick={onClose} role="presentation">
-      <div
-        ref={modalRef}
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Settings"
-        tabIndex={-1}
-      >
-        <div style={modalHeader}>
-          <h2 style={{ margin: 0 }}>Settings</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-            style={closeBtn}
-          >
-            <Icon name="x" size="md" />
-          </button>
-        </div>
+    <Modal label="Settings" onClose={onClose} width={560}>
+      <div style={modalHeader}>
+        <h2 style={{ margin: 0 }}>Settings</h2>
+        <ModalCloseButton onClose={onClose} />
+      </div>
+      <p style={hint}>
+        Preferences for how the app behaves day-to-day. Registry source and
+        identity live under <strong>Account</strong> settings.
+      </p>
+
+      <h3 style={groupHeading}>Skills</h3>
+      <section style={section}>
+        <h3 style={sectionTitle}>Registration</h3>
         <p style={hint}>
-          Preferences for how the app behaves day-to-day. Registry source and
-          identity live under <strong>Account</strong> settings.
+          When you register a skill, move its files into Skills Bank
+          (recommended). With this off, the registry just records the skill's
+          external location and leaves files where they are — useful for skills
+          you actively edit in their own git repo.
         </p>
+        <label style={{ ...checkboxRow, marginTop: 8 }}>
+          <input
+            type="checkbox"
+            checked={draft.registerAdopts}
+            onChange={() =>
+              setDraft((prev) => ({
+                ...prev,
+                registerAdopts: !prev.registerAdopts,
+              }))
+            }
+          />
+          <strong>Move files into Skills Bank on Register</strong>
+        </label>
+      </section>
 
-        <h3 style={groupHeading}>Skills</h3>
-        <section style={section}>
-          <h3 style={sectionTitle}>Registration</h3>
-          <p style={hint}>
-            When you register a skill, move its files into Skills Bank
-            (recommended). With this off, the registry just records the skill's
-            external location and leaves files where they are — useful for
-            skills you actively edit in their own git repo.
+      <section style={section}>
+        <h3 style={sectionTitle}>Upstream activity</h3>
+        <p style={hint}>
+          Show the most recent commit to each skill's folder in its source repo
+          (in the drawer's Origin section). Uses your GitHub token for 1 API
+          call per skill — heavy registries can pressure your rate-limit budget,
+          so it's off by default.
+        </p>
+        <label
+          style={{
+            ...checkboxRow,
+            marginTop: 8,
+            opacity: isAuthed ? 1 : 0.5,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={draft.showOriginActivity && isAuthed}
+            disabled={!isAuthed}
+            onChange={() =>
+              setDraft((prev) => ({
+                ...prev,
+                showOriginActivity: !prev.showOriginActivity,
+              }))
+            }
+          />
+          <strong>Show Origin activity</strong>
+        </label>
+        {!isAuthed && (
+          <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+            Sign in with GitHub to enable — Account → Sign in with GitHub.
           </p>
-          <label style={{ ...checkboxRow, marginTop: 8 }}>
-            <input
-              type="checkbox"
-              checked={draft.registerAdopts}
-              onChange={() =>
-                setDraft((prev) => ({
-                  ...prev,
-                  registerAdopts: !prev.registerAdopts,
-                }))
-              }
-            />
-            <strong>Move files into Skills Bank on Register</strong>
-          </label>
-        </section>
+        )}
+      </section>
 
-        <section style={section}>
-          <h3 style={sectionTitle}>Upstream activity</h3>
-          <p style={hint}>
-            Show the most recent commit to each skill's folder in its source
-            repo (in the drawer's Origin section). Uses your GitHub token for 1
-            API call per skill — heavy registries can pressure your rate-limit
-            budget, so it's off by default.
+      <section style={section}>
+        <h3 style={sectionTitle}>Unregister destination</h3>
+        <p style={hint}>
+          When you unregister an adopted skill, its files move out of Skills
+          Bank into the agent dir picked here. The default,
+          <code style={{ marginLeft: 4, marginRight: 4 }}>
+            ~/.agents/skills/
+          </code>
+          , is the shared location all agents can read. Non-adopted
+          (symlink-mode) skills aren't moved — their origin files stay in place.
+        </p>
+        <div style={radioRow}>
+          {ALL_AGENTS.map((id) => (
+            <label key={id} style={radioOption}>
+              <input
+                type="radio"
+                name="unregister-dest"
+                checked={draft.unregisterDestinationAgent === id}
+                onChange={() =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    unregisterDestinationAgent: id,
+                  }))
+                }
+              />
+              <span>{AGENT_LABELS[id]}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      <section style={section}>
+        <h3 style={sectionTitle}>Default install agents</h3>
+        {/* end of Skills group; Display + Advanced groups follow. */}
+        <p style={hint}>
+          When you install a skill from the Registry tab, link it into these
+          agent directories. Leave all unchecked to broadcast to every agent
+          directory that exists on this machine.
+        </p>
+        <div style={{ marginTop: 8 }}>
+          {ALL_AGENTS.map((id) => (
+            <label key={id} style={checkboxRow}>
+              <input
+                type="checkbox"
+                checked={draft.defaultInstallAgents.includes(id)}
+                onChange={() => toggleAgent(id)}
+              />
+              <strong style={{ minWidth: 120 }}>{AGENT_LABELS[id]}</strong>
+              <code style={{ color: "var(--text-3)", fontSize: 11 }}>
+                {AGENT_PATHS[id]}/skills/
+              </code>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      <section style={section}>
+        <h3 style={sectionTitle}>Install a skill from GitHub</h3>
+        <p style={hint}>
+          Paste a GitHub folder URL (or a SKILL.md blob URL) and the app fetches
+          the skill directly into your bank — no terminal, no npx. The skill
+          lands as <code>source: user</code> with its origin stamped, so future
+          updates flow through the standard update path.
+        </p>
+        <button
+          className="btn"
+          type="button"
+          onClick={() => onOpenInstallFromGithub()}
+          style={{ marginTop: 8 }}
+        >
+          Install a skill from GitHub
+        </button>
+      </section>
+
+      <section style={section}>
+        <h3 style={sectionTitle}>Curated skills</h3>
+        <p style={hint}>
+          Skills bundled with the app, maintained centrally. Read-only — curated
+          skills update automatically on app restart.
+        </p>
+        {curatedSkills.length === 0 ? (
+          <p style={{ ...hint, fontStyle: "italic" }}>
+            None present in this registry.
           </p>
-          <label
+        ) : (
+          <ul
             style={{
-              ...checkboxRow,
-              marginTop: 8,
-              opacity: isAuthed ? 1 : 0.5,
+              listStyle: "none",
+              padding: 0,
+              margin: "6px 0 8px",
+              fontSize: 12,
+              color: "var(--text-2)",
             }}
           >
-            <input
-              type="checkbox"
-              checked={draft.showOriginActivity && isAuthed}
-              disabled={!isAuthed}
-              onChange={() =>
-                setDraft((prev) => ({
-                  ...prev,
-                  showOriginActivity: !prev.showOriginActivity,
-                }))
-              }
-            />
-            <strong>Show Origin activity</strong>
-          </label>
-          {!isAuthed && (
-            <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>
-              Sign in with GitHub to enable — Account → Sign in with GitHub.
-            </p>
-          )}
-        </section>
-
-        <section style={section}>
-          <h3 style={sectionTitle}>Unregister destination</h3>
-          <p style={hint}>
-            When you unregister an adopted skill, its files move out of Skills
-            Bank into the agent dir picked here. The default,
-            <code style={{ marginLeft: 4, marginRight: 4 }}>
-              ~/.agents/skills/
-            </code>
-            , is the shared location all agents can read. Non-adopted
-            (symlink-mode) skills aren't moved — their origin files stay in
-            place.
-          </p>
-          <div style={radioRow}>
-            {ALL_AGENTS.map((id) => (
-              <label key={id} style={radioOption}>
-                <input
-                  type="radio"
-                  name="unregister-dest"
-                  checked={draft.unregisterDestinationAgent === id}
-                  onChange={() =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      unregisterDestinationAgent: id,
-                    }))
-                  }
-                />
-                <span>{AGENT_LABELS[id]}</span>
-              </label>
+            {curatedSkills.map((s) => (
+              <li key={s.name} style={{ marginBottom: 4 }}>
+                <code>{s.name}</code>
+                {s.description ? (
+                  <span style={{ color: "var(--text-3)" }}>
+                    {" "}
+                    — {s.description}
+                  </span>
+                ) : null}
+              </li>
             ))}
-          </div>
-        </section>
+          </ul>
+        )}
+        <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+          Last checked:{" "}
+          {curatedLastCheckedAt
+            ? new Date(curatedLastCheckedAt).toLocaleString()
+            : "never"}
+        </p>
+      </section>
 
+      <h3 style={groupHeading}>Display</h3>
+      <section style={section}>
+        <h3 style={sectionTitle}>Card grid columns</h3>
+        <p style={hint}>
+          Auto adapts to the window width; fixed values give you consistent card
+          density at the cost of overflow on narrow windows.
+        </p>
+        <div style={radioRow}>
+          {(["auto", "2", "3", "4"] as GridColumns[]).map((v) => (
+            <label key={v} style={radioOption}>
+              <input
+                type="radio"
+                name="grid-cols"
+                checked={draft.gridColumns === v}
+                onChange={() =>
+                  setDraft((prev) => ({ ...prev, gridColumns: v }))
+                }
+              />
+              <span>{v === "auto" ? "Auto" : `${v} columns`}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      <h3 style={groupHeading}>Advanced</h3>
+      <section style={section}>
+        <h3 style={sectionTitle}>Search debounce</h3>
+        <p style={hint}>
+          Delay before search filtering applies. Higher values keep the UI
+          smooth on large registries.
+        </p>
+        <div style={radioRow}>
+          {(["off", "100", "250"] as SearchDebounce[]).map((v) => (
+            <label key={v} style={radioOption}>
+              <input
+                type="radio"
+                name="search-debounce"
+                checked={draft.searchDebounceMs === v}
+                onChange={() =>
+                  setDraft((prev) => ({ ...prev, searchDebounceMs: v }))
+                }
+              />
+              <span>{v === "off" ? "Off" : `${v} ms`}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {topLevelSymlinks.length > 0 && (
         <section style={section}>
-          <h3 style={sectionTitle}>Default install agents</h3>
-          {/* end of Skills group; Display + Advanced groups follow. */}
+          <h3 style={sectionTitle}>Collapse symlinked agent dirs</h3>
           <p style={hint}>
-            When you install a skill from the Registry tab, link it into these
-            agent directories. Leave all unchecked to broadcast to every agent
-            directory that exists on this machine.
+            {topLevelSymlinks.length === 1
+              ? "One"
+              : `${topLevelSymlinks.length}`}{" "}
+            agent skills directory
+            {topLevelSymlinks.length === 1 ? " is" : "s are"} symlinked to
+            another location:
           </p>
-          <div style={{ marginTop: 8 }}>
-            {ALL_AGENTS.map((id) => (
-              <label key={id} style={checkboxRow}>
-                <input
-                  type="checkbox"
-                  checked={draft.defaultInstallAgents.includes(id)}
-                  onChange={() => toggleAgent(id)}
-                />
-                <strong style={{ minWidth: 120 }}>{AGENT_LABELS[id]}</strong>
-                <code style={{ color: "var(--text-3)", fontSize: 11 }}>
-                  {AGENT_PATHS[id]}/skills/
-                </code>
-              </label>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: "6px 0 8px",
+              fontSize: 12,
+              color: "var(--text-2)",
+            }}
+          >
+            {topLevelSymlinks.map((tls) => (
+              <li key={tls.agent} style={{ marginBottom: 2 }}>
+                <code>{tls.agent}</code> → <code>{tls.resolvedTarget}</code>
+                {!tls.exists && (
+                  <span style={{ color: "var(--danger)" }}> (missing)</span>
+                )}
+              </li>
             ))}
-          </div>
-        </section>
-
-        <section style={section}>
-          <h3 style={sectionTitle}>Install a skill from GitHub</h3>
+          </ul>
           <p style={hint}>
-            Paste a GitHub folder URL (or a SKILL.md blob URL) and the app
-            fetches the skill directly into your bank — no terminal, no npx. The
-            skill lands as <code>source: user</code> with its origin stamped, so
-            future updates flow through the standard update path.
+            Finalize collapses each symlink into a real directory in place,
+            moving content from the resolved target. Skills must be registered
+            first — finalize refuses while real-directory entries remain
+            unregistered.
           </p>
           <button
             className="btn"
             type="button"
-            onClick={() => onOpenInstallFromGithub()}
-            style={{ marginTop: 8 }}
+            disabled={finalizing}
+            onClick={() => void runFinalize()}
           >
-            Install a skill from GitHub
+            {finalizing ? (
+              <>
+                <span className="spinner inline" /> Finalizing
+              </>
+            ) : (
+              "Finalize now"
+            )}
           </button>
-        </section>
-
-        <section style={section}>
-          <h3 style={sectionTitle}>Curated skills</h3>
-          <p style={hint}>
-            Skills bundled with the app, maintained centrally. Read-only —
-            curated skills update automatically on app restart.
-          </p>
-          {curatedSkills.length === 0 ? (
-            <p style={{ ...hint, fontStyle: "italic" }}>
-              None present in this registry.
-            </p>
-          ) : (
-            <ul
+          {finalizeError && (
+            <pre
               style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "6px 0 8px",
-                fontSize: 12,
-                color: "var(--text-2)",
+                margin: "8px 0 0",
+                fontSize: 11,
+                color: "var(--danger)",
+                whiteSpace: "pre-wrap",
               }}
             >
-              {curatedSkills.map((s) => (
-                <li key={s.name} style={{ marginBottom: 4 }}>
-                  <code>{s.name}</code>
-                  {s.description ? (
-                    <span style={{ color: "var(--text-3)" }}>
-                      {" "}
-                      — {s.description}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+              {finalizeError}
+            </pre>
           )}
-          <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>
-            Last checked:{" "}
-            {curatedLastCheckedAt
-              ? new Date(curatedLastCheckedAt).toLocaleString()
-              : "never"}
-          </p>
         </section>
+      )}
 
-        <h3 style={groupHeading}>Display</h3>
+      <section style={section}>
+        <h3 style={sectionTitle}>Terminal app (macOS)</h3>
+        <p style={hint}>
+          Used by the "Open Terminal" button in the Discover tab. The chosen app
+          must be installed — uninstalled apps will fall back to Terminal.
+        </p>
+        <div style={radioRow}>
+          {(
+            [
+              ["system", "Terminal"],
+              ["iterm2", "iTerm2"],
+              ["warp", "Warp"],
+              ["hyper", "Hyper"],
+              ["alacritty", "Alacritty"],
+              ["kitty", "kitty"],
+            ] as [TerminalApp, string][]
+          ).map(([v, label]) => (
+            <label key={v} style={radioOption}>
+              <input
+                type="radio"
+                name="terminal-app"
+                checked={draft.terminalApp === v}
+                onChange={() =>
+                  setDraft((prev) => ({ ...prev, terminalApp: v }))
+                }
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {hiddenCanon.length > 0 && (
         <section style={section}>
-          <h3 style={sectionTitle}>Card grid columns</h3>
+          <h3 style={sectionTitle}>Dismissed bundled skills</h3>
           <p style={hint}>
-            Auto adapts to the window width; fixed values give you consistent
-            card density at the cost of overflow on narrow windows.
+            Bundled skills you've dismissed from the default Browse view.
+            Unhiding restores them everywhere. Their installations and metadata
+            are preserved while dismissed — this is a UI dormancy flag, not an
+            uninstall.
           </p>
-          <div style={radioRow}>
-            {(["auto", "2", "3", "4"] as GridColumns[]).map((v) => (
-              <label key={v} style={radioOption}>
-                <input
-                  type="radio"
-                  name="grid-cols"
-                  checked={draft.gridColumns === v}
-                  onChange={() =>
-                    setDraft((prev) => ({ ...prev, gridColumns: v }))
-                  }
-                />
-                <span>{v === "auto" ? "Auto" : `${v} columns`}</span>
-              </label>
-            ))}
-          </div>
-        </section>
-
-        <h3 style={groupHeading}>Advanced</h3>
-        <section style={section}>
-          <h3 style={sectionTitle}>Search debounce</h3>
-          <p style={hint}>
-            Delay before search filtering applies. Higher values keep the UI
-            smooth on large registries.
-          </p>
-          <div style={radioRow}>
-            {(["off", "100", "250"] as SearchDebounce[]).map((v) => (
-              <label key={v} style={radioOption}>
-                <input
-                  type="radio"
-                  name="search-debounce"
-                  checked={draft.searchDebounceMs === v}
-                  onChange={() =>
-                    setDraft((prev) => ({ ...prev, searchDebounceMs: v }))
-                  }
-                />
-                <span>{v === "off" ? "Off" : `${v} ms`}</span>
-              </label>
-            ))}
-          </div>
-        </section>
-
-        {topLevelSymlinks.length > 0 && (
-          <section style={section}>
-            <h3 style={sectionTitle}>Collapse symlinked agent dirs</h3>
-            <p style={hint}>
-              {topLevelSymlinks.length === 1
-                ? "One"
-                : `${topLevelSymlinks.length}`}{" "}
-              agent skills directory
-              {topLevelSymlinks.length === 1 ? " is" : "s are"} symlinked to
-              another location:
-            </p>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "6px 0 8px",
-                fontSize: 12,
-                color: "var(--text-2)",
-              }}
-            >
-              {topLevelSymlinks.map((tls) => (
-                <li key={tls.agent} style={{ marginBottom: 2 }}>
-                  <code>{tls.agent}</code> → <code>{tls.resolvedTarget}</code>
-                  {!tls.exists && (
-                    <span style={{ color: "var(--danger)" }}> (missing)</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <p style={hint}>
-              Finalize collapses each symlink into a real directory in place,
-              moving content from the resolved target. Skills must be registered
-              first — finalize refuses while real-directory entries remain
-              unregistered.
-            </p>
-            <button
-              className="btn"
-              type="button"
-              disabled={finalizing}
-              onClick={() => void runFinalize()}
-            >
-              {finalizing ? (
-                <>
-                  <span className="spinner inline" /> Finalizing
-                </>
-              ) : (
-                "Finalize now"
-              )}
-            </button>
-            {finalizeError && (
-              <pre
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: "8px 0 0",
+            }}
+          >
+            {hiddenCanon.map((name) => (
+              <li
+                key={name}
                 style={{
-                  margin: "8px 0 0",
-                  fontSize: 11,
-                  color: "var(--danger)",
-                  whiteSpace: "pre-wrap",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "6px 0",
+                  borderBottom: "1px solid var(--border)",
                 }}
               >
-                {finalizeError}
-              </pre>
-            )}
-          </section>
-        )}
-
-        <section style={section}>
-          <h3 style={sectionTitle}>Terminal app (macOS)</h3>
-          <p style={hint}>
-            Used by the "Open Terminal" button in the Discover tab. The chosen
-            app must be installed — uninstalled apps will fall back to Terminal.
-          </p>
-          <div style={radioRow}>
-            {(
-              [
-                ["system", "Terminal"],
-                ["iterm2", "iTerm2"],
-                ["warp", "Warp"],
-                ["hyper", "Hyper"],
-                ["alacritty", "Alacritty"],
-                ["kitty", "kitty"],
-              ] as [TerminalApp, string][]
-            ).map(([v, label]) => (
-              <label key={v} style={radioOption}>
-                <input
-                  type="radio"
-                  name="terminal-app"
-                  checked={draft.terminalApp === v}
-                  onChange={() =>
-                    setDraft((prev) => ({ ...prev, terminalApp: v }))
-                  }
-                />
-                <span>{label}</span>
-              </label>
-            ))}
-          </div>
-        </section>
-
-        {hiddenCanon.length > 0 && (
-          <section style={section}>
-            <h3 style={sectionTitle}>Dismissed bundled skills</h3>
-            <p style={hint}>
-              Bundled skills you've dismissed from the default Browse view.
-              Unhiding restores them everywhere. Their installations and
-              metadata are preserved while dismissed — this is a UI dormancy
-              flag, not an uninstall.
-            </p>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "8px 0 0",
-              }}
-            >
-              {hiddenCanon.map((name) => (
-                <li
-                  key={name}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "6px 0",
-                    borderBottom: "1px solid var(--border)",
-                  }}
+                <code style={{ fontSize: 13 }}>{name}</code>
+                <button
+                  className="link-btn"
+                  onClick={() => void onUnhide(name)}
                 >
-                  <code style={{ fontSize: 13 }}>{name}</code>
-                  <button
-                    className="link-btn"
-                    onClick={() => void onUnhide(name)}
-                  >
-                    Unhide
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+                  Unhide
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 8,
-            marginTop: 16,
-          }}
-        >
-          <button onClick={onClose}>Cancel</button>
-          <button className="primary" onClick={apply}>
-            Save
-          </button>
-        </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: 16,
+        }}
+      >
+        <button onClick={onClose}>Cancel</button>
+        <button className="primary" onClick={apply}>
+          Save
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
 
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 560,
-  maxWidth: "90vw",
-  maxHeight: "85vh",
-  overflowY: "auto",
-  outline: "none",
-};
-const modalHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-  marginBottom: 4,
-};
-const closeBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--text-3)",
-  padding: 4,
-  borderRadius: 4,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
 const section: React.CSSProperties = {
   marginBottom: 24,
   paddingBottom: 16,

@@ -7,6 +7,7 @@ import type {
 import type { PublishSkillResult } from "../../shared/ipc.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
 import { Icon } from "./Icon.js";
+import { Modal, ModalCloseButton } from "./modalStyles.js";
 
 interface Props {
   entry: RegistryEntry;
@@ -275,63 +276,47 @@ function ForkConfirmModal({
   onConfirm,
 }: ForkConfirmModalProps): React.ReactElement {
   return (
-    <div style={overlay} onClick={onCancel} role="presentation">
-      <div
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Confirm fork"
-      >
-        <div style={modalHeader}>
-          <h2 style={{ margin: 0, fontSize: 16 }}>
-            Fork <code>{name}</code>?
-          </h2>
-          <button
-            type="button"
-            onClick={onCancel}
-            aria-label="Close"
-            title="Close"
-            style={closeBtn}
-          >
-            <Icon name="x" size="md" />
-          </button>
-        </div>
-        <p style={hint}>
-          Publishing your edits to <code>{name}</code> forks it from{" "}
-          <code>{originRepo}</code>. The local copy moves from{" "}
-          <code>skills/vendored/</code> to <code>skills/personal/</code>, the
-          origin pointer clears, and future updates from{" "}
-          <code>{originRepo}</code> stop surfacing. This is irreversible without
-          re-vendoring.
-        </p>
-        {willCollide && (
-          <p style={{ ...hint, color: "var(--danger)" }}>
-            ⚠️ A skill named <code>{name}</code> already exists in{" "}
-            <code>skills/personal/</code>. The fork will refuse until you
-            resolve the collision (revert your edits, rename the existing skill,
-            or delete it).
-          </p>
-        )}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 8,
-            marginTop: 16,
-          }}
-        >
-          <button onClick={onCancel}>Cancel</button>
-          <button
-            className="primary"
-            onClick={onConfirm}
-            disabled={willCollide}
-          >
-            Fork and publish
-          </button>
-        </div>
+    <Modal
+      label={`Fork ${name}?`}
+      onClose={onCancel}
+      width={540}
+      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+    >
+      <div style={modalHeader}>
+        <h2 style={{ margin: 0, fontSize: 16 }}>
+          Fork <code>{name}</code>?
+        </h2>
+        <ModalCloseButton onClose={onCancel} />
       </div>
-    </div>
+      <p style={hint}>
+        Publishing your edits to <code>{name}</code> forks it from{" "}
+        <code>{originRepo}</code>. The local copy moves from{" "}
+        <code>skills/vendored/</code> to <code>skills/personal/</code>, the
+        origin pointer clears, and future updates from <code>{originRepo}</code>{" "}
+        stop surfacing. This is irreversible without re-vendoring.
+      </p>
+      {willCollide && (
+        <p style={{ ...hint, color: "var(--danger)" }}>
+          ⚠️ A skill named <code>{name}</code> already exists in{" "}
+          <code>skills/personal/</code>. The fork will refuse until you resolve
+          the collision (revert your edits, rename the existing skill, or delete
+          it).
+        </p>
+      )}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: 16,
+        }}
+      >
+        <button onClick={onCancel}>Cancel</button>
+        <button className="primary" onClick={onConfirm} disabled={willCollide}>
+          Fork and publish
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -421,35 +406,9 @@ const hint: React.CSSProperties = {
   lineHeight: 1.5,
   margin: "0 0 var(--s2, 8px) 0",
 };
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1100,
-};
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 540,
-  maxWidth: "90vw",
-};
 const modalHeader: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   gap: 8,
-};
-const closeBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--text-3)",
-  padding: 4,
-  borderRadius: 4,
-  display: "inline-flex",
 };

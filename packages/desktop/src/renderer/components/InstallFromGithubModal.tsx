@@ -1,8 +1,6 @@
-import React, { useRef, useState } from "react";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
-import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
+import React, { useState } from "react";
 import { useRegistryHost } from "../RegistryHostContext.js";
-import { Icon } from "./Icon.js";
+import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
 interface Props {
   onClose: () => void;
@@ -24,10 +22,6 @@ export function InstallFromGithubModal({
   onClose,
   onInstalled,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(onClose);
-  const ref = useRef<HTMLDivElement | null>(null);
-  useInitialFocus(ref);
   const { flash, flashError } = useRegistryHost();
 
   const [url, setUrl] = useState("");
@@ -76,138 +70,85 @@ export function InstallFromGithubModal({
   };
 
   return (
-    <div style={overlay} onClick={onClose} role="presentation">
-      <div
-        ref={ref}
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Install a skill from GitHub"
-        tabIndex={-1}
-      >
-        <div style={modalHeader}>
-          <h2 style={{ margin: 0, fontSize: 16 }}>
-            Install a skill from GitHub
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-            style={closeBtn}
-          >
-            <Icon name="x" size="md" />
-          </button>
-        </div>
-        <p style={hint}>
-          Paste a GitHub URL pointing at a skill folder (or its SKILL.md file).
-          The app fetches the folder, registers the skill in your bank, and
-          stamps the origin so future Updates work.
-        </p>
-        <p style={{ ...hint, fontSize: 11, color: "var(--text-3)" }}>
-          Examples:
-          <br />
-          <code>
-            https://github.com/owner/repo/tree/main/skills/find-skills
-          </code>
-          <br />
-          <code>
-            https://github.com/owner/repo/blob/main/skills/find-skills/SKILL.md
-          </code>
-        </p>
-        <input
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://github.com/owner/repo/tree/main/path"
-          disabled={busy}
-          style={input}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && url.trim().length > 0) {
-              void submit();
-            }
-          }}
-        />
-        {error && (
-          <p
-            role="alert"
-            style={{
-              ...hint,
-              marginTop: 8,
-              color: "var(--danger)",
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {error}
-          </p>
-        )}
-        <div
+    <Modal
+      label="Install a skill from GitHub"
+      onClose={onClose}
+      width={540}
+      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+    >
+      <div style={modalHeader}>
+        <h2 style={{ margin: 0, fontSize: 16 }}>Install a skill from GitHub</h2>
+        <ModalCloseButton onClose={onClose} />
+      </div>
+      <p style={hint}>
+        Paste a GitHub URL pointing at a skill folder (or its SKILL.md file).
+        The app fetches the folder, registers the skill in your bank, and stamps
+        the origin so future Updates work.
+      </p>
+      <p style={{ ...hint, fontSize: 11, color: "var(--text-3)" }}>
+        Examples:
+        <br />
+        <code>https://github.com/owner/repo/tree/main/skills/find-skills</code>
+        <br />
+        <code>
+          https://github.com/owner/repo/blob/main/skills/find-skills/SKILL.md
+        </code>
+      </p>
+      <input
+        type="text"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="https://github.com/owner/repo/tree/main/path"
+        disabled={busy}
+        style={input}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && url.trim().length > 0) {
+            void submit();
+          }
+        }}
+      />
+      {error && (
+        <p
+          role="alert"
           style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 8,
-            marginTop: 16,
+            ...hint,
+            marginTop: 8,
+            color: "var(--danger)",
+            whiteSpace: "pre-wrap",
           }}
         >
-          <button onClick={onClose} disabled={busy}>
-            Cancel
-          </button>
-          <button
-            className="primary"
-            onClick={() => void submit()}
-            disabled={busy || url.trim().length === 0}
-          >
-            {busy ? (
-              <>
-                <span className="spinner inline" /> Installing
-              </>
-            ) : (
-              "Install"
-            )}
-          </button>
-        </div>
+          {error}
+        </p>
+      )}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: 16,
+        }}
+      >
+        <button onClick={onClose} disabled={busy}>
+          Cancel
+        </button>
+        <button
+          className="primary"
+          onClick={() => void submit()}
+          disabled={busy || url.trim().length === 0}
+        >
+          {busy ? (
+            <>
+              <span className="spinner inline" /> Installing
+            </>
+          ) : (
+            "Install"
+          )}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
 
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 540,
-  maxWidth: "90vw",
-  outline: "none",
-};
-const modalHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-  marginBottom: 4,
-};
-const closeBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--text-3)",
-  padding: 4,
-  borderRadius: 4,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
 const hint: React.CSSProperties = {
   fontSize: 12,
   color: "var(--text-2)",
