@@ -5,9 +5,8 @@ import type {
   SyncDecisions,
 } from "@skills-bank/core";
 import type { SkillDiffResult } from "../../shared/ipc.js";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { DiffViewer } from "./DiffViewer.js";
+import { Modal } from "./modalStyles.js";
 
 interface Props {
   conflicts: ConflictEntry[];
@@ -42,8 +41,6 @@ export function ConflictResolutionModal({
   onClose,
   onResolve,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(onClose);
   // Default each conflict to keep-mine (the safest action — no destructive
   // overwrite, no rename surprises). User must actively change it.
   const [picks, setPicks] = useState<Record<string, ConflictAction>>(() => {
@@ -144,213 +141,189 @@ export function ConflictResolutionModal({
   })();
 
   return (
-    <div style={overlay} onClick={onClose} role="presentation">
-      <div
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Incoming update conflicts"
-      >
-        <h2 style={{ marginTop: 0 }}>Incoming update conflicts</h2>
-        <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} changed
-          in both your local registry and the incoming update. Choose what to
-          keep for each — your decision is saved and won't be asked again unless
-          the upstream changes.
-        </p>
+    <Modal
+      label="Incoming update conflicts"
+      onClose={onClose}
+      width={640}
+      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+    >
+      <h2 style={{ marginTop: 0 }}>Incoming update conflicts</h2>
+      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+        {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} changed in
+        both your local registry and the incoming update. Choose what to keep
+        for each — your decision is saved and won't be asked again unless the
+        upstream changes.
+      </p>
 
-        <div
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 6,
+          marginTop: 12,
+          padding: "6px 10px",
+          background: "var(--surface-2, rgba(0,0,0,0.03))",
+          border: "1px solid var(--border)",
+          borderRadius: 6,
+        }}
+      >
+        <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 6,
-            marginTop: 12,
-            padding: "6px 10px",
-            background: "var(--surface-2, rgba(0,0,0,0.03))",
-            border: "1px solid var(--border)",
-            borderRadius: 6,
+            fontSize: 11,
+            color: "var(--text-3)",
+            marginRight: 2,
+            flexShrink: 0,
           }}
         >
-          <span
-            style={{
-              fontSize: 11,
-              color: "var(--text-3)",
-              marginRight: 2,
-              flexShrink: 0,
-            }}
-          >
-            Select all:
-          </span>
-          <button
-            type="button"
-            onClick={() => setAll("keep-mine")}
-            disabled={submitting}
-            style={{ fontSize: 12, padding: "2px 8px" }}
-          >
-            Keep mine
-          </button>
-          <button
-            type="button"
-            onClick={() => setAll("use-canonical")}
-            disabled={submitting}
-            style={{ fontSize: 12, padding: "2px 8px" }}
-          >
-            Use incoming
-          </button>
-          <button
-            type="button"
-            onClick={() => setAll("rename-mine")}
-            disabled={submitting}
-            style={{ fontSize: 12, padding: "2px 8px" }}
-          >
-            Rename to <code>&lt;name&gt;-local</code>
-          </button>
-          <span
-            style={{
-              flex: 1,
-              textAlign: "right",
-              alignSelf: "center",
-              fontSize: 11,
-              color: "var(--text-3)",
-            }}
-            aria-live="polite"
-          >
-            {[
-              counts.keep > 0 ? `Keep ${counts.keep}` : null,
-              counts.use > 0 ? `Use incoming ${counts.use}` : null,
-              counts.rename > 0 ? `Rename ${counts.rename}` : null,
-            ]
-              .filter(Boolean)
-              .join(" · ") || "Nothing selected"}
-          </span>
-        </div>
+          Select all:
+        </span>
+        <button
+          type="button"
+          onClick={() => setAll("keep-mine")}
+          disabled={submitting}
+          style={{ fontSize: 12, padding: "2px 8px" }}
+        >
+          Keep mine
+        </button>
+        <button
+          type="button"
+          onClick={() => setAll("use-canonical")}
+          disabled={submitting}
+          style={{ fontSize: 12, padding: "2px 8px" }}
+        >
+          Use incoming
+        </button>
+        <button
+          type="button"
+          onClick={() => setAll("rename-mine")}
+          disabled={submitting}
+          style={{ fontSize: 12, padding: "2px 8px" }}
+        >
+          Rename to <code>&lt;name&gt;-local</code>
+        </button>
+        <span
+          style={{
+            flex: 1,
+            textAlign: "right",
+            alignSelf: "center",
+            fontSize: 11,
+            color: "var(--text-3)",
+          }}
+          aria-live="polite"
+        >
+          {[
+            counts.keep > 0 ? `Keep ${counts.keep}` : null,
+            counts.use > 0 ? `Use incoming ${counts.use}` : null,
+            counts.rename > 0 ? `Rename ${counts.rename}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Nothing selected"}
+        </span>
+      </div>
 
-        <div style={{ marginTop: 12, maxHeight: "60vh", overflowY: "auto" }}>
-          {conflicts.map((c) => (
+      <div style={{ marginTop: 12, maxHeight: "60vh", overflowY: "auto" }}>
+        {conflicts.map((c) => (
+          <div
+            key={c.name}
+            style={{
+              border: "1px solid var(--border)",
+              borderRadius: 6,
+              padding: 12,
+              marginBottom: 12,
+            }}
+          >
             <div
-              key={c.name}
               style={{
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                padding: 12,
-                marginBottom: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: 8,
+                gap: 8,
               }}
             >
-              <div
+              <strong style={{ fontFamily: "var(--font-mono)" }}>
+                {c.name}
+              </strong>
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => toggleDiff(c)}
+                style={{ fontSize: 11 }}
+                aria-expanded={!!expanded[c.name]}
+              >
+                {expanded[c.name] ? "Hide diff" : "Compare changes"}
+              </button>
+            </div>
+            {expanded[c.name] && (
+              <div style={{ marginBottom: 10 }}>
+                <DiffViewer
+                  result={diffs[c.name]?.result ?? null}
+                  loading={diffs[c.name]?.loading ?? true}
+                  error={diffs[c.name]?.error ?? null}
+                />
+              </div>
+            )}
+            {ACTIONS.map((a) => (
+              <label
+                key={a.value}
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
-                  marginBottom: 8,
-                  gap: 8,
+                  display: "block",
+                  padding: 8,
+                  marginBottom: 4,
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  background:
+                    picks[c.name] === a.value
+                      ? "var(--accent-dim)"
+                      : "transparent",
                 }}
               >
-                <strong style={{ fontFamily: "var(--font-mono)" }}>
-                  {c.name}
-                </strong>
-                <button
-                  type="button"
-                  className="link-btn"
-                  onClick={() => toggleDiff(c)}
-                  style={{ fontSize: 11 }}
-                  aria-expanded={!!expanded[c.name]}
-                >
-                  {expanded[c.name]
-                    ? "Hide diff"
-                    : "Compare changes"}
-                </button>
-              </div>
-              {expanded[c.name] && (
-                <div style={{ marginBottom: 10 }}>
-                  <DiffViewer
-                    result={diffs[c.name]?.result ?? null}
-                    loading={diffs[c.name]?.loading ?? true}
-                    error={diffs[c.name]?.error ?? null}
-                  />
-                </div>
-              )}
-              {ACTIONS.map((a) => (
-                <label
-                  key={a.value}
+                <input
+                  type="radio"
+                  name={`conflict-${c.name}`}
+                  value={a.value}
+                  checked={picks[c.name] === a.value}
+                  onChange={() =>
+                    setPicks((p) => ({ ...p, [c.name]: a.value }))
+                  }
+                  style={{ marginRight: 8 }}
+                />
+                <span style={{ fontWeight: 500 }}>{a.label}</span>
+                <p
                   style={{
-                    display: "block",
-                    padding: 8,
-                    marginBottom: 4,
-                    borderRadius: 4,
-                    cursor: "pointer",
-                    background:
-                      picks[c.name] === a.value
-                        ? "var(--accent-dim)"
-                        : "transparent",
+                    margin: "2px 0 0 24px",
+                    fontSize: 12,
+                    color: "var(--text-2)",
                   }}
                 >
-                  <input
-                    type="radio"
-                    name={`conflict-${c.name}`}
-                    value={a.value}
-                    checked={picks[c.name] === a.value}
-                    onChange={() =>
-                      setPicks((p) => ({ ...p, [c.name]: a.value }))
-                    }
-                    style={{ marginRight: 8 }}
-                  />
-                  <span style={{ fontWeight: 500 }}>{a.label}</span>
-                  <p
-                    style={{
-                      margin: "2px 0 0 24px",
-                      fontSize: 12,
-                      color: "var(--text-2)",
-                    }}
-                  >
-                    {a.description}
-                  </p>
-                </label>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 8,
-            marginTop: 12,
-          }}
-        >
-          <button onClick={onClose} disabled={submitting}>
-            Cancel
-          </button>
-          <button
-            className="primary"
-            onClick={() => void apply()}
-            disabled={submitting}
-          >
-            {submitting ? "Applying…" : "Apply"}
-          </button>
-        </div>
+                  {a.description}
+                </p>
+              </label>
+            ))}
+          </div>
+        ))}
       </div>
-    </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: 12,
+        }}
+      >
+        <button onClick={onClose} disabled={submitting}>
+          Cancel
+        </button>
+        <button
+          className="primary"
+          onClick={() => void apply()}
+          disabled={submitting}
+        >
+          {submitting ? "Applying…" : "Apply"}
+        </button>
+      </div>
+    </Modal>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 640,
-  maxWidth: "90vw",
-};

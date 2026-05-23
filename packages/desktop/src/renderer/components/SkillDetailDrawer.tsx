@@ -5,6 +5,7 @@ import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import { useRegisterModal } from "../ModalRegistryContext.js";
 import { Icon } from "./Icon.js";
 import { PublishSection } from "./PublishSection.js";
 import { classifyDrawerState } from "./skillState.js";
@@ -217,6 +218,10 @@ export function SkillDetailDrawer({
 
   useFocusReturn();
   useInitialFocus(drawerRef);
+  // Drawer participates in the open-modal count so the Discover-tab
+  // WebContentsView yields while the drawer is up. The drawer renders
+  // its own slide-in chrome (not <Modal>), so it registers directly.
+  useRegisterModal();
   const confirmDeleteRef = useRef<HTMLDivElement | null>(null);
   const [descExpanded, setDescExpanded] = useState(false);
   const [editingTags, setEditingTags] = useState(false);

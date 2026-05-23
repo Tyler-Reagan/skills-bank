@@ -1,8 +1,6 @@
-import React, { useRef, useState } from "react";
-import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import React, { useState } from "react";
 import { Icon } from "./Icon.js";
-import { modal, modalFooter, overlay } from "./modalStyles.js";
+import { Modal, modalFooter } from "./modalStyles.js";
 
 interface Props {
   open: boolean;
@@ -37,10 +35,6 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
 }: Props): React.ReactElement | null {
-  useFocusReturn();
-  useEscapeToClose(onCancel, open);
-  const modalRef = useRef<HTMLDivElement | null>(null);
-  useInitialFocus(modalRef);
   const [submitting, setSubmitting] = useState(false);
 
   if (!open) return null;
@@ -55,51 +49,41 @@ export function ConfirmDialog({
   };
 
   return (
-    <div style={overlay} onClick={onCancel} role="presentation">
-      <div
-        ref={modalRef}
-        style={modal()}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-title"
-        tabIndex={-1}
-      >
-        <h2 id="confirm-title" style={titleStyle}>
-          {tone === "danger" && (
-            <span style={iconWrap} aria-hidden="true">
-              <Icon name="alert-triangle" size="md" />
-            </span>
+    <Modal label={title} onClose={onCancel}>
+      <h2 style={titleStyle}>
+        {tone === "danger" && (
+          <span style={iconWrap} aria-hidden="true">
+            <Icon name="alert-triangle" size="md" />
+          </span>
+        )}
+        {title}
+      </h2>
+      <div style={bodyStyle}>{body}</div>
+      <div style={modalFooter}>
+        <button
+          className="btn"
+          type="button"
+          onClick={onCancel}
+          disabled={submitting}
+        >
+          {cancelLabel}
+        </button>
+        <button
+          className={tone === "danger" ? "btn danger" : "btn primary"}
+          type="button"
+          onClick={() => void submit()}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <>
+              <span className="spinner inline" /> Working
+            </>
+          ) : (
+            confirmLabel
           )}
-          {title}
-        </h2>
-        <div style={bodyStyle}>{body}</div>
-        <div style={modalFooter}>
-          <button
-            className="btn"
-            type="button"
-            onClick={onCancel}
-            disabled={submitting}
-          >
-            {cancelLabel}
-          </button>
-          <button
-            className={tone === "danger" ? "btn danger" : "btn primary"}
-            type="button"
-            onClick={() => void submit()}
-            disabled={submitting}
-          >
-            {submitting ? (
-              <>
-                <span className="spinner inline" /> Working
-              </>
-            ) : (
-              confirmLabel
-            )}
-          </button>
-        </div>
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
 

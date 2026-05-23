@@ -64,6 +64,10 @@ import {
   useRegistryHost,
   type ToastAction,
 } from "./RegistryHostContext.js";
+import {
+  ModalRegistryProvider,
+  useAnyModalOpen,
+} from "./ModalRegistryContext.js";
 import type {
   AuthStatus,
   SyncStatus,
@@ -150,9 +154,11 @@ function readTagFilterLS(): string[] {
 
 export function App(): React.ReactElement {
   return (
-    <RegistryHostProvider>
-      <AppContent />
-    </RegistryHostProvider>
+    <ModalRegistryProvider>
+      <RegistryHostProvider>
+        <AppContent />
+      </RegistryHostProvider>
+    </ModalRegistryProvider>
   );
 }
 
@@ -166,6 +172,11 @@ function AppContent(): React.ReactElement {
     dismissAppError,
     appErrors,
   } = useRegistryHost();
+  // Driven by ModalRegistry — every <Modal> increments on mount and
+  // SkillDetailDrawer calls useRegisterModal() directly. Replaces the
+  // hand-curated OR-chain that drifted between this and the actual
+  // set of mountable modals (v1.11.1 fix).
+  const anyModalOpen = useAnyModalOpen();
 
   const [tab, setTab] = useState<TabId>(
     (readLS(LS_KEYS.tab, "browse") as TabId) ?? "browse",
@@ -1448,28 +1459,7 @@ function AppContent(): React.ReactElement {
       />
       {tab === "discover" ? (
         <DiscoverTab
-          modalOpen={
-            showRegister ||
-            !!manageLinksTarget ||
-            !!conflictTarget ||
-            !!deleteTarget ||
-            !!mergeConflictTarget ||
-            showSettings ||
-            showShortcuts ||
-            showAccount ||
-            showConnectGithub ||
-            !!conflictModalEntries ||
-            showRepoPicker ||
-            !!pickDestinationTarget ||
-            !!overwriteTarget ||
-            !!bulkRepairPrompt ||
-            !!selected ||
-            !!installConflict ||
-            !!manifestImportHints ||
-            showUpdatesModal ||
-            showInstallFromGithub ||
-            isUpdateModalOpen
-          }
+          modalOpen={anyModalOpen}
           terminalApp={settings.terminalApp}
         />
       ) : (

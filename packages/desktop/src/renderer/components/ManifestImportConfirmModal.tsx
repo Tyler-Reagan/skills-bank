@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react";
 import type { AgentId, ImportRegistryManifestResult } from "@skills-bank/core";
 import { AGENT_LABELS } from "../agentDisplay.js";
-import { Icon } from "./Icon.js";
-import { overlay, modal as sharedModal, modalFooter } from "./modalStyles.js";
+import { Modal, ModalCloseButton, modalFooter } from "./modalStyles.js";
 
 /**
  * After a successful manifest import, surfaces the install-hint
@@ -72,64 +71,48 @@ export function ManifestImportConfirmModal({
   ).length;
 
   return (
-    <div style={overlay} onClick={onClose} role="presentation">
-      <div
-        style={sharedModal(480)}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Confirm install from manifest"
-      >
-        <div style={header}>
-          <h2 style={{ margin: 0, fontSize: 16 }}>Install restored skills?</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-            style={closeBtn}
-          >
-            <Icon name="x" size="md" />
-          </button>
-        </div>
-        <p style={{ ...hint, marginTop: 8 }}>
-          {registeredCount} skill{registeredCount === 1 ? "" : "s"} restored.{" "}
-          {names.length} of them {names.length === 1 ? "was" : "were"}{" "}
-          previously installed in <strong>{agentLabels}</strong>. Install in
-          your agents now? Your registry is already restored either way.
-        </p>
-        {error && (
-          <pre
-            style={{
-              margin: "8px 0 0",
-              fontSize: 11,
-              color: "var(--danger)",
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {error}
-          </pre>
-        )}
-        <div style={modalFooter}>
-          <button onClick={onClose} disabled={busy}>
-            Skip
-          </button>
-          <button
-            className="primary"
-            onClick={() => void runInstall()}
-            disabled={busy}
-          >
-            {busy ? (
-              <>
-                <span className="spinner inline" /> Installing
-              </>
-            ) : (
-              "Install"
-            )}
-          </button>
-        </div>
+    <Modal label="Confirm install from manifest" onClose={onClose} width={480}>
+      <div style={header}>
+        <h2 style={{ margin: 0, fontSize: 16 }}>Install restored skills?</h2>
+        <ModalCloseButton onClose={onClose} />
       </div>
-    </div>
+      <p style={{ ...hint, marginTop: 8 }}>
+        {registeredCount} skill{registeredCount === 1 ? "" : "s"} restored.{" "}
+        {names.length} of them {names.length === 1 ? "was" : "were"} previously
+        installed in <strong>{agentLabels}</strong>. Install in your agents now?
+        Your registry is already restored either way.
+      </p>
+      {error && (
+        <pre
+          style={{
+            margin: "8px 0 0",
+            fontSize: 11,
+            color: "var(--danger)",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {error}
+        </pre>
+      )}
+      <div style={modalFooter}>
+        <button onClick={onClose} disabled={busy}>
+          Skip
+        </button>
+        <button
+          className="primary"
+          onClick={() => void runInstall()}
+          disabled={busy}
+        >
+          {busy ? (
+            <>
+              <span className="spinner inline" /> Installing
+            </>
+          ) : (
+            "Install"
+          )}
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -138,16 +121,6 @@ const header: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 8,
-};
-
-const closeBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--text-3)",
-  padding: 4,
-  borderRadius: 4,
-  display: "inline-flex",
 };
 
 const hint: React.CSSProperties = {

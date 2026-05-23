@@ -9,9 +9,8 @@ import {
   AGENT_PATHS,
   ALL_AGENT_IDS as ALL_AGENTS,
 } from "../agentDisplay.js";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
+import { Modal } from "./modalStyles.js";
 
 interface Props {
   /** Display name and the source for the link operation. */
@@ -42,9 +41,6 @@ export function ManageLinksModal({
   onClose,
   onFlash,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(() => void onClose());
-
   const currentAgents = useMemo(
     () => new Set<AgentId>(installations.map((i) => i.agent)),
     [installations],
@@ -86,162 +82,124 @@ export function ManageLinksModal({
   };
 
   if (phase.kind === "applying") {
+    // Undismissable while the IPC is in flight — Modal handles
+    // `onClose={undefined}` by suppressing scrim + Esc.
     return (
-      <div style={overlay}>
-        <div style={modal} role="dialog" aria-modal="true">
-          <h2 style={{ marginTop: 0 }}>Updating links for {name}</h2>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              padding: "32px 0",
-            }}
-          >
-            <div className="spinner" />
-          </div>
+      <Modal label={`Updating links for ${name}`} width={540}>
+        <h2 style={{ marginTop: 0 }}>Updating links for {name}</h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            padding: "32px 0",
+          }}
+        >
+          <div className="spinner" />
         </div>
-      </div>
+      </Modal>
     );
   }
 
   if (phase.kind === "result") {
+    const dismiss = () => {
+      onFlash(phase.result.message);
+      void onClose();
+    };
     return (
-      <div
-        style={overlay}
-        onClick={() => {
-          onFlash(phase.result.message);
-          void onClose();
-        }}
-        role="presentation"
+      <Modal
+        label={phase.result.ok ? "Links updated" : "Update failed"}
+        onClose={dismiss}
+        width={540}
       >
-        <div
-          style={modal}
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
+        <h2 style={{ marginTop: 0 }}>
+          {phase.result.ok ? "Links updated" : "Update failed"}
+        </h2>
+        <p
+          style={{
+            color: phase.result.ok ? "var(--success)" : "var(--danger)",
+            fontSize: 13,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
         >
-          <h2 style={{ marginTop: 0 }}>
-            {phase.result.ok ? "Links updated" : "Update failed"}
-          </h2>
-          <p
-            style={{
-              color: phase.result.ok ? "var(--success)" : "var(--danger)",
-              fontSize: 13,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <Icon name={phase.result.ok ? "check" : "x"} size="sm" />{" "}
-            {phase.result.message}
-          </p>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button
-              className="primary"
-              onClick={() => {
-                onFlash(phase.result.message);
-                void onClose();
-              }}
-            >
-              Done
-            </button>
-          </div>
+          <Icon name={phase.result.ok ? "check" : "x"} size="sm" />{" "}
+          {phase.result.message}
+        </p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button className="primary" onClick={dismiss}>
+            Done
+          </button>
         </div>
-      </div>
+      </Modal>
     );
   }
 
   return (
-    <div
-      style={overlay}
-      onClick={() => void onClose()}
-      role="presentation"
+    <Modal
+      label={`Manage agent links — ${name}`}
+      onClose={() => void onClose()}
+      width={540}
     >
-      <div
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Manage agent links"
-      >
-        <h2 style={{ marginTop: 0 }}>Manage agent links — {name}</h2>
-        <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          Pick which agent directories the skill is linked from. Already-checked
-          agents reflect the current state — uncheck to remove a link, check to
-          add one. Source directories that hold the actual content are locked;
-          unlinking them would delete the skill.
-        </p>
+      <h2 style={{ marginTop: 0 }}>Manage agent links — {name}</h2>
+      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+        Pick which agent directories the skill is linked from. Already-checked
+        agents reflect the current state — uncheck to remove a link, check to
+        add one. Source directories that hold the actual content are locked;
+        unlinking them would delete the skill.
+      </p>
 
-        <div style={{ marginTop: 16, marginBottom: 16 }}>
-          {ALL_AGENTS.map((id) => {
-            const isSource = sourceAgents.has(id);
-            const isChecked = isSource || desiredAgents.has(id);
-            return (
-              <label
-                key={id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 4px",
-                  fontSize: 13,
-                  color: isSource ? "var(--text-2)" : "var(--text)",
-                  cursor: isSource ? "default" : "pointer",
-                  borderBottom: "1px solid var(--border)",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  disabled={isSource}
-                  onChange={() => toggle(id)}
-                />
-                <strong style={{ minWidth: 130 }}>{AGENT_LABELS[id]}</strong>
-                <code style={{ color: "var(--text-3)", fontSize: 11, flex: 1 }}>
-                  {AGENT_PATHS[id]}/skills/
-                </code>
-                {isSource && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      color: "var(--text-3)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    source
-                  </span>
-                )}
-              </label>
-            );
-          })}
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button onClick={() => void onClose()}>Cancel</button>
-          <button className="primary" onClick={() => void apply()}>
-            Apply
-          </button>
-        </div>
+      <div style={{ marginTop: 16, marginBottom: 16 }}>
+        {ALL_AGENTS.map((id) => {
+          const isSource = sourceAgents.has(id);
+          const isChecked = isSource || desiredAgents.has(id);
+          return (
+            <label
+              key={id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 4px",
+                fontSize: 13,
+                color: isSource ? "var(--text-2)" : "var(--text)",
+                cursor: isSource ? "default" : "pointer",
+                borderBottom: "1px solid var(--border)",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isChecked}
+                disabled={isSource}
+                onChange={() => toggle(id)}
+              />
+              <strong style={{ minWidth: 130 }}>{AGENT_LABELS[id]}</strong>
+              <code style={{ color: "var(--text-3)", fontSize: 11, flex: 1 }}>
+                {AGENT_PATHS[id]}/skills/
+              </code>
+              {isSource && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "var(--text-3)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  source
+                </span>
+              )}
+            </label>
+          );
+        })}
       </div>
-    </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <button onClick={() => void onClose()}>Cancel</button>
+        <button className="primary" onClick={() => void apply()}>
+          Apply
+        </button>
+      </div>
+    </Modal>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 540,
-  maxWidth: "90vw",
-};

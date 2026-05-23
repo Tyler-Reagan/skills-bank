@@ -1,9 +1,7 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import type { RegistryEntry } from "@skills-bank/core";
-import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
-import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { Icon } from "./Icon.js";
+import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
 interface Props {
   entries: RegistryEntry[];
@@ -34,11 +32,6 @@ export function UpdatesModal({
   onView,
   onRefresh,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(onClose);
-  const modalRef = useRef<HTMLDivElement | null>(null);
-  useInitialFocus(modalRef);
-  useFocusTrap(modalRef);
   const [states, setStates] = useState<Record<string, RowState>>({});
   const [running, setRunning] = useState(false);
 
@@ -66,147 +59,109 @@ export function UpdatesModal({
   };
 
   return (
-    <div style={overlay} onClick={onClose} role="presentation">
-      <div
-        ref={modalRef}
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Skill updates"
-        tabIndex={-1}
-      >
-        <div style={modalHeader}>
-          <h2 style={{ margin: 0 }}>
-            Skill updates <span style={countBadge}>{entries.length}</span>
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-            style={closeBtn}
-          >
-            <Icon name="x" size="md" />
-          </button>
-        </div>
-
-        <p style={hint}>
-          These skills have a newer version available from their{" "}
-          <strong>Origin</strong>. Updating fetches the latest content directly
-          from each skill's Origin and mirrors it into your registry — local
-          edits are not preserved, so skills you've edited surface via the Drift
-          heal flow (Reset to origin / Unlink origin) instead.
-        </p>
-
-        <div style={list}>
-          {entries.length === 0 && (
-            <div style={emptyState}>
-              <Icon name="check" size="md" />
-              <span>Every skill is up to date with its Origin.</span>
-            </div>
-          )}
-          {entries.map((e) => {
-            const state = states[e.name] ?? "idle";
-            return (
-              <div key={e.name} style={row}>
-                <div style={rowMain}>
-                  <strong style={rowName}>{e.name}</strong>
-                  {e.source.origin?.repo && (
-                    <span style={rowRepo}>{e.source.origin.repo}</span>
-                  )}
-                </div>
-                <div style={rowActions}>
-                  <button
-                    className="btn"
-                    type="button"
-                    onClick={() => onView(e)}
-                    disabled={running}
-                  >
-                    View
-                  </button>
-                  <button
-                    className="btn primary"
-                    type="button"
-                    onClick={() => void updateOne(e.name)}
-                    disabled={running || state === "ok" || state === "updating"}
-                  >
-                    {state === "updating" && (
-                      <>
-                        <span className="spinner inline" /> Updating…
-                      </>
-                    )}
-                    {state === "ok" && "✓ Updated"}
-                    {state === "err" && "Retry"}
-                    {state === "idle" && "Update"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div style={footer}>
-          <button
-            className="btn"
-            type="button"
-            onClick={() => void onRefresh()}
-            disabled={running}
-            title="Probe Origins now (resets known updates against the latest tree hashes)."
-          >
-            <Icon name="refresh" size="sm" /> Refresh
-          </button>
-          <div style={{ flexGrow: 1 }} />
-          <button
-            className="btn primary"
-            type="button"
-            onClick={() => void updateAll()}
-            disabled={running || entries.length === 0}
-          >
-            {running ? (
-              <>
-                <span className="spinner inline" /> Updating all…
-              </>
-            ) : (
-              `Update all (${entries.length})`
-            )}
-          </button>
-        </div>
+    <Modal
+      label="Skill updates"
+      onClose={onClose}
+      width={640}
+      bodyStyle={{
+        maxWidth: "92vw",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: undefined,
+      }}
+      trapFocus
+    >
+      <div style={modalHeader}>
+        <h2 style={{ margin: 0 }}>
+          Skill updates <span style={countBadge}>{entries.length}</span>
+        </h2>
+        <ModalCloseButton onClose={onClose} />
       </div>
-    </div>
+
+      <p style={hint}>
+        These skills have a newer version available from their{" "}
+        <strong>Origin</strong>. Updating fetches the latest content directly
+        from each skill's Origin and mirrors it into your registry — local edits
+        are not preserved, so skills you've edited surface via the Drift heal
+        flow (Reset to origin / Unlink origin) instead.
+      </p>
+
+      <div style={list}>
+        {entries.length === 0 && (
+          <div style={emptyState}>
+            <Icon name="check" size="md" />
+            <span>Every skill is up to date with its Origin.</span>
+          </div>
+        )}
+        {entries.map((e) => {
+          const state = states[e.name] ?? "idle";
+          return (
+            <div key={e.name} style={row}>
+              <div style={rowMain}>
+                <strong style={rowName}>{e.name}</strong>
+                {e.source.origin?.repo && (
+                  <span style={rowRepo}>{e.source.origin.repo}</span>
+                )}
+              </div>
+              <div style={rowActions}>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => onView(e)}
+                  disabled={running}
+                >
+                  View
+                </button>
+                <button
+                  className="btn primary"
+                  type="button"
+                  onClick={() => void updateOne(e.name)}
+                  disabled={running || state === "ok" || state === "updating"}
+                >
+                  {state === "updating" && (
+                    <>
+                      <span className="spinner inline" /> Updating…
+                    </>
+                  )}
+                  {state === "ok" && "✓ Updated"}
+                  {state === "err" && "Retry"}
+                  {state === "idle" && "Update"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={footer}>
+        <button
+          className="btn"
+          type="button"
+          onClick={() => void onRefresh()}
+          disabled={running}
+          title="Probe Origins now (resets known updates against the latest tree hashes)."
+        >
+          <Icon name="refresh" size="sm" /> Refresh
+        </button>
+        <div style={{ flexGrow: 1 }} />
+        <button
+          className="btn primary"
+          type="button"
+          onClick={() => void updateAll()}
+          disabled={running || entries.length === 0}
+        >
+          {running ? (
+            <>
+              <span className="spinner inline" /> Updating all…
+            </>
+          ) : (
+            `Update all (${entries.length})`
+          )}
+        </button>
+      </div>
+    </Modal>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 640,
-  maxWidth: "92vw",
-  maxHeight: "85vh",
-  display: "flex",
-  flexDirection: "column",
-  outline: "none",
-};
-
-const modalHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-  marginBottom: 4,
-};
 
 const countBadge: React.CSSProperties = {
   display: "inline-block",
@@ -218,18 +173,6 @@ const countBadge: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
   verticalAlign: "middle",
-};
-
-const closeBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--text-3)",
-  padding: 4,
-  borderRadius: 4,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
 };
 
 const hint: React.CSSProperties = {

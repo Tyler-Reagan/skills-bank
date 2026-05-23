@@ -1,6 +1,5 @@
 import React from "react";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
+import { Modal } from "./modalStyles.js";
 
 interface Props {
   onClose: () => void;
@@ -30,68 +29,41 @@ const SHORTCUTS: { keys: string[]; description: string }[] = [
 export function KeyboardShortcutsOverlay({
   onClose,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(onClose);
   return (
-    <div style={overlay} onClick={onClose}>
-      <div
-        style={modal}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Keyboard shortcuts"
-        onClick={(e) => e.stopPropagation()}
+    <Modal label="Keyboard shortcuts" onClose={onClose}>
+      <h2 style={{ marginTop: 0 }}>Keyboard shortcuts</h2>
+      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+        A handful of shortcuts to keep your hands on the keys.
+      </p>
+      <table
+        style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}
       >
-        <h2 style={{ marginTop: 0 }}>Keyboard shortcuts</h2>
-        <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          A handful of shortcuts to keep your hands on the keys.
-        </p>
-        <table
-          style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}
-        >
-          <tbody>
-            {SHORTCUTS.map((s) => (
-              <tr key={s.description}>
-                <td style={keysCell}>
-                  {s.keys.map((k) => (
-                    <kbd key={k} style={kbd}>
-                      {k}
-                    </kbd>
-                  ))}
-                </td>
-                <td style={descCell}>{s.description}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div
-          style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}
-        >
-          <button className="primary" onClick={onClose}>
-            Done
-          </button>
-        </div>
+        <tbody>
+          {SHORTCUTS.map((s) => (
+            <tr key={s.description}>
+              <td style={keysCell}>
+                {s.keys.map((k) => (
+                  <kbd key={k} style={kbd}>
+                    {k}
+                  </kbd>
+                ))}
+              </td>
+              <td style={descCell}>{s.description}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div
+        style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}
+      >
+        <button className="primary" onClick={onClose}>
+          Done
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
 
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 480,
-  maxWidth: "90vw",
-};
 const keysCell: React.CSSProperties = {
   padding: "8px 12px 8px 0",
   whiteSpace: "nowrap",

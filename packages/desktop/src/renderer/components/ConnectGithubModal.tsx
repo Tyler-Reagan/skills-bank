@@ -1,13 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type {
   AuthStatus,
   DeviceFlowResumePayload,
   DeviceFlowStartPayload,
 } from "../../shared/ipc.js";
-import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
-import { modal as modalStyle, overlay } from "./modalStyles.js";
+import { Modal } from "./modalStyles.js";
 
 interface Props {
   isAuthConfigured: boolean;
@@ -28,10 +26,6 @@ export function ConnectGithubModal({
   onConnected,
   onClose,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  const modalRef = useRef<HTMLDivElement | null>(null);
-  useInitialFocus(modalRef);
-
   const [resumable, setResumable] = useState<DeviceFlowResumePayload | null>(
     null,
   );
@@ -132,36 +126,24 @@ export function ConnectGithubModal({
     onClose();
   };
 
-  useEscapeToClose(() => void cancel());
-
   if (!isAuthConfigured) {
     return (
-      <div
-        style={overlay}
-        onClick={() => void cancel()}
-        role="presentation"
+      <Modal
+        label="Connect to GitHub"
+        onClose={() => void cancel()}
+        width={520}
       >
-        <div
-          ref={modalRef}
-          style={modalStyle(520)}
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Connect to GitHub"
-          tabIndex={-1}
-        >
-          <h2 style={titleStyle}>Connect to GitHub</h2>
-          <p style={hint}>
-            GitHub OAuth isn't configured for this build. See{" "}
-            <code>packages/desktop/src/main/auth-config.ts</code>.
-          </p>
-          <div style={btnRow}>
-            <button className="btn" type="button" onClick={() => void cancel()}>
-              Close
-            </button>
-          </div>
+        <h2 style={titleStyle}>Connect to GitHub</h2>
+        <p style={hint}>
+          GitHub OAuth isn't configured for this build. See{" "}
+          <code>packages/desktop/src/main/auth-config.ts</code>.
+        </p>
+        <div style={btnRow}>
+          <button className="btn" type="button" onClick={() => void cancel()}>
+            Close
+          </button>
         </div>
-      </div>
+      </Modal>
     );
   }
 
@@ -171,129 +153,107 @@ export function ConnectGithubModal({
       Math.floor((resumable.expiresAt - Date.now()) / 60000),
     );
     return (
-      <div
-        style={overlay}
-        onClick={() => void cancel()}
-        role="presentation"
+      <Modal
+        label="Resume GitHub authentication"
+        onClose={() => void cancel()}
+        width={520}
       >
-        <div
-          ref={modalRef}
-          style={modalStyle(520)}
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Resume GitHub authentication"
-          tabIndex={-1}
-        >
-          <h2 style={titleStyle}>Resume GitHub authentication?</h2>
-          <p style={hint}>
-            An in-progress authentication is still valid (about {minutesLeft}{" "}
-            minute{minutesLeft === 1 ? "" : "s"} remaining). If you completed
-            the GitHub side, Resume will pick up the token. Otherwise pick Start
-            over.
-          </p>
-          <div className="device-code-box">
-            <code className="device-code">{resumable.userCode}</code>
-          </div>
-          <div style={btnRow}>
-            <button
-              className="btn primary"
-              type="button"
-              disabled={busy}
-              onClick={() => void resumeFlow()}
-            >
-              <Icon name="check" size="sm" /> Resume
-            </button>
-            <button
-              className="btn"
-              type="button"
-              disabled={busy}
-              onClick={() => void startOver()}
-            >
-              Start over
-            </button>
-            <button
-              className="btn"
-              type="button"
-              disabled={busy}
-              onClick={() => void cancel()}
-            >
-              Cancel
-            </button>
-          </div>
+        <h2 style={titleStyle}>Resume GitHub authentication?</h2>
+        <p style={hint}>
+          An in-progress authentication is still valid (about {minutesLeft}{" "}
+          minute{minutesLeft === 1 ? "" : "s"} remaining). If you completed the
+          GitHub side, Resume will pick up the token. Otherwise pick Start over.
+        </p>
+        <div className="device-code-box">
+          <code className="device-code">{resumable.userCode}</code>
         </div>
-      </div>
+        <div style={btnRow}>
+          <button
+            className="btn primary"
+            type="button"
+            disabled={busy}
+            onClick={() => void resumeFlow()}
+          >
+            <Icon name="check" size="sm" /> Resume
+          </button>
+          <button
+            className="btn"
+            type="button"
+            disabled={busy}
+            onClick={() => void startOver()}
+          >
+            Start over
+          </button>
+          <button
+            className="btn"
+            type="button"
+            disabled={busy}
+            onClick={() => void cancel()}
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
     );
   }
 
   return (
-    <div style={overlay} onClick={() => void cancel()} role="presentation">
-      <div
-        ref={modalRef}
-        style={modalStyle(520)}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Connect to GitHub"
-        tabIndex={-1}
-      >
-        <h2 style={titleStyle}>Connect to GitHub</h2>
+    <Modal label="Connect to GitHub" onClose={() => void cancel()} width={520}>
+      <h2 style={titleStyle}>Connect to GitHub</h2>
+      <p style={hint}>
+        Authenticate, then pick a repo to back your registry with. Your current
+        local-bundled set isn't touched until you choose a repo on the next
+        screen.
+      </p>
+      {!flow && !error && busy && (
         <p style={hint}>
-          Authenticate, then pick a repo to back your registry with. Your
-          current local-bundled set isn't touched until you choose a repo on the
-          next screen.
+          <span className="spinner inline" /> Starting Device Flow
         </p>
-        {!flow && !error && busy && (
-          <p style={hint}>
-            <span className="spinner inline" /> Starting Device Flow
-          </p>
-        )}
-        {flow && (
-          <>
-            <p style={hint}>Open the link below and enter this code:</p>
-            <div className="device-code-box">
-              <code className="device-code">{flow.userCode}</code>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  void navigator.clipboard.writeText(flow.userCode);
-                }}
-              >
-                <Icon name="check" size="sm" /> Copy code
-              </button>
-            </div>
+      )}
+      {flow && (
+        <>
+          <p style={hint}>Open the link below and enter this code:</p>
+          <div className="device-code-box">
+            <code className="device-code">{flow.userCode}</code>
             <button
               type="button"
-              className="btn primary"
-              style={{ marginTop: 8 }}
-              onClick={() =>
-                void window.skillsBank.openExternal(flow.verificationUri)
-              }
+              className="btn"
+              onClick={() => {
+                void navigator.clipboard.writeText(flow.userCode);
+              }}
             >
-              <Icon name="external-link" size="sm" /> Open{" "}
-              {flow.verificationUri}
+              <Icon name="check" size="sm" /> Copy code
             </button>
-            {polling && (
-              <p style={hint} role="status" aria-live="polite">
-                <span className="spinner inline" /> Waiting for you to authorize
-                the app
-              </p>
-            )}
-          </>
-        )}
-        {error && (
-          <p style={{ ...hint, color: "var(--danger)" }} role="alert">
-            <Icon name="alert-triangle" size="sm" /> {error}
-          </p>
-        )}
-        <div style={btnRow}>
-          <button className="btn" type="button" onClick={() => void cancel()}>
-            Cancel
+          </div>
+          <button
+            type="button"
+            className="btn primary"
+            style={{ marginTop: 8 }}
+            onClick={() =>
+              void window.skillsBank.openExternal(flow.verificationUri)
+            }
+          >
+            <Icon name="external-link" size="sm" /> Open {flow.verificationUri}
           </button>
-        </div>
+          {polling && (
+            <p style={hint} role="status" aria-live="polite">
+              <span className="spinner inline" /> Waiting for you to authorize
+              the app
+            </p>
+          )}
+        </>
+      )}
+      {error && (
+        <p style={{ ...hint, color: "var(--danger)" }} role="alert">
+          <Icon name="alert-triangle" size="sm" /> {error}
+        </p>
+      )}
+      <div style={btnRow}>
+        <button className="btn" type="button" onClick={() => void cancel()}>
+          Cancel
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
 

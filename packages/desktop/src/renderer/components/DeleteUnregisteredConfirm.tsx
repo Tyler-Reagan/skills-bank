@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import type { InstalledSkill } from "@skills-bank/core";
 import { AGENT_LABELS } from "../agentDisplay.js";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
+import { Modal } from "./modalStyles.js";
 
 interface Props {
   name: string;
@@ -28,8 +27,6 @@ export function DeleteUnregisteredConfirm({
   onCancel,
   onConfirm,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(onCancel);
   const [submitting, setSubmitting] = useState(false);
 
   const realDirs = installations.filter((i) => i.kind === "real-directory");
@@ -45,120 +42,99 @@ export function DeleteUnregisteredConfirm({
   };
 
   return (
-    <div style={overlay} onClick={onCancel} role="presentation">
-      <div
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <h2 style={{ marginTop: 0 }}>
-          <Icon name="alert-triangle" size="sm" /> Delete <code>{name}</code>{" "}
-          from this machine?
-        </h2>
-        <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          This permanently deletes the files listed below. This cannot be
-          undone. The skill must already be unregistered.
-        </p>
+    <Modal
+      label={`Delete ${name} from this machine?`}
+      onClose={onCancel}
+      width={560}
+      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+    >
+      <h2 style={{ marginTop: 0 }}>
+        <Icon name="alert-triangle" size="sm" /> Delete <code>{name}</code> from
+        this machine?
+      </h2>
+      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+        This permanently deletes the files listed below. This cannot be undone.
+        The skill must already be unregistered.
+      </p>
 
-        {realDirs.length > 0 && (
-          <section style={{ marginTop: 12 }}>
-            <h3 style={sectionTitle}>Will delete</h3>
-            <ul style={list}>
-              {realDirs.map((i) => (
-                <li key={i.linkPath}>
-                  <strong>{AGENT_LABELS[i.agent]}</strong>{" "}
-                  <code>{i.linkPath}</code> <span style={badge}>folder</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+      {realDirs.length > 0 && (
+        <section style={{ marginTop: 12 }}>
+          <h3 style={sectionTitle}>Will delete</h3>
+          <ul style={list}>
+            {realDirs.map((i) => (
+              <li key={i.linkPath}>
+                <strong>{AGENT_LABELS[i.agent]}</strong>{" "}
+                <code>{i.linkPath}</code> <span style={badge}>folder</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        {symlinks.length > 0 && (
-          <section style={{ marginTop: 12 }}>
-            <h3 style={sectionTitle}>Will unlink (target preserved)</h3>
-            <ul style={list}>
-              {symlinks.map((i) => (
-                <li key={i.linkPath}>
-                  <strong>{AGENT_LABELS[i.agent]}</strong>{" "}
-                  <code>{i.linkPath}</code>
-                  {i.target && (
-                    <>
-                      {" "}
-                      <span style={{ color: "var(--text-3)" }}>
-                        → {i.target}
-                      </span>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <p style={hint}>
-              Symlink targets are user-owned (often your own git repos) and are{" "}
-              <strong>not</strong> deleted.
-            </p>
-          </section>
-        )}
-
-        {realDirs.length === 0 && symlinks.length === 0 && (
-          <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
-            Nothing to delete — {name} has no on-disk presence in any agent
-            directory.
+      {symlinks.length > 0 && (
+        <section style={{ marginTop: 12 }}>
+          <h3 style={sectionTitle}>Will unlink (target preserved)</h3>
+          <ul style={list}>
+            {symlinks.map((i) => (
+              <li key={i.linkPath}>
+                <strong>{AGENT_LABELS[i.agent]}</strong>{" "}
+                <code>{i.linkPath}</code>
+                {i.target && (
+                  <>
+                    {" "}
+                    <span style={{ color: "var(--text-3)" }}>→ {i.target}</span>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p style={hint}>
+            Symlink targets are user-owned (often your own git repos) and are{" "}
+            <strong>not</strong> deleted.
           </p>
-        )}
+        </section>
+      )}
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 8,
-            marginTop: 16,
-          }}
+      {realDirs.length === 0 && symlinks.length === 0 && (
+        <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
+          Nothing to delete — {name} has no on-disk presence in any agent
+          directory.
+        </p>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: 16,
+        }}
+      >
+        <button className="btn" onClick={onCancel} disabled={submitting}>
+          Cancel
+        </button>
+        <button
+          className="btn danger"
+          onClick={() => void confirm()}
+          disabled={submitting || installations.length === 0}
         >
-          <button className="btn" onClick={onCancel} disabled={submitting}>
-            Cancel
-          </button>
-          <button
-            className="btn danger"
-            onClick={() => void confirm()}
-            disabled={submitting || installations.length === 0}
-          >
-            {submitting ? (
-              <>
-                <span className="spinner inline" /> Deleting
-              </>
-            ) : installations.length === 0 ? (
-              "Nothing to delete"
-            ) : (
-              `Delete ${realDirs.length + symlinks.length} item${
-                realDirs.length + symlinks.length === 1 ? "" : "s"
-              }`
-            )}
-          </button>
-        </div>
+          {submitting ? (
+            <>
+              <span className="spinner inline" /> Deleting
+            </>
+          ) : installations.length === 0 ? (
+            "Nothing to delete"
+          ) : (
+            `Delete ${realDirs.length + symlinks.length} item${
+              realDirs.length + symlinks.length === 1 ? "" : "s"
+            }`
+          )}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
 
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1100,
-};
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 560,
-  maxWidth: "90vw",
-};
 const sectionTitle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 600,

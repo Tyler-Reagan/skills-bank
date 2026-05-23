@@ -1,10 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
 import { AGENTS } from "../agentDisplay.js";
-import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
-import { modal, modalFooter, overlay } from "./modalStyles.js";
+import { Modal, modalFooter } from "./modalStyles.js";
 
 interface Props {
   open: boolean;
@@ -30,10 +28,6 @@ export function DestinationPickerDialog({
   onCancel,
   onPick,
 }: Props): React.ReactElement | null {
-  useFocusReturn();
-  useEscapeToClose(onCancel, open);
-  const modalRef = useRef<HTMLDivElement | null>(null);
-  useInitialFocus(modalRef);
   const options = useMemo(
     () => AGENTS.filter((a) => a.id !== currentDestination),
     [currentDestination],
@@ -59,87 +53,81 @@ export function DestinationPickerDialog({
   };
 
   return (
-    <div style={overlay} onClick={onCancel} role="presentation">
-      <div
-        ref={modalRef}
-        style={modal(520)}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="pick-dest-title"
-        tabIndex={-1}
-      >
-        <h2 id="pick-dest-title" style={titleStyle}>
-          <span style={iconWrap} aria-hidden="true">
-            <Icon name="folder" size="md" />
-          </span>
-          Pick a destination for <code>{skillName}</code>
-        </h2>
-        <p style={summaryStyle}>
-          The default destination already has a folder by this name. Choose
-          another agent dir to move the files into.
-        </p>
+    <Modal
+      label={`Pick a destination for ${skillName}`}
+      onClose={onCancel}
+      width={520}
+    >
+      <h2 id="pick-dest-title" style={titleStyle}>
+        <span style={iconWrap} aria-hidden="true">
+          <Icon name="folder" size="md" />
+        </span>
+        Pick a destination for <code>{skillName}</code>
+      </h2>
+      <p style={summaryStyle}>
+        The default destination already has a folder by this name. Choose
+        another agent dir to move the files into.
+      </p>
 
-        <ul style={list} role="radiogroup" aria-labelledby="pick-dest-title">
-          {options.map((a) => {
-            const id = `dest-${a.id}`;
-            const selected = picked === a.id;
-            return (
-              <li key={a.id}>
-                <label htmlFor={id} style={row(selected)}>
-                  <input
-                    id={id}
-                    type="radio"
-                    name="destination"
-                    value={a.id}
-                    checked={selected}
-                    onChange={() => setPicked(a.id)}
-                  />
-                  <span style={rowText}>
-                    <span style={rowLabel}>{a.label}</span>
-                    <code style={rowPath}>~/{a.relativePath}</code>
-                  </span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
+      <ul style={list} role="radiogroup" aria-labelledby="pick-dest-title">
+        {options.map((a) => {
+          const id = `dest-${a.id}`;
+          const selected = picked === a.id;
+          return (
+            <li key={a.id}>
+              <label htmlFor={id} style={row(selected)}>
+                <input
+                  id={id}
+                  type="radio"
+                  name="destination"
+                  value={a.id}
+                  checked={selected}
+                  onChange={() => setPicked(a.id)}
+                />
+                <span style={rowText}>
+                  <span style={rowLabel}>{a.label}</span>
+                  <code style={rowPath}>~/{a.relativePath}</code>
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
 
-        <label style={persistRow}>
-          <input
-            type="checkbox"
-            checked={persist}
-            onChange={(e) => setPersist(e.target.checked)}
-          />
-          <span>Use this as my default unregister destination from now on</span>
-        </label>
+      <label style={persistRow}>
+        <input
+          type="checkbox"
+          checked={persist}
+          onChange={(e) => setPersist(e.target.checked)}
+        />
+        <span>Use this as my default unregister destination from now on</span>
+      </label>
 
-        <div style={modalFooter}>
-          <button
-            className="btn"
-            type="button"
-            onClick={onCancel}
-            disabled={submitting}
-          >
-            Cancel
-          </button>
-          <button
-            className="btn primary"
-            type="button"
-            onClick={() => void submit()}
-            disabled={submitting}
-          >
-            {submitting ? (
-              <>
-                <span className="spinner inline" /> Moving
-              </>
-            ) : (
-              "Move here"
-            )}
-          </button>
-        </div>
+      <div style={modalFooter}>
+        <button
+          className="btn"
+          type="button"
+          onClick={onCancel}
+          disabled={submitting}
+        >
+          Cancel
+        </button>
+        <button
+          className="btn primary"
+          type="button"
+          onClick={() => void submit()}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <>
+              <span className="spinner inline" /> Moving
+            </>
+          ) : (
+            "Move here"
+          )}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
 

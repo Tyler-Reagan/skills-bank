@@ -6,9 +6,8 @@ import type {
   InstalledSkill,
 } from "@skills-bank/core";
 import { AGENT_LABELS } from "../agentDisplay.js";
-import { useFocusReturn } from "../hooks/useFocusReturn.js";
-import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { Icon } from "./Icon.js";
+import { Modal } from "./modalStyles.js";
 
 const KIND_LABEL: Record<InstalledSkill["kind"], string> = {
   ours: "registered",
@@ -73,8 +72,6 @@ export function ConflictResolveModal({
   onFlash,
   allowReplaceWithSymlink = true,
 }: Props): React.ReactElement {
-  useFocusReturn();
-  useEscapeToClose(() => void onClose());
   // Default per-installation action:
   //   - Registered case → replace-with-symlink (recommended outcome:
   //     converge agent dirs onto the registry copy).
@@ -178,271 +175,250 @@ export function ConflictResolveModal({
   };
 
   return (
-    <div
-      style={overlay}
-      onClick={() => void onClose()}
-      role="presentation"
+    <Modal
+      label={
+        allowReplaceWithSymlink
+          ? `Resolve install collision — ${name}`
+          : `Resolve tracking ambiguity — ${name}`
+      }
+      onClose={() => void onClose()}
+      width={600}
+      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
     >
-      <div
-        style={modal}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <h2 style={{ marginTop: 0 }}>
-          {allowReplaceWithSymlink
-            ? `Resolve install collision — ${name}`
-            : `Resolve tracking ambiguity — ${name}`}
-        </h2>
-        <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
-          {allowReplaceWithSymlink
-            ? `Install collision: ${name} is registered, but some agent directories have stragglers that aren't symlinks to the registry copy. Pick how to handle each.`
-            : `Tracking ambiguity: multiple copies of ${name} exist across agent directories — Skills Bank can't tell which one is the real one. All copies are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`}
-        </p>
+      <h2 style={{ marginTop: 0 }}>
+        {allowReplaceWithSymlink
+          ? `Resolve install collision — ${name}`
+          : `Resolve tracking ambiguity — ${name}`}
+      </h2>
+      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+        {allowReplaceWithSymlink
+          ? `Install collision: ${name} is registered, but some agent directories have stragglers that aren't symlinks to the registry copy. Pick how to handle each.`
+          : `Tracking ambiguity: multiple copies of ${name} exist across agent directories — Skills Bank can't tell which one is the real one. All copies are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`}
+      </p>
 
-        <div
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginTop: 12,
+          marginBottom: 12,
+          padding: "6px 10px",
+          background: "var(--surface-2, rgba(0,0,0,0.03))",
+          border: "1px solid var(--border)",
+          borderRadius: 6,
+        }}
+      >
+        <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            marginTop: 12,
-            marginBottom: 12,
-            padding: "6px 10px",
-            background: "var(--surface-2, rgba(0,0,0,0.03))",
-            border: "1px solid var(--border)",
-            borderRadius: 6,
+            fontSize: 11,
+            color: "var(--text-3)",
+            marginRight: 2,
+            flexShrink: 0,
           }}
         >
-          <span
-            style={{
-              fontSize: 11,
-              color: "var(--text-3)",
-              marginRight: 2,
-              flexShrink: 0,
-            }}
-          >
-            Select all:
-          </span>
-          {allowReplaceWithSymlink && (
-            <button
-              onClick={() => setAll("replace-with-symlink")}
-              style={{ fontSize: 12, padding: "2px 8px" }}
-            >
-              Replace
-            </button>
-          )}
+          Select all:
+        </span>
+        {allowReplaceWithSymlink && (
           <button
-            onClick={() => setAll("keep")}
+            onClick={() => setAll("replace-with-symlink")}
             style={{ fontSize: 12, padding: "2px 8px" }}
           >
-            Keep
+            Replace
           </button>
-          <button
-            onClick={() => setAll("delete")}
+        )}
+        <button
+          onClick={() => setAll("keep")}
+          style={{ fontSize: 12, padding: "2px 8px" }}
+        >
+          Keep
+        </button>
+        <button
+          onClick={() => setAll("delete")}
+          style={{
+            fontSize: 12,
+            padding: "2px 8px",
+            color: "var(--danger, #d04444)",
+          }}
+        >
+          Delete
+        </button>
+      </div>
+
+      <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+        {conflicts.map((c) => (
+          <div
+            key={c.agent}
             style={{
-              fontSize: 12,
-              padding: "2px 8px",
-              color: "var(--danger, #d04444)",
+              border: `1px solid ${errorMessages[c.agent] ? "var(--danger, #d04444)" : "var(--border)"}`,
+              borderRadius: 6,
+              padding: 12,
+              marginBottom: 12,
             }}
           >
-            Delete
-          </button>
-        </div>
-
-        <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
-          {conflicts.map((c) => (
             <div
-              key={c.agent}
               style={{
-                border: `1px solid ${errorMessages[c.agent] ? "var(--danger, #d04444)" : "var(--border)"}`,
-                borderRadius: 6,
-                padding: 12,
-                marginBottom: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: 6,
               }}
             >
+              <strong>{AGENT_LABELS[c.agent]}</strong>
+              <span style={{ color: "var(--text-3)", fontSize: 11 }}>
+                {KIND_LABEL[c.kind]}
+              </span>
+            </div>
+            <code
+              style={{
+                display: "block",
+                fontSize: 11,
+                color: "var(--text-3)",
+                marginBottom: 8,
+              }}
+            >
+              {c.linkPath}
+            </code>
+            {errorMessages[c.agent] && (
               <div
+                role="alert"
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
-                  marginBottom: 6,
+                  background: "var(--danger-dim, rgba(208, 68, 68, 0.12))",
+                  color: "var(--danger, #d04444)",
+                  border: "1px solid var(--danger, #d04444)",
+                  borderRadius: 4,
+                  padding: "6px 8px",
+                  fontSize: 11,
+                  marginBottom: 8,
+                  fontFamily: "var(--font-mono)",
                 }}
               >
-                <strong>{AGENT_LABELS[c.agent]}</strong>
-                <span style={{ color: "var(--text-3)", fontSize: 11 }}>
-                  {KIND_LABEL[c.kind]}
-                </span>
+                {errorMessages[c.agent]}
               </div>
-              <code
+            )}
+            {ACTIONS.map((a) => (
+              <label
+                key={a.value}
                 style={{
                   display: "block",
-                  fontSize: 11,
-                  color: "var(--text-3)",
-                  marginBottom: 8,
+                  padding: 6,
+                  marginBottom: 4,
+                  cursor: "pointer",
+                  // Selected-row background distinguishes safe picks
+                  // (keep / replace) from risky picks (delete) so the
+                  // user can scan the selection state at a glance.
+                  background:
+                    picks[c.agent] === a.value
+                      ? a.value === "delete"
+                        ? "var(--danger-dim, rgba(208, 68, 68, 0.18))"
+                        : "var(--accent-dim)"
+                      : "transparent",
+                  borderRadius: 4,
                 }}
               >
-                {c.linkPath}
-              </code>
-              {errorMessages[c.agent] && (
-                <div
-                  role="alert"
+                <input
+                  type="radio"
+                  name={`conflict-${c.agent}`}
+                  checked={picks[c.agent] === a.value}
+                  onChange={() =>
+                    setPicks((prev) => ({ ...prev, [c.agent]: a.value }))
+                  }
+                  style={{ marginRight: 8 }}
+                />
+                <strong style={{ fontSize: 13 }}>{a.label}</strong>
+                <p
                   style={{
-                    background: "var(--danger-dim, rgba(208, 68, 68, 0.12))",
-                    color: "var(--danger, #d04444)",
-                    border: "1px solid var(--danger, #d04444)",
-                    borderRadius: 4,
-                    padding: "6px 8px",
+                    margin: "2px 0 0 24px",
                     fontSize: 11,
-                    marginBottom: 8,
-                    fontFamily: "var(--font-mono)",
+                    color: "var(--text-2)",
                   }}
                 >
-                  {errorMessages[c.agent]}
-                </div>
-              )}
-              {ACTIONS.map((a) => (
-                <label
-                  key={a.value}
-                  style={{
-                    display: "block",
-                    padding: 6,
-                    marginBottom: 4,
-                    cursor: "pointer",
-                    // Selected-row background distinguishes safe picks
-                    // (keep / replace) from risky picks (delete) so the
-                    // user can scan the selection state at a glance.
-                    background:
-                      picks[c.agent] === a.value
-                        ? a.value === "delete"
-                          ? "var(--danger-dim, rgba(208, 68, 68, 0.18))"
-                          : "var(--accent-dim)"
-                        : "transparent",
-                    borderRadius: 4,
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name={`conflict-${c.agent}`}
-                    checked={picks[c.agent] === a.value}
-                    onChange={() =>
-                      setPicks((prev) => ({ ...prev, [c.agent]: a.value }))
-                    }
-                    style={{ marginRight: 8 }}
-                  />
-                  <strong style={{ fontSize: 13 }}>{a.label}</strong>
-                  <p
-                    style={{
-                      margin: "2px 0 0 24px",
-                      fontSize: 11,
-                      color: "var(--text-2)",
-                    }}
-                  >
-                    {a.description}
-                  </p>
-                </label>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        {/* Live tally — gives the user a single-glance read on what
-            Apply will actually do, complementing the per-row colors. */}
-        <p
-          style={{
-            margin: "8px 0 0",
-            fontSize: 12,
-            color: counts.del > 0 ? "var(--text-2)" : "var(--text-3)",
-          }}
-        >
-          {[
-            counts.keep > 0 ? `Keep ${counts.keep}` : null,
-            counts.del > 0 ? `Delete ${counts.del}` : null,
-            counts.replace > 0 ? `Replace ${counts.replace}` : null,
-          ]
-            .filter(Boolean)
-            .join(" · ") || "Nothing selected"}
-        </p>
-
-        {wouldDeleteAll && (
-          <div
-            role="alert"
-            style={{
-              marginTop: 10,
-              padding: "10px 12px",
-              background: "var(--danger-dim, rgba(208, 68, 68, 0.12))",
-              border: "1px solid var(--danger, #d04444)",
-              borderRadius: 4,
-              color: "var(--danger, #d04444)",
-              fontSize: 12,
-            }}
-          >
-            {wouldOrphan ? (
-              <>
-                <strong>All copies of {name} will be deleted.</strong> The skill
-                will no longer be on this machine. Re-importing from its source
-                is the only way back.
-              </>
-            ) : (
-              <>
-                <strong>
-                  All {decisions.length} conflicting{" "}
-                  {decisions.length === 1 ? "entry" : "entries"} will be
-                  deleted.
-                </strong>{" "}
-                The registered installation in Skills Bank stays intact.
-              </>
-            )}
+                  {a.description}
+                </p>
+              </label>
+            ))}
           </div>
-        )}
+        ))}
+      </div>
 
+      {/* Live tally — gives the user a single-glance read on what
+            Apply will actually do, complementing the per-row colors. */}
+      <p
+        style={{
+          margin: "8px 0 0",
+          fontSize: 12,
+          color: counts.del > 0 ? "var(--text-2)" : "var(--text-3)",
+        }}
+      >
+        {[
+          counts.keep > 0 ? `Keep ${counts.keep}` : null,
+          counts.del > 0 ? `Delete ${counts.del}` : null,
+          counts.replace > 0 ? `Replace ${counts.replace}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "Nothing selected"}
+      </p>
+
+      {wouldDeleteAll && (
         <div
+          role="alert"
           style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 8,
-            marginTop: 12,
+            marginTop: 10,
+            padding: "10px 12px",
+            background: "var(--danger-dim, rgba(208, 68, 68, 0.12))",
+            border: "1px solid var(--danger, #d04444)",
+            borderRadius: 4,
+            color: "var(--danger, #d04444)",
+            fontSize: 12,
           }}
         >
-          <button onClick={() => void onClose()} disabled={submitting}>
-            Cancel
-          </button>
-          <button
-            className={wouldDeleteAll ? "btn danger" : "primary"}
-            onClick={() => void apply()}
-            disabled={submitting}
-          >
-            {submitting ? (
-              <>
-                <Icon name="check" size="sm" /> Applying
-              </>
-            ) : Object.keys(errorMessages).length > 0 ? (
-              "Retry"
-            ) : wouldDeleteAll ? (
-              "Confirm delete all"
-            ) : (
-              "Apply"
-            )}
-          </button>
+          {wouldOrphan ? (
+            <>
+              <strong>All copies of {name} will be deleted.</strong> The skill
+              will no longer be on this machine. Re-importing from its source is
+              the only way back.
+            </>
+          ) : (
+            <>
+              <strong>
+                All {decisions.length} conflicting{" "}
+                {decisions.length === 1 ? "entry" : "entries"} will be deleted.
+              </strong>{" "}
+              The registered installation in Skills Bank stays intact.
+            </>
+          )}
         </div>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: 12,
+        }}
+      >
+        <button onClick={() => void onClose()} disabled={submitting}>
+          Cancel
+        </button>
+        <button
+          className={wouldDeleteAll ? "btn danger" : "primary"}
+          onClick={() => void apply()}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <>
+              <Icon name="check" size="sm" /> Applying
+            </>
+          ) : Object.keys(errorMessages).length > 0 ? (
+            "Retry"
+          ) : wouldDeleteAll ? (
+            "Confirm delete all"
+          ) : (
+            "Apply"
+          )}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-const modal: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width: 600,
-  maxWidth: "90vw",
-};
