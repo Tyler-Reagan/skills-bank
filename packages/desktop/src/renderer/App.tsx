@@ -68,6 +68,8 @@ import {
   ModalRegistryProvider,
   useAnyModalOpen,
 } from "./ModalRegistryContext.js";
+import { SettingsProvider, useSettings } from "./SettingsContext.js";
+import { RegistryProvider, useRegistry } from "./RegistryContext.js";
 import type {
   AuthStatus,
   SyncStatus,
@@ -75,55 +77,17 @@ import type {
   OriginUpdateResult,
 } from "../shared/ipc.js";
 
+// Settings, theme, and density persistence keys moved into
+// SettingsContext along with the read/write helpers. The keys below
+// are the ones still managed by App.tsx (search/tab/etc. — UI filter
+// + tab state that hasn't been lifted yet).
 const LS_KEYS = {
   search: "skills-bank.searchQuery",
   tagFilter: "skills-bank.tagFilter",
   tab: "skills-bank.activeTab",
-  theme: "skills-bank.theme",
-  density: "skills-bank.density",
   installedOnly: "skills-bank.installedOnly",
-  settings: "skills-bank.settings",
   unregisterHintShown: "skills-bank.unregisterHintShown",
 };
-
-function readSettings(): AppSettings {
-  try {
-    const raw = localStorage.getItem(LS_KEYS.settings);
-    if (!raw) return DEFAULT_SETTINGS;
-    const parsed = JSON.parse(raw) as Partial<AppSettings>;
-    return { ...DEFAULT_SETTINGS, ...parsed };
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
-}
-
-function readInitialTheme(): Theme {
-  try {
-    const stored = localStorage.getItem(LS_KEYS.theme);
-    if (stored === "dark" || stored === "light") return stored;
-  } catch {
-    // fall through
-  }
-  // Honor OS preference for first run when nothing is stored.
-  if (
-    typeof window !== "undefined" &&
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(prefers-color-scheme: light)").matches
-  ) {
-    return "light";
-  }
-  return "dark";
-}
-
-function readInitialDensity(): Density {
-  try {
-    const stored = localStorage.getItem(LS_KEYS.density);
-    if (stored === "compact" || stored === "comfortable") return stored;
-  } catch {
-    // fall through
-  }
-  return "comfortable";
-}
 
 function readLS(key: string, fallback: string): string {
   try {
@@ -153,10 +117,19 @@ function readTagFilterLS(): string[] {
 }
 
 export function App(): React.ReactElement {
+  // Provider nesting matters: SettingsProvider wraps RegistryProvider
+  // because refresh() reads settings.customSkillsDirs. The host +
+  // modal-registry providers stay outermost — both contexts above
+  // call useRegistryHost (flash on rebuild) and need to mount before
+  // any consumer can register.
   return (
     <ModalRegistryProvider>
       <RegistryHostProvider>
-        <AppContent />
+        <SettingsProvider>
+          <RegistryProvider>
+            <AppContent />
+          </RegistryProvider>
+        </SettingsProvider>
       </RegistryHostProvider>
     </ModalRegistryProvider>
   );
@@ -177,14 +150,33 @@ function AppContent(): React.ReactElement {
   // hand-curated OR-chain that drifted between this and the actual
   // set of mountable modals (v1.11.1 fix).
   const anyModalOpen = useAnyModalOpen();
+  // Settings + persisted preference scalars come from SettingsContext.
+  // Theme/density dataset writes are owned by the provider; this
+  // component just reads + setters when it needs them.
+  const { settings, saveSettings, theme, setTheme, density, setDensity } =
+    useSettings();
+  // Registry data + lifecycle. refresh()/rebuild() are the only
+  // mutation entry points; everything else reads.
+  const {
+    registry,
+    installed,
+    registryRoot,
+    configChecked,
+    initialLoading,
+    rebuilding,
+    registryByName,
+    installedNames,
+    pendingSkillUpdates,
+    visibleRegistry,
+    uniqueInstalledCount,
+    refresh,
+    rebuild,
+    mutateRegistry,
+  } = useRegistry();
 
   const [tab, setTab] = useState<TabId>(
     (readLS(LS_KEYS.tab, "browse") as TabId) ?? "browse",
   );
-  const [registry, setRegistry] = useState<RegistryEntry[]>([]);
-  const [installed, setInstalled] = useState<InstalledSkill[]>([]);
-  const [registryRoot, setRegistryRoot] = useState<string | null>(null);
-  const [configChecked, setConfigChecked] = useState(false);
   // Typed string-key reader for AppError.copyableDetails. Returns the
   // value when present and a string; null otherwise.
   const detailString = (
@@ -310,7 +302,6 @@ function AppContent(): React.ReactElement {
     string,
     string[]
   > | null>(null);
-  const [settings, setSettingsState] = useState<AppSettings>(readSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [showInstallFromGithub, setShowInstallFromGithub] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -332,16 +323,6 @@ function AppContent(): React.ReactElement {
     string | null
   >(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const saveSettings = useCallback((next: AppSettings) => {
-    setSettingsState(next);
-    try {
-      localStorage.setItem(LS_KEYS.settings, JSON.stringify(next));
-    } catch {
-      // ignore
-    }
-  }, []);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [rebuilding, setRebuilding] = useState(false);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
   const [installedOnly, setInstalledOnlyState] = useState<boolean>(
@@ -362,8 +343,6 @@ function AppContent(): React.ReactElement {
   >({ by: "name", direction: "asc" });
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
   const [bulkInstall, setBulkInstall] = useState<BulkInstallState | null>(null);
-  const [theme, setTheme] = useState<Theme>(readInitialTheme);
-  const [density, setDensity] = useState<Density>(readInitialDensity);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ kind: "idle" });
   const [pendingConflicts, setPendingConflicts] = useState(0);
   const [conflictModalEntries, setConflictModalEntries] = useState<
@@ -371,44 +350,6 @@ function AppContent(): React.ReactElement {
   >(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
-
-  // One pass to build name→entry / name→set lookups; reused across the
-  // overlay-reconciliation effect, the drawer's freshness sync, and any
-  // per-render `.some(byName)` site. Cheap to build, cheaper than ~7
-  // O(n) scans per render.
-  const registryByName = useMemo(
-    () => new Map(registry.map((e) => [e.name, e] as const)),
-    [registry],
-  );
-  const installedNames = useMemo(
-    () => new Set(installed.map((i) => i.name)),
-    [installed],
-  );
-
-  // Skills with an available upstream update — set by the main-process
-  // probe runner via the augmented `listRegistry`. Drives the header
-  // aggregate badge and the UpdatesModal's content. Memoized so the
-  // UpdatesModal doesn't see a fresh `entries` array on every render.
-  // Must live above the auth/loading early-return gates below — Rules
-  // of Hooks: every render must reach the same set of hook calls.
-  const pendingSkillUpdates = useMemo(
-    () => registry.filter((e) => e.originUpdateAvailable === true),
-    [registry],
-  );
-
-  // Hidden canon skills stay in `registry` for lookups/installs/Settings
-  // but are filtered out of the default Browse view. Memoize so BrowseTab
-  // (and its descendant RegistryFilters / count effects) see a stable
-  // reference until the registry actually changes.
-  const visibleRegistry = useMemo(
-    () => registry.filter((e) => !e.hidden),
-    [registry],
-  );
-
-  // Tab badge counts — dedupe by skill name so a skill linked into two
-  // agent dirs counts once. The toast computed by refresh() uses the
-  // same expression; keep them in sync via this single derivation.
-  const uniqueInstalledCount = installedNames.size;
 
   // Overlay reconciliation: if a skill referenced by an open drawer or
   // modal disappears from installed/registry after refresh() (e.g. the
@@ -430,25 +371,6 @@ function AppContent(): React.ReactElement {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- overlays are inputs to validate, not deps
   }, [registryByName, installedNames]);
-
-  // Apply the active theme to <html data-theme=""> so CSS-variable
-  // overrides flow through every component.
-  useEffect(() => {
-    document.documentElement.dataset["theme"] = theme;
-    writeLS(LS_KEYS.theme, theme);
-  }, [theme]);
-
-  // Density flows through the same pattern via data-density.
-  useEffect(() => {
-    document.documentElement.dataset["density"] = density;
-    writeLS(LS_KEYS.density, density);
-  }, [density]);
-
-  // Grid columns from settings → data-grid-cols on <html>; CSS reads
-  // this attribute to override the auto-fit grid layout.
-  useEffect(() => {
-    document.documentElement.dataset["gridCols"] = settings.gridColumns;
-  }, [settings.gridColumns]);
 
   // Global keyboard shortcuts: Cmd/Ctrl+K and "/" focus the search bar.
   // Skip when the user is already typing in another input/textarea so
@@ -472,10 +394,9 @@ function AppContent(): React.ReactElement {
     return () => window.removeEventListener("keydown", onKey);
   }, [tab]);
 
-  const toggleTheme = () =>
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
   const toggleDensity = () =>
-    setDensity((prev) => (prev === "comfortable" ? "compact" : "comfortable"));
+    setDensity(density === "comfortable" ? "compact" : "comfortable");
 
   const setSearch = (v: string) => {
     setSearchState(v);
@@ -540,34 +461,6 @@ function AppContent(): React.ReactElement {
     },
     [flash, flashError],
   );
-
-  // Minimum spinner duration so the user actually sees the load state.
-  // Without it, a sub-100ms refresh just flickers and reads as "nothing
-  // happened." Returns counts so the Refresh-button click handler can
-  // surface a meaningful toast.
-  const refresh = useCallback(async (): Promise<{
-    registryCount: number;
-    installedCount: number;
-  }> => {
-    const cfg = await window.skillsBank.getConfig();
-    setRegistryRoot(cfg.registryRoot);
-    setConfigChecked(true);
-    if (!cfg.registryRoot) {
-      setRegistry([]);
-      setInstalled([]);
-      return { registryCount: 0, installedCount: 0 };
-    }
-    const [r, i] = await Promise.all([
-      window.skillsBank.listRegistry(),
-      window.skillsBank.listInstalled(settings.customSkillsDirs),
-    ]);
-    setRegistry(r);
-    setInstalled(i);
-    return {
-      registryCount: r.length,
-      installedCount: new Set(i.map((x) => x.name)).size,
-    };
-  }, [settings.customSkillsDirs]);
 
   // Bulk-install runner. Iterates the queue sequentially and surfaces
   // per-skill progress through `bulkInstall`. Skip-and-continue: a
@@ -686,11 +579,14 @@ function AppContent(): React.ReactElement {
       clearTimeout(localScanDoneTimerRef.current);
     setLocalScanState({ phase: "working" });
     try {
-      const [report, i] = await Promise.all([
+      // The diagnostics scan + an installed-list refresh in parallel:
+      // the disk is already being hit, so we piggyback the installed
+      // rehydration onto the same wait. Goes through the registry
+      // context's refresh() now that it owns the installed snapshot.
+      const [report] = await Promise.all([
         window.skillsBank.localDiagnosticsScan(settings.customSkillsDirs),
-        window.skillsBank.listInstalled(settings.customSkillsDirs),
+        refresh(),
       ]);
-      setInstalled(i);
       setDiagnostics(report);
       setLocalScanState({ phase: "done", count: report.items.length });
       // Done-zero auto-fades after 1.5s; done-N>0 stays persistent so
@@ -704,7 +600,7 @@ function AppContent(): React.ReactElement {
     } catch {
       setLocalScanState({ phase: "idle" });
     }
-  }, [settings.customSkillsDirs]);
+  }, [settings.customSkillsDirs, refresh]);
 
   const refreshDiagnostics = useCallback(async () => {
     try {
@@ -823,10 +719,6 @@ function AppContent(): React.ReactElement {
     [settings, saveSettings, refresh],
   );
 
-  useEffect(() => {
-    void refresh().finally(() => setInitialLoading(false));
-  }, [refresh]);
-
   // Hydrate the user's "Skip this version" choice once at boot. The main
   // process is the source of truth (persisted alongside registryRoot/persona
   // in config.json), so this is fire-and-forget.
@@ -920,7 +812,7 @@ function AppContent(): React.ReactElement {
   // editing a canonical skill) without blocking the user's next click.
   const saveCardTags = useCallback(
     async (name: string, next: string[]) => {
-      setRegistry((prev) =>
+      mutateRegistry((prev) =>
         prev.map((e) => (e.name === name ? { ...e, tags: next } : e)),
       );
       const r = await window.skillsBank.editTags(name, next);
@@ -930,7 +822,7 @@ function AppContent(): React.ReactElement {
       // optimistic paint.
       void refresh();
     },
-    [flash, refresh],
+    [flash, refresh, mutateRegistry],
   );
 
   const sync = useCallback(async () => {
@@ -1275,17 +1167,6 @@ function AppContent(): React.ReactElement {
       }
     });
   }, [rescan, sync, checkForUpdates]);
-
-  const rebuild = useCallback(async () => {
-    setRebuilding(true);
-    try {
-      const r = await window.skillsBank.rebuildIndex();
-      flash(r.message);
-      await refresh();
-    } finally {
-      setRebuilding(false);
-    }
-  }, [refresh, flash]);
 
   // Keep the drawer's entry up-to-date if the registry refreshes. Don't
   // close the drawer when no registry entry is found — the selection may
