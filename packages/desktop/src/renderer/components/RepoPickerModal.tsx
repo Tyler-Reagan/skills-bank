@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import type { UserRepo } from "../../shared/ipc.js";
+import React, { useMemo, useState } from "react";
+import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { Icon } from "./Icon.js";
 import { Modal } from "./modalStyles.js";
 
@@ -21,21 +21,19 @@ export function RepoPickerModal({
   onPicked,
   onSignOut,
 }: Props): React.ReactElement {
-  const [repos, setRepos] = useState<UserRepo[] | null>(null);
+  // Shared error surface: both the load failure (via onError) and the
+  // pick-action failure (below) write here. The `error` state lives
+  // outside useIpcQuery because the pick flow needs to clear/set it
+  // imperatively.
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [picking, setPicking] = useState<string | null>(null);
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        const r = await window.skillsBank.reposListMine();
-        setRepos(r);
-      } catch (err) {
-        setError((err as Error).message);
-      }
-    })();
-  }, []);
+  const { data: repos } = useIpcQuery(
+    () => window.skillsBank.reposListMine(),
+    [],
+    { onError: (e) => setError(e.message) },
+  );
 
   const filtered = useMemo(() => {
     if (!repos) return [];

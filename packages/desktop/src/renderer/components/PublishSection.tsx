@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from "react";
-import type {
-  PublishState,
-  RegistryEntry,
-  SkillPublishFlow,
-} from "@skills-bank/core";
+import React, { useState } from "react";
+import type { PublishState, RegistryEntry } from "@skills-bank/core";
 import type { PublishSkillResult } from "../../shared/ipc.js";
+import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
 import { Icon } from "./Icon.js";
 import { Modal, ModalCloseButton } from "./modalStyles.js";
@@ -33,26 +30,21 @@ export function PublishSection({
   onPublished,
 }: Props): React.ReactElement | null {
   const { flash, flashError } = useRegistryHost();
-  const [publishState, setPublishState] = useState<PublishState | null>(null);
-  const [flow, setFlow] = useState<SkillPublishFlow | null>(null);
   const [busy, setBusy] = useState(false);
   const [forkConfirmOpen, setForkConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    void window.skillsBank.classifySkillForPublish(entry.name).then((r) => {
-      if (cancelled) return;
-      if (r.ok) setFlow(r.flow);
-    });
-    void window.skillsBank.getPublishState(entry.name).then((s) => {
-      if (cancelled) return;
-      setPublishState(s);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [entry.name]);
+  const { data: flow } = useIpcQuery(
+    () =>
+      window.skillsBank
+        .classifySkillForPublish(entry.name)
+        .then((r) => (r.ok ? r.flow : null)),
+    [entry.name],
+  );
+  const { data: publishState } = useIpcQuery(
+    () => window.skillsBank.getPublishState(entry.name),
+    [entry.name],
+  );
 
   if (!linkedRepoName) return null;
 
