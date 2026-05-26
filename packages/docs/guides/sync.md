@@ -42,9 +42,19 @@ You can update one without the other.
 
 ## Importing from elsewhere
 
-Two modes (Account modal):
+Two shapes in the Account modal's **Move my registry** section:
+
+**Content** (the full skills tree):
 
 - **Import from disk (replace)…** — point the app at a different folder; the active registry root is swapped. Use when switching to a different upstream entirely or restoring from a fresh `git clone`.
-- **Merge a registry into mine…** — additive. Scans the picked folder's `skills/`, adds non-colliding entries to your active registry, and surfaces collisions through the same resolver Refresh uses (default: keep yours). Merged-in skills are marked `source: user`.
+- **Merge from disk…** — additive. Scans the picked folder's `skills/`, adds non-colliding entries to your active registry, and surfaces collisions through the same resolver Refresh uses (default: keep yours). Merged-in skills are marked `source: user`.
+- **Export as folder** — saves the full skills tree to a folder you pick.
 
-Both modes accept any folder with a `skills/` subdirectory.
+Both disk-import modes accept any folder with a `skills/` subdirectory.
+
+**Manifest** (origin pointers, tiny):
+
+- **Export manifest** / **Import manifest** — transfers a JSON snapshot of origin pointers rather than file content. On import each skill is re-fetched from its origin. Transfers are small and work across machines; origins must still be reachable.
+- When a linked repo is configured, the manifest modal defaults to reading from / writing to your GitHub repo directly — no file save/open dialog needed.
+
+See [Move your registry](/guides/manifest) for the full manifest flow.

@@ -38,6 +38,7 @@ export default defineConfig({
           { text: 'Manage agent links', link: '/guides/manage-links' },
           { text: 'Pull registry updates', link: '/guides/sync' },
           { text: 'Sign in with GitHub', link: '/guides/sign-in' },
+          { text: 'Move your registry', link: '/guides/manifest' },
           { text: 'Heal bad states', link: '/guides/heal' },
           { text: 'Unregister a skill', link: '/guides/unregister' },
         ],

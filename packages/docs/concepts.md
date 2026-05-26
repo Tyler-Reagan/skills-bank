@@ -74,11 +74,11 @@ Labels match the in-app vocabulary: nodes are lifecycle positions, transitions a
 
 Three actions form an escalation, with distinct file/recovery semantics. Delete is only reachable on **unregistered** skills, so the user must Unregister first.
 
-| Action | Where | Files | Agent symlinks | Recovery |
-|--------|-------|-------|----------------|----------|
-| Manage agent links | Dialog | untouched | added/removed per-agent via checkboxes | re-add via the same modal |
-| [Unregister](/guides/unregister) | Dialog | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at new location; non-adopted: untouched | re-register from new location |
-| Delete | Installed tab → Unregistered section | real-directory copies removed; symlink targets preserved | symlinks unlinked | curated: re-pull; user: gone |
+| Action                           | Where                                | Files                                                               | Agent symlinks                                                      | Recovery                      |
+| -------------------------------- | ------------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------- |
+| Manage agent links               | Dialog                               | untouched                                                           | added/removed per-agent via checkboxes                              | re-add via the same modal     |
+| [Unregister](/guides/unregister) | Dialog                               | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at new location; non-adopted: untouched | re-register from new location |
+| Delete                           | Installed tab → Unregistered section | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                   | curated: re-pull; user: gone  |
 
 Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **Dismiss from registry view** instead.
 
@@ -92,16 +92,16 @@ A folder containing instructions (`SKILL.md`) and optional metadata (`meta.json`
 
 Every supported AI agent reads skills from a fixed directory under your home folder:
 
-| Agent | Directory |
-|-------|-----------|
-| Claude Code | `~/.claude/skills/` |
-| Cursor | `~/.cursor/skills/` |
-| Gemini | `~/.gemini/skills/` |
-| GitHub Copilot | `~/.copilot/skills/` |
-| Continue | `~/.continue/skills/` |
-| Cline | `~/.cline/skills/` |
-| OpenAI Codex | `~/.codex/skills/` |
-| Shared (any) | `~/.agents/skills/` |
+| Agent          | Directory             |
+| -------------- | --------------------- |
+| Claude Code    | `~/.claude/skills/`   |
+| Cursor         | `~/.cursor/skills/`   |
+| Gemini         | `~/.gemini/skills/`   |
+| GitHub Copilot | `~/.copilot/skills/`  |
+| Continue       | `~/.continue/skills/` |
+| Cline          | `~/.cline/skills/`    |
+| OpenAI Codex   | `~/.codex/skills/`    |
+| Shared (any)   | `~/.agents/skills/`   |
 
 Skills Bank scans every one of these. If a directory doesn't exist on your machine, it's just skipped — no error, no prompt.
 
@@ -181,6 +181,14 @@ Collapse a symlinked top-level agent dir (e.g. `~/.claude/skills` → `~/.agents
 ## Vendor
 
 Pulling a third-party skill from its origin GitHub repo into the bank, preserving the origin pointer so future updates from the original author still surface via the update probe. Vendored skills live under `skills/vendored/<name>/`. The CLI counterpart is `pnpm vendor:skill`; the bulk-refresh counterpart is `pnpm vendor:refresh`. Vendoring does NOT take ownership — the user is mirroring, not forking.
+
+## Manifest
+
+A lightweight JSON snapshot of a registry's **origin pointers** — not the skill content itself. Each entry carries the skill's name, source axis, origin pointer (repo + path), tags, and hidden/dismissed state. On import, each skill is re-fetched from its origin, so transfers are tiny but require the origins to still be reachable.
+
+Manifests are the transport layer for moving a registry's _metadata_ between machines or pushing it to a linked repo. Content transfers (the full skills tree as files) use the disk import/export flow instead.
+
+The current schema is v3. A manifest exported from one machine can be pushed directly to your linked GitHub repo and pulled on another, closing the loop without manual file handling. See [Move your registry](/guides/manifest).
 
 ## Publish
 
