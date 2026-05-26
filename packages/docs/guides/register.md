@@ -7,7 +7,7 @@ You installed a skill from somewhere else (e.g. `npx skills add` or a manual cop
 1. Open the **Installed** tab. Skills you didn't install through this app appear under **Not registered**, with a chip showing the agent dir they live in.
 2. Click the card to open the detail dialog.
 3. Click **Register**. What happens next depends on the **Move files into Skills Bank on Register** setting (Settings → Registration):
-   - **On (default)** — files move into `<repo>/skills/<name>/`, the original agent-dir entry becomes a symlink pointing at the new registry location, and the entry is recorded with `adopted: true`. This is the standard flow.
+   - **On (default)** — files move into `skills/personal/<name>/` under your registry root, the original agent-dir entry becomes a symlink pointing at the new registry location, and the entry is recorded with `adopted: true`. This is the standard flow.
    - **Off** — files stay where they are. The registry just records the external location; the skill is `adopted: false`. Use this when you actively edit the skill in its own git repo and don't want Skills Bank to move it.
 4. Either way, registry metadata is generated (source = `user`, computes publish state).
 5. The card moves to the **Registered** section. From now on it behaves like any other registry skill — installable into other agents, taggable, etc.
@@ -20,7 +20,7 @@ Use **Register all** in the section header to make individual selections for eve
 
 Skills Bank tracks an **Adopted** axis per registry entry:
 
-- **Adopted** — files live under `<repo>/skills/<name>/`. The bank owns the files. Unregistering moves them to your shared agents directory.
+- **Adopted** — files live under `skills/personal/<name>/` in your registry root. The bank owns the files. Unregistering moves them to your shared agents directory.
 - **Not adopted** — files live wherever you registered from. The bank just tracks the external path. Unregistering removes the index entry but leaves origin files untouched.
 
 The choice is controlled globally by the `Move files into Skills Bank on Register` setting.

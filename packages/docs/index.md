@@ -23,6 +23,8 @@ features:
     details: Tag filters, full-text search, and an Installed-only toggle over a growing set of skills. No GitHub account required to get started.
   - title: Bring your own repo
     details: Link any GitHub repo you own as your registry source. Refresh pulls the latest with a diff-before-apply preview.
+  - title: Push your registry anywhere
+    details: Export a manifest of your registry's origin pointers and push it directly to your linked GitHub repo — or pull it on another machine. One click, no file management.
   - title: Heal, don't delete
     details: Explicit recovery flows for every bad state — conflicts, broken links, missing files, and canon drift — with your choice at each step.
 ---

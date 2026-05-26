@@ -44,6 +44,7 @@ Click any "Not registered" card to manage it: register it into Skills Bank, link
 ## Next steps
 
 - [Concepts](/concepts) — terms you'll see throughout the app (registry, linked repo, source, agent dir).
-- [Guides](/guides/install) — task-oriented walkthroughs for installing, registering, syncing, and resolving conflicts.
+- [Sign in with GitHub](/guides/sign-in) — link your own repo as your registry source and get 5000 requests/hr.
+- [Move your registry](/guides/manifest) — push a manifest snapshot to your GitHub repo, or pull it on another machine.
 - [Keyboard shortcuts](/reference/keyboard) — keyboard shortcuts reference.
 - [Troubleshooting](/reference/troubleshooting) — common problems and how to recover.

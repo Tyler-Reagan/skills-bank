@@ -6,17 +6,17 @@ Every heal flow is the user's call — Skills Bank never auto-deletes content th
 
 ## Bad states reference
 
-| State | Trigger | Primary heal |
-|-------|---------|--------------|
-| **Install collision** | Registered skill has a duplicate copy (real dir or foreign symlink) in another agent dir. | Resolve install collision modal (per-row choices: replace with symlink, delete, keep). |
-| **registered-broken** | Registered skill has at least one broken symlink and no working `ours` copy. | Try repair (find a usable source); fall back to delete-broken. |
-| **registered-mixed-broken** | Registered + working symlinks AND broken symlinks. | Repair the broken ones; the working ones stay. |
-| **Tracking ambiguity** | Multiple non-`ours` copies of the same skill name exist across agents. | Pick the right copy via the resolve modal, then register. |
-| **unregistered-broken** | Only broken-symlink copies exist for this name. Dead reference. | Delete the broken link. |
-| **edited-without-origin** | Local copy of a curated skill (no `origin` pointer) differs from the synced baseline. | **Keep my edits** (detach from Pull) or **Re-baseline** (clear drift, Pull still owns the skill). |
-| **edited-with-origin** | Local copy of a skill with a GitHub `origin` pointer has diverged from that upstream. | **Keep my edits** (unlink origin) or **Reset to origin** (re-fetch upstream content). |
-| **registry-folder-missing** | Adopted entry's `<repo>/skills/<name>/` folder is gone on disk. | **Forget this entry** — drops the registry record. |
-| **external-target-missing** | Non-adopted (symlink-mode) entry's external path is gone. | **Forget this entry** — drops the external row. |
+| State                       | Trigger                                                                                   | Primary heal                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Install collision**       | Registered skill has a duplicate copy (real dir or foreign symlink) in another agent dir. | Resolve install collision modal (per-row choices: replace with symlink, delete, keep).            |
+| **registered-broken**       | Registered skill has at least one broken symlink and no working `ours` copy.              | Try repair (find a usable source); fall back to delete-broken.                                    |
+| **registered-mixed-broken** | Registered + working symlinks AND broken symlinks.                                        | Repair the broken ones; the working ones stay.                                                    |
+| **Tracking ambiguity**      | Multiple non-`ours` copies of the same skill name exist across agents.                    | Pick the right copy via the resolve modal, then register.                                         |
+| **unregistered-broken**     | Only broken-symlink copies exist for this name. Dead reference.                           | Delete the broken link.                                                                           |
+| **edited-without-origin**   | Local copy of a curated skill (no `origin` pointer) differs from the synced baseline.     | **Keep my edits** (detach from Pull) or **Re-baseline** (clear drift, Pull still owns the skill). |
+| **edited-with-origin**      | Local copy of a skill with a GitHub `origin` pointer has diverged from that upstream.     | **Keep my edits** (unlink origin) or **Reset to origin** (re-fetch upstream content).             |
+| **registry-folder-missing** | Adopted entry's `<repo>/skills/<name>/` folder is gone on disk.                           | **Forget this entry** — drops the registry record.                                                |
+| **external-target-missing** | Non-adopted (symlink-mode) entry's external path is gone.                                 | **Forget this entry** — drops the external row.                                                   |
 
 ## How heal flows are surfaced
 
@@ -54,3 +54,9 @@ Three distinct collision types use distinct labels:
 ## Why not auto-resolve?
 
 A "bad state" is often work the user placed somewhere on purpose — a manual fork, a one-off override, an experiment. Skills Bank presents choices when several are reasonable; forces the single option with an explanation banner when there's only one. It never silently mutates content under either path.
+
+## See also
+
+- [Manage agent links](/guides/manage-links) — add or remove per-agent symlinks without touching registry files.
+- [Unregister a skill](/guides/unregister) — remove a registry entry and optionally expel its files.
+- [Pull registry updates](/guides/sync) — the sync flow that surfaces incoming update conflicts.
