@@ -12,7 +12,7 @@ import {
  * Suite 8 per ADR-0008 — publish-state dual-mode invariants. The
  * git path is fixture-driven (real `git init` + commits in a tmp
  * dir, matching heal.test.ts pattern); the remote path stubs
- * `fetch` for the `probeOriginTree` call.
+ * `fetch` for the `fetchOriginTree` call.
  */
 
 let scratch: string;

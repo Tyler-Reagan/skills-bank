@@ -69,7 +69,7 @@ export interface ProbeOptions {
  * entry list; callers scan it locally via `findFolderHash` to look
  * up per-path SHAs.
  */
-export async function probeOriginTree(
+export async function fetchOriginTree(
   repo: string,
   token: string | null,
   options: ProbeOptions = {},
@@ -219,7 +219,7 @@ export async function mirrorSkillFolder(
   const fs = await import("node:fs");
   const path = await import("node:path");
 
-  const probe = await probeOriginTree(repo, token, options);
+  const probe = await fetchOriginTree(repo, token, options);
   if (!probe.ok) {
     const err: MirrorResultErr = {
       ok: false,

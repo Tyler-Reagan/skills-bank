@@ -37,7 +37,7 @@ Domain: per-skill upstream tracking, drift detection, and the manual upstream pi
 | **Baseline**         | The local snapshot the app compares against to detect user edits (`.skills-bank-hash`)                                               | Reference, anchor        |
 | **Drift**            | The condition where a **Skill**'s local content no longer matches its **Baseline**                                                   | Edits, divergence, dirty |
 | **Update available** | The condition where the **Origin hash** at the remote has moved past the **Origin hash** recorded locally, and there is no **Drift** | Out of date, stale       |
-| **Probe**            | The act of calling GitHub's Git Trees API to check the current upstream **Origin hash**                                              | Check, poll, sync        |
+| **Fetch origin tree** | The act of calling GitHub's Git Trees API to retrieve the current upstream tree and **Origin hash**. Code: `fetchOriginTree` in `origin.ts`. | Probe, check, poll, sync |
 
 ## Origin operations (user-visible verbs)
 
@@ -66,7 +66,7 @@ These are the user-time verbs for pushing local **Skill** content to a **Linked 
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
 | **Publish**     | Push a **Skill** from the local **Registry** to the user's **Linked repo** as a pull request. Three sub-flows by trigger condition: new skill (no **Origin**, `personal/`), safekeeping (has **Origin**, no **Drift**, `vendored/`), or **Fork** (has **Origin**, **Drift** detected). PR-only — the linked repo's default branch is never written directly. | Push, ship, submit                  |
 | **Fork**        | A confirmed **Publish** of an edited vendored **Skill**. Composes **Unlink origin** with a bucket move (`vendored/` → `personal/`) and a **Source** flip (`bundled` → `yours`). Requires explicit user confirmation; irreversible without re-vendoring.                                                                                                      | Sever and publish, claim, take over |
-| **Safekeeping** | The motive for **Publish**ing an unedited vendored **Skill**: deposit the third-party content into your **Linked repo** so it survives if the **Origin** goes dark. The **Origin pointer** is preserved; updates from the original author continue to surface via the update **Probe**.                                                                      | Backup, snapshot, deposit           |
+| **Safekeeping** | The motive for **Publish**ing an unedited vendored **Skill**: deposit the third-party content into your **Linked repo** so it survives if the **Origin** goes dark. The **Origin pointer** is preserved; updates from the original author continue to surface via the update **Fetch origin tree**.                                                                      | Backup, snapshot, deposit           |
 
 ## GitHub API layer
 
@@ -102,7 +102,7 @@ A portable, metadata-only artifact representing a **Registry**'s state at a poin
 - An **Origin pointer** with `kind: "github"` carries an **Origin repo**, an **Origin path**, and an **Origin hash**.
 - An **Origin pointer** with `kind: "none"` declares the **Skill** has no upstream (set via **Mark as local**).
 - **Drift** is detected by comparing the current **Skill** content against its **Baseline**, not its **Origin hash**.
-- **Update available** is detected by comparing the latest **Probe** result against the recorded **Origin hash**.
+- **Update available** is detected by comparing the latest **Fetch origin tree** result against the recorded **Origin hash**.
 - **Update**, **Reset to origin**, and **Unlink origin** are mutually exclusive primary actions — exactly one is offered at a time based on the **Skill**'s drawer state.
 - **Publish** is orthogonal to the **Origin operations** — it pushes outbound to the **Linked repo**; the **Origin operations** pull inbound from **Origin**. A single **Skill** can be **Update**-eligible and **Publish**-eligible simultaneously.
 - **Fork** is a composition of **Unlink origin** + bucket move + **Source** flip, gated by a user confirmation. The underlying **Unlink origin** is the same primitive that fires in the heal flow when the user keeps local edits to a bundled skill.
@@ -111,7 +111,7 @@ A portable, metadata-only artifact representing a **Registry**'s state at a poin
 ## Example dialogue
 
 > **Dev:** "When the user clicks **Link origin** in the **Picker**, what fires?"
-> **Domain expert:** "We validate the **Origin repo** + **Origin path** by running a **Probe**, then write an **Origin pointer** with `kind: \"github\"` to `.skills-bank.json` and stamp the resulting **Origin hash** as the new **Baseline**."
+> **Domain expert:** "We validate the **Origin repo** + **Origin path** by running a **Fetch origin tree**, then write an **Origin pointer** with `kind: \"github\"` to `.skills-bank.json` and stamp the resulting **Origin hash** as the new **Baseline**."
 > **Dev:** "So a **Drift** detection right after **Link origin** would always show clean?"
 > **Domain expert:** "Right — the **Baseline** matches the just-fetched content. **Drift** only appears after the user edits files locally."
 > **Dev:** "And **Update** vs **Reset to origin** — same network call?"
@@ -137,7 +137,6 @@ A portable, metadata-only artifact representing a **Registry**'s state at a poin
 - **"Fork" overlaps with "Unlink origin."** **Fork** is the user-facing umbrella verb for the (publish-time) composition of three operations: **Unlink origin** + bucket move (`vendored/` → `personal/`) + **Source** flip (`bundled` → `yours`). **Unlink origin** is also reachable independently from the heal flow (the user keeps edits to a bundled or vendored skill but doesn't intend to publish). The distinction matters because the publish-time fork forces a confirmation modal; the heal-time unlink does not (the user already acted on the heal-pending state). In code: `forkSkill` composes `acceptDriftSeverUpstream` (the legacy-named implementation of **Unlink origin**) plus the new helpers.
 - **"Safekeeping" is rationale, not an operation.** It explains _why_ the (has **Origin**, no **Drift**) **Publish** sub-flow preserves the **Origin pointer** while the **Fork** sub-flow drops it. There is no `safekeepSkill` primitive — the operation is **Publish**; "safekeeping" is the name for one of the three trigger conditions. If a future surface wants to action "safekeep this skill" directly (e.g. a sidebar shortcut), it routes to **Publish** with the unedited-vendored precondition; it does not create a new verb.
 - **"Registry export" is overloaded between the deprecated content-bearing export and the new metadata-only manifest flow.** The legacy `exportRegistry` produced a content `.zip`; it is `@deprecated` post-v1.1 and slated for removal one minor cycle later. The post-v1.1 canonical concept is **Registry manifest** (the artifact) and **Manifest export** / **Manifest import** (the operations). When prose says "export the registry," it now means producing a **Registry manifest** unless explicitly qualified as "content-bearing export." Per-skill `exportSkill` / `getExportInfo` remain unchanged — different surface, different purpose.
-- **`push` is overloaded in the codebase.** `publishSkillFolder` (in `publish-push.ts`) = the 6-step git branch+PR flow, the implementation of **Publish**. Future single-file writes to the **Linked repo** use `writeRepoFile` (Contents API PUT). Never use "push" to mean "write a file to GitHub" — that obscures the distinction between a PR-based publish and a direct file commit.
 - **"Registry snapshot" must not be used loosely.** Two distinct artifacts get conflated under that name: the **Registry manifest** (a single portable JSON file representing registry state at a point in time) and the **userData auto-snapshot** (a rotating series of manifests written automatically to userData on every registry change). Use the precise term for the artifact you mean. Note: an earlier post-v1.0 plan proposed a third artifact — a per-skill content cache called `bankSnapshot` — but that concept was retired during the Phase 1 grilling pass; the bank's rot-survival story relies on registry files persisting on disk plus the **Publish** safekeeping sub-flow, not a separate cache.
 
 ## Implications for the picker copy (v0.11.2 redesign)

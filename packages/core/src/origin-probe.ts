@@ -3,7 +3,7 @@ import path from "node:path";
 import type { RateLimitInfo } from "./github-http.js";
 import {
   folderPathFromSkillPath,
-  probeOriginTree,
+  fetchOriginTree,
   type GitTreeEntry,
 } from "./origin.js";
 import { buildRegistryIndex } from "./build.js";
@@ -313,7 +313,7 @@ export function createOriginProbeRunner(
       let cache = repoProbeCache.get(repo);
       const now = Date.now();
       if (!cache || now - cache.fetchedAt > ttl) {
-        const res = await probeOriginTree(repo, token);
+        const res = await fetchOriginTree(repo, token);
         if (!res.ok) {
           console.warn(
             `upstream probe: ${repo} failed (${res.status}): ${res.message}`,

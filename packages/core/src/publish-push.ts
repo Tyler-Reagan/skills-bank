@@ -84,7 +84,7 @@ export interface PushSkillFolderOptions {
   prMeta?: PushPrMeta;
 }
 
-export async function publishSkillFolder(
+export async function pushSkillFolder(
   opts: PushSkillFolderOptions,
 ): Promise<PushSkillFolderResult> {
   const fsMod = await import("node:fs");

@@ -3,7 +3,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import { hashSkillFolder } from "./heal.js";
 import { walkSkills } from "./registry.js";
-import { findFolderHash, probeOriginTree } from "./origin.js";
+import { findFolderHash, fetchOriginTree } from "./origin.js";
 import type { RateLimitInfo } from "./github-http.js";
 import type { PublishState } from "./types.js";
 
@@ -16,7 +16,7 @@ import type { PublishState } from "./types.js";
  *     against the registry's working tree. Used in dev / CI / the
  *     maintainer's local clone.
  *   - Remote-API mode (`computePublishStatesFromRemote`): probes
- *     the linked repo's recursive tree via `probeOriginTree` and
+ *     the linked repo's recursive tree via `fetchOriginTree` and
  *     compares per-skill folder hashes locally. Used by the
  *     packaged Electron app where `git` isn't on PATH.
  *
@@ -140,7 +140,7 @@ export async function computePublishStatesFromRemote(
     return { states: new Map() };
   }
 
-  const probe = await probeOriginTree(opts.repo, opts.token, {
+  const probe = await fetchOriginTree(opts.repo, opts.token, {
     ref: baseBranch,
   });
   if (!probe.ok) {

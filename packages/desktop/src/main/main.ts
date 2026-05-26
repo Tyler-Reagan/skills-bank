@@ -44,7 +44,7 @@ import {
   detectPublishStateMode,
   findSkillFolder,
   forkSkill,
-  publishSkillFolder,
+  pushSkillFolder,
   type PublishState,
   type PublishStateMode,
   fetchCanonicalTarball,
@@ -74,7 +74,7 @@ import {
   findFolderHash,
   mirrorSkillFolder,
   folderPathFromSkillPath,
-  probeOriginTree,
+  fetchOriginTree,
   resolveRegistryRoot,
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
@@ -743,7 +743,7 @@ async function setManualUpstream(
   // Validate against GitHub: probe the folder. Anything other than
   // an ok response is treated as "couldn't verify" and rejected.
   const folder = folderPathFromSkillPath(choice.skillPath);
-  const probe = await probeOriginTree(choice.repo, getStoredToken());
+  const probe = await fetchOriginTree(choice.repo, getStoredToken());
   if (!probe.ok) {
     return {
       ok: false,
@@ -3451,7 +3451,7 @@ mutatingHandle(
     }
 
     const prMeta = options.prMeta ?? flow.defaultPrMeta;
-    const push = await publishSkillFolder({
+    const push = await pushSkillFolder({
       repo: linkedRepo.fullName,
       sourceDir,
       targetPath: flow.targetPath,
