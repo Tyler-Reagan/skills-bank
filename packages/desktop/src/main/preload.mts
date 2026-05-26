@@ -91,6 +91,12 @@ const api = {
   exportManifest: () => ipcRenderer.invoke(IPC.exportManifest),
   importManifest: () => ipcRenderer.invoke(IPC.importManifest),
   importManifestCancel: () => ipcRenderer.invoke(IPC.importManifestCancel),
+  previewManifestPush: () => ipcRenderer.invoke(IPC.previewManifestPush),
+  pushManifestToRepo: (opts: { asPR: boolean }) =>
+    ipcRenderer.invoke(IPC.pushManifestToRepo, opts),
+  readManifestFromRepo: () => ipcRenderer.invoke(IPC.readManifestFromRepo),
+  runManifestImport: (manifest: unknown) =>
+    ipcRenderer.invoke(IPC.runManifestImport, manifest),
   installFromManifestHint: (payload: unknown) =>
     ipcRenderer.invoke(IPC.installFromManifestHint, payload),
   installSkillFromGithub: (url: string) =>

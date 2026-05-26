@@ -55,6 +55,7 @@ import { InstallFromGithubModal } from "./components/InstallFromGithubModal.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
 import { AccountModal } from "./components/AccountModal.js";
 import { ManifestImportConfirmModal } from "./components/ManifestImportConfirmModal.js";
+import { ManifestModal } from "./components/ManifestModal.js";
 import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
@@ -925,10 +926,13 @@ function AppContent(): React.ReactElement {
   >(null);
   // Tier 1 v2: tracks whether the manifest-import IPC is in flight,
   // gating the AccountModal button matrix (busy state for Import
-  // manifest, disable for corruption-risking siblings, reveal of the
-  // Cancel import button). Cleared in the `finally` so an aborted or
-  // failed import returns the UI to its idle state.
+  // manifest, disable for corruption-risking siblings). Cleared in the
+  // `finally` so an aborted or failed import returns the UI to idle.
   const [importingManifest, setImportingManifest] = useState(false);
+
+  const [showManifestModal, setShowManifestModal] = useState<
+    false | "import" | "export"
+  >(false);
 
   // Tier 2 per-skill progress. Tracks the currently-in-flight manifest
   // import's progress so the ImportIndicator chip can render `N/total`
@@ -1900,15 +1904,14 @@ function AppContent(): React.ReactElement {
             setShowAccount(false);
             await exportRegistry();
           }}
-          onImportManifest={async () => {
-            await importManifest();
+          onOpenImportManifest={() => {
             setShowAccount(false);
+            setShowManifestModal("import");
           }}
           importingManifest={importingManifest}
-          onCancelImport={cancelManifestImport}
-          onExportManifest={async () => {
+          onOpenExportManifest={() => {
             setShowAccount(false);
-            await exportManifest();
+            setShowManifestModal("export");
           }}
           onSignOut={async () => {
             setShowAccount(false);
@@ -1929,6 +1932,40 @@ function AppContent(): React.ReactElement {
           onDone={(msg) => {
             setManifestImportHints(null);
             if (msg) flash(msg);
+          }}
+        />
+      )}
+
+      {showManifestModal !== false && (
+        <ManifestModal
+          mode={showManifestModal}
+          linkedRepo={authStatus?.linkedRepo ?? null}
+          appVersion="dev"
+          importingManifest={importingManifest}
+          onCancelImport={cancelManifestImport}
+          onClose={() => setShowManifestModal(false)}
+          onImportComplete={(result) => {
+            setShowManifestModal(false);
+            const registered = result.outcomes.filter(
+              (o) => o.result === "registered",
+            ).length;
+            if (result.cancelled) {
+              flash(
+                `Import cancelled. Restored ${registered} skill${registered === 1 ? "" : "s"}.`,
+              );
+            } else {
+              flash(
+                `Restored ${registered} skill${registered === 1 ? "" : "s"} from manifest`,
+              );
+            }
+            void refresh();
+            if (result.installHints.length > 0) {
+              setManifestImportHints(result);
+            }
+          }}
+          onExportComplete={(msg) => {
+            setShowManifestModal(false);
+            flash(msg);
           }}
         />
       )}

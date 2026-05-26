@@ -53,6 +53,7 @@ export interface ManifestOrigin {
 
 export interface ManifestSkill {
   name: string;
+  description?: string;
   source: SkillOrigin;
   /**
    * On-disk bucket the skill lives in (`skills/<bucket>/<name>/`).
@@ -113,6 +114,7 @@ export function exportRegistryManifest(
     const hidden = entry.hidden === true;
     return {
       name: entry.name,
+      ...(entry.description ? { description: entry.description } : {}),
       source: entry.source.source,
       bucket: entry.bucket ?? "personal",
       origin: originFromPointer(entry.source.origin),

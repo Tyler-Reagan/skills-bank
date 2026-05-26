@@ -24,29 +24,20 @@ interface Props {
   onMergeRegistry: () => void | Promise<void>;
   onExportRegistry: () => void | Promise<void>;
   /**
-   * Manifest-shaped moves. Pointer-only — origin pointers per skill,
-   * not content. Importing re-fetches each skill from its origin.
-   * Merged into the Account surface (was split across Settings pre-
-   * v1.6) so registry ops have one home and the seam is clear:
-   * Account = "move my registry / sign in", Settings = "app
-   * preferences."
+   * Manifest-shaped moves. Open the ManifestModal for the appropriate
+   * mode — the modal owns the full transport flow (repo or disk).
    */
-  onImportManifest: () => void | Promise<void>;
-  onExportManifest: () => void | Promise<void>;
+  onOpenImportManifest: () => void;
+  onOpenExportManifest: () => void;
   onSignOut: () => void | Promise<void>;
   onCheckForUpdates: () => void | Promise<void>;
   onConnectGithub: () => void;
   /**
-   * Tier 1 v2 manifest-import affordance. When `true`:
-   *   - Import manifest swaps to a busy state + disables.
-   *   - Cancel import becomes visible next to Import manifest.
-   *   - Corruption-risking siblings (Import folder, Refresh from
-   *     repo, Merge registry, Sign out, repo affordances) disable.
-   *   - Read-only siblings (Export folder, Export manifest, Check
-   *     for updates) stay enabled.
+   * Tier 1 v2 manifest-import affordance. When `true`, corruption-
+   * risking siblings disable. The cancel button lives inside
+   * ManifestModal now.
    */
   importingManifest: boolean;
-  onCancelImport: () => void;
 }
 
 export function AccountModal({
@@ -58,13 +49,12 @@ export function AccountModal({
   onImportRegistry,
   onMergeRegistry,
   onExportRegistry,
-  onImportManifest,
-  onExportManifest,
+  onOpenImportManifest,
+  onOpenExportManifest,
   onSignOut,
   onCheckForUpdates,
   onConnectGithub,
   importingManifest,
-  onCancelImport,
 }: Props): React.ReactElement {
   const user = authStatus?.user ?? null;
   const linkedRepo = authStatus?.linkedRepo ?? null;
@@ -236,7 +226,7 @@ export function AccountModal({
           <button
             className="btn"
             type="button"
-            onClick={() => void onImportManifest()}
+            onClick={onOpenImportManifest}
             disabled={importingManifest}
           >
             {importingManifest ? (
@@ -247,16 +237,7 @@ export function AccountModal({
               "Import manifest"
             )}
           </button>
-          {importingManifest && (
-            <button className="btn" type="button" onClick={onCancelImport}>
-              Cancel import
-            </button>
-          )}
-          <button
-            className="btn"
-            type="button"
-            onClick={() => void onExportManifest()}
-          >
+          <button className="btn" type="button" onClick={onOpenExportManifest}>
             Export manifest
           </button>
         </div>

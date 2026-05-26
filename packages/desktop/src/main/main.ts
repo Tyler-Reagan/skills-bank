@@ -75,6 +75,12 @@ import {
   mirrorSkillFolder,
   folderPathFromSkillPath,
   fetchOriginTree,
+  readRepoFile,
+  writeRepoFile,
+  writeRepoFileAsBranch,
+  diffManifests,
+  GH_API,
+  ghFetch as coreGhFetch,
   resolveRegistryRoot,
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
@@ -117,6 +123,10 @@ import {
   type OriginRepoMetadata,
   type PublishSkillOptions,
   type PublishSkillResult,
+  type PreviewManifestPushResult,
+  type PushManifestToRepoResult,
+  type ReadManifestFromRepoResult,
+  type RunManifestImportResult,
   type UserRepo,
 } from "../shared/ipc.js";
 import {
@@ -2002,7 +2012,13 @@ ipcMain.handle(IPC.exportRegistry, async () => {
   }
 });
 
-ipcMain.handle(IPC.exportManifest, async () => {
+async function writeManifestToDisk(): Promise<{
+  ok: boolean;
+  message: string;
+  skillCount?: number;
+  destPath?: string;
+  error?: ReturnType<typeof fromCaught>;
+}> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     const win = BrowserWindow.getFocusedWindow();
@@ -2031,9 +2047,16 @@ ipcMain.handle(IPC.exportManifest, async () => {
     const error = fromCaught("ipc.unknown", err);
     return { ok: false, message: error.message, error };
   }
-});
+}
 
-ipcMain.handle(IPC.importManifest, async () => {
+async function readManifestFromDisk(): Promise<
+  | { ok: false; message: string; error?: ReturnType<typeof fromCaught> }
+  | {
+      ok: true;
+      message: string;
+      result: Awaited<ReturnType<typeof importRegistryManifest>>;
+    }
+> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
     const win = BrowserWindow.getFocusedWindow();
@@ -2059,71 +2082,332 @@ ipcMain.handle(IPC.importManifest, async () => {
         error,
       };
     }
-    // Accept v2 and v3 (coerced by importRegistryManifest). v1 is no
-    // longer readable per MANIFEST_OLDEST_READABLE_VERSION. Newer
-    // schemaVersions are refused so a future-incompatible manifest
-    // doesn't silently mismap fields. Cast through unknown to inspect
-    // what was actually on disk.
-    const sv = (manifest as unknown as { schemaVersion: unknown })
-      .schemaVersion;
-    if (sv !== 2 && sv !== 3) {
-      return {
-        ok: false,
-        message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v2 and v3.`,
-      };
-    }
-    const controller = new AbortController();
-    inFlightImportAbort = controller;
-    let importResult;
-    try {
-      importResult = await importRegistryManifest(registryRoot, manifest, {
-        token: getStoredToken(),
-        signal: controller.signal,
-        onProgress: (event) => {
-          for (const win of BrowserWindow.getAllWindows()) {
-            if (!win.isDestroyed())
-              win.webContents.send(IPC.manifestImportProgress, event);
-          }
-        },
-      });
-    } finally {
-      inFlightImportAbort = null;
-    }
-    // Rebuild the index so the renderer's next listRegistry shows
-    // freshly registered skills without a manual refresh.
-    buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
-    snapshotAfterMutation();
-    const registered = importResult.outcomes.filter(
-      (o) => o.result === "registered",
-    ).length;
-    const collisions = importResult.outcomes.filter(
-      (o) => o.result === "collision",
-    ).length;
-    const unreachable = importResult.outcomes.filter(
-      (o) => o.result === "origin-unreachable",
-    ).length;
-    const parts = [`${registered} restored`];
-    if (collisions > 0)
-      parts.push(`${collisions} collision${collisions === 1 ? "" : "s"}`);
-    if (unreachable > 0)
-      parts.push(
-        `${unreachable} unreachable origin${unreachable === 1 ? "" : "s"}`,
-      );
-    return {
-      ok: true,
-      message: parts.join(", "),
-      result: importResult,
-    };
+    return runManifestImportCore(manifest);
   } catch (err) {
     const error = fromCaught("ipc.unknown", err);
     return { ok: false, message: error.message, error };
   }
-});
+}
+
+async function runManifestImportCore(
+  manifest: RegistryManifest,
+): Promise<
+  | { ok: false; message: string; error?: ReturnType<typeof fromCaught> }
+  | {
+      ok: true;
+      message: string;
+      result: Awaited<ReturnType<typeof importRegistryManifest>>;
+    }
+> {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  // Accept v2 and v3 (coerced by importRegistryManifest). v1 is no
+  // longer readable per MANIFEST_OLDEST_READABLE_VERSION. Newer
+  // schemaVersions are refused so a future-incompatible manifest
+  // doesn't silently mismap fields.
+  const sv = (manifest as unknown as { schemaVersion: unknown }).schemaVersion;
+  if (sv !== 2 && sv !== 3) {
+    return {
+      ok: false,
+      message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v2 and v3.`,
+    };
+  }
+  const controller = new AbortController();
+  inFlightImportAbort = controller;
+  let importResult;
+  try {
+    importResult = await importRegistryManifest(registryRoot, manifest, {
+      token: getStoredToken(),
+      signal: controller.signal,
+      onProgress: (event) => {
+        for (const win of BrowserWindow.getAllWindows()) {
+          if (!win.isDestroyed())
+            win.webContents.send(IPC.manifestImportProgress, event);
+        }
+      },
+    });
+  } finally {
+    inFlightImportAbort = null;
+  }
+  buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
+  snapshotAfterMutation();
+  const registered = importResult.outcomes.filter(
+    (o) => o.result === "registered",
+  ).length;
+  const collisions = importResult.outcomes.filter(
+    (o) => o.result === "collision",
+  ).length;
+  const unreachable = importResult.outcomes.filter(
+    (o) => o.result === "origin-unreachable",
+  ).length;
+  const parts = [`${registered} restored`];
+  if (collisions > 0)
+    parts.push(`${collisions} collision${collisions === 1 ? "" : "s"}`);
+  if (unreachable > 0)
+    parts.push(
+      `${unreachable} unreachable origin${unreachable === 1 ? "" : "s"}`,
+    );
+  return { ok: true, message: parts.join(", "), result: importResult };
+}
+
+ipcMain.handle(IPC.exportManifest, writeManifestToDisk);
+ipcMain.handle(IPC.importManifest, readManifestFromDisk);
 
 ipcMain.handle(IPC.importManifestCancel, () => {
   inFlightImportAbort?.abort();
   return { ok: true };
 });
+
+ipcMain.handle(
+  IPC.previewManifestPush,
+  async (): Promise<PreviewManifestPushResult> => {
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    if (!linkedRepo) return { ok: false, message: "no linked repo" };
+    const token = getStoredToken();
+    if (!token) return { ok: false, message: "not authenticated" };
+    const branch = linkedRepo.defaultBranch ?? "main";
+    const sourceBankVersion = app.getVersion();
+    const localManifest = exportRegistryManifest(registryRoot, {
+      sourceBankVersion,
+      registryRootLabel: linkedRepo.fullName,
+    });
+    const remoteRes = await readRepoFile({
+      repo: linkedRepo.fullName,
+      path: "registry-manifest.json",
+      ref: branch,
+      token,
+    });
+    let remoteManifest: import("@skills-bank/core").RegistryManifest;
+    if (!remoteRes.ok) {
+      if (remoteRes.status === 404) {
+        remoteManifest = {
+          schemaVersion: MANIFEST_SCHEMA_VERSION,
+          exportedAt: "",
+          sourceBankVersion: "",
+          skills: [],
+        };
+      } else {
+        return {
+          ok: false,
+          message: remoteRes.message,
+          rateLimit: remoteRes.rateLimit,
+        };
+      }
+    } else {
+      try {
+        remoteManifest = JSON.parse(remoteRes.content) as typeof remoteManifest;
+      } catch {
+        remoteManifest = {
+          schemaVersion: MANIFEST_SCHEMA_VERSION,
+          exportedAt: "",
+          sourceBankVersion: "",
+          skills: [],
+        };
+      }
+    }
+    const diff = diffManifests(localManifest, remoteManifest);
+    return {
+      ok: true,
+      diff,
+      skillCount: localManifest.skills.length,
+      repo: linkedRepo.fullName,
+      branch,
+    };
+  },
+);
+
+ipcMain.handle(
+  IPC.pushManifestToRepo,
+  async (_e, opts: { asPR: boolean }): Promise<PushManifestToRepoResult> => {
+    if (!registryRoot)
+      return { ok: false, reason: "write-failed", message: NO_ROOT_MSG };
+    if (!linkedRepo)
+      return { ok: false, reason: "write-failed", message: "no linked repo" };
+    const token = getStoredToken();
+    if (!token)
+      return {
+        ok: false,
+        reason: "write-failed",
+        message: "not authenticated",
+      };
+    const branch = linkedRepo.defaultBranch ?? "main";
+    const sourceBankVersion = app.getVersion();
+    const manifest = exportRegistryManifest(registryRoot, {
+      sourceBankVersion,
+      registryRootLabel: linkedRepo.fullName,
+    });
+    const content = JSON.stringify(manifest, null, 2) + "\n";
+    const commitMessage = "chore: update registry manifest";
+
+    if (!opts.asPR) {
+      const res = await writeRepoFile({
+        repo: linkedRepo.fullName,
+        path: "registry-manifest.json",
+        content,
+        message: commitMessage,
+        branch,
+        token,
+      });
+      if (!res.ok) {
+        if (res.rateLimit)
+          return {
+            ok: false,
+            reason: "rate-limit",
+            message: res.message,
+            rateLimit: res.rateLimit,
+          };
+        return { ok: false, reason: "write-failed", message: res.message };
+      }
+      return {
+        ok: true,
+        commitSha: res.commitSha,
+        htmlUrl: res.htmlUrl,
+        skillCount: manifest.skills.length,
+      };
+    }
+
+    // PR path — check for an open PR on the stable manifest branch first.
+    const prBranch = "manifest/registry-manifest";
+    const ownerSegment = linkedRepo.fullName.split("/")[0];
+    const prsRes = await coreGhFetch<{ number: number; html_url: string }[]>(
+      `${GH_API}/repos/${linkedRepo.fullName}/pulls?head=${ownerSegment}:${prBranch}&state=open`,
+      { method: "GET" },
+      token,
+    );
+    if (!prsRes.ok) {
+      if (prsRes.rateLimit)
+        return {
+          ok: false,
+          reason: "rate-limit",
+          message: prsRes.message,
+          rateLimit: prsRes.rateLimit,
+        };
+      return { ok: false, reason: "write-failed", message: prsRes.message };
+    }
+    const existingPr = prsRes.body[0] ?? null;
+
+    const writeRes = await writeRepoFileAsBranch({
+      repo: linkedRepo.fullName,
+      path: "registry-manifest.json",
+      content,
+      message: commitMessage,
+      branch: prBranch,
+      baseBranch: branch,
+      token,
+    });
+    if (!writeRes.ok) {
+      if (writeRes.rateLimit)
+        return {
+          ok: false,
+          reason: "rate-limit",
+          message: writeRes.message,
+          rateLimit: writeRes.rateLimit,
+        };
+      return { ok: false, reason: "write-failed", message: writeRes.message };
+    }
+
+    if (existingPr) {
+      return {
+        ok: true,
+        commitSha: writeRes.commitSha,
+        htmlUrl: existingPr.html_url,
+        prNumber: existingPr.number,
+        skillCount: manifest.skills.length,
+      };
+    }
+
+    // No open PR — create one.
+    const diff = diffManifests(manifest, {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "",
+      sourceBankVersion: "",
+      skills: [],
+    });
+    const prBody = `+${diff.added.length} added, ${diff.removed.length} removed, ${diff.changed.length} changed`;
+    const prRes = await coreGhFetch<{ html_url: string; number: number }>(
+      `${GH_API}/repos/${linkedRepo.fullName}/pulls`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          title: commitMessage,
+          body: prBody,
+          head: prBranch,
+          base: branch,
+        }),
+        headers: { "Content-Type": "application/json" },
+      },
+      token,
+    );
+    if (!prRes.ok) {
+      if (prRes.rateLimit)
+        return {
+          ok: false,
+          reason: "rate-limit",
+          message: prRes.message,
+          rateLimit: prRes.rateLimit,
+        };
+      return { ok: false, reason: "write-failed", message: prRes.message };
+    }
+    return {
+      ok: true,
+      commitSha: writeRes.commitSha,
+      htmlUrl: prRes.body.html_url,
+      prNumber: prRes.body.number,
+      skillCount: manifest.skills.length,
+    };
+  },
+);
+
+ipcMain.handle(
+  IPC.readManifestFromRepo,
+  async (): Promise<ReadManifestFromRepoResult> => {
+    if (!registryRoot)
+      return { ok: false, reason: "read-failed", message: NO_ROOT_MSG };
+    if (!linkedRepo)
+      return { ok: false, reason: "read-failed", message: "no linked repo" };
+    const token = getStoredToken();
+    if (!token)
+      return { ok: false, reason: "read-failed", message: "not authenticated" };
+    const branch = linkedRepo.defaultBranch ?? "main";
+    const res = await readRepoFile({
+      repo: linkedRepo.fullName,
+      path: "registry-manifest.json",
+      ref: branch,
+      token,
+    });
+    if (!res.ok) {
+      if (res.status === 404) return { ok: false, reason: "not-found" };
+      if (res.rateLimit)
+        return {
+          ok: false,
+          reason: "rate-limit",
+          message: res.message,
+          rateLimit: res.rateLimit,
+        };
+      return { ok: false, reason: "read-failed", message: res.message };
+    }
+    let remoteManifest: RegistryManifest;
+    try {
+      remoteManifest = JSON.parse(res.content) as RegistryManifest;
+    } catch (e) {
+      return { ok: false, reason: "parse-failed", message: String(e) };
+    }
+    const sourceBankVersion = app.getVersion();
+    const localManifest = exportRegistryManifest(registryRoot, {
+      sourceBankVersion,
+      registryRootLabel: linkedRepo.fullName,
+    });
+    const diff = diffManifests(remoteManifest, localManifest);
+    return { ok: true, manifest: remoteManifest, diff };
+  },
+);
+
+ipcMain.handle(
+  IPC.runManifestImport,
+  async (_e, manifest: RegistryManifest): Promise<RunManifestImportResult> => {
+    const result = await runManifestImportCore(manifest);
+    return result;
+  },
+);
 
 // Tier-3 retry: re-mirror a single skill that errored during a prior
 // import. Wraps the entry in a one-skill manifest so it reuses the
@@ -3017,10 +3301,25 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
       });
       // v0.11.9 M8: linkage commit step extracted so other paths
       // (re-link, restore from session) can reuse it.
+      // Fetch the repo's default branch so push/read operations can
+      // target the correct base without hardcoding "main".
+      let fetchedDefaultBranch: string | undefined;
+      try {
+        const repoMetaRes = await coreGhFetch<{ default_branch: string }>(
+          `${GH_API}/repos/${fullName}`,
+          { method: "GET" },
+          token,
+        );
+        if (repoMetaRes.ok)
+          fetchedDefaultBranch = repoMetaRes.body.default_branch;
+      } catch {
+        // Non-fatal — defaultBranch stays undefined; handlers fall back to "main".
+      }
       commitGithubLinkage({
         fullName,
         lastFetchedAt: report.syncedAt,
         syncedFromCommit: fetched.commitSha,
+        defaultBranch: fetchedDefaultBranch,
       });
       const message =
         report.conflicts.length > 0

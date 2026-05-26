@@ -14,6 +14,7 @@ import type {
   InstallFromGithubResult,
   ImportSkillOutcome,
   InstalledSkill,
+  ManifestDiff,
   ManifestImportProgressEvent,
   ManifestSkill,
   MergeImportReport,
@@ -97,6 +98,10 @@ export const IPC = {
   importManifest: "bank:importManifest",
   importManifestCancel: "bank:importManifestCancel",
   manifestImportProgress: "bank:manifestImportProgress",
+  previewManifestPush: "bank:previewManifestPush",
+  pushManifestToRepo: "bank:pushManifestToRepo",
+  readManifestFromRepo: "bank:readManifestFromRepo",
+  runManifestImport: "bank:runManifestImport",
   manifestImportRetrySkill: "bank:manifestImportRetrySkill",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
@@ -536,6 +541,47 @@ export type PublishSkillResult =
       message: string;
     };
 
+export type PreviewManifestPushResult =
+  | {
+      ok: true;
+      diff: ManifestDiff;
+      skillCount: number;
+      repo: string;
+      branch: string;
+    }
+  | { ok: false; message: string; rateLimit?: RateLimitInfo };
+
+export type PushManifestToRepoResult =
+  | {
+      ok: true;
+      commitSha: string;
+      htmlUrl: string;
+      prNumber?: number;
+      skillCount: number;
+    }
+  | {
+      ok: false;
+      reason: "rate-limit";
+      message: string;
+      rateLimit: RateLimitInfo;
+    }
+  | { ok: false; reason: "write-failed"; message: string };
+
+export type ReadManifestFromRepoResult =
+  | { ok: true; manifest: RegistryManifest; diff: ManifestDiff }
+  | { ok: false; reason: "not-found" }
+  | {
+      ok: false;
+      reason: "rate-limit";
+      message: string;
+      rateLimit: RateLimitInfo;
+    }
+  | { ok: false; reason: "read-failed" | "parse-failed"; message: string };
+
+export type RunManifestImportResult =
+  | { ok: true; message: string; result: ImportRegistryManifestResult }
+  | { ok: false; message: string };
+
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
   /**
@@ -770,6 +816,18 @@ interface SkillsBankAPI {
    * skills stay on disk. No-op when no import is running.
    */
   importManifestCancel(): Promise<{ ok: boolean }>;
+  /** Preview what a push would change in the linked repo's manifest. */
+  previewManifestPush(): Promise<PreviewManifestPushResult>;
+  /** Push the local manifest to the linked repo (direct commit or PR). */
+  pushManifestToRepo(opts: {
+    asPR: boolean;
+  }): Promise<PushManifestToRepoResult>;
+  /** Read the manifest from the linked repo and diff it against local. */
+  readManifestFromRepo(): Promise<ReadManifestFromRepoResult>;
+  /** Run a manifest import from a caller-supplied manifest object. */
+  runManifestImport(
+    manifest: RegistryManifest,
+  ): Promise<RunManifestImportResult>;
   /**
    * Apply a manifest's install hints — one user-confirmed batch.
    * Calls the existing install path for each `{ name, agents }`
