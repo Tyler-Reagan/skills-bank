@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { mirrorSkillFolder } from "./upstream.js";
+import { mirrorSkillFolder } from "./origin.js";
 
 /**
  * Pins the "no partial mutation" contract for `mirrorSkillFolder`

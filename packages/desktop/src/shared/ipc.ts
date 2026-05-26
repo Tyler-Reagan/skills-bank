@@ -135,19 +135,6 @@ export const IPC = {
   originRepoMetadata: "origin:repoMetadata",
   originLastCommit: "origin:lastCommit",
   originSetManual: "origin:setManual",
-  // v0.11.10 deprecation aliases — same wire strings as the new keys
-  // above, so a renderer that hasn't been updated still reaches the
-  // same main handlers. Drop in v0.12.0.
-  /** @deprecated use IPC.originProbe */
-  upstreamProbe: "origin:probe",
-  /** @deprecated use IPC.originUpdate */
-  upstreamUpdate: "origin:update",
-  /** @deprecated use IPC.originRepoMetadata */
-  upstreamRepoMetadata: "origin:repoMetadata",
-  /** @deprecated use IPC.originLastCommit */
-  upstreamLastCommit: "origin:lastCommit",
-  /** @deprecated use IPC.originSetManual */
-  upstreamSetManual: "origin:setManual",
 } as const;
 
 /**
@@ -342,6 +329,8 @@ export interface LinkedRepoMetadata {
   fullName: string;
   lastFetchedAt: string;
   syncedFromCommit: string;
+  /** Populated from /repos API when available; absent in legacy persisted configs. */
+  defaultBranch?: string;
 }
 
 export interface AuthStatus {

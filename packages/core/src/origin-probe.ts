@@ -1,18 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { RateLimitInfo } from "./github-http.js";
 import {
   folderPathFromSkillPath,
   probeOriginTree,
   type GitTreeEntry,
-  type RateLimitInfo,
-} from "./upstream.js";
+} from "./origin.js";
 import { buildRegistryIndex } from "./build.js";
 import { readRuntimeState, writeRuntimeState } from "./heal.js";
 import { getStateDir } from "./paths.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
 
 /**
- * The upstream-probe scheduler. Lifted from
+ * The origin probe scheduler. Lifted from
  * `packages/desktop/src/main/main.ts` in v0.11.9 M2 so the CLI and
  * future test surfaces can drive a probe without an Electron host.
  *
@@ -174,7 +174,7 @@ function persistCache(
  * isn't meaningful, and skipping the disk write after saturation
  * avoids churning the runtime sidecar on every probe pass.
  *
- * Exported for the dedicated test suite (`upstream-probe.test.ts`);
+ * Exported for the dedicated test suite (`origin-probe.test.ts`);
  * production callers are inside this module's probe loop.
  */
 export function recordProbeFailure(
@@ -202,7 +202,7 @@ export function recordProbeFailure(
  * successful per-skill probe. No-op when the counter is already
  * zero — avoid unnecessary sidecar writes.
  *
- * Exported for the dedicated test suite (`upstream-probe.test.ts`).
+ * Exported for the dedicated test suite (`origin-probe.test.ts`).
  */
 export function recordProbeSuccess(
   registryRoot: string,

@@ -3,11 +3,8 @@ import path from "node:path";
 import { writeSyncedHash } from "./heal.js";
 import { findSkillFolder, readSkillMeta } from "./registry.js";
 import { writeSkillSource, type OriginPointer } from "./source.js";
-import {
-  folderPathFromSkillPath,
-  mirrorSkillFolder,
-  type RateLimitInfo,
-} from "./upstream.js";
+import type { RateLimitInfo } from "./github-http.js";
+import { folderPathFromSkillPath, mirrorSkillFolder } from "./origin.js";
 
 /**
  * Phase 4 (v1.5): one-shot install of a single skill from a GitHub

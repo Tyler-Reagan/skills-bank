@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { pushSkillFolder } from "./upstream.js";
+import { publishSkillFolder } from "./publish-push.js";
 
 /**
- * Suite 7 per ADR-0007 — pushSkillFolder invariants. Each test
+ * Suite 7 per ADR-0007 — publishSkillFolder invariants. Each test
  * stubs `fetch` to drive a specific failure mode through the 6-step
  * sequence, then asserts the resulting reason / step / branchUrl
  * shape.
@@ -62,7 +62,7 @@ function rateLimitResponse(): Response {
   });
 }
 
-describe("pushSkillFolder (Suite 7)", () => {
+describe("publishSkillFolder (Suite 7)", () => {
   test("happy path: new branch + new PR", async () => {
     let n = 0;
     vi.stubGlobal(
@@ -95,7 +95,7 @@ describe("pushSkillFolder (Suite 7)", () => {
       }),
     );
 
-    const r = await pushSkillFolder({
+    const r = await publishSkillFolder({
       repo: "u/r",
       sourceDir,
       targetPath: "skills/personal/alpha",
@@ -137,7 +137,7 @@ describe("pushSkillFolder (Suite 7)", () => {
       }),
     );
 
-    const r = await pushSkillFolder({
+    const r = await publishSkillFolder({
       repo: "u/r",
       sourceDir,
       targetPath: "skills/personal/alpha",
@@ -174,7 +174,7 @@ describe("pushSkillFolder (Suite 7)", () => {
       }),
     );
 
-    const r = await pushSkillFolder({
+    const r = await publishSkillFolder({
       repo: "u/r",
       sourceDir,
       targetPath: "skills/personal/alpha",
@@ -201,7 +201,7 @@ describe("pushSkillFolder (Suite 7)", () => {
       }),
     );
 
-    const r = await pushSkillFolder({
+    const r = await publishSkillFolder({
       repo: "u/r",
       sourceDir,
       targetPath: "skills/personal/alpha",
@@ -233,7 +233,7 @@ describe("pushSkillFolder (Suite 7)", () => {
       }),
     );
 
-    const r = await pushSkillFolder({
+    const r = await publishSkillFolder({
       repo: "u/r",
       sourceDir,
       targetPath: "skills/personal/alpha",
@@ -266,7 +266,7 @@ describe("pushSkillFolder (Suite 7)", () => {
       }),
     );
 
-    const r = await pushSkillFolder({
+    const r = await publishSkillFolder({
       repo: "u/r",
       sourceDir,
       targetPath: "skills/personal/alpha",
@@ -293,7 +293,7 @@ describe("pushSkillFolder (Suite 7)", () => {
     });
     vi.stubGlobal("fetch", spy);
 
-    const r = await pushSkillFolder({
+    const r = await publishSkillFolder({
       repo: "u/r",
       sourceDir,
       targetPath: "skills/personal/alpha",
@@ -339,7 +339,7 @@ describe("pushSkillFolder (Suite 7)", () => {
     });
     vi.stubGlobal("fetch", spy);
 
-    const r = await pushSkillFolder({
+    const r = await publishSkillFolder({
       repo: "u/r",
       sourceDir,
       targetPath: "skills/personal/alpha",

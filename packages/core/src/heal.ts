@@ -224,11 +224,6 @@ export function unlinkOrigin(skillDir: string): void {
   }
 }
 
-/**
- * @deprecated v1.3 — renamed to `unlinkOrigin`. Removal targeted
- * for v1.4. Behavior identical.
- */
-export const acceptDriftSeverUpstream = unlinkOrigin;
 
 /**
  * Flip a skill's source axis from `curated` → `user`. Idempotent

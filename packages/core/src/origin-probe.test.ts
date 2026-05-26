@@ -7,7 +7,7 @@ import {
   recordProbeFailure,
   recordProbeSuccess,
   type ProbeCompleteEvent,
-} from "./upstream-probe.js";
+} from "./origin-probe.js";
 import { readRuntimeState } from "./heal.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
 

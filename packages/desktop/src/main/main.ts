@@ -44,7 +44,7 @@ import {
   detectPublishStateMode,
   findSkillFolder,
   forkSkill,
-  pushSkillFolder,
+  publishSkillFolder,
   type PublishState,
   type PublishStateMode,
   fetchCanonicalTarball,
@@ -3451,7 +3451,7 @@ mutatingHandle(
     }
 
     const prMeta = options.prMeta ?? flow.defaultPrMeta;
-    const push = await pushSkillFolder({
+    const push = await publishSkillFolder({
       repo: linkedRepo.fullName,
       sourceDir,
       targetPath: flow.targetPath,

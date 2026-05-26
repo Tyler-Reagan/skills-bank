@@ -11,7 +11,7 @@ import {
   type OriginPointer,
   type SkillOrigin,
 } from "./source.js";
-import { folderPathFromSkillPath, mirrorSkillFolder } from "./upstream.js";
+import { folderPathFromSkillPath, mirrorSkillFolder } from "./origin.js";
 
 /**
  * v1.1 Registry manifest (Phase 1 of the curation-layer-reset plan).

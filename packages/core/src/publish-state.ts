@@ -3,11 +3,8 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import { hashSkillFolder } from "./heal.js";
 import { walkSkills } from "./registry.js";
-import {
-  findFolderHash,
-  probeOriginTree,
-  type RateLimitInfo,
-} from "./upstream.js";
+import { findFolderHash, probeOriginTree } from "./origin.js";
+import type { RateLimitInfo } from "./github-http.js";
 import type { PublishState } from "./types.js";
 
 /**
@@ -97,12 +94,6 @@ export function computePublishStatesFromGit(
   return out;
 }
 
-/**
- * @deprecated v1.5 — renamed to `computePublishStatesFromGit` to
- * disambiguate from the new remote-API path. Removal targeted at
- * v1.6. Behavior identical.
- */
-export const computePublishStates = computePublishStatesFromGit;
 
 // ─── Remote-API mode ───────────────────────────────────────────────
 
