@@ -3,6 +3,23 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.12.0
+
+Manifest linked-repo transport: push and pull `registry-manifest.json` directly to and from your linked GitHub repo without leaving the app.
+
+### Added
+
+- **Manifest push/pull via GitHub repo.** Export manifest now offers a two-phase repo transport alongside the existing file dialog: preview shows a diff table (added / removed / changed / unchanged skill counts) against whatever is currently in the repo, then a single click commits `registry-manifest.json` directly to your linked repo's default branch. A "Open as pull request" toggle routes the write to a stable `manifest/registry-manifest` branch and opens (or appends to) a PR instead of a direct commit. The result phase shows the short commit SHA and a "View on GitHub" link.
+- **Manifest import from repo.** Import manifest shows the same diff-preview against your local registry before fetching. The "not found" state surfaces a friendly message when no manifest exists in the repo yet. Cancel and in-progress states use the same flow as the existing disk import.
+- **`ManifestModal`** replaces the raw dialog calls in `AccountModal`. Renders the appropriate transport automatically: repo transport when a linked repo is configured (default), with a "Use a file" toggle to fall back to the disk dialog. No linked repo → disk-only, no toggle shown.
+- **`github-files.ts` core primitives** (`readRepoFile`, `writeRepoFile`, `writeRepoFileAsBranch`) built on `ghFetch` — Contents API read/write without shelling out to git.
+- **`diffManifests`** (`manifest-diff.ts`) — pure diff of two `RegistryManifest` values by skill name, comparing source / origin / tags / hidden / dismissed axes.
+- **`defaultBranch` stored at link time** so push and read operations target the repo's actual default branch instead of hardcoding `"main"`.
+
+### Fixed
+
+- **`ManifestSkill.description` restored.** The v3 manifest schema was missing the `description` field that v1.5.1-exported manifests carried; exports now include it again. Import logic is unaffected (description is informational only).
+
 ## v1.11.2
 
 Internal-refactor release. Closes the four-MR component-redundancy housekeeping branch. No user-visible feature changes; one small visual convergence in the install-collision picker rows.
