@@ -46,7 +46,7 @@ export function ManifestModal({
             style={toggleBtn}
             onClick={() => setTransport("repo")}
           >
-            {mode === "export" ? "Push to" : "Read from"} repo
+            {mode === "export" ? "Push to" : "Read from"} linked GitHub repo
           </button>
           <button
             type="button"
@@ -54,7 +54,7 @@ export function ManifestModal({
             style={toggleBtn}
             onClick={() => setTransport("disk")}
           >
-            Use a file
+            Read from local file system
           </button>
         </div>
       )}
