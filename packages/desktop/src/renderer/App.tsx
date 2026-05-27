@@ -55,6 +55,7 @@ import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
 import { useModalRouter } from "./hooks/useModalRouter.js";
 import { useRescanController } from "./hooks/useRescanController.js";
+import { useSyncFeed } from "./hooks/useSyncFeed.js";
 import {
   RegistryHostProvider,
   useRegistryHost,
@@ -343,11 +344,14 @@ function AppContent(): React.ReactElement {
   >({ by: "name", direction: "asc" });
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
   const [bulkInstall, setBulkInstall] = useState<BulkInstallState | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>({ kind: "idle" });
-  const [pendingConflicts, setPendingConflicts] = useState(0);
-  const [conflictModalEntries, setConflictModalEntries] = useState<
-    ConflictEntry[] | null
-  >(null);
+  const {
+    syncStatus,
+    setSyncStatus,
+    pendingConflicts,
+    setPendingConflicts,
+    conflictModalEntries,
+    setConflictModalEntries,
+  } = useSyncFeed();
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
 
   // Overlay reconciliation: if a skill referenced by an open drawer or
@@ -767,35 +771,6 @@ function AppContent(): React.ReactElement {
         console.warn("[update] error:", status.message);
       }
     });
-  }, []);
-
-  // Sync status feed: drives the SyncBanner and the Header sync button.
-  // When a sync completes with conflicts, auto-open the resolver modal so
-  // the user doesn't have to chase the banner.
-  useEffect(() => {
-    if (!window.skillsBank.onSyncStatus) return;
-    return window.skillsBank.onSyncStatus((status) => {
-      setSyncStatus(status);
-      if (status.kind === "done") {
-        setPendingConflicts(status.conflicts);
-        if (status.conflicts > 0) {
-          void window.skillsBank.getPendingConflicts().then((pending) => {
-            if (pending && pending.conflicts.length > 0) {
-              setConflictModalEntries(pending.conflicts);
-            }
-          });
-        }
-      }
-    });
-  }, []);
-
-  // Hydrate pendingConflicts from the persisted last-sync report on launch
-  // so a banner from a prior run shows immediately, before any new sync.
-  useEffect(() => {
-    void (async () => {
-      const report = await window.skillsBank.getSyncReport();
-      if (report) setPendingConflicts(report.conflicts.length);
-    })();
   }, []);
 
   // Initial auth/persona snapshot. The LoginScreen is shown until persona
