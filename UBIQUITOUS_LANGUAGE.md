@@ -32,22 +32,22 @@ Domain: per-skill upstream tracking, drift detection, and the manual upstream pi
 
 ## Drift and update lifecycle
 
-| Term                 | Definition                                                                                                                           | Aliases to avoid         |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
-| **Baseline**         | The local snapshot the app compares against to detect user edits (`.skills-bank-hash`)                                               | Reference, anchor        |
-| **Drift**            | The condition where a **Skill**'s local content no longer matches its **Baseline**                                                   | Edits, divergence, dirty |
-| **Update available** | The condition where the **Origin hash** at the remote has moved past the **Origin hash** recorded locally, and there is no **Drift** | Out of date, stale       |
+| Term                  | Definition                                                                                                                                   | Aliases to avoid         |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| **Baseline**          | The local snapshot the app compares against to detect user edits (`.skills-bank-hash`)                                                       | Reference, anchor        |
+| **Drift**             | The condition where a **Skill**'s local content no longer matches its **Baseline**                                                           | Edits, divergence, dirty |
+| **Update available**  | The condition where the **Origin hash** at the remote has moved past the **Origin hash** recorded locally, and there is no **Drift**         | Out of date, stale       |
 | **Fetch origin tree** | The act of calling GitHub's Git Trees API to retrieve the current upstream tree and **Origin hash**. Code: `fetchOriginTree` in `origin.ts`. | Probe, check, poll, sync |
 
 ## Origin operations (user-visible verbs)
 
 These are the three commit actions a user can take on a **Skill**'s **Origin**. Each maps one-to-one to a drawer button.
 
-| Term                | Definition                                                                                                                      | Aliases to avoid                     |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| **Update**          | Pull the current **Origin** content into the local **Skill**. Valid only when **Update available** and no **Drift** is present. | Apply upstream, refresh, sync        |
-| **Reset to origin** | Discard local **Drift** and restore the **Skill** to its **Origin** snapshot                                                    | Take upstream, revert, restore       |
-| **Unlink origin**   | Clear the **Origin pointer** for a **Skill**, keeping local content as-is. The **Skill** is now origin-less.                    | Sever upstream, accept drift, detach |
+| Term                | Definition                                                                                                                                                                                                                                        | Aliases to avoid                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| **Update**          | Pull the current **Origin** content into the local **Skill**. Valid only when **Update available** and no **Drift** is present.                                                                                                                   | Apply upstream, refresh, sync        |
+| **Reset to origin** | Discard local **Drift** and restore the **Skill** to its **Origin** snapshot                                                                                                                                                                      | Take upstream, revert, restore       |
+| **Unlink origin**   | Clear the **Origin pointer** for a **Skill**, keeping local content as-is. The **Skill** is now origin-less.                                                                                                                                      | Sever upstream, accept drift, detach |
 | **Mirror**          | The technical operation underpinning **Update** and **Manifest import**: wipe-and-recopy a skill folder from its **Origin repo** into the local **Registry**. Not user-visible by name; referenced in code as `mirrorSkillFolder` in `origin.ts`. | Sync, clone, fetch folder            |
 
 ## Picker (manual origin form)
@@ -66,17 +66,17 @@ These are the user-time verbs for pushing local **Skill** content to a **Linked 
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
 | **Publish**     | Push a **Skill** from the local **Registry** to the user's **Linked repo** as a pull request. Three sub-flows by trigger condition: new skill (no **Origin**, `personal/`), safekeeping (has **Origin**, no **Drift**, `vendored/`), or **Fork** (has **Origin**, **Drift** detected). PR-only — the linked repo's default branch is never written directly. | Push, ship, submit                  |
 | **Fork**        | A confirmed **Publish** of an edited vendored **Skill**. Composes **Unlink origin** with a bucket move (`vendored/` → `personal/`) and a **Source** flip (`bundled` → `yours`). Requires explicit user confirmation; irreversible without re-vendoring.                                                                                                      | Sever and publish, claim, take over |
-| **Safekeeping** | The motive for **Publish**ing an unedited vendored **Skill**: deposit the third-party content into your **Linked repo** so it survives if the **Origin** goes dark. The **Origin pointer** is preserved; updates from the original author continue to surface via the update **Fetch origin tree**.                                                                      | Backup, snapshot, deposit           |
+| **Safekeeping** | The motive for **Publish**ing an unedited vendored **Skill**: deposit the third-party content into your **Linked repo** so it survives if the **Origin** goes dark. The **Origin pointer** is preserved; updates from the original author continue to surface via the update **Fetch origin tree**.                                                          | Backup, snapshot, deposit           |
 
 ## GitHub API layer
 
 Infrastructure-level concepts for the code that talks to GitHub's REST API. Not user-visible by name; listed here to prevent naming drift between modules.
 
-| Term                               | Definition                                                                                                                                                                                                                                     | Aliases to avoid                     |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| **GitHub HTTP layer**              | The `github-http` module providing `ghFetch`, the shared authenticated REST client used by all GitHub-touching code. Infrastructure term, not domain.                                                                                          | github client, api wrapper           |
-| **Manifest write to linked repo**  | The operation of serializing the current **Registry manifest** and committing it to the **Linked repo** via the GitHub Contents API. Extends **Manifest export** with a GitHub target instead of a local file. Code: `writeRepoFile` (planned in `github-files.ts`). IPC: `bank:writeManifestToRepo`. | Push manifest, sync manifest         |
-| **Manifest read from linked repo** | The operation of fetching the **Registry manifest** from the **Linked repo** via the GitHub Contents API and routing it through **Manifest import**. Code: `readRepoFile` (planned in `github-files.ts`). IPC: `bank:readManifestFromRepo`.    | Pull manifest, download manifest     |
+| Term                               | Definition                                                                                                                                                                                                                                                                                            | Aliases to avoid                 |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **GitHub HTTP layer**              | The `github-http` module providing `ghFetch`, the shared authenticated REST client used by all GitHub-touching code. Infrastructure term, not domain.                                                                                                                                                 | github client, api wrapper       |
+| **Manifest write to linked repo**  | The operation of serializing the current **Registry manifest** and committing it to the **Linked repo** via the GitHub Contents API. Extends **Manifest export** with a GitHub target instead of a local file. Code: `writeRepoFile` (planned in `github-files.ts`). IPC: `bank:writeManifestToRepo`. | Push manifest, sync manifest     |
+| **Manifest read from linked repo** | The operation of fetching the **Registry manifest** from the **Linked repo** via the GitHub Contents API and routing it through **Manifest import**. Code: `readRepoFile` (planned in `github-files.ts`). IPC: `bank:readManifestFromRepo`.                                                           | Pull manifest, download manifest |
 
 ## Linked repo
 

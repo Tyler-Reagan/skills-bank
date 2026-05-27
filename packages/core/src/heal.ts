@@ -224,7 +224,6 @@ export function unlinkOrigin(skillDir: string): void {
   }
 }
 
-
 /**
  * Flip a skill's source axis from `curated` → `user`. Idempotent
  * on already-`user` skills. Composed by `forkSkill` (ADR-0006) on

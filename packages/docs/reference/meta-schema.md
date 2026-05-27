@@ -16,13 +16,13 @@ Each skill folder can contain an optional `meta.json` file that adds metadata vi
 
 ## Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | **Yes** | Skill identifier. Must match the folder name. Pattern: `^[a-z0-9][a-z0-9-]*$`, max 64 characters. |
-| `description` | `string` | **Yes** | Short description shown on the card and in the detail dialog. |
-| `tags` | `string[]` | No | Array of tag strings. Used by the Registry tag filters. Each tag: min 1, max 64 characters. No duplicates. |
-| `version` | `string` | No | Semver string (e.g. `1.0.0` or `2.1.0-beta.1`). |
-| `author` | `string` | No | Author name or GitHub username. |
+| Field         | Type       | Required | Description                                                                                                |
+| ------------- | ---------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `name`        | `string`   | **Yes**  | Skill identifier. Must match the folder name. Pattern: `^[a-z0-9][a-z0-9-]*$`, max 64 characters.          |
+| `description` | `string`   | **Yes**  | Short description shown on the card and in the detail dialog.                                              |
+| `tags`        | `string[]` | No       | Array of tag strings. Used by the Registry tag filters. Each tag: min 1, max 64 characters. No duplicates. |
+| `version`     | `string`   | No       | Semver string (e.g. `1.0.0` or `2.1.0-beta.1`).                                                            |
+| `author`      | `string`   | No       | Author name or GitHub username.                                                                            |
 
 ## Validation
 

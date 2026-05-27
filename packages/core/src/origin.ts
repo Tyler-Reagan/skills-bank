@@ -584,4 +584,3 @@ function synthesizeMetaJson(
     JSON.stringify({ name, description: "", tags }, null, 2) + "\n",
   );
 }
-

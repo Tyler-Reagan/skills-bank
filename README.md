@@ -43,13 +43,13 @@ node packages/cli/dist/index.js path <name>
 
 ## What's in this repo
 
-| Path | Purpose |
-|------|---------|
-| [`skills/`](skills/) | Bundled registry — one folder per skill, `SKILL.md` + `meta.json`. |
-| [`packages/core`](packages/core) | Shared TypeScript library: registry IO, install, sync, registration. |
-| [`packages/cli`](packages/cli) | The `skills-bank` CLI — five commands for shell composition. |
-| [`packages/desktop`](packages/desktop) | Electron + React desktop app. |
-| [`packages/docs`](packages/docs) | VitePress docs site. |
+| Path                                   | Purpose                                                              |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| [`skills/`](skills/)                   | Bundled registry — one folder per skill, `SKILL.md` + `meta.json`.   |
+| [`packages/core`](packages/core)       | Shared TypeScript library: registry IO, install, sync, registration. |
+| [`packages/cli`](packages/cli)         | The `skills-bank` CLI — five commands for shell composition.         |
+| [`packages/desktop`](packages/desktop) | Electron + React desktop app.                                        |
+| [`packages/docs`](packages/docs)       | VitePress docs site.                                                 |
 
 ## Local development
 

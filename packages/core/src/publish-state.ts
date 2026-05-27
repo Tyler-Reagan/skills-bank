@@ -94,7 +94,6 @@ export function computePublishStatesFromGit(
   return out;
 }
 
-
 // ─── Remote-API mode ───────────────────────────────────────────────
 
 export interface ComputePublishStatesFromRemoteOptions {
