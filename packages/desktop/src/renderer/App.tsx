@@ -56,6 +56,7 @@ import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js
 import { useModalRouter } from "./hooks/useModalRouter.js";
 import { useRescanController } from "./hooks/useRescanController.js";
 import { useSyncFeed } from "./hooks/useSyncFeed.js";
+import { useUpdateFeed } from "./hooks/useUpdateFeed.js";
 import {
   RegistryHostProvider,
   useRegistryHost,
@@ -311,18 +312,15 @@ function AppContent(): React.ReactElement {
     string,
     string[]
   > | null>(null);
-  // Auto-update state. `latestUpdateStatus` is a live mirror of the most
-  // recent event the main process broadcast; the "updateNotes" modal
-  // reads it directly when open, so a render during `downloading` shows
-  // the live progress bar without us having to snapshot.
-  // `dismissedUpdateVersion` is hydrated once at boot from config.json
-  // and gates the badge for that specific version only; the in-app
-  // "Check for app updates" entry bypasses it.
-  const [latestUpdateStatus, setLatestUpdateStatus] =
-    useState<UpdateStatus | null>(null);
-  const [dismissedUpdateVersion, setDismissedUpdateVersion] = useState<
-    string | null
-  >(null);
+  // Auto-update state + wiring (live feed, boot dismissal gate, derived
+  // badge). The "updateNotes" modal reads latestUpdateStatus directly so
+  // a render during `downloading` shows the live progress bar.
+  const {
+    latestUpdateStatus,
+    setDismissedUpdateVersion,
+    isLiveUpdate,
+    pendingUpdateVersion,
+  } = useUpdateFeed();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
@@ -728,16 +726,12 @@ function AppContent(): React.ReactElement {
     [settings, saveSettings, refresh],
   );
 
-  // Hydrate the user's "Skip this version" choice once at boot. The main
-  // process is the source of truth (persisted alongside registryRoot/persona
-  // in config.json), so this is fire-and-forget.
-  //
-  // Same boot read also surfaces the ADR-0004 weak-storage notice when
-  // the safeStorage backend resolved to `basic_text` (Linux without a
-  // keyring) and the user hasn't already dismissed it for this backend.
+  // Boot read for the ADR-0004 weak-storage notice: surfaced when the
+  // safeStorage backend resolved to `basic_text` (Linux without a
+  // keyring) and the user hasn't already dismissed it. (The "Skip this
+  // version" choice is hydrated separately by useUpdateFeed.)
   useEffect(() => {
     void window.skillsBank.getConfig().then((cfg) => {
-      setDismissedUpdateVersion(cfg.dismissedUpdateVersion);
       if (cfg.showWeakStorageNotice) {
         flashError(
           "Your system has no usable keyring — the GitHub token is stored with weak encryption (basic_text). Sign out when you're done.",
@@ -758,20 +752,6 @@ function AppContent(): React.ReactElement {
       }
     });
   }, [flashError, dismissToast]);
-
-  // Mirror every auto-updater event into local state. The boot-time check
-  // only surfaces the badge; no modal auto-open — the user explicitly
-  // opens it from the badge or the in-app Settings dropdown. Errors are
-  // logged but not surfaced (transient network blips happen).
-  useEffect(() => {
-    if (!window.skillsBank.onUpdateStatus) return;
-    return window.skillsBank.onUpdateStatus((status) => {
-      setLatestUpdateStatus(status);
-      if (status.kind === "error") {
-        console.warn("[update] error:", status.message);
-      }
-    });
-  }, []);
 
   // Initial auth/persona snapshot. The LoginScreen is shown until persona
   // resolves to convenience or power.
@@ -1175,21 +1155,6 @@ function AppContent(): React.ReactElement {
   // renderer ever sees AuthStatus, so this gate would have stayed dead
   // code if not removed. The legacy v1.2 path that routed here on
   // first launch is documented in `docs/plans/vocabulary-rename.md`.
-
-  // Surface an app-update badge next to the brand whenever the main
-  // process has told us about a release in any of the three active
-  // phases (available / downloading / downloaded) that the user hasn't
-  // actively skipped. `dismissedUpdateVersion` is per-version so a
-  // newer-newer release reappears.
-  const isLiveUpdate =
-    latestUpdateStatus &&
-    (latestUpdateStatus.kind === "available" ||
-      latestUpdateStatus.kind === "downloading" ||
-      latestUpdateStatus.kind === "downloaded");
-  const pendingUpdateVersion: string | null =
-    isLiveUpdate && latestUpdateStatus.version !== dismissedUpdateVersion
-      ? latestUpdateStatus.version
-      : null;
 
   // Plain functions (not useCallback) — this code lives below early-return
   // gates above (no authStatus, persona unresolved). A hook here would be a
