@@ -53,8 +53,11 @@ import { ManifestModal } from "./components/ManifestModal.js";
 import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
+import { useManifestImportProgress } from "./hooks/useManifestImportProgress.js";
 import { useModalRouter } from "./hooks/useModalRouter.js";
 import { useRescanController } from "./hooks/useRescanController.js";
+import { useSyncFeed } from "./hooks/useSyncFeed.js";
+import { useUpdateFeed } from "./hooks/useUpdateFeed.js";
 import {
   RegistryHostProvider,
   useRegistryHost,
@@ -310,18 +313,15 @@ function AppContent(): React.ReactElement {
     string,
     string[]
   > | null>(null);
-  // Auto-update state. `latestUpdateStatus` is a live mirror of the most
-  // recent event the main process broadcast; the "updateNotes" modal
-  // reads it directly when open, so a render during `downloading` shows
-  // the live progress bar without us having to snapshot.
-  // `dismissedUpdateVersion` is hydrated once at boot from config.json
-  // and gates the badge for that specific version only; the in-app
-  // "Check for app updates" entry bypasses it.
-  const [latestUpdateStatus, setLatestUpdateStatus] =
-    useState<UpdateStatus | null>(null);
-  const [dismissedUpdateVersion, setDismissedUpdateVersion] = useState<
-    string | null
-  >(null);
+  // Auto-update state + wiring (live feed, boot dismissal gate, derived
+  // badge). The "updateNotes" modal reads latestUpdateStatus directly so
+  // a render during `downloading` shows the live progress bar.
+  const {
+    latestUpdateStatus,
+    setDismissedUpdateVersion,
+    isLiveUpdate,
+    pendingUpdateVersion,
+  } = useUpdateFeed();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
@@ -343,11 +343,14 @@ function AppContent(): React.ReactElement {
   >({ by: "name", direction: "asc" });
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
   const [bulkInstall, setBulkInstall] = useState<BulkInstallState | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>({ kind: "idle" });
-  const [pendingConflicts, setPendingConflicts] = useState(0);
-  const [conflictModalEntries, setConflictModalEntries] = useState<
-    ConflictEntry[] | null
-  >(null);
+  const {
+    syncStatus,
+    setSyncStatus,
+    pendingConflicts,
+    setPendingConflicts,
+    conflictModalEntries,
+    setConflictModalEntries,
+  } = useSyncFeed();
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
 
   // Overlay reconciliation: if a skill referenced by an open drawer or
@@ -724,16 +727,12 @@ function AppContent(): React.ReactElement {
     [settings, saveSettings, refresh],
   );
 
-  // Hydrate the user's "Skip this version" choice once at boot. The main
-  // process is the source of truth (persisted alongside registryRoot/persona
-  // in config.json), so this is fire-and-forget.
-  //
-  // Same boot read also surfaces the ADR-0004 weak-storage notice when
-  // the safeStorage backend resolved to `basic_text` (Linux without a
-  // keyring) and the user hasn't already dismissed it for this backend.
+  // Boot read for the ADR-0004 weak-storage notice: surfaced when the
+  // safeStorage backend resolved to `basic_text` (Linux without a
+  // keyring) and the user hasn't already dismissed it. (The "Skip this
+  // version" choice is hydrated separately by useUpdateFeed.)
   useEffect(() => {
     void window.skillsBank.getConfig().then((cfg) => {
-      setDismissedUpdateVersion(cfg.dismissedUpdateVersion);
       if (cfg.showWeakStorageNotice) {
         flashError(
           "Your system has no usable keyring — the GitHub token is stored with weak encryption (basic_text). Sign out when you're done.",
@@ -754,49 +753,6 @@ function AppContent(): React.ReactElement {
       }
     });
   }, [flashError, dismissToast]);
-
-  // Mirror every auto-updater event into local state. The boot-time check
-  // only surfaces the badge; no modal auto-open — the user explicitly
-  // opens it from the badge or the in-app Settings dropdown. Errors are
-  // logged but not surfaced (transient network blips happen).
-  useEffect(() => {
-    if (!window.skillsBank.onUpdateStatus) return;
-    return window.skillsBank.onUpdateStatus((status) => {
-      setLatestUpdateStatus(status);
-      if (status.kind === "error") {
-        console.warn("[update] error:", status.message);
-      }
-    });
-  }, []);
-
-  // Sync status feed: drives the SyncBanner and the Header sync button.
-  // When a sync completes with conflicts, auto-open the resolver modal so
-  // the user doesn't have to chase the banner.
-  useEffect(() => {
-    if (!window.skillsBank.onSyncStatus) return;
-    return window.skillsBank.onSyncStatus((status) => {
-      setSyncStatus(status);
-      if (status.kind === "done") {
-        setPendingConflicts(status.conflicts);
-        if (status.conflicts > 0) {
-          void window.skillsBank.getPendingConflicts().then((pending) => {
-            if (pending && pending.conflicts.length > 0) {
-              setConflictModalEntries(pending.conflicts);
-            }
-          });
-        }
-      }
-    });
-  }, []);
-
-  // Hydrate pendingConflicts from the persisted last-sync report on launch
-  // so a banner from a prior run shows immediately, before any new sync.
-  useEffect(() => {
-    void (async () => {
-      const report = await window.skillsBank.getSyncReport();
-      if (report) setPendingConflicts(report.conflicts.length);
-    })();
-  }, []);
 
   // Initial auth/persona snapshot. The LoginScreen is shown until persona
   // resolves to convenience or power.
@@ -941,63 +897,8 @@ function AppContent(): React.ReactElement {
   // import's progress so the ImportIndicator chip can render `N/total`
   // and (Tier 3) BrowseTab can place ghost cards. Cleared in the
   // `finally` after import resolves so a fresh import starts clean.
-  const [manifestImportProgress, setManifestImportProgress] = useState<{
-    completed: number;
-    total: number;
-    currentName: string;
-    manifestNames: string[];
-    manifestSkills: import("@skills-bank/core").ManifestSkill[];
-    errors: Map<string, string>;
-    /** Names the user has explicitly dismissed via the ghost-card × button. */
-    dismissed: Set<string>;
-    /**
-     * Per-skill completion status driven by the progress events. A skill
-     * moves to "settled" the moment the iteration AFTER it fires (so the
-     * previous skill's outcome is observed). Used to drive ghost → real
-     * card transitions and the band's "all settled" dissolution.
-     */
-    settled: Set<string>;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!window.skillsBank.onManifestImportProgress) return;
-    return window.skillsBank.onManifestImportProgress((event) => {
-      setManifestImportProgress((prev) => {
-        const errors = new Map(prev?.errors ?? []);
-        if (event.lastError) {
-          // lastError is "name: reason" — extract name for the map key
-          const idx = event.lastError.indexOf(": ");
-          const failedName =
-            idx > 0 ? event.lastError.slice(0, idx) : event.lastError;
-          const reason =
-            idx > 0 ? event.lastError.slice(idx + 2) : event.lastError;
-          errors.set(failedName, reason);
-        }
-        // Mark the previous in-flight skill as settled when this event
-        // fires — we can't observe its outcome directly from progress,
-        // but the fact that the loop advanced means its iteration
-        // closed. The last terminal event (completed === total) settles
-        // the final skill.
-        const settled = new Set(prev?.settled ?? []);
-        if (prev?.currentName && prev.currentName !== event.currentName) {
-          settled.add(prev.currentName);
-        }
-        if (event.completed === event.total && event.currentName) {
-          settled.add(event.currentName);
-        }
-        return {
-          completed: event.completed,
-          total: event.total,
-          currentName: event.currentName,
-          manifestNames: event.manifestNames ?? prev?.manifestNames ?? [],
-          manifestSkills: event.manifestSkills ?? prev?.manifestSkills ?? [],
-          errors,
-          dismissed: prev?.dismissed ?? new Set(),
-          settled,
-        };
-      });
-    });
-  }, []);
+  const { manifestImportProgress, setManifestImportProgress } =
+    useManifestImportProgress();
 
   const dismissGhost = useCallback((name: string) => {
     setManifestImportProgress((prev) => {
@@ -1200,21 +1101,6 @@ function AppContent(): React.ReactElement {
   // renderer ever sees AuthStatus, so this gate would have stayed dead
   // code if not removed. The legacy v1.2 path that routed here on
   // first launch is documented in `docs/plans/vocabulary-rename.md`.
-
-  // Surface an app-update badge next to the brand whenever the main
-  // process has told us about a release in any of the three active
-  // phases (available / downloading / downloaded) that the user hasn't
-  // actively skipped. `dismissedUpdateVersion` is per-version so a
-  // newer-newer release reappears.
-  const isLiveUpdate =
-    latestUpdateStatus &&
-    (latestUpdateStatus.kind === "available" ||
-      latestUpdateStatus.kind === "downloading" ||
-      latestUpdateStatus.kind === "downloaded");
-  const pendingUpdateVersion: string | null =
-    isLiveUpdate && latestUpdateStatus.version !== dismissedUpdateVersion
-      ? latestUpdateStatus.version
-      : null;
 
   // Plain functions (not useCallback) — this code lives below early-return
   // gates above (no authStatus, persona unresolved). A hook here would be a
