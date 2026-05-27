@@ -7,8 +7,8 @@ export interface ManifestDiff {
   removed: string[];
   /** Names in both but with differing fields. */
   changed: string[];
-  /** Count of skills identical in both. */
-  unchanged: number;
+  /** Names identical in both. */
+  unchanged: string[];
 }
 
 const COMPARED_FIELDS: (keyof ManifestSkill)[] = [
@@ -39,7 +39,7 @@ export function diffManifests(
 
   const added: string[] = [];
   const changed: string[] = [];
-  let unchanged = 0;
+  const unchanged: string[] = [];
 
   for (const [name, skill] of sourceMap) {
     const existing = targetMap.get(name);
@@ -48,7 +48,7 @@ export function diffManifests(
     } else if (skillKey(skill) !== skillKey(existing)) {
       changed.push(name);
     } else {
-      unchanged++;
+      unchanged.push(name);
     }
   }
 

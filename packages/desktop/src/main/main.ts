@@ -2089,9 +2089,7 @@ async function readManifestFromDisk(): Promise<
   }
 }
 
-async function runManifestImportCore(
-  manifest: RegistryManifest,
-): Promise<
+async function runManifestImportCore(manifest: RegistryManifest): Promise<
   | { ok: false; message: string; error?: ReturnType<typeof fromCaught> }
   | {
       ok: true;
@@ -3034,7 +3032,7 @@ async function runSync(): Promise<{
       );
       broadcastSyncStatus({
         kind: "done",
-        upserted: report.upserted.length,
+        upserted: report.upserted,
         conflicts: report.conflicts.length,
         orphaned: report.orphaned,
         commitSha: report.commitSha,
@@ -3294,7 +3292,7 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
       }
       broadcastSyncStatus({
         kind: "done",
-        upserted: report.upserted.length,
+        upserted: report.upserted,
         conflicts: report.conflicts.length,
         orphaned: report.orphaned,
         commitSha: report.commitSha,

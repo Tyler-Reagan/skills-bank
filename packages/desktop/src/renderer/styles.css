@@ -1301,6 +1301,16 @@ select {
   border: 1px solid var(--border);
   background: var(--surface-hi);
   color: var(--text-2);
+  transition: opacity var(--t-slow) var(--ease);
+}
+/* Done banner self-dismiss: JS toggles .leaving, CSS fades it out. */
+.sync-banner.leaving {
+  opacity: 0;
+}
+/* Expandable done banner stacks a header row over its detail panel. */
+.sync-banner.expandable {
+  flex-direction: column;
+  align-items: stretch;
 }
 .sync-banner.active {
   color: var(--text);
@@ -1351,6 +1361,77 @@ select {
 }
 .sync-banner-action + .sync-banner-dismiss {
   margin-left: var(--s1);
+}
+
+/* Header row inside an expandable done banner. */
+.sync-banner-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.sync-banner-msg {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.sync-banner-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+  opacity: 0.85;
+}
+.sync-banner-toggle:hover {
+  background: rgba(0, 0, 0, 0.08);
+  opacity: 1;
+}
+.sync-banner-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: var(--s2);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border);
+}
+.sync-banner-detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+.sync-banner-detail-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* Shared disclosure affordance: rotating chevron + wrapped skill chips. */
+.disclosure-chevron {
+  display: inline-flex;
+  transition: transform var(--t-fast) var(--ease);
+}
+.disclosure-chevron.open {
+  transform: rotate(180deg);
+}
+.skill-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sync-banner,
+  .disclosure-chevron {
+    transition: none;
+  }
 }
 
 .skill-name {
