@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type {
   ImportRegistryManifestResult,
   ManifestDiff,
@@ -9,6 +9,7 @@ import type {
 } from "../../shared/ipc.js";
 import type { LinkedRepoMetadata } from "../../shared/ipc.js";
 import { useDisclosureSet } from "../hooks/useDisclosure.js";
+import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { DisclosureChevron } from "./DisclosureChevron.js";
 import { SkillTagList } from "./SkillTagList.js";
 
@@ -22,24 +23,18 @@ interface Props {
   onError: (msg: string) => void;
 }
 
-type ExportPhase =
-  | { kind: "loading" }
-  | { kind: "preview"; diff: ManifestDiff; skillCount: number; branch: string }
+// The preview read is a useIpcQuery; these capture only the imperative
+// phases a user action drives on top of it (push / import).
+type ExportAction =
+  | { kind: "idle" }
   | { kind: "pushing" }
   | { kind: "done"; commitSha: string; htmlUrl: string; prNumber?: number }
   | { kind: "error"; message: string; resetAt?: string };
 
-type ImportPhase =
-  | { kind: "loading" }
-  | { kind: "not-found" }
-  | {
-      kind: "preview";
-      diff: ManifestDiff;
-      exportedAt: string;
-      skillCount: number;
-    }
+type ImportAction =
+  | { kind: "idle" }
   | { kind: "importing" }
-  | { kind: "error"; message: string; resetAt?: string };
+  | { kind: "error"; message: string };
 
 const DIFF_CATEGORIES: {
   key: keyof ManifestDiff;
@@ -120,128 +115,53 @@ export function RepoTransport({
   onExportComplete,
   onError,
 }: Props): React.ReactElement {
-  const [exportPhase, setExportPhase] = useState<ExportPhase>({
-    kind: "loading",
-  });
-  const [importPhase, setImportPhase] = useState<ImportPhase>({
-    kind: "loading",
-  });
-  const [asPR, setAsPR] = useState(false);
-
-  useEffect(() => {
-    if (mode === "export") {
-      void window.skillsBank
-        .previewManifestPush()
-        .then((r: PreviewManifestPushResult) => {
-          if (!r.ok) {
-            setExportPhase({
-              kind: "error",
-              message: r.message,
-              resetAt: r.rateLimit?.resetAt,
-            });
-          } else {
-            setExportPhase({
-              kind: "preview",
-              diff: r.diff,
-              skillCount: r.skillCount,
-              branch: r.branch,
-            });
-          }
-        });
-    } else {
-      void window.skillsBank
-        .readManifestFromRepo()
-        .then((r: ReadManifestFromRepoResult) => {
-          if (!r.ok) {
-            if (r.reason === "not-found") {
-              setImportPhase({ kind: "not-found" });
-            } else if (r.reason === "rate-limit") {
-              setImportPhase({
-                kind: "error",
-                message: r.message,
-                resetAt: r.rateLimit?.resetAt,
-              });
-            } else {
-              setImportPhase({ kind: "error", message: r.message });
-            }
-          } else {
-            setImportPhase({
-              kind: "preview",
-              diff: r.diff,
-              exportedAt: r.manifest.exportedAt,
-              skillCount: r.manifest.skills.length,
-            });
-          }
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
-
-  // Sync importingManifest → importing phase
-  useEffect(() => {
-    if (importingManifest && importPhase.kind === "preview") {
-      setImportPhase({ kind: "importing" });
-    }
-  }, [importingManifest, importPhase.kind]);
-
   if (mode === "export") {
     return (
       <ExportView
-        phase={exportPhase}
-        asPR={asPR}
-        setAsPR={setAsPR}
         linkedRepo={linkedRepo}
         onExportComplete={onExportComplete}
         onError={onError}
-        setPhase={setExportPhase}
       />
     );
   }
   return (
     <ImportView
-      phase={importPhase}
       importingManifest={importingManifest}
       onCancelImport={onCancelImport}
       onImportComplete={onImportComplete}
       onError={onError}
-      setPhase={setImportPhase}
     />
   );
 }
 
 function ExportView({
-  phase,
-  asPR,
-  setAsPR,
   linkedRepo,
   onExportComplete,
   onError,
-  setPhase,
 }: {
-  phase: ExportPhase;
-  asPR: boolean;
-  setAsPR: (v: boolean) => void;
   linkedRepo: LinkedRepoMetadata;
   onExportComplete: (msg: string) => void;
   onError: (msg: string) => void;
-  setPhase: (p: ExportPhase) => void;
 }): React.ReactElement {
+  const { data, loading } = useIpcQuery<PreviewManifestPushResult>(
+    () => window.skillsBank.previewManifestPush(),
+    [],
+  );
+  const [asPR, setAsPR] = useState(false);
+  const [action, setAction] = useState<ExportAction>({ kind: "idle" });
+
   const push = async () => {
-    setPhase({ kind: "pushing" });
+    setAction({ kind: "pushing" });
     const r = await window.skillsBank.pushManifestToRepo({ asPR });
     if (!r.ok) {
-      if (r.reason === "rate-limit") {
-        setPhase({
-          kind: "error",
-          message: r.message,
-          resetAt: r.rateLimit?.resetAt,
-        });
-      } else {
-        setPhase({ kind: "error", message: r.message });
-      }
+      setAction({
+        kind: "error",
+        message: r.message,
+        resetAt: r.reason === "rate-limit" ? r.rateLimit.resetAt : undefined,
+      });
       onError(r.message);
     } else {
-      setPhase({
+      setAction({
         kind: "done",
         commitSha: r.commitSha,
         htmlUrl: r.htmlUrl,
@@ -254,15 +174,7 @@ function ExportView({
     }
   };
 
-  if (phase.kind === "loading") {
-    return (
-      <div style={centerHint}>
-        <span className="spinner inline" /> Loading diff…
-      </div>
-    );
-  }
-
-  if (phase.kind === "pushing") {
+  if (action.kind === "pushing") {
     return (
       <div style={centerHint}>
         <span className="spinner inline" /> Pushing…
@@ -270,35 +182,39 @@ function ExportView({
     );
   }
 
-  if (phase.kind === "error") {
-    return (
-      <div style={errorBox}>
-        <strong>Error:</strong> {phase.message}
-        {phase.resetAt && (
-          <div style={{ marginTop: 6, fontSize: 11 }}>
-            Rate limited — resets at {formatResetAt(phase.resetAt)}. Sign in to
-            raise the limit.
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (phase.kind === "done") {
+  if (action.kind === "done") {
     return (
       <div style={{ marginTop: 8 }}>
         <div style={{ color: "var(--text-3)", fontSize: 13, marginBottom: 12 }}>
-          Committed <code>{phase.commitSha.slice(0, 7)}</code>
-          {phase.prNumber && ` · PR #${phase.prNumber}`}
+          Committed <code>{action.commitSha.slice(0, 7)}</code>
+          {action.prNumber && ` · PR #${action.prNumber}`}
         </div>
         <button
           className="btn"
           type="button"
-          onClick={() => void window.skillsBank.openExternal(phase.htmlUrl)}
+          onClick={() => void window.skillsBank.openExternal(action.htmlUrl)}
         >
           View on GitHub
         </button>
       </div>
+    );
+  }
+
+  if (action.kind === "error") {
+    return <ErrorBox message={action.message} resetAt={action.resetAt} />;
+  }
+
+  if (loading || !data) {
+    return (
+      <div style={centerHint}>
+        <span className="spinner inline" /> Loading diff…
+      </div>
+    );
+  }
+
+  if (!data.ok) {
+    return (
+      <ErrorBox message={data.message} resetAt={data.rateLimit?.resetAt} />
     );
   }
 
@@ -308,13 +224,13 @@ function ExportView({
       <div style={metaRow}>
         <span style={metaLabel}>{linkedRepo.fullName}</span>
         <span style={{ color: "var(--text-3)", fontSize: 12 }}>
-          registry-manifest.json · {phase.branch}
+          registry-manifest.json · {data.branch}
         </span>
       </div>
       <div style={{ color: "var(--text-3)", fontSize: 12, marginBottom: 10 }}>
-        {phase.skillCount} skill{phase.skillCount === 1 ? "" : "s"} total
+        {data.skillCount} skill{data.skillCount === 1 ? "" : "s"} total
       </div>
-      <DiffTable diff={phase.diff} />
+      <DiffTable diff={data.diff} />
       <div style={toggleRow}>
         <label
           style={{
@@ -347,61 +263,44 @@ function ExportView({
 }
 
 function ImportView({
-  phase,
   importingManifest,
   onCancelImport,
   onImportComplete,
   onError,
-  setPhase,
 }: {
-  phase: ImportPhase;
   importingManifest: boolean;
   onCancelImport: () => void;
   onImportComplete: (result: ImportRegistryManifestResult) => void;
   onError: (msg: string) => void;
-  setPhase: (p: ImportPhase) => void;
 }): React.ReactElement {
+  const { data, loading } = useIpcQuery<ReadManifestFromRepoResult>(
+    () => window.skillsBank.readManifestFromRepo(),
+    [],
+  );
+  const [action, setAction] = useState<ImportAction>({ kind: "idle" });
+
   const runImport = async () => {
-    if (phase.kind !== "preview") return;
-    setPhase({ kind: "importing" });
+    setAction({ kind: "importing" });
     const readRes = await window.skillsBank.readManifestFromRepo();
     if (!readRes.ok) {
       const msg =
         readRes.reason === "not-found"
           ? "Manifest not found in repo."
           : ((readRes as { message: string }).message ?? "Unknown error");
-      setPhase({ kind: "error", message: msg });
+      setAction({ kind: "error", message: msg });
       onError(msg);
       return;
     }
     const r = await window.skillsBank.runManifestImport(readRes.manifest);
     if (!r.ok) {
-      setPhase({ kind: "error", message: r.message });
+      setAction({ kind: "error", message: r.message });
       onError(r.message);
     } else {
       onImportComplete(r.result);
     }
   };
 
-  if (phase.kind === "loading") {
-    return (
-      <div style={centerHint}>
-        <span className="spinner inline" /> Reading manifest…
-      </div>
-    );
-  }
-
-  if (phase.kind === "not-found") {
-    return (
-      <div style={centerHint}>
-        <div style={{ fontSize: 13, color: "var(--text-3)" }}>
-          No manifest in repo yet — push one first.
-        </div>
-      </div>
-    );
-  }
-
-  if (phase.kind === "importing" || importingManifest) {
+  if (action.kind === "importing" || importingManifest) {
     return (
       <div style={centerHint}>
         <span className="spinner inline" /> Importing…
@@ -414,17 +313,35 @@ function ImportView({
     );
   }
 
-  if (phase.kind === "error") {
+  if (action.kind === "error") {
+    return <ErrorBox message={action.message} />;
+  }
+
+  if (loading || !data) {
     return (
-      <div style={errorBox}>
-        <strong>Error:</strong> {phase.message}
-        {phase.resetAt && (
-          <div style={{ marginTop: 6, fontSize: 11 }}>
-            Rate limited — resets at {formatResetAt(phase.resetAt)}. Sign in to
-            raise the limit.
-          </div>
-        )}
+      <div style={centerHint}>
+        <span className="spinner inline" /> Reading manifest…
       </div>
+    );
+  }
+
+  if (!data.ok) {
+    if (data.reason === "not-found") {
+      return (
+        <div style={centerHint}>
+          <div style={{ fontSize: 13, color: "var(--text-3)" }}>
+            No manifest in repo yet — push one first.
+          </div>
+        </div>
+      );
+    }
+    return (
+      <ErrorBox
+        message={data.message}
+        resetAt={
+          data.reason === "rate-limit" ? data.rateLimit.resetAt : undefined
+        }
+      />
     );
   }
 
@@ -433,13 +350,15 @@ function ImportView({
     <div>
       <div style={{ color: "var(--text-3)", fontSize: 12, marginBottom: 4 }}>
         Exported:{" "}
-        {phase.exportedAt ? new Date(phase.exportedAt).toLocaleString() : "—"}
+        {data.manifest.exportedAt
+          ? new Date(data.manifest.exportedAt).toLocaleString()
+          : "—"}
       </div>
       <div style={{ color: "var(--text-3)", fontSize: 12, marginBottom: 10 }}>
-        {phase.skillCount} skill{phase.skillCount === 1 ? "" : "s"} in remote
-        manifest
+        {data.manifest.skills.length} skill
+        {data.manifest.skills.length === 1 ? "" : "s"} in remote manifest
       </div>
-      <DiffTable diff={phase.diff} />
+      <DiffTable diff={data.diff} />
       <div style={{ marginTop: 16 }}>
         <button
           className="btn primary"
@@ -449,6 +368,27 @@ function ImportView({
           Import from repo
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Shared rate-limit-aware error box for the transport phases. */
+function ErrorBox({
+  message,
+  resetAt,
+}: {
+  message: string;
+  resetAt?: string;
+}): React.ReactElement {
+  return (
+    <div style={errorBox}>
+      <strong>Error:</strong> {message}
+      {resetAt && (
+        <div style={{ marginTop: 6, fontSize: 11 }}>
+          Rate limited — resets at {formatResetAt(resetAt)}. Sign in to raise
+          the limit.
+        </div>
+      )}
     </div>
   );
 }
