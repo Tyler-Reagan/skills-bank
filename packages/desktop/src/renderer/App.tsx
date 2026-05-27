@@ -53,6 +53,7 @@ import { ManifestModal } from "./components/ManifestModal.js";
 import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
+import { useManifestImportProgress } from "./hooks/useManifestImportProgress.js";
 import { useModalRouter } from "./hooks/useModalRouter.js";
 import { useRescanController } from "./hooks/useRescanController.js";
 import { useSyncFeed } from "./hooks/useSyncFeed.js";
@@ -896,63 +897,8 @@ function AppContent(): React.ReactElement {
   // import's progress so the ImportIndicator chip can render `N/total`
   // and (Tier 3) BrowseTab can place ghost cards. Cleared in the
   // `finally` after import resolves so a fresh import starts clean.
-  const [manifestImportProgress, setManifestImportProgress] = useState<{
-    completed: number;
-    total: number;
-    currentName: string;
-    manifestNames: string[];
-    manifestSkills: import("@skills-bank/core").ManifestSkill[];
-    errors: Map<string, string>;
-    /** Names the user has explicitly dismissed via the ghost-card × button. */
-    dismissed: Set<string>;
-    /**
-     * Per-skill completion status driven by the progress events. A skill
-     * moves to "settled" the moment the iteration AFTER it fires (so the
-     * previous skill's outcome is observed). Used to drive ghost → real
-     * card transitions and the band's "all settled" dissolution.
-     */
-    settled: Set<string>;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!window.skillsBank.onManifestImportProgress) return;
-    return window.skillsBank.onManifestImportProgress((event) => {
-      setManifestImportProgress((prev) => {
-        const errors = new Map(prev?.errors ?? []);
-        if (event.lastError) {
-          // lastError is "name: reason" — extract name for the map key
-          const idx = event.lastError.indexOf(": ");
-          const failedName =
-            idx > 0 ? event.lastError.slice(0, idx) : event.lastError;
-          const reason =
-            idx > 0 ? event.lastError.slice(idx + 2) : event.lastError;
-          errors.set(failedName, reason);
-        }
-        // Mark the previous in-flight skill as settled when this event
-        // fires — we can't observe its outcome directly from progress,
-        // but the fact that the loop advanced means its iteration
-        // closed. The last terminal event (completed === total) settles
-        // the final skill.
-        const settled = new Set(prev?.settled ?? []);
-        if (prev?.currentName && prev.currentName !== event.currentName) {
-          settled.add(prev.currentName);
-        }
-        if (event.completed === event.total && event.currentName) {
-          settled.add(event.currentName);
-        }
-        return {
-          completed: event.completed,
-          total: event.total,
-          currentName: event.currentName,
-          manifestNames: event.manifestNames ?? prev?.manifestNames ?? [],
-          manifestSkills: event.manifestSkills ?? prev?.manifestSkills ?? [],
-          errors,
-          dismissed: prev?.dismissed ?? new Set(),
-          settled,
-        };
-      });
-    });
-  }, []);
+  const { manifestImportProgress, setManifestImportProgress } =
+    useManifestImportProgress();
 
   const dismissGhost = useCallback((name: string) => {
     setManifestImportProgress((prev) => {
