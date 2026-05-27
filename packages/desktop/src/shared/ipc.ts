@@ -383,7 +383,7 @@ export type SyncStatus =
   | { kind: "applying" }
   | {
       kind: "done";
-      upserted: number;
+      upserted: string[];
       conflicts: number;
       orphaned: string[];
       commitSha: string;

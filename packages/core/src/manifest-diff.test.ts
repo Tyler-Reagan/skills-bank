@@ -25,7 +25,12 @@ function makeManifest(skills: Partial<ManifestSkill>[]): RegistryManifest {
 describe("diffManifests", () => {
   test("empty vs empty → all zeroes", () => {
     const diff = diffManifests(makeManifest([]), makeManifest([]));
-    expect(diff).toEqual({ added: [], removed: [], changed: [], unchanged: 0 });
+    expect(diff).toEqual({
+      added: [],
+      removed: [],
+      changed: [],
+      unchanged: [],
+    });
   });
 
   test("source has a skill target lacks → added", () => {
@@ -36,7 +41,7 @@ describe("diffManifests", () => {
     expect(diff.added).toEqual(["alpha"]);
     expect(diff.removed).toEqual([]);
     expect(diff.changed).toEqual([]);
-    expect(diff.unchanged).toBe(0);
+    expect(diff.unchanged).toEqual([]);
   });
 
   test("target has a skill source lacks → removed", () => {
@@ -47,15 +52,15 @@ describe("diffManifests", () => {
     expect(diff.removed).toEqual(["beta"]);
     expect(diff.added).toEqual([]);
     expect(diff.changed).toEqual([]);
-    expect(diff.unchanged).toBe(0);
+    expect(diff.unchanged).toEqual([]);
   });
 
-  test("identical skill in both → unchanged count", () => {
+  test("identical skill in both → unchanged names", () => {
     const diff = diffManifests(
       makeManifest([{ name: "gamma" }]),
       makeManifest([{ name: "gamma" }]),
     );
-    expect(diff.unchanged).toBe(1);
+    expect(diff.unchanged).toEqual(["gamma"]);
     expect(diff.added).toEqual([]);
     expect(diff.removed).toEqual([]);
     expect(diff.changed).toEqual([]);
@@ -67,7 +72,7 @@ describe("diffManifests", () => {
       makeManifest([{ name: "delta", tags: [] }]),
     );
     expect(diff.changed).toEqual(["delta"]);
-    expect(diff.unchanged).toBe(0);
+    expect(diff.unchanged).toEqual([]);
   });
 
   test("same name but different dismissed → changed", () => {
@@ -93,7 +98,7 @@ describe("diffManifests", () => {
     expect(diff.added).toEqual(["new-one"]);
     expect(diff.removed).toEqual(["old-one"]);
     expect(diff.changed).toEqual(["modify"]);
-    expect(diff.unchanged).toBe(1);
+    expect(diff.unchanged).toEqual(["keep"]);
   });
 
   test("push preview convention: diffManifests(local, remote) describes remote changes", () => {

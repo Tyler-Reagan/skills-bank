@@ -8,6 +8,7 @@ import type {
   ReadManifestFromRepoResult,
 } from "../../shared/ipc.js";
 import type { LinkedRepoMetadata } from "../../shared/ipc.js";
+import { Icon } from "./Icon.js";
 
 interface Props {
   mode: "export" | "import";
@@ -38,31 +39,76 @@ type ImportPhase =
   | { kind: "importing" }
   | { kind: "error"; message: string; resetAt?: string };
 
+const DIFF_CATEGORIES: {
+  key: keyof ManifestDiff;
+  label: string;
+  color: string;
+}[] = [
+  { key: "added", label: "Added", color: "var(--green, #4ade80)" },
+  { key: "removed", label: "Removed", color: "var(--red, #f87171)" },
+  { key: "changed", label: "Changed", color: "var(--yellow, #fbbf24)" },
+  { key: "unchanged", label: "Unchanged", color: "var(--text-3)" },
+];
+
+/**
+ * Per-category breakdown of a manifest diff. Each category with at
+ * least one skill is a disclosure row that expands to list which
+ * skills fall in it; empty categories stay as a static count.
+ */
 function DiffTable({ diff }: { diff: ManifestDiff }): React.ReactElement {
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const toggle = (key: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
   return (
     <div style={diffTable}>
-      <div style={diffRow}>
-        <span style={diffLabel}>Added</span>
-        <span style={{ color: "var(--green, #4ade80)" }}>
-          {diff.added.length}
-        </span>
-      </div>
-      <div style={diffRow}>
-        <span style={diffLabel}>Removed</span>
-        <span style={{ color: "var(--red, #f87171)" }}>
-          {diff.removed.length}
-        </span>
-      </div>
-      <div style={diffRow}>
-        <span style={diffLabel}>Changed</span>
-        <span style={{ color: "var(--yellow, #fbbf24)" }}>
-          {diff.changed.length}
-        </span>
-      </div>
-      <div style={diffRow}>
-        <span style={diffLabel}>Unchanged</span>
-        <span style={{ color: "var(--text-3)" }}>{diff.unchanged}</span>
-      </div>
+      {DIFF_CATEGORIES.map(({ key, label, color }) => {
+        const names = diff[key];
+        const expandable = names.length > 0;
+        const isOpen = open.has(key);
+        return (
+          <div key={key}>
+            <button
+              type="button"
+              style={{
+                ...diffRow,
+                ...diffRowButton,
+                cursor: expandable ? "pointer" : "default",
+              }}
+              onClick={expandable ? () => toggle(key) : undefined}
+              aria-expanded={expandable ? isOpen : undefined}
+            >
+              <span style={diffLabelWrap}>
+                <span
+                  style={{
+                    ...diffChevron,
+                    visibility: expandable ? "visible" : "hidden",
+                    transform: isOpen ? "rotate(180deg)" : "none",
+                  }}
+                >
+                  <Icon name="chevron-down" size="sm" />
+                </span>
+                <span style={diffLabel}>{label}</span>
+              </span>
+              <span style={{ color }}>{names.length}</span>
+            </button>
+            {expandable && isOpen && (
+              <div style={diffNames}>
+                {names.map((n) => (
+                  <span key={n} className="skill-tag">
+                    {n}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -439,11 +485,41 @@ const diffTable: React.CSSProperties = {
 const diffRow: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
+  alignItems: "center",
   fontSize: 13,
+};
+
+const diffRowButton: React.CSSProperties = {
+  width: "100%",
+  background: "transparent",
+  border: 0,
+  padding: "2px 0",
+  color: "inherit",
+  font: "inherit",
+  textAlign: "left",
 };
 
 const diffLabel: React.CSSProperties = {
   color: "var(--text-3)",
+};
+
+const diffLabelWrap: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+};
+
+const diffChevron: React.CSSProperties = {
+  display: "inline-flex",
+  color: "var(--text-3)",
+  transition: "transform var(--t-fast) var(--ease)",
+};
+
+const diffNames: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 4,
+  padding: "4px 0 6px 16px",
 };
 
 const metaRow: React.CSSProperties = {
