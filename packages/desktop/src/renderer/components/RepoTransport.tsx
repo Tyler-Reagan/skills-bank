@@ -8,7 +8,9 @@ import type {
   ReadManifestFromRepoResult,
 } from "../../shared/ipc.js";
 import type { LinkedRepoMetadata } from "../../shared/ipc.js";
-import { Icon } from "./Icon.js";
+import { useDisclosureSet } from "../hooks/useDisclosure.js";
+import { DisclosureChevron } from "./DisclosureChevron.js";
+import { SkillTagList } from "./SkillTagList.js";
 
 interface Props {
   mode: "export" | "import";
@@ -56,21 +58,14 @@ const DIFF_CATEGORIES: {
  * skills fall in it; empty categories stay as a static count.
  */
 function DiffTable({ diff }: { diff: ManifestDiff }): React.ReactElement {
-  const [open, setOpen] = useState<Set<string>>(new Set());
-  const toggle = (key: string) =>
-    setOpen((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+  const { isOpen, toggle } = useDisclosureSet();
 
   return (
     <div style={diffTable}>
       {DIFF_CATEGORIES.map(({ key, label, color }) => {
         const names = diff[key];
         const expandable = names.length > 0;
-        const isOpen = open.has(key);
+        const open = isOpen(key);
         return (
           <div key={key}>
             <button
@@ -81,30 +76,22 @@ function DiffTable({ diff }: { diff: ManifestDiff }): React.ReactElement {
                 cursor: expandable ? "pointer" : "default",
               }}
               onClick={expandable ? () => toggle(key) : undefined}
-              aria-expanded={expandable ? isOpen : undefined}
+              aria-expanded={expandable ? open : undefined}
             >
               <span style={diffLabelWrap}>
-                <span
+                <DisclosureChevron
+                  open={open}
                   style={{
-                    ...diffChevron,
+                    color: "var(--text-3)",
                     visibility: expandable ? "visible" : "hidden",
-                    transform: isOpen ? "rotate(180deg)" : "none",
                   }}
-                >
-                  <Icon name="chevron-down" size="sm" />
-                </span>
+                />
                 <span style={diffLabel}>{label}</span>
               </span>
               <span style={{ color }}>{names.length}</span>
             </button>
-            {expandable && isOpen && (
-              <div style={diffNames}>
-                {names.map((n) => (
-                  <span key={n} className="skill-tag">
-                    {n}
-                  </span>
-                ))}
-              </div>
+            {expandable && open && (
+              <SkillTagList names={names} style={diffNames} />
             )}
           </div>
         );
@@ -509,16 +496,9 @@ const diffLabelWrap: React.CSSProperties = {
   gap: 4,
 };
 
-const diffChevron: React.CSSProperties = {
-  display: "inline-flex",
-  color: "var(--text-3)",
-  transition: "transform var(--t-fast) var(--ease)",
-};
-
+// Indent the disclosed names under their category row; SkillTagList's
+// own class supplies the flex-wrap layout.
 const diffNames: React.CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 4,
   padding: "4px 0 6px 16px",
 };
 

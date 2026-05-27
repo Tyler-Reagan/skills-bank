@@ -1394,12 +1394,6 @@ select {
   background: rgba(0, 0, 0, 0.08);
   opacity: 1;
 }
-.sync-banner-chevron {
-  transition: transform var(--t-fast) var(--ease);
-}
-.sync-banner-toggle.open .sync-banner-chevron {
-  transform: rotate(180deg);
-}
 .sync-banner-details {
   display: flex;
   flex-direction: column;
@@ -1418,7 +1412,16 @@ select {
   font-weight: 600;
   color: var(--text-2);
 }
-.sync-banner-detail-names {
+
+/* Shared disclosure affordance: rotating chevron + wrapped skill chips. */
+.disclosure-chevron {
+  display: inline-flex;
+  transition: transform var(--t-fast) var(--ease);
+}
+.disclosure-chevron.open {
+  transform: rotate(180deg);
+}
+.skill-tag-list {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s1);
@@ -1426,7 +1429,7 @@ select {
 
 @media (prefers-reduced-motion: reduce) {
   .sync-banner,
-  .sync-banner-chevron {
+  .disclosure-chevron {
     transition: none;
   }
 }

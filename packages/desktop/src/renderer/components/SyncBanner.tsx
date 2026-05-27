@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { SyncStatus } from "../../shared/ipc.js";
+import { useDisclosure } from "../hooks/useDisclosure.js";
+import { DisclosureChevron } from "./DisclosureChevron.js";
 import { Icon } from "./Icon.js";
+import { SkillTagList } from "./SkillTagList.js";
 
 interface Props {
   status: SyncStatus;
@@ -44,7 +47,11 @@ export function SyncBanner({
   onResolveConflicts,
   onResetPending,
 }: Props): React.ReactElement | null {
-  const [expanded, setExpanded] = useState(false);
+  const {
+    open: expanded,
+    toggle: toggleExpanded,
+    close: closeExpanded,
+  } = useDisclosure();
   const [paused, setPaused] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
@@ -59,10 +66,10 @@ export function SyncBanner({
 
   // Reset transient UI whenever a new banner appears.
   useEffect(() => {
-    setExpanded(false);
+    closeExpanded();
     setPaused(false);
     setLeaving(false);
-  }, [doneKey, status.kind]);
+  }, [doneKey, status.kind, closeExpanded]);
 
   // Auto-fade the done state. Paused by hover/focus/expand.
   useEffect(() => {
@@ -130,18 +137,14 @@ export function SyncBanner({
           </span>
           {hasDetails && (
             <button
-              className={`sync-banner-toggle${expanded ? " open" : ""}`}
+              className="sync-banner-toggle"
               type="button"
               aria-expanded={expanded}
               aria-controls="sync-banner-details"
-              onClick={() => setExpanded((v) => !v)}
+              onClick={toggleExpanded}
             >
               {expanded ? "Hide" : "Details"}
-              <Icon
-                name="chevron-down"
-                size="sm"
-                className="sync-banner-chevron"
-              />
+              <DisclosureChevron open={expanded} />
             </button>
           )}
           {status.conflicts > 0 && (
@@ -235,13 +238,7 @@ function DetailGroup({
       <span className="sync-banner-detail-title">
         {title} ({names.length})
       </span>
-      <div className="sync-banner-detail-names">
-        {names.map((name) => (
-          <span key={name} className="skill-tag">
-            {name}
-          </span>
-        ))}
-      </div>
+      <SkillTagList names={names} />
     </div>
   );
 }
