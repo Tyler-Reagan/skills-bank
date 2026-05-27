@@ -3,6 +3,27 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.13.0
+
+Expandable detail views for the sync banner and the manifest diff, plus a renderer-internal cleanup pass — lifecycle hooks, a modal router, and wider `useIpcQuery` adoption.
+
+### Added
+
+- **SyncBanner expandable details + auto-fade.** A successful sync banner now carries a "Details" disclosure that lists which skills were updated and which are no longer in the source repo, and it self-dismisses after 5s — paused while hovered, focused, or expanded, and instant under `prefers-reduced-motion`. Error and pending-conflict banners stay put (they're actionable). (#90)
+- **Manifest diff per-category detail.** Each `DiffTable` category — Added / Removed / Changed / Unchanged — is now a disclosure row that expands to list the skills in it. (#90)
+
+### Changed (internal)
+
+- **`SyncStatus.done.upserted` and `ManifestDiff.unchanged` now carry skill names** (`string[]`) rather than just counts, feeding the new detail views; `manifest-diff` reports `unchanged` as names like the other three axes. (#90)
+- **`useModalRouter`** consolidates ~18 scattered modal-state variables in `AppContent` into a single `ActiveModal` discriminated union — "two navigation modals open at once" is now unrepresentable. The drawer, the sync-triggered conflict resolver, and the bulk resolve-all flow stay separate by design. (#98)
+- **Lifecycle hooks `useSyncFeed` / `useUpdateFeed` / `useManifestImportProgress`** pull the boot + subscription effects (sync feed, auto-update feed + badge derivation, manifest-import progress) out of `App.tsx`, each owning its full boot-load → subscription → derived-state lifecycle. (#93)
+- **Shared `SkillTagList` / `DisclosureChevron` / `useDisclosure` primitives + a `useAutoDismiss` hook** back the expand/auto-fade UI; `SyncBanner` is decomposed into per-state sub-components. (#90)
+- **`useIpcQuery` adopted in `SettingsModal`, `ConflictResolutionModal`, and `RepoTransport`'s preview fetch**, removing the remaining hand-rolled mount-fetch effects. A `rateLimitReached` helper centralizes the GitHub rate-limit message prefix. (#91)
+
+### Fixed
+
+- **Pre-existing prettier drift in `main.ts`** (`runManifestImportCore` signature) that was failing `format:check` on `main`. (#91)
+
 ## v1.12.0
 
 Manifest linked-repo transport: push and pull `registry-manifest.json` directly to and from your linked GitHub repo without leaving the app.
