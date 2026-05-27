@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type {
   ConflictAction,
   ConflictEntry,
   SyncDecisions,
 } from "@skills-bank/core";
 import type { SkillDiffResult } from "../../shared/ipc.js";
+import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { BulkSelectToolbar, type BulkAction } from "./BulkSelectToolbar.js";
 import {
   ConflictActionPicker,
@@ -76,13 +77,8 @@ export function ConflictResolutionModal({
     >
   >({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [registryRoot, setRegistryRoot] = useState<string | null>(null);
-
-  useEffect(() => {
-    void window.skillsBank
-      .getConfig()
-      .then((c) => setRegistryRoot(c.registryRoot));
-  }, []);
+  const { data: config } = useIpcQuery(() => window.skillsBank.getConfig(), []);
+  const registryRoot = config?.registryRoot ?? null;
 
   const toggleDiff = (c: ConflictEntry) => {
     const open = !expanded[c.name];
