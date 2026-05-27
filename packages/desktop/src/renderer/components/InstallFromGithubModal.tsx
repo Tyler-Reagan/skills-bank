@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { rateLimitReached } from "../ghRateLimit.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
 import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
@@ -56,7 +57,7 @@ export function InstallFromGithubModal({
         case "mirror-failed":
           if (r.rateLimit) {
             flashError(
-              `GitHub rate limit reached (${r.rateLimit.limit}/hr${r.rateLimit.unauthenticated ? ", unauthenticated" : ""}). Sign in via Account for 5000/hr.`,
+              `${rateLimitReached(r.rateLimit)}. Sign in via Account for 5000/hr.`,
             );
             setError("Rate-limited. Sign in for a higher ceiling.");
           } else {
