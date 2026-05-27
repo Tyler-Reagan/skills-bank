@@ -53,6 +53,7 @@ import { ManifestModal } from "./components/ManifestModal.js";
 import { UpdatesModal } from "./components/UpdatesModal.js";
 import { ConfirmDialog } from "./components/ConfirmDialog.js";
 import { DestinationPickerDialog } from "./components/DestinationPickerDialog.js";
+import { useModalRouter } from "./hooks/useModalRouter.js";
 import { useRescanController } from "./hooks/useRescanController.js";
 import {
   RegistryHostProvider,
@@ -130,6 +131,76 @@ export function App(): React.ReactElement {
   );
 }
 
+/**
+ * Every mutually-exclusive modal AppContent can show. One at a time —
+ * see useModalRouter. The drawer (`selected`), the sync-triggered
+ * conflict resolver (`conflictModalEntries`), and the bulk resolve-all
+ * flow keep their own state because they can overlay a modal or carry
+ * multi-step state.
+ */
+type ActiveModal =
+  | { kind: "register" }
+  | { kind: "settings" }
+  | { kind: "installFromGithub" }
+  | { kind: "shortcuts" }
+  | { kind: "account" }
+  | { kind: "connectGithub" }
+  | { kind: "updates" }
+  | { kind: "repoPicker" }
+  | { kind: "updateNotes" }
+  | { kind: "manifest"; mode: "import" | "export" }
+  | {
+      kind: "manageLinks";
+      target: { name: string; installations: InstalledSkill[] };
+    }
+  | {
+      kind: "conflict";
+      target: {
+        name: string;
+        conflicts: InstalledSkill[];
+        /**
+         * False when resolving conflicts for an unregistered skill —
+         * hides "Replace with symlink to registry" (no registry copy to
+         * point at) and defaults each per-installation pick to delete.
+         */
+        allowReplaceWithSymlink: boolean;
+      };
+    }
+  | {
+      kind: "installConflict";
+      target: { name: string; errors: InstallConflictError[] };
+    }
+  | {
+      kind: "delete";
+      target: { name: string; installations: InstalledSkill[] };
+    }
+  | {
+      kind: "mergeConflict";
+      target: {
+        sourcePath: string;
+        conflicts: import("@skills-bank/core").ConflictEntry[];
+        priorReport: import("@skills-bank/core").MergeImportReport;
+      };
+    }
+  | {
+      kind: "pickDestination";
+      target: { errorId: number; name: string; currentDestination: AgentId };
+    }
+  | {
+      kind: "overwrite";
+      target: { errorId: number; name: string; destDir: string };
+    }
+  | {
+      kind: "bulkRepair";
+      target: {
+        repaired: number;
+        unrepairable: Array<{
+          name: string;
+          entries: Array<{ agent: string; linkPath: string }>;
+        }>;
+      };
+    };
+
 function AppContent(): React.ReactElement {
   const {
     flash,
@@ -181,28 +252,14 @@ function AppContent(): React.ReactElement {
     const v = e.copyableDetails?.[key];
     return typeof v === "string" ? v : null;
   };
-  // Destination-collision recovery surfaces (replacing the previous
-  // Settings-redirect + native window.confirm).
-  const [pickDestinationTarget, setPickDestinationTarget] = useState<{
-    errorId: number;
-    name: string;
-    currentDestination: AgentId;
-  } | null>(null);
-  const [overwriteTarget, setOverwriteTarget] = useState<{
-    errorId: number;
-    name: string;
-    destDir: string;
-  } | null>(null);
-  // Mid-sweep state for the bulk Fix-broken-links flow: after we've
-  // tried to repair each skill, the unrepairable subset is shown in a
-  // styled ConfirmDialog that asks whether to drop the dead symlinks.
-  const [bulkRepairPrompt, setBulkRepairPrompt] = useState<{
-    repaired: number;
-    unrepairable: Array<{
-      name: string;
-      entries: Array<{ agent: string; linkPath: string }>;
-    }>;
-  } | null>(null);
+  // At most one modal open at a time; see ActiveModal + useModalRouter.
+  const { modal, openModal, closeModal } = useModalRouter<ActiveModal>();
+  // The always-mounted ConfirmDialogs below read their payload via these
+  // narrowed views (they toggle on `open` rather than mount/unmount).
+  const pickDestinationTarget =
+    modal?.kind === "pickDestination" ? modal.target : null;
+  const overwriteTarget = modal?.kind === "overwrite" ? modal.target : null;
+  const bulkRepairPrompt = modal?.kind === "bulkRepair" ? modal.target : null;
   // Dispatch table for AppError suggestedActions. Each kind maps to a
   // handler that knows the surrounding context (current settings,
   // refresh, toast). The handler can dismiss the originating panel.
@@ -220,10 +277,9 @@ function AppContent(): React.ReactElement {
         flash("Couldn't retry — original target name was lost.");
         return;
       }
-      setPickDestinationTarget({
-        errorId: id,
-        name,
-        currentDestination: dest,
+      openModal({
+        kind: "pickDestination",
+        target: { errorId: id, name, currentDestination: dest },
       });
       return;
     }
@@ -234,53 +290,10 @@ function AppContent(): React.ReactElement {
         flash("Couldn't retry — original target name was lost.");
         return;
       }
-      setOverwriteTarget({ errorId: id, name, destDir });
+      openModal({ kind: "overwrite", target: { errorId: id, name, destDir } });
       return;
     }
   };
-  const [showRegister, setShowRegister] = useState(false);
-  // Manage-agent-links is a standalone modal targeting a single skill name.
-  // Its target may originate from the registry tab, the installed-registered
-  // section, or the installed-not-registered section — uniformly handled.
-  const [manageLinksTarget, setManageLinksTarget] = useState<{
-    name: string;
-    installations: InstalledSkill[];
-  } | null>(null);
-  const [conflictTarget, setConflictTarget] = useState<{
-    name: string;
-    conflicts: InstalledSkill[];
-    /**
-     * False when resolving conflicts for an unregistered skill — hides
-     * the "Replace with symlink to registry" action (no registry copy
-     * to point at) and switches the default per-installation pick to
-     * delete. After this resolution the skill lands in Unregistered;
-     * the Register step is separate, preserving level-pure flow.
-     */
-    allowReplaceWithSymlink: boolean;
-  } | null>(null);
-  // Surfaced when installSkill fails because something already exists at
-  // an agent's link path. The user picks Force / Resolve per-agent /
-  // Cancel from a dedicated modal rather than a vague toast.
-  const [installConflict, setInstallConflict] = useState<{
-    name: string;
-    errors: InstallConflictError[];
-  } | null>(null);
-  // M9b: confirmation target for the inline Delete button on
-  // Unregistered cards. Holds the skill name + the installations
-  // that would be removed so the modal can preview them.
-  const [deleteTarget, setDeleteTarget] = useState<{
-    name: string;
-    installations: InstalledSkill[];
-  } | null>(null);
-  // M8: pending merge-import conflicts. When non-null, the sync-style
-  // ConflictResolutionModal renders against this list. priorReport
-  // carries the partial-progress numbers (imported / kept-mine /
-  // renamed) so the post-resolve toast aggregates correctly.
-  const [mergeConflictTarget, setMergeConflictTarget] = useState<{
-    sourcePath: string;
-    conflicts: import("@skills-bank/core").ConflictEntry[];
-    priorReport: import("@skills-bank/core").MergeImportReport;
-  } | null>(null);
   // Bulk "Resolve all" confirmation list. Each entry's conflicts will
   // be replaced with symlinks to the registry copy. Broken-symlink
   // groups are excluded by the caller because they require source
@@ -297,23 +310,15 @@ function AppContent(): React.ReactElement {
     string,
     string[]
   > | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showInstallFromGithub, setShowInstallFromGithub] = useState(false);
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showAccount, setShowAccount] = useState(false);
-  const [showConnectGithub, setShowConnectGithub] = useState(false);
-  const [showUpdatesModal, setShowUpdatesModal] = useState(false);
   // Auto-update state. `latestUpdateStatus` is a live mirror of the most
-  // recent event the main process broadcast; the modal reads it directly
-  // when open, so a render during `downloading` shows the live progress
-  // bar without us having to snapshot. `isUpdateModalOpen` is a plain
-  // boolean — the modal's content is fully derived from
-  // `latestUpdateStatus`. `dismissedUpdateVersion` is hydrated once at
-  // boot from config.json and gates the badge for that specific version
-  // only; the in-app "Check for app updates" entry bypasses it.
+  // recent event the main process broadcast; the "updateNotes" modal
+  // reads it directly when open, so a render during `downloading` shows
+  // the live progress bar without us having to snapshot.
+  // `dismissedUpdateVersion` is hydrated once at boot from config.json
+  // and gates the badge for that specific version only; the in-app
+  // "Check for app updates" entry bypasses it.
   const [latestUpdateStatus, setLatestUpdateStatus] =
     useState<UpdateStatus | null>(null);
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [dismissedUpdateVersion, setDismissedUpdateVersion] = useState<
     string | null
   >(null);
@@ -344,7 +349,6 @@ function AppContent(): React.ReactElement {
     ConflictEntry[] | null
   >(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
-  const [showRepoPicker, setShowRepoPicker] = useState(false);
 
   // Overlay reconciliation: if a skill referenced by an open drawer or
   // modal disappears from installed/registry after refresh() (e.g. the
@@ -355,14 +359,20 @@ function AppContent(): React.ReactElement {
     if (selected && !registryByName.has(selected.name)) {
       setSelected(null);
     }
-    if (conflictTarget && !installedNames.has(conflictTarget.name)) {
-      setConflictTarget(null);
+    if (modal?.kind === "conflict" && !installedNames.has(modal.target.name)) {
+      closeModal();
     }
-    if (installConflict && !registryByName.has(installConflict.name)) {
-      setInstallConflict(null);
+    if (
+      modal?.kind === "installConflict" &&
+      !registryByName.has(modal.target.name)
+    ) {
+      closeModal();
     }
-    if (manageLinksTarget && !installedNames.has(manageLinksTarget.name)) {
-      setManageLinksTarget(null);
+    if (
+      modal?.kind === "manageLinks" &&
+      !installedNames.has(modal.target.name)
+    ) {
+      closeModal();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- overlays are inputs to validate, not deps
   }, [registryByName, installedNames]);
@@ -435,7 +445,7 @@ function AppContent(): React.ReactElement {
               label: "Sign in",
               onClick: () => {
                 dismissToast();
-                setShowAccount(true);
+                openModal({ kind: "account" });
               },
             }
           : undefined;
@@ -547,7 +557,7 @@ function AppContent(): React.ReactElement {
     setTabPersisted,
     onRequestSignIn: useCallback(() => {
       dismissToast();
-      setShowAccount(true);
+      openModal({ kind: "account" });
     }, [dismissToast]),
   });
 
@@ -847,7 +857,7 @@ function AppContent(): React.ReactElement {
   // The folder-picker path (Import a registry from disk) is a separate
   // Operations action; see `importRegistryFromDisk` below.
   const changeRegistry = useCallback(async () => {
-    setShowRepoPicker(true);
+    openModal({ kind: "repoPicker" });
   }, []);
 
   // Folder-picker replace path. Bundled-default and custom-repo users
@@ -893,12 +903,15 @@ function AppContent(): React.ReactElement {
       await refresh();
       return;
     }
-    setMergeConflictTarget({
-      sourcePath: r.sourcePath,
-      conflicts: r.report.conflicts,
-      priorReport: r.report,
+    openModal({
+      kind: "mergeConflict",
+      target: {
+        sourcePath: r.sourcePath,
+        conflicts: r.report.conflicts,
+        priorReport: r.report,
+      },
     });
-  }, [flash, refresh]);
+  }, [flash, refresh, openModal]);
 
   const exportRegistry = useCallback(async () => {
     const r = await window.skillsBank.exportRegistry();
@@ -923,10 +936,6 @@ function AppContent(): React.ReactElement {
   // manifest, disable for corruption-risking siblings). Cleared in the
   // `finally` so an aborted or failed import returns the UI to idle.
   const [importingManifest, setImportingManifest] = useState(false);
-
-  const [showManifestModal, setShowManifestModal] = useState<
-    false | "import" | "export"
-  >(false);
 
   // Tier 2 per-skill progress. Tracks the currently-in-flight manifest
   // import's progress so the ImportIndicator chip can render `N/total`
@@ -1097,7 +1106,7 @@ function AppContent(): React.ReactElement {
       const r = await window.skillsBank.reposReplaceRegistry(fullName);
       if (r.ok) {
         flash(r.message);
-        setShowRepoPicker(false);
+        closeModal();
         const next = await window.skillsBank.authStatus();
         setAuthStatus(next);
         await refresh();
@@ -1112,7 +1121,7 @@ function AppContent(): React.ReactElement {
   const signOut = useCallback(async () => {
     const s = await window.skillsBank.authLogout();
     setAuthStatus(s);
-    setShowRepoPicker(false);
+    closeModal();
     flash("Signed out");
   }, [flash]);
 
@@ -1126,7 +1135,7 @@ function AppContent(): React.ReactElement {
         latestUpdateStatus.kind === "downloading" ||
         latestUpdateStatus.kind === "downloaded")
     ) {
-      setIsUpdateModalOpen(true);
+      openModal({ kind: "updateNotes" });
     } else {
       void window.skillsBank.checkForUpdates().then((r) => {
         flash(r.ok ? "Checking for updates" : r.message);
@@ -1143,10 +1152,10 @@ function AppContent(): React.ReactElement {
     return window.skillsBank.onHeaderMenuAction((action) => {
       switch (action) {
         case "openSettings":
-          setShowSettings(true);
+          openModal({ kind: "settings" });
           break;
         case "openShortcuts":
-          setShowShortcuts(true);
+          openModal({ kind: "shortcuts" });
           break;
         case "refresh":
           void rescan.onRefreshClick();
@@ -1212,7 +1221,7 @@ function AppContent(): React.ReactElement {
   // Rules-of-Hooks violation. None of the consumers memoize, so referential
   // stability isn't load-bearing.
   const openUpdateModal = () => {
-    if (isLiveUpdate) setIsUpdateModalOpen(true);
+    if (isLiveUpdate) openModal({ kind: "updateNotes" });
   };
 
   // Initial loading — skeleton over real chrome.
@@ -1281,12 +1290,12 @@ function AppContent(): React.ReactElement {
         }
         onSync={() => void refreshLinkedRepo()}
         authStatus={authStatus}
-        onOpenAccount={() => setShowAccount(true)}
-        onOpenSettings={() => setShowSettings(true)}
+        onOpenAccount={() => openModal({ kind: "account" })}
+        onOpenSettings={() => openModal({ kind: "settings" })}
         pendingUpdateVersion={pendingUpdateVersion}
         onShowUpdate={openUpdateModal}
         pendingSkillUpdates={pendingSkillUpdates.length}
-        onShowUpdates={() => setShowUpdatesModal(true)}
+        onShowUpdates={() => openModal({ kind: "updates" })}
         onViewRescanUpdates={rescan.onViewUpdates}
         importingManifest={importingManifest}
         onCancelImport={cancelManifestImport}
@@ -1386,7 +1395,7 @@ function AppContent(): React.ReactElement {
               onAddCustomSkillsDir={addCustomSkillsDir}
               onRemoveCustomSkillsDir={removeCustomSkillsDir}
               onSwitchToBrowse={() => setTabPersisted("browse")}
-              onRegisterAll={() => setShowRegister(true)}
+              onRegisterAll={() => openModal({ kind: "register" })}
               onRegisterOne={(s) => {
                 // Open the unified detail drawer with a synthetic registry
                 // entry so the user gets the same Register / Manage-links /
@@ -1416,10 +1425,13 @@ function AppContent(): React.ReactElement {
                       (c) => c.kind !== "ours" && c.kind !== "broken-symlink",
                     )
                   : g.conflicts.filter((c) => c.kind !== "ours");
-                setConflictTarget({
-                  name: g.name,
-                  conflicts,
-                  allowReplaceWithSymlink: isRegistered,
+                openModal({
+                  kind: "conflict",
+                  target: {
+                    name: g.name,
+                    conflicts,
+                    allowReplaceWithSymlink: isRegistered,
+                  },
                 });
               }}
               onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
@@ -1464,18 +1476,20 @@ function AppContent(): React.ReactElement {
                 // Hand off to the styled ConfirmDialog. The dialog's
                 // onConfirm runs the removal sweep; cancel surfaces a
                 // partial-success toast.
-                setBulkRepairPrompt({
-                  repaired,
-                  unrepairable: unrepairableBySkill,
+                openModal({
+                  kind: "bulkRepair",
+                  target: { repaired, unrepairable: unrepairableBySkill },
                 });
               }}
               onInlineDelete={(group) => {
-                // M9b: stash the group on deleteTarget so the
-                // confirmation modal can preview which paths get
-                // touched. Actual deletion fires only after the
-                // user confirms.
+                // M9b: open the delete-confirm modal with the group so it
+                // can preview which paths get touched. Actual deletion
+                // fires only after the user confirms.
                 const mine = installed.filter((i) => i.name === group.name);
-                setDeleteTarget({ name: group.name, installations: mine });
+                openModal({
+                  kind: "delete",
+                  target: { name: group.name, installations: mine },
+                });
               }}
               onInlineRegister={(group) => {
                 // Unregistered-section shortcut. Registers the only
@@ -1520,17 +1534,20 @@ function AppContent(): React.ReactElement {
                   // removeBrokenLinks for each entry; onCancel
                   // surfaces a "left unresolved" toast.
                   await refresh();
-                  setBulkRepairPrompt({
-                    repaired: report.repaired.length > 0 ? 1 : 0,
-                    unrepairable: [
-                      {
-                        name: g.name,
-                        entries: report.unrepairable.map((e) => ({
-                          agent: e.agent,
-                          linkPath: e.linkPath,
-                        })),
-                      },
-                    ],
+                  openModal({
+                    kind: "bulkRepair",
+                    target: {
+                      repaired: report.repaired.length > 0 ? 1 : 0,
+                      unrepairable: [
+                        {
+                          name: g.name,
+                          entries: report.unrepairable.map((e) => ({
+                            agent: e.agent,
+                            linkPath: e.linkPath,
+                          })),
+                        },
+                      ],
+                    },
                   });
                 })();
               }}
@@ -1541,10 +1558,10 @@ function AppContent(): React.ReactElement {
         </div>
       )}
 
-      {showRegister && (
+      {modal?.kind === "register" && (
         <RegisterModal
           onClose={async () => {
-            setShowRegister(false);
+            closeModal();
             await refresh();
           }}
           onFlash={flash}
@@ -1557,25 +1574,25 @@ function AppContent(): React.ReactElement {
         />
       )}
 
-      {manageLinksTarget && (
+      {modal?.kind === "manageLinks" && (
         <ManageLinksModal
-          name={manageLinksTarget.name}
-          installations={manageLinksTarget.installations}
+          name={modal.target.name}
+          installations={modal.target.installations}
           onClose={async () => {
-            setManageLinksTarget(null);
+            closeModal();
             await refresh();
           }}
           onFlash={flash}
         />
       )}
 
-      {conflictTarget && (
+      {modal?.kind === "conflict" && (
         <ConflictResolveModal
-          name={conflictTarget.name}
-          conflicts={conflictTarget.conflicts}
-          allowReplaceWithSymlink={conflictTarget.allowReplaceWithSymlink}
+          name={modal.target.name}
+          conflicts={modal.target.conflicts}
+          allowReplaceWithSymlink={modal.target.allowReplaceWithSymlink}
           onClose={async () => {
-            setConflictTarget(null);
+            closeModal();
             await refresh();
           }}
           onFlash={flash}
@@ -1755,52 +1772,54 @@ function AppContent(): React.ReactElement {
         </div>
       )}
 
-      {installConflict && (
+      {modal?.kind === "installConflict" && (
         <InstallConflictModal
-          name={installConflict.name}
-          errors={installConflict.errors}
-          onClose={() => setInstallConflict(null)}
+          name={modal.target.name}
+          errors={modal.target.errors}
+          onClose={() => closeModal()}
           onForce={async () => {
             const r = await window.skillsBank.install(
-              installConflict.name,
+              modal.target.name,
               true,
               settings.defaultInstallAgents.length > 0
                 ? settings.defaultInstallAgents
                 : undefined,
             );
             flash(r.message);
-            setInstallConflict(null);
+            closeModal();
             await refresh();
           }}
           onResolve={() => {
             // Hand off to ConflictResolveModal using the current
             // installed snapshot for the same name. The user picks
-            // per-agent actions there.
+            // per-agent actions there. openModal replaces this modal.
             const conflicts = installed.filter(
               (i) =>
-                i.name === installConflict.name &&
+                i.name === modal.target.name &&
                 i.kind !== "ours" &&
                 i.kind !== "broken-symlink",
             );
             // Force-install conflicts only occur for registered skills
             // (force-install is a registered-level action), so the
             // resolution always allows the symlink-to-registry path.
-            setConflictTarget({
-              name: installConflict.name,
-              conflicts,
-              allowReplaceWithSymlink: true,
+            openModal({
+              kind: "conflict",
+              target: {
+                name: modal.target.name,
+                conflicts,
+                allowReplaceWithSymlink: true,
+              },
             });
-            setInstallConflict(null);
           }}
         />
       )}
 
-      {mergeConflictTarget && (
+      {modal?.kind === "mergeConflict" && (
         <ConflictResolutionModal
-          conflicts={mergeConflictTarget.conflicts}
+          conflicts={modal.target.conflicts}
           onClose={() => {
-            const prior = mergeConflictTarget.priorReport;
-            setMergeConflictTarget(null);
+            const prior = modal.target.priorReport;
+            closeModal();
             const parts: string[] = [];
             if (prior.imported.length > 0)
               parts.push(`${prior.imported.length} imported`);
@@ -1814,8 +1833,8 @@ function AppContent(): React.ReactElement {
             void refresh();
           }}
           onResolve={async (decisions) => {
-            const target = mergeConflictTarget;
-            setMergeConflictTarget(null);
+            const target = modal.target;
+            closeModal();
             const r = await window.skillsBank.importRegistryMergeApply(
               target.sourcePath,
               decisions,
@@ -1826,14 +1845,14 @@ function AppContent(): React.ReactElement {
         />
       )}
 
-      {deleteTarget && (
+      {modal?.kind === "delete" && (
         <DeleteUnregisteredConfirm
-          name={deleteTarget.name}
-          installations={deleteTarget.installations}
-          onCancel={() => setDeleteTarget(null)}
+          name={modal.target.name}
+          installations={modal.target.installations}
+          onCancel={() => closeModal()}
           onConfirm={async () => {
-            const target = deleteTarget;
-            setDeleteTarget(null);
+            const target = modal.target;
+            closeModal();
             const r = await window.skillsBank.deleteUnregistered(target.name);
             flash(r.message);
             await refresh();
@@ -1841,15 +1860,14 @@ function AppContent(): React.ReactElement {
         />
       )}
 
-      {showSettings && (
+      {modal?.kind === "settings" && (
         <SettingsModal
           settings={settings}
           onSave={saveSettings}
-          onClose={() => setShowSettings(false)}
-          onOpenInstallFromGithub={() => {
-            setShowSettings(false);
-            setShowInstallFromGithub(true);
-          }}
+          onClose={() => closeModal()}
+          onOpenInstallFromGithub={() =>
+            openModal({ kind: "installFromGithub" })
+          }
           hiddenCanon={registry.filter((e) => e.hidden).map((e) => e.name)}
           onUnhide={async (name) => {
             const r = await window.skillsBank.unhide(name);
@@ -1859,63 +1877,58 @@ function AppContent(): React.ReactElement {
           isAuthed={Boolean(authStatus?.user)}
         />
       )}
-      {showInstallFromGithub && (
+      {modal?.kind === "installFromGithub" && (
         <InstallFromGithubModal
-          onClose={() => setShowInstallFromGithub(false)}
+          onClose={() => closeModal()}
           onInstalled={() => {
-            setShowInstallFromGithub(false);
+            closeModal();
             void refresh();
           }}
         />
       )}
 
-      {showShortcuts && (
-        <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
+      {modal?.kind === "shortcuts" && (
+        <KeyboardShortcutsOverlay onClose={() => closeModal()} />
       )}
 
-      {showAccount && (
+      {modal?.kind === "account" && (
         <AccountModal
           authStatus={authStatus}
           appVersion={"dev"}
-          onClose={() => setShowAccount(false)}
+          onClose={() => closeModal()}
           onChangeRegistry={async () => {
-            setShowAccount(false);
+            closeModal();
             await changeRegistry();
           }}
           onRefreshRegistry={async () => {
-            setShowAccount(false);
+            closeModal();
             await refreshLinkedRepo();
           }}
           onImportRegistry={async () => {
-            setShowAccount(false);
+            closeModal();
             await importRegistryFromDisk();
           }}
           onMergeRegistry={async () => {
-            setShowAccount(false);
+            closeModal();
             await mergeRegistry();
           }}
           onExportRegistry={async () => {
-            setShowAccount(false);
+            closeModal();
             await exportRegistry();
           }}
-          onOpenImportManifest={() => {
-            setShowAccount(false);
-            setShowManifestModal("import");
-          }}
+          onOpenImportManifest={() =>
+            openModal({ kind: "manifest", mode: "import" })
+          }
           importingManifest={importingManifest}
-          onOpenExportManifest={() => {
-            setShowAccount(false);
-            setShowManifestModal("export");
-          }}
+          onOpenExportManifest={() =>
+            openModal({ kind: "manifest", mode: "export" })
+          }
           onSignOut={async () => {
-            setShowAccount(false);
+            closeModal();
             await signOut();
           }}
           onCheckForUpdates={checkForUpdates}
-          onConnectGithub={() => {
-            setShowAccount(false);
-            setShowConnectGithub(true);
-          }}
+          onConnectGithub={() => openModal({ kind: "connectGithub" })}
         />
       )}
 
@@ -1930,16 +1943,16 @@ function AppContent(): React.ReactElement {
         />
       )}
 
-      {showManifestModal !== false && (
+      {modal?.kind === "manifest" && (
         <ManifestModal
-          mode={showManifestModal}
+          mode={modal.mode}
           linkedRepo={authStatus?.linkedRepo ?? null}
           appVersion="dev"
           importingManifest={importingManifest}
           onCancelImport={cancelManifestImport}
-          onClose={() => setShowManifestModal(false)}
+          onClose={() => closeModal()}
           onImportComplete={(result) => {
-            setShowManifestModal(false);
+            closeModal();
             const registered = result.outcomes.filter(
               (o) => o.result === "registered",
             ).length;
@@ -1958,18 +1971,18 @@ function AppContent(): React.ReactElement {
             }
           }}
           onExportComplete={(msg) => {
-            setShowManifestModal(false);
+            closeModal();
             flash(msg);
           }}
         />
       )}
 
-      {showConnectGithub && authStatus && (
+      {modal?.kind === "connectGithub" && authStatus && (
         <ConnectGithubModal
           isAuthConfigured={authStatus.isAuthConfigured}
-          onClose={() => setShowConnectGithub(false)}
+          onClose={() => closeModal()}
           onConnected={(status) => {
-            setShowConnectGithub(false);
+            closeModal();
             setAuthStatus(status);
             // First-link case: user just authed and has no linked
             // repo yet → auto-prompt RepoPicker as the obvious
@@ -1982,17 +1995,17 @@ function AppContent(): React.ReactElement {
             // explicit "Change linked repo" action in Account
             // covers the rare "actually swap the repo" intent.
             if (!status.linkedRepo) {
-              setShowRepoPicker(true);
+              openModal({ kind: "repoPicker" });
             }
             void refresh();
           }}
         />
       )}
 
-      {showUpdatesModal && (
+      {modal?.kind === "updates" && (
         <UpdatesModal
           entries={pendingSkillUpdates}
-          onClose={() => setShowUpdatesModal(false)}
+          onClose={() => closeModal()}
           onUpdate={async (name) => {
             const r = await window.skillsBank.originUpdate(name);
             handleUpdateResult(r);
@@ -2000,7 +2013,7 @@ function AppContent(): React.ReactElement {
             return r;
           }}
           onView={(entry) => {
-            setShowUpdatesModal(false);
+            closeModal();
             setSelected(entry);
           }}
           onRefresh={async () => {
@@ -2017,11 +2030,11 @@ function AppContent(): React.ReactElement {
           pickDestinationTarget?.currentDestination ??
           settings.unregisterDestinationAgent
         }
-        onCancel={() => setPickDestinationTarget(null)}
+        onCancel={() => closeModal()}
         onPick={async (next, persistAsDefault) => {
           if (!pickDestinationTarget) return;
           const target = pickDestinationTarget;
-          setPickDestinationTarget(null);
+          closeModal();
           if (persistAsDefault) {
             saveSettings({
               ...settings,
@@ -2057,11 +2070,11 @@ function AppContent(): React.ReactElement {
         }
         confirmLabel="Overwrite and unregister"
         tone="danger"
-        onCancel={() => setOverwriteTarget(null)}
+        onCancel={() => closeModal()}
         onConfirm={async () => {
           if (!overwriteTarget) return;
           const target = overwriteTarget;
-          setOverwriteTarget(null);
+          closeModal();
           const r = await window.skillsBank.unregister(
             target.name,
             settings.unregisterDestinationAgent,
@@ -2127,7 +2140,7 @@ function AppContent(): React.ReactElement {
         onCancel={() => {
           if (!bulkRepairPrompt) return;
           const { repaired, unrepairable } = bulkRepairPrompt;
-          setBulkRepairPrompt(null);
+          closeModal();
           flash(
             `Repaired ${repaired}; ${unrepairable.length} left unresolved.`,
           );
@@ -2135,7 +2148,7 @@ function AppContent(): React.ReactElement {
         onConfirm={async () => {
           if (!bulkRepairPrompt) return;
           const { repaired, unrepairable } = bulkRepairPrompt;
-          setBulkRepairPrompt(null);
+          closeModal();
           const results = await Promise.allSettled(
             unrepairable.map((u) =>
               window.skillsBank
@@ -2168,18 +2181,18 @@ function AppContent(): React.ReactElement {
         }}
       />
 
-      {isUpdateModalOpen &&
+      {modal?.kind === "updateNotes" &&
         latestUpdateStatus &&
         (latestUpdateStatus.kind === "available" ||
           latestUpdateStatus.kind === "downloading" ||
           latestUpdateStatus.kind === "downloaded") && (
           <UpdateNotesModal
             status={latestUpdateStatus}
-            onClose={() => setIsUpdateModalOpen(false)}
+            onClose={() => closeModal()}
             onSkip={(version) => {
               setDismissedUpdateVersion(version);
               void window.skillsBank.setDismissedUpdateVersion(version);
-              setIsUpdateModalOpen(false);
+              closeModal();
             }}
             onDownload={() => {
               void window.skillsBank.downloadUpdate().then((r) => {
@@ -2187,7 +2200,7 @@ function AppContent(): React.ReactElement {
               });
             }}
             onRestart={() => {
-              setIsUpdateModalOpen(false);
+              closeModal();
               void window.skillsBank.quitAndInstallUpdate();
             }}
           />
@@ -2201,9 +2214,9 @@ function AppContent(): React.ReactElement {
         />
       )}
 
-      {showRepoPicker && (
+      {modal?.kind === "repoPicker" && (
         <RepoPickerModal
-          onClose={() => setShowRepoPicker(false)}
+          onClose={() => closeModal()}
           onPicked={pickRepo}
           onSignOut={signOut}
         />
@@ -2219,9 +2232,11 @@ function AppContent(): React.ReactElement {
         authStatus={authStatus}
         refresh={refresh}
         onUpdateResult={handleUpdateResult}
-        onOpenManageLinks={(t) => setManageLinksTarget(t)}
-        onOpenConflicts={(t) => setConflictTarget(t)}
-        onInstallConflict={(p) => setInstallConflict(p)}
+        onOpenManageLinks={(t) => openModal({ kind: "manageLinks", target: t })}
+        onOpenConflicts={(t) => openModal({ kind: "conflict", target: t })}
+        onInstallConflict={(p) =>
+          openModal({ kind: "installConflict", target: p })
+        }
         unregisterHintShown={() =>
           localStorage.getItem(LS_KEYS.unregisterHintShown) === "1"
         }
