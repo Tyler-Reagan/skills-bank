@@ -2089,9 +2089,7 @@ async function readManifestFromDisk(): Promise<
   }
 }
 
-async function runManifestImportCore(
-  manifest: RegistryManifest,
-): Promise<
+async function runManifestImportCore(manifest: RegistryManifest): Promise<
   | { ok: false; message: string; error?: ReturnType<typeof fromCaught> }
   | {
       ok: true;
