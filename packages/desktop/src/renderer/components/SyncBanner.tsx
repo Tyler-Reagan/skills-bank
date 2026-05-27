@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import type { SyncStatus } from "../../shared/ipc.js";
+import { useAutoDismiss } from "../hooks/useAutoDismiss.js";
 import { useDisclosure } from "../hooks/useDisclosure.js";
 import { DisclosureChevron } from "./DisclosureChevron.js";
 import { Icon } from "./Icon.js";
@@ -21,13 +22,6 @@ interface Props {
 const AUTO_FADE_MS = 5000;
 /** Opacity transition window once the fade starts. Matches --t-slow. */
 const FADE_OUT_MS = 300;
-
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
-  );
-}
 
 /**
  * Slim banner above the tabs that surfaces sync state. Active state
@@ -52,38 +46,25 @@ export function SyncBanner({
     toggle: toggleExpanded,
     close: closeExpanded,
   } = useDisclosure();
-  const [paused, setPaused] = useState(false);
-  const [leaving, setLeaving] = useState(false);
-
-  // onDismiss is an inline arrow in the parent, so keep it in a ref to
-  // avoid restarting the fade timer on every parent re-render.
-  const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
 
   // commitSha is stable for a given done result, so it identifies "this
   // banner" without churning when the parent re-renders.
   const doneKey = status.kind === "done" ? status.commitSha : null;
 
-  // Reset transient UI whenever a new banner appears.
+  // Collapse the detail panel when a new banner appears.
   useEffect(() => {
     closeExpanded();
-    setPaused(false);
-    setLeaving(false);
   }, [doneKey, status.kind, closeExpanded]);
 
-  // Auto-fade the done state. Paused by hover/focus/expand.
-  useEffect(() => {
-    if (status.kind !== "done" || paused || expanded) return;
-    const timer = window.setTimeout(() => {
-      if (prefersReducedMotion()) {
-        onDismissRef.current();
-      } else {
-        setLeaving(true);
-        window.setTimeout(() => onDismissRef.current(), FADE_OUT_MS);
-      }
-    }, AUTO_FADE_MS);
-    return () => window.clearTimeout(timer);
-  }, [status.kind, doneKey, paused, expanded]);
+  // Done state self-dismisses; paused while expanded or hovered/focused.
+  const { leaving, hoverHandlers } = useAutoDismiss({
+    active: status.kind === "done",
+    paused: expanded,
+    resetKey: doneKey,
+    onDismiss,
+    delayMs: AUTO_FADE_MS,
+    fadeMs: FADE_OUT_MS,
+  });
 
   if (status.kind === "fetching") {
     return (
@@ -126,10 +107,7 @@ export function SyncBanner({
       <div
         className={`sync-banner done expandable${leaving ? " leaving" : ""}`}
         role="status"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onFocusCapture={() => setPaused(true)}
-        onBlurCapture={() => setPaused(false)}
+        {...hoverHandlers}
       >
         <div className="sync-banner-row">
           <span className="sync-banner-msg">
