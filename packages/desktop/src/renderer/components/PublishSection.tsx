@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { PublishState, RegistryEntry } from "@skills-bank/core";
 import type { PublishSkillResult } from "../../shared/ipc.js";
+import { rateLimitReached } from "../ghRateLimit.js";
 import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
 import { Icon } from "./Icon.js";
@@ -82,7 +83,7 @@ export function PublishSection({
         break;
       case "rate-limit":
         flashError(
-          `GitHub rate limit reached (${r.rateLimit.limit}/hr). Try again at ${new Date(r.rateLimit.resetAt).toLocaleTimeString()}.`,
+          `${rateLimitReached(r.rateLimit)}. Try again at ${new Date(r.rateLimit.resetAt).toLocaleTimeString()}.`,
         );
         setError("Rate-limited. Retry after the reset window.");
         break;

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
 import {
   AGENT_LABELS,
   AGENT_PATHS,
   ALL_AGENT_IDS as ALL_AGENTS,
 } from "../agentDisplay.js";
+import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { Icon } from "./Icon.js";
 import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
@@ -117,35 +118,36 @@ export function SettingsModal({
   // Top-level agent dir symlinks — drives the conditional "Collapse
   // symlinked agent dirs" section. Loaded once on mount; refresh after
   // a successful finalize so the section disappears.
-  const [topLevelSymlinks, setTopLevelSymlinks] = useState<
-    Array<{ agent: AgentId; resolvedTarget: string; exists: boolean }>
-  >([]);
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
+
+  const { data: symlinkData, refetch: refetchSymlinks } = useIpcQuery(
+    () => window.skillsBank.listTopLevelSymlinks(),
+    [],
+    { initialData: [] },
+  );
+  const topLevelSymlinks = symlinkData ?? [];
 
   // Curated skills snapshot. Read-only display; curated is an
   // app-managed dependency post-v1.3 — content refresh runs silently
   // on app launch via runSync.
-  const [curatedSkills, setCuratedSkills] = useState<
-    Array<{ name: string; description: string }>
-  >([]);
-  const [curatedLastCheckedAt, setCuratedLastCheckedAt] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    void window.skillsBank.listTopLevelSymlinks().then(setTopLevelSymlinks);
-    void window.skillsBank.listRegistry().then((entries) => {
-      setCuratedSkills(
-        entries
-          .filter((e) => e.source.source === "curated")
-          .map((e) => ({ name: e.name, description: e.description })),
-      );
-    });
-    void window.skillsBank.getSyncReport().then((report) => {
-      setCuratedLastCheckedAt(report?.syncedAt ?? null);
-    });
-  }, []);
+  const { data: registryEntries } = useIpcQuery(
+    () => window.skillsBank.listRegistry(),
+    [],
+    { initialData: [] },
+  );
+  const curatedSkills = useMemo(
+    () =>
+      (registryEntries ?? [])
+        .filter((e) => e.source.source === "curated")
+        .map((e) => ({ name: e.name, description: e.description })),
+    [registryEntries],
+  );
+  const { data: syncReport } = useIpcQuery(
+    () => window.skillsBank.getSyncReport(),
+    [],
+  );
+  const curatedLastCheckedAt = syncReport?.syncedAt ?? null;
 
   const runFinalize = async () => {
     setFinalizing(true);
@@ -153,8 +155,7 @@ export function SettingsModal({
     try {
       const r = await window.skillsBank.finalize();
       if (r.ok) {
-        const next = await window.skillsBank.listTopLevelSymlinks();
-        setTopLevelSymlinks(next);
+        refetchSymlinks();
       } else {
         setFinalizeError(
           r.blockingEntries
