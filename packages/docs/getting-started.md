@@ -41,9 +41,16 @@ Open the **Installed** tab. You'll see two sections:
 
 Click any "Not registered" card to manage it: register it into Skills Bank, link it into other agents, or fix broken links.
 
+## Organize with labels
+
+Skills are automatically grouped into categories — frontend, backend, AI tooling, and [twelve more](/reference/labels) — based on each skill's name and description. The Browse tab shows one collapsible section per category.
+
+The first time you open Browse you'll see a **Review labels** banner. Click it to step through your registry skill-by-skill: confirm the inferred category, reject or add tags, and move on. You can also open any skill's detail dialog at any time to edit its category and tags directly.
+
 ## Next steps
 
-- [Concepts](/concepts) — terms you'll see throughout the app (registry, linked repo, source, agent dir).
+- [Concepts](/concepts) — terms you'll see throughout the app (registry, linked repo, source, agent dir, labels).
+- [Skill labels](/reference/labels) — full reference for all 15 categories and 34 tags.
 - [Sign in with GitHub](/guides/sign-in) — link your own repo as your registry source and get 5000 requests/hr.
 - [Move your registry](/guides/manifest) — push a manifest snapshot to your GitHub repo, or pull it on another machine.
 - [Keyboard shortcuts](/reference/keyboard) — keyboard shortcuts reference.

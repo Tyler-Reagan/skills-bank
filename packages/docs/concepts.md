@@ -126,6 +126,17 @@ Provenance is a binary on each registry skill — every skill is either **curate
 - **`curated`** — Part of the curated set the bank tracks. Sync keeps it current.
 - **`user`** — Anything that didn't come from the curated set — authored locally, merged in from another bank's export, imported from elsewhere. Sync never touches it.
 
+## Labels
+
+Every skill carries two label axes, both auto-derived from the skill's name and description and fully overridable per-skill from its detail dialog.
+
+- **Category** — exactly one per skill, first-match from a priority list of 15 rules. Skills in the Browse tab are grouped under collapsible category section headers (Frontend, Backend, Infrastructure, …, Uncategorized). You can change a skill's category from the **Labels** section of its detail dialog; the new grouping takes effect immediately.
+- **Tags** — zero or more per skill, all-match from 34 rules. Tags are additive: you can reject auto-derived tags and add your own. The tag filter bar and the **Mine** chip use this axis.
+
+Both axes are stored as user overrides in `labels.json` under the app's data directory. Only overrides are written — the derived values are always computed at runtime, so adding a new keyword to a future rule update propagates automatically.
+
+See [Skill labels](/reference/labels) for the full list of categories and tags.
+
 ### Tags are local
 
 Tags are a local-only dimension. You can add or remove tags on any skill — including curated ones — and Sync will preserve your tag edits on the next pull.

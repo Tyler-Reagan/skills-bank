@@ -20,7 +20,7 @@ features:
   - title: One install, every agent
     details: A single symlink-based registry keeps Claude Code, Cursor, Gemini, and four more agents in sync. Install once, done.
   - title: Browse a curated registry
-    details: Tag filters, full-text search, and an Installed-only toggle over a growing set of skills. No GitHub account required to get started.
+    details: Skills are organized by auto-derived category (frontend, backend, AI tooling, and more) in collapsible sections. Tag filters, full-text search, and an Installed-only toggle let you narrow further. No GitHub account required.
   - title: Bring your own repo
     details: Link any GitHub repo you own as your registry source. Refresh pulls the latest with a diff-before-apply preview.
   - title: Push your registry anywhere

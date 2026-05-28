@@ -14,7 +14,7 @@ One registry. Every AI agent on your machine.
 
 ![The Registry tab — browse, search, and install curated skills](docs/images/registry.png)
 
-A **skill** is a folder of instructions (`SKILL.md` + optional metadata) that an AI coding agent reads at runtime to gain a specialized capability. Skills Bank keeps your collection in sync across Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, and Codex — using symlinks, so there are no copies and no drift.
+A **skill** is a folder of instructions (`SKILL.md` + optional metadata) that an AI coding agent reads at runtime to gain a specialized capability. Skills Bank keeps your collection in sync across Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, and Codex — using symlinks, so there are no copies and no drift. Skills are automatically organized by category (frontend, backend, AI tooling, and more) and tagged based on their name and description; both are editable per-skill from the detail drawer.
 
 ## Get started
 
@@ -76,6 +76,6 @@ pnpm validate && pnpm build:index
 
 ## Cutting a release
 
-Releases are tag-driven. Merge the feature PR, bump `packages/desktop/package.json`, commit as `chore(release): bump desktop to X.Y.Z`, then tag and push `vX.Y.Z`. The [release workflow](.github/workflows/release.yml) builds signed + notarized DMGs and creates a draft; publish the draft from the GitHub UI to ship.
+Releases are tag-driven. Merge the feature PR, bump the version in all `package.json` files (`./`, `packages/core`, `packages/desktop`, `packages/cli`) and update `CHANGELOG.md`, then commit as `chore: release vX.Y.Z`, tag, and push `vX.Y.Z`. The [release workflow](.github/workflows/release.yml) builds signed + notarized DMGs and creates a draft; publish the draft from the GitHub UI to ship.
 
 See [`CLAUDE.md`](CLAUDE.md) for the full release checklist and agent-facing scripts.

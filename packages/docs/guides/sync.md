@@ -8,7 +8,7 @@ Independent of pull, the **Check for updates** button probes each skill's author
 
 1. Click **Pull from `<repo>`** in the header.
 2. The app fetches the upstream tarball, computes a diff against your local copy, and applies the merge.
-3. The **Sync banner** above the tabs reports the result: `N skills updated`, `M conflicts pending`, `K no longer in source repo`. Counts are informational — no destructive action runs against your local copies.
+3. The **Sync banner** above the tabs reports the result: `N skills updated`, `M conflicts pending`, `K no longer in source repo`. Click **Details** to expand a list of exactly which skills refreshed and which are no longer in the source repo. The banner auto-dismisses after 5 seconds if you don't interact with it; error and conflict banners stay until you act.
 4. If any skills changed in both your local registry and the incoming update, an **Incoming update conflicts** modal opens. Pick one of:
    - **Keep mine** — your local version stays; the incoming update for that skill is skipped.
    - **Use incoming (replaces mine)** — the incoming version replaces yours. Your local changes are lost.

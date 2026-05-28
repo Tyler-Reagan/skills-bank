@@ -7,8 +7,8 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 ## Steps
 
 1. Open the **Registry** tab (it's the default tab).
-2. Use the search bar or tag filters to narrow the list. Toggle **Installed only** to filter to skills you've already linked.
-3. Click any card to open its detail dialog. The dialog shows the full `SKILL.md` preview, tags, source, and any warnings.
+2. Skills are grouped into collapsible category sections — **Frontend**, **Backend**, **AI Tooling**, and [more](/reference/labels). Click a section header to expand or collapse it. Use the search bar or tag filters to narrow the list further; toggle **Installed only** to filter to skills you've already linked.
+3. Click any card to open its detail dialog. The dialog shows the full `SKILL.md` preview, tags, category, source, and any warnings.
 
    ![Skill detail dialog with SKILL.md preview, Install, Manage agent links](/images/skill-detail.png)
 
