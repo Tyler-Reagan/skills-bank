@@ -3,6 +3,24 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.14.0
+
+Two-tier skill labeling: every skill now has a category and zero-or-more tags, derived automatically from its name and description and fully overridable per-skill from the detail drawer.
+
+### Added
+
+- **Category grouping in Browse.** Skills are organized into collapsible sections — one per inferred or user-set category — ordered by a fixed priority list (frontend → backend → infrastructure → … → hardware), with an Uncategorized section at the end. Sections expand and collapse in-session.
+- **Tag and category inference engine** (`packages/core/src/labels.ts`). A pure `deriveLabels` function tokenizes each skill's name + description and applies 15 category rules (first-match) and 34 tag rules (all-match). Categories include: frontend, backend, infrastructure, testing, writing, product, ai-tooling, design, dx, git, data, security, mobile, research, hardware. Tags include: react, vue, svelte, typescript, python, golang, rust, node, css, next, vite, electron, flutter, react-native, cli, mcp, terraform, github, gitlab, docker, docs, api, graphql, ui, testing, e2e, review, refactor, naming, diagrams, design-system, seo, sql, branding.
+- **Label overrides persisted in `labels.json`** (userData). The `effectiveLabels` function merges user overrides onto auto-derived values: user-set category replaces derived; tags = (derived − rejected) ∪ added. Three IPC channels back it: `labels:read`, `labels:update` (merge-patch), `labels:reset` (per-skill delete).
+- **Label editing in the detail drawer** (`DrawerLabelSection`). Category `<select>` with all 15 options, tag chips with per-chip remove (auto-derived chips reject on ✕, user-added chips remove), inline add-tag input with `<datalist>` suggestions from the tag rules, and a rejected-tags row with click-to-restore.
+- **Label review session.** The Browse tab shows a first-run banner ("Review labels") the first time the app runs with labels enabled. Clicking it opens a sequenced review flow through the visible registry: a progress bar in the drawer header shows "X / N", Prev/Next navigate between skills, and Exit ends the session. The banner is dismissed permanently via the `__meta` key in `labels.json`.
+- **Auto-derive on register.** When skills are registered via the Register modal, each newly registered skill with no existing override has its auto-derived category seeded into `labels.json` (`categorySource: "auto"`), so it lands in the correct section immediately.
+- **Docs reference page** (`/reference/labels`) listing all 15 categories and 34 tags with descriptions. (#105)
+
+### Fixed
+
+- `categoryDisplayName` helper ensures "AI Tooling" and "DX" render with correct capitalisation rather than "Ai Tooling" / "Dx". (#105)
+
 ## v1.13.0
 
 Expandable detail views for the sync banner and the manifest diff, plus a renderer-internal cleanup pass — lifecycle hooks, a modal router, and wider `useIpcQuery` adoption.
