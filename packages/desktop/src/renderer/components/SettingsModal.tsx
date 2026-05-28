@@ -276,11 +276,11 @@ export function SettingsModal({
       </section>
 
       <section className="settings-section">
-        <h3 className="settings-section-title">Default install agents</h3>
+        <h3 className="settings-section-title">Default agents</h3>
         {/* end of Skills group; Display + Advanced groups follow. */}
         <p className="settings-hint">
-          When you install a skill from the Registry tab, link it into these
-          agent directories. Leave all unchecked to broadcast to every agent
+          When you install or register a skill, link it into these agent
+          directories. Leave all unchecked to broadcast to every agent
           directory that exists on this machine.
         </p>
         <div className="mt-8">
