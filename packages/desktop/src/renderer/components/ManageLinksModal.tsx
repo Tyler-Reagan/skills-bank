@@ -86,14 +86,8 @@ export function ManageLinksModal({
     // `onClose={undefined}` by suppressing scrim + Esc.
     return (
       <Modal label={`Updating links for ${name}`} width={540}>
-        <h2 style={{ marginTop: 0 }}>Updating links for {name}</h2>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            padding: "32px 0",
-          }}
-        >
+        <h2 className="mt-0">Updating links for {name}</h2>
+        <div className="manage-links-applying">
           <div className="spinner" />
         </div>
       </Modal>
@@ -111,22 +105,16 @@ export function ManageLinksModal({
         onClose={dismiss}
         width={540}
       >
-        <h2 style={{ marginTop: 0 }}>
+        <h2 className="mt-0">
           {phase.result.ok ? "Links updated" : "Update failed"}
         </h2>
         <p
-          style={{
-            color: phase.result.ok ? "var(--success)" : "var(--danger)",
-            fontSize: 13,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
+          className={`manage-links-result-row${phase.result.ok ? " manage-links-result-row--ok" : " manage-links-result-row--err"}`}
         >
           <Icon name={phase.result.ok ? "check" : "x"} size="sm" />{" "}
           {phase.result.message}
         </p>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <div className="row-end">
           <button className="primary" onClick={dismiss}>
             Done
           </button>
@@ -141,31 +129,22 @@ export function ManageLinksModal({
       onClose={() => void onClose()}
       width={540}
     >
-      <h2 style={{ marginTop: 0 }}>Manage agent links — {name}</h2>
-      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+      <h2 className="mt-0">Manage agent links — {name}</h2>
+      <p className="text-muted text-13 mt-4">
         Pick which agent directories the skill is linked from. Already-checked
         agents reflect the current state — uncheck to remove a link, check to
         add one. Source directories that hold the actual content are locked;
         unlinking them would delete the skill.
       </p>
 
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
+      <div className="mt-16 mb-16">
         {ALL_AGENTS.map((id) => {
           const isSource = sourceAgents.has(id);
           const isChecked = isSource || desiredAgents.has(id);
           return (
             <label
               key={id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "8px 4px",
-                fontSize: 13,
-                color: isSource ? "var(--text-2)" : "var(--text)",
-                cursor: isSource ? "default" : "pointer",
-                borderBottom: "1px solid var(--border)",
-              }}
+              className={`manage-links-agent-label${isSource ? " manage-links-agent-label--source" : " manage-links-agent-label--active"}`}
             >
               <input
                 type="checkbox"
@@ -173,28 +152,17 @@ export function ManageLinksModal({
                 disabled={isSource}
                 onChange={() => toggle(id)}
               />
-              <strong style={{ minWidth: 130 }}>{AGENT_LABELS[id]}</strong>
-              <code style={{ color: "var(--text-3)", fontSize: 11, flex: 1 }}>
+              <strong className="min-w-130">{AGENT_LABELS[id]}</strong>
+              <code className="text-subtle text-11 flex-1">
                 {AGENT_PATHS[id]}/skills/
               </code>
-              {isSource && (
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: "var(--text-3)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  source
-                </span>
-              )}
+              {isSource && <span className="repo-item-badge">source</span>}
             </label>
           );
         })}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+      <div className="row-end">
         <button onClick={() => void onClose()}>Cancel</button>
         <button className="primary" onClick={() => void apply()}>
           Apply

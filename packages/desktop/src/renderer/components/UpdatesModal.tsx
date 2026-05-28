@@ -63,22 +63,18 @@ export function UpdatesModal({
       label="Skill updates"
       onClose={onClose}
       width={640}
-      bodyStyle={{
-        maxWidth: "92vw",
-        display: "flex",
-        flexDirection: "column",
-        overflowY: undefined,
-      }}
+      bodyClass="modal-body--w92vw modal-body--flex-col"
       trapFocus
     >
-      <div style={modalHeader}>
-        <h2 style={{ margin: 0 }}>
-          Skill updates <span style={countBadge}>{entries.length}</span>
+      <div className={modalHeader}>
+        <h2 className="mt-0 mb-0">
+          Skill updates{" "}
+          <span className="updates-modal-count-badge">{entries.length}</span>
         </h2>
         <ModalCloseButton onClose={onClose} />
       </div>
 
-      <p style={hint}>
+      <p className="updates-modal-hint">
         These skills have a newer version available from their{" "}
         <strong>Origin</strong>. Updating fetches the latest content directly
         from each skill's Origin and mirrors it into your registry — local edits
@@ -86,9 +82,9 @@ export function UpdatesModal({
         flow (Reset to origin / Unlink origin) instead.
       </p>
 
-      <div style={list}>
+      <div className="updates-modal-list">
         {entries.length === 0 && (
-          <div style={emptyState}>
+          <div className="updates-modal-empty">
             <Icon name="check" size="md" />
             <span>Every skill is up to date with its Origin.</span>
           </div>
@@ -96,14 +92,16 @@ export function UpdatesModal({
         {entries.map((e) => {
           const state = states[e.name] ?? "idle";
           return (
-            <div key={e.name} style={row}>
-              <div style={rowMain}>
-                <strong style={rowName}>{e.name}</strong>
+            <div key={e.name} className="updates-modal-row">
+              <div className="updates-modal-row-main">
+                <strong className="updates-modal-row-name">{e.name}</strong>
                 {e.source.origin?.repo && (
-                  <span style={rowRepo}>{e.source.origin.repo}</span>
+                  <span className="updates-modal-row-repo">
+                    {e.source.origin.repo}
+                  </span>
                 )}
               </div>
-              <div style={rowActions}>
+              <div className="updates-modal-row-actions">
                 <button
                   className="btn"
                   type="button"
@@ -133,7 +131,7 @@ export function UpdatesModal({
         })}
       </div>
 
-      <div style={footer}>
+      <div className="updates-modal-footer">
         <button
           className="btn"
           type="button"
@@ -143,7 +141,7 @@ export function UpdatesModal({
         >
           <Icon name="refresh" size="sm" /> Refresh
         </button>
-        <div style={{ flexGrow: 1 }} />
+        <div className="updates-modal-footer-spacer" />
         <button
           className="btn primary"
           type="button"
@@ -162,78 +160,3 @@ export function UpdatesModal({
     </Modal>
   );
 }
-
-const countBadge: React.CSSProperties = {
-  display: "inline-block",
-  marginLeft: 6,
-  padding: "1px 8px",
-  borderRadius: 12,
-  background: "var(--accent-dim, rgba(59, 130, 246, 0.18))",
-  color: "var(--accent)",
-  fontSize: 12,
-  fontWeight: 700,
-  verticalAlign: "middle",
-};
-
-const hint: React.CSSProperties = {
-  fontSize: 12,
-  color: "var(--text-3)",
-  margin: "8px 0 12px",
-  lineHeight: 1.5,
-};
-
-const list: React.CSSProperties = {
-  flexGrow: 1,
-  overflowY: "auto",
-  borderTop: "1px solid var(--border)",
-  marginTop: 4,
-  paddingTop: 12,
-};
-
-const row: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 12,
-  padding: "8px 0",
-  borderBottom: "1px solid var(--border)",
-};
-
-const rowMain: React.CSSProperties = {
-  flexGrow: 1,
-  display: "flex",
-  flexDirection: "column",
-  gap: 2,
-  minWidth: 0,
-};
-
-const rowName: React.CSSProperties = {
-  fontSize: 13,
-  fontFamily: "var(--font-mono)",
-};
-
-const rowRepo: React.CSSProperties = {
-  fontSize: 11,
-  color: "var(--text-3)",
-};
-
-const rowActions: React.CSSProperties = {
-  display: "flex",
-  gap: 6,
-};
-
-const emptyState: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  padding: 24,
-  color: "var(--text-3)",
-  fontSize: 13,
-};
-
-const footer: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  paddingTop: 12,
-  borderTop: "1px solid var(--border)",
-};

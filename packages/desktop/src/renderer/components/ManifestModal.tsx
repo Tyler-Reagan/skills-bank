@@ -33,25 +33,23 @@ export function ManifestModal({
 
   return (
     <Modal label={title} onClose={onClose} width={480}>
-      <div style={modalHeader}>
-        <h2 style={{ margin: 0 }}>{title}</h2>
+      <div className={modalHeader}>
+        <h2 className="mt-0 mb-0">{title}</h2>
         <ModalCloseButton onClose={onClose} />
       </div>
 
       {linkedRepo && (
-        <div style={transportToggle}>
+        <div className="manifest-transport-toggle">
           <button
             type="button"
-            className={transport === "repo" ? "btn primary" : "btn"}
-            style={toggleBtn}
+            className={`manifest-transport-btn ${transport === "repo" ? "btn primary" : "btn"}`}
             onClick={() => setTransport("repo")}
           >
             {mode === "export" ? "Push to" : "Read from"} repo
           </button>
           <button
             type="button"
-            className={transport === "disk" ? "btn primary" : "btn"}
-            style={toggleBtn}
+            className={`manifest-transport-btn ${transport === "disk" ? "btn primary" : "btn"}`}
             onClick={() => setTransport("disk")}
           >
             Use a file
@@ -59,7 +57,7 @@ export function ManifestModal({
         </div>
       )}
 
-      <div style={{ marginTop: 16 }}>
+      <div className="manifest-content-wrap">
         {transport === "repo" && linkedRepo ? (
           <RepoTransport
             mode={mode}
@@ -100,13 +98,3 @@ export function ManifestModal({
     </Modal>
   );
 }
-
-const transportToggle: React.CSSProperties = {
-  display: "flex",
-  gap: 6,
-  marginTop: 14,
-};
-
-const toggleBtn: React.CSSProperties = {
-  flex: 1,
-};

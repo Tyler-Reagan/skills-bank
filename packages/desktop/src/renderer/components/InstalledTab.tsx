@@ -202,15 +202,7 @@ export function InstalledTab({
             Install skills from the Registry tab, or scan for pre-existing
             entries.
           </p>
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              justifyContent: "center",
-              marginTop: 16,
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="row-wrap-center mt-16">
             <button className="btn primary" onClick={onSwitchToBrowse}>
               Browse registry
             </button>
@@ -303,7 +295,7 @@ export function InstalledTab({
           {needsAttention.length > 0 && (
             <>
               <span>·</span>
-              <span style={{ color: "var(--warn, var(--text-2))" }}>
+              <span className="text-warn">
                 {needsAttention.length} need
                 {needsAttention.length === 1 ? "s" : ""} attention
               </span>
@@ -339,12 +331,9 @@ export function InstalledTab({
             <section>
               <header className="section-header">
                 <div>
-                  <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <h2 className="row-center-8">
                     <span
-                      style={{
-                        color: "var(--warn, #f59e0b)",
-                        display: "inline-flex",
-                      }}
+                      className="inline-center text-warn"
                       aria-hidden="true"
                     >
                       <Icon name="alert-triangle" size="sm" />
@@ -358,17 +347,12 @@ export function InstalledTab({
                     no drawer detour.
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <div className="row-center-6">
                   {bulkRepairable.length > 1 && onRepairAllBroken && (
                     <button
-                      className="btn"
+                      className="btn inline-center-6"
                       onClick={() => onRepairAllBroken(bulkRepairable)}
                       title={`Re-link the broken symlinks for ${bulkRepairable.length} skills in one step. If a link can't be repaired (the registry copy is gone) you'll be prompted to remove the dead links.`}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
                     >
                       <Icon name="broken-link" size="sm" />
                       Fix broken link(s) ({bulkRepairable.length})
@@ -376,14 +360,9 @@ export function InstalledTab({
                   )}
                   {bulkResolvable.length > 1 && onResolveAllConflicts && (
                     <button
-                      className="btn warn"
+                      className="btn warn inline-center-6"
                       onClick={() => onResolveAllConflicts(bulkResolvable)}
                       title={`Replace duplicates with symlinks to Skills Bank for ${bulkResolvable.length} skills in one step.`}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
                     >
                       <Icon name="alert-triangle" size="sm" />
                       Resolve all ({bulkResolvable.length})
@@ -443,20 +422,13 @@ export function InstalledTab({
                     <div key={g.name} className="action-cell">
                       {inlineEnabled && inlineHandler && (
                         <button
-                          className="btn warn"
+                          className="btn warn inline-center-6 fw-600"
                           onClick={inlineHandler}
                           title={
                             isBroken
                               ? "Try to find a usable source elsewhere; otherwise prompt to delete."
                               : `${classification.conflictCount} agent dir(s) have duplicate or stale entries — pick how to handle each.`
                           }
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 6,
-                            fontWeight: 600,
-                          }}
                         >
                           <Icon name="alert-triangle" size="sm" />
                           {inlineLabel}
@@ -514,42 +486,21 @@ export function InstalledTab({
               return (
                 <div key={g.name} className="action-cell">
                   {(onInlineRegister || onInlineDelete) && (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 6,
-                      }}
-                    >
+                    <div className="row-center-6">
                       {onInlineRegister && (
                         <button
-                          className="btn primary"
+                          className="btn primary flex-1 inline-center-6 fw-600"
                           onClick={() => onInlineRegister(g)}
                           title="Adopt this skill into Skills Bank. To register as external (foreign symlinks only), open the card and use the drawer."
-                          style={{
-                            flex: 1,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 6,
-                            fontWeight: 600,
-                          }}
                         >
                           Register
                         </button>
                       )}
                       {onInlineDelete && (
                         <button
-                          className="btn danger"
+                          className="btn danger flex-1 inline-center-6 fw-600"
                           onClick={() => onInlineDelete(g)}
                           title="Permanently delete this skill's files from this machine. Real-directory copies are removed; foreign symlinks are unlinked but their targets are left alone. Prompts for confirmation."
-                          style={{
-                            flex: 1,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 6,
-                            fontWeight: 600,
-                          }}
                         >
                           Delete
                         </button>
@@ -694,13 +645,11 @@ function LocalScanResultsSection({
     <section className="local-scan-results">
       <header className="section-header">
         <div>
-          <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <h2 className="row-center-8">
             <Icon name="alert-triangle" size="sm" /> From last local scan{" "}
             <span className="count">({diagnostics.items.length})</span>
           </h2>
-          <p
-            style={{ margin: "4px 0 0", fontSize: 11, color: "var(--text-3)" }}
-          >
+          <p className="text-11 text-subtle mt-4 mb-0">
             Scanned at {scannedAt}. Local-only — no network. Items grouped by
             category. Fix one at a time; the report refreshes after each action.
           </p>
@@ -715,26 +664,12 @@ function LocalScanResultsSection({
           // without duplicating every name twice on the same screen.
           if (cat === "unregistered-installs") {
             return (
-              <div key={cat} style={{ marginBottom: 12 }}>
-                <h3
-                  style={{
-                    margin: "8px 0 4px",
-                    fontSize: 13,
-                    color: "var(--text-2)",
-                  }}
-                >
+              <div key={cat} className="local-scan-category">
+                <h3 className="local-scan-category-title">
                   {CATEGORY_LABELS[cat]}{" "}
-                  <span style={{ color: "var(--text-3)" }}>
-                    ({items.length})
-                  </span>
+                  <span className="text-subtle">({items.length})</span>
                 </h3>
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    fontSize: 12,
-                    color: "var(--text-3)",
-                  }}
-                >
+                <p className="text-12 text-subtle mt-4 mb-0">
                   Listed individually in the Unregistered section below —
                   register or delete each from there.
                 </p>
@@ -742,52 +677,22 @@ function LocalScanResultsSection({
             );
           }
           return (
-            <div key={cat} style={{ marginBottom: 12 }}>
-              <h3
-                style={{
-                  margin: "8px 0 4px",
-                  fontSize: 13,
-                  color: "var(--text-2)",
-                }}
-              >
+            <div key={cat} className="local-scan-category">
+              <h3 className="local-scan-category-title">
                 {CATEGORY_LABELS[cat]}{" "}
-                <span style={{ color: "var(--text-3)" }}>({items.length})</span>
+                <span className="text-subtle">({items.length})</span>
               </h3>
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                }}
-              >
+              <ul className="local-scan-item-list">
                 {items.map((item) => (
-                  <li
-                    key={item.itemId}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 8,
-                      padding: "6px 8px",
-                      borderRadius: 4,
-                      background: "var(--surface-2)",
-                      fontSize: 12,
-                    }}
-                  >
-                    <span style={{ minWidth: 0, flex: 1 }}>
+                  <li key={item.itemId} className="local-scan-item">
+                    <span className="local-scan-item-name">
                       <strong>{item.name}</strong>{" "}
-                      <span style={{ color: "var(--text-3)" }}>
-                        — {item.detail}
-                      </span>
+                      <span className="text-subtle">— {item.detail}</span>
                     </span>
                     <button
-                      className="btn small"
+                      className="btn small flex-shrink-0"
                       type="button"
                       onClick={() => onFix(item)}
-                      style={{ flexShrink: 0 }}
                     >
                       {CATEGORY_FIX_LABELS[cat]}
                     </button>

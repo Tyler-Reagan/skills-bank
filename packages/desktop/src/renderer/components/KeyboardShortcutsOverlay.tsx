@@ -31,31 +31,27 @@ export function KeyboardShortcutsOverlay({
 }: Props): React.ReactElement {
   return (
     <Modal label="Keyboard shortcuts" onClose={onClose}>
-      <h2 style={{ marginTop: 0 }}>Keyboard shortcuts</h2>
-      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+      <h2 className="mt-0">Keyboard shortcuts</h2>
+      <p className="text-muted text-13 mt-4">
         A handful of shortcuts to keep your hands on the keys.
       </p>
-      <table
-        style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}
-      >
+      <table className="kb-table">
         <tbody>
           {SHORTCUTS.map((s) => (
             <tr key={s.description}>
-              <td style={keysCell}>
+              <td className="kb-keys-cell">
                 {s.keys.map((k) => (
-                  <kbd key={k} style={kbd}>
+                  <kbd key={k} className="kb-key">
                     {k}
                   </kbd>
                 ))}
               </td>
-              <td style={descCell}>{s.description}</td>
+              <td className="kb-desc-cell">{s.description}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div
-        style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}
-      >
+      <div className="row-end mt-16">
         <button className="primary" onClick={onClose}>
           Done
         </button>
@@ -63,27 +59,3 @@ export function KeyboardShortcutsOverlay({
     </Modal>
   );
 }
-
-const keysCell: React.CSSProperties = {
-  padding: "8px 12px 8px 0",
-  whiteSpace: "nowrap",
-  borderBottom: "1px solid var(--border)",
-};
-const descCell: React.CSSProperties = {
-  padding: "8px 0",
-  fontSize: 13,
-  color: "var(--text-2)",
-  borderBottom: "1px solid var(--border)",
-};
-const kbd: React.CSSProperties = {
-  display: "inline-block",
-  padding: "2px 8px",
-  marginRight: 6,
-  fontFamily: "var(--font-mono)",
-  fontSize: 11,
-  color: "var(--text)",
-  background: "var(--surface-hi)",
-  border: "1px solid var(--border)",
-  borderBottomWidth: 2,
-  borderRadius: 4,
-};

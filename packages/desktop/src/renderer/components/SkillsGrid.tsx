@@ -63,7 +63,7 @@ export function SkillsGrid({
           </>
         )}
         {onClearFilters && (
-          <div style={{ marginTop: 16 }}>
+          <div className="skills-grid-clear-btn-wrap">
             <button className="btn primary" onClick={onClearFilters}>
               Clear filters
             </button>

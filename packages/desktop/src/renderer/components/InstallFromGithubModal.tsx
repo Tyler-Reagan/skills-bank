@@ -75,18 +75,18 @@ export function InstallFromGithubModal({
       label="Install a skill from GitHub"
       onClose={onClose}
       width={540}
-      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+      bodyClass="modal-body--no-scroll"
     >
-      <div style={modalHeader}>
-        <h2 style={{ margin: 0, fontSize: 16 }}>Install a skill from GitHub</h2>
+      <div className={modalHeader}>
+        <h2 className="mt-0 mb-0 text-13">Install a skill from GitHub</h2>
         <ModalCloseButton onClose={onClose} />
       </div>
-      <p style={hint}>
+      <p className="install-from-gh-hint">
         Paste a GitHub URL pointing at a skill folder (or its SKILL.md file).
         The app fetches the folder, registers the skill in your bank, and stamps
         the origin so future Updates work.
       </p>
-      <p style={{ ...hint, fontSize: 11, color: "var(--text-3)" }}>
+      <p className="install-from-gh-hint install-from-gh-hint--sm">
         Examples:
         <br />
         <code>https://github.com/owner/repo/tree/main/skills/find-skills</code>
@@ -101,7 +101,7 @@ export function InstallFromGithubModal({
         onChange={(e) => setUrl(e.target.value)}
         placeholder="https://github.com/owner/repo/tree/main/path"
         disabled={busy}
-        style={input}
+        className="install-from-gh-input"
         onKeyDown={(e) => {
           if (e.key === "Enter" && url.trim().length > 0) {
             void submit();
@@ -111,24 +111,12 @@ export function InstallFromGithubModal({
       {error && (
         <p
           role="alert"
-          style={{
-            ...hint,
-            marginTop: 8,
-            color: "var(--danger)",
-            whiteSpace: "pre-wrap",
-          }}
+          className="install-from-gh-hint install-from-gh-hint--danger mt-8"
         >
           {error}
         </p>
       )}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 8,
-          marginTop: 16,
-        }}
-      >
+      <div className="row-end mt-16">
         <button onClick={onClose} disabled={busy}>
           Cancel
         </button>
@@ -149,20 +137,3 @@ export function InstallFromGithubModal({
     </Modal>
   );
 }
-
-const hint: React.CSSProperties = {
-  fontSize: 12,
-  color: "var(--text-2)",
-  margin: "8px 0",
-};
-const input: React.CSSProperties = {
-  width: "100%",
-  marginTop: 8,
-  padding: "8px 10px",
-  fontSize: 13,
-  fontFamily: "var(--font-mono, monospace)",
-  border: "1px solid var(--border)",
-  borderRadius: 4,
-  background: "var(--surface-hi)",
-  color: "var(--text)",
-};

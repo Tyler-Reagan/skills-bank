@@ -467,16 +467,10 @@ export function DrawerActions({
         first try repair, then prompt delete for unrepairable. */}
         {caps.canRepairBroken && caps.primary === "repair-broken" && (
           <button
-            className="btn warn"
+            className="btn warn inline-center-6"
             disabled={action !== null || repairState.kind === "running"}
             onClick={() => void repairOrRemoveBroken()}
             title="Try to repoint broken symlinks at a usable source. Unrepairable links can be deleted in the next step."
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-            }}
           >
             {repairState.kind === "running" ? (
               <>
@@ -503,16 +497,10 @@ export function DrawerActions({
           caps.primary === "resolve-registration-conflicts" &&
           onResolveConflicts && (
             <button
-              className="btn warn"
+              className="btn warn inline-center-6"
               disabled={action !== null}
               onClick={onResolveConflicts}
               title={`This skill name appears in ${classification.conflictCount + classification.brokenCount} agent dir(s) with different sources. Pick which copy to keep; the rest will be deleted.`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
             >
               <Icon name="alert-triangle" size="sm" />
               Resolve{" "}
@@ -532,16 +520,10 @@ export function DrawerActions({
           caps.primary === "resolve-conflicts" &&
           onResolveConflicts && (
             <button
-              className="btn warn"
+              className="btn warn inline-center-6"
               disabled={action !== null}
               onClick={onResolveConflicts}
               title={`${classification.conflictCount} agent dir(s) have duplicate or stale entries for this skill`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
             >
               <Icon name="alert-triangle" size="sm" />
               Resolve {classification.conflictCount} conflict
@@ -564,11 +546,7 @@ export function DrawerActions({
             <div
               role="separator"
               aria-hidden="true"
-              style={{
-                height: 1,
-                background: "var(--border)",
-                margin: "8px 0 4px",
-              }}
+              className="drawer-section-sep"
             />
           )}
 
@@ -757,64 +735,23 @@ export function DrawerActions({
       </div>
 
       {repairState.kind === "confirm-delete" && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "var(--scrim)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1100,
-          }}
-        >
-          <div
-            ref={confirmDeleteRef}
-            tabIndex={-1}
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border-hi)",
-              borderRadius: 8,
-              padding: 24,
-              width: 480,
-              maxWidth: "90vw",
-              outline: "none",
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>
+        <div role="dialog" aria-modal="true" className="modal-overlay">
+          <div ref={confirmDeleteRef} tabIndex={-1} className="modal-body">
+            <h3 className="mt-0">
               Couldn't repair broken link
               {repairState.agents.length === 1 ? "" : "s"}
             </h3>
-            <p style={{ color: "var(--text-2)", fontSize: 13 }}>
+            <p className="text-muted text-13">
               No usable source found for these broken symlink
               {repairState.agents.length === 1 ? "" : "s"}. Delete{" "}
               {repairState.agents.length === 1 ? "it" : "them"}?
             </p>
-            <ul
-              style={{
-                margin: "8px 0",
-                padding: "8px 12px",
-                background: "var(--surface-hi)",
-                borderRadius: 4,
-                fontSize: 11,
-                fontFamily: "var(--font-mono)",
-                color: "var(--text-3)",
-                listStyle: "none",
-                maxHeight: 160,
-                overflowY: "auto",
-              }}
-            >
+            <ul className="confirm-delete-list">
               {repairState.reasons.map((r) => (
-                <li key={r} style={{ padding: "2px 0" }}>
-                  {r}
-                </li>
+                <li key={r}>{r}</li>
               ))}
             </ul>
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
-            >
+            <div className="row-end">
               <button
                 className="btn"
                 onClick={() => setRepairState({ kind: "idle" })}

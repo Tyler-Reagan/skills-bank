@@ -76,13 +76,7 @@ export function DrawerOriginSection({
         <div className="drawer-section">
           <h3>Origin</h3>
           {!pickerOpen ? (
-            <div
-              style={{
-                display: "flex",
-                gap: "var(--s3)",
-                alignItems: "center",
-              }}
-            >
+            <div className="origin-picker-row">
               <button
                 type="button"
                 className="link-btn"
@@ -93,7 +87,7 @@ export function DrawerOriginSection({
               >
                 Link origin
               </button>
-              <span style={{ color: "var(--text-3)", fontSize: 12 }}>·</span>
+              <span className="origin-picker-sep">·</span>
               <button
                 type="button"
                 className="link-btn"
@@ -139,25 +133,11 @@ export function DrawerOriginSection({
                 </p>
               </div>
               {pickerError && (
-                <p
-                  style={{
-                    color: "var(--danger)",
-                    fontSize: 12,
-                    margin: "var(--s2) 0",
-                  }}
-                  role="alert"
-                >
+                <p className="origin-picker-error" role="alert">
                   {pickerError}
                 </p>
               )}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "var(--s3)",
-                  alignItems: "center",
-                  marginTop: "var(--s3)",
-                }}
-              >
+              <div className="origin-picker-btn-row">
                 <button
                   type="button"
                   className="btn primary"
@@ -227,11 +207,7 @@ export function DrawerOriginSection({
               </button>
               {repoMeta?.stars !== null && repoMeta?.stars !== undefined && (
                 <span
-                  style={{
-                    marginLeft: 8,
-                    fontSize: 11,
-                    color: "var(--text-3)",
-                  }}
+                  className="origin-star-count"
                   title={`${repoMeta.stars} stars on GitHub`}
                 >
                   ★ {formatStarCount(repoMeta.stars)}
@@ -293,11 +269,7 @@ export function DrawerOriginSection({
                 <code>{lastCommit.sha.slice(0, 7)}</code>
                 {lastCommit.message && (
                   <span
-                    style={{
-                      marginLeft: 6,
-                      color: "var(--text-3)",
-                      fontSize: 11,
-                    }}
+                    className="origin-commit-msg"
                     title={lastCommit.message}
                   >
                     {lastCommit.message.length > 60

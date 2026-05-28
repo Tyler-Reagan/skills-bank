@@ -103,7 +103,7 @@ export function DestinationPickerDialog({
         <span>Use this as my default unregister destination from now on</span>
       </label>
 
-      <div style={modalFooter}>
+      <div className={modalFooter}>
         <button
           className="btn"
           type="button"

@@ -1,4 +1,4 @@
-import React, { useRef, type CSSProperties } from "react";
+import React, { useRef } from "react";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
@@ -14,59 +14,11 @@ import { Icon } from "./Icon.js";
  * had to be patched individually) structurally impossible.
  *
  * `modalHeader` and `modalFooter` are exported for body content that
- * composes inside `<Modal>`; the scrim and centered-body styles
- * (`overlay`, `modal()`, `closeBtn`) are file-private because the
- * wrapper is the only legitimate consumer.
+ * composes inside `<Modal>`; they are now CSS class-name strings.
  */
 
-const overlay: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "var(--scrim)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1100,
-};
-
-const modal = (width = 480): CSSProperties => ({
-  background: "var(--surface)",
-  border: "1px solid var(--border-hi)",
-  borderRadius: 8,
-  padding: 24,
-  width,
-  maxWidth: "90vw",
-  maxHeight: "85vh",
-  overflowY: "auto",
-  outline: "none",
-});
-
-export const modalHeader: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-  marginBottom: 4,
-};
-
-export const modalFooter: CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  marginTop: 20,
-};
-
-const closeBtn: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--text-3)",
-  padding: 4,
-  borderRadius: 4,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
+export const modalHeader = "modal-header";
+export const modalFooter = "modal-footer";
 
 interface ModalProps {
   /**
@@ -79,14 +31,13 @@ interface ModalProps {
   onClose?: () => void;
   /** aria-label for the dialog body. */
   label: string;
-  /** Container width in px. Defaults to 480. */
-  width?: number;
+  /** Body width in px. Defaults to 480. Maps to `.modal-body--wN` modifier. */
+  width?: 480 | 520 | 540 | 560 | 600 | 640 | 720;
   /**
-   * Body style overrides spread onto the dialog div (background,
-   * padding, etc.). Width passed here loses to the `width` prop —
-   * use `width` for size, this for cosmetic tweaks.
+   * Extra class(es) for the body element (replaces old bodyStyle prop).
+   * Use `.modal-body--no-scroll`, `.modal-body--flex-col`, etc.
    */
-  bodyStyle?: CSSProperties;
+  bodyClass?: string;
   /**
    * When true, Tab + Shift+Tab cycle focus within this modal instead
    * of escaping to the page chrome. Off by default to avoid
@@ -102,7 +53,7 @@ export function Modal({
   onClose,
   label,
   width = 480,
-  bodyStyle,
+  bodyClass,
   trapFocus = false,
   children,
 }: ModalProps): React.ReactElement {
@@ -115,15 +66,18 @@ export function Modal({
   useFocusTrap(bodyRef, trapFocus);
   useRegisterModal();
 
+  const widthClass = width && width !== 480 ? ` modal-body--w${width}` : "";
+  const bodyClassName = `modal-body${widthClass}${bodyClass ? ` ${bodyClass}` : ""}`;
+
   return (
     <div
-      style={overlay}
+      className="modal-overlay"
       onClick={onClose ? () => onClose() : undefined}
       role="presentation"
     >
       <div
         ref={bodyRef}
-        style={bodyStyle ? { ...modal(width), ...bodyStyle } : modal(width)}
+        className={bodyClassName}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -144,7 +98,7 @@ interface ModalCloseButtonProps {
 
 /**
  * The X icon-button repeated across every modal header. Use inside a
- * `<div style={modalHeader}>` adjacent to the title.
+ * `<div className="modal-header">` adjacent to the title.
  */
 export function ModalCloseButton({
   onClose,
@@ -156,7 +110,7 @@ export function ModalCloseButton({
       onClick={onClose}
       aria-label={label}
       title={label}
-      style={closeBtn}
+      className="modal-close-btn"
     >
       <Icon name="x" size="md" />
     </button>

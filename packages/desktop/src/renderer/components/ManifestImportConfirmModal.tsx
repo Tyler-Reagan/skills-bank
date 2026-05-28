@@ -1,7 +1,12 @@
 import React, { useMemo, useState } from "react";
 import type { AgentId, ImportRegistryManifestResult } from "@skills-bank/core";
 import { AGENT_LABELS } from "../agentDisplay.js";
-import { Modal, ModalCloseButton, modalFooter } from "./modalStyles.js";
+import {
+  Modal,
+  ModalCloseButton,
+  modalHeader,
+  modalFooter,
+} from "./modalStyles.js";
 
 /**
  * After a successful manifest import, surfaces the install-hint
@@ -72,29 +77,18 @@ export function ManifestImportConfirmModal({
 
   return (
     <Modal label="Confirm install from manifest" onClose={onClose} width={480}>
-      <div style={header}>
-        <h2 style={{ margin: 0, fontSize: 16 }}>Install restored skills?</h2>
+      <div className={modalHeader}>
+        <h2 className="mt-0 mb-0 text-13">Install restored skills?</h2>
         <ModalCloseButton onClose={onClose} />
       </div>
-      <p style={{ ...hint, marginTop: 8 }}>
+      <p className="manifest-confirm-hint mt-8">
         {registeredCount} skill{registeredCount === 1 ? "" : "s"} restored.{" "}
         {names.length} of them {names.length === 1 ? "was" : "were"} previously
         installed in <strong>{agentLabels}</strong>. Install in your agents now?
         Your registry is already restored either way.
       </p>
-      {error && (
-        <pre
-          style={{
-            margin: "8px 0 0",
-            fontSize: 11,
-            color: "var(--danger)",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {error}
-        </pre>
-      )}
-      <div style={modalFooter}>
+      {error && <pre className="manifest-confirm-error">{error}</pre>}
+      <div className={modalFooter}>
         <button onClick={onClose} disabled={busy}>
           Skip
         </button>
@@ -115,16 +109,3 @@ export function ManifestImportConfirmModal({
     </Modal>
   );
 }
-
-const header: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-};
-
-const hint: React.CSSProperties = {
-  fontSize: 12,
-  color: "var(--text-2)",
-  margin: "4px 0",
-};

@@ -53,9 +53,9 @@ export function DiskTransport({
 
   if (mode === "import" && importingManifest) {
     return (
-      <div style={{ textAlign: "center", padding: "24px 0" }}>
+      <div className="disk-transport-center">
         <span className="spinner inline" /> Importing…
-        <div style={{ marginTop: 12 }}>
+        <div className="mt-12">
           <button className="btn" type="button" onClick={onCancelImport}>
             Cancel import
           </button>
@@ -65,14 +65,7 @@ export function DiskTransport({
   }
 
   return (
-    <div
-      style={{
-        textAlign: "center",
-        padding: "24px 0",
-        color: "var(--text-3)",
-        fontSize: 13,
-      }}
-    >
+    <div className="disk-transport-center">
       {mode === "export" ? "Opening save dialog…" : "Opening file picker…"}
     </div>
   );

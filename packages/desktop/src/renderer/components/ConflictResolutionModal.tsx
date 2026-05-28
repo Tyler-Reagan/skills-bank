@@ -158,10 +158,10 @@ export function ConflictResolutionModal({
       label="Incoming update conflicts"
       onClose={onClose}
       width={640}
-      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+      bodyClass="modal-body--no-scroll"
     >
-      <h2 style={{ marginTop: 0 }}>Incoming update conflicts</h2>
-      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+      <h2 className="mt-0">Incoming update conflicts</h2>
+      <p className="text-muted text-13 mt-4">
         {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} changed in
         both your local registry and the incoming update. Choose what to keep
         for each — your decision is saved and won't be asked again unless the
@@ -183,41 +183,22 @@ export function ConflictResolutionModal({
         }
       />
 
-      <div style={{ marginTop: 12, maxHeight: "60vh", overflowY: "auto" }}>
+      <div className="conflict-res-scroll">
         {conflicts.map((c) => (
-          <div
-            key={c.name}
-            style={{
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              padding: 12,
-              marginBottom: 12,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                marginBottom: 8,
-                gap: 8,
-              }}
-            >
-              <strong style={{ fontFamily: "var(--font-mono)" }}>
-                {c.name}
-              </strong>
+          <div key={c.name} className="conflict-res-row">
+            <div className="conflict-res-row-header">
+              <strong className="conflict-res-row-name">{c.name}</strong>
               <button
                 type="button"
-                className="link-btn"
+                className="link-btn conflict-res-compare-btn"
                 onClick={() => toggleDiff(c)}
-                style={{ fontSize: 11 }}
                 aria-expanded={!!expanded[c.name]}
               >
                 {expanded[c.name] ? "Hide diff" : "Compare changes"}
               </button>
             </div>
             {expanded[c.name] && (
-              <div style={{ marginBottom: 10 }}>
+              <div className="conflict-res-diff-wrap">
                 <DiffViewer
                   result={diffs[c.name]?.result ?? null}
                   loading={diffs[c.name]?.loading ?? true}
@@ -235,14 +216,7 @@ export function ConflictResolutionModal({
         ))}
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 8,
-          marginTop: 12,
-        }}
-      >
+      <div className="row-end mt-12">
         <button onClick={onClose} disabled={submitting}>
           Cancel
         </button>

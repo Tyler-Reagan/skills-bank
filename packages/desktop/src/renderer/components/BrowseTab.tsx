@@ -128,7 +128,7 @@ export function BrowseTab({
           frontmatter, or click <strong>Pull from &lt;repo&gt;</strong> in the
           header to pull from your linked registry.
         </p>
-        <div style={{ marginTop: 16 }}>
+        <div className="mt-16">
           <button
             className="btn primary"
             disabled={rebuilding}
@@ -259,20 +259,11 @@ export function BrowseTab({
           onSelectedTagsChange={setSelectedTags}
         />
       </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          margin: "8px 0",
-        }}
-      >
+      <div className="row-between-8 my-8">
         <p
-          className="results-count"
+          className="results-count mt-0 mb-0"
           aria-live="polite"
           aria-atomic="true"
-          style={{ margin: 0 }}
         >
           {filtered.length} of {registry.length} skill
           {registry.length === 1 ? "" : "s"}
@@ -386,17 +377,7 @@ function BulkInstallBar({
 
   return (
     <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "center",
-        gap: 12,
-        padding: "8px 12px",
-        margin: "0 0 12px",
-        border: "1px solid var(--border)",
-        background: "var(--surface-2, var(--surface, transparent))",
-        borderRadius: 6,
-      }}
+      className="bulk-install-bar"
       role="region"
       aria-label="Bulk install action bar"
     >
@@ -422,7 +403,7 @@ function BulkInstallBar({
           ? "Deselect visible"
           : `Select all visible (${installable.length})`}
       </button>
-      <span aria-live="polite" style={{ fontSize: 13, color: "var(--text-2)" }}>
+      <span aria-live="polite" className="text-13 text-muted">
         {running && bulkInstall
           ? `Installing ${done + 1} of ${total} — ${bulkInstall.current ?? ""}`
           : bulkInstall &&
@@ -430,7 +411,7 @@ function BulkInstallBar({
             ? `Finished: ${bulkInstall.succeeded.size} installed, ${bulkInstall.failed.size} failed`
             : `${selectedInstallable.length} selected (already-installed skills are skipped)`}
       </span>
-      <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+      <div className="row-end ml-auto">
         <button
           className="btn primary"
           onClick={() => void onRun()}
@@ -489,31 +470,15 @@ function GhostBand({
       className="ghost-band"
       aria-label="Skills incoming via manifest import"
     >
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 8,
-        }}
-      >
-        <h2 style={{ margin: 0, fontSize: 14 }}>
+      <header className="row-center-8 mb-8">
+        <h2 className="mt-0 mb-0 text-13">
           Incoming via manifest{" "}
-          <span style={{ color: "var(--text-3)", fontWeight: 400 }}>
+          <span className="text-subtle fw-400">
             ({progress.completed}/{progress.total})
           </span>
         </h2>
       </header>
-      <ul
-        style={{
-          listStyle: "none",
-          padding: 0,
-          margin: 0,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-          gap: 8,
-        }}
-      >
+      <ul className="ghost-band-grid">
         {skills.map((skill) => {
           const error = progress.errors.get(skill.name);
           const isCurrent = progress.currentName === skill.name && !error;
@@ -528,35 +493,13 @@ function GhostBand({
           return (
             <li
               key={skill.name}
-              className={`ghost-card ghost-${status}`}
-              style={{
-                padding: 10,
-                borderRadius: 6,
-                border:
-                  status === "errored"
-                    ? "1px solid var(--danger, #d33)"
-                    : "1px solid var(--border, #ccc)",
-                background: "var(--surface-2)",
-                fontSize: 12,
-                minHeight: 64,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
+              className={`ghost-card ghost-${status} ghost-card-body${status === "errored" ? " ghost-card-body--errored" : ""}`}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontWeight: 500,
-                }}
-              >
+              <div className="ghost-card-name-row">
                 {status === "pending" && (
                   <span
-                    className="spinner inline"
+                    className="spinner inline ghost-pending-spinner"
                     aria-hidden="true"
-                    style={{ opacity: 0.4 }}
                   />
                 )}
                 {status === "current" && (
@@ -568,28 +511,11 @@ function GhostBand({
                 {status === "errored" && (
                   <Icon name="alert-triangle" size="sm" aria-hidden={true} />
                 )}
-                <span
-                  style={{
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {skill.name}
-                </span>
+                <span className="ghost-card-name">{skill.name}</span>
               </div>
+              {error && <div className="ghost-card-error">{error}</div>}
               {error && (
-                <div
-                  style={{
-                    color: "var(--danger, #d33)",
-                    fontSize: 11,
-                  }}
-                >
-                  {error}
-                </div>
-              )}
-              {error && (
-                <div style={{ display: "flex", gap: 4 }}>
+                <div className="ghost-card-actions">
                   {onRetry && (
                     <button
                       type="button"

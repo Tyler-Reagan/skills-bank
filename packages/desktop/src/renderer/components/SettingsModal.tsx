@@ -182,25 +182,25 @@ export function SettingsModal({
 
   return (
     <Modal label="Settings" onClose={onClose} width={560}>
-      <div style={modalHeader}>
-        <h2 style={{ margin: 0 }}>Settings</h2>
+      <div className={modalHeader}>
+        <h2 className="mt-0 mb-0">Settings</h2>
         <ModalCloseButton onClose={onClose} />
       </div>
-      <p style={hint}>
+      <p className="settings-hint">
         Preferences for how the app behaves day-to-day. Registry source and
         identity live under <strong>Account</strong> settings.
       </p>
 
-      <h3 style={groupHeading}>Skills</h3>
-      <section style={section}>
-        <h3 style={sectionTitle}>Registration</h3>
-        <p style={hint}>
+      <h3 className="settings-group-heading">Skills</h3>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Registration</h3>
+        <p className="settings-hint">
           When you register a skill, move its files into Skills Bank
           (recommended). With this off, the registry just records the skill's
           external location and leaves files where they are — useful for skills
           you actively edit in their own git repo.
         </p>
-        <label style={{ ...checkboxRow, marginTop: 8 }}>
+        <label className="settings-checkbox-row mt-8">
           <input
             type="checkbox"
             checked={draft.registerAdopts}
@@ -215,20 +215,16 @@ export function SettingsModal({
         </label>
       </section>
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Upstream activity</h3>
-        <p style={hint}>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Upstream activity</h3>
+        <p className="settings-hint">
           Show the most recent commit to each skill's folder in its source repo
           (in the drawer's Origin section). Uses your GitHub token for 1 API
           call per skill — heavy registries can pressure your rate-limit budget,
           so it's off by default.
         </p>
         <label
-          style={{
-            ...checkboxRow,
-            marginTop: 8,
-            opacity: isAuthed ? 1 : 0.5,
-          }}
+          className={`settings-checkbox-row mt-8${isAuthed ? "" : " settings-checkbox-row-disabled"}`}
         >
           <input
             type="checkbox"
@@ -244,26 +240,24 @@ export function SettingsModal({
           <strong>Show Origin activity</strong>
         </label>
         {!isAuthed && (
-          <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+          <p className="settings-hint mt-6 text-11">
             Sign in with GitHub to enable — Account → Sign in with GitHub.
           </p>
         )}
       </section>
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Unregister destination</h3>
-        <p style={hint}>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Unregister destination</h3>
+        <p className="settings-hint">
           When you unregister an adopted skill, its files move out of Skills
           Bank into the agent dir picked here. The default,
-          <code style={{ marginLeft: 4, marginRight: 4 }}>
-            ~/.agents/skills/
-          </code>
-          , is the shared location all agents can read. Non-adopted
-          (symlink-mode) skills aren't moved — their origin files stay in place.
+          <code className="ml-4 mr-4">~/.agents/skills/</code>, is the shared
+          location all agents can read. Non-adopted (symlink-mode) skills aren't
+          moved — their origin files stay in place.
         </p>
-        <div style={radioRow}>
+        <div className="settings-radio-row">
           {ALL_AGENTS.map((id) => (
-            <label key={id} style={radioOption}>
+            <label key={id} className="settings-radio-option">
               <input
                 type="radio"
                 name="unregister-dest"
@@ -281,24 +275,24 @@ export function SettingsModal({
         </div>
       </section>
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Default install agents</h3>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Default install agents</h3>
         {/* end of Skills group; Display + Advanced groups follow. */}
-        <p style={hint}>
+        <p className="settings-hint">
           When you install a skill from the Registry tab, link it into these
           agent directories. Leave all unchecked to broadcast to every agent
           directory that exists on this machine.
         </p>
-        <div style={{ marginTop: 8 }}>
+        <div className="mt-8">
           {ALL_AGENTS.map((id) => (
-            <label key={id} style={checkboxRow}>
+            <label key={id} className="settings-checkbox-row">
               <input
                 type="checkbox"
                 checked={draft.defaultInstallAgents.includes(id)}
                 onChange={() => toggleAgent(id)}
               />
-              <strong style={{ minWidth: 120 }}>{AGENT_LABELS[id]}</strong>
-              <code style={{ color: "var(--text-3)", fontSize: 11 }}>
+              <strong className="min-w-120">{AGENT_LABELS[id]}</strong>
+              <code className="text-subtle text-11">
                 {AGENT_PATHS[id]}/skills/
               </code>
             </label>
@@ -306,58 +300,44 @@ export function SettingsModal({
         </div>
       </section>
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Install a skill from GitHub</h3>
-        <p style={hint}>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Install a skill from GitHub</h3>
+        <p className="settings-hint">
           Paste a GitHub folder URL (or a SKILL.md blob URL) and the app fetches
           the skill directly into your bank — no terminal, no npx. The skill
           lands as <code>source: user</code> with its origin stamped, so future
           updates flow through the standard update path.
         </p>
         <button
-          className="btn"
+          className="btn mt-8"
           type="button"
           onClick={() => onOpenInstallFromGithub()}
-          style={{ marginTop: 8 }}
         >
           Install a skill from GitHub
         </button>
       </section>
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Curated skills</h3>
-        <p style={hint}>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Curated skills</h3>
+        <p className="settings-hint">
           Skills bundled with the app, maintained centrally. Read-only — curated
           skills update automatically on app restart.
         </p>
         {curatedSkills.length === 0 ? (
-          <p style={{ ...hint, fontStyle: "italic" }}>
-            None present in this registry.
-          </p>
+          <p className="settings-hint italic">None present in this registry.</p>
         ) : (
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: "6px 0 8px",
-              fontSize: 12,
-              color: "var(--text-2)",
-            }}
-          >
+          <ul className="settings-list">
             {curatedSkills.map((s) => (
-              <li key={s.name} style={{ marginBottom: 4 }}>
+              <li key={s.name} className="mb-4">
                 <code>{s.name}</code>
                 {s.description ? (
-                  <span style={{ color: "var(--text-3)" }}>
-                    {" "}
-                    — {s.description}
-                  </span>
+                  <span className="text-subtle"> — {s.description}</span>
                 ) : null}
               </li>
             ))}
           </ul>
         )}
-        <p style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+        <p className="settings-hint mt-6 text-11">
           Last checked:{" "}
           {curatedLastCheckedAt
             ? new Date(curatedLastCheckedAt).toLocaleString()
@@ -365,16 +345,16 @@ export function SettingsModal({
         </p>
       </section>
 
-      <h3 style={groupHeading}>Display</h3>
-      <section style={section}>
-        <h3 style={sectionTitle}>Card grid columns</h3>
-        <p style={hint}>
+      <h3 className="settings-group-heading">Display</h3>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Card grid columns</h3>
+        <p className="settings-hint">
           Auto adapts to the window width; fixed values give you consistent card
           density at the cost of overflow on narrow windows.
         </p>
-        <div style={radioRow}>
+        <div className="settings-radio-row">
           {(["auto", "2", "3", "4"] as GridColumns[]).map((v) => (
-            <label key={v} style={radioOption}>
+            <label key={v} className="settings-radio-option">
               <input
                 type="radio"
                 name="grid-cols"
@@ -389,16 +369,16 @@ export function SettingsModal({
         </div>
       </section>
 
-      <h3 style={groupHeading}>Advanced</h3>
-      <section style={section}>
-        <h3 style={sectionTitle}>Search debounce</h3>
-        <p style={hint}>
+      <h3 className="settings-group-heading">Advanced</h3>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Search debounce</h3>
+        <p className="settings-hint">
           Delay before search filtering applies. Higher values keep the UI
           smooth on large registries.
         </p>
-        <div style={radioRow}>
+        <div className="settings-radio-row">
           {(["off", "100", "250"] as SearchDebounce[]).map((v) => (
-            <label key={v} style={radioOption}>
+            <label key={v} className="settings-radio-option">
               <input
                 type="radio"
                 name="search-debounce"
@@ -414,9 +394,11 @@ export function SettingsModal({
       </section>
 
       {topLevelSymlinks.length > 0 && (
-        <section style={section}>
-          <h3 style={sectionTitle}>Collapse symlinked agent dirs</h3>
-          <p style={hint}>
+        <section className="settings-section">
+          <h3 className="settings-section-title">
+            Collapse symlinked agent dirs
+          </h3>
+          <p className="settings-hint">
             {topLevelSymlinks.length === 1
               ? "One"
               : `${topLevelSymlinks.length}`}{" "}
@@ -424,25 +406,15 @@ export function SettingsModal({
             {topLevelSymlinks.length === 1 ? " is" : "s are"} symlinked to
             another location:
           </p>
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: "6px 0 8px",
-              fontSize: 12,
-              color: "var(--text-2)",
-            }}
-          >
+          <ul className="settings-list">
             {topLevelSymlinks.map((tls) => (
-              <li key={tls.agent} style={{ marginBottom: 2 }}>
+              <li key={tls.agent} className="mb-2">
                 <code>{tls.agent}</code> → <code>{tls.resolvedTarget}</code>
-                {!tls.exists && (
-                  <span style={{ color: "var(--danger)" }}> (missing)</span>
-                )}
+                {!tls.exists && <span className="text-danger"> (missing)</span>}
               </li>
             ))}
           </ul>
-          <p style={hint}>
+          <p className="settings-hint">
             Finalize collapses each symlink into a real directory in place,
             moving content from the resolved target. Skills must be registered
             first — finalize refuses while real-directory entries remain
@@ -463,27 +435,20 @@ export function SettingsModal({
             )}
           </button>
           {finalizeError && (
-            <pre
-              style={{
-                margin: "8px 0 0",
-                fontSize: 11,
-                color: "var(--danger)",
-                whiteSpace: "pre-wrap",
-              }}
-            >
+            <pre className="mt-8 text-11 text-danger pre-wrap">
               {finalizeError}
             </pre>
           )}
         </section>
       )}
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Terminal app (macOS)</h3>
-        <p style={hint}>
+      <section className="settings-section">
+        <h3 className="settings-section-title">Terminal app (macOS)</h3>
+        <p className="settings-hint">
           Used by the "Open Terminal" button in the Discover tab. The chosen app
           must be installed — uninstalled apps will fall back to Terminal.
         </p>
-        <div style={radioRow}>
+        <div className="settings-radio-row">
           {(
             [
               ["system", "Terminal"],
@@ -494,7 +459,7 @@ export function SettingsModal({
               ["kitty", "kitty"],
             ] as [TerminalApp, string][]
           ).map(([v, label]) => (
-            <label key={v} style={radioOption}>
+            <label key={v} className="settings-radio-option">
               <input
                 type="radio"
                 name="terminal-app"
@@ -510,33 +475,18 @@ export function SettingsModal({
       </section>
 
       {hiddenCanon.length > 0 && (
-        <section style={section}>
-          <h3 style={sectionTitle}>Dismissed bundled skills</h3>
-          <p style={hint}>
+        <section className="settings-section">
+          <h3 className="settings-section-title">Dismissed bundled skills</h3>
+          <p className="settings-hint">
             Bundled skills you've dismissed from the default Browse view.
             Unhiding restores them everywhere. Their installations and metadata
             are preserved while dismissed — this is a UI dormancy flag, not an
             uninstall.
           </p>
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: "8px 0 0",
-            }}
-          >
+          <ul className="settings-unhide-list">
             {hiddenCanon.map((name) => (
-              <li
-                key={name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "6px 0",
-                  borderBottom: "1px solid var(--border)",
-                }}
-              >
-                <code style={{ fontSize: 13 }}>{name}</code>
+              <li key={name} className="settings-unhide-item">
+                <code className="text-13">{name}</code>
                 <button
                   className="link-btn"
                   onClick={() => void onUnhide(name)}
@@ -549,14 +499,7 @@ export function SettingsModal({
         </section>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 8,
-          marginTop: 16,
-        }}
-      >
+      <div className="row-end mt-16">
         <button onClick={onClose}>Cancel</button>
         <button className="primary" onClick={apply}>
           Save
@@ -565,49 +508,3 @@ export function SettingsModal({
     </Modal>
   );
 }
-
-const section: React.CSSProperties = {
-  marginBottom: 24,
-  paddingBottom: 16,
-  borderBottom: "1px solid var(--border)",
-};
-const sectionTitle: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 600,
-  letterSpacing: "-0.01em",
-  margin: "0 0 4px 0",
-};
-const groupHeading: React.CSSProperties = {
-  margin: "20px 0 4px 0",
-  fontSize: 11,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "var(--text-3)",
-};
-const hint: React.CSSProperties = {
-  fontSize: 12,
-  color: "var(--text-2)",
-  margin: 0,
-};
-const checkboxRow: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  padding: "4px 0",
-  fontSize: 13,
-  cursor: "pointer",
-};
-const radioRow: React.CSSProperties = {
-  display: "flex",
-  gap: 12,
-  marginTop: 8,
-  flexWrap: "wrap",
-};
-const radioOption: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  fontSize: 13,
-  cursor: "pointer",
-};

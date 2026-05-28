@@ -62,11 +62,11 @@ export function RepoPickerModal({
       label="Choose a registry repo"
       onClose={onClose}
       width={640}
-      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+      bodyClass="modal-body--no-scroll"
       trapFocus
     >
-      <h2 style={{ marginTop: 0 }}>Choose a registry repo</h2>
-      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+      <h2 className="mt-0">Choose a registry repo</h2>
+      <p className="text-muted text-13 mt-4">
         Pick a repo of yours that contains a <code>skills/</code> directory at
         its root. Each subfolder of <code>skills/</code> should hold a{" "}
         <code>SKILL.md</code> (and optionally a <code>meta.json</code>). The
@@ -76,107 +76,47 @@ export function RepoPickerModal({
 
       <input
         type="text"
-        className="search-input"
+        className="search-input w-full mt-12"
         placeholder="Filter repos"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ width: "100%", marginTop: 12 }}
         autoFocus
       />
 
       {error && (
-        <div
-          role="alert"
-          style={{
-            marginTop: 12,
-            padding: 8,
-            background: "var(--danger-dim)",
-            border: "1px solid var(--danger)",
-            borderRadius: 6,
-            color: "var(--danger)",
-            fontSize: 12,
-          }}
-        >
+        <div role="alert" className="repo-picker-error">
           <Icon name="alert-triangle" size="sm" /> {error}
         </div>
       )}
 
-      <div style={{ marginTop: 12, maxHeight: "55vh", overflowY: "auto" }}>
+      <div className="repo-picker-list">
         {repos === null && (
-          <p style={{ color: "var(--text-3)", fontSize: 12 }}>
+          <p className="text-subtle text-12">
             <span className="spinner inline" /> Loading your repos…
           </p>
         )}
         {repos !== null && filtered.length === 0 && (
-          <p style={{ color: "var(--text-3)", fontSize: 12 }}>
-            No repos match your filter.
-          </p>
+          <p className="text-subtle text-12">No repos match your filter.</p>
         )}
         {filtered.map((r) => (
           <button
             key={r.fullName}
             type="button"
-            className="repo-picker-item"
+            className={`repo-picker-item${picking === r.fullName ? " repo-picker-item--picking" : ""}`}
             disabled={picking !== null}
             onClick={() => void pick(r.fullName)}
-            style={{
-              width: "100%",
-              textAlign: "left",
-              padding: 10,
-              marginBottom: 6,
-              background:
-                picking === r.fullName ? "var(--accent-dim)" : "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              cursor: picking ? "wait" : "pointer",
-              color: "var(--text)",
-            }}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                gap: 8,
-              }}
-            >
-              <strong style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>
-                {r.fullName}
-              </strong>
-              <span style={{ display: "inline-flex", gap: 6 }}>
+            <div className="repo-item-header">
+              <strong className="mono text-13">{r.fullName}</strong>
+              <span className="inline-center-6">
                 {r.isPrivate && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      color: "var(--text-3)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    private
-                  </span>
+                  <span className="repo-item-badge">private</span>
                 )}
               </span>
             </div>
-            {r.description && (
-              <p
-                style={{
-                  margin: "4px 0 0",
-                  fontSize: 12,
-                  color: "var(--text-2)",
-                }}
-              >
-                {r.description}
-              </p>
-            )}
+            {r.description && <p className="repo-item-desc">{r.description}</p>}
             {picking === r.fullName && (
-              <p
-                style={{
-                  margin: "4px 0 0",
-                  fontSize: 11,
-                  color: "var(--text-3)",
-                }}
-              >
+              <p className="repo-item-loading">
                 <span className="spinner inline" /> Importing…
               </p>
             )}
@@ -184,17 +124,7 @@ export function RepoPickerModal({
         ))}
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 8,
-          marginTop: 12,
-          paddingTop: 12,
-          borderTop: "1px solid var(--border)",
-        }}
-      >
+      <div className="repo-picker-footer">
         <button
           type="button"
           className="link-btn"

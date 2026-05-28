@@ -355,83 +355,36 @@ export function ModalHost({
       )}
 
       {resolveAllTarget && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "var(--scrim)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1100,
-          }}
-        >
-          <div
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border-hi)",
-              borderRadius: 8,
-              padding: 24,
-              width: 520,
-              maxWidth: "90vw",
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>
+        <div role="dialog" aria-modal="true" className="modal-overlay">
+          <div className="resolve-all-body">
+            <h3 className="mt-0">
               Resolve all conflicts ({resolveAllTarget.length})?
             </h3>
-            <p style={{ color: "var(--text-2)", fontSize: 13 }}>
+            <p className="text-muted text-13">
               For each skill below, every duplicate or stale agent-dir entry
               will be replaced with a symlink to the Skills Bank copy. This is
               the same as picking "Replace with symlink" for each conflict.
             </p>
-            <ul
-              style={{
-                margin: "8px 0 12px",
-                padding: "8px 12px",
-                background: "var(--surface-hi)",
-                borderRadius: 4,
-                fontSize: 12,
-                color: "var(--text-2)",
-                listStyle: "none",
-                maxHeight: 200,
-                overflowY: "auto",
-              }}
-            >
+            <ul className="resolve-all-list">
               {resolveAllTarget.map((g) => {
                 const skillErrors = resolveAllErrors?.[g.name];
                 return (
-                  <li key={g.name} style={{ padding: "3px 0" }}>
+                  <li key={g.name} className="resolve-all-list-item">
                     <code
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        color: skillErrors
-                          ? "var(--danger, #d04444)"
-                          : "var(--text-1)",
-                      }}
+                      className={
+                        skillErrors ? "resolve-all-skill-error" : "mono"
+                      }
                     >
                       {g.name}
                     </code>{" "}
-                    <span style={{ color: "var(--text-3)" }}>
+                    <span className="text-subtle">
                       — {g.conflicts.length} conflict
                       {g.conflicts.length === 1 ? "" : "s"}
                     </span>
                     {skillErrors && (
-                      <ul
-                        style={{
-                          margin: "4px 0 0 12px",
-                          padding: 0,
-                          listStyle: "none",
-                          color: "var(--danger, #d04444)",
-                          fontSize: 11,
-                          fontFamily: "var(--font-mono)",
-                        }}
-                      >
+                      <ul className="resolve-all-errors-list">
                         {skillErrors.map((m, i) => (
-                          <li key={i} style={{ padding: "1px 0" }}>
-                            · {m}
-                          </li>
+                          <li key={i}>· {m}</li>
                         ))}
                       </ul>
                     )}
@@ -439,13 +392,7 @@ export function ModalHost({
                 );
               })}
             </ul>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 8,
-              }}
-            >
+            <div className="row-end">
               <button
                 className="btn"
                 onClick={() => {
@@ -784,21 +731,12 @@ export function ModalHost({
         title={`Overwrite existing folder?`}
         body={
           <>
-            <p style={{ margin: 0 }}>
+            <p className="mt-0 mb-0">
               A folder already exists at <code>{overwriteTarget?.destDir}</code>
               . Continuing will permanently delete it and move{" "}
               <code>{overwriteTarget?.name}</code> in its place.
             </p>
-            <p
-              style={{
-                marginTop: 10,
-                marginBottom: 0,
-                fontSize: 12,
-                color: "var(--text-3)",
-              }}
-            >
-              This cannot be undone.
-            </p>
+            <p className="confirm-dialog-secondary">This cannot be undone.</p>
           </>
         }
         confirmLabel="Overwrite and unregister"
@@ -829,35 +767,20 @@ export function ModalHost({
           );
           return (
             <>
-              <p style={{ margin: 0 }}>
+              <p className="mt-0 mb-0">
                 Repaired {repaired} skill{repaired === 1 ? "" : "s"}.{" "}
                 {unrepairable.length} skill
                 {unrepairable.length === 1 ? "" : "s"} couldn't be repaired
                 because the registry copy is gone.
               </p>
-              <p
-                style={{
-                  margin: "10px 0 6px 0",
-                  fontSize: 12,
-                  color: "var(--text-3)",
-                }}
-              >
+              <p className="confirm-dialog-secondary">
                 Remove the {totalLinks} dead symlink
                 {totalLinks === 1 ? "" : "s"}? The agent dirs lose the symlink.
                 Because the registry copy is already gone, these skills will
                 also disappear from the registry — there are no source files
                 left to back them.
               </p>
-              <ul
-                style={{
-                  margin: "8px 0 0 0",
-                  paddingLeft: 18,
-                  fontSize: 12,
-                  color: "var(--text-2)",
-                  maxHeight: 160,
-                  overflowY: "auto",
-                }}
-              >
+              <ul className="confirm-dialog-list">
                 {unrepairable.map((u) => (
                   <li key={u.name}>
                     <strong>{u.name}</strong> ({u.entries.length} link

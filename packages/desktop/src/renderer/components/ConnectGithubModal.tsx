@@ -133,12 +133,12 @@ export function ConnectGithubModal({
         onClose={() => void cancel()}
         width={520}
       >
-        <h2 style={titleStyle}>Connect to GitHub</h2>
-        <p style={hint}>
+        <h2 className="connect-github-title">Connect to GitHub</h2>
+        <p className="connect-github-hint">
           GitHub OAuth isn't configured for this build. See{" "}
           <code>packages/desktop/src/main/auth-config.ts</code>.
         </p>
-        <div style={btnRow}>
+        <div className="connect-github-footer">
           <button className="btn" type="button" onClick={() => void cancel()}>
             Close
           </button>
@@ -158,8 +158,8 @@ export function ConnectGithubModal({
         onClose={() => void cancel()}
         width={520}
       >
-        <h2 style={titleStyle}>Resume GitHub authentication?</h2>
-        <p style={hint}>
+        <h2 className="connect-github-title">Resume GitHub authentication?</h2>
+        <p className="connect-github-hint">
           An in-progress authentication is still valid (about {minutesLeft}{" "}
           minute{minutesLeft === 1 ? "" : "s"} remaining). If you completed the
           GitHub side, Resume will pick up the token. Otherwise pick Start over.
@@ -167,7 +167,7 @@ export function ConnectGithubModal({
         <div className="device-code-box">
           <code className="device-code">{resumable.userCode}</code>
         </div>
-        <div style={btnRow}>
+        <div className="connect-github-footer">
           <button
             className="btn primary"
             type="button"
@@ -199,20 +199,22 @@ export function ConnectGithubModal({
 
   return (
     <Modal label="Connect to GitHub" onClose={() => void cancel()} width={520}>
-      <h2 style={titleStyle}>Connect to GitHub</h2>
-      <p style={hint}>
+      <h2 className="connect-github-title">Connect to GitHub</h2>
+      <p className="connect-github-hint">
         Authenticate, then pick a repo to back your registry with. Your current
         local-bundled set isn't touched until you choose a repo on the next
         screen.
       </p>
       {!flow && !error && busy && (
-        <p style={hint}>
+        <p className="connect-github-hint">
           <span className="spinner inline" /> Starting Device Flow
         </p>
       )}
       {flow && (
         <>
-          <p style={hint}>Open the link below and enter this code:</p>
+          <p className="connect-github-hint">
+            Open the link below and enter this code:
+          </p>
           <div className="device-code-box">
             <code className="device-code">{flow.userCode}</code>
             <button
@@ -227,8 +229,7 @@ export function ConnectGithubModal({
           </div>
           <button
             type="button"
-            className="btn primary"
-            style={{ marginTop: 8 }}
+            className="btn primary mt-8"
             onClick={() =>
               void window.skillsBank.openExternal(flow.verificationUri)
             }
@@ -236,7 +237,7 @@ export function ConnectGithubModal({
             <Icon name="external-link" size="sm" /> Open {flow.verificationUri}
           </button>
           {polling && (
-            <p style={hint} role="status" aria-live="polite">
+            <p className="connect-github-hint" role="status" aria-live="polite">
               <span className="spinner inline" /> Waiting for you to authorize
               the app
             </p>
@@ -244,11 +245,14 @@ export function ConnectGithubModal({
         </>
       )}
       {error && (
-        <p style={{ ...hint, color: "var(--danger)" }} role="alert">
+        <p
+          className="connect-github-hint connect-github-hint--danger"
+          role="alert"
+        >
           <Icon name="alert-triangle" size="sm" /> {error}
         </p>
       )}
-      <div style={btnRow}>
+      <div className="connect-github-footer">
         <button className="btn" type="button" onClick={() => void cancel()}>
           Cancel
         </button>
@@ -276,25 +280,3 @@ function prettyDeviceFlowError(raw: string): string {
       return msg ?? code ?? "unknown error";
   }
 }
-
-const titleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: 18,
-  fontWeight: 600,
-};
-
-const hint: React.CSSProperties = {
-  fontSize: 13,
-  color: "var(--text-2)",
-  margin: "8px 0",
-  lineHeight: 1.5,
-};
-
-const btnRow: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  marginTop: 16,
-  paddingTop: 12,
-  borderTop: "1px solid var(--border)",
-};

@@ -45,38 +45,32 @@ export function UpdateNotesModal({
       label={title}
       onClose={onClose}
       width={640}
-      bodyStyle={{
-        display: "flex",
-        flexDirection: "column",
-        overflowY: undefined,
-      }}
+      bodyClass="modal-body--flex-col"
     >
-      <h2 style={{ marginTop: 0 }}>{title}</h2>
+      <h2 className="mt-0">{title}</h2>
       {status.releaseName && status.releaseName !== `v${status.version}` && (
-        <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: -8 }}>
-          {status.releaseName}
-        </p>
+        <p className="text-muted text-13 mt-neg8">{status.releaseName}</p>
       )}
-      <p style={{ color: "var(--text-2)", fontSize: 13 }}>{subtitle}</p>
+      <p className="text-muted text-13">{subtitle}</p>
 
       {status.kind === "downloading" && (
         <DownloadProgress percent={status.percent} />
       )}
 
-      <div style={notesScroll}>
+      <div className="update-notes-scroll">
         {renderedNotes ? (
           <div
             className="markdown-body"
             dangerouslySetInnerHTML={{ __html: renderedNotes }}
           />
         ) : (
-          <p style={{ color: "var(--text-3)", fontSize: 13 }}>
+          <p className="text-subtle text-13">
             No release notes were attached to this release.
           </p>
         )}
       </div>
 
-      <div style={footer}>
+      <div className="update-notes-footer">
         <button
           onClick={() => onSkip(status.version)}
           disabled={status.kind === "downloading"}
@@ -88,7 +82,7 @@ export function UpdateNotesModal({
         >
           Skip this version
         </button>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className="update-notes-footer-right">
           <button onClick={onClose}>Later</button>
           {status.kind === "available" && (
             <button className="primary" onClick={onDownload}>
@@ -140,64 +134,20 @@ function DownloadProgress({
 }): React.ReactElement {
   const clamped = Math.max(0, Math.min(100, percent));
   return (
-    <div
-      style={{
-        margin: "4px 0 12px 0",
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-      }}
-    >
+    <div className="download-progress">
       <div
         role="progressbar"
         aria-valuenow={Math.round(clamped)}
         aria-valuemin={0}
         aria-valuemax={100}
-        style={{
-          flex: 1,
-          height: 6,
-          background: "var(--border)",
-          borderRadius: 999,
-          overflow: "hidden",
-        }}
+        className="download-progress-track"
       >
         <div
-          style={{
-            width: `${clamped}%`,
-            height: "100%",
-            background: "var(--accent)",
-            transition: "width 200ms ease",
-          }}
+          className="download-progress-fill"
+          style={{ width: `${clamped}%` }}
         />
       </div>
-      <span
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 12,
-          color: "var(--text-2)",
-          minWidth: 40,
-          textAlign: "right",
-        }}
-      >
-        {Math.round(clamped)}%
-      </span>
+      <span className="download-progress-pct">{Math.round(clamped)}%</span>
     </div>
   );
 }
-
-const notesScroll: React.CSSProperties = {
-  flex: 1,
-  overflowY: "auto",
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  padding: "12px 16px",
-  marginBottom: 16,
-  fontSize: 13,
-  lineHeight: 1.5,
-};
-
-const footer: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};

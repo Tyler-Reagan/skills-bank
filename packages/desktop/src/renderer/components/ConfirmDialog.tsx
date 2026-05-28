@@ -50,16 +50,16 @@ export function ConfirmDialog({
 
   return (
     <Modal label={title} onClose={onCancel}>
-      <h2 style={titleStyle}>
+      <h2 className="confirm-dialog-title">
         {tone === "danger" && (
-          <span style={iconWrap} aria-hidden="true">
+          <span className="confirm-dialog-icon-wrap" aria-hidden="true">
             <Icon name="alert-triangle" size="md" />
           </span>
         )}
         {title}
       </h2>
-      <div style={bodyStyle}>{body}</div>
-      <div style={modalFooter}>
+      <div className="confirm-dialog-body">{body}</div>
+      <div className={modalFooter}>
         <button
           className="btn"
           type="button"
@@ -86,24 +86,3 @@ export function ConfirmDialog({
     </Modal>
   );
 }
-
-const titleStyle: React.CSSProperties = {
-  margin: 0,
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  fontSize: 15,
-  fontWeight: 600,
-};
-
-const iconWrap: React.CSSProperties = {
-  display: "inline-flex",
-  color: "var(--danger, #d04444)",
-};
-
-const bodyStyle: React.CSSProperties = {
-  margin: "12px 0 0 0",
-  fontSize: 13,
-  lineHeight: 1.5,
-  color: "var(--text-2)",
-};

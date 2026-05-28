@@ -299,27 +299,10 @@ export function SkillDetailDrawer({
         aria-label={`${entry.name} details`}
       >
         <div className="drawer-header">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 18,
-                wordBreak: "break-word",
-              }}
-            >
-              {entry.name}
-            </h2>
+          <div className="flex-1-min0">
+            <h2 className="mono text-18 break-word">{entry.name}</h2>
             {entry.version && (
-              <p
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-3)",
-                  fontFamily: "var(--font-mono)",
-                  marginTop: 2,
-                }}
-              >
-                v{entry.version}
-              </p>
+              <p className="text-12 text-subtle mono mt-2">v{entry.version}</p>
             )}
           </div>
           <button
@@ -365,22 +348,13 @@ export function SkillDetailDrawer({
                   )}
                 </>
               ) : (
-                <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
-                  (no description)
-                </p>
+                <p className="text-subtle italic">(no description)</p>
               )}
             </div>
 
             <div className="drawer-section">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 8,
-                }}
-              >
-                <h3 style={{ margin: 0 }}>Tags</h3>
+              <div className="row-between mb-8">
+                <h3 className="mt-0 mb-0">Tags</h3>
                 {!editingTags ? (
                   <button
                     className="link-btn"
@@ -390,7 +364,7 @@ export function SkillDetailDrawer({
                     Edit
                   </button>
                 ) : (
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div className="row-center-6">
                     <button
                       className="link-btn"
                       onClick={cancelTagEdit}
@@ -400,8 +374,7 @@ export function SkillDetailDrawer({
                       Cancel
                     </button>
                     <button
-                      className="link-btn"
-                      style={{ color: "var(--accent)" }}
+                      className="link-btn text-accent"
                       onClick={() => void saveTags()}
                       disabled={savingTags}
                       aria-label="Save tags"
@@ -413,7 +386,7 @@ export function SkillDetailDrawer({
               </div>
               {editingTags ? (
                 <div>
-                  <div className="skill-tags" style={{ marginBottom: 8 }}>
+                  <div className="skill-tags mb-8">
                     {tagDraft.map((t) => (
                       <span key={t} className="skill-tag editable">
                         #{t}
@@ -464,15 +437,7 @@ export function SkillDetailDrawer({
                   ))}
                 </div>
               ) : (
-                <p
-                  style={{
-                    color: "var(--text-3)",
-                    fontStyle: "italic",
-                    fontSize: 12,
-                  }}
-                >
-                  (no tags)
-                </p>
+                <p className="text-subtle italic text-12">(no tags)</p>
               )}
             </div>
 
@@ -484,15 +449,8 @@ export function SkillDetailDrawer({
                   aria-busy="true"
                   role="status"
                 >
-                  {[100, 86, 92, 70, 96, 64].map((width, i) => (
-                    <div
-                      key={i}
-                      className="skeleton skeleton-line"
-                      style={{
-                        width: `${width}%`,
-                        animationDelay: `${i * 60}ms`,
-                      }}
-                    />
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="skeleton skeleton-line" />
                   ))}
                 </div>
               ) : renderedMd ? (
@@ -502,7 +460,7 @@ export function SkillDetailDrawer({
                 />
               ) : (
                 <div className="empty-inline">
-                  <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
+                  <p className="text-subtle italic">
                     No <code>SKILL.md</code> in this folder.
                   </p>
                   <button

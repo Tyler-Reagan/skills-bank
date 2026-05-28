@@ -41,40 +41,24 @@ export function ConflictActionPicker<T extends string>({
     <>
       {options.map((opt) => {
         const selected = value === opt.value;
-        const background = !selected
-          ? "transparent"
-          : opt.selectedTone === "danger"
-            ? "var(--danger-dim, rgba(208, 68, 68, 0.18))"
-            : "var(--accent-dim)";
+        const labelClass = `conflict-action-label${
+          !selected
+            ? ""
+            : opt.selectedTone === "danger"
+              ? " conflict-action-label--danger"
+              : " conflict-action-label--accent"
+        }`;
         return (
-          <label
-            key={opt.value}
-            style={{
-              display: "block",
-              padding: 8,
-              marginBottom: 4,
-              cursor: "pointer",
-              background,
-              borderRadius: 4,
-            }}
-          >
+          <label key={opt.value} className={labelClass}>
             <input
               type="radio"
               name={name}
               checked={selected}
               onChange={() => onChange(opt.value)}
-              style={{ marginRight: 8 }}
+              className="conflict-action-radio"
             />
-            <span style={{ fontWeight: 500 }}>{opt.label}</span>
-            <p
-              style={{
-                margin: "2px 0 0 24px",
-                fontSize: 12,
-                color: "var(--text-2)",
-              }}
-            >
-              {opt.description}
-            </p>
+            <span className="conflict-action-option-label">{opt.label}</span>
+            <p className="conflict-action-desc">{opt.description}</p>
           </label>
         );
       })}

@@ -56,7 +56,7 @@ function DiffTable({ diff }: { diff: ManifestDiff }): React.ReactElement {
   const { isOpen, toggle } = useDisclosureSet();
 
   return (
-    <div style={diffTable}>
+    <div className="diff-table">
       {DIFF_CATEGORIES.map(({ key, label, color }) => {
         const names = diff[key];
         const expandable = names.length > 0;
@@ -65,15 +65,12 @@ function DiffTable({ diff }: { diff: ManifestDiff }): React.ReactElement {
           <div key={key}>
             <button
               type="button"
-              style={{
-                ...diffRow,
-                ...diffRowButton,
-                cursor: expandable ? "pointer" : "default",
-              }}
+              className={`diff-row diff-row-button${expandable ? "" : " diff-row-button--static"}`}
+              style={{ cursor: expandable ? "pointer" : "default" }}
               onClick={expandable ? () => toggle(key) : undefined}
               aria-expanded={expandable ? open : undefined}
             >
-              <span style={diffLabelWrap}>
+              <span className="diff-label-wrap">
                 <DisclosureChevron
                   open={open}
                   style={{
@@ -81,12 +78,12 @@ function DiffTable({ diff }: { diff: ManifestDiff }): React.ReactElement {
                     visibility: expandable ? "visible" : "hidden",
                   }}
                 />
-                <span style={diffLabel}>{label}</span>
+                <span className="diff-label">{label}</span>
               </span>
               <span style={{ color }}>{names.length}</span>
             </button>
             {expandable && open && (
-              <SkillTagList names={names} style={diffNames} />
+              <SkillTagList names={names} className="diff-names" />
             )}
           </div>
         );
@@ -176,7 +173,7 @@ function ExportView({
 
   if (action.kind === "pushing") {
     return (
-      <div style={centerHint}>
+      <div className="repo-transport-center">
         <span className="spinner inline" /> Pushing…
       </div>
     );
@@ -184,8 +181,8 @@ function ExportView({
 
   if (action.kind === "done") {
     return (
-      <div style={{ marginTop: 8 }}>
-        <div style={{ color: "var(--text-3)", fontSize: 13, marginBottom: 12 }}>
+      <div className="repo-transport-done">
+        <div className="repo-transport-done-meta">
           Committed <code>{action.commitSha.slice(0, 7)}</code>
           {action.prNumber && ` · PR #${action.prNumber}`}
         </div>
@@ -206,7 +203,7 @@ function ExportView({
 
   if (loading || !data) {
     return (
-      <div style={centerHint}>
+      <div className="repo-transport-center">
         <span className="spinner inline" /> Loading diff…
       </div>
     );
@@ -221,26 +218,18 @@ function ExportView({
   // preview
   return (
     <div>
-      <div style={metaRow}>
-        <span style={metaLabel}>{linkedRepo.fullName}</span>
-        <span style={{ color: "var(--text-3)", fontSize: 12 }}>
+      <div className="repo-transport-meta-row">
+        <span className="repo-transport-meta-label">{linkedRepo.fullName}</span>
+        <span className="repo-transport-meta-detail">
           registry-manifest.json · {data.branch}
         </span>
       </div>
-      <div style={{ color: "var(--text-3)", fontSize: 12, marginBottom: 10 }}>
+      <div className="repo-transport-skill-count">
         {data.skillCount} skill{data.skillCount === 1 ? "" : "s"} total
       </div>
       <DiffTable diff={data.diff} />
-      <div style={toggleRow}>
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
-        >
+      <div className="repo-transport-toggle-row">
+        <label className="repo-transport-toggle-label">
           <input
             type="checkbox"
             checked={asPR}
@@ -249,7 +238,7 @@ function ExportView({
           Open as pull request
         </label>
       </div>
-      <div style={{ marginTop: 16 }}>
+      <div className="mt-16">
         <button
           className="btn primary"
           type="button"
@@ -302,9 +291,9 @@ function ImportView({
 
   if (action.kind === "importing" || importingManifest) {
     return (
-      <div style={centerHint}>
+      <div className="repo-transport-center">
         <span className="spinner inline" /> Importing…
-        <div style={{ marginTop: 12 }}>
+        <div className="mt-12">
           <button className="btn" type="button" onClick={onCancelImport}>
             Cancel import
           </button>
@@ -319,7 +308,7 @@ function ImportView({
 
   if (loading || !data) {
     return (
-      <div style={centerHint}>
+      <div className="repo-transport-center">
         <span className="spinner inline" /> Reading manifest…
       </div>
     );
@@ -328,8 +317,8 @@ function ImportView({
   if (!data.ok) {
     if (data.reason === "not-found") {
       return (
-        <div style={centerHint}>
-          <div style={{ fontSize: 13, color: "var(--text-3)" }}>
+        <div className="repo-transport-not-found">
+          <div className="repo-transport-not-found-msg">
             No manifest in repo yet — push one first.
           </div>
         </div>
@@ -348,18 +337,18 @@ function ImportView({
   // preview
   return (
     <div>
-      <div style={{ color: "var(--text-3)", fontSize: 12, marginBottom: 4 }}>
+      <div className="repo-transport-import-meta">
         Exported:{" "}
         {data.manifest.exportedAt
           ? new Date(data.manifest.exportedAt).toLocaleString()
           : "—"}
       </div>
-      <div style={{ color: "var(--text-3)", fontSize: 12, marginBottom: 10 }}>
+      <div className="repo-transport-skill-count">
         {data.manifest.skills.length} skill
         {data.manifest.skills.length === 1 ? "" : "s"} in remote manifest
       </div>
       <DiffTable diff={data.diff} />
-      <div style={{ marginTop: 16 }}>
+      <div className="mt-16">
         <button
           className="btn primary"
           type="button"
@@ -381,10 +370,10 @@ function ErrorBox({
   resetAt?: string;
 }): React.ReactElement {
   return (
-    <div style={errorBox}>
+    <div className="repo-transport-error">
       <strong>Error:</strong> {message}
       {resetAt && (
-        <div style={{ marginTop: 6, fontSize: 11 }}>
+        <div className="repo-transport-error-reset">
           Rate limited — resets at {formatResetAt(resetAt)}. Sign in to raise
           the limit.
         </div>
@@ -392,77 +381,3 @@ function ErrorBox({
     </div>
   );
 }
-
-const centerHint: React.CSSProperties = {
-  textAlign: "center",
-  padding: "24px 0",
-  color: "var(--text-3)",
-  fontSize: 13,
-};
-
-const diffTable: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-  background: "var(--surface-hi)",
-  borderRadius: 6,
-  padding: "10px 12px",
-};
-
-const diffRow: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  fontSize: 13,
-};
-
-const diffRowButton: React.CSSProperties = {
-  width: "100%",
-  background: "transparent",
-  border: 0,
-  padding: "2px 0",
-  color: "inherit",
-  font: "inherit",
-  textAlign: "left",
-};
-
-const diffLabel: React.CSSProperties = {
-  color: "var(--text-3)",
-};
-
-const diffLabelWrap: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 4,
-};
-
-// Indent the disclosed names under their category row; SkillTagList's
-// own class supplies the flex-wrap layout.
-const diffNames: React.CSSProperties = {
-  padding: "4px 0 6px 16px",
-};
-
-const metaRow: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "baseline",
-  marginBottom: 4,
-};
-
-const metaLabel: React.CSSProperties = {
-  fontWeight: 600,
-  fontSize: 13,
-};
-
-const toggleRow: React.CSSProperties = {
-  marginTop: 14,
-};
-
-const errorBox: React.CSSProperties = {
-  background: "var(--surface-hi)",
-  borderRadius: 6,
-  padding: "10px 12px",
-  fontSize: 13,
-  color: "var(--text-1)",
-  marginTop: 8,
-};

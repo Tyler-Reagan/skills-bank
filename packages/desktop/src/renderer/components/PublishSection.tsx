@@ -142,30 +142,38 @@ export function PublishSection({
   const isFork = flowKind === "fork";
 
   return (
-    <div style={section}>
-      <div style={headingRow}>
-        <h3 style={sectionHeading}>Linked repo</h3>
+    <div className="publish-section">
+      <div className="publish-heading-row">
+        <h3 className="publish-section-heading">Linked repo</h3>
         <PublishChip state={publishState} />
       </div>
-      <div style={repoLine} title={`Connected to github.com/${linkedRepoName}`}>
+      <div
+        className="publish-repo-line"
+        title={`Connected to github.com/${linkedRepoName}`}
+      >
         <Icon name="check" size="sm" />
         <span>{linkedRepoName}</span>
       </div>
       {flowLabel && targetPath && (
-        <div style={flowBlock}>
-          <span style={isFork ? flowLabelTextWarn : flowLabelText}>
+        <div className="publish-flow-block">
+          <span
+            className={`publish-flow-label${isFork ? " publish-flow-label--warn" : ""}`}
+          >
             {isFork && <Icon name="alert-triangle" size="sm" />}
             {flowLabel}
           </span>
-          <code style={pathLine} title={`${linkedRepoName}/${targetPath}/`}>
+          <code
+            className="publish-path-line"
+            title={`${linkedRepoName}/${targetPath}/`}
+          >
             {targetPath}/
           </code>
         </div>
       )}
-      {flowExplain && <p style={hint}>{flowExplain}</p>}
-      <div style={actionRow}>
+      {flowExplain && <p className="publish-hint">{flowExplain}</p>}
+      <div className="publish-action-row">
         <button
-          className="btn primary"
+          className="btn primary publish-btn-full"
           type="button"
           disabled={busy || !flow || flow.flow === "not-publishable"}
           onClick={() => void onClickPublish()}
@@ -174,7 +182,6 @@ export function PublishSection({
               ? "Fork and open a pull request on the linked repo. Severs the origin pointer."
               : "Open a pull request on the linked repo with this skill"
           }
-          style={{ width: "100%" }}
         >
           {busy ? (
             <>
@@ -186,15 +193,7 @@ export function PublishSection({
         </button>
       </div>
       {error && (
-        <p
-          role="alert"
-          style={{
-            ...hint,
-            marginTop: 8,
-            color: "var(--danger)",
-            whiteSpace: "pre-wrap",
-          }}
-        >
+        <p role="alert" className="publish-hint publish-hint--danger mt-8">
           {error}
         </p>
       )}
@@ -273,15 +272,15 @@ function ForkConfirmModal({
       label={`Fork ${name}?`}
       onClose={onCancel}
       width={540}
-      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+      bodyClass="modal-body--no-scroll"
     >
-      <div style={modalHeader}>
-        <h2 style={{ margin: 0, fontSize: 16 }}>
+      <div className="modal-header">
+        <h2 className="mt-0 mb-0 text-13">
           Fork <code>{name}</code>?
         </h2>
         <ModalCloseButton onClose={onCancel} />
       </div>
-      <p style={hint}>
+      <p className="fork-confirm-hint">
         Publishing your edits to <code>{name}</code> forks it from{" "}
         <code>{originRepo}</code>. The local copy moves from{" "}
         <code>skills/vendored/</code> to <code>skills/personal/</code>, the
@@ -289,21 +288,14 @@ function ForkConfirmModal({
         stop surfacing. This is irreversible without re-vendoring.
       </p>
       {willCollide && (
-        <p style={{ ...hint, color: "var(--danger)" }}>
+        <p className="fork-confirm-hint fork-confirm-hint--danger">
           ⚠️ A skill named <code>{name}</code> already exists in{" "}
           <code>skills/personal/</code>. The fork will refuse until you resolve
           the collision (revert your edits, rename the existing skill, or delete
           it).
         </p>
       )}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 8,
-          marginTop: 16,
-        }}
-      >
+      <div className="row-end mt-16">
         <button onClick={onCancel}>Cancel</button>
         <button className="primary" onClick={onConfirm} disabled={willCollide}>
           Fork and publish
@@ -312,96 +304,3 @@ function ForkConfirmModal({
     </Modal>
   );
 }
-
-const section: React.CSSProperties = {
-  // No top border. The rail's surface + the section's own spacing
-  // are enough separation; the divider was creating visual noise in
-  // a column that already segments via empty space.
-  marginTop: 12,
-};
-const sectionHeading: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: "0.06em",
-  textTransform: "uppercase",
-  color: "var(--text-3)",
-  margin: 0,
-};
-const headingRow: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-  margin: "0 0 var(--s2, 8px) 0",
-};
-const repoLine: React.CSSProperties = {
-  // Explicit "you're linked to X" acknowledgement. The check icon
-  // confirms the connection visually; the repo name reads as the
-  // destination. Sits just under the section heading so the eye
-  // anchors on context before scanning the action affordances.
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 4,
-  fontSize: 12,
-  fontFamily: "var(--font-mono)",
-  color: "var(--text-2)",
-  margin: "0 0 var(--s3, 12px) 0",
-  overflowWrap: "anywhere",
-};
-const flowBlock: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-  margin: "0 0 var(--s2, 8px) 0",
-};
-const flowLabelText: React.CSSProperties = {
-  // Editorial label: small, weighted, no chrome box. Pairs visually
-  // with the section heading rather than competing with the
-  // PublishChip.
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 4,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: "0.04em",
-  textTransform: "uppercase",
-  color: "var(--text-2)",
-};
-const flowLabelTextWarn: React.CSSProperties = {
-  ...({
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-  } as React.CSSProperties),
-  // Fork is irreversible — surface the cost in the label color
-  // rather than as a duplicate badge next to the button.
-  color: "var(--warn, var(--text-2))",
-};
-const pathLine: React.CSSProperties = {
-  // Inside-repo path only; the linked-repo owner/name is already in
-  // the dialog/header context. Full path lives in the title tooltip
-  // for users who want it.
-  color: "var(--text-2)",
-  fontSize: 11,
-  overflowWrap: "anywhere",
-  lineHeight: 1.5,
-};
-const actionRow: React.CSSProperties = {
-  marginTop: 12,
-};
-const hint: React.CSSProperties = {
-  fontSize: 11,
-  color: "var(--text-3)",
-  lineHeight: 1.5,
-  margin: "0 0 var(--s2, 8px) 0",
-};
-const modalHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-};

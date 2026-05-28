@@ -66,41 +66,34 @@ export function AccountModal({
 
   return (
     <Modal label="Account" onClose={onClose} width={560}>
-      <div style={modalHeader}>
-        <h2 style={{ margin: 0 }}>Account</h2>
+      <div className={modalHeader}>
+        <h2 className="mt-0 mb-0">Account</h2>
         <ModalCloseButton onClose={onClose} />
       </div>
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Registry source</h3>
-        <p style={hint}>
+      <section className="account-section">
+        <h3 className="account-section-title">Registry source</h3>
+        <p className="account-hint">
           The GitHub repo your registry mirrors. Refresh re-fetches its
           contents; your local edits and added skills are preserved through the
           diff-before-apply flow.
         </p>
-        <div style={sourceRow}>
-          <span style={sourceChip}>{linkedLabel}</span>
+        <div className="account-source-row">
+          <span className="account-source-chip">{linkedLabel}</span>
         </div>
         {linkedRepo && (
-          <div style={{ ...hint, marginTop: 8 }}>
+          <div className="account-hint mt-8">
             Last fetched: {formatRelativeTime(linkedRepo.lastFetchedAt)} ·{" "}
             <code>{linkedRepo.syncedFromCommit.slice(0, 7)}</code>
           </div>
         )}
         {!linkedRepo && (
-          <div style={{ ...hint, marginTop: 8 }}>
+          <div className="account-hint mt-8">
             Last fetched: never — click <strong>Refresh</strong> to pull the
             latest.
           </div>
         )}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-            marginTop: 10,
-          }}
-        >
+        <div className="account-btn-stack mt-10">
           <button
             className="btn primary"
             type="button"
@@ -128,15 +121,15 @@ export function AccountModal({
         </div>
       </section>
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Identity</h3>
+      <section className="account-section">
+        <h3 className="account-section-title">Identity</h3>
         {isAuthed ? (
           <>
-            <div style={hint}>
+            <div className="account-hint">
               Signed in as <strong>@{user!.login}</strong> · 5000 GitHub API
               requests/hour available for Refresh.
             </div>
-            <div style={{ marginTop: 8 }}>
+            <div className="mt-8">
               <button
                 className="btn danger"
                 type="button"
@@ -149,11 +142,11 @@ export function AccountModal({
           </>
         ) : (
           <>
-            <div style={hint}>
+            <div className="account-hint">
               Not signed in — Refresh uses the unauthenticated GitHub limit (60
               requests/hour). Sign in for 5000/hr and access to private repos.
             </div>
-            <div style={{ marginTop: 8 }}>
+            <div className="mt-8">
               <button
                 className="btn"
                 type="button"
@@ -168,7 +161,7 @@ export function AccountModal({
                 Sign in with GitHub
               </button>
               {!authStatus?.isAuthConfigured && (
-                <div style={{ ...hint, marginTop: 6, fontSize: 11 }}>
+                <div className="account-hint mt-6 text-11">
                   GitHub OAuth Client ID not set. See{" "}
                   <code>auth-config.ts</code>.
                 </div>
@@ -178,9 +171,9 @@ export function AccountModal({
         )}
       </section>
 
-      <section style={section}>
-        <h3 style={sectionTitle}>Move my registry</h3>
-        <p style={hint}>
+      <section className="account-section">
+        <h3 className="account-section-title">Move my registry</h3>
+        <p className="account-hint">
           Two shapes you can move between machines. <strong>Content</strong>{" "}
           moves the entire skills tree — drop-in restore, no network needed.{" "}
           <strong>Manifest</strong> moves a JSON snapshot of origin pointers; on
@@ -188,11 +181,11 @@ export function AccountModal({
           but require the origins to still be reachable.
         </p>
 
-        <div style={subGroupHeader}>
-          <span style={subGroupLabel}>Content</span>
-          <span style={subGroupHint}>The skills tree itself</span>
+        <div className="account-subgroup-header">
+          <span className="account-subgroup-label">Content</span>
+          <span className="account-subgroup-hint">The skills tree itself</span>
         </div>
-        <div style={btnStack}>
+        <div className="account-btn-stack">
           <button
             className="btn"
             type="button"
@@ -218,11 +211,11 @@ export function AccountModal({
           </button>
         </div>
 
-        <div style={subGroupHeader}>
-          <span style={subGroupLabel}>Manifest</span>
-          <span style={subGroupHint}>Origin pointers, JSON</span>
+        <div className="account-subgroup-header">
+          <span className="account-subgroup-label">Manifest</span>
+          <span className="account-subgroup-hint">Origin pointers, JSON</span>
         </div>
-        <div style={btnStack}>
+        <div className="account-btn-stack">
           <button
             className="btn"
             type="button"
@@ -243,12 +236,12 @@ export function AccountModal({
         </div>
       </section>
 
-      <section style={{ ...section, marginTop: 12 }}>
-        <h3 style={sectionTitle}>About this app</h3>
-        <div style={hint}>
+      <section className="account-section mt-12">
+        <h3 className="account-section-title">About this app</h3>
+        <div className="account-hint">
           Version <code>{appVersion}</code>
         </div>
-        <div style={{ marginTop: 8 }}>
+        <div className="mt-8">
           <button
             className="btn"
             type="button"
@@ -259,7 +252,7 @@ export function AccountModal({
         </div>
       </section>
 
-      <div style={footer}>
+      <div className="account-footer">
         <button className="btn primary" type="button" onClick={onClose}>
           Done
         </button>
@@ -267,80 +260,6 @@ export function AccountModal({
     </Modal>
   );
 }
-
-const section: React.CSSProperties = {
-  marginTop: 16,
-  paddingTop: 12,
-  borderTop: "1px solid var(--border)",
-};
-
-const sectionTitle: React.CSSProperties = {
-  margin: "0 0 6px 0",
-  fontSize: 12,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  color: "var(--text-2)",
-};
-
-const hint: React.CSSProperties = {
-  fontSize: 12,
-  color: "var(--text-3)",
-  margin: "4px 0",
-  lineHeight: 1.5,
-};
-
-const subGroupHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "baseline",
-  justifyContent: "space-between",
-  marginTop: 16,
-  marginBottom: 6,
-};
-
-const subGroupLabel: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: "0.06em",
-  textTransform: "uppercase",
-  color: "var(--text-2)",
-};
-
-const subGroupHint: React.CSSProperties = {
-  fontSize: 11,
-  color: "var(--text-3)",
-};
-
-const btnStack: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
-};
-
-const sourceRow: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  marginTop: 8,
-};
-
-const sourceChip: React.CSSProperties = {
-  display: "inline-block",
-  padding: "3px 10px",
-  borderRadius: 12,
-  background: "var(--surface-hi)",
-  border: "1px solid var(--border)",
-  fontSize: 12,
-  fontWeight: 600,
-};
-
-const footer: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  marginTop: 16,
-  paddingTop: 12,
-  borderTop: "1px solid var(--border)",
-};
 
 function formatRelativeTime(iso: string): string {
   const then = new Date(iso).getTime();

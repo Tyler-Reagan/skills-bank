@@ -196,14 +196,14 @@ export function ConflictResolveModal({
       }
       onClose={() => void onClose()}
       width={600}
-      bodyStyle={{ maxHeight: undefined, overflowY: undefined }}
+      bodyClass="modal-body--no-scroll"
     >
-      <h2 style={{ marginTop: 0 }}>
+      <h2 className="mt-0">
         {allowReplaceWithSymlink
           ? `Resolve install collision — ${name}`
           : `Resolve tracking ambiguity — ${name}`}
       </h2>
-      <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+      <p className="text-muted text-13 mt-4">
         {allowReplaceWithSymlink
           ? `Install collision: ${name} is registered, but some agent directories have stragglers that aren't symlinks to the registry copy. Pick how to handle each.`
           : `Tracking ambiguity: multiple copies of ${name} exist across agent directories — Skills Bank can't tell which one is the real one. All copies are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`}
@@ -216,54 +216,19 @@ export function ConflictResolveModal({
         onSelectAll={setAll}
       />
 
-      <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+      <div className="conflict-scroll-list">
         {conflicts.map((c) => (
           <div
             key={c.agent}
-            style={{
-              border: `1px solid ${errorMessages[c.agent] ? "var(--danger, #d04444)" : "var(--border)"}`,
-              borderRadius: 6,
-              padding: 12,
-              marginBottom: 12,
-            }}
+            className={`conflict-row${errorMessages[c.agent] ? " conflict-row--error" : ""}`}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                marginBottom: 6,
-              }}
-            >
+            <div className="conflict-row-header">
               <strong>{AGENT_LABELS[c.agent]}</strong>
-              <span style={{ color: "var(--text-3)", fontSize: 11 }}>
-                {KIND_LABEL[c.kind]}
-              </span>
+              <span className="text-subtle text-11">{KIND_LABEL[c.kind]}</span>
             </div>
-            <code
-              style={{
-                display: "block",
-                fontSize: 11,
-                color: "var(--text-3)",
-                marginBottom: 8,
-              }}
-            >
-              {c.linkPath}
-            </code>
+            <code className="conflict-row-path">{c.linkPath}</code>
             {errorMessages[c.agent] && (
-              <div
-                role="alert"
-                style={{
-                  background: "var(--danger-dim, rgba(208, 68, 68, 0.12))",
-                  color: "var(--danger, #d04444)",
-                  border: "1px solid var(--danger, #d04444)",
-                  borderRadius: 4,
-                  padding: "6px 8px",
-                  fontSize: 11,
-                  marginBottom: 8,
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
+              <div role="alert" className="conflict-row-error">
                 {errorMessages[c.agent]}
               </div>
             )}
@@ -282,11 +247,7 @@ export function ConflictResolveModal({
       {/* Live tally — gives the user a single-glance read on what
             Apply will actually do, complementing the per-row colors. */}
       <p
-        style={{
-          margin: "8px 0 0",
-          fontSize: 12,
-          color: counts.del > 0 ? "var(--text-2)" : "var(--text-3)",
-        }}
+        className={`conflict-tally${counts.del > 0 ? " text-muted" : " text-subtle"}`}
       >
         {[
           counts.keep > 0 ? `Keep ${counts.keep}` : null,
@@ -298,18 +259,7 @@ export function ConflictResolveModal({
       </p>
 
       {wouldDeleteAll && (
-        <div
-          role="alert"
-          style={{
-            marginTop: 10,
-            padding: "10px 12px",
-            background: "var(--danger-dim, rgba(208, 68, 68, 0.12))",
-            border: "1px solid var(--danger, #d04444)",
-            borderRadius: 4,
-            color: "var(--danger, #d04444)",
-            fontSize: 12,
-          }}
-        >
+        <div role="alert" className="conflict-delete-warning">
           {wouldOrphan ? (
             <>
               <strong>All copies of {name} will be deleted.</strong> The skill
@@ -328,14 +278,7 @@ export function ConflictResolveModal({
         </div>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 8,
-          marginTop: 12,
-        }}
-      >
+      <div className="conflict-footer">
         <button onClick={() => void onClose()} disabled={submitting}>
           Cancel
         </button>

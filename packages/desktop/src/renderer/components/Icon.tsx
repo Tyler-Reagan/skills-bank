@@ -78,8 +78,7 @@ export function Icon({
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
-      style={{ flexShrink: 0, display: "inline-block", verticalAlign: "-2px" }}
+      className={`icon-svg${className ? ` ${className}` : ""}`}
       {...a11yProps}
     >
       {title && <title>{title}</title>}

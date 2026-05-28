@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { AGENT_LABELS, AGENT_PATHS } from "../agentDisplay.js";
-import { useReducedMotion } from "../hooks/useReducedMotion.js";
 import { Icon } from "./Icon.js";
 
 function freshness(lastCommit: RegistryEntry["lastCommit"]): {
@@ -80,7 +79,6 @@ export function SkillCard({
   const hidden = (entry.tags?.length ?? 0) - visibleTags.length;
   const [adding, setAdding] = useState(false);
   const [addInput, setAddInput] = useState("");
-  const reducedMotion = useReducedMotion();
 
   const removeTag = async (tag: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -120,11 +118,6 @@ export function SkillCard({
   return (
     <div
       className={`skill-card${entry.originUpdateAvailable ? " skill-card--update-available" : ""}${selectMode && selected ? " skill-card--selected" : ""}`}
-      style={
-        reducedMotion
-          ? undefined
-          : ({ animationDelay: `${index * 30}ms` } as React.CSSProperties)
-      }
       onClick={handleCardClick}
       role="button"
       tabIndex={0}
@@ -152,27 +145,13 @@ export function SkillCard({
                   ? `Deselect ${entry.name}`
                   : `Select ${entry.name} for bulk install`
             }
-            style={{ marginRight: 8, accentColor: "var(--accent)" }}
+            className="mr-8"
           />
         )}
-        <p
-          className="skill-name"
-          style={{ flex: 1, minWidth: 0, marginBottom: 0 }}
-        >
-          {entry.name}
-        </p>
+        <p className="skill-name flex-1-min0 mb-0">{entry.name}</p>
         {bulkInstallStatus && (
           <span
-            className="skill-status-chip"
-            style={{
-              fontSize: 11,
-              color:
-                bulkInstallStatus === "failed"
-                  ? "var(--danger, #c33)"
-                  : bulkInstallStatus === "installed"
-                    ? "var(--fresh, #2a7)"
-                    : "var(--text-2)",
-            }}
+            className={`skill-status-chip text-11${bulkInstallStatus === "failed" ? " text-danger" : bulkInstallStatus === "installed" ? " text-accent" : " text-muted"}`}
             title={`Bulk install: ${bulkInstallStatus}`}
           >
             {bulkInstallStatus === "installing"
@@ -191,12 +170,7 @@ export function SkillCard({
       {entry.description ? (
         <p className="skill-description">{entry.description}</p>
       ) : (
-        <p
-          className="skill-description"
-          style={{ color: "var(--text-3)", fontStyle: "italic" }}
-        >
-          (no description)
-        </p>
+        <p className="skill-description text-subtle italic">(no description)</p>
       )}
 
       {(visibleTags.length > 0 || onSaveTags) && (
@@ -277,7 +251,7 @@ export function SkillCard({
       <div className="skill-meta-row">
         <span
           className="freshness-dot"
-          style={{ background: fresh.color }}
+          style={{ background: fresh.color } as React.CSSProperties}
           title={`last commit: ${fresh.label}`}
         />
         <span>{fresh.label}</span>

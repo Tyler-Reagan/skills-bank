@@ -216,11 +216,10 @@ function PendingBanner({
       </button>
       {onResetPending && (
         <button
-          className="sync-banner-action"
+          className="sync-banner-action sync-banner-reset"
           type="button"
           onClick={onResetPending}
           title="Discard the pending sync state. Use this if the resolve flow is stuck and you'd rather start fresh on the next Pull Updates."
-          style={{ marginLeft: 4, opacity: 0.85 }}
         >
           Reset
         </button>

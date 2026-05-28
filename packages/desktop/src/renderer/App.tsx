@@ -781,15 +781,11 @@ function AppContent(): React.ReactElement {
         />
         <div className="content">
           <div
-            className="skills-grid"
+            className="skills-grid app-skeleton"
             aria-label="Loading registry and installed skills"
           >
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="skeleton skeleton-card"
-                style={{ animationDelay: `${i * 80}ms` }}
-              />
+              <div key={i} className="skeleton skeleton-card" />
             ))}
           </div>
         </div>
