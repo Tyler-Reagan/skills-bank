@@ -9,6 +9,7 @@ const repoRoot = path.resolve(here, "..");
 const index = buildRegistryIndex(repoRoot, {
   includeGitInfo: true,
   writeFile: true,
+  buckets: ["vendored"],
 });
 
 console.log(`Wrote index.json with ${index.entries.length} entries.`);
