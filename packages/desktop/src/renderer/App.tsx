@@ -76,15 +76,10 @@ import type {
   OriginUpdateResult,
 } from "../shared/ipc.js";
 
-// Settings, theme, and density persistence keys moved into
-// SettingsContext along with the read/write helpers. The keys below
-// are the ones still managed by App.tsx (search/tab/etc. — UI filter
-// + tab state that hasn't been lifted yet).
+// Persistence keys still managed directly by App.tsx (tab + unregister hint).
+// Search/filter/sort state moved into useBrowseFilters.
 const LS_KEYS = {
-  search: "skills-bank.searchQuery",
-  tagFilter: "skills-bank.tagFilter",
   tab: "skills-bank.activeTab",
-  installedOnly: "skills-bank.installedOnly",
   unregisterHintShown: "skills-bank.unregisterHintShown",
 };
 
@@ -101,17 +96,6 @@ function writeLS(key: string, value: string): void {
     localStorage.setItem(key, value);
   } catch {
     // ignore
-  }
-}
-
-function readTagFilterLS(): string[] {
-  try {
-    const raw = localStorage.getItem(LS_KEYS.tagFilter);
-    if (!raw) return [];
-    const v = JSON.parse(raw);
-    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
-  } catch {
-    return [];
   }
 }
 
@@ -324,23 +308,12 @@ function AppContent(): React.ReactElement {
   } = useUpdateFeed();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const [search, setSearchState] = useState<string>(readLS(LS_KEYS.search, ""));
-  const [installedOnly, setInstalledOnlyState] = useState<boolean>(
-    () => readLS(LS_KEYS.installedOnly, "false") === "true",
-  );
-  const [selectedTags, setSelectedTagsState] =
-    useState<string[]>(readTagFilterLS);
-  // BrowseTab filter chip + sort state. Defaults to "All" (empty set)
-  // on launch — pending updates from prior sessions may have been
-  // resolved while the app was closed; don't presume staleness. State
-  // lives here (not BrowseTab) so the Rescan done-state's View action
-  // can flip the Updates chip on remotely.
+  // registryFilters stays here (not in useBrowseFilters) because the
+  // Rescan controller flips it remotely via setRegistryFilters when the
+  // user clicks "View updates" in the done-state banner.
   const [registryFilters, setRegistryFilters] = useState<
     Set<import("./components/RegistryFilters.js").RegistryFilterTag>
   >(() => new Set());
-  const [registrySort, setRegistrySort] = useState<
-    import("./components/RegistryFilters.js").RegistrySortState
-  >({ by: "name", direction: "asc" });
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
   const [bulkInstall, setBulkInstall] = useState<BulkInstallState | null>(null);
   const {
@@ -406,18 +379,6 @@ function AppContent(): React.ReactElement {
   const toggleDensity = () =>
     setDensity(density === "comfortable" ? "compact" : "comfortable");
 
-  const setSearch = (v: string) => {
-    setSearchState(v);
-    writeLS(LS_KEYS.search, v);
-  };
-  const setSelectedTags = (next: string[]) => {
-    setSelectedTagsState(next);
-    writeLS(LS_KEYS.tagFilter, JSON.stringify(next));
-  };
-  const setInstalledOnly = (v: boolean) => {
-    setInstalledOnlyState(v);
-    writeLS(LS_KEYS.installedOnly, String(v));
-  };
   const setTabPersisted = (t: TabId) => {
     setTab(t);
     writeLS(LS_KEYS.tab, t);
@@ -1245,18 +1206,6 @@ function AppContent(): React.ReactElement {
         >
           {tab === "browse" && (
             <BrowseTab
-              // M5: filter hidden canon entries from the default
-              // Browse view. They remain in `registry` for lookups,
-              // installations, and the Settings → Hidden canon
-              // skills section. Memoized above as `visibleRegistry`.
-              registry={visibleRegistry}
-              installed={installed}
-              search={search}
-              setSearch={setSearch}
-              selectedTags={selectedTags}
-              setSelectedTags={setSelectedTags}
-              installedOnly={installedOnly}
-              setInstalledOnly={setInstalledOnly}
               onSelect={(e) => setSelected(e)}
               onSaveTags={saveCardTags}
               onRebuild={rebuild}
@@ -1264,8 +1213,6 @@ function AppContent(): React.ReactElement {
               searchInputRef={searchInputRef}
               registryFilters={registryFilters}
               setRegistryFilters={setRegistryFilters}
-              registrySort={registrySort}
-              setRegistrySort={setRegistrySort}
               onBulkInstall={runBulkInstall}
               bulkInstall={bulkInstall}
               manifestImportProgress={manifestImportProgress}
@@ -1275,9 +1222,6 @@ function AppContent(): React.ReactElement {
           )}
           {tab === "installed" && (
             <InstalledTab
-              installed={installed}
-              registry={registry}
-              customSkillsDirs={settings.customSkillsDirs}
               onAddCustomSkillsDir={addCustomSkillsDir}
               onRemoveCustomSkillsDir={removeCustomSkillsDir}
               onSwitchToBrowse={() => setTabPersisted("browse")}
@@ -1748,8 +1692,6 @@ function AppContent(): React.ReactElement {
 
       {modal?.kind === "settings" && (
         <SettingsModal
-          settings={settings}
-          onSave={saveSettings}
           onClose={() => closeModal()}
           onOpenInstallFromGithub={() =>
             openModal({ kind: "installFromGithub" })
@@ -2111,12 +2053,7 @@ function AppContent(): React.ReactElement {
       <DrawerHost
         selected={selected}
         onClose={() => setSelected(null)}
-        registryByName={registryByName}
-        installed={installed}
-        registryRoot={registryRoot}
-        settings={settings}
         authStatus={authStatus}
-        refresh={refresh}
         onUpdateResult={handleUpdateResult}
         onOpenManageLinks={(t) => openModal({ kind: "manageLinks", target: t })}
         onOpenConflicts={(t) => openModal({ kind: "conflict", target: t })}

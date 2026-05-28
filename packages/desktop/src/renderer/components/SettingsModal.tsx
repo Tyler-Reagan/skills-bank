@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import type { AgentId } from "@skills-bank/core";
+import { useSettings } from "../SettingsContext.js";
 import {
   AGENT_LABELS,
   AGENT_PATHS,
@@ -72,8 +73,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 interface Props {
-  settings: AppSettings;
-  onSave: (next: AppSettings) => void;
   onClose: () => void;
   /**
    * M5: list of canon skill names currently hidden from default
@@ -105,14 +104,13 @@ interface Props {
  * tabbed layout until there's enough content to justify one.
  */
 export function SettingsModal({
-  settings,
-  onSave,
   onClose,
   onOpenInstallFromGithub,
   hiddenCanon,
   onUnhide,
   isAuthed,
 }: Props): React.ReactElement {
+  const { settings, saveSettings: onSave } = useSettings();
   const [draft, setDraft] = useState<AppSettings>(settings);
 
   // Top-level agent dir symlinks — drives the conditional "Collapse

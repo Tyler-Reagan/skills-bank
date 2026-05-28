@@ -11,19 +11,9 @@ import path from "node:path";
  * destructive-action protection; it never surfaces to the user and
  * is intentionally not part of this enum.
  *
- * v1.3 vocabulary rename — see `docs/plans/vocabulary-rename.md`.
- * Prior values `bundled`/`yours` are accepted on read for one minor
- * cycle (v1.3.x); writes always emit `curated`/`user`.
+ * Renamed from `bundled`/`yours` in v1.3 (see `docs/plans/vocabulary-rename.md`).
  */
 export type SkillOrigin = "curated" | "user";
-
-/**
- * @deprecated v1.3 — renamed to `SkillOrigin` values `curated` / `user`.
- * Removal targeted for v1.4. The legacy literal-string type stays for
- * one minor cycle as a migration breadcrumb for downstream consumers
- * that imported the type itself.
- */
-export type SkillOriginLegacy = "bundled" | "yours";
 
 /**
  * Per-skill Origin pointer — independent of the registry-level
@@ -78,35 +68,22 @@ export interface SkillSource {
    * scanner attempts (the manual "this is mine" stamp).
    *
    * Field renamed from `upstream` → `origin` in v1.3 (ADR-0002
-   * Phase 2 amendment). `readSkillSource` tolerates the legacy
-   * `upstream` JSON key for one minor cycle; `writeSkillSource`
-   * always emits `origin`. The type itself is the canonical
-   * `OriginPointer`; UL canon already used "origin" in prose
-   * post-v0.11.10.
+   * Phase 2 amendment). `writeSkillSource` always emits `origin`.
    */
   origin?: OriginPointer;
 }
 
 export const SKILL_SOURCE_FILENAME = ".skills-bank.json";
 
-/**
- * Normalize a raw `source` axis value off disk to the post-v1.3
- * vocabulary. Accepts both the new values (`curated` / `user`) and
- * the legacy v1.2 values (`bundled` / `yours`) for one minor cycle.
- * Defaults to `user` on missing / unknown values — the safe
- * assumption for unknown provenance.
- */
 function normalizeSourceValue(raw: unknown): SkillOrigin {
-  if (raw === "curated" || raw === "bundled") return "curated";
-  if (raw === "user" || raw === "yours") return "user";
+  if (raw === "curated") return "curated";
+  if (raw === "user") return "user";
   return "user";
 }
 
 /**
  * Read a skill's origin marker. Missing or invalid files default to
- * `user` — the safe assumption for unknown provenance. The maintainer
- * may also run `scripts/migrate-source-markers.ts` for an eager
- * pass over a registry's committed markers.
+ * `user` — the safe assumption for unknown provenance.
  */
 export function readSkillSource(skillDir: string): SkillSource {
   const p = path.join(skillDir, SKILL_SOURCE_FILENAME);
@@ -122,10 +99,7 @@ export function readSkillSource(skillDir: string): SkillSource {
       out.syncedFromCommit = raw["syncedFromCommit"];
     }
     if (typeof raw["syncedAt"] === "string") out.syncedAt = raw["syncedAt"];
-    // Accept both `origin` (post-v1.3) and `upstream` (legacy)
-    // wire keys for one minor cycle. `origin` wins when both are
-    // present (defensive in case a hand-edited marker has both).
-    const origin = parseOrigin(raw["origin"] ?? raw["upstream"]);
+    const origin = parseOrigin(raw["origin"]);
     if (origin) out.origin = origin;
     return out;
   } catch {

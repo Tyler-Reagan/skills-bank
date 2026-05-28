@@ -173,11 +173,11 @@ export function writeRuntimeState(skillDir: string, state: RuntimeState): void {
 }
 
 /**
- * Heal action — keep-mine on a edited-without-origin state. Clears
+ * Heal action — keep-mine on an edited-without-origin state. Clears
  * the source marker so the skill's `source` becomes "user" going
  * forward and subsequent syncs leave it alone. Idempotent.
  */
-export function acceptDriftKeepLocal(skillDir: string): void {
+export function keepLocalDetach(skillDir: string): void {
   const src = readSkillSource(skillDir);
   if (src.source !== "curated") return;
   writeSkillSource(skillDir, { source: "user" });
@@ -248,12 +248,12 @@ export function flipSourceToUser(skillDir: string): void {
  * sees no drift. Source marker stays `curated` — Sync still owns
  * the skill and would still overwrite on the next pull.
  *
- * Distinct from acceptDriftKeepLocal (which flips source to `user`
- * and detaches from Sync entirely). Use this when the drift
- * indicator surfaced after a sync but the post-sync state is what
- * you want — clearing the indicator without reclassifying the skill.
+ * Distinct from `keepLocalDetach` (which flips source to `user` and
+ * detaches from Sync entirely). Use this when the drift indicator
+ * surfaced after a sync but the post-sync state is what you want —
+ * clearing the indicator without reclassifying the skill.
  */
-export function acceptDriftTakeCanonical(skillDir: string): void {
+export function rebaselineHash(skillDir: string): void {
   const src = readSkillSource(skillDir);
   if (src.source !== "curated") return;
   const h = hashSkillFolder(skillDir);
@@ -327,3 +327,9 @@ export function forgetMissingEntry(
     message: `forgot ${name}`,
   };
 }
+
+// v1.13 renames — one-cycle deprecated aliases for SDK consumers.
+/** @deprecated v1.13 — renamed to `keepLocalDetach`. */
+export const acceptDriftKeepLocal = keepLocalDetach;
+/** @deprecated v1.13 — renamed to `rebaselineHash`. */
+export const acceptDriftTakeCanonical = rebaselineHash;

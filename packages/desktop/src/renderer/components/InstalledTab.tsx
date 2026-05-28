@@ -7,6 +7,8 @@ import type {
   InstalledSkill,
   RegistryEntry,
 } from "@skills-bank/core";
+import { useRegistry } from "../RegistryContext.js";
+import { useSettings } from "../SettingsContext.js";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
 import { Icon } from "./Icon.js";
@@ -97,14 +99,6 @@ function kindRank(k: InstalledSkill["kind"]): number {
 }
 
 interface Props {
-  installed: InstalledSkill[];
-  registry: RegistryEntry[];
-  /**
-   * User-defined custom skills directories that the Installed tab
-   * scans alongside the known agent dirs. Surfaced inline (not in
-   * Settings) since the feature is scoped to this tab.
-   */
-  customSkillsDirs: string[];
   /** Open the directory picker; on confirm, append to customSkillsDirs. */
   onAddCustomSkillsDir: () => void;
   /** Remove a custom dir from the persisted list. */
@@ -175,9 +169,6 @@ interface Props {
 }
 
 export function InstalledTab({
-  installed,
-  registry,
-  customSkillsDirs,
   onAddCustomSkillsDir,
   onRemoveCustomSkillsDir,
   onSwitchToBrowse,
@@ -193,6 +184,9 @@ export function InstalledTab({
   diagnostics,
   onFixDiagnosticItem,
 }: Props): React.ReactElement {
+  const { installed, registry } = useRegistry();
+  const { settings } = useSettings();
+  const customSkillsDirs = settings.customSkillsDirs;
   const registerTooltip = REGISTER_TOOLTIP;
   if (installed.length === 0) {
     return (

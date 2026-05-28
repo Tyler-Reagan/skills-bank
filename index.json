@@ -1,15 +1,31 @@
 {
-  "generatedAt": "2026-05-20T22:16:31.710Z",
+  "generatedAt": "2026-05-28T02:12:10.151Z",
   "registry": "skills-bank",
   "entries": [
+    {
+      "name": "eureka",
+      "description": "Turns a raw shower thought or pivot idea into a structured outline ready for Grill-Me. Use when the user says \"eureka\", has a loose idea they want to develop (\"I'm thinking about...\", \"what if we...\", \"we should drop X and become Y\"), wants to brainstorm a pivot or new direction, or wants to pressure-test a rough concept before committing to a plan. Challenges the idea — pushes on why, what breaks, and what's gained — rather than just expanding it.",
+      "path": "skills/personal/eureka",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
     {
       "name": "find-skills",
       "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
       "path": "skills/vendored/find-skills",
       "source": {
         "source": "curated",
-        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "syncedFromCommit": "d1a7f5e26eac2128ac358b6d836f041f6c6f2bfb",
+        "syncedAt": "2026-05-26T20:38:51.706Z",
         "origin": {
           "kind": "github",
           "repo": "vercel-labs/skills",
@@ -21,11 +37,287 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
-        "date": "2026-05-18 09:25:01 -0700",
-        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+        "sha": "580ab55955044dc1f92d6d643a14efe433e482f4",
+        "date": "2026-05-27 07:43:57 -0700",
+        "message": "chore: align markdown tables, remove trailing blank lines, vendor refresh"
       },
       "bucket": "vendored",
+      "canon": true
+    },
+    {
+      "name": "gh-cli",
+      "description": "GitHub CLI (gh) comprehensive reference for repositories, issues, pull requests, Actions, projects, releases, gists, codespaces, organizations, extensions, and all GitHub operations from the command line.",
+      "path": "skills/personal/gh-cli",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z",
+        "origin": {
+          "kind": "github",
+          "repo": "github/awesome-copilot",
+          "sourceUrl": "https://github.com/github/awesome-copilot.git",
+          "skillPath": "skills/gh-cli/SKILL.md",
+          "skillFolderHash": "437437f7f20bcdbbdb3081cf164435a388c0a39a",
+          "installedAt": "2026-05-08T01:03:19.659Z",
+          "fetchedAt": "2026-05-08T01:03:19.659Z"
+        }
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "gitlab-ci-inspector",
+      "description": "Inspect GitLab CI/CD job results, fetch job logs, and diagnose pipeline failures. Use when the user shares a GitLab job URL, pipeline URL, asks about CI/CD job output, wants to check why a pipeline failed, or needs to review build/deploy logs.",
+      "path": "skills/personal/gitlab-ci-inspector",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/gitlab-ci-inspector/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4dbe99c5887cbe94ef7a694735b45bca46505ee9",
+        "date": "2026-05-20 12:03:26 -0700",
+        "message": "chore(skills/personal): remove from curation layer after subtree split"
+      },
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "gitlab-mr-writing",
+      "description": "Author GitLab merge request descriptions and technical reviewer guides for large-scale engineering changes. Use when the user asks to write an MR description, merge request body, PR description, technical reviewer summary, or reviewer guide — especially for refactors, architecture changes, or multi-package merges.",
+      "path": "skills/personal/gitlab-mr-writing",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/gitlab-mr-writing/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4dbe99c5887cbe94ef7a694735b45bca46505ee9",
+        "date": "2026-05-20 12:03:26 -0700",
+        "message": "chore(skills/personal): remove from curation layer after subtree split"
+      },
+      "bucket": "personal",
+      "canon": false,
+      "drift": true
+    },
+    {
+      "name": "pretty-mermaid",
+      "description": "Render beautiful Mermaid diagrams as SVG or ASCII art using the beautiful-mermaid library. Supports 15+ themes, 5 diagram types (flowchart, sequence, state, class, ER), and ultra-fast rendering. Use this skill when: rendering a mermaid diagram or processing .mmd files; creating a flowchart, sequence, state, class, or ER diagram; applying a theme or beautifying a diagram; batch processing multiple diagrams; producing ASCII / terminal-friendly diagrams; or visualizing architecture, workflows, or data models.",
+      "path": "skills/personal/pretty-mermaid",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/pretty-mermaid/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4dbe99c5887cbe94ef7a694735b45bca46505ee9",
+        "date": "2026-05-20 12:03:26 -0700",
+        "message": "chore(skills/personal): remove from curation layer after subtree split"
+      },
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "pretty-zmk-keymap",
+      "description": "Generates box-drawing ASCII art keymap diagrams embedded as comments in ZMK .keymap files, aligned to each layer's bindings block. Use when the user asks to \"add a keymap diagram\", \"draw the layout\", \"make the keymap readable\", \"add ascii art above the layers\", or wants a visual representation of their key layout in the .keymap file itself.",
+      "path": "skills/personal/pretty-zmk-keymap",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "scatterbrain",
+      "description": "Focus-recovery skill for when tangential drill-downs have buried the main conversational thread. Use when the user says \"scatterbrain\", wants to bookmark the current discussion so they can resurface after a tangent, realizes they've lost the thread of what was being discussed, or wants to identify where a session went sideways. Surfaces the drift point and classifies the tangent as productive or derailing before prompting a return to the main thread.",
+      "path": "skills/personal/scatterbrain",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "terraform-plan-summary",
+      "description": "Parses noisy Terraform or GitLab CI job logs and produces a concise impact summary (add/change/destroy counts, per-resource actions, grouped repetitive changes, key attribute diffs, warnings). Use when summarizing terraform plan output, CI plan jobs, long job logs, or when the user asks what a plan would change.",
+      "path": "skills/personal/terraform-plan-summary",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills-bank",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills-bank.git",
+          "skillPath": "skills/terraform-plan-summary/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4dbe99c5887cbe94ef7a694735b45bca46505ee9",
+        "date": "2026-05-20 12:03:26 -0700",
+        "message": "chore(skills/personal): remove from curation layer after subtree split"
+      },
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "write-a-skill",
+      "description": "Creates a new skill for this repo following project conventions — full metadata schema, category layout, plugin.json registration, Anti-Patterns section. Use when the user says \"write a skill\", \"create a skill\", \"new skill\", \"add a skill\", or wants to author a new capability in this skills repo.",
+      "path": "skills/personal/write-a-skill",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z",
+        "origin": {
+          "kind": "github",
+          "repo": "mattpocock/skills",
+          "sourceUrl": "https://github.com/mattpocock/skills.git",
+          "skillPath": "skills/productivity/write-a-skill/SKILL.md",
+          "skillFolderHash": "2f252b35aa238879afc5a230ac30343708dee0b3",
+          "installedAt": "2026-05-22T04:48:59.106Z",
+          "fetchedAt": "2026-05-22T04:48:59.106Z"
+        }
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "zmk-config",
+      "description": "ZMK project configuration specialist for west.yml manifests, build.yaml CI targets, and Kconfig .conf files. Use when the user is setting up or editing a ZMK config repo, asks about module pinning, shield or board identifiers, build targets, ZMK Studio, split keyboard wiring, CONFIG_ZMK_ Kconfig options, or the UF2 flash workflow.",
+      "path": "skills/personal/zmk-config",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "zmk-debug",
+      "description": "Diagnoses and resolves common ZMK firmware failures across five categories: build errors, flash failures, split pairing issues, display problems, and ZMK Studio connection failures. Use when the user reports a build error, CI failure, \"board not found\", \"KeyError qualifiers\", keyboard not pairing, display blank or not compiling, or ZMK Studio not connecting.",
+      "path": "skills/personal/zmk-debug",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "zmk-display",
+      "description": "ZMK display subsystem specialist covering nice!view, SSD1306 OLED, IL0323 ePaper, and dongle screens. Use when the user asks about adding a display to a ZMK keyboard, writing a custom status screen, using LVGL widgets, integrating nice-view-gem or other display modules, or configuring CONFIG_ZMK_DISPLAY options.",
+      "path": "skills/personal/zmk-display",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "zmk-keymap",
+      "description": "ZMK keymap specialist covering the full behavior library across v0.3 and ZMK main. Use when the user is editing a .keymap file, asks about hold-tap flavors, tap-dance, mod-morph, combos, or macros, references &mt, &lt, &mo, &sk, &caps_word, or sensor bindings, or wants to know which header to include for mouse or Bluetooth behaviors.",
+      "path": "skills/personal/zmk-keymap",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "zmk-lvgl-migrate",
+      "description": "Migrates ZMK nice!view display modules from LVGL v8 (ZMK v0.3 / Zephyr 3.5) to LVGL v9 (ZMK main / Zephyr 4.1). Use when the user says \"port this display to ZMK main\", \"migrate from v8 to v9\", \"lv_canvas_draw_rect undeclared\", \"LV_IMG_CF_TRUE_COLOR undeclared\", or wants to use a community display module that only works on ZMK v0.3. Pairs with zmk-display (v8 API reference) and zmk-config (west.yml / build.yaml changes).",
+      "path": "skills/personal/zmk-lvgl-migrate",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
+      "canon": false
+    },
+    {
+      "name": "zmk-new-config",
+      "description": "Scaffolds a new ZMK keyboard config repo by generating west.yml, build.yaml, and per-side .conf files from answers to six questions about hardware and features. Use when the user wants to start a new ZMK keyboard project, asks \"how do I set up a ZMK config repo\", \"create my zmk config\", or has a new keyboard and no existing config files.",
+      "path": "skills/personal/zmk-new-config",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "745f73525e44b4f5016ab18daabb861591f8dbfc",
+        "syncedAt": "2026-05-26T19:05:40.290Z"
+      },
+      "adopted": true,
+      "warnings": [
+        "missing meta.json (using SKILL.md frontmatter)"
+      ],
+      "bucket": "personal",
       "canon": false
     }
   ]

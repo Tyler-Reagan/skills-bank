@@ -48,14 +48,14 @@ import {
   type PublishState,
   type PublishStateMode,
   fetchCanonicalTarball,
-  acceptDriftKeepLocal,
+  keepLocalDetach,
   unlinkOrigin,
   hashSkillFolder,
   readSkillSource,
   writeSkillSource,
   writeRuntimeState,
   writeSyncedHash,
-  acceptDriftTakeCanonical,
+  rebaselineHash,
   finalizeSkillsDir,
   listTopLevelSymlinks,
   forgetMissingEntry,
@@ -1539,12 +1539,12 @@ mutatingHandle(IPC.acceptDrift, (_e, name: string) => {
   //   baseline so future probes don't surface it as having an
   //   update available. Source axis (curated/user) is preserved.
   // - Skills without an origin (the original curated-sync drift
-  //   case) route through `acceptDriftKeepLocal` as before — flips
-  //   source to "user" so future syncs leave the skill alone.
+  //   case) route through `keepLocalDetach` — flips source to "user"
+  //   so future syncs leave the skill alone.
   const hasOrigin = entry.source.origin?.kind === "github";
   try {
     if (hasOrigin) unlinkOrigin(skillDir);
-    else acceptDriftKeepLocal(skillDir);
+    else keepLocalDetach(skillDir);
     buildRegistryIndex(registryRoot, {
       includeGitInfo: true,
       writeFile: true,
@@ -1581,7 +1581,7 @@ mutatingHandle(IPC.takeCanonical, (_e, name: string) => {
   }
   const skillDir = path.join(registryRoot, entry.path);
   try {
-    acceptDriftTakeCanonical(skillDir);
+    rebaselineHash(skillDir);
     buildRegistryIndex(registryRoot, {
       includeGitInfo: true,
       writeFile: true,

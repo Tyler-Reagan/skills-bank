@@ -1,9 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import type {
-  InstalledSkill,
-  ManifestSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import type { ManifestSkill, RegistryEntry } from "@skills-bank/core";
 import { Icon } from "./Icon.js";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
@@ -16,6 +12,8 @@ import {
   type RegistryFilterTag,
   type RegistrySortState,
 } from "./RegistryFilters.js";
+import { useRegistry } from "../RegistryContext.js";
+import { useBrowseFilters } from "../hooks/useBrowseFilters.js";
 
 /** Per-skill state during a bulk-install run. */
 export interface BulkInstallState {
@@ -37,15 +35,6 @@ const REGISTRY_TOOLTIP =
   "in the Installed tab.";
 
 interface Props {
-  registry: RegistryEntry[];
-  installed: InstalledSkill[];
-  search: string;
-  setSearch: (v: string) => void;
-  selectedTags: string[];
-  setSelectedTags: (next: string[]) => void;
-  /** When true, filter to skills with at least one ours installation. */
-  installedOnly: boolean;
-  setInstalledOnly: (v: boolean) => void;
   onSelect: (entry: RegistryEntry) => void;
   onSaveTags?: (name: string, next: string[]) => Promise<void> | void;
   onRebuild: () => void | Promise<void>;
@@ -53,8 +42,6 @@ interface Props {
   searchInputRef?: React.Ref<HTMLInputElement>;
   registryFilters: ReadonlySet<RegistryFilterTag>;
   setRegistryFilters: (next: Set<RegistryFilterTag>) => void;
-  registrySort: RegistrySortState;
-  setRegistrySort: (next: RegistrySortState) => void;
   /**
    * Bulk-install runner. Called with the user's selected skill
    * names when they click "Install N selected". The host (App.tsx)
@@ -88,14 +75,6 @@ interface Props {
 }
 
 export function BrowseTab({
-  registry,
-  installed,
-  search,
-  setSearch,
-  selectedTags,
-  setSelectedTags,
-  installedOnly,
-  setInstalledOnly,
   onSelect,
   onSaveTags,
   onRebuild,
@@ -103,14 +82,23 @@ export function BrowseTab({
   searchInputRef,
   registryFilters,
   setRegistryFilters,
-  registrySort,
-  setRegistrySort,
   onBulkInstall,
   bulkInstall,
   manifestImportProgress,
   onRetryGhost,
   onDismissGhost,
 }: Props): React.ReactElement {
+  const { visibleRegistry: registry, installed } = useRegistry();
+  const {
+    search,
+    setSearch,
+    selectedTags,
+    setSelectedTags,
+    installedOnly,
+    setInstalledOnly,
+    registrySort,
+    setRegistrySort,
+  } = useBrowseFilters();
   const [selectMode, setSelectMode] = useState(false);
   const [selectedNames, setSelectedNames] = useState<ReadonlySet<string>>(
     () => new Set(),

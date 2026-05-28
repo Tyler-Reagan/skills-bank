@@ -9,14 +9,10 @@ import {
 } from "./source.js";
 
 /**
- * Pins the Phase 2 vocabulary rename (`bundled`→`curated`,
- * `yours`→`user`) under a tolerant-read window:
- *
- *   - readSkillSource accepts both legacy and new values on disk.
- *   - writeSkillSource emits ONLY the new values.
- *
- * The pair makes the migration self-healing: every `.skills-bank.json`
- * the app touches drifts toward the new values.
+ * Pins the v1.3 vocabulary (`curated`/`user`, `origin` wire key).
+ * Legacy values (`bundled`/`yours`, `upstream` wire key) were accepted
+ * under a tolerant-read window that closed in v1.13 after all committed
+ * markers were migrated. These tests verify the settled behavior only.
  */
 
 let scratch: string;
@@ -36,23 +32,13 @@ function writeMarker(content: Record<string, unknown>): void {
   );
 }
 
-describe("readSkillSource — Phase 2 tolerant-read", () => {
-  test("legacy `bundled` reads as `curated`", () => {
-    writeMarker({ source: "bundled" });
-    expect(readSkillSource(scratch).source).toBe("curated");
-  });
-
-  test("legacy `yours` reads as `user`", () => {
-    writeMarker({ source: "yours" });
-    expect(readSkillSource(scratch).source).toBe("user");
-  });
-
-  test("new `curated` reads as `curated`", () => {
+describe("readSkillSource — source axis", () => {
+  test("`curated` reads as `curated`", () => {
     writeMarker({ source: "curated" });
     expect(readSkillSource(scratch).source).toBe("curated");
   });
 
-  test("new `user` reads as `user`", () => {
+  test("`user` reads as `user`", () => {
     writeMarker({ source: "user" });
     expect(readSkillSource(scratch).source).toBe("user");
   });
@@ -73,7 +59,7 @@ describe("readSkillSource — Phase 2 tolerant-read", () => {
 
   test("syncedFromCommit + syncedAt pass through unchanged", () => {
     writeMarker({
-      source: "bundled",
+      source: "curated",
       syncedFromCommit: "deadbeef",
       syncedAt: "2026-05-18T12:00:00Z",
     });
@@ -84,11 +70,11 @@ describe("readSkillSource — Phase 2 tolerant-read", () => {
   });
 });
 
-describe("readSkillSource — Phase 2 tolerant-read on `upstream` wire key", () => {
-  test("legacy `upstream` key reads into `.origin`", () => {
+describe("readSkillSource — `origin` wire key", () => {
+  test("`origin` key reads into `.origin`", () => {
     writeMarker({
       source: "curated",
-      upstream: {
+      origin: {
         kind: "github",
         repo: "owner/repo",
         skillPath: "skills/x/SKILL.md",
@@ -99,29 +85,6 @@ describe("readSkillSource — Phase 2 tolerant-read on `upstream` wire key", () 
     expect(r.origin?.repo).toBe("owner/repo");
     expect(r.origin?.skillPath).toBe("skills/x/SKILL.md");
     expect(r.origin?.skillFolderHash).toBe("deadbeef");
-  });
-
-  test("new `origin` key reads into `.origin`", () => {
-    writeMarker({
-      source: "curated",
-      origin: {
-        kind: "github",
-        repo: "owner/repo",
-        skillPath: "skills/x/SKILL.md",
-      },
-    });
-    const r = readSkillSource(scratch);
-    expect(r.origin?.repo).toBe("owner/repo");
-    expect(r.origin?.skillPath).toBe("skills/x/SKILL.md");
-  });
-
-  test("when both keys present, `origin` wins (defensive)", () => {
-    writeMarker({
-      source: "curated",
-      upstream: { kind: "github", repo: "legacy/repo" },
-      origin: { kind: "github", repo: "new/repo" },
-    });
-    expect(readSkillSource(scratch).origin?.repo).toBe("new/repo");
   });
 });
 
@@ -154,11 +117,11 @@ describe("writeSkillSource — emits only new vocabulary", () => {
     expect(raw["upstream"]).toBeUndefined();
   });
 
-  test("round-trip: legacy on disk → read → write → only new vocabulary remains", () => {
+  test("round-trip: read → write preserves all fields, never emits `upstream`", () => {
     writeMarker({
-      source: "bundled",
+      source: "curated",
       syncedFromCommit: "abc",
-      upstream: { kind: "github", repo: "owner/repo" },
+      origin: { kind: "github", repo: "owner/repo" },
     });
     const r = readSkillSource(scratch);
     writeSkillSource(scratch, r);

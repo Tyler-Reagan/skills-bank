@@ -11,25 +11,16 @@ import type {
 } from "../../shared/ipc.js";
 import { SkillDetailDrawer } from "./SkillDetailDrawer.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
-import type { AppSettings } from "./SettingsModal.js";
+import { useRegistry } from "../RegistryContext.js";
+import { useSettings } from "../SettingsContext.js";
 
 interface Props {
   /** Currently-selected entry (drawer is mounted when non-null). */
   selected: RegistryEntry | null;
   /** Close the drawer (clears selection). */
   onClose: () => void;
-  /** Pre-built name → entry map. */
-  registryByName: Map<string, RegistryEntry>;
-  /** Full installed list (drawer filters internally). */
-  installed: InstalledSkill[];
-  /** Registry root (passed through to the drawer for path rendering). */
-  registryRoot: string | null;
-  /** App-level settings (drawer reads showOriginActivity / defaultInstallAgents / etc.). */
-  settings: AppSettings;
   /** Auth state — drawer gates the upstream-activity strip on whether the user is signed in. */
   authStatus: AuthStatus | null;
-  /** Re-fetch the registry after a state-changing action. */
-  refresh: () => Promise<unknown>;
   /** Centralized handler for the three Update result paths. */
   onUpdateResult: (r: OriginUpdateResult) => void;
   /** Open the per-skill ManageLinks modal. */
@@ -72,12 +63,7 @@ interface Props {
 export function DrawerHost({
   selected,
   onClose,
-  registryByName,
-  installed,
-  registryRoot,
-  settings,
   authStatus,
-  refresh,
   onUpdateResult,
   onOpenManageLinks,
   onOpenConflicts,
@@ -86,6 +72,8 @@ export function DrawerHost({
   markUnregisterHintShown,
 }: Props): React.ReactElement | null {
   const { flash, pushAppError } = useRegistryHost();
+  const { registryByName, installed, registryRoot, refresh } = useRegistry();
+  const { settings } = useSettings();
   if (!selected) return null;
   const isRegistered = registryByName.has(selected.name);
   const installations = installed.filter((i) => i.name === selected.name);
