@@ -24,7 +24,9 @@ if (!fs.existsSync(skillsDir)) {
   process.exit(0);
 }
 
-const skillRefs = walkSkills(repoRoot);
+const skillRefs = walkSkills(repoRoot).filter(
+  (ref) => ref.bucket === "vendored",
+);
 for (const ref of skillRefs) {
   const folder = ref.dir;
   const metaPath = path.join(folder, "meta.json");

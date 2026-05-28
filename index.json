@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T22:16:31.710Z",
+  "generatedAt": "2026-05-28T15:54:19.476Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -8,8 +8,8 @@
       "path": "skills/vendored/find-skills",
       "source": {
         "source": "curated",
-        "syncedFromCommit": "91683a836b7565ab9828513fbbb12c774e51367e",
-        "syncedAt": "2026-05-15T19:39:10.065Z",
+        "syncedFromCommit": "d1a7f5e26eac2128ac358b6d836f041f6c6f2bfb",
+        "syncedAt": "2026-05-26T20:38:51.706Z",
         "origin": {
           "kind": "github",
           "repo": "vercel-labs/skills",
@@ -21,12 +21,12 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "e99d1f9e6b49aadaf974f1bcdcf6603a80766484",
-        "date": "2026-05-18 09:25:01 -0700",
-        "message": "feat(v0.11.3): migrate skills into personal/vendored buckets"
+        "sha": "580ab55955044dc1f92d6d643a14efe433e482f4",
+        "date": "2026-05-27 07:43:57 -0700",
+        "message": "chore: align markdown tables, remove trailing blank lines, vendor refresh"
       },
       "bucket": "vendored",
-      "canon": false
+      "canon": true
     }
   ]
 }

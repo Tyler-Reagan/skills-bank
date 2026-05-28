@@ -1,23 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
-import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { useRegisterModal } from "../ModalRegistryContext.js";
 import { Icon } from "./Icon.js";
-import { PublishSection } from "./PublishSection.js";
 import { classifyDrawerState } from "./skillState.js";
+import { DrawerOriginSection } from "./DrawerOriginSection.js";
+import { DrawerActions } from "./DrawerActions.js";
 
 const DESCRIPTION_SOFT_CAP = 400;
-
-function formatStarCount(stars: number): string {
-  if (stars >= 1000)
-    return `${(stars / 1000).toFixed(stars >= 10000 ? 0 : 1)}k`;
-  return String(stars);
-}
 
 interface Props {
   entry: RegistryEntry;
@@ -149,22 +143,6 @@ interface Props {
   linkedRepoName?: string | null;
 }
 
-type ActionState =
-  | null
-  | "installing"
-  | "exporting"
-  | "registering"
-  | "unregistering"
-  | "hiding"
-  | "unhiding"
-  | "accepting-drift"
-  | "taking-canonical"
-  | "resetting-to-origin"
-  | "retrying-probe"
-  | "updating"
-  | "forgetting"
-  | "repointing";
-
 export function SkillDetailDrawer({
   entry,
   installed,
@@ -190,24 +168,19 @@ export function SkillDetailDrawer({
   showOriginActivity,
   onSetManualUpstream,
 }: Props): React.ReactElement {
-  const [action, setAction] = useState<ActionState>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerRepo, setPickerRepo] = useState("");
-  const [pickerPath, setPickerPath] = useState("");
-  const [pickerBusy, setPickerBusy] = useState(false);
-  const [pickerError, setPickerError] = useState<string | null>(null);
-  const pickerRepoRef = useRef<HTMLInputElement | null>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (pickerOpen) pickerRepoRef.current?.focus();
-  }, [pickerOpen]);
   // The drawer slides in from the right (~280ms). Until it lands,
   // its hit area is offscreen — a click on the eventual drawer position
   // would land on the overlay underneath and dismiss the drawer the
   // user just opened. Guard the overlay's close handler until the
   // entrance animation settles.
   const [overlayReady, setOverlayReady] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [editingTags, setEditingTags] = useState(false);
+  const [tagDraft, setTagDraft] = useState<string[]>(entry.tags ?? []);
+  const [tagInput, setTagInput] = useState("");
+  const [tagInputError, setTagInputError] = useState<string | null>(null);
+  const [savingTags, setSavingTags] = useState(false);
 
   useFocusReturn();
   useInitialFocus(drawerRef);
@@ -215,13 +188,6 @@ export function SkillDetailDrawer({
   // WebContentsView yields while the drawer is up. The drawer renders
   // its own slide-in chrome (not <Modal>), so it registers directly.
   useRegisterModal();
-  const confirmDeleteRef = useRef<HTMLDivElement | null>(null);
-  const [descExpanded, setDescExpanded] = useState(false);
-  const [editingTags, setEditingTags] = useState(false);
-  const [tagDraft, setTagDraft] = useState<string[]>(entry.tags ?? []);
-  const [tagInput, setTagInput] = useState("");
-  const [tagInputError, setTagInputError] = useState<string | null>(null);
-  const [savingTags, setSavingTags] = useState(false);
 
   // SKILL.md fetch keys purely on the skill name. Splitting this off
   // from the tag-reset effect prevents a re-fetch every time the parent
@@ -250,85 +216,9 @@ export function SkillDetailDrawer({
     return () => window.clearTimeout(id);
   }, []);
 
-  // Fetch source-repo metadata (stars, description) when an Origin
-  // section is visible. Main process caches per-repo with a 15-min
-  // TTL so consecutive drawer opens for skills from the same repo
-  // don't re-hit GitHub. Result `null` until the fetch resolves;
-  // the drawer omits the stars chip and description when fields
-  // are null. Errors degrade silently to no-enrichment.
-  const upstreamRepo = entry.source.origin?.repo;
-  const upstreamSkillPath = entry.source.origin?.skillPath;
-  const { data: repoMeta } = useIpcQuery(
-    () => window.skillsBank.originRepoMetadata(upstreamRepo!),
-    [upstreamRepo],
-    { enabled: Boolean(upstreamRepo) },
-  );
-
-  // Per-skill last-commit fetch, opt-in via Settings. Costs 1 GitHub
-  // API call per skill (no repo dedup) so it stays off by default.
-  // Silent degrade on error.
-  const { data: lastCommit } = useIpcQuery(
-    () => window.skillsBank.originLastCommit(upstreamRepo!, upstreamSkillPath!),
-    [upstreamRepo, upstreamSkillPath, showOriginActivity],
-    {
-      enabled: Boolean(showOriginActivity && upstreamRepo && upstreamSkillPath),
-    },
-  );
-
-  const [repairState, setRepairState] = useState<
-    | { kind: "idle" }
-    | { kind: "running" }
-    | {
-        kind: "confirm-delete";
-        agents: import("@skills-bank/core").AgentId[];
-        reasons: string[];
-      }
-  >({ kind: "idle" });
-  // Drawer trap is suspended while the confirm-delete sub-dialog is
-  // mounted — focus belongs to the inner dialog, not the drawer.
-  useFocusTrap(drawerRef, repairState.kind !== "confirm-delete");
-  useFocusTrap(confirmDeleteRef, repairState.kind === "confirm-delete");
   // Single source of truth for which actions are valid in this state.
-  // Replaces the previous scatter of isRegistered/isInstalled/hasConflicts
-  // /hasBrokenLinks conditionals across the action block. See plan §7b.
   const classification = classifyDrawerState(entry, installed, isRegistered);
-  const caps = classification.capabilities;
 
-  const repairOrRemoveBroken = async () => {
-    setRepairState({ kind: "running" });
-    const report = await window.skillsBank.repairBrokenLinks(entry.name);
-    if (report.unrepairable.length === 0) {
-      setRepairState({ kind: "idle" });
-      await onChanged(
-        report.repaired.length > 0
-          ? `Repaired ${report.repaired.length} broken link(s) for ${entry.name}`
-          : `No broken links for ${entry.name}`,
-      );
-      return;
-    }
-    setRepairState({
-      kind: "confirm-delete",
-      agents: report.unrepairable.map((u) => u.agent),
-      reasons: report.unrepairable.map((u) => `${u.linkPath}: ${u.reason}`),
-    });
-  };
-
-  const confirmDeleteBroken = async () => {
-    if (repairState.kind !== "confirm-delete") return;
-    setRepairState({ kind: "running" });
-    const report = await window.skillsBank.removeBrokenLinks(
-      entry.name,
-      repairState.agents,
-    );
-    setRepairState({ kind: "idle" });
-    if (report.errors.length > 0) {
-      await onChanged(
-        `Removed ${report.removed.length}; ${report.errors.length} failed`,
-      );
-    } else {
-      await onChanged(`Deleted ${report.removed.length} broken link(s)`);
-    }
-  };
   // Synthetic entries (not-registered skills) carry an absolute linkPath
   // as `entry.path`; registered entries carry a relative `skills/<name>`.
   // Compose vs. use-as-is so Reveal in Finder works in both cases.
@@ -350,50 +240,6 @@ export function SkillDetailDrawer({
     !descExpanded && isLongDescription
       ? description.slice(0, DESCRIPTION_SOFT_CAP).trimEnd()
       : description;
-
-  const install = async () => {
-    setAction("installing");
-    try {
-      const r = await window.skillsBank.install(
-        entry.name,
-        false,
-        defaultInstallAgents,
-      );
-      // "refusing to overwrite without force" comes from installSkill
-      // when a non-symlink or foreign symlink blocks the target path.
-      // Surface the structured errors so the host can open the
-      // InstallConflictModal instead of dropping a vague toast.
-      const forceErrors = (r.errors ?? [])
-        .filter((e) => /refusing to overwrite without force/i.test(e.message))
-        .map((e) => {
-          const agentDetail = e.copyableDetails?.["agent"];
-          const agent =
-            typeof agentDetail === "string"
-              ? (agentDetail as AgentId)
-              : ("claude" as AgentId);
-          return { agent, message: e.message };
-        });
-      if (!r.ok && forceErrors.length > 0 && onInstallConflict) {
-        onInstallConflict({ name: entry.name, errors: forceErrors });
-        return;
-      }
-      await onChanged(r.message);
-    } finally {
-      setAction(null);
-    }
-  };
-  const exportSkill = async () => {
-    setAction("exporting");
-    try {
-      const r = await window.skillsBank.exportSkill(entry.name);
-      await onChanged(r.message);
-    } finally {
-      setAction(null);
-    }
-  };
-  const reveal = () => {
-    if (absPath) void window.skillsBank.openInFinder(absPath);
-  };
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -435,1207 +281,305 @@ export function SkillDetailDrawer({
   };
 
   return (
-    <>
-      <div
-        className="drawer-overlay"
-        // Backdrop click closes; click-on-dialog bubbles up here but
-        // the currentTarget check filters those out so the dialog body
-        // doesn't dismiss on every interaction.
-        onClick={(e) => {
-          if (!overlayReady) return;
-          if (e.target === e.currentTarget) onClose();
-        }}
+    <div
+      className="drawer-overlay"
+      // Backdrop click closes; click-on-dialog bubbles up here but
+      // the currentTarget check filters those out so the dialog body
+      // doesn't dismiss on every interaction.
+      onClick={(e) => {
+        if (!overlayReady) return;
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <aside
+        ref={drawerRef}
+        className="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${entry.name} details`}
       >
-        <aside
-          ref={drawerRef}
-          className="drawer"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${entry.name} details`}
-        >
-          <div className="drawer-header">
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h2
+        <div className="drawer-header">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 18,
+                wordBreak: "break-word",
+              }}
+            >
+              {entry.name}
+            </h2>
+            {entry.version && (
+              <p
                 style={{
+                  fontSize: 12,
+                  color: "var(--text-3)",
                   fontFamily: "var(--font-mono)",
-                  fontSize: 18,
-                  wordBreak: "break-word",
+                  marginTop: 2,
                 }}
               >
-                {entry.name}
-              </h2>
-              {entry.version && (
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-3)",
-                    fontFamily: "var(--font-mono)",
-                    marginTop: 2,
-                  }}
-                >
-                  v{entry.version}
+                v{entry.version}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="drawer-close"
+            onClick={onClose}
+            aria-label="Close skill details"
+            title="Close skill details (Esc)"
+          >
+            <Icon name="x" size="lg" />
+          </button>
+        </div>
+
+        <div className="drawer-main">
+          <div className="drawer-body">
+            {entry.warnings && entry.warnings.length > 0 && (
+              <div className="drawer-warnings">
+                <strong>
+                  <Icon name="alert-triangle" size="sm" />{" "}
+                  {entry.warnings.length}{" "}
+                  {entry.warnings.length === 1 ? "warning" : "warnings"}
+                </strong>
+                <ul>
+                  {entry.warnings.map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="drawer-section lede">
+              <h3>Description</h3>
+              {description ? (
+                <>
+                  <p>{visibleDescription}</p>
+                  {isLongDescription && (
+                    <button
+                      className="link-btn"
+                      onClick={() => setDescExpanded((v) => !v)}
+                    >
+                      {descExpanded ? "Show less" : "Show more"}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
+                  (no description)
                 </p>
               )}
             </div>
-            <button
-              type="button"
-              className="drawer-close"
-              onClick={onClose}
-              aria-label="Close skill details"
-              title="Close skill details (Esc)"
-            >
-              <Icon name="x" size="lg" />
-            </button>
-          </div>
 
-          <div className="drawer-main">
-            <div className="drawer-body">
-              {entry.warnings && entry.warnings.length > 0 && (
-                <div className="drawer-warnings">
-                  <strong>
-                    <Icon name="alert-triangle" size="sm" />{" "}
-                    {entry.warnings.length}{" "}
-                    {entry.warnings.length === 1 ? "warning" : "warnings"}
-                  </strong>
-                  <ul>
-                    {entry.warnings.map((w, i) => (
-                      <li key={i}>{w}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div className="drawer-section lede">
-                <h3>Description</h3>
-                {description ? (
-                  <>
-                    <p>{visibleDescription}</p>
-                    {isLongDescription && (
-                      <button
-                        className="link-btn"
-                        onClick={() => setDescExpanded((v) => !v)}
-                      >
-                        {descExpanded ? "Show less" : "Show more"}
-                      </button>
-                    )}
-                  </>
+            <div className="drawer-section">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
+              >
+                <h3 style={{ margin: 0 }}>Tags</h3>
+                {!editingTags ? (
+                  <button
+                    className="link-btn"
+                    onClick={() => setEditingTags(true)}
+                    aria-label="Edit tags"
+                  >
+                    Edit
+                  </button>
                 ) : (
-                  <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
-                    (no description)
-                  </p>
-                )}
-              </div>
-
-              <div className="drawer-section">
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
-                  }}
-                >
-                  <h3 style={{ margin: 0 }}>Tags</h3>
-                  {!editingTags ? (
+                  <div style={{ display: "flex", gap: 6 }}>
                     <button
                       className="link-btn"
-                      onClick={() => setEditingTags(true)}
-                      aria-label="Edit tags"
+                      onClick={cancelTagEdit}
+                      disabled={savingTags}
+                      aria-label="Cancel tag edit"
                     >
-                      Edit
+                      Cancel
                     </button>
-                  ) : (
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        className="link-btn"
-                        onClick={cancelTagEdit}
-                        disabled={savingTags}
-                        aria-label="Cancel tag edit"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="link-btn"
-                        style={{ color: "var(--accent)" }}
-                        onClick={() => void saveTags()}
-                        disabled={savingTags}
-                        aria-label="Save tags"
-                      >
-                        {savingTags ? "Saving" : "Save"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {editingTags ? (
-                  <div>
-                    <div className="skill-tags" style={{ marginBottom: 8 }}>
-                      {tagDraft.map((t) => (
-                        <span key={t} className="skill-tag editable">
-                          #{t}
-                          <button
-                            type="button"
-                            className="tag-remove"
-                            aria-label={`Remove tag ${t}`}
-                            title={`Remove tag ${t}`}
-                            onClick={() => removeTag(t)}
-                          >
-                            <Icon name="x" size="sm" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => {
-                        setTagInput(e.target.value);
-                        if (tagInputError) setTagInputError(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addTag();
-                        }
-                      }}
-                      placeholder="add a tag, press Enter"
-                      className={`tag-input ${tagInputError ? "invalid" : ""}`}
-                      aria-invalid={tagInputError ? true : undefined}
-                      aria-describedby={
-                        tagInputError ? "tag-input-error" : undefined
-                      }
-                    />
-                    {tagInputError && (
-                      <p
-                        id="tag-input-error"
-                        className="form-error"
-                        role="alert"
-                      >
-                        {tagInputError}
-                      </p>
-                    )}
+                    <button
+                      className="link-btn"
+                      style={{ color: "var(--accent)" }}
+                      onClick={() => void saveTags()}
+                      disabled={savingTags}
+                      aria-label="Save tags"
+                    >
+                      {savingTags ? "Saving" : "Save"}
+                    </button>
                   </div>
-                ) : entry.tags && entry.tags.length > 0 ? (
-                  <div className="skill-tags">
-                    {entry.tags.map((t) => (
-                      <span key={t} className="skill-tag">
+                )}
+              </div>
+              {editingTags ? (
+                <div>
+                  <div className="skill-tags" style={{ marginBottom: 8 }}>
+                    {tagDraft.map((t) => (
+                      <span key={t} className="skill-tag editable">
                         #{t}
+                        <button
+                          type="button"
+                          className="tag-remove"
+                          aria-label={`Remove tag ${t}`}
+                          title={`Remove tag ${t}`}
+                          onClick={() => removeTag(t)}
+                        >
+                          <Icon name="x" size="sm" />
+                        </button>
                       </span>
                     ))}
                   </div>
-                ) : (
-                  <p
-                    style={{
-                      color: "var(--text-3)",
-                      fontStyle: "italic",
-                      fontSize: 12,
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => {
+                      setTagInput(e.target.value);
+                      if (tagInputError) setTagInputError(null);
                     }}
-                  >
-                    (no tags)
-                  </p>
-                )}
-              </div>
-
-              <div className="drawer-section">
-                <h3>SKILL.md preview</h3>
-                {skillMdLoading ? (
-                  <div
-                    aria-label="Loading SKILL.md preview"
-                    aria-busy="true"
-                    role="status"
-                  >
-                    {[100, 86, 92, 70, 96, 64].map((width, i) => (
-                      <div
-                        key={i}
-                        className="skeleton skeleton-line"
-                        style={{
-                          width: `${width}%`,
-                          animationDelay: `${i * 60}ms`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : renderedMd ? (
-                  <div
-                    className="skill-md-preview md"
-                    dangerouslySetInnerHTML={{ __html: renderedMd }}
-                  />
-                ) : (
-                  <div className="empty-inline">
-                    <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
-                      No <code>SKILL.md</code> in this folder.
-                    </p>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={reveal}
-                      disabled={!registryRoot}
-                      aria-label="Open the registry folder so you can create a SKILL.md"
-                    >
-                      <Icon name="folder" size="sm" /> Open folder to create one
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {isRegistered &&
-                entry.adopted !== false &&
-                !entry.source.origin &&
-                onSetManualUpstream && (
-                  <div className="drawer-section">
-                    <h3>Origin</h3>
-                    {!pickerOpen ? (
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "var(--s3)",
-                          alignItems: "center",
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="link-btn"
-                          onClick={() => {
-                            setPickerOpen(true);
-                            setPickerError(null);
-                          }}
-                        >
-                          Link origin
-                        </button>
-                        <span style={{ color: "var(--text-3)", fontSize: 12 }}>
-                          ·
-                        </span>
-                        <button
-                          type="button"
-                          className="link-btn"
-                          disabled={pickerBusy}
-                          onClick={async () => {
-                            setPickerBusy(true);
-                            await onSetManualUpstream({ kind: "none" });
-                            setPickerBusy(false);
-                          }}
-                        >
-                          Mark as local
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="form-field">
-                          <label htmlFor="picker-repo">Repo</label>
-                          <input
-                            id="picker-repo"
-                            ref={pickerRepoRef}
-                            type="text"
-                            className="input"
-                            placeholder="owner/name"
-                            value={pickerRepo}
-                            onChange={(e) => setPickerRepo(e.target.value)}
-                            disabled={pickerBusy}
-                          />
-                          <p className="form-field-hint">
-                            e.g. vercel-labs/skills
-                          </p>
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="picker-path">Path</label>
-                          <input
-                            id="picker-path"
-                            type="text"
-                            className="input"
-                            placeholder="skills/my-skill/SKILL.md"
-                            value={pickerPath}
-                            onChange={(e) => setPickerPath(e.target.value)}
-                            disabled={pickerBusy}
-                          />
-                          <p className="form-field-hint">
-                            Path to SKILL.md within the repo
-                          </p>
-                        </div>
-                        {pickerError && (
-                          <p
-                            style={{
-                              color: "var(--danger)",
-                              fontSize: 12,
-                              margin: "var(--s2) 0",
-                            }}
-                            role="alert"
-                          >
-                            {pickerError}
-                          </p>
-                        )}
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "var(--s3)",
-                            alignItems: "center",
-                            marginTop: "var(--s3)",
-                          }}
-                        >
-                          <button
-                            type="button"
-                            className="btn primary"
-                            disabled={
-                              pickerBusy ||
-                              !pickerRepo.trim() ||
-                              !pickerPath.trim()
-                            }
-                            onClick={async () => {
-                              setPickerBusy(true);
-                              setPickerError(null);
-                              const r = await onSetManualUpstream({
-                                kind: "github",
-                                repo: pickerRepo.trim(),
-                                skillPath: pickerPath.trim(),
-                              });
-                              if (!r.ok) {
-                                setPickerError(r.message);
-                                setPickerBusy(false);
-                              } else {
-                                setPickerOpen(false);
-                                setPickerBusy(false);
-                              }
-                            }}
-                          >
-                            {pickerBusy ? (
-                              <>
-                                <span className="spinner inline" /> Validating
-                              </>
-                            ) : (
-                              "Link"
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            className="link-btn"
-                            disabled={pickerBusy}
-                            onClick={() => {
-                              setPickerOpen(false);
-                              setPickerError(null);
-                            }}
-                            aria-label="Cancel linking an origin"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              {entry.source.origin?.kind === "github" &&
-                entry.source.origin.repo && (
-                  <div className="drawer-section">
-                    <h3>Origin</h3>
-                    <div className="drawer-meta-row">
-                      <span className="drawer-meta-key">from</span>
-                      <span className="drawer-meta-value">
-                        <button
-                          type="button"
-                          className="link-btn"
-                          onClick={() =>
-                            void window.skillsBank.openExternal(
-                              `https://github.com/${entry.source.origin!.repo!}`,
-                            )
-                          }
-                          title="Open the source repo on GitHub"
-                        >
-                          github.com/{entry.source.origin.repo}
-                        </button>
-                        {repoMeta?.stars !== null &&
-                          repoMeta?.stars !== undefined && (
-                            <span
-                              style={{
-                                marginLeft: 8,
-                                fontSize: 11,
-                                color: "var(--text-3)",
-                              }}
-                              title={`${repoMeta.stars} stars on GitHub`}
-                            >
-                              ★ {formatStarCount(repoMeta.stars)}
-                            </span>
-                          )}
-                      </span>
-                    </div>
-                    {repoMeta?.description && (
-                      <div className="drawer-meta-row">
-                        <span className="drawer-meta-key">about</span>
-                        <span className="drawer-meta-value prose">
-                          {repoMeta.description}
-                        </span>
-                      </div>
-                    )}
-                    {entry.source.origin.skillPath && (
-                      <div className="drawer-meta-row">
-                        <span className="drawer-meta-key">path in repo</span>
-                        <span className="drawer-meta-value">
-                          <button
-                            type="button"
-                            className="link-btn"
-                            onClick={() => {
-                              const repo = entry.source.origin!.repo!;
-                              const skillPath = entry.source.origin!.skillPath!;
-                              // Strip the trailing /SKILL.md so the link
-                              // opens the folder view rather than the file.
-                              const folder = skillPath.replace(
-                                /\/SKILL\.md$/,
-                                "",
-                              );
-                              void window.skillsBank.openExternal(
-                                `https://github.com/${repo}/tree/HEAD/${folder}`,
-                              );
-                            }}
-                            title="Open the skill's folder on GitHub"
-                          >
-                            {entry.source.origin.skillPath.replace(
-                              /\/SKILL\.md$/,
-                              "/",
-                            )}
-                          </button>
-                        </span>
-                      </div>
-                    )}
-                    {entry.source.origin.skillFolderHash && (
-                      <div className="drawer-meta-row">
-                        <span className="drawer-meta-key">fetched hash</span>
-                        <span className="drawer-meta-value">
-                          <code>
-                            {entry.source.origin.skillFolderHash.slice(0, 7)}
-                          </code>
-                        </span>
-                      </div>
-                    )}
-                    {entry.source.origin.fetchedAt && (
-                      <div className="drawer-meta-row">
-                        <span className="drawer-meta-key">last fetched</span>
-                        <span className="drawer-meta-value">
-                          {new Date(
-                            entry.source.origin.fetchedAt,
-                          ).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                    {showOriginActivity &&
-                      lastCommit?.sha &&
-                      lastCommit?.date && (
-                        <div className="drawer-meta-row">
-                          <span className="drawer-meta-key">
-                            last Origin commit
-                          </span>
-                          <span className="drawer-meta-value">
-                            {new Date(lastCommit.date).toLocaleDateString()} ·{" "}
-                            <code>{lastCommit.sha.slice(0, 7)}</code>
-                            {lastCommit.message && (
-                              <span
-                                style={{
-                                  marginLeft: 6,
-                                  color: "var(--text-3)",
-                                  fontSize: 11,
-                                }}
-                                title={lastCommit.message}
-                              >
-                                {lastCommit.message.length > 60
-                                  ? lastCommit.message.slice(0, 60)
-                                  : lastCommit.message}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      )}
-                  </div>
-                )}
-
-              <div className="drawer-section">
-                <h3>Metadata</h3>
-                {entry.author && (
-                  <div className="drawer-meta-row">
-                    <span className="drawer-meta-key">author</span>
-                    <span className="drawer-meta-value">{entry.author}</span>
-                  </div>
-                )}
-                <div className="drawer-meta-row">
-                  <span className="drawer-meta-key">path</span>
-                  <span className="drawer-meta-value">{entry.path}</span>
-                </div>
-                {entry.lastCommit && (
-                  <div className="drawer-meta-row">
-                    <span className="drawer-meta-key">last commit</span>
-                    <span className="drawer-meta-value">
-                      {new Date(entry.lastCommit.date).toLocaleDateString()} ·{" "}
-                      {entry.lastCommit.sha.slice(0, 7)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="drawer-actions">
-              {/* Action block is gated by classifyDrawerState. Each button
-              has both a capability flag (should it appear?) and a
-              primary marker (should it be styled as the primary call to
-              action?). The primary action renders first, regardless of
-              category, so the user's eye lands on the right move for
-              the current state. See skillState.ts for the table. */}
-
-              {/* Register — primary for unregistered states with adoptable
-              source. The registry-source hint stays with this affordance. */}
-              {caps.canRegister && onRegister && (
-                <>
-                  <button
-                    className="btn primary"
-                    disabled={action !== null}
-                    onClick={() => {
-                      setAction("registering");
-                      void Promise.resolve(onRegister()).finally(() =>
-                        setAction(null),
-                      );
-                    }}
-                  >
-                    {action === "registering" ? (
-                      <>
-                        <span className="spinner inline" /> Registering
-                      </>
-                    ) : (
-                      "Register in registry"
-                    )}
-                  </button>
-                  <p className="drawer-action-hint">
-                    Files move into your registry's skills/ directory unless you
-                    turn off adoption in Settings. Preserved through Refresh via
-                    diff-before-apply; cross-agent linkable. If your registry
-                    mirrors a GitHub repo, commit to persist across machines.
-                  </p>
-                </>
-              )}
-
-              {/* Origin-unreachable heal — N consecutive probe failures
-              on the per-skill origin. The local copy under
-              skills/.../<name>/ is intact; the user picks Keep this
-              skill (unlink origin, stop checking) or Retry probe
-              (re-run the probe pass). The classifier also sets
-              canAcceptDrift on this state so the existing main
-              dispatch routes through unlinkOrigin for github origins.
-              v1.4. */}
-              {caps.canRetryOriginProbe && onAcceptDrift && (
-                <>
-                  <button
-                    className="btn primary"
-                    disabled={action !== null}
-                    onClick={() => {
-                      setAction("retrying-probe");
-                      void window.skillsBank
-                        .originProbe()
-                        .finally(() => setAction(null));
-                    }}
-                    title="Re-run the origin probe pass for every github-origin skill. If this skill's origin is reachable again, the unreachable state clears."
-                  >
-                    {action === "retrying-probe" ? (
-                      <>
-                        <span className="spinner inline" /> Retrying
-                      </>
-                    ) : (
-                      "Retry probe"
-                    )}
-                  </button>
-                  <button
-                    className="btn"
-                    disabled={action !== null}
-                    onClick={() => {
-                      setAction("accepting-drift");
-                      void Promise.resolve(onAcceptDrift()).finally(() =>
-                        setAction(null),
-                      );
-                    }}
-                    title={`Stop checking ${
-                      entry.source.origin?.repo ?? "the origin"
-                    } for updates. Your local copy stays; the origin pointer clears.`}
-                  >
-                    {action === "accepting-drift" ? (
-                      <>
-                        <span className="spinner inline" /> Unlinking{" "}
-                      </>
-                    ) : (
-                      "Keep this skill"
-                    )}
-                  </button>
-                  <p className="drawer-action-hint">
-                    The origin{" "}
-                    <code>{entry.source.origin?.repo ?? "Origin"}</code> hasn't
-                    been reachable for the last few probes. Your local copy is
-                    intact.
-                    <strong> Retry probe</strong> re-runs the check.
-                    <strong> Keep this skill</strong> clears the origin pointer
-                    — future probes won't surface this skill again.
-                  </p>
-                </>
-              )}
-
-              {/* Drift heal — fan-out by source axis. The classifier emits
-              `canAcceptDrift` for both bundled-sync drift and upstream-
-              pointer drift; render the sub-arm and hint copy that
-              matches the actual axis on this entry.
-
-              Copy migrated to the canonical glossary verbs:
-                edited-with-origin:  [Reset to origin] (primary, danger)  [Unlink origin]
-                edited-without-origin:       [Re-baseline]     (primary)          [Accept drift] */}
-              {caps.canAcceptDrift &&
-                onAcceptDrift &&
-                !caps.canRetryOriginProbe && (
-                  <>
-                    {caps.canResetToOrigin && onTakeUpstream && (
-                      <button
-                        className="btn danger"
-                        disabled={action !== null}
-                        onClick={() => {
-                          setAction("resetting-to-origin");
-                          void Promise.resolve(onTakeUpstream()).finally(() =>
-                            setAction(null),
-                          );
-                        }}
-                        title={`Discard local edits and re-fetch from ${entry.source.origin?.repo ?? "Origin"}. Your changes are lost.`}
-                      >
-                        {action === "resetting-to-origin" ? (
-                          <>
-                            <span className="spinner inline" /> Resetting{" "}
-                          </>
-                        ) : (
-                          "Reset to origin"
-                        )}
-                      </button>
-                    )}
-                    {caps.canTakeCanonical && onTakeCanonical && (
-                      <button
-                        className="btn primary"
-                        disabled={action !== null}
-                        onClick={() => {
-                          setAction("taking-canonical");
-                          void Promise.resolve(onTakeCanonical()).finally(() =>
-                            setAction(null),
-                          );
-                        }}
-                        title="Re-baseline the current on-disk state as canonical. Drift clears; the skill stays under Sync, which can still overwrite on the next pull."
-                      >
-                        {action === "taking-canonical" ? (
-                          <>
-                            <span className="spinner inline" />{" "}
-                            Re-baselining{" "}
-                          </>
-                        ) : (
-                          "Re-baseline"
-                        )}
-                      </button>
-                    )}
-                    <button
-                      className="btn"
-                      disabled={action !== null}
-                      onClick={() => {
-                        setAction("accepting-drift");
-                        void Promise.resolve(onAcceptDrift()).finally(() =>
-                          setAction(null),
-                        );
-                      }}
-                      title={
-                        caps.canResetToOrigin
-                          ? "Keep your local edits and clear the Origin pointer. Future probes won't surface this skill as having an update available."
-                          : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag();
                       }
-                    >
-                      {action === "accepting-drift" ? (
-                        <>
-                          <span className="spinner inline" />{" "}
-                          {caps.canResetToOrigin ? "Unlinking…" : "Accepting…"}
-                        </>
-                      ) : caps.canResetToOrigin ? (
-                        "Unlink origin"
-                      ) : (
-                        "Accept drift"
-                      )}
-                    </button>
-                    <p className="drawer-action-hint">
-                      {caps.canResetToOrigin ? (
-                        <>
-                          Your local copy diverges from{" "}
-                          {entry.source.origin?.repo ?? "its Origin"}.
-                          <strong> Reset to origin</strong> discards your edits
-                          and refetches.
-                          <strong> Unlink origin</strong> keeps your edits and
-                          clears the Origin pointer.
-                        </>
-                      ) : (
-                        <>
-                          This canonical skill differs from its synced baseline.
-                          <strong> Re-baseline</strong> re-snaps the current
-                          state as the new synced version; Sync still owns the
-                          skill.
-                          <strong> Accept drift</strong> detaches from Sync —
-                          your edits stay, Sync stops overwriting.
-                        </>
-                      )}
-                    </p>
-                  </>
-                )}
-              {caps.canUpdate && onUpdate && (
-                <>
-                  <button
-                    className="btn primary"
-                    disabled={action !== null}
-                    onClick={() => {
-                      setAction("updating");
-                      void Promise.resolve(onUpdate()).finally(() =>
-                        setAction(null),
-                      );
                     }}
-                    title={`Fetch the latest content from ${
-                      entry.source.origin?.repo ?? "the Origin"
-                    } and mirror it into this skill.`}
-                  >
-                    {action === "updating" ? (
-                      <>
-                        <span className="spinner inline" /> Updating{" "}
-                      </>
-                    ) : (
-                      "Update"
-                    )}
-                  </button>
-                  <p className="drawer-action-hint">
-                    A newer version is available from{" "}
-                    <code>{entry.source.origin?.repo ?? "Origin"}</code>. Local
-                    content is unchanged since the last fetch, so the update
-                    applies cleanly.
-                  </p>
-                </>
-              )}
-              {caps.canRepoint && onRepoint && (
-                <button
-                  className="btn primary"
-                  disabled={action !== null}
-                  onClick={() => {
-                    setAction("repointing");
-                    void Promise.resolve(onRepoint()).finally(() =>
-                      setAction(null),
-                    );
-                  }}
-                  title="Pick the folder the skill moved to. Updates the registry entry's target path."
-                >
-                  {action === "repointing" ? (
-                    <>
-                      <span className="spinner inline" /> Picking{" "}
-                    </>
-                  ) : (
-                    "Pick new location"
-                  )}
-                </button>
-              )}
-              {caps.canForgetMissing && onForgetMissing && (
-                <>
-                  <button
-                    className={caps.canRepoint ? "btn" : "btn primary"}
-                    disabled={action !== null}
-                    onClick={() => {
-                      setAction("forgetting");
-                      void Promise.resolve(onForgetMissing()).finally(() =>
-                        setAction(null),
-                      );
-                    }}
-                    title="Remove the registry entry for this skill. Files are already gone — nothing else to do."
-                  >
-                    {action === "forgetting" ? (
-                      <>
-                        <span className="spinner inline" /> Forgetting{" "}
-                      </>
-                    ) : (
-                      "Forget this skill"
-                    )}
-                  </button>
-                  <p className="drawer-action-hint">
-                    {caps.canRepoint
-                      ? "If the skill just moved on disk, pick its new location. Otherwise forget it to stop tracking."
-                      : "The files for this skill are gone. Forgetting drops the registry record so the skill stops appearing."}
-                  </p>
-                </>
-              )}
-
-              {/* Repair broken — primary in *-broken states. Two-step:
-              first try repair, then prompt delete for unrepairable. */}
-              {caps.canRepairBroken && caps.primary === "repair-broken" && (
-                <button
-                  className="btn warn"
-                  disabled={action !== null || repairState.kind === "running"}
-                  onClick={() => void repairOrRemoveBroken()}
-                  title="Try to repoint broken symlinks at a usable source. Unrepairable links can be deleted in the next step."
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                  }}
-                >
-                  {repairState.kind === "running" ? (
-                    <>
-                      <span className="spinner inline" /> Repairing
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="alert-triangle" size="sm" />
-                      Fix broken link
-                      {classification.brokenCount === 1 ? "" : "s"} (
-                      {classification.brokenCount})
-                    </>
-                  )}
-                </button>
-              )}
-
-              {/* Resolve registration conflicts — primary for unregistered
-              skills with multiple non-ours installations. Routes through
-              ConflictResolveModal in its level-pure mode (delete/keep
-              only) so this Needs-attention action does not silently
-              also register the skill. After resolution the card lands
-              in Unregistered for the separate Register step. */}
-              {caps.canResolveRegistrationConflicts &&
-                caps.primary === "resolve-registration-conflicts" &&
-                onResolveConflicts && (
-                  <button
-                    className="btn warn"
-                    disabled={action !== null}
-                    onClick={onResolveConflicts}
-                    title={`This skill name appears in ${classification.conflictCount + classification.brokenCount} agent dir(s) with different sources. Pick which copy to keep; the rest will be deleted.`}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <Icon name="alert-triangle" size="sm" />
-                    Resolve{" "}
-                    {classification.conflictCount +
-                      classification.brokenCount}{" "}
-                    conflict
-                    {classification.conflictCount +
-                      classification.brokenCount ===
-                    1
-                      ? ""
-                      : "s"}
-                  </button>
-                )}
-
-              {/* Resolve conflicts — primary when stragglers exist alongside
-              a registered skill. The InstallConflictModal handles the
-              gate-time variant; this one handles already-installed +
-              stragglers. */}
-              {caps.canResolveConflicts &&
-                caps.primary === "resolve-conflicts" &&
-                onResolveConflicts && (
-                  <button
-                    className="btn warn"
-                    disabled={action !== null}
-                    onClick={onResolveConflicts}
-                    title={`${classification.conflictCount} agent dir(s) have duplicate or stale entries for this skill`}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <Icon name="alert-triangle" size="sm" />
-                    Resolve {classification.conflictCount} conflict
-                    {classification.conflictCount === 1 ? "" : "s"}
-                  </button>
-                )}
-
-              {/* Attention/management separator — renders only when the
-              primary is an in-flight attention action AND at least one
-              management button is visible. Makes the drawer read
-              fix → manage → destroy. For unregistered-conflicts /
-              unregistered-broken the management group is empty (only
-              Reveal alongside the primary), so this is suppressed. */}
-              {[
-                "repair-broken",
-                "resolve-conflicts",
-                "resolve-registration-conflicts",
-              ].includes(caps.primary) &&
-                (caps.canManageLinks || caps.canExport) && (
-                  <div
-                    role="separator"
-                    aria-hidden="true"
-                    style={{
-                      height: 1,
-                      background: "var(--border)",
-                      margin: "8px 0 4px",
-                    }}
+                    placeholder="add a tag, press Enter"
+                    className={`tag-input ${tagInputError ? "invalid" : ""}`}
+                    aria-invalid={tagInputError ? true : undefined}
+                    aria-describedby={
+                      tagInputError ? "tag-input-error" : undefined
+                    }
                   />
-                )}
-
-              {/* Install — primary in registered-available; also the only
-              path to a "reinstall fixes broken links" in registered-broken.
-              In registered-conflicts it appears as a secondary and routes
-              through InstallConflictModal. */}
-              {caps.canInstall && (
-                <button
-                  className={caps.primary === "install" ? "btn primary" : "btn"}
-                  disabled={action !== null}
-                  onClick={() => void install()}
-                  title={
-                    classification.state === "registered-broken"
-                      ? "Recreates the agent-dir symlinks, replacing any broken ones with fresh links to the Skills Bank copy."
-                      : classification.state === "registered-conflicts"
-                        ? "Install where possible; agents with conflicting entries will prompt you to resolve."
-                        : "Link this skill into your agent directories."
-                  }
-                >
-                  {action === "installing" ? (
-                    <>
-                      <span className="spinner inline" /> Installing{" "}
-                    </>
-                  ) : classification.state === "registered-broken" ? (
-                    "Reinstall (fixes broken links)"
-                  ) : classification.state === "registered-conflicts" ? (
-                    "Install (will prompt for conflicts)"
-                  ) : (
-                    "Install"
+                  {tagInputError && (
+                    <p id="tag-input-error" className="form-error" role="alert">
+                      {tagInputError}
+                    </p>
                   )}
-                </button>
-              )}
-
-              {/* Manage agent links — the single entry point for any
-              agent-link change. Subsumes the prior "Remove from
-              agents" and "Choose agents" buttons: the modal lets
-              the user tick or untick each agent dir individually, and
-              unticking all is equivalent to a bulk uninstall. */}
-              {caps.canManageLinks && onManageLinks && (
-                <button
-                  className="btn"
-                  disabled={action !== null}
-                  onClick={onManageLinks}
-                  title="Add or remove agent-dir symlinks for this skill. Unchecking all is equivalent to removing the skill from every agent."
-                >
-                  Manage agent links
-                </button>
-              )}
-
-              {/* Secondary repair button — appears only in mixed-broken
-              where Repair is primary but Install was hidden; this
-              keeps the action discoverable alongside Remove. */}
-              {caps.canRepairBroken && caps.primary !== "repair-broken" && (
-                <button
-                  className="btn warn"
-                  disabled={action !== null || repairState.kind === "running"}
-                  onClick={() => void repairOrRemoveBroken()}
-                  title={`${classification.brokenCount} broken symlink(s) for this skill`}
-                >
-                  {repairState.kind === "running" ? (
-                    <>
-                      <span className="spinner inline" /> Repairing
-                    </>
-                  ) : (
-                    `Fix broken link${classification.brokenCount === 1 ? "" : "s"}`
-                  )}
-                </button>
-              )}
-
-              {/* Secondary resolve button — placeholder; today every state
-              that allows Resolve also has it as the primary, so this
-              branch is unreachable. Kept for future symmetry. */}
-              {caps.canResolveConflicts &&
-                caps.primary !== "resolve-conflicts" &&
-                onResolveConflicts && (
-                  <button
-                    className="btn warn"
-                    disabled={action !== null}
-                    onClick={onResolveConflicts}
-                  >
-                    Resolve conflicts ({classification.conflictCount})
-                  </button>
-                )}
-
-              {caps.canExport && (
-                <button
-                  className="btn"
-                  disabled={action !== null}
-                  onClick={() => void exportSkill()}
-                >
-                  {action === "exporting" ? (
-                    <>
-                      <span className="spinner inline" /> Exporting{" "}
-                    </>
-                  ) : (
-                    "Export"
-                  )}
-                </button>
-              )}
-
-              {caps.canRevealInFinder && (
-                <button
-                  className="btn ghost"
-                  onClick={reveal}
-                  disabled={!absPath}
-                >
-                  Reveal in Finder
-                </button>
-              )}
-              {caps.canUnregister && onUnregister && (
-                <>
-                  <button
-                    className="btn"
-                    disabled={action !== null}
-                    onClick={() => {
-                      setAction("unregistering");
-                      void Promise.resolve(onUnregister()).finally(() =>
-                        setAction(null),
-                      );
-                    }}
-                    title="Drop the registry entry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry. Use Delete from this machine to destroy files."
-                  >
-                    {action === "unregistering" ? (
-                      <>
-                        <span className="spinner inline" /> Removing{" "}
-                      </>
-                    ) : (
-                      "Remove from registry"
-                    )}
-                  </button>
-                  <p className="drawer-action-hint">
-                    {entry.adopted === false
-                      ? "Drops the registry entry. Your external files stay where they are."
-                      : "Files move to your shared agents directory. You can then choose Delete from this machine in the Unregistered section to remove them."}
-                  </p>
-                </>
-              )}
-              {caps.canHide && onHide && (
-                <button
-                  className="btn"
-                  disabled={action !== null}
-                  onClick={() => {
-                    setAction("hiding");
-                    void Promise.resolve(onHide()).finally(() =>
-                      setAction(null),
-                    );
-                  }}
-                  title="Tuck this canon skill out of the default views. Installations and metadata are kept; you can unhide from Settings."
-                >
-                  {action === "hiding" ? (
-                    <>
-                      <span className="spinner inline" /> Hiding{" "}
-                    </>
-                  ) : (
-                    "Dismiss from registry view"
-                  )}
-                </button>
-              )}
-              {caps.canUnhide && onUnhide && (
-                <button
-                  className="btn primary"
-                  disabled={action !== null}
-                  onClick={() => {
-                    setAction("unhiding");
-                    void Promise.resolve(onUnhide()).finally(() =>
-                      setAction(null),
-                    );
+                </div>
+              ) : entry.tags && entry.tags.length > 0 ? (
+                <div className="skill-tags">
+                  {entry.tags.map((t) => (
+                    <span key={t} className="skill-tag">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p
+                  style={{
+                    color: "var(--text-3)",
+                    fontStyle: "italic",
+                    fontSize: 12,
                   }}
                 >
-                  {action === "unhiding" ? (
-                    <>
-                      <span className="spinner inline" /> Unhiding{" "}
-                    </>
-                  ) : (
-                    "Unhide"
-                  )}
-                </button>
+                  (no tags)
+                </p>
               )}
-              {/* Phase 5: Publish surface. Renders only when a linked
-              repo is configured. Owns its own fetch of publish-state
-              + classifier + Fork-confirm modal. */}
-              {linkedRepoName && (
-                <PublishSection
-                  entry={entry}
-                  linkedRepoName={linkedRepoName}
-                  onPublished={() => {
-                    // Close the drawer after a successful publish. The
-                    // host's standard post-action refresh path picks up
-                    // the fork-induced bucket change (vendored→personal)
-                    // + the freshly-updated publish-state. No drawer-
-                    // level refresh callback needed.
-                    onClose();
-                  }}
+            </div>
+
+            <div className="drawer-section">
+              <h3>SKILL.md preview</h3>
+              {skillMdLoading ? (
+                <div
+                  aria-label="Loading SKILL.md preview"
+                  aria-busy="true"
+                  role="status"
+                >
+                  {[100, 86, 92, 70, 96, 64].map((width, i) => (
+                    <div
+                      key={i}
+                      className="skeleton skeleton-line"
+                      style={{
+                        width: `${width}%`,
+                        animationDelay: `${i * 60}ms`,
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : renderedMd ? (
+                <div
+                  className="skill-md-preview md"
+                  dangerouslySetInnerHTML={{ __html: renderedMd }}
                 />
+              ) : (
+                <div className="empty-inline">
+                  <p style={{ color: "var(--text-3)", fontStyle: "italic" }}>
+                    No <code>SKILL.md</code> in this folder.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() =>
+                      absPath
+                        ? void window.skillsBank.openInFinder(absPath)
+                        : undefined
+                    }
+                    disabled={!registryRoot}
+                    aria-label="Open the registry folder so you can create a SKILL.md"
+                  >
+                    <Icon name="folder" size="sm" /> Open folder to create one
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <DrawerOriginSection
+              entry={entry}
+              isRegistered={isRegistered}
+              showOriginActivity={showOriginActivity}
+              onSetManualUpstream={onSetManualUpstream}
+            />
+
+            <div className="drawer-section">
+              <h3>Metadata</h3>
+              {entry.author && (
+                <div className="drawer-meta-row">
+                  <span className="drawer-meta-key">author</span>
+                  <span className="drawer-meta-value">{entry.author}</span>
+                </div>
+              )}
+              <div className="drawer-meta-row">
+                <span className="drawer-meta-key">path</span>
+                <span className="drawer-meta-value">{entry.path}</span>
+              </div>
+              {entry.lastCommit && (
+                <div className="drawer-meta-row">
+                  <span className="drawer-meta-key">last commit</span>
+                  <span className="drawer-meta-value">
+                    {new Date(entry.lastCommit.date).toLocaleDateString()} ·{" "}
+                    {entry.lastCommit.sha.slice(0, 7)}
+                  </span>
+                </div>
               )}
             </div>
           </div>
-        </aside>
-      </div>
-      {repairState.kind === "confirm-delete" && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "var(--scrim)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1100,
-          }}
-        >
-          <div
-            ref={confirmDeleteRef}
-            tabIndex={-1}
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border-hi)",
-              borderRadius: 8,
-              padding: 24,
-              width: 480,
-              maxWidth: "90vw",
-              outline: "none",
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>
-              Couldn't repair broken link
-              {repairState.agents.length === 1 ? "" : "s"}
-            </h3>
-            <p style={{ color: "var(--text-2)", fontSize: 13 }}>
-              No usable source found for these broken symlink
-              {repairState.agents.length === 1 ? "" : "s"}. Delete{" "}
-              {repairState.agents.length === 1 ? "it" : "them"}?
-            </p>
-            <ul
-              style={{
-                margin: "8px 0",
-                padding: "8px 12px",
-                background: "var(--surface-hi)",
-                borderRadius: 4,
-                fontSize: 11,
-                fontFamily: "var(--font-mono)",
-                color: "var(--text-3)",
-                listStyle: "none",
-                maxHeight: 160,
-                overflowY: "auto",
-              }}
-            >
-              {repairState.reasons.map((r) => (
-                <li key={r} style={{ padding: "2px 0" }}>
-                  {r}
-                </li>
-              ))}
-            </ul>
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
-            >
-              <button
-                className="btn"
-                onClick={() => setRepairState({ kind: "idle" })}
-              >
-                Keep as-is
-              </button>
-              <button
-                className="btn danger"
-                onClick={() => void confirmDeleteBroken()}
-              >
-                Delete broken link{repairState.agents.length === 1 ? "" : "s"}
-              </button>
-            </div>
-          </div>
+
+          <DrawerActions
+            entry={entry}
+            installed={installed}
+            isRegistered={isRegistered}
+            absPath={absPath}
+            defaultInstallAgents={defaultInstallAgents}
+            classification={classification}
+            drawerRef={drawerRef}
+            onInstallConflict={onInstallConflict}
+            onChanged={onChanged}
+            onClose={onClose}
+            linkedRepoName={linkedRepoName}
+            onManageLinks={onManageLinks}
+            onResolveConflicts={onResolveConflicts}
+            onRegister={onRegister}
+            onUnregister={onUnregister}
+            onHide={onHide}
+            onUnhide={onUnhide}
+            onAcceptDrift={onAcceptDrift}
+            onTakeCanonical={onTakeCanonical}
+            onTakeUpstream={onTakeUpstream}
+            onUpdate={onUpdate}
+            onForgetMissing={onForgetMissing}
+            onRepoint={onRepoint}
+          />
         </div>
-      )}
-    </>
+      </aside>
+    </div>
   );
 }

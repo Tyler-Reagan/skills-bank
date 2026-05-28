@@ -33,6 +33,13 @@ export interface BuildIndexOptions {
    * fix the metadata in place.
    */
   strict?: boolean;
+  /**
+   * Restrict to a subset of buckets. Defaults to all buckets
+   * (`["personal", "vendored"]`). Pass `["vendored"]` in CI scripts to
+   * prevent untracked `skills/personal/` content from landing in the
+   * committed `index.json`.
+   */
+  buckets?: import("./registry.js").SkillBucket[];
 }
 
 interface SchemaValidator {
@@ -96,7 +103,10 @@ export function buildRegistryIndex(
   const hiddenCanon = readHiddenCanonNames(registryRoot);
 
   if (fs.existsSync(skillsDir)) {
-    const skillRefs = walkSkills(registryRoot);
+    const allRefs = walkSkills(registryRoot);
+    const skillRefs = opts.buckets
+      ? allRefs.filter((r) => (opts.buckets as string[]).includes(r.bucket))
+      : allRefs;
     for (const ref of skillRefs) {
       const built = buildOneEntry(
         registryRoot,
