@@ -5,7 +5,7 @@ import * as tar from "tar";
 import { writeUpstreamCanonNames } from "./canon.js";
 import { applyConflictDecision } from "./conflict.js";
 import { discoverSkillsInTree } from "./discovery.js";
-import { hashSkillFolder, writeSyncedHash } from "./heal.js";
+import { hashSkillFolder, readSyncedHash, writeSyncedHash } from "./heal.js";
 import { getStateDir } from "./paths.js";
 import { findSkillFolder, walkSkills, type SkillBucket } from "./registry.js";
 import {
@@ -297,9 +297,14 @@ export async function applyCanonicalSync(
           continue;
         }
       } else {
-        // Canonical → canonical: overwrite in place. Preserve the
-        // existing source's `upstream` pointer (and any other axes)
-        // across the wipe so per-skill origin attribution survives.
+        // Canonical → canonical: skip if content hash is unchanged.
+        const incomingHash = hashSkillFolder(sourceDir);
+        const storedHash = readSyncedHash(localPath);
+        if (incomingHash && storedHash && incomingHash === storedHash) {
+          continue;
+        }
+        // Overwrite in place. Preserve the existing source's `upstream`
+        // pointer so per-skill origin attribution survives the wipe.
         preservedSource = existingSource;
         fs.rmSync(localPath, { recursive: true, force: true });
       }

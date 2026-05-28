@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { applyCanonicalSync } from "./sync.js";
 import { readSkillSource, writeSkillSource } from "./source.js";
+import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 
 /**
  * applyCanonicalSync's conflict-resolution branches + the meta.json
@@ -498,5 +499,76 @@ describe("applyCanonicalSync — discovery anomalies surface in report", () => {
     expect(report.discoveryNested).toEqual([
       { outer: "outer", inner: "outer/inner" },
     ]);
+  });
+});
+
+describe("applyCanonicalSync — hash-gate (no-op when content unchanged)", () => {
+  test("previously-synced skill with matching hash is not upserted", async () => {
+    const content = {
+      "SKILL.md": "# alpha",
+      "meta.json": '{"name":"alpha","description":"a"}',
+    };
+    writeLocal("vendored", "alpha", content, {
+      source: "curated",
+      syncedFromCommit: "old-sha",
+    });
+    const localDir = path.join(registryRoot, "skills", "vendored", "alpha");
+    const h = hashSkillFolder(localDir)!;
+    writeSyncedHash(localDir, h);
+
+    writeCanonical("alpha", content);
+
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "new-sha",
+    );
+    expect(report.upserted).toEqual([]);
+    expect(readLocal("vendored", "alpha", "SKILL.md")).toBe("# alpha");
+  });
+
+  test("previously-synced skill with changed content is upserted", async () => {
+    writeLocal(
+      "vendored",
+      "beta",
+      { "SKILL.md": "# old" },
+      {
+        source: "curated",
+        syncedFromCommit: "old-sha",
+      },
+    );
+    const localDir = path.join(registryRoot, "skills", "vendored", "beta");
+    const h = hashSkillFolder(localDir)!;
+    writeSyncedHash(localDir, h);
+
+    writeCanonical("beta", { "SKILL.md": "# updated" });
+
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "new-sha",
+    );
+    expect(report.upserted).toEqual(["beta"]);
+    expect(readLocal("vendored", "beta", "SKILL.md")).toBe("# updated");
+  });
+
+  test("previously-synced skill with no stored hash is upserted", async () => {
+    writeLocal(
+      "vendored",
+      "gamma",
+      { "SKILL.md": "# gamma" },
+      {
+        source: "curated",
+        syncedFromCommit: "old-sha",
+      },
+    );
+    writeCanonical("gamma", { "SKILL.md": "# gamma" });
+
+    const report = await applyCanonicalSync(
+      registryRoot,
+      canonicalRoot,
+      "new-sha",
+    );
+    expect(report.upserted).toEqual(["gamma"]);
   });
 });
