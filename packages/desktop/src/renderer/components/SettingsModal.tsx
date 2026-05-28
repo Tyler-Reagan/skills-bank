@@ -280,8 +280,8 @@ export function SettingsModal({
         {/* end of Skills group; Display + Advanced groups follow. */}
         <p className="settings-hint">
           When you install or register a skill, link it into these agent
-          directories. Leave all unchecked to broadcast to every agent
-          directory that exists on this machine.
+          directories. Leave all unchecked to broadcast to every agent directory
+          that exists on this machine.
         </p>
         <div className="mt-8">
           {ALL_AGENTS.map((id) => (
