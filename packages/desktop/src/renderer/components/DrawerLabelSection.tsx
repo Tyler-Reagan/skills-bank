@@ -3,6 +3,7 @@ import type { RegistryEntry } from "@skills-bank/core";
 import type { SkillLabelOverride } from "@skills-bank/core/labels";
 import {
   categoryRules,
+  categoryDisplayName,
   deriveLabels,
   effectiveLabels,
   tagRules,
@@ -93,8 +94,7 @@ export function DrawerLabelSection({
             <option value="__none__">None</option>
             {categoryRules.map((r) => (
               <option key={r.category} value={r.category}>
-                {r.category.charAt(0).toUpperCase() +
-                  r.category.slice(1).replace(/-/g, " ")}
+                {categoryDisplayName(r.category)}
               </option>
             ))}
           </select>

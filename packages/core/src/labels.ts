@@ -505,6 +505,21 @@ function tokenize(text: string): string[] {
     .filter(Boolean);
 }
 
+const CATEGORY_DISPLAY_OVERRIDES: Record<string, string> = {
+  "ai-tooling": "AI Tooling",
+  dx: "DX",
+};
+
+export function categoryDisplayName(category: string): string {
+  return (
+    CATEGORY_DISPLAY_OVERRIDES[category] ??
+    category
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+  );
+}
+
 export function deriveLabels(skill: { name: string; description: string }): {
   category: string | null;
   tags: string[];

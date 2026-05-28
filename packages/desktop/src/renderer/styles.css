@@ -4109,7 +4109,6 @@ button:disabled {
 }
 .category-section-name {
   flex: 1;
-  text-transform: capitalize;
 }
 .category-section-count {
   font-size: 12px;

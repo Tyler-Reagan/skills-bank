@@ -6,6 +6,7 @@ import type {
 } from "@skills-bank/core";
 import {
   categoryRules,
+  categoryDisplayName,
   deriveLabels,
   effectiveLabels,
 } from "@skills-bank/core/labels";
@@ -672,7 +673,7 @@ function CategorySection({
   const label =
     category === "Uncategorized"
       ? "Uncategorized"
-      : category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, " ");
+      : categoryDisplayName(category);
 
   return (
     <section className="category-section">
