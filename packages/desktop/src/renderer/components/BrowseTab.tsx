@@ -1,5 +1,15 @@
-import React, { useCallback, useMemo, useState } from "react";
-import type { ManifestSkill, RegistryEntry } from "@skills-bank/core";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  LabelsMap,
+  ManifestSkill,
+  RegistryEntry,
+} from "@skills-bank/core";
+import {
+  categoryRules,
+  deriveLabels,
+  effectiveLabels,
+} from "@skills-bank/core/labels";
+import { DisclosureChevron } from "./DisclosureChevron.js";
 import { Icon } from "./Icon.js";
 import { InfoTooltip } from "./InfoTooltip.js";
 import { SearchBar } from "./SearchBar.js";
@@ -14,6 +24,8 @@ import {
 } from "./RegistryFilters.js";
 import { useRegistry } from "../RegistryContext.js";
 import { useBrowseFilters } from "../hooks/useBrowseFilters.js";
+
+const CATEGORY_ORDER = categoryRules.map((r) => r.category);
 
 /** Per-skill state during a bulk-install run. */
 export interface BulkInstallState {
@@ -72,6 +84,10 @@ interface Props {
   onRetryGhost?: (skill: ManifestSkill) => void;
   /** Dismiss a failed (or pending) ghost; pure renderer-side state. */
   onDismissGhost?: (name: string) => void;
+  /** Increment when label overrides change so the section grouping re-fetches. */
+  labelsRefreshKey?: number;
+  /** Start a label-review session over the visible registry. */
+  onStartReview?: (entries: RegistryEntry[]) => void;
 }
 
 export function BrowseTab({
@@ -87,6 +103,8 @@ export function BrowseTab({
   manifestImportProgress,
   onRetryGhost,
   onDismissGhost,
+  labelsRefreshKey,
+  onStartReview,
 }: Props): React.ReactElement {
   const { visibleRegistry: registry, installed } = useRegistry();
   const {
@@ -103,7 +121,24 @@ export function BrowseTab({
   const [selectedNames, setSelectedNames] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  const [labelsMap, setLabelsMap] = useState<LabelsMap>({});
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [bannerDismissed, setBannerDismissed] = useState<boolean>(false);
   const running = bulkInstall != null && bulkInstall.current != null;
+
+  useEffect(() => {
+    void window.skillsBank.readLabels().then((map) => {
+      setLabelsMap(map);
+      setBannerDismissed(Boolean(map["__meta"]?.bannerDismissed));
+    });
+  }, [labelsRefreshKey]);
+
+  const dismissBanner = useCallback(async () => {
+    setBannerDismissed(true);
+    await window.skillsBank.updateLabel("__meta", { bannerDismissed: true });
+  }, []);
 
   const toggleSelect = useCallback((name: string) => {
     setSelectedNames((prev) => {
@@ -185,6 +220,43 @@ export function BrowseTab({
     installedNames,
     registrySort,
   ]);
+
+  const sections = useMemo(() => {
+    const byCategory = new Map<string | null, RegistryEntry[]>();
+    for (const entry of filtered) {
+      const derived = deriveLabels({
+        name: entry.name,
+        description: entry.description,
+      });
+      const effective = effectiveLabels(derived, labelsMap[entry.name]);
+      const cat = effective.category;
+      const bucket = byCategory.get(cat) ?? [];
+      bucket.push(entry);
+      byCategory.set(cat, bucket);
+    }
+
+    const ordered: { category: string; entries: RegistryEntry[] }[] = [];
+    for (const cat of CATEGORY_ORDER) {
+      const entries = byCategory.get(cat);
+      if (entries && entries.length > 0) {
+        ordered.push({ category: cat, entries });
+      }
+    }
+    const uncategorized = byCategory.get(null);
+    if (uncategorized && uncategorized.length > 0) {
+      ordered.push({ category: "Uncategorized", entries: uncategorized });
+    }
+    return ordered;
+  }, [filtered, labelsMap]);
+
+  const toggleSection = useCallback((category: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }, []);
   const installedFromRegistry = installedNames.size;
   const warningCount = registry.reduce(
     (acc, e) => acc + (e.warnings?.length ?? 0),
@@ -244,6 +316,14 @@ export function BrowseTab({
           )}
         </span>
       </div>
+      {!bannerDismissed && onStartReview && registry.length > 0 && (
+        <LabelsFirstRunBanner
+          onReview={() =>
+            onStartReview(filtered.length > 0 ? filtered : registry)
+          }
+          onDismiss={() => void dismissBanner()}
+        />
+      )}
       <div className="filters-section">
         <SearchBar value={search} onChange={setSearch} ref={searchInputRef} />
         <RegistryFilters
@@ -305,34 +385,48 @@ export function BrowseTab({
           onExit={exitSelectMode}
         />
       )}
-      <SkillsGrid
-        entries={filtered}
-        installed={installed}
-        onSelect={onSelect}
-        {...(onSaveTags && !selectMode ? { onSaveTags } : {})}
-        selectMode={selectMode}
-        selectedNames={selectedNames}
-        onToggleSelect={toggleSelect}
-        isDisabled={(e) => installedNames.has(e.name)}
-        bulkStatus={(e) => {
-          if (!bulkInstall) return undefined;
-          if (bulkInstall.current === e.name) return "installing";
-          if (bulkInstall.succeeded.has(e.name)) return "installed";
-          if (bulkInstall.failed.has(e.name)) return "failed";
-          if (bulkInstall.queue.has(e.name)) return "pending";
-          return undefined;
-        }}
-        onClearFilters={
-          filtersActive
-            ? () => {
-                setSearch("");
-                setSelectedTags([]);
-                setInstalledOnly(false);
-                setRegistryFilters(new Set());
-              }
-            : undefined
-        }
-      />
+      {filtered.length === 0 ? (
+        <SkillsGrid
+          entries={[]}
+          installed={installed}
+          onSelect={onSelect}
+          onClearFilters={
+            filtersActive
+              ? () => {
+                  setSearch("");
+                  setSelectedTags([]);
+                  setInstalledOnly(false);
+                  setRegistryFilters(new Set());
+                }
+              : undefined
+          }
+        />
+      ) : (
+        sections.map(({ category, entries }) => (
+          <CategorySection
+            key={category}
+            category={category}
+            entries={entries}
+            open={!collapsedSections.has(category)}
+            onToggle={() => toggleSection(category)}
+            installed={installed}
+            onSelect={onSelect}
+            {...(onSaveTags && !selectMode ? { onSaveTags } : {})}
+            selectMode={selectMode}
+            selectedNames={selectedNames}
+            onToggleSelect={toggleSelect}
+            isDisabled={(e) => installedNames.has(e.name)}
+            bulkStatus={(e) => {
+              if (!bulkInstall) return undefined;
+              if (bulkInstall.current === e.name) return "installing";
+              if (bulkInstall.succeeded.has(e.name)) return "installed";
+              if (bulkInstall.failed.has(e.name)) return "failed";
+              if (bulkInstall.queue.has(e.name)) return "pending";
+              return undefined;
+            }}
+          />
+        ))
+      )}
     </div>
   );
 }
@@ -541,6 +635,105 @@ function GhostBand({
         })}
       </ul>
     </section>
+  );
+}
+
+interface CategorySectionProps {
+  category: string;
+  entries: RegistryEntry[];
+  open: boolean;
+  onToggle: () => void;
+  installed: import("@skills-bank/core").InstalledSkill[];
+  onSelect: (entry: RegistryEntry) => void;
+  onSaveTags?: (name: string, next: string[]) => Promise<void> | void;
+  selectMode?: boolean;
+  selectedNames?: ReadonlySet<string>;
+  onToggleSelect?: (name: string) => void;
+  isDisabled?: (entry: RegistryEntry) => boolean;
+  bulkStatus?: (
+    entry: RegistryEntry,
+  ) => "pending" | "installing" | "installed" | "failed" | undefined;
+}
+
+function CategorySection({
+  category,
+  entries,
+  open,
+  onToggle,
+  installed,
+  onSelect,
+  onSaveTags,
+  selectMode = false,
+  selectedNames,
+  onToggleSelect,
+  isDisabled,
+  bulkStatus,
+}: CategorySectionProps): React.ReactElement {
+  const label =
+    category === "Uncategorized"
+      ? "Uncategorized"
+      : category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, " ");
+
+  return (
+    <section className="category-section">
+      <button
+        type="button"
+        className="category-section-header"
+        aria-expanded={open}
+        onClick={onToggle}
+      >
+        <DisclosureChevron open={open} />
+        <span className="category-section-name">{label}</span>
+        <span className="category-section-count">{entries.length}</span>
+      </button>
+      {open && (
+        <div className="category-section-body">
+          <SkillsGrid
+            entries={entries}
+            installed={installed}
+            onSelect={onSelect}
+            {...(onSaveTags && !selectMode ? { onSaveTags } : {})}
+            selectMode={selectMode}
+            selectedNames={selectedNames}
+            onToggleSelect={onToggleSelect}
+            isDisabled={isDisabled}
+            bulkStatus={bulkStatus}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+interface LabelsFirstRunBannerProps {
+  onReview: () => void;
+  onDismiss: () => void;
+}
+
+function LabelsFirstRunBanner({
+  onReview,
+  onDismiss,
+}: LabelsFirstRunBannerProps): React.ReactElement {
+  return (
+    <div className="labels-banner" role="status">
+      <span className="labels-banner-text">
+        Skills are now organized by category and tag. Review to customize how
+        yours are grouped.
+      </span>
+      <div className="labels-banner-actions">
+        <button type="button" className="btn btn-sm" onClick={onReview}>
+          Review labels
+        </button>
+        <button
+          type="button"
+          className="labels-banner-dismiss"
+          aria-label="Dismiss"
+          onClick={onDismiss}
+        >
+          ✕
+        </button>
+      </div>
+    </div>
   );
 }
 

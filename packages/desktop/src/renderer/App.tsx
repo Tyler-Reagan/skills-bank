@@ -187,6 +187,43 @@ function AppContent(): React.ReactElement {
   const [resolveAllTarget, setResolveAllTarget] = useState<
     InstalledGroup[] | null
   >(null);
+  const [labelsRefreshKey, setLabelsRefreshKey] = useState(0);
+  const handleLabelsChanged = useCallback(
+    () => setLabelsRefreshKey((k) => k + 1),
+    [],
+  );
+  const [reviewSession, setReviewSession] = useState<{
+    entries: RegistryEntry[];
+    index: number;
+  } | null>(null);
+  const handleStartReview = useCallback((entries: RegistryEntry[]) => {
+    if (entries.length === 0) return;
+    setReviewSession({ entries, index: 0 });
+    setSelected(entries[0]!);
+  }, []);
+  const reviewContext = reviewSession
+    ? {
+        index: reviewSession.index,
+        total: reviewSession.entries.length,
+        onPrev: () => {
+          const newIndex = Math.max(0, reviewSession.index - 1);
+          setReviewSession({ ...reviewSession, index: newIndex });
+          setSelected(reviewSession.entries[newIndex]!);
+        },
+        onNext: () => {
+          const newIndex = Math.min(
+            reviewSession.entries.length - 1,
+            reviewSession.index + 1,
+          );
+          setReviewSession({ ...reviewSession, index: newIndex });
+          setSelected(reviewSession.entries[newIndex]!);
+        },
+        onExit: () => {
+          setReviewSession(null);
+          setSelected(null);
+        },
+      }
+    : null;
   // Auto-update state + wiring (live feed, boot dismissal gate, derived
   // badge). The "updateNotes" modal reads latestUpdateStatus directly so
   // a render during `downloading` shows the live progress bar.
@@ -888,6 +925,8 @@ function AppContent(): React.ReactElement {
               manifestImportProgress={manifestImportProgress}
               onRetryGhost={(skill) => void retryGhost(skill)}
               onDismissGhost={dismissGhost}
+              labelsRefreshKey={labelsRefreshKey}
+              onStartReview={handleStartReview}
             />
           )}
           {tab === "installed" && (
@@ -1086,6 +1125,8 @@ function AppContent(): React.ReactElement {
             // ignore
           }
         }}
+        onLabelsChanged={handleLabelsChanged}
+        reviewContext={reviewContext}
       />
     </div>
   );

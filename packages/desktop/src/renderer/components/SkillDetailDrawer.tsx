@@ -8,8 +8,17 @@ import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { useRegisterModal } from "../ModalRegistryContext.js";
 import { Icon } from "./Icon.js";
 import { classifyDrawerState } from "./skillState.js";
+import { DrawerLabelSection } from "./DrawerLabelSection.js";
 import { DrawerOriginSection } from "./DrawerOriginSection.js";
 import { DrawerActions } from "./DrawerActions.js";
+
+export interface ReviewContext {
+  index: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onExit: () => void;
+}
 
 const DESCRIPTION_SOFT_CAP = 400;
 
@@ -141,6 +150,10 @@ interface Props {
    * PublishSection's visibility — no linked repo → no Publish UI.
    */
   linkedRepoName?: string | null;
+  /** Called after any label mutation so BrowseTab can re-group. */
+  onLabelsChanged?: () => void;
+  /** When set, the drawer shows review navigation (prev/next/exit). */
+  reviewContext?: ReviewContext | null;
 }
 
 export function SkillDetailDrawer({
@@ -167,6 +180,8 @@ export function SkillDetailDrawer({
   linkedRepoName,
   showOriginActivity,
   onSetManualUpstream,
+  onLabelsChanged,
+  reviewContext,
 }: Props): React.ReactElement {
   const drawerRef = useRef<HTMLElement | null>(null);
   // The drawer slides in from the right (~280ms). Until it lands,
@@ -315,6 +330,23 @@ export function SkillDetailDrawer({
             <Icon name="x" size="lg" />
           </button>
         </div>
+        {reviewContext && (
+          <div className="drawer-review-bar">
+            <span className="drawer-review-label">
+              Reviewing{" "}
+              <span className="drawer-review-count">
+                {reviewContext.index + 1} / {reviewContext.total}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="drawer-review-exit"
+              onClick={reviewContext.onExit}
+            >
+              Exit <Icon name="x" size="sm" />
+            </button>
+          </div>
+        )}
 
         <div className="drawer-main">
           <div className="drawer-body">
@@ -486,6 +518,32 @@ export function SkillDetailDrawer({
               showOriginActivity={showOriginActivity}
               onSetManualUpstream={onSetManualUpstream}
             />
+
+            <DrawerLabelSection
+              entry={entry}
+              onLabelsChanged={onLabelsChanged ?? (() => undefined)}
+            />
+
+            {reviewContext && (
+              <div className="drawer-review-nav">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={reviewContext.onPrev}
+                  disabled={reviewContext.index === 0}
+                >
+                  ← Prev
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={reviewContext.onNext}
+                  disabled={reviewContext.index === reviewContext.total - 1}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
 
             <div className="drawer-section">
               <h3>Metadata</h3>

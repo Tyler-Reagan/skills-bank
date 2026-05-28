@@ -25,6 +25,7 @@ import { RepoPickerModal } from "./RepoPickerModal.js";
 import { DestinationPickerDialog } from "./DestinationPickerDialog.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
 import { DrawerHost } from "./DrawerHost.js";
+import type { ReviewContext } from "./SkillDetailDrawer.js";
 import type { InstalledGroup } from "./InstalledTab.js";
 import { useRegistry } from "../RegistryContext.js";
 import { useSettings } from "../SettingsContext.js";
@@ -125,6 +126,8 @@ interface Props {
   checkForUpdates: () => void;
   unregisterHintShown: () => boolean;
   markUnregisterHintShown: () => void;
+  onLabelsChanged?: () => void;
+  reviewContext?: ReviewContext | null;
 }
 
 /**
@@ -153,6 +156,8 @@ export function ModalHost({
   checkForUpdates,
   unregisterHintShown,
   markUnregisterHintShown,
+  onLabelsChanged,
+  reviewContext,
 }: Props): React.ReactElement {
   const { registry, installed, pendingSkillUpdates, refresh } = useRegistry();
   const { settings, saveSettings } = useSettings();
@@ -890,6 +895,8 @@ export function ModalHost({
         }
         unregisterHintShown={unregisterHintShown}
         markUnregisterHintShown={markUnregisterHintShown}
+        onLabelsChanged={onLabelsChanged}
+        reviewContext={reviewContext}
       />
     </>
   );

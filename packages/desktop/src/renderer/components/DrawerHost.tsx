@@ -9,7 +9,7 @@ import type {
   OriginManualChoice,
   OriginUpdateResult,
 } from "../../shared/ipc.js";
-import { SkillDetailDrawer } from "./SkillDetailDrawer.js";
+import { SkillDetailDrawer, type ReviewContext } from "./SkillDetailDrawer.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
 import { useRegistry } from "../RegistryContext.js";
 import { useSettings } from "../SettingsContext.js";
@@ -42,6 +42,8 @@ interface Props {
   /** Persist the "user has seen the unregister-destination hint" bit. */
   unregisterHintShown: () => boolean;
   markUnregisterHintShown: () => void;
+  onLabelsChanged?: () => void;
+  reviewContext?: ReviewContext | null;
 }
 
 /**
@@ -70,6 +72,8 @@ export function DrawerHost({
   onInstallConflict,
   unregisterHintShown,
   markUnregisterHintShown,
+  onLabelsChanged,
+  reviewContext,
 }: Props): React.ReactElement | null {
   const { flash, pushAppError } = useRegistryHost();
   const { registryByName, installed, registryRoot, refresh } = useRegistry();
@@ -275,6 +279,8 @@ export function DrawerHost({
             }
           : undefined
       }
+      onLabelsChanged={onLabelsChanged}
+      reviewContext={reviewContext}
     />
   );
 }

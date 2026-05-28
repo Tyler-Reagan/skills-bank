@@ -48,6 +48,7 @@ export default defineConfig({
         items: [
           { text: 'CLI', link: '/cli' },
           { text: 'Keyboard shortcuts', link: '/reference/keyboard' },
+          { text: 'Skill labels', link: '/reference/labels' },
           { text: 'meta.json schema', link: '/reference/meta-schema' },
           { text: 'Troubleshooting', link: '/reference/troubleshooting' },
         ],

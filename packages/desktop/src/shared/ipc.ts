@@ -14,6 +14,7 @@ import type {
   InstallFromGithubResult,
   ImportSkillOutcome,
   InstalledSkill,
+  LabelsMap,
   ManifestDiff,
   ManifestImportProgressEvent,
   ManifestSkill,
@@ -25,6 +26,7 @@ import type {
   RegistryEntry,
   RegistryManifest,
   ScanReport,
+  SkillLabelOverride,
   SkillPublishFlow,
   SyncDecisions,
   SyncReport,
@@ -140,6 +142,9 @@ export const IPC = {
   originRepoMetadata: "origin:repoMetadata",
   originLastCommit: "origin:lastCommit",
   originSetManual: "origin:setManual",
+  readLabels: "labels:read",
+  updateLabel: "labels:update",
+  resetLabel: "labels:reset",
 } as const;
 
 /**
@@ -979,6 +984,9 @@ interface SkillsBankAPI {
     name: string,
     choice: OriginManualChoice,
   ): Promise<{ ok: boolean; message: string }>;
+  readLabels(): Promise<LabelsMap>;
+  updateLabel(name: string, patch: SkillLabelOverride): Promise<void>;
+  resetLabel(name: string): Promise<void>;
 }
 
 declare global {
