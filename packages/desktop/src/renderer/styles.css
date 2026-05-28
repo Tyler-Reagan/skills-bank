@@ -4083,3 +4083,236 @@ button:disabled {
 
 /* ── Utility: fw-400 ───────────────────────────────────── */
 .fw-400 { font-weight: 400; }
+
+/* ── CategorySection ───────────────────────────────────── */
+.category-section {
+  margin-bottom: var(--s4);
+}
+.category-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: var(--s2) 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  margin-bottom: var(--s3);
+}
+.category-section-header:hover {
+  color: var(--accent);
+}
+.category-section-name {
+  flex: 1;
+}
+.category-section-count {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-3);
+}
+.category-section-body {
+  /* no extra padding — SkillsGrid already has gap */
+}
+
+/* ── Drawer label section ─────────────────────────────────────────────── */
+.drawer-label-section {
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--border);
+}
+.label-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-bottom: var(--s4);
+}
+.label-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-2);
+}
+.label-field-label--muted {
+  color: var(--text-3);
+}
+.label-category-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.label-category-select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-1);
+  font-size: 13px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.label-category-select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.label-source-badge {
+  font-size: 11px;
+  color: var(--text-3);
+  background: var(--surface-3);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.label-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+.label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.label-chip--auto {
+  background: var(--surface-2);
+}
+.label-chip--added {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.label-chip--rejected {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--text-3);
+  cursor: pointer;
+  text-decoration: line-through;
+}
+.label-chip--rejected:hover {
+  color: var(--text-2);
+  border-color: var(--text-3);
+}
+.label-chip--add {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 12px;
+}
+.label-chip--add:hover {
+  color: var(--text-2);
+  border-color: var(--text-2);
+}
+.label-chip-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  display: inline-flex;
+  align-items: center;
+}
+.label-chip-remove:hover {
+  opacity: 1;
+}
+.label-no-tags {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.label-tag-input {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--accent);
+  background: var(--surface-2);
+  color: var(--text-1);
+  outline: none;
+  width: 120px;
+}
+
+/* ── Drawer review bar + nav ──────────────────────────────────────────── */
+.drawer-review-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s2) var(--s4);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-1));
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.drawer-review-label {
+  color: var(--text-2);
+}
+.drawer-review-count {
+  font-weight: 600;
+  color: var(--text-1);
+}
+.drawer-review-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.drawer-review-exit:hover {
+  color: var(--text-1);
+  border-color: var(--text-3);
+}
+.drawer-review-nav {
+  display: flex;
+  gap: var(--s2);
+  justify-content: flex-end;
+  padding-top: var(--s3);
+}
+
+/* ── Labels first-run banner ──────────────────────────────────────────── */
+.labels-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  margin-bottom: var(--s4);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.labels-banner-text {
+  flex: 1;
+}
+.labels-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-shrink: 0;
+}
+.labels-banner-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  line-height: 1;
+}
+.labels-banner-dismiss:hover {
+  color: var(--text-1);
+}

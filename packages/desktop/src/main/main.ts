@@ -3790,3 +3790,48 @@ mutatingHandle(
     };
   },
 );
+
+// ── Labels ────────────────────────────────────────────────────────────────────
+
+function labelsFilePath(): string {
+  return path.join(app.getPath("userData"), "labels.json");
+}
+
+function readLabelsFile(): import("@skills-bank/core").LabelsMap {
+  const p = labelsFilePath();
+  if (!fs.existsSync(p)) return {};
+  try {
+    return JSON.parse(
+      fs.readFileSync(p, "utf8"),
+    ) as import("@skills-bank/core").LabelsMap;
+  } catch {
+    return {};
+  }
+}
+
+function writeLabelsFile(data: import("@skills-bank/core").LabelsMap): void {
+  fs.writeFileSync(labelsFilePath(), JSON.stringify(data, null, 2) + "\n");
+}
+
+ipcMain.handle(IPC.readLabels, (): import("@skills-bank/core").LabelsMap => {
+  return readLabelsFile();
+});
+
+ipcMain.handle(
+  IPC.updateLabel,
+  (
+    _e,
+    name: string,
+    patch: import("@skills-bank/core").SkillLabelOverride,
+  ): void => {
+    const data = readLabelsFile();
+    data[name] = { ...(data[name] ?? {}), ...patch };
+    writeLabelsFile(data);
+  },
+);
+
+ipcMain.handle(IPC.resetLabel, (_e, name: string): void => {
+  const data = readLabelsFile();
+  delete data[name];
+  writeLabelsFile(data);
+});

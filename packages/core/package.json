@@ -20,6 +20,11 @@
       "types": "./dist/agents-data.d.ts",
       "import": "./dist/agents-data.js",
       "default": "./dist/agents-data.js"
+    },
+    "./labels": {
+      "types": "./dist/labels.d.ts",
+      "import": "./dist/labels.js",
+      "default": "./dist/labels.js"
     }
   },
   "scripts": {

@@ -38,3 +38,4 @@ export * from "./skill-record.js";
 export * from "./skill-state.js";
 export * from "./skill-state-server.js";
 export * from "./unregister.js";
+export * from "./labels.js";
