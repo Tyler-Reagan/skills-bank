@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import ignore, { type Ignore } from "ignore";
 import {
   externalRegistryPath,
   readExternalRegistry,
@@ -29,11 +30,33 @@ import { readSkillSource, writeSkillSource } from "./source.js";
  * build. Folders larger than that fall back to "untracked" (returns
  * null) — drift on huge skills is unlikely and a slow build is
  * worse than skipping the check.
+ *
+ * Honors the skill's own root `.gitignore`: paths the skill declares
+ * ignorable (e.g. `node_modules/`, build/test output) are excluded
+ * from the hash. Without this, a skill that installs deps or writes
+ * artifacts into its own folder at runtime drifts to "edited" on the
+ * next index build even though its tracked content is untouched. Only
+ * the skill-root `.gitignore` is read — nested gitignores are rare in
+ * skills and not worth the re-rooting complexity.
  */
 const HASH_BYTE_BUDGET = 8 * 1024 * 1024;
 
+// Build a matcher from the skill-root `.gitignore`. A missing or
+// unreadable file yields a matcher that ignores nothing, so the hash
+// behaves exactly as it did before for skills without a `.gitignore`.
+function buildSkillIgnore(skillDir: string): Ignore {
+  const ig = ignore();
+  try {
+    ig.add(fs.readFileSync(path.join(skillDir, ".gitignore"), "utf8"));
+  } catch {
+    // No (readable) .gitignore — match nothing.
+  }
+  return ig;
+}
+
 export function hashSkillFolder(skillDir: string): string | null {
   if (!fs.existsSync(skillDir)) return null;
+  const ig = buildSkillIgnore(skillDir);
   const parts: string[] = [];
   let bytes = 0;
   function walk(dir: string, rel: string): boolean {
@@ -60,6 +83,11 @@ export function hashSkillFolder(skillDir: string): string | null {
       if (ent.name === ".skills-bank-runtime.json") continue;
       const abs = path.join(dir, ent.name);
       const r = rel ? `${rel}/${ent.name}` : ent.name;
+      // Prune ignored directories (tested with a trailing slash so
+      // dir-only patterns like `node_modules/` match) and skip ignored
+      // files. The `.gitignore` itself is never ignored, so editing it
+      // still registers as drift.
+      if (ent.isDirectory() ? ig.ignores(`${r}/`) : ig.ignores(r)) continue;
       if (ent.isSymbolicLink()) {
         const target = fs.readlinkSync(abs);
         parts.push(`${r}\tL:${target}`);
