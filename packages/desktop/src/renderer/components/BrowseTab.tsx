@@ -188,6 +188,18 @@ export function BrowseTab({
       new Set(installed.filter((i) => i.kind === "ours").map((i) => i.name)),
     [installed],
   );
+  const effectiveTagsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const entry of registry) {
+      const derived = deriveLabels({
+        name: entry.name,
+        description: entry.description,
+      });
+      map.set(entry.name, effectiveLabels(derived, labelsMap[entry.name]).tags);
+    }
+    return map;
+  }, [registry, labelsMap]);
+
   // Compose in this order: chip-filters narrow the registry by the
   // user's tag-like state filters; the search/tag/installedOnly pass
   // applies free-text + legacy filters; sort orders the survivors;
@@ -203,6 +215,7 @@ export function BrowseTab({
       selectedTags,
       installedOnly,
       installedNames,
+      effectiveTagsMap,
     );
     const sorted = applySort(filteredRaw, registrySort);
     const isDefaultOrder =
@@ -220,6 +233,7 @@ export function BrowseTab({
     installedOnly,
     installedNames,
     registrySort,
+    effectiveTagsMap,
   ]);
 
   const sections = useMemo(() => {
@@ -258,6 +272,16 @@ export function BrowseTab({
       return next;
     });
   }, []);
+
+  const allCollapsed =
+    sections.length > 0 &&
+    sections.every((s) => collapsedSections.has(s.category));
+
+  const toggleAllSections = useCallback(() => {
+    setCollapsedSections(
+      allCollapsed ? new Set() : new Set(sections.map((s) => s.category)),
+    );
+  }, [allCollapsed, sections]);
   const installedFromRegistry = installedNames.size;
   const warningCount = registry.reduce(
     (acc, e) => acc + (e.warnings?.length ?? 0),
@@ -329,6 +353,7 @@ export function BrowseTab({
         <SearchBar value={search} onChange={setSearch} ref={searchInputRef} />
         <RegistryFilters
           registry={registry}
+          effectiveTagsMap={effectiveTagsMap}
           active={registryFilters}
           onChange={setRegistryFilters}
           sort={registrySort}
@@ -349,6 +374,17 @@ export function BrowseTab({
           {filtered.length} of {registry.length} skill
           {registry.length === 1 ? "" : "s"}
         </p>
+        <div className="row-between-8">
+          {sections.length >= 2 && (
+            <button
+              type="button"
+              className={`expand-collapse-btn${allCollapsed ? " all-collapsed" : ""}`}
+              onClick={toggleAllSections}
+            >
+              <DisclosureChevron open={!allCollapsed} />
+              {allCollapsed ? "Expand all" : "Collapse all"}
+            </button>
+          )}
         {onBulkInstall && (
           <button
             className="btn"
@@ -367,6 +403,7 @@ export function BrowseTab({
             {selectMode ? "Cancel select" : "Bulk install"}
           </button>
         )}
+        </div>
       </div>
       {selectMode && onBulkInstall && (
         <BulkInstallBar
@@ -412,6 +449,7 @@ export function BrowseTab({
             onToggle={() => toggleSection(category)}
             installed={installed}
             onSelect={onSelect}
+            effectiveTagsMap={effectiveTagsMap}
             {...(onSaveTags && !selectMode ? { onSaveTags } : {})}
             selectMode={selectMode}
             selectedNames={selectedNames}
@@ -647,6 +685,7 @@ interface CategorySectionProps {
   installed: import("@skills-bank/core").InstalledSkill[];
   onSelect: (entry: RegistryEntry) => void;
   onSaveTags?: (name: string, next: string[]) => Promise<void> | void;
+  effectiveTagsMap?: Map<string, string[]>;
   selectMode?: boolean;
   selectedNames?: ReadonlySet<string>;
   onToggleSelect?: (name: string) => void;
@@ -664,6 +703,7 @@ function CategorySection({
   installed,
   onSelect,
   onSaveTags,
+  effectiveTagsMap,
   selectMode = false,
   selectedNames,
   onToggleSelect,
@@ -693,6 +733,7 @@ function CategorySection({
             entries={entries}
             installed={installed}
             onSelect={onSelect}
+            {...(effectiveTagsMap ? { effectiveTagsMap } : {})}
             {...(onSaveTags && !selectMode ? { onSaveTags } : {})}
             selectMode={selectMode}
             selectedNames={selectedNames}
@@ -744,20 +785,18 @@ function applyFilters(
   selectedTags: string[],
   installedOnly: boolean,
   installedNames: Set<string>,
+  effectiveTagsMap: Map<string, string[]>,
 ): RegistryEntry[] {
   const q = search.trim().toLowerCase();
   return registry.filter((e) => {
+    const tags = effectiveTagsMap.get(e.name) ?? e.tags ?? [];
     if (installedOnly && !installedNames.has(e.name)) return false;
-    if (
-      selectedTags.length > 0 &&
-      !selectedTags.some((t) => e.tags?.includes(t))
-    ) {
+    if (selectedTags.length > 0 && !selectedTags.some((t) => tags.includes(t)))
       return false;
-    }
     if (!q) return true;
     if (e.name.toLowerCase().includes(q)) return true;
     if (e.description.toLowerCase().includes(q)) return true;
-    if ((e.tags ?? []).some((t) => t.toLowerCase().includes(q))) return true;
+    if (tags.some((t) => t.toLowerCase().includes(q))) return true;
     return false;
   });
 }

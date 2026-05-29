@@ -3,6 +3,8 @@ import type { RegistryEntry } from "@skills-bank/core";
 
 interface Props {
   registry: RegistryEntry[];
+  /** Derived + override tags per skill name; replaces raw `e.tags` for display and filtering. */
+  effectiveTagsMap: Map<string, string[]>;
   selected: string[];
   onChange: (next: string[]) => void;
   /** Close-the-panel hook: invoked when the user picks a "Clear all" action so
@@ -14,19 +16,21 @@ interface Props {
 /**
  * Multi-select tag list. Rendered inside a dropdown panel anchored from the
  * "Tags ▾" trigger chip in `RegistryFilters`. Tags are derived live from the
- * union of every skill's `tags`, sorted by frequency descending then
- * alphabetical. A skill matches when at least one selected tag appears in its
- * `tags` (OR semantics). Empty selection means no filter.
+ * union of every skill's effective tags (auto-inferred + user overrides),
+ * sorted by frequency descending then alphabetical. A skill matches when at
+ * least one selected tag appears in its effective tags (OR semantics). Empty
+ * selection means no filter.
  */
 export function TagFilter({
   registry,
+  effectiveTagsMap,
   selected,
   onChange,
   onClearAll,
 }: Props): React.ReactElement | null {
   const counts = new Map<string, number>();
   for (const e of registry) {
-    for (const t of e.tags ?? []) {
+    for (const t of effectiveTagsMap.get(e.name) ?? e.tags ?? []) {
       counts.set(t, (counts.get(t) ?? 0) + 1);
     }
   }

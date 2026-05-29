@@ -151,6 +151,8 @@ export function floatToTop(
 
 interface Props {
   registry: RegistryEntry[];
+  /** Derived + override tags per skill name; replaces raw `e.tags` for display and filtering. */
+  effectiveTagsMap: Map<string, string[]>;
   active: ReadonlySet<RegistryFilterTag>;
   onChange: (next: Set<RegistryFilterTag>) => void;
   sort: RegistrySortState;
@@ -167,6 +169,7 @@ interface Props {
 
 export function RegistryFilters({
   registry,
+  effectiveTagsMap,
   active,
   onChange,
   sort,
@@ -276,9 +279,9 @@ export function RegistryFilters({
   // Tags trigger entirely — same null-result behaviour TagFilter
   // had pre-refactor.
   const hasAnyTags = React.useMemo(() => {
-    for (const e of registry) if ((e.tags?.length ?? 0) > 0) return true;
+    for (const tags of effectiveTagsMap.values()) if (tags.length > 0) return true;
     return false;
-  }, [registry]);
+  }, [effectiveTagsMap]);
 
   return (
     <div className="registry-filters">
@@ -440,6 +443,7 @@ export function RegistryFilters({
             {tagsOpen && (
               <TagFilter
                 registry={registry}
+                effectiveTagsMap={effectiveTagsMap}
                 selected={selectedTags}
                 onChange={onSelectedTagsChange}
                 onClearAll={() => setTagsOpen(false)}

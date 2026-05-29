@@ -750,12 +750,8 @@ select {
   -webkit-line-clamp: 2;
   margin-bottom: var(--s2);
 }
-:root[data-density="compact"] .skill-tags {
-  margin-bottom: var(--s2);
-}
 :root[data-density="compact"] .skill-tag {
-  font-size: 10px;
-  padding: 1px var(--s1);
+  padding: 0 4px;
 }
 :root[data-density="compact"] .skill-meta-row {
   margin-bottom: var(--s2);
@@ -1117,6 +1113,8 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: var(--s2);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--border);
 }
 .tag-filter-panel-title {
   font-size: 11px;
@@ -1152,12 +1150,14 @@ select {
   justify-content: space-between;
   gap: var(--s2);
   padding: 4px var(--s2);
+  padding-left: calc(var(--s2) - 1px);
   border-radius: var(--r-sm);
   font-size: 12px;
   font-weight: 500;
   color: var(--text-2);
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
+  border-left: 2px solid transparent;
   transition:
     background var(--t-fast) var(--ease),
     color var(--t-fast) var(--ease),
@@ -1166,10 +1166,11 @@ select {
 .tag-filter-item:hover {
   background: var(--surface-hi);
   color: var(--text);
+  border-left-color: var(--border);
 }
 .tag-filter-item.active {
   background: var(--accent-dim);
-  border-color: var(--accent);
+  border-left-color: var(--accent);
   color: var(--accent);
 }
 /* Inset ring — same reasoning as `.repo-picker-item:focus-visible`:
@@ -1181,11 +1182,18 @@ select {
   font-family: var(--font-mono);
 }
 .tag-filter-item-count {
-  font-size: 11px;
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
   color: var(--text-3);
+  background: var(--surface-hi);
+  padding: 1px 5px;
+  border-radius: 8px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.5;
 }
 .tag-filter-item.active .tag-filter-item-count {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: var(--accent);
 }
 
@@ -1457,16 +1465,16 @@ select {
 .skill-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s1);
-  margin-bottom: var(--s3);
+  gap: 4px;
+  margin-bottom: var(--s2);
 }
 .skill-tag {
-  font-size: 11px;
-  padding: 2px var(--s2);
-  border-radius: var(--r-sm);
-  background: var(--surface-hi);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-3) 10%, transparent);
   color: var(--text-3);
-  border: 1px solid var(--border);
+  border: none;
   font-family: var(--font-mono);
 }
 .skill-tag-more {
@@ -2003,6 +2011,19 @@ select {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.expand-collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 120ms var(--ease);
+}
+.expand-collapse-btn:hover { color: var(--text-2); }
 
 .skill-tag.editable {
   display: inline-flex;
@@ -2569,6 +2590,10 @@ button:disabled {
   gap: var(--s3);
 }
 .discover-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
   padding: var(--s2) var(--s3);
   background: var(--surface-hi);
   border: 1px solid var(--border);
@@ -2576,6 +2601,39 @@ button:disabled {
   font-size: 13px;
   color: var(--text-2);
 }
+.discover-callout-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.discover-callout-form {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: 1;
+  min-width: 0;
+}
+.discover-callout-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+}
+.discover-callout-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.discover-callout-feedback {
+  width: 100%;
+  font-size: 11px;
+  margin: 0;
+}
+.discover-callout-feedback--error { color: var(--danger); }
+.discover-callout-feedback--success { color: var(--success, var(--accent)); }
 
 /* ── Diff viewer (sync-collision modal + future drift drawer) ─── */
 .diff-viewer {
@@ -3439,6 +3497,18 @@ button:disabled {
 }
 
 /* ── RepoPickerModal ───────────────────────────────────── */
+.repo-picker-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: inherit;
+}
+.repo-picker-item:hover { background: var(--hover); }
 .repo-picker-item--picking { background: var(--accent-dim); cursor: wait; }
 .repo-picker-error {
   margin-top: 12px;
@@ -4297,6 +4367,7 @@ button:disabled {
 }
 .labels-banner-text {
   flex: 1;
+  margin-bottom: 10px;
 }
 .labels-banner-actions {
   display: flex;

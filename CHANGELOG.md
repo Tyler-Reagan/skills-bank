@@ -3,6 +3,27 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.16.0
+
+Install skills directly from the Discover tab, tag inference wired end-to-end, Browse UX polish, and a drift false-positive fix for GitHub-installed skills.
+
+### Added
+
+- **Install from Discover tab.** The Discover tab callout now has an inline URL/command input. Paste either an `npx skills add <url> --skill <name>` command (the format skills.sh copies to the clipboard) or a raw GitHub folder URL — the app parses either, fetches the skill, and adds it to your bank without opening a terminal. On success the existing flash banner confirms the skill name and prompts you to find it in Browse to install.
+- **Expand / Collapse All in Browse.** A chevron-prefixed "Collapse all" / "Expand all" button appears in the results row whenever two or more category sections are visible. The chevron rotates to reflect the current state.
+
+### Changed
+
+- **Auto-derived tags now surface everywhere tags are used.** Previously, `deriveLabels` computed tags but only the drawer consumed them — the Browse filter panel, tag search, and skill cards all still read raw `tags` from the registry entry (frontmatter-only). Now an `effectiveTagsMap` is computed once per render (derived + user overrides) and flows through to `TagFilter`, `applyFilters`, and `SkillCard`. Skills with no explicit `tags:` frontmatter now show their inferred tags on cards and participate in tag filtering.
+- **"Install a skill from GitHub" moved out of Settings.** The Settings modal section and its button are removed. The action now lives inline on the Discover tab (see above), where it belongs in the workflow.
+- **Tag filter dropdown polish.** A border separator between the panel header and the tag list; count badges are now pill-shaped with a tinted background; the active-item indicator is a left accent bar rather than a full perimeter border.
+- **Skill card tag chips compacted.** Tags render at 10 px in a borderless tight-pill style (`color-mix` neutral tint, no border, 4 px border-radius) instead of the previous 11 px bordered pill. Compact-density mode shaves one more pixel of vertical padding.
+
+### Fixed
+
+- **False-positive drift on every GitHub-installed skill.** `installSkillFromGithub` was storing the git tree SHA-1 (from the GitHub Trees API) as the `.skills-bank-hash` baseline, but drift detection compares against `hashSkillFolder`'s local content hash — two different algorithms that never match. The baseline is now written with `hashSkillFolder` after the files land on disk, consistent with how `sync` and `merge` baseline their skills.
+- **Repo picker list items flowing inline.** `.repo-picker-item` had no base CSS rule, so `<button>` elements defaulted to `display: inline-block` and rendered horizontally. A base rule (`display: block; width: 100%`) corrects the layout.
+
 ## v1.15.0
 
 SKILL.md YAML frontmatter becomes the single source of skill metadata, and the drift detector stops flagging skills that install dependencies into their own folder.

@@ -2,7 +2,13 @@
 
 Skills Bank auto-derives a **category** and zero or more **tags** for every skill in your registry, based on its name and description. Labels are computed at runtime from static rule tables — nothing is baked into `index.json` or the skill's `SKILL.md` frontmatter.
 
+Auto-derived tags appear on skill cards in the Browse grid, power the **Tags ▾** filter dropdown, and are matched during free-text search. Skills with no explicit `tags:` in their `SKILL.md` frontmatter still receive inferred tags.
+
 You can override any auto-derived label from the skill detail drawer. Overrides are stored in `labels.json` in your app data directory and never touch the skill files themselves.
+
+## Browse navigation
+
+Skills are grouped into collapsible category sections. When two or more sections are visible, a **Collapse all / Expand all** toggle appears in the results row — click it to fold or unfold every section at once. Individual sections can still be toggled independently.
 
 <!-- NEW SCREENSHOT (placeholder): this page has no image. Add one showing the Labels section of the detail drawer (category select + tag chips) and/or the collapsible category grouping in the Browse tab. Suggested path: /images/labels.png -->
 

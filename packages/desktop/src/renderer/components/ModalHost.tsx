@@ -559,9 +559,6 @@ export function ModalHost({
       {modal?.kind === "settings" && (
         <SettingsModal
           onClose={() => closeModal()}
-          onOpenInstallFromGithub={() =>
-            openModal({ kind: "installFromGithub" })
-          }
           hiddenCanon={registry.filter((e) => e.hidden).map((e) => e.name)}
           onUnhide={async (name) => {
             const r = await window.skillsBank.unhide(name);

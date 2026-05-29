@@ -7,6 +7,8 @@ interface Props {
   installed: InstalledSkill[];
   onSelect: (entry: RegistryEntry) => void;
   emptyMessage?: React.ReactNode;
+  /** When provided, overrides each entry's raw `tags` with derived+override tags. */
+  effectiveTagsMap?: Map<string, string[]>;
   /**
    * If provided, the empty-state renders a "Clear filters" CTA. Call it
    * only when filters are actually narrowing the result set; otherwise
@@ -47,6 +49,7 @@ export function SkillsGrid({
   emptyMessage,
   onClearFilters,
   onSaveTags,
+  effectiveTagsMap,
   selectMode = false,
   selectedNames,
   onToggleSelect,
@@ -76,10 +79,13 @@ export function SkillsGrid({
     <div className="skills-grid">
       {entries.map((e, i) => {
         const status = bulkStatus?.(e);
+        const entry = effectiveTagsMap
+          ? { ...e, tags: effectiveTagsMap.get(e.name) ?? e.tags }
+          : e;
         return (
           <SkillCard
             key={e.path}
-            entry={e}
+            entry={entry}
             status={statusForEntry(e, installed)}
             onSelect={() => onSelect(e)}
             index={i}

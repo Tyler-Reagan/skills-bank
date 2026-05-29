@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { writeSyncedHash } from "./heal.js";
+import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import { findSkillFolder, readSkillMeta } from "./registry.js";
 import { writeSkillSource, type OriginPointer } from "./source.js";
 import type { RateLimitInfo } from "./github-http.js";
@@ -161,9 +161,12 @@ export async function installSkillFromGithub(
     installedAt: new Date().toISOString(),
   };
   writeSkillSource(finalDir, { source, origin });
-  // Baseline the synced-hash sidecar so drift detection + Phase 3's
-  // origin-unreachable counter both start from a clean slate.
-  writeSyncedHash(finalDir, mirror.folderHash);
+  // Baseline the synced-hash sidecar using the LOCAL folder hash (same
+  // algorithm as drift detection) rather than the git tree SHA stored in
+  // origin.skillFolderHash — those are different hash functions and would
+  // immediately trigger false-positive drift on every fresh install.
+  const localHash = hashSkillFolder(finalDir);
+  if (localHash) writeSyncedHash(finalDir, localHash);
 
   return {
     ok: true,

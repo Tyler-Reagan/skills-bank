@@ -1,8 +1,37 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { DiscoverStatus } from "../../shared/ipc.js";
+import { useRegistryHost } from "../RegistryHostContext.js";
 import { DiscoverEmpty } from "./DiscoverEmpty.js";
 
 const HOME = "https://skills.sh";
+
+/**
+ * Accepts either a raw GitHub tree/blob URL or the npx install command
+ * that skills.sh copies to the clipboard:
+ *
+ *   npx skills add https://github.com/owner/repo --skill skill-name
+ *
+ * Returns the GitHub URL to pass to installSkillFromGithub, or null if
+ * the input doesn't match either recognised format.
+ */
+function parseInstallInput(raw: string): string | null {
+  const s = raw.trim();
+
+  // npx skills add <repo-url> --skill <skill-name>
+  const npxMatch = s.match(
+    /npx\s+skills\s+add\s+(https:\/\/github\.com\/[^\s]+)\s+--skill\s+(\S+)/,
+  );
+  if (npxMatch?.[1] && npxMatch[2]) {
+    const repoUrl = npxMatch[1].replace(/\/$/, "");
+    const skillName = npxMatch[2];
+    return `${repoUrl}/tree/main/skills/${skillName}`;
+  }
+
+  // Raw GitHub URL
+  if (s.startsWith("https://github.com/")) return s;
+
+  return null;
+}
 
 function formatUrl(url: string): string {
   try {
@@ -21,12 +50,55 @@ interface Props {
   modalOpen: boolean;
   /** macOS terminal app preference forwarded to the IPC handler. */
   terminalApp?: string;
+  /** Called after a successful install so the host can refresh the registry. */
+  onInstalled: () => void;
 }
 
 export function DiscoverTab({
   modalOpen,
   terminalApp,
+  onInstalled,
 }: Props): React.ReactElement {
+  const { flash, flashError } = useRegistryHost();
+  const [installUrl, setInstallUrl] = useState("");
+  const [installBusy, setInstallBusy] = useState(false);
+  const [installError, setInstallError] = useState<string | null>(null);
+
+  const submitInstall = async () => {
+    const resolved = parseInstallInput(installUrl);
+    if (!resolved) {
+      setInstallError(
+        "Paste an npx skills add … command or a GitHub folder URL.",
+      );
+      return;
+    }
+    setInstallBusy(true);
+    setInstallError(null);
+    try {
+      const r = await window.skillsBank.installSkillFromGithub(resolved);
+      if (r.ok) {
+        setInstallUrl("");
+        flash(`${r.name} added to your bank — find it in Browse to install`);
+        onInstalled();
+        return;
+      }
+      switch (r.reason) {
+        case "name-collision":
+          setInstallError(
+            `"${r.name}" is already in your bank (${r.existingBucket}). Uninstall it first or rename it.`,
+          );
+          break;
+        case "mirror-failed":
+          flashError(r.message);
+          setInstallError(r.message);
+          break;
+        default:
+          setInstallError(r.message);
+      }
+    } finally {
+      setInstallBusy(false);
+    }
+  };
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [status, setStatus] = useState<DiscoverStatus>({
     kind: "loading",
@@ -124,14 +196,39 @@ export function DiscoverTab({
 
   return (
     <div className="discover-tab">
-      <div
-        className="discover-callout"
-        role="note"
-        aria-label="How discovered skills land in your registry"
-      >
-        See a skill you want? Copy its source-repo folder URL and use{" "}
-        <strong>Settings → Install a skill from GitHub</strong>. For raw{" "}
-        <code>npx</code> commands, use <strong>Open Terminal</strong>.
+      <div className="discover-callout" aria-label="Install a skill from GitHub">
+        <span className="discover-callout-label">See a skill you want?</span>
+        <div className="discover-callout-form">
+          <input
+            type="text"
+            className="discover-callout-input"
+            placeholder='Paste "npx skills add <url> --skill <name>" or a GitHub skill folder URL'
+            value={installUrl}
+            disabled={installBusy}
+            onChange={(e) => {
+              setInstallUrl(e.target.value);
+              setInstallError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && installUrl.trim().length > 0)
+                void submitInstall();
+            }}
+            aria-label="GitHub skill folder URL"
+          />
+          <button
+            type="button"
+            className="btn"
+            onClick={() => void submitInstall()}
+            disabled={installBusy || installUrl.trim().length === 0}
+          >
+            {installBusy ? <><span className="spinner inline" /> Installing</> : "Install"}
+          </button>
+        </div>
+        {installError && (
+          <p role="alert" className="discover-callout-feedback discover-callout-feedback--error">
+            {installError}
+          </p>
+        )}
       </div>
       <div
         className="discover-chrome"

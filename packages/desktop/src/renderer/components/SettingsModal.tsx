@@ -89,13 +89,6 @@ interface Props {
    * user enable a feature that would silently fail.
    */
   isAuthed: boolean;
-  /**
-   * v1.5: opens the Install-from-GitHub modal. Routed through the
-   * parent so the modal can refresh the registry view after a
-   * successful install via the same refresh path other mutations
-   * use.
-   */
-  onOpenInstallFromGithub: () => void;
 }
 
 /**
@@ -105,7 +98,6 @@ interface Props {
  */
 export function SettingsModal({
   onClose,
-  onOpenInstallFromGithub,
   hiddenCanon,
   onUnhide,
   isAuthed,
@@ -298,23 +290,6 @@ export function SettingsModal({
             </label>
           ))}
         </div>
-      </section>
-
-      <section className="settings-section">
-        <h3 className="settings-section-title">Install a skill from GitHub</h3>
-        <p className="settings-hint">
-          Paste a GitHub folder URL (or a SKILL.md blob URL) and the app fetches
-          the skill directly into your bank — no terminal, no npx. The skill
-          lands as <code>source: user</code> with its origin stamped, so future
-          updates flow through the standard update path.
-        </p>
-        <button
-          className="btn mt-8"
-          type="button"
-          onClick={() => onOpenInstallFromGithub()}
-        >
-          Install a skill from GitHub
-        </button>
       </section>
 
       <section className="settings-section">

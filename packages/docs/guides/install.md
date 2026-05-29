@@ -7,7 +7,7 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 ## Steps
 
 1. Open the **Registry** tab (it's the default tab).
-2. Skills are grouped into collapsible category sections — **Frontend**, **Backend**, **AI Tooling**, and [more](/reference/labels). Click a section header to expand or collapse it. Use the search bar or tag filters to narrow the list further; toggle **Installed only** to filter to skills you've already linked.
+2. Skills are grouped into collapsible category sections — **Frontend**, **Backend**, **AI Tooling**, and [more](/reference/labels). Click a section header to expand or collapse it, or use **Collapse all / Expand all** in the results row to fold every section at once. Use the search bar or tag filters to narrow the list further; toggle **Installed only** to filter to skills you've already linked.
 3. Click any card to open its detail dialog. The dialog shows the full `SKILL.md` preview, tags, category, source, and any warnings.
 
    ![Skill detail dialog with SKILL.md preview, Install, Manage agent links](/images/skill-detail.png)
@@ -34,6 +34,23 @@ For a skill named `my-skill` and agents Claude Code + Cursor:
 ```
 
 Both symlinks point at the same source folder. Edits to the registry copy are immediately visible to every linked agent — no copy step, no resync.
+
+## Install a skill from the Discover tab
+
+The **Discover** tab embeds [skills.sh](https://skills.sh) — a browsable directory of community skills. When you find one you want, copy its install command (skills.sh shows a copy button on each skill) and paste it directly into the callout bar at the top of the tab.
+
+Two formats are accepted:
+
+- **`npx skills add` command** — the format skills.sh puts on the clipboard:
+  ```
+  npx skills add https://github.com/owner/repo --skill skill-name
+  ```
+- **GitHub folder URL** — a direct link to the skill's folder:
+  ```
+  https://github.com/owner/repo/tree/main/skills/skill-name
+  ```
+
+Press **Install** (or Enter). The app fetches the skill into your bank and shows a confirmation flash. The skill then appears in the **Registry** tab under its inferred category — click it there and press **Install** to link it into your agent directories.
 
 ## Uninstall
 

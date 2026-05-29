@@ -903,6 +903,7 @@ function AppContent(): React.ReactElement {
         <DiscoverTab
           modalOpen={anyModalOpen}
           terminalApp={settings.terminalApp}
+          onInstalled={() => void refresh()}
         />
       ) : (
         <div
