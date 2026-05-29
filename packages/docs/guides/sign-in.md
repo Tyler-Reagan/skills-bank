@@ -33,18 +33,16 @@ Minimum viable repo:
 your-skill-bank-repo/
 └── skills/
     ├── some-skill/
-    │   └── SKILL.md          # required
+    │   └── SKILL.md          # required — metadata in YAML frontmatter
     ├── another-skill/
-    │   ├── SKILL.md
-    │   └── meta.json         # optional: tags + version metadata
+    │   └── SKILL.md
     └── ...
 ```
 
-The `skills/` directory at the repo root is the contract. Each subdirectory is one skill; each skill needs a `SKILL.md`. The app validates this on link and refuses with a clear message if the structure is missing.
+The `skills/` directory at the repo root is the contract. Each subdirectory is one skill; each skill needs a `SKILL.md` whose YAML frontmatter carries its `name`, `description`, and optional `tags`/`version`/`author`. The app validates this on link and refuses with a clear message if the structure is missing. See [Skill metadata](/reference/meta-schema).
 
 Optional extras the app will pick up:
 
-- `meta.json` per skill — adds tags, version, description metadata. See [meta.json schema](/reference/meta-schema).
 - `.skills-bank.json` per skill — internal source marker; the app stamps these on refresh if absent.
 - Anything else in the repo (READMEs, `.github/`, license, etc.) is ignored.
 

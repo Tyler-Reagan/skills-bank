@@ -21,6 +21,7 @@ Want to fork the entire app and ship your own build? See [Self-hosting](/self-ho
 
 ## Install a skill
 
+<!-- STALE SCREENSHOT (re-capture): current registry.png is a dev build ("Skills Bank (Dev)") showing a 1-skill registry with no category grouping. Re-shoot from a packaged build with a populated registry showing the collapsible category sections (Frontend, Backend, …) added in v1.14.0. -->
 ![The Registry tab — the default view](/images/registry.png)
 
 1. Open the **Registry** tab (it's the default).

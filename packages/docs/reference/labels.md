@@ -1,8 +1,11 @@
 # Skill labels
 
-Skills Bank auto-derives a **category** and zero or more **tags** for every skill in your registry, based on its name and description. Labels are computed at runtime from static rule tables — nothing is baked into `index.json` or `meta.json`.
+Skills Bank auto-derives a **category** and zero or more **tags** for every skill in your registry, based on its name and description. Labels are computed at runtime from static rule tables — nothing is baked into `index.json` or the skill's `SKILL.md` frontmatter.
 
 You can override any auto-derived label from the skill detail drawer. Overrides are stored in `labels.json` in your app data directory and never touch the skill files themselves.
+
+<!-- NEW SCREENSHOT (placeholder): this page has no image. Add one showing the Labels section of the detail drawer (category select + tag chips) and/or the collapsible category grouping in the Browse tab. Suggested path: /images/labels.png -->
+
 
 ## Categories
 

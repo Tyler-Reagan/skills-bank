@@ -1,18 +1,25 @@
-# meta.json schema
+# Skill metadata
 
-Each skill folder can contain an optional `meta.json` file that adds metadata visible in the Registry tab. The app picks it up automatically on refresh.
+A skill's metadata — the name, description, and tags shown in the Registry tab — lives in the **YAML frontmatter at the top of `SKILL.md`**. The app reads it automatically on refresh.
+
+> [!NOTE]
+> As of **v1.15.0**, SKILL.md frontmatter is the **sole** source of skill metadata. Earlier versions also read a sibling `meta.json` as a fallback ("shim"); that read path was removed. A `meta.json` may still appear inside a skill folder, but only as an app-**synthesized** artifact (generated from the frontmatter for agents that expect one) — you never author or edit it, and it is not read back as a source of truth.
 
 ## Example
 
-```json
-{
-  "name": "frontend-design",
-  "description": "Expert UI/UX guidance for React and Tailwind projects.",
-  "tags": ["frontend", "react", "design"],
-  "version": "1.2.0",
-  "author": "your-github-username"
-}
+```markdown
+---
+name: frontend-design
+description: Expert UI/UX guidance for React and Tailwind projects.
+tags: [frontend, react, design]
+version: 1.2.0
+author: your-github-username
+---
+
+Your skill prompt content here…
 ```
+
+The frontmatter is delimited by `---` lines and must be the first thing in the file. Everything after the closing `---` is the skill's prose, which the agent reads at runtime.
 
 ## Fields
 
@@ -24,23 +31,20 @@ Each skill folder can contain an optional `meta.json` file that adds metadata vi
 | `version`     | `string`   | No       | Semver string (e.g. `1.0.0` or `2.1.0-beta.1`).                                                            |
 | `author`      | `string`   | No       | Author name or GitHub username.                                                                            |
 
+These are the same fields the app's category/tag inference reads from; see [Skill labels](/reference/labels) for how `tags` interacts with auto-derived labels.
+
 ## Validation
 
-Run `pnpm validate` from the repo root to validate all `meta.json` files in `skills/` against the schema. CI runs this on every push.
+Run `pnpm validate` from the repo root to validate every skill's `SKILL.md` frontmatter against the schema. It fails a skill that is missing frontmatter or whose frontmatter violates the schema. CI runs this on every push.
 
-The full JSON schema is at [`docs/meta-schema.json`](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/meta-schema.json) on GitHub.
+The full JSON schema is at [`docs/meta-schema.json`](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/meta-schema.json) on GitHub — it now describes the frontmatter fields above.
 
-## SKILL.md frontmatter
+## Migrating an existing `meta.json`
 
-`SKILL.md` can also carry YAML frontmatter as an alternative to `meta.json`. The app reads either form:
+If you have older skills that still carry their metadata in a `meta.json`, fold it into the SKILL.md frontmatter with:
 
-```markdown
----
-name: frontend-design
-description: Expert UI/UX guidance for React and Tailwind projects.
----
-
-Your skill prompt content here...
+```bash
+pnpm migrate:meta-to-frontmatter
 ```
 
-If both `meta.json` and `SKILL.md` frontmatter are present, `meta.json` takes precedence.
+After migrating, `pnpm validate && pnpm build:index` and commit. The standalone `meta.json` is no longer needed as a source.

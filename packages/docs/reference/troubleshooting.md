@@ -43,7 +43,7 @@ The app polls the GitHub Releases feed once on launch. If you've been running th
 
 ## "I want to start fresh"
 
-For packaged-app users, manually delete `~/Library/Application Support/Skills Bank` to start fresh.
+For packaged-app users, manually delete `~/Library/Application Support/@skills-bank/` to start fresh. (To remove the app itself too, see [Uninstalling Skills Bank](#uninstalling-skills-bank).)
 
 Two reset scripts are also available if you're running from source:
 
@@ -53,6 +53,27 @@ pnpm reset:hard     # also wipe the app-managed registry directory and re-seed
 ```
 
 Set `unset SKILLS_BANK_ROOT` in your shell first if you've been pointing the app at a checkout.
+
+## Uninstalling Skills Bank
+
+"Start fresh" above only clears app state — the app stays installed. To remove Skills Bank **entirely**, use the uninstaller script from a clone of the repo:
+
+```bash
+./scripts/uninstall.sh --dry-run    # preview exactly what will be removed
+./scripts/uninstall.sh              # do it (prompts for confirmation)
+./scripts/uninstall.sh --keep-data  # remove the app but keep your registry/userData
+```
+
+It removes the app bundle, the app-managed registry + userData, logs/caches/preferences, the dev-mode redirect dir (`~/.skills-bank-dev/`), and **only** the agent-directory symlinks that point into the Skills Bank registry — your own skills (real directories, or symlinks pointing elsewhere) are left untouched.
+
+> [!WARNING]
+> A full uninstall deletes the app-managed registry — the skills in your bank and their content. If your registry isn't pushed to a linked GitHub repo, that's unrecoverable. Run `--dry-run` first, or [move your registry](/guides/manifest) somewhere safe before uninstalling. Use `--keep-data` to remove the app but preserve the registry.
+
+Prefer to do it by hand? Quit the app, drag **Skills Bank** from `/Applications` to the Trash, then delete `~/Library/Application Support/@skills-bank/` and `~/Library/Caches/com.tyler-reagan.skills-bank*`. The leftover agent symlinks under `~/.claude/skills/`, `~/.cursor/skills/`, etc. will be broken afterward — remove the broken ones (the script does this for you).
+
+## "A skill keeps showing EDITED after I run it"
+
+A skill that installs dependencies or writes output into its own folder at runtime (e.g. a `node_modules/` it populates on first use) used to drift to `EDITED` because those generated files changed the folder's content hash. As of **v1.15.0**, drift detection honors the skill's own `.gitignore`, so anything the skill ignores no longer counts as an edit. If you're on v1.15.0+ and still see this, confirm the generated paths are actually listed in the skill's `.gitignore`; only ignored paths are excluded. (On older versions, "Revert to canon" / "Reset to origin" clears it until the next run.)
 
 ## "Sync conflict modal keeps appearing for the same skill"
 

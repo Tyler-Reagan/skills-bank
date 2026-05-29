@@ -43,6 +43,9 @@ The dialog for a curated skill you've edited replaces the usual destructive area
 
 Both buttons clear the `EDITED` badge.
 
+> [!NOTE]
+> **Runtime-generated files don't count as edits.** As of v1.15.0, drift detection honors a skill's own `.gitignore`. A skill that installs dependencies or writes build/test output into its own folder at runtime (for example a skill that runs `pnpm install` into a `node_modules/`) no longer trips the `EDITED` badge for those ignored paths — only changes to tracked files are drift.
+
 ## Conflict vocabulary
 
 Three distinct collision types use distinct labels:

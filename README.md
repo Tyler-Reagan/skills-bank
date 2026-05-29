@@ -14,7 +14,7 @@ One registry. Every AI agent on your machine.
 
 ![The Registry tab — browse, search, and install curated skills](docs/images/registry.png)
 
-A **skill** is a folder of instructions (`SKILL.md` + optional metadata) that an AI coding agent reads at runtime to gain a specialized capability. Skills Bank keeps your collection in sync across Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, and Codex — using symlinks, so there are no copies and no drift. Skills are automatically organized by category (frontend, backend, AI tooling, and more) and tagged based on their name and description; both are editable per-skill from the detail drawer.
+A **skill** is a folder with a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI coding agent reads at runtime to gain a specialized capability. Skills Bank keeps your collection in sync across Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, and Codex — using symlinks, so there are no copies and no drift. Skills are automatically organized by category (frontend, backend, AI tooling, and more) and tagged based on their name and description; both are editable per-skill from the detail drawer.
 
 ## Get started
 
@@ -26,6 +26,8 @@ Download the latest DMG from the [Releases page](https://github.com/Tyler-Reagan
 - `Skills-Bank-<version>-x64.dmg` — Intel
 
 Drag to Applications, launch from Spotlight. Signed and notarized — Gatekeeper opens on a normal double-click. Auto-updates on launch.
+
+**Uninstall:** run [`scripts/uninstall.sh`](scripts/uninstall.sh) from a clone (`--dry-run` to preview, `--keep-data` to keep your registry). It removes the app, its data/caches, and only the agent symlinks it created. See [Uninstalling Skills Bank](https://skills-bank-desktop.vercel.app/reference/troubleshooting#uninstalling-skills-bank).
 
 > [!TIP]
 > **📖 Read the docs: [skills-bank-desktop.vercel.app](https://skills-bank-desktop.vercel.app/)** — the source of truth for getting started, concepts, guides, and reference. The markdown sources live under [`packages/docs/`](packages/docs/) if you want to edit them.
@@ -45,7 +47,7 @@ node packages/cli/dist/index.js path <name>
 
 | Path                                   | Purpose                                                              |
 | -------------------------------------- | -------------------------------------------------------------------- |
-| [`skills/`](skills/)                   | Bundled registry — one folder per skill, `SKILL.md` + `meta.json`.   |
+| [`skills/`](skills/)                   | Bundled registry — one folder per skill, each a `SKILL.md` with YAML frontmatter. |
 | [`packages/core`](packages/core)       | Shared TypeScript library: registry IO, install, sync, registration. |
 | [`packages/cli`](packages/cli)         | The `skills-bank` CLI — five commands for shell composition.         |
 | [`packages/desktop`](packages/desktop) | Electron + React desktop app.                                        |
@@ -68,7 +70,7 @@ pnpm docs:dev   # run the docs site locally
 
 ## Adding a registry skill
 
-Drop a folder at `skills/<name>/` with a `SKILL.md` and (optionally) a `meta.json` matching [`docs/meta-schema.json`](docs/meta-schema.json), then:
+Drop a folder at `skills/<name>/` with a `SKILL.md` whose YAML frontmatter matches [`docs/meta-schema.json`](docs/meta-schema.json), then:
 
 ```bash
 pnpm validate && pnpm build:index

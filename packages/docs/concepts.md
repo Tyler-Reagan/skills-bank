@@ -86,7 +86,7 @@ Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **
 
 ## Skill
 
-A folder containing instructions (`SKILL.md`) and optional metadata (`meta.json`) that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist.
+A folder containing a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist. (As of v1.15.0 the frontmatter is the sole metadata source; a `meta.json` may still appear as an app-synthesized artifact for agents that read one — see [Skill metadata](/reference/meta-schema).)
 
 ## Agent directory
 
@@ -115,7 +115,7 @@ The registry is **not** the only source of skills you can use. Skills installed 
 
 Every install starts on the **bundled default** — the app reads the canonical curated set from `Tyler-Reagan/skills-bank` at the unauthenticated GitHub rate limit (60/hr). Refresh pulls the latest. No GitHub account needed.
 
-Sign in via **Account** to either keep the curated set at a higher rate limit (5000/hr authenticated, plus access to private repos) or **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with `SKILL.md` and/or `meta.json`) — its layout doesn't have to match anything specific.
+Sign in via **Account** to either keep the curated set at a higher rate limit (5000/hr authenticated, plus access to private repos) or **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with a `SKILL.md` — its YAML frontmatter carries the metadata) — its layout doesn't have to match anything specific.
 
 Self-hosting (forking the entire app) remains a separate developer path; see [Self-hosting](/self-host).
 
@@ -148,7 +148,7 @@ Each card surfaces a single badge. Actionable state badges take priority; proven
 Priority order, highest first:
 
 - **`MISSING`** _(danger)_ — files are gone. Open the dialog to **Forget this entry**.
-- **`EDITED`** _(warn)_ — you've edited a curated skill. Open the dialog to keep your edits or revert.
+- **`EDITED`** _(warn)_ — you've edited a curated skill. Open the dialog to keep your edits or revert. Files the skill ignores via its own `.gitignore` (e.g. a runtime-installed `node_modules/`) don't count as edits.
 - **`UPDATE`** _(info)_ — an update is available from the skill's origin.
 - **`CURATED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the curated-only escape hatch.
 
