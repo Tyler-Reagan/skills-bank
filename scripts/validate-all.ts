@@ -27,12 +27,8 @@ for (const ref of skillRefs) {
     continue;
   }
   failures++;
-  if (result.reason === "missing-meta-json") {
-    console.error(
-      `✖ ${rel}: missing SKILL.md frontmatter (and no meta.json fallback)`,
-    );
-  } else if (result.reason === "invalid-json") {
-    console.error(`✖ ${rel}: invalid JSON in meta.json (${result.message})`);
+  if (result.reason === "missing-frontmatter") {
+    console.error(`✖ ${rel}: missing SKILL.md frontmatter`);
   } else {
     console.error(`✖ ${rel}: schema violations`);
     for (const e of result.errors) {

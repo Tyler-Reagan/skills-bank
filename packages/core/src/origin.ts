@@ -476,13 +476,11 @@ export async function applyOriginUpdate(
     const detail =
       metaCheck.reason === "schema-violation"
         ? metaCheck.errors.join("; ")
-        : metaCheck.reason === "invalid-json"
-          ? metaCheck.message
-          : metaCheck.reason;
+        : metaCheck.reason;
     return {
       ok: false,
       message:
-        `Update from ${origin.repo} fetched cleanly but failed meta.json validation; ` +
+        `Update from ${origin.repo} fetched cleanly but failed frontmatter validation; ` +
         `local content restored. Cause: ${detail}.`,
       diagnostic:
         `name=${ctx.name}\n` +

@@ -154,7 +154,7 @@ describe("synthesizeSkillMeta", () => {
 });
 
 describe("validateSkillMeta", () => {
-  test("passes a well-formed SKILL.md frontmatter (primary path)", () => {
+  test("passes a well-formed SKILL.md frontmatter", () => {
     fs.writeFileSync(
       path.join(scratch, "SKILL.md"),
       "---\nname: my-skill\ndescription: A helpful skill\nversion: 1.0.0\ntags: [foo]\n---\nbody\n",
@@ -162,61 +162,23 @@ describe("validateSkillMeta", () => {
     expect(validateSkillMeta(scratch)).toEqual({ ok: true });
   });
 
-  test("frontmatter takes precedence over meta.json", () => {
-    // SKILL.md has valid frontmatter; meta.json has malformed JSON.
-    // Should pass because frontmatter is read first and is valid.
-    fs.writeFileSync(
-      path.join(scratch, "SKILL.md"),
-      "---\nname: my-skill\ndescription: A helpful skill\n---\nbody\n",
-    );
-    fs.writeFileSync(path.join(scratch, "meta.json"), "{ not json");
-    expect(validateSkillMeta(scratch)).toEqual({ ok: true });
-  });
-
-  test("fails with schema-violation when frontmatter has an invalid field", () => {
-    fs.writeFileSync(
-      path.join(scratch, "SKILL.md"),
-      "---\nname: MySkill\ndescription: ok\n---\n",
-    );
+  test("fails with missing-frontmatter when SKILL.md is absent", () => {
     const r = validateSkillMeta(scratch);
     expect(r.ok).toBe(false);
-    if (r.ok === false && r.reason === "schema-violation") {
-      expect(r.errors.join(" ")).toMatch(/name/);
-    } else {
-      throw new Error("expected schema-violation");
-    }
+    expect(r.ok === false && r.reason).toBe("missing-frontmatter");
   });
 
-  test("passes a well-formed meta.json when no frontmatter exists (shim)", () => {
-    fs.writeFileSync(
-      path.join(scratch, "meta.json"),
-      JSON.stringify({
-        name: "my-skill",
-        description: "A helpful skill",
-        version: "1.0.0",
-        tags: ["foo"],
-      }),
-    );
-    expect(validateSkillMeta(scratch)).toEqual({ ok: true });
-  });
-
-  test("fails with missing-meta-json when neither frontmatter nor meta.json exists", () => {
+  test("fails with missing-frontmatter when SKILL.md has no frontmatter", () => {
+    fs.writeFileSync(path.join(scratch, "SKILL.md"), "# no frontmatter\n");
     const r = validateSkillMeta(scratch);
     expect(r.ok).toBe(false);
-    expect(r.ok === false && r.reason).toBe("missing-meta-json");
-  });
-
-  test("fails with invalid-json when the file is malformed", () => {
-    fs.writeFileSync(path.join(scratch, "meta.json"), "{ not json");
-    const r = validateSkillMeta(scratch);
-    expect(r.ok).toBe(false);
-    expect(r.ok === false && r.reason).toBe("invalid-json");
+    expect(r.ok === false && r.reason).toBe("missing-frontmatter");
   });
 
   test("fails with schema-violation for empty description (the impeccable case)", () => {
     fs.writeFileSync(
-      path.join(scratch, "meta.json"),
-      JSON.stringify({ name: "my-skill", description: "" }),
+      path.join(scratch, "SKILL.md"),
+      "---\nname: my-skill\ndescription: \"\"\n---\n",
     );
     const r = validateSkillMeta(scratch);
     expect(r.ok).toBe(false);
@@ -228,20 +190,21 @@ describe("validateSkillMeta", () => {
     }
   });
 
-  test("fails with schema-violation for missing required name", () => {
+  test("fails with missing-frontmatter for missing required name", () => {
+    // Frontmatter without name doesn't satisfy the name+description guard.
     fs.writeFileSync(
-      path.join(scratch, "meta.json"),
-      JSON.stringify({ description: "no name" }),
+      path.join(scratch, "SKILL.md"),
+      "---\ndescription: no name\n---\n",
     );
     const r = validateSkillMeta(scratch);
     expect(r.ok).toBe(false);
-    expect(r.ok === false && r.reason).toBe("schema-violation");
+    expect(r.ok === false && r.reason).toBe("missing-frontmatter");
   });
 
   test("fails with schema-violation for name with uppercase characters", () => {
     fs.writeFileSync(
-      path.join(scratch, "meta.json"),
-      JSON.stringify({ name: "MySkill", description: "x" }),
+      path.join(scratch, "SKILL.md"),
+      "---\nname: MySkill\ndescription: x\n---\n",
     );
     const r = validateSkillMeta(scratch);
     expect(r.ok).toBe(false);
