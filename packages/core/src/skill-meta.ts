@@ -205,11 +205,12 @@ export type ValidateSkillMetaResult =
   | { ok: false; reason: "schema-violation"; errors: string[] };
 
 /**
- * Validate `skillDir/meta.json` against the SkillMeta schema.
+ * Validate skill metadata for `skillDir` against the SkillMeta schema.
+ * Prefers SKILL.md frontmatter (primary path); falls back to meta.json as
+ * a tolerant-read shim for skills that haven't migrated yet.
  *
  * Used by `update:skill` (pre-publish gate) and `applyOriginUpdate`
- * (post-mirror gate). Closes the gap reported in
- * `docs/bug-reports/2026-05-19-origin-update-missing-validation.md`.
+ * (post-mirror gate).
  *
  * Returns a discriminated union so callers can render flow-specific
  * UI per failure mode. The `errors` array for `schema-violation`
@@ -217,6 +218,27 @@ export type ValidateSkillMetaResult =
  * fewer than 1 characters" and friends).
  */
 export function validateSkillMeta(skillDir: string): ValidateSkillMetaResult {
+  const validate = compiledValidator();
+
+  // Primary path: validate SKILL.md frontmatter.
+  const fm = parseSkillFrontmatter(path.join(skillDir, "SKILL.md"));
+  if (fm && fm["name"] && fm["description"]) {
+    const fmObj: Record<string, unknown> = {};
+    if (typeof fm["name"] === "string") fmObj["name"] = fm["name"];
+    if (typeof fm["description"] === "string")
+      fmObj["description"] = fm["description"];
+    if (Array.isArray(fm["tags"])) fmObj["tags"] = fm["tags"];
+    if (typeof fm["version"] === "string") fmObj["version"] = fm["version"];
+    if (typeof fm["author"] === "string") fmObj["author"] = fm["author"];
+
+    if (validate(fmObj)) return { ok: true };
+    const errors = (validate.errors ?? []).map(
+      (e) => `${e.instancePath || "(root)"} ${e.message ?? "<unknown>"}`,
+    );
+    return { ok: false, reason: "schema-violation", errors };
+  }
+
+  // Tolerant-read shim: fall back to meta.json for unmigrated skills.
   const metaPath = path.join(skillDir, "meta.json");
   if (!fs.existsSync(metaPath)) {
     return { ok: false, reason: "missing-meta-json" };
@@ -231,7 +253,6 @@ export function validateSkillMeta(skillDir: string): ValidateSkillMetaResult {
       message: (err as Error).message,
     };
   }
-  const validate = compiledValidator();
   if (validate(parsed)) return { ok: true };
   const errors = (validate.errors ?? []).map(
     (e) => `${e.instancePath || "(root)"} ${e.message ?? "<unknown>"}`,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T15:54:19.476Z",
+  "generatedAt": "2026-05-28T20:46:22.152Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -26,7 +26,8 @@
         "message": "chore: align markdown tables, remove trailing blank lines, vendor refresh"
       },
       "bucket": "vendored",
-      "canon": true
+      "canon": true,
+      "drift": true
     }
   ]
 }

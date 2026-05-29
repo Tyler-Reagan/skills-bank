@@ -34,7 +34,8 @@
     "vendor:skill": "tsx scripts/vendor-skill.ts",
     "vendor:refresh": "tsx scripts/vendor-refresh.ts",
     "update:skill": "tsx scripts/update-skill.ts",
-    "migrate:source-markers": "tsx scripts/migrate-source-markers.ts"
+    "migrate:source-markers": "tsx scripts/migrate-source-markers.ts",
+    "migrate:meta-to-frontmatter": "tsx scripts/migrate-meta-to-frontmatter.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
