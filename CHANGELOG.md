@@ -3,6 +3,22 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.15.0
+
+SKILL.md YAML frontmatter becomes the single source of skill metadata, and the drift detector stops flagging skills that install dependencies into their own folder.
+
+### Added
+
+- **SKILL.md YAML frontmatter as the metadata source.** A skill's `name` / `description` / etc. now live in the SKILL.md frontmatter; `meta.json` is synthesized on demand from it for mirrored skills that don't ship one. A `migrate-meta-to-frontmatter` script folds existing `meta.json` files into frontmatter. (#106)
+
+### Changed
+
+- **Frontmatter is now the _sole_ metadata source — the `meta.json` tolerant-read shim is removed.** Skills are read from SKILL.md frontmatter only; the `meta.json` fallback for unmigrated skills is gone. (#107)
+
+### Fixed
+
+- **Drift hash honors the skill's `.gitignore`.** `hashSkillFolder` now excludes paths a skill declares ignorable (e.g. `node_modules/`, build/test output), so a skill that installs dependencies or writes artifacts into its own folder at runtime no longer shows up as "edited". Pruning ignored directories also keeps a heavy `node_modules/` from tripping the 8 MB hash budget. (#108)
+
 ## v1.14.0
 
 Two-tier skill labeling: every skill now has a category and zero-or-more tags, derived automatically from its name and description and fully overridable per-skill from the detail drawer.
