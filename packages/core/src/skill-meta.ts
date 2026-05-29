@@ -200,14 +200,11 @@ export function synthesizeSkillMeta(
 
 export type ValidateSkillMetaResult =
   | { ok: true }
-  | { ok: false; reason: "missing-meta-json" }
-  | { ok: false; reason: "invalid-json"; message: string }
+  | { ok: false; reason: "missing-frontmatter" }
   | { ok: false; reason: "schema-violation"; errors: string[] };
 
 /**
- * Validate skill metadata for `skillDir` against the SkillMeta schema.
- * Prefers SKILL.md frontmatter (primary path); falls back to meta.json as
- * a tolerant-read shim for skills that haven't migrated yet.
+ * Validate SKILL.md frontmatter for `skillDir` against the SkillMeta schema.
  *
  * Used by `update:skill` (pre-publish gate) and `applyOriginUpdate`
  * (post-mirror gate).
@@ -218,42 +215,26 @@ export type ValidateSkillMetaResult =
  * fewer than 1 characters" and friends).
  */
 export function validateSkillMeta(skillDir: string): ValidateSkillMetaResult {
-  const validate = compiledValidator();
-
-  // Primary path: validate SKILL.md frontmatter.
   const fm = parseSkillFrontmatter(path.join(skillDir, "SKILL.md"));
-  if (fm && fm["name"] && fm["description"]) {
-    const fmObj: Record<string, unknown> = {};
-    if (typeof fm["name"] === "string") fmObj["name"] = fm["name"];
-    if (typeof fm["description"] === "string")
-      fmObj["description"] = fm["description"];
-    if (Array.isArray(fm["tags"])) fmObj["tags"] = fm["tags"];
-    if (typeof fm["version"] === "string") fmObj["version"] = fm["version"];
-    if (typeof fm["author"] === "string") fmObj["author"] = fm["author"];
-
-    if (validate(fmObj)) return { ok: true };
-    const errors = (validate.errors ?? []).map(
-      (e) => `${e.instancePath || "(root)"} ${e.message ?? "<unknown>"}`,
-    );
-    return { ok: false, reason: "schema-violation", errors };
+  if (
+    !fm ||
+    typeof fm["name"] !== "string" ||
+    !fm["name"] ||
+    typeof fm["description"] !== "string"
+  ) {
+    return { ok: false, reason: "missing-frontmatter" };
   }
 
-  // Tolerant-read shim: fall back to meta.json for unmigrated skills.
-  const metaPath = path.join(skillDir, "meta.json");
-  if (!fs.existsSync(metaPath)) {
-    return { ok: false, reason: "missing-meta-json" };
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(fs.readFileSync(metaPath, "utf8"));
-  } catch (err) {
-    return {
-      ok: false,
-      reason: "invalid-json",
-      message: (err as Error).message,
-    };
-  }
-  if (validate(parsed)) return { ok: true };
+  const fmObj: Record<string, unknown> = {};
+  if (typeof fm["name"] === "string") fmObj["name"] = fm["name"];
+  if (typeof fm["description"] === "string")
+    fmObj["description"] = fm["description"];
+  if (Array.isArray(fm["tags"])) fmObj["tags"] = fm["tags"];
+  if (typeof fm["version"] === "string") fmObj["version"] = fm["version"];
+  if (typeof fm["author"] === "string") fmObj["author"] = fm["author"];
+
+  const validate = compiledValidator();
+  if (validate(fmObj)) return { ok: true };
   const errors = (validate.errors ?? []).map(
     (e) => `${e.instancePath || "(root)"} ${e.message ?? "<unknown>"}`,
   );

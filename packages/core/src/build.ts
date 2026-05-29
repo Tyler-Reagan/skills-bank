@@ -242,14 +242,12 @@ function buildOneEntry(
   validate: SchemaValidator | null,
   opts: BuildIndexOptions,
 ): RegistryEntry | null {
-  const metaJsonPath = path.join(skillDir, "meta.json");
   const skillMdPath = path.join(skillDir, "SKILL.md");
-  const hasMetaJson = fs.existsSync(metaJsonPath);
   const hasSkillMd = fs.existsSync(skillMdPath);
   const warnings: string[] = [];
 
-  if (!hasMetaJson && !hasSkillMd) {
-    // Folder with neither SKILL.md nor meta.json isn't really a skill.
+  if (!hasSkillMd) {
+    // Folder without SKILL.md isn't a skill.
     return null;
   }
 
@@ -298,45 +296,6 @@ function buildOneEntry(
           : {}),
         ...(typeof fm["author"] === "string" ? { author: fm["author"] } : {}),
       };
-    }
-  }
-
-  // Tolerant-read shim: fall back to meta.json when frontmatter is absent
-  // or lacks required fields. Will be removed after external registries
-  // have migrated to SKILL.md frontmatter.
-  if ((!meta.name || !meta.description) && hasMetaJson) {
-    try {
-      const raw = JSON.parse(fs.readFileSync(metaJsonPath, "utf8")) as Record<
-        string,
-        unknown
-      >;
-      if (!meta.name && typeof raw["name"] === "string")
-        meta.name = raw["name"];
-      if (!meta.description && typeof raw["description"] === "string")
-        meta.description = raw["description"];
-      if (!meta.tags && Array.isArray(raw["tags"]))
-        meta.tags = raw["tags"] as string[];
-      if (!meta.version && typeof raw["version"] === "string")
-        meta.version = raw["version"];
-      if (!meta.author && typeof raw["author"] === "string")
-        meta.author = raw["author"];
-
-      if (validate && !validate(raw)) {
-        if (opts.strict) return null;
-        for (const e of validate.errors ?? []) {
-          if (
-            e.keyword === "required" &&
-            (e.params?.["missingProperty"] === "name" ||
-              e.params?.["missingProperty"] === "description")
-          ) {
-            continue;
-          }
-          warnings.push(`meta.json ${e.instancePath || "/"}: ${e.message}`);
-        }
-      }
-    } catch (err) {
-      warnings.push(`meta.json: ${(err as Error).message}`);
-      if (opts.strict) return null;
     }
   }
 

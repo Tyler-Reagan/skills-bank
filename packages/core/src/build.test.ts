@@ -37,61 +37,32 @@ afterEach(() => {
 });
 
 describe("buildRegistryIndex — description warning convergence", () => {
-  test("post-import on-disk shape (description present in meta.json + SKILL.md frontmatter) emits zero description-related warnings", () => {
-    // Verifies Parts 1 and 2 in combination: after manifest import,
-    // restoreAuxState has populated meta.json with the description
-    // recovered from SKILL.md frontmatter. The build pass must then
-    // emit no description-related warnings — neither the AJV
-    // `required`-keyword complaint (suppressed by Part 2) nor the
-    // human-readable "missing description" (now actually satisfied).
+  test("SKILL.md frontmatter with name + description emits zero warnings", () => {
     const dir = path.join(registryRoot, "skills", "personal", "alpha");
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
       path.join(dir, "SKILL.md"),
       "---\nname: alpha\ndescription: A real description\n---\n# alpha\n",
     );
-    fs.writeFileSync(
-      path.join(dir, "meta.json"),
-      JSON.stringify(
-        { name: "alpha", description: "A real description" },
-        null,
-        2,
-      ),
-    );
 
     const index = buildRegistryIndex(registryRoot);
     const entry = index.entries.find((e) => e.name === "alpha");
     expect(entry).toBeDefined();
     expect(entry!.description).toBe("A real description");
-    const warnings = entry!.warnings ?? [];
-    const descriptionWarnings = warnings.filter((w) =>
-      w.toLowerCase().includes("description"),
-    );
-    expect(descriptionWarnings).toEqual([]);
+    expect(entry!.warnings ?? []).toEqual([]);
   });
 
-  test("genuinely missing description (no frontmatter recovery) emits exactly one warning", () => {
-    // With both fixes in place, a skill that truly has no description
-    // anywhere should produce a single human-readable warning rather
-    // than the AJV + human-readable duo it used to.
+  test("SKILL.md without frontmatter emits missing-name and missing-description warnings", () => {
     const dir = path.join(registryRoot, "skills", "personal", "beta");
     fs.mkdirSync(dir, { recursive: true });
-    // SKILL.md without frontmatter description so the fallback can't
-    // recover anything.
     fs.writeFileSync(path.join(dir, "SKILL.md"), "# beta\n");
-    fs.writeFileSync(
-      path.join(dir, "meta.json"),
-      JSON.stringify({ name: "beta" }, null, 2),
-    );
 
     const index = buildRegistryIndex(registryRoot);
     const entry = index.entries.find((e) => e.name === "beta");
     expect(entry).toBeDefined();
     const warnings = entry!.warnings ?? [];
-    const descriptionWarnings = warnings.filter((w) =>
-      w.toLowerCase().includes("description"),
-    );
-    expect(descriptionWarnings).toEqual(["missing description"]);
+    expect(warnings).toContain("missing name (using folder name)");
+    expect(warnings).toContain("missing description");
   });
 
   test("non-required AJV violations still emit (regression guard for the filter)", () => {
