@@ -160,6 +160,90 @@ describe("hashSkillFolder", () => {
   });
 });
 
+describe("hashSkillFolder — honors skill .gitignore", () => {
+  test("ignored runtime dir does not affect the hash", () => {
+    // Same tracked content; only "b" has a node_modules/ dir that the
+    // .gitignore excludes. This is the pretty-mermaid case: the skill
+    // npm/pnpm-installs deps into its own folder at runtime.
+    writeFile("a/SKILL.md", "# x");
+    writeFile("a/.gitignore", "node_modules/\n");
+    writeFile("b/SKILL.md", "# x");
+    writeFile("b/.gitignore", "node_modules/\n");
+    writeFile("b/node_modules/dep/index.js", "module.exports = 1;");
+    writeFile("b/node_modules/dep/package.json", '{"name":"dep"}');
+    const ha = hashSkillFolder(path.join(scratch, "a"));
+    const hb = hashSkillFolder(path.join(scratch, "b"));
+    expect(ha).toBe(hb);
+    expect(ha).not.toBeNull();
+  });
+
+  test("installing into an ignored dir does not flip a skill to drifted", () => {
+    // Baseline hash, then simulate a runtime install, then re-hash.
+    writeFile("s/SKILL.md", "# x");
+    writeFile("s/.gitignore", "node_modules/\n*.svg\n");
+    const before = hashSkillFolder(path.join(scratch, "s"));
+    writeFile("s/node_modules/big/index.js", "x".repeat(1000));
+    writeFile("s/diagram.svg", "<svg/>"); // also-ignored build artifact
+    const after = hashSkillFolder(path.join(scratch, "s"));
+    expect(after).toBe(before);
+  });
+
+  test("ignored file is excluded but a negated (un-ignored) file still counts", () => {
+    writeFile("a/SKILL.md", "# x");
+    writeFile("a/.gitignore", "*.txt\n!keep.txt\n");
+    writeFile("b/SKILL.md", "# x");
+    writeFile("b/.gitignore", "*.txt\n!keep.txt\n");
+    writeFile("b/scratch.txt", "ignored");
+    const ha = hashSkillFolder(path.join(scratch, "a"));
+    const hb = hashSkillFolder(path.join(scratch, "b"));
+    expect(ha).toBe(hb); // scratch.txt excluded → no drift
+
+    // The negated keep.txt is tracked, so adding it DOES shift the hash.
+    writeFile("b/keep.txt", "tracked");
+    expect(hashSkillFolder(path.join(scratch, "b"))).not.toBe(ha);
+  });
+
+  test("editing tracked content still drifts even with a .gitignore present", () => {
+    writeFile("a/SKILL.md", "# hello");
+    writeFile("a/.gitignore", "node_modules/\n");
+    writeFile("b/SKILL.md", "# goodbye");
+    writeFile("b/.gitignore", "node_modules/\n");
+    expect(hashSkillFolder(path.join(scratch, "a"))).not.toBe(
+      hashSkillFolder(path.join(scratch, "b")),
+    );
+  });
+
+  test("editing the .gitignore itself drifts (it is never self-ignored)", () => {
+    writeFile("a/SKILL.md", "# x");
+    writeFile("a/.gitignore", "node_modules/\n");
+    writeFile("b/SKILL.md", "# x");
+    writeFile("b/.gitignore", "node_modules/\ndist/\n");
+    expect(hashSkillFolder(path.join(scratch, "a"))).not.toBe(
+      hashSkillFolder(path.join(scratch, "b")),
+    );
+  });
+
+  test("no .gitignore → unchanged behavior (nothing excluded)", () => {
+    // Without a .gitignore, a node_modules dir is hashed like any other
+    // content, so its presence shifts the hash.
+    writeFile("a/SKILL.md", "# x");
+    writeFile("b/SKILL.md", "# x");
+    writeFile("b/node_modules/dep/index.js", "1");
+    expect(hashSkillFolder(path.join(scratch, "a"))).not.toBe(
+      hashSkillFolder(path.join(scratch, "b")),
+    );
+  });
+
+  test("an ignored dir is pruned, keeping a huge skill under the byte budget", () => {
+    // 9 MB of deps inside an ignored node_modules/ would blow the 8 MB
+    // budget (→ null) if walked; pruning keeps the hash computable.
+    writeFile("s/SKILL.md", "# ok");
+    writeFile("s/.gitignore", "node_modules/\n");
+    writeFile("s/node_modules/blob.bin", Buffer.alloc(9 * 1024 * 1024, 0x41));
+    expect(typeof hashSkillFolder(path.join(scratch, "s"))).toBe("string");
+  });
+});
+
 describe("runtime state sidecar (.skills-bank-runtime.json)", () => {
   test("read returns empty object when sidecar is missing", () => {
     fs.mkdirSync(path.join(scratch, "a"), { recursive: true });
