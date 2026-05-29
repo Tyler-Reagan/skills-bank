@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T20:46:22.152Z",
+  "generatedAt": "2026-05-29T01:16:04.151Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -21,9 +21,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "580ab55955044dc1f92d6d643a14efe433e482f4",
-        "date": "2026-05-27 07:43:57 -0700",
-        "message": "chore: align markdown tables, remove trailing blank lines, vendor refresh"
+        "sha": "2908cfe74b500014bfda3229240abc520180597a",
+        "date": "2026-05-28 18:11:12 -0700",
+        "message": "feat: consolidate skill metadata into SKILL.md YAML frontmatter (#100) (#106)"
       },
       "bucket": "vendored",
       "canon": true,

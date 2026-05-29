@@ -61,18 +61,15 @@ function blobResponse(content: string): Response {
 
 describe("installSkillFromGithub", () => {
   test("success: mirrors + stamps marker + baselines hash", async () => {
+    const skillMdContent =
+      "---\nname: alpha\ndescription: test\n---\n# alpha\n";
     let call = 0;
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => {
         call++;
-        if (call === 1)
-          return treeResponse("skills/alpha", ["SKILL.md", "meta.json"]);
-        if (call === 2) return blobResponse("# alpha");
-        if (call === 3)
-          return blobResponse(
-            JSON.stringify({ name: "alpha", description: "test" }),
-          );
+        if (call === 1) return treeResponse("skills/alpha", ["SKILL.md"]);
+        if (call === 2) return blobResponse(skillMdContent);
         throw new Error(`unexpected call #${call}`);
       }),
     );
@@ -92,7 +89,7 @@ describe("installSkillFromGithub", () => {
     const destDir = path.join(registryRoot, "skills", "personal", "alpha");
     expect(fs.existsSync(path.join(destDir, "SKILL.md"))).toBe(true);
     expect(fs.readFileSync(path.join(destDir, "SKILL.md"), "utf8")).toBe(
-      "# alpha",
+      skillMdContent,
     );
     const marker = JSON.parse(
       fs.readFileSync(path.join(destDir, ".skills-bank.json"), "utf8"),
@@ -262,18 +259,17 @@ describe("installSkillFromGithub", () => {
     expect(r.rateLimit?.limit).toBe(60);
   });
 
-  test("canonical-name rename: meta.json name differs from folder basename", async () => {
+  test("canonical-name rename: frontmatter name differs from folder basename", async () => {
     let call = 0;
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => {
         call++;
         if (call === 1)
-          return treeResponse("skills/folder-name", ["SKILL.md", "meta.json"]);
-        if (call === 2) return blobResponse("# x");
-        if (call === 3)
+          return treeResponse("skills/folder-name", ["SKILL.md"]);
+        if (call === 2)
           return blobResponse(
-            JSON.stringify({ name: "canonical-name", description: "x" }),
+            "---\nname: canonical-name\ndescription: x\n---\n# x\n",
           );
         throw new Error(`unexpected call #${call}`);
       }),

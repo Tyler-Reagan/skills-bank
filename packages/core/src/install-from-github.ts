@@ -125,7 +125,7 @@ export async function installSkillFromGithub(
     return {
       ok: false,
       reason: "no-skill-md",
-      message: `${opts.repo}/${folderPath} doesn't contain a SKILL.md or meta.json. Make sure the URL points at a skill folder.`,
+      message: `${opts.repo}/${folderPath} doesn't contain a SKILL.md with frontmatter. Make sure the URL points at a skill folder.`,
     };
   }
 

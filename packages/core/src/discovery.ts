@@ -5,10 +5,9 @@ import { readSkillMeta } from "./registry.js";
 /**
  * Per-skill discovery output from `discoverSkillsInTree`. Captures
  * just enough to mount the skill into the active registry root:
- * the canonical name (from meta.json / SKILL.md frontmatter, with
- * folder basename as the fallback), the source-tree location, and
- * the path relative to the walk root so callers can stamp
- * `upstream.skillPath` round-trip-safely.
+ * the canonical name (from SKILL.md frontmatter, with folder basename
+ * as fallback), the source-tree location, and the path relative to
+ * the walk root so callers can stamp `upstream.skillPath` round-trip-safely.
  */
 export interface SkillDiscovery {
   /** Canonical skill name. */
@@ -17,8 +16,8 @@ export interface SkillDiscovery {
   sourceDir: string;
   /** Path relative to the walk root (no leading slash). */
   relPath: string;
-  /** Path to SKILL.md within `sourceDir`, or null when only meta.json is present. */
-  skillMdRelPath: string | null;
+  /** Path to SKILL.md within `sourceDir`. */
+  skillMdRelPath: string;
 }
 
 export interface DiscoveryReport {
@@ -115,14 +114,11 @@ export function discoverSkillsInTree(
     if (depth > maxDepth) return;
 
     const skillMd = path.join(dir, "SKILL.md");
-    const metaJson = path.join(dir, "meta.json");
     const hasSkillMd = fs.existsSync(skillMd) && fs.statSync(skillMd).isFile();
-    const hasMetaJson =
-      fs.existsSync(metaJson) && fs.statSync(metaJson).isFile();
 
     // Recognized as a skill folder — emit + STOP descending. Anything
     // skill-shaped underneath is surfaced via `nested`.
-    if ((hasSkillMd || hasMetaJson) && relDir !== "") {
+    if (hasSkillMd && relDir !== "") {
       const meta = readSkillMeta(dir);
       const folderBase = path.basename(dir);
       const name = meta?.name ?? folderBase;
@@ -130,7 +126,7 @@ export function discoverSkillsInTree(
         name,
         sourceDir: dir,
         relPath: relDir,
-        skillMdRelPath: hasSkillMd ? path.join(relDir, "SKILL.md") : null,
+        skillMdRelPath: path.join(relDir, "SKILL.md"),
       });
       collectNested(dir, relDir);
       return;
@@ -165,8 +161,7 @@ export function discoverSkillsInTree(
       if (DEFAULT_SKIP_DIRS.has(ent.name) || ent.name.startsWith(".")) continue;
       const innerDir = path.join(outerDir, ent.name);
       const innerSkillMd = path.join(innerDir, "SKILL.md");
-      const innerMetaJson = path.join(innerDir, "meta.json");
-      if (fs.existsSync(innerSkillMd) || fs.existsSync(innerMetaJson)) {
+      if (fs.existsSync(innerSkillMd)) {
         nested.push({
           outer: outerRel,
           inner: path.posix.join(outerRel, ent.name),

@@ -36,7 +36,7 @@ describe("discoverSkillsInTree", () => {
   test("flat remote: each top-level folder with SKILL.md is one discovery", () => {
     writeSkill("alpha");
     writeSkill("beta");
-    writeSkill("gamma", { "meta.json": JSON.stringify({ name: "gamma" }) });
+    writeSkill("gamma");
 
     const r = discoverSkillsInTree(scratch);
     expect(r.discoveries.map((d) => d.name)).toEqual([
@@ -47,7 +47,7 @@ describe("discoverSkillsInTree", () => {
     expect(r.collisions).toEqual([]);
     expect(r.nested).toEqual([]);
     expect(r.discoveries[0]!.relPath).toBe("alpha");
-    expect(r.discoveries[2]!.skillMdRelPath).toBeNull();
+    expect(r.discoveries[2]!.skillMdRelPath).toBe("gamma/SKILL.md");
   });
 
   test("bucketed remote: walker descends through skills/{personal,vendored}/", () => {
@@ -79,15 +79,15 @@ describe("discoverSkillsInTree", () => {
     );
   });
 
-  test("name from meta.json overrides folder basename", () => {
+  test("name from SKILL.md frontmatter overrides folder basename", () => {
     writeSkill("folder-name", {
-      "SKILL.md": "# x",
-      "meta.json": JSON.stringify({ name: "meta-name", description: "x" }),
+      "SKILL.md":
+        "---\nname: frontmatter-name\ndescription: x\n---\n# frontmatter-name\n",
     });
 
     const r = discoverSkillsInTree(scratch);
     expect(r.discoveries).toHaveLength(1);
-    expect(r.discoveries[0]!.name).toBe("meta-name");
+    expect(r.discoveries[0]!.name).toBe("frontmatter-name");
     expect(r.discoveries[0]!.sourceDir).toBe(path.join(scratch, "folder-name"));
   });
 
@@ -111,14 +111,12 @@ describe("discoverSkillsInTree", () => {
     expect(r.nested).toEqual([{ outer: "outer", inner: "outer/inner" }]);
   });
 
-  test("meta.json-only folder is discovered with null skillMdRelPath", () => {
-    writeSkill("alpha", {
-      "meta.json": JSON.stringify({ name: "alpha", description: "x" }),
-    });
+  test("SKILL.md folder discovered with correct skillMdRelPath", () => {
+    writeSkill("alpha");
 
     const r = discoverSkillsInTree(scratch);
     expect(r.discoveries).toHaveLength(1);
-    expect(r.discoveries[0]!.skillMdRelPath).toBeNull();
+    expect(r.discoveries[0]!.skillMdRelPath).toBe("alpha/SKILL.md");
   });
 
   test(".git, node_modules, dist, build, dot-dirs all skipped", () => {
