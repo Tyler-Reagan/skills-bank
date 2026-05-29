@@ -7,6 +7,7 @@ import { readUpstreamCanonNames } from "./canon.js";
 import { readExternalRegistry } from "./external.js";
 import { hashSkillFolder, readSyncedHash } from "./heal.js";
 import { readHiddenCanonNames } from "./hide.js";
+import { parseSkillFrontmatter } from "./skill-meta.js";
 import { readSkillMeta, walkSkills } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import { readRuntimeState } from "./heal.js";
@@ -248,45 +249,81 @@ function buildOneEntry(
   const warnings: string[] = [];
 
   if (!hasMetaJson && !hasSkillMd) {
-    if (opts.strict) return null;
-    // Folder with neither meta.json nor SKILL.md isn't really a skill.
-    // Don't surface it.
+    // Folder with neither SKILL.md nor meta.json isn't really a skill.
     return null;
   }
 
   let meta: Partial<SkillMeta> = {};
-  let metaParseFailed = false;
 
-  if (hasMetaJson) {
+  // Primary path: SKILL.md frontmatter. Uses parseSkillFrontmatter so
+  // block/inline tag arrays are captured (readSkillMdFrontmatter only
+  // returns Record<string, string>).
+  if (hasSkillMd) {
+    const fm = parseSkillFrontmatter(skillMdPath);
+    if (fm && fm["name"] && fm["description"]) {
+      const rawFm: Record<string, unknown> = {};
+      if (typeof fm["name"] === "string") rawFm["name"] = fm["name"];
+      if (typeof fm["description"] === "string")
+        rawFm["description"] = fm["description"];
+      if (Array.isArray(fm["tags"])) rawFm["tags"] = fm["tags"];
+      if (typeof fm["version"] === "string") rawFm["version"] = fm["version"];
+      if (typeof fm["author"] === "string") rawFm["author"] = fm["author"];
+
+      if (validate && !validate(rawFm)) {
+        if (opts.strict) return null;
+        for (const e of validate.errors ?? []) {
+          if (
+            e.keyword === "required" &&
+            (e.params?.["missingProperty"] === "name" ||
+              e.params?.["missingProperty"] === "description")
+          ) {
+            continue;
+          }
+          warnings.push(
+            `SKILL.md frontmatter ${e.instancePath || "/"}: ${e.message}`,
+          );
+        }
+      }
+
+      meta = {
+        ...(typeof fm["name"] === "string" ? { name: fm["name"] } : {}),
+        ...(typeof fm["description"] === "string"
+          ? { description: fm["description"] }
+          : {}),
+        ...(Array.isArray(fm["tags"]) && fm["tags"].length > 0
+          ? { tags: fm["tags"] as string[] }
+          : {}),
+        ...(typeof fm["version"] === "string"
+          ? { version: fm["version"] }
+          : {}),
+        ...(typeof fm["author"] === "string" ? { author: fm["author"] } : {}),
+      };
+    }
+  }
+
+  // Tolerant-read shim: fall back to meta.json when frontmatter is absent
+  // or lacks required fields. Will be removed after external registries
+  // have migrated to SKILL.md frontmatter.
+  if ((!meta.name || !meta.description) && hasMetaJson) {
     try {
       const raw = JSON.parse(fs.readFileSync(metaJsonPath, "utf8")) as Record<
         string,
         unknown
       >;
-      meta = {
-        ...(typeof raw["name"] === "string" ? { name: raw["name"] } : {}),
-        ...(typeof raw["description"] === "string"
-          ? { description: raw["description"] }
-          : {}),
-        ...(Array.isArray(raw["tags"])
-          ? { tags: raw["tags"] as string[] }
-          : {}),
-        ...(typeof raw["version"] === "string"
-          ? { version: raw["version"] }
-          : {}),
-        ...(typeof raw["author"] === "string" ? { author: raw["author"] } : {}),
-      };
+      if (!meta.name && typeof raw["name"] === "string")
+        meta.name = raw["name"];
+      if (!meta.description && typeof raw["description"] === "string")
+        meta.description = raw["description"];
+      if (!meta.tags && Array.isArray(raw["tags"]))
+        meta.tags = raw["tags"] as string[];
+      if (!meta.version && typeof raw["version"] === "string")
+        meta.version = raw["version"];
+      if (!meta.author && typeof raw["author"] === "string")
+        meta.author = raw["author"];
+
       if (validate && !validate(raw)) {
         if (opts.strict) return null;
         for (const e of validate.errors ?? []) {
-          // Suppress AJV `required`-keyword violations for `name` and
-          // `description`: those two fields are recovered via the
-          // SKILL.md fallback below, and the human-readable warnings
-          // emitted at the bottom of this function (`missing name`,
-          // `missing description`) already convey the same complaint
-          // in a single voice. Letting AJV also complain creates a
-          // duplicate warning per skill. Type mismatches, pattern
-          // violations, additional-property errors, etc. still emit.
           if (
             e.keyword === "required" &&
             (e.params?.["missingProperty"] === "name" ||
@@ -298,27 +335,11 @@ function buildOneEntry(
         }
       }
     } catch (err) {
-      metaParseFailed = true;
       warnings.push(`meta.json: ${(err as Error).message}`);
       if (opts.strict) return null;
     }
   }
 
-  // Fall back to SKILL.md frontmatter for missing fields.
-  if (!meta.name || !meta.description || metaParseFailed) {
-    const fm = readSkillMeta(skillDir);
-    if (fm) {
-      if (!meta.name && fm.name) meta.name = fm.name;
-      if (!meta.description && fm.description)
-        meta.description = fm.description;
-      if (!meta.version && fm.version) meta.version = fm.version;
-      if (!meta.author && fm.author) meta.author = fm.author;
-    }
-  }
-
-  if (!hasMetaJson) {
-    warnings.push("missing meta.json (using SKILL.md frontmatter)");
-  }
   if (!meta.name) {
     warnings.push("missing name (using folder name)");
     meta.name = folderName;

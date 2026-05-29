@@ -69,9 +69,13 @@ function writeSkill(
 ): string {
   const dir = path.join(registryRoot, "skills", bucket, name);
   fs.mkdirSync(dir, { recursive: true });
+  const tagLine =
+    opts.tags && opts.tags.length > 0
+      ? `tags: [${opts.tags.join(", ")}]\n`
+      : "";
   fs.writeFileSync(
     path.join(dir, "SKILL.md"),
-    `---\nname: ${name}\ndescription: ${opts.description ?? "test skill"}\n---\n# ${name}\n`,
+    `---\nname: ${name}\ndescription: ${opts.description ?? "test skill"}\n${tagLine}---\n# ${name}\n`,
   );
   const meta: Record<string, unknown> = {
     name,

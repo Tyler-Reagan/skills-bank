@@ -98,15 +98,12 @@ describe("buildRegistryIndex — description warning convergence", () => {
     // Pattern violation on `name` is keyword:"pattern", not "required" —
     // the suppression filter must not swallow it. (Schema requires
     // lowercase alphanum + hyphen; uppercase trips it.)
+    // Frontmatter is the primary source, so the violation is placed there.
     const dir = path.join(registryRoot, "skills", "personal", "gamma");
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
       path.join(dir, "SKILL.md"),
-      "---\nname: gamma\ndescription: ok\n---\n# gamma\n",
-    );
-    fs.writeFileSync(
-      path.join(dir, "meta.json"),
-      JSON.stringify({ name: "GAMMA-UPPERCASE", description: "ok" }, null, 2),
+      "---\nname: GAMMA-UPPERCASE\ndescription: ok\n---\n# gamma\n",
     );
 
     const index = buildRegistryIndex(registryRoot);
@@ -116,6 +113,8 @@ describe("buildRegistryIndex — description warning convergence", () => {
     expect(entry).toBeDefined();
     const warnings = entry!.warnings ?? [];
     // At least one AJV warning about the name pattern survived.
-    expect(warnings.some((w) => w.startsWith("meta.json"))).toBe(true);
+    expect(warnings.some((w) => w.startsWith("SKILL.md frontmatter"))).toBe(
+      true,
+    );
   });
 });

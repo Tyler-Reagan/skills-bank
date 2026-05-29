@@ -1,59 +1,44 @@
 #!/usr/bin/env tsx
-import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
-import { walkSkills } from "../packages/core/src/index.js";
+import { walkSkills, validateSkillMeta } from "../packages/core/src/index.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..");
-const skillsDir = path.join(repoRoot, "skills");
-const schemaPath = path.join(repoRoot, "docs", "meta-schema.json");
-
-const ajv = new Ajv({ allErrors: true, strict: false });
-addFormats(ajv);
-const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
-const validate = ajv.compile(schema);
 
 let failures = 0;
 let checked = 0;
 
-if (!fs.existsSync(skillsDir)) {
-  console.log("skills/ directory missing; nothing to validate.");
-  process.exit(0);
-}
-
 const skillRefs = walkSkills(repoRoot).filter(
   (ref) => ref.bucket === "vendored",
 );
+
+if (skillRefs.length === 0) {
+  console.log("skills/vendored/ is empty or missing; nothing to validate.");
+  process.exit(0);
+}
+
 for (const ref of skillRefs) {
-  const folder = ref.dir;
-  const metaPath = path.join(folder, "meta.json");
-  const rel = path.relative(repoRoot, folder);
-  if (!fs.existsSync(metaPath)) {
-    console.error(`✖ ${rel}: missing meta.json`);
-    failures++;
+  const rel = path.relative(repoRoot, ref.dir);
+  const result = validateSkillMeta(ref.dir);
+  if (result.ok) {
+    checked++;
+    console.log(`✓ ${rel}`);
     continue;
   }
-  let data: unknown;
-  try {
-    data = JSON.parse(fs.readFileSync(metaPath, "utf8"));
-  } catch (err) {
-    console.error(`✖ ${rel}: invalid JSON (${(err as Error).message})`);
-    failures++;
-    continue;
-  }
-  checked++;
-  if (!validate(data)) {
+  failures++;
+  if (result.reason === "missing-meta-json") {
+    console.error(
+      `✖ ${rel}: missing SKILL.md frontmatter (and no meta.json fallback)`,
+    );
+  } else if (result.reason === "invalid-json") {
+    console.error(`✖ ${rel}: invalid JSON in meta.json (${result.message})`);
+  } else {
     console.error(`✖ ${rel}: schema violations`);
-    for (const e of validate.errors ?? []) {
-      console.error(`    ${e.instancePath} ${e.message}`);
+    for (const e of result.errors) {
+      console.error(`    ${e}`);
     }
-    failures++;
-    continue;
   }
-  console.log(`✓ ${rel}`);
 }
 
 console.log();

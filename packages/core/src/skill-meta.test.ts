@@ -154,7 +154,40 @@ describe("synthesizeSkillMeta", () => {
 });
 
 describe("validateSkillMeta", () => {
-  test("passes a well-formed meta.json", () => {
+  test("passes a well-formed SKILL.md frontmatter (primary path)", () => {
+    fs.writeFileSync(
+      path.join(scratch, "SKILL.md"),
+      "---\nname: my-skill\ndescription: A helpful skill\nversion: 1.0.0\ntags: [foo]\n---\nbody\n",
+    );
+    expect(validateSkillMeta(scratch)).toEqual({ ok: true });
+  });
+
+  test("frontmatter takes precedence over meta.json", () => {
+    // SKILL.md has valid frontmatter; meta.json has malformed JSON.
+    // Should pass because frontmatter is read first and is valid.
+    fs.writeFileSync(
+      path.join(scratch, "SKILL.md"),
+      "---\nname: my-skill\ndescription: A helpful skill\n---\nbody\n",
+    );
+    fs.writeFileSync(path.join(scratch, "meta.json"), "{ not json");
+    expect(validateSkillMeta(scratch)).toEqual({ ok: true });
+  });
+
+  test("fails with schema-violation when frontmatter has an invalid field", () => {
+    fs.writeFileSync(
+      path.join(scratch, "SKILL.md"),
+      "---\nname: MySkill\ndescription: ok\n---\n",
+    );
+    const r = validateSkillMeta(scratch);
+    expect(r.ok).toBe(false);
+    if (r.ok === false && r.reason === "schema-violation") {
+      expect(r.errors.join(" ")).toMatch(/name/);
+    } else {
+      throw new Error("expected schema-violation");
+    }
+  });
+
+  test("passes a well-formed meta.json when no frontmatter exists (shim)", () => {
     fs.writeFileSync(
       path.join(scratch, "meta.json"),
       JSON.stringify({
@@ -167,7 +200,7 @@ describe("validateSkillMeta", () => {
     expect(validateSkillMeta(scratch)).toEqual({ ok: true });
   });
 
-  test("fails with missing-meta-json when the file doesn't exist", () => {
+  test("fails with missing-meta-json when neither frontmatter nor meta.json exists", () => {
     const r = validateSkillMeta(scratch);
     expect(r.ok).toBe(false);
     expect(r.ok === false && r.reason).toBe("missing-meta-json");

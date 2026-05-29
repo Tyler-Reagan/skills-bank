@@ -90,18 +90,12 @@ export function readSkillMdFrontmatter(
 }
 
 /**
- * Reads SkillMeta for a skill folder. Prefers meta.json; falls back to YAML
- * frontmatter in SKILL.md. Returns null if neither is parseable.
+ * Reads SkillMeta for a skill folder. Prefers SKILL.md frontmatter (primary
+ * path); falls back to meta.json as a tolerant-read shim for external
+ * registries that haven't migrated yet. Returns null if neither is parseable.
  */
 export function readSkillMeta(skillDir: string): SkillMeta | null {
-  const metaPath = path.join(skillDir, "meta.json");
-  if (fs.existsSync(metaPath)) {
-    try {
-      return JSON.parse(fs.readFileSync(metaPath, "utf8")) as SkillMeta;
-    } catch {
-      // fall through
-    }
-  }
+  // Primary path: SKILL.md frontmatter.
   const fm = readSkillMdFrontmatter(skillDir);
   if (fm && fm["name"] && fm["description"]) {
     return {
@@ -110,6 +104,16 @@ export function readSkillMeta(skillDir: string): SkillMeta | null {
       ...(fm["version"] ? { version: fm["version"] } : {}),
       ...(fm["author"] ? { author: fm["author"] } : {}),
     };
+  }
+  // Tolerant-read shim: fall back to meta.json for registries that
+  // haven't migrated. Will be dropped in a future minor.
+  const metaPath = path.join(skillDir, "meta.json");
+  if (fs.existsSync(metaPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(metaPath, "utf8")) as SkillMeta;
+    } catch {
+      // fall through
+    }
   }
   return null;
 }
