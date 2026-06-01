@@ -88,4 +88,80 @@ describe("readSkillMdFrontmatter — block scalars", () => {
     const fm = readSkillMdFrontmatter(dir);
     expect(fm!["description"]).toBe("body");
   });
+
+  test("folded-strip block (`>-`) joins with spaces, no trailing newline", () => {
+    // Regression for aqua-diagram, whose description was authored as a
+    // `>-` folded-strip block. Pre-fix the parser captured the literal
+    // indicator `">-"` as the entire description.
+    const dir = writeSkillMd(
+      [
+        "---",
+        "name: aqua-diagram",
+        "description: >-",
+        "  Renders aquatic diagrams from a DSL.",
+        "  Use when the user asks for a tank layout.",
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = readSkillMdFrontmatter(dir);
+    expect(fm!["description"]).toBe(
+      "Renders aquatic diagrams from a DSL. Use when the user asks for a tank layout.",
+    );
+  });
+});
+
+describe("readSkillMdFrontmatter — quoted scalars", () => {
+  test("double-quoted value unescapes inner escaped quotes", () => {
+    // Regression for zmk-debug: a description authored as a YAML
+    // double-quoted scalar with escaped inner quotes. The old parser
+    // stripped the delimiters but left the backslashes, so the value
+    // re-serialized into meta.json as a double-escaped `\\\"`.
+    const dir = writeSkillMd(
+      [
+        "---",
+        "name: zmk-debug",
+        'description: "Diagnoses ZMK failures. Use when the user reports \\"board not found\\" or \\"KeyError\\"."',
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = readSkillMdFrontmatter(dir);
+    expect(fm!["description"]).toBe(
+      'Diagnoses ZMK failures. Use when the user reports "board not found" or "KeyError".',
+    );
+  });
+
+  test("plain scalar containing quotes keeps them verbatim", () => {
+    // The current on-disk zmk-debug form: an unquoted plain scalar that
+    // merely contains double quotes. The old blanket edge-quote strip
+    // is gone, so interior quotes survive and no edge quote is sheared.
+    const dir = writeSkillMd(
+      [
+        "---",
+        "name: zmk-debug",
+        'description: Diagnoses failures. Use when the user reports "board not found", "KeyError".',
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = readSkillMdFrontmatter(dir);
+    expect(fm!["description"]).toBe(
+      'Diagnoses failures. Use when the user reports "board not found", "KeyError".',
+    );
+  });
+
+  test("single-quoted value unescapes doubled quotes", () => {
+    const dir = writeSkillMd(
+      [
+        "---",
+        "name: q",
+        "description: 'It''s a folded layout'",
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = readSkillMdFrontmatter(dir);
+    expect(fm!["description"]).toBe("It's a folded layout");
+  });
 });

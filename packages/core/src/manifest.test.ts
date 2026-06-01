@@ -6,6 +6,7 @@ import {
   coerceManifestToCurrent,
   exportRegistryManifest,
   importRegistryManifest,
+  serializeManifest,
   writeRegistrySnapshot,
   MANIFEST_SCHEMA_VERSION,
   type RegistryManifest,
@@ -767,18 +768,155 @@ describe("coerceManifestToCurrent", () => {
         },
       ],
     };
-    const v3 = coerceManifestToCurrent(v2);
-    expect(v3.schemaVersion).toBe(3);
-    expect(v3.skills[0]!.bucket).toBe("vendored");
-    expect(v3.skills[1]!.bucket).toBe("personal");
-    expect(v3.skills[0]!.tags).toEqual(["t1"]);
-    expect(v3.skills[1]!.lastInstalledOn).toEqual(["claude"]);
+    const coerced = coerceManifestToCurrent(v2);
+    expect(coerced.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
+    expect(coerced.skills[0]!.bucket).toBe("vendored");
+    expect(coerced.skills[1]!.bucket).toBe("personal");
+    expect(coerced.skills[0]!.tags).toEqual(["t1"]);
+    expect(coerced.skills[1]!.lastInstalledOn).toEqual(["claude"]);
+  });
+
+  test("v3 manifest: stamps current version, fills field defaults", () => {
+    const v3 = {
+      schemaVersion: 3 as const,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.3.0",
+      skills: [
+        {
+          name: "alpha",
+          source: "user" as const,
+          bucket: "personal" as const,
+          origin: { kind: "none" as const },
+          tags: ["t1"],
+          dismissed: true,
+          hidden: true,
+          lastInstalledOn: ["claude" as const],
+        },
+      ],
+    };
+    const coerced = coerceManifestToCurrent(v3);
+    expect(coerced.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
+    expect(coerced.skills[0]!.bucket).toBe("personal");
+    expect(coerced.skills[0]!.tags).toEqual(["t1"]);
+    expect(coerced.skills[0]!.dismissed).toBe(true);
+    expect(coerced.skills[0]!.lastInstalledOn).toEqual(["claude"]);
+  });
+
+  test("canonical v4 file (no exportedAt / lastInstalledOn) refills defaults", () => {
+    // The shape `serializeManifest` produces: schemaVersion 4, no
+    // top-level exportedAt, no per-skill lastInstalledOn.
+    const canonical = {
+      schemaVersion: 4 as const,
+      sourceBankVersion: "1.17.0",
+      skills: [
+        {
+          name: "alpha",
+          source: "user" as const,
+          bucket: "personal" as const,
+          origin: { kind: "none" as const },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+        },
+      ],
+    };
+    const coerced = coerceManifestToCurrent(canonical);
+    expect(coerced.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
+    expect(coerced.exportedAt).toBe("");
+    expect(coerced.skills[0]!.lastInstalledOn).toEqual([]);
   });
 
   test("rejects unsupported schemaVersion", () => {
     expect(() =>
       coerceManifestToCurrent({ schemaVersion: 1, skills: [] }),
     ).toThrow(/unsupported schemaVersion 1/);
+  });
+});
+
+describe("serializeManifest", () => {
+  function sample(): RegistryManifest {
+    return {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.17.0",
+      registryRoot: "Tyler-Reagan/skills",
+      skills: [
+        {
+          name: "zeta",
+          description: "last by name",
+          source: "user",
+          bucket: "personal",
+          origin: { kind: "none" },
+          tags: ["b", "a"],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: ["claude", "cursor"],
+        },
+        {
+          name: "alpha",
+          description: "first by name",
+          source: "curated",
+          bucket: "vendored",
+          origin: {
+            kind: "github",
+            repo: "owner/repo",
+            skillPath: "skills/alpha/SKILL.md",
+            skillFolderHash: "deadbeef",
+          },
+          tags: [],
+          dismissed: true,
+          hidden: true,
+          lastInstalledOn: [],
+        },
+      ],
+    };
+  }
+
+  test("drops exportedAt + lastInstalledOn, sorts skills, keeps shared intent", () => {
+    const parsed = JSON.parse(serializeManifest(sample())) as Record<
+      string,
+      unknown
+    >;
+    expect("exportedAt" in parsed).toBe(false);
+    expect(parsed["schemaVersion"]).toBe(MANIFEST_SCHEMA_VERSION);
+    const skills = parsed["skills"] as Record<string, unknown>[];
+    // Sorted by name.
+    expect(skills.map((s) => s["name"])).toEqual(["alpha", "zeta"]);
+    // No per-skill lastInstalledOn (local, churn source).
+    expect(skills.every((s) => !("lastInstalledOn" in s))).toBe(true);
+    // dismissed/hidden retained (curation intent, compared by diff).
+    expect(skills[0]!["dismissed"]).toBe(true);
+    expect(skills[0]!["hidden"]).toBe(true);
+    // skillFolderHash retained as a pin.
+    expect(
+      (skills[0]!["origin"] as Record<string, unknown>)["skillFolderHash"],
+    ).toBe("deadbeef");
+  });
+
+  test("emits stable per-skill key order and a trailing newline", () => {
+    const text = serializeManifest(sample());
+    expect(text.endsWith("\n")).toBe(true);
+    const alphaKeys = Object.keys(
+      (JSON.parse(text)["skills"] as Record<string, unknown>[])[0]!,
+    );
+    expect(alphaKeys).toEqual([
+      "name",
+      "description",
+      "source",
+      "bucket",
+      "origin",
+      "tags",
+      "dismissed",
+      "hidden",
+    ]);
+  });
+
+  test("round-trip stable: serialize == serialize∘coerce∘parse∘serialize", () => {
+    const once = serializeManifest(sample());
+    const twice = serializeManifest(
+      coerceManifestToCurrent(JSON.parse(once) as unknown),
+    );
+    expect(twice).toBe(once);
   });
 });
 

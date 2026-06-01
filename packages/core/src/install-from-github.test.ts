@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { installSkillFromGithub } from "./install-from-github.js";
+import { hashSkillFolder } from "./heal.js";
 
 /**
  * Phase 4 contract: installSkillFromGithub composes mirrorSkillFolder
@@ -101,10 +102,13 @@ describe("installSkillFromGithub", () => {
     expect(marker.origin.repo).toBe("owner/repo");
     expect(marker.origin.skillPath).toBe("skills/alpha/SKILL.md");
     expect(marker.origin.skillFolderHash).toBe("foldersha");
-    // Synced-hash sidecar baselined.
+    // Synced-hash sidecar baselined with the local SHA-256 (not the
+    // GitHub tree SHA-1), matching the manifest-import baseline path.
+    const expectedLocalHash = hashSkillFolder(destDir);
+    expect(expectedLocalHash).not.toBeNull();
     expect(
       fs.readFileSync(path.join(destDir, ".skills-bank-hash"), "utf8").trim(),
-    ).toBe("foldersha");
+    ).toBe(expectedLocalHash);
   });
 
   test("bucket: vendored writes source: 'curated'", async () => {
@@ -265,8 +269,7 @@ describe("installSkillFromGithub", () => {
       "fetch",
       vi.fn(async () => {
         call++;
-        if (call === 1)
-          return treeResponse("skills/folder-name", ["SKILL.md"]);
+        if (call === 1) return treeResponse("skills/folder-name", ["SKILL.md"]);
         if (call === 2)
           return blobResponse(
             "---\nname: canonical-name\ndescription: x\n---\n# x\n",
