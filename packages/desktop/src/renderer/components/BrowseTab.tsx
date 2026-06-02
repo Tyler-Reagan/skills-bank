@@ -385,24 +385,24 @@ export function BrowseTab({
               {allCollapsed ? "Expand all" : "Collapse all"}
             </button>
           )}
-        {onBulkInstall && (
-          <button
-            className="btn"
-            onClick={() => {
-              if (selectMode) exitSelectMode();
-              else setSelectMode(true);
-            }}
-            disabled={running}
-            aria-pressed={selectMode}
-            title={
-              selectMode
-                ? "Exit bulk-install mode"
-                : "Select multiple skills to install in one batch"
-            }
-          >
-            {selectMode ? "Cancel select" : "Bulk install"}
-          </button>
-        )}
+          {onBulkInstall && (
+            <button
+              className="btn"
+              onClick={() => {
+                if (selectMode) exitSelectMode();
+                else setSelectMode(true);
+              }}
+              disabled={running}
+              aria-pressed={selectMode}
+              title={
+                selectMode
+                  ? "Exit bulk-install mode"
+                  : "Select multiple skills to install in one batch"
+              }
+            >
+              {selectMode ? "Cancel select" : "Bulk install"}
+            </button>
+          )}
         </div>
       </div>
       {selectMode && onBulkInstall && (

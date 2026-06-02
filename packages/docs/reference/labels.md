@@ -12,7 +12,6 @@ Skills are grouped into collapsible category sections. When two or more sections
 
 <!-- NEW SCREENSHOT (placeholder): this page has no image. Add one showing the Labels section of the detail drawer (category select + tag chips) and/or the collapsible category grouping in the Browse tab. Suggested path: /images/labels.png -->
 
-
 ## Categories
 
 Each skill gets at most one category. The first matching rule wins.

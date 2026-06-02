@@ -279,7 +279,8 @@ export function RegistryFilters({
   // Tags trigger entirely — same null-result behaviour TagFilter
   // had pre-refactor.
   const hasAnyTags = React.useMemo(() => {
-    for (const tags of effectiveTagsMap.values()) if (tags.length > 0) return true;
+    for (const tags of effectiveTagsMap.values())
+      if (tags.length > 0) return true;
     return false;
   }, [effectiveTagsMap]);
 

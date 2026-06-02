@@ -196,7 +196,10 @@ export function DiscoverTab({
 
   return (
     <div className="discover-tab">
-      <div className="discover-callout" aria-label="Install a skill from GitHub">
+      <div
+        className="discover-callout"
+        aria-label="Install a skill from GitHub"
+      >
         <span className="discover-callout-label">See a skill you want?</span>
         <div className="discover-callout-form">
           <input
@@ -221,11 +224,20 @@ export function DiscoverTab({
             onClick={() => void submitInstall()}
             disabled={installBusy || installUrl.trim().length === 0}
           >
-            {installBusy ? <><span className="spinner inline" /> Installing</> : "Install"}
+            {installBusy ? (
+              <>
+                <span className="spinner inline" /> Installing
+              </>
+            ) : (
+              "Install"
+            )}
           </button>
         </div>
         {installError && (
-          <p role="alert" className="discover-callout-feedback discover-callout-feedback--error">
+          <p
+            role="alert"
+            className="discover-callout-feedback discover-callout-feedback--error"
+          >
             {installError}
           </p>
         )}

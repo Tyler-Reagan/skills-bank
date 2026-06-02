@@ -178,7 +178,7 @@ describe("validateSkillMeta", () => {
   test("fails with schema-violation for empty description (the impeccable case)", () => {
     fs.writeFileSync(
       path.join(scratch, "SKILL.md"),
-      "---\nname: my-skill\ndescription: \"\"\n---\n",
+      '---\nname: my-skill\ndescription: ""\n---\n',
     );
     const r = validateSkillMeta(scratch);
     expect(r.ok).toBe(false);
