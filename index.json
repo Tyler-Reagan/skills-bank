@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T01:16:04.151Z",
+  "generatedAt": "2026-06-02T15:03:37.143Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -8,8 +8,8 @@
       "path": "skills/vendored/find-skills",
       "source": {
         "source": "curated",
-        "syncedFromCommit": "d1a7f5e26eac2128ac358b6d836f041f6c6f2bfb",
-        "syncedAt": "2026-05-26T20:38:51.706Z",
+        "syncedFromCommit": "7e5cd4650884e82c6165be33d5f9ab51d07315ee",
+        "syncedAt": "2026-05-29T05:33:48.798Z",
         "origin": {
           "kind": "github",
           "repo": "vercel-labs/skills",
@@ -21,13 +21,12 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "2908cfe74b500014bfda3229240abc520180597a",
-        "date": "2026-05-28 18:11:12 -0700",
-        "message": "feat: consolidate skill metadata into SKILL.md YAML frontmatter (#100) (#106)"
+        "sha": "6f17f1e6465d114892e6aa9e00a325196e252f16",
+        "date": "2026-05-29 00:51:51 -0700",
+        "message": "chore: release v1.16.0"
       },
       "bucket": "vendored",
-      "canon": true,
-      "drift": true
+      "canon": true
     }
   ]
 }
