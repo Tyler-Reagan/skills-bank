@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
 import { buildRegistryIndex } from "./build.js";
-import { hashSkillFolder, writeSyncedHash } from "./heal.js";
+import { hashSkillFolder, readSyncedHash, writeSyncedHash } from "./heal.js";
 import { hideCanonSkill } from "./hide.js";
 import { findSkillFolder, readSkillMdFrontmatter } from "./registry.js";
 import {
@@ -367,6 +367,14 @@ export async function importRegistryManifest(
       );
       if (originsEqual(localOrigin, skill.origin)) {
         restoreAuxState(registryRoot, existing.dir, skill);
+        // Re-baseline the hash so restoreAuxState's meta.json write
+        // (tags, description) doesn't register as phantom drift on the
+        // next index build. Only re-baseline when a prior baseline
+        // exists — don't create one where the skill was never synced.
+        if (readSyncedHash(existing.dir)) {
+          const h = hashSkillFolder(existing.dir);
+          if (h) writeSyncedHash(existing.dir, h);
+        }
         outcomes.push({ name: skill.name, result: "registered" });
       } else {
         outcomes.push({
