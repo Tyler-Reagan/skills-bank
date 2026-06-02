@@ -2178,6 +2178,12 @@ async function reconcileLocalToManifest(
   const result = await importRegistryManifest(root, manifest, {
     token: getStoredToken(),
     ...(removeNames.length > 0 ? { removeNames } : {}),
+    onProgress: (event) => {
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed())
+          win.webContents.send(IPC.manifestImportProgress, event);
+      }
+    },
   });
   buildRegistryIndex(root, { includeGitInfo: true, writeFile: true });
   invalidateCanonCache(root);
