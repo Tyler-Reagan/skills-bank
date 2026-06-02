@@ -79,11 +79,9 @@ export function ManifestModal({
             }}
             onMerged={(msg) => {
               onMerged(msg);
-              onClose();
             }}
             onConflicts={(conflicts) => {
               onConflicts(conflicts);
-              onClose();
             }}
             onError={() => {
               // error is surfaced inline inside RepoTransport; don't auto-close
