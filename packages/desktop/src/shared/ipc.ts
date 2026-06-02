@@ -15,9 +15,11 @@ import type {
   ImportSkillOutcome,
   InstalledSkill,
   LabelsMap,
+  ManifestDecisions,
   ManifestDiff,
   ManifestImportProgressEvent,
   ManifestSkill,
+  PendingManifestConflicts,
   MergeImportReport,
   PublishState,
   RateLimitInfo,
@@ -105,6 +107,9 @@ export const IPC = {
   readManifestFromRepo: "bank:readManifestFromRepo",
   runManifestImport: "bank:runManifestImport",
   manifestImportRetrySkill: "bank:manifestImportRetrySkill",
+  getPendingManifestConflicts: "bank:getPendingManifestConflicts",
+  clearPendingManifestConflicts: "bank:clearPendingManifestConflicts",
+  resolveManifestConflicts: "bank:resolveManifestConflicts",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
   classifySkillForPublish: "publish:classify",
@@ -587,6 +592,17 @@ export type RunManifestImportResult =
   | { ok: true; message: string; result: ImportRegistryManifestResult }
   | { ok: false; message: string };
 
+export type ResolveManifestConflictsResult =
+  | {
+      ok: true;
+      message: string;
+      /** Skills removed locally to propagate accepted remote deletions. */
+      removed: string[];
+      /** `keep-both` forks applied on disk (`<name>` → `<name>-local`). */
+      renamed: { from: string; to: string }[];
+    }
+  | { ok: false; message: string; error?: AppError };
+
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
   /**
@@ -833,6 +849,23 @@ interface SkillsBankAPI {
   runManifestImport(
     manifest: RegistryManifest,
   ): Promise<RunManifestImportResult>;
+  /**
+   * Read the queued three-way merge conflicts (if any) so the resolver
+   * modal can re-open across restarts. Null when none are pending.
+   */
+  getPendingManifestConflicts(): Promise<PendingManifestConflicts | null>;
+  /** Discard the queued merge conflicts (stuck-state recovery). */
+  clearPendingManifestConflicts(): Promise<{ ok: boolean; removed: boolean }>;
+  /**
+   * Apply the user's resolver decisions to the queued merge: fold each
+   * choice into the merged manifest, reconcile the local registry
+   * (import adds/restores, delete confirmed removals, fork `keep-both`),
+   * then clear the pending file. Pushing the merged manifest upstream is
+   * a separate action.
+   */
+  resolveManifestConflicts(
+    decisions: ManifestDecisions,
+  ): Promise<ResolveManifestConflictsResult>;
   /**
    * Apply a manifest's install hints — one user-confirmed batch.
    * Calls the existing install path for each `{ name, agents }`

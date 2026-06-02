@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  applyManifestResolutions,
   clearPendingManifestConflicts,
   mergeManifests,
   readPendingManifestConflicts,
@@ -242,37 +243,92 @@ describe("pending-manifest-conflicts persistence", () => {
   });
 
   test("write → read round-trips the conflict payload", () => {
-    const { conflicts } = cell(A(), B(), C());
+    const result = cell(A(), B(), C());
     writePendingManifestConflicts(root, {
       mergedAt: "2026-06-01T00:00:00Z",
-      conflicts,
+      conflicts: result.conflicts,
+      merged: result.merged,
     });
     const back = readPendingManifestConflicts(root);
     expect(back?.mergedAt).toBe("2026-06-01T00:00:00Z");
     expect(back?.conflicts).toHaveLength(1);
     expect(back?.conflicts[0]!.kind).toBe("both-modified");
+    expect(back?.merged.skills).toEqual([]);
   });
 
   test("writing an empty conflict list clears any stale file", () => {
+    const result = cell(A(), B(), C());
     writePendingManifestConflicts(root, {
       mergedAt: "t1",
-      conflicts: cell(A(), B(), C()).conflicts,
+      conflicts: result.conflicts,
+      merged: result.merged,
     });
     expect(
       fs.existsSync(
         path.join(getStateDir(root), "pending-manifest-conflicts.json"),
       ),
     ).toBe(true);
-    writePendingManifestConflicts(root, { mergedAt: "t2", conflicts: [] });
+    writePendingManifestConflicts(root, {
+      mergedAt: "t2",
+      conflicts: [],
+      merged: result.merged,
+    });
     expect(readPendingManifestConflicts(root)).toBeNull();
   });
 
   test("clear removes the file and reports it", () => {
+    const result = cell(A(), B(), C());
     writePendingManifestConflicts(root, {
       mergedAt: "t1",
-      conflicts: cell(A(), B(), C()).conflicts,
+      conflicts: result.conflicts,
+      merged: result.merged,
     });
     expect(clearPendingManifestConflicts(root)).toEqual({ removed: true });
     expect(clearPendingManifestConflicts(root)).toEqual({ removed: false });
+  });
+});
+
+describe("applyManifestResolutions", () => {
+  test("keep-mine keeps the local entry; use-theirs takes the remote", () => {
+    const merge = cell(A(), B(), C()); // both-modified on "x"
+    const keepMine = applyManifestResolutions(merge, { x: "keep-mine" });
+    expect(keepMine.manifest.skills[0]!.tags).toEqual(["b"]);
+    expect(keepMine.removeNames).toEqual([]);
+
+    const useTheirs = applyManifestResolutions(merge, { x: "use-theirs" });
+    expect(useTheirs.manifest.skills[0]!.tags).toEqual(["c"]);
+  });
+
+  test("undecided conflict defaults to keep-mine", () => {
+    const merge = cell(A(), B(), C());
+    const r = applyManifestResolutions(merge, {});
+    expect(r.manifest.skills[0]!.tags).toEqual(["b"]);
+  });
+
+  test("use-theirs on a remote deletion queues a local removal", () => {
+    // ours edited, theirs deleted → ours-modified-theirs-deleted.
+    const merge = cell(A(), B(), null);
+    const r = applyManifestResolutions(merge, { x: "use-theirs" });
+    expect(r.removeNames).toEqual(["x"]);
+    expect(r.manifest.skills).toEqual([]);
+  });
+
+  test("keep-mine on a local deletion keeps it gone", () => {
+    // ours deleted, theirs edited → theirs-modified-ours-deleted.
+    const merge = cell(A(), null, B());
+    const r = applyManifestResolutions(merge, { x: "keep-mine" });
+    expect(r.removeNames).toEqual(["x"]);
+    expect(r.manifest.skills).toEqual([]);
+  });
+
+  test("keep-both forks ours to <name>-local and keeps theirs at the name", () => {
+    const merge = cell(A(), B(), C());
+    const r = applyManifestResolutions(merge, { x: "keep-both" });
+    const byName = Object.fromEntries(
+      r.manifest.skills.map((s) => [s.name, s.tags]),
+    );
+    expect(byName["x"]).toEqual(["c"]); // theirs at original name
+    expect(byName["x-local"]).toEqual(["b"]); // ours forked
+    expect(r.renamed).toEqual([{ from: "x", to: "x-local" }]);
   });
 });

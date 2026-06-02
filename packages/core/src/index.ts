@@ -18,6 +18,7 @@ export * from "./source.js";
 export * from "./github-http.js";
 export * from "./github-files.js";
 export * from "./manifest-diff.js";
+export * from "./manifest-merge.js";
 export * from "./origin.js";
 export * from "./origin-probe.js";
 export * from "./publish-push.js";

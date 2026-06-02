@@ -152,12 +152,93 @@ function classifyConflict(
   return "both-modified";
 }
 
+/**
+ * How the user resolved a single manifest conflict in the modal:
+ *   - `keep-mine`  — the local side wins (keep ours; a local deletion
+ *     stays deleted).
+ *   - `use-theirs` — the remote side wins (take theirs; accept a remote
+ *     deletion, propagating it locally).
+ *   - `keep-both`  — genuine divergence worth preserving: keep theirs at
+ *     the original name and fork ours to `<name>-local`.
+ */
+export type ManifestResolution = "keep-mine" | "use-theirs" | "keep-both";
+
+/** name → chosen resolution, produced by the resolver modal. */
+export type ManifestDecisions = Record<string, ManifestResolution>;
+
+export interface ResolvedMerge {
+  /** The merged manifest with every conflict decision folded in. */
+  manifest: RegistryManifest;
+  /**
+   * Local skills to delete so a remote deletion propagates — names the
+   * user accepted as gone (`use-theirs` where theirs is absent, or
+   * `keep-mine` where ours is absent). Feed straight to
+   * `importRegistryManifest`'s `removeNames` arm.
+   */
+  removeNames: string[];
+  /**
+   * `keep-both` forks: the local skill at `from` must be renamed to
+   * `to` (`<name>-local`) on disk before reconcile, and both entries
+   * appear in `manifest`. The on-disk rename uses `resolveRenameTarget`
+   * / `applyConflictDecision` at the caller (it owns the filesystem).
+   */
+  renamed: { from: string; to: string }[];
+}
+
+/**
+ * Fold user decisions into a merge result, producing the final manifest
+ * plus the removal/rename intents the reconcile step needs. Pure — the
+ * caller performs the disk mutations (`importRegistryManifest`,
+ * folder rename). Conflicts without a decision default to `keep-mine`
+ * (the safe, non-destructive choice), matching the modal's default.
+ */
+export function applyManifestResolutions(
+  mergeResult: ManifestMergeResult,
+  decisions: ManifestDecisions,
+): ResolvedMerge {
+  const skills = [...mergeResult.merged.skills];
+  const removeNames: string[] = [];
+  const renamed: { from: string; to: string }[] = [];
+
+  for (const c of mergeResult.conflicts) {
+    const choice = decisions[c.name] ?? "keep-mine";
+    if (choice === "keep-mine") {
+      if (c.ours) skills.push(c.ours);
+      else removeNames.push(c.name); // ours deleted locally → keep it gone
+    } else if (choice === "use-theirs") {
+      if (c.theirs) skills.push(c.theirs);
+      else removeNames.push(c.name); // theirs deleted → propagate removal
+    } else {
+      // keep-both: theirs keeps the name; ours forks to <name>-local.
+      const forkName = `${c.name}-local`;
+      if (c.theirs) skills.push(c.theirs);
+      if (c.ours) {
+        skills.push({ ...c.ours, name: forkName });
+        renamed.push({ from: c.name, to: forkName });
+      }
+    }
+  }
+
+  skills.sort((a, b) => a.name.localeCompare(b.name));
+  return {
+    manifest: { ...mergeResult.merged, skills },
+    removeNames,
+    renamed,
+  };
+}
+
 const PENDING_FILE = "pending-manifest-conflicts.json";
 
 export interface PendingManifestConflicts {
   /** ISO-8601 stamp set by the caller when the merge ran. */
   mergedAt: string;
   conflicts: ManifestConflict[];
+  /**
+   * The auto-merged manifest (conflicts excluded). Persisted alongside
+   * the conflicts so the resolve step can fold decisions back in without
+   * re-fetching `theirs` and re-running the merge.
+   */
+  merged: RegistryManifest;
 }
 
 /**

@@ -31,6 +31,12 @@ import {
   exportRegistry,
   exportRegistryManifest,
   importRegistryManifest,
+  applyManifestResolutions,
+  readPendingManifestConflicts,
+  writePendingManifestConflicts,
+  clearPendingManifestConflicts,
+  resolveRenameTarget,
+  type ManifestDecisions,
   MANIFEST_SCHEMA_VERSION,
   installSkillFromGithub,
   parseGithubSkillUrl,
@@ -126,6 +132,7 @@ import {
   type PreviewManifestPushResult,
   type PushManifestToRepoResult,
   type ReadManifestFromRepoResult,
+  type ResolveManifestConflictsResult,
   type RunManifestImportResult,
   type UserRepo,
 } from "../shared/ipc.js";
@@ -2404,6 +2411,96 @@ ipcMain.handle(
   async (_e, manifest: RegistryManifest): Promise<RunManifestImportResult> => {
     const result = await runManifestImportCore(manifest);
     return result;
+  },
+);
+
+ipcMain.handle(IPC.getPendingManifestConflicts, () => {
+  if (!registryRoot) return null;
+  return readPendingManifestConflicts(registryRoot);
+});
+
+ipcMain.handle(IPC.clearPendingManifestConflicts, () => {
+  if (!registryRoot) return { ok: false, removed: false };
+  const r = clearPendingManifestConflicts(registryRoot);
+  return { ok: true, removed: r.removed };
+});
+
+ipcMain.handle(
+  IPC.resolveManifestConflicts,
+  async (
+    _e,
+    decisions: ManifestDecisions,
+  ): Promise<ResolveManifestConflictsResult> => {
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    const pending = readPendingManifestConflicts(registryRoot);
+    if (!pending) {
+      return { ok: false, message: "no pending manifest conflicts" };
+    }
+    const root = registryRoot;
+
+    const resolved = applyManifestResolutions(
+      { merged: pending.merged, conflicts: pending.conflicts },
+      decisions,
+    );
+
+    // keep-both forks: rename the local skill out of the way BEFORE the
+    // import re-materializes theirs at the original name. resolveRename-
+    // Target guards against a pre-existing `<name>-local`; when it picks
+    // a different target than the pure layer assumed, patch the manifest
+    // entry so the registered fork matches what landed on disk.
+    const renamed: { from: string; to: string }[] = [];
+    for (const { from, to } of resolved.renamed) {
+      const ref = findSkillFolder(root, from);
+      if (!ref) continue; // nothing local to fork
+      const parent = path.dirname(ref.dir);
+      const actualTo = fs.existsSync(path.join(parent, to))
+        ? resolveRenameTarget(parent, from)
+        : to;
+      fs.renameSync(ref.dir, path.join(parent, actualTo));
+      if (actualTo !== to) {
+        const entry = resolved.manifest.skills.find((s) => s.name === to);
+        if (entry) entry.name = actualTo;
+      }
+      renamed.push({ from, to: actualTo });
+    }
+
+    // The complete local-deletion set is everything on disk that the
+    // resolved manifest no longer lists — this covers BOTH the user's
+    // conflict decisions AND the auto-resolved deletions the merge
+    // already dropped (importRegistryManifest is otherwise additive).
+    const finalNames = new Set(resolved.manifest.skills.map((s) => s.name));
+    const removeNames = walkSkills(root)
+      .map((r) => r.name)
+      .filter((n) => !finalNames.has(n));
+
+    try {
+      const result = await importRegistryManifest(root, resolved.manifest, {
+        token: getStoredToken(),
+        ...(removeNames.length > 0 ? { removeNames } : {}),
+      });
+      clearPendingManifestConflicts(root);
+      buildRegistryIndex(root, { includeGitInfo: true, writeFile: true });
+      invalidateCanonCache(root);
+      const removed = (result.removed ?? [])
+        .filter((r) => r.ok)
+        .map((r) => r.name);
+      return {
+        ok: true,
+        message: `Resolved ${pending.conflicts.length} conflict${
+          pending.conflicts.length === 1 ? "" : "s"
+        }${removed.length > 0 ? `, removed ${removed.length}` : ""}${
+          renamed.length > 0 ? `, forked ${renamed.length}` : ""
+        }.`,
+        removed,
+        renamed,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: `reconcile failed: ${(err as Error).message}`,
+        error: fromCaught("manifest.resolve-failed", err),
+      };
+    }
   },
 );
 
