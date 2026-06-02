@@ -690,6 +690,15 @@ export function ModalHost({
             closeModal();
             flash(msg);
           }}
+          onMerged={(msg) => {
+            closeModal();
+            flash(msg);
+            void refresh();
+          }}
+          onConflicts={(conflicts) => {
+            closeModal();
+            openModal({ kind: "manifestConflict", target: { conflicts } });
+          }}
         />
       )}
 

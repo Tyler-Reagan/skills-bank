@@ -95,6 +95,7 @@ const api = {
   pushManifestToRepo: (opts: { asPR: boolean }) =>
     ipcRenderer.invoke(IPC.pushManifestToRepo, opts),
   readManifestFromRepo: () => ipcRenderer.invoke(IPC.readManifestFromRepo),
+  runManifestMerge: () => ipcRenderer.invoke(IPC.runManifestMerge),
   getPendingManifestConflicts: () =>
     ipcRenderer.invoke(IPC.getPendingManifestConflicts),
   clearPendingManifestConflicts: () =>

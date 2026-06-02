@@ -1,7 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  coerceManifestToCurrent,
   MANIFEST_SCHEMA_VERSION,
+  serializeManifest,
   type ManifestSkill,
   type RegistryManifest,
 } from "./manifest.js";
@@ -239,6 +241,14 @@ export interface PendingManifestConflicts {
    * re-fetching `theirs` and re-running the merge.
    */
   merged: RegistryManifest;
+  /**
+   * The remote manifest this merge ran against. Persisted so the resolve
+   * step can advance the merge base to it — once resolved, the local
+   * registry has fully incorporated `theirs`, so it becomes the new
+   * "last known remote" reference for the next merge. See
+   * `writeMergeBase`.
+   */
+  theirs: RegistryManifest;
 }
 
 /**
@@ -280,4 +290,40 @@ export function clearPendingManifestConflicts(registryRoot: string): {
   if (!fs.existsSync(p)) return { removed: false };
   fs.unlinkSync(p);
   return { removed: true };
+}
+
+const MERGE_BASE_FILE = "merge-base.json";
+
+/**
+ * The merge base: this machine's best knowledge of the LINKED REPO's
+ * manifest content — a per-machine remote-tracking reference, not a
+ * shared file. Advanced to the remote's content after every successful
+ * sync (to `theirs` after a pull-merge, to the pushed manifest after a
+ * push), so the next `mergeManifests` can tell "we changed this" from
+ * "they changed this". `null` before the first sync, which the caller
+ * treats as an empty base (everything reads as added).
+ *
+ * Stored canonically (via `serializeManifest`) so it doesn't churn, and
+ * kept in the local state dir — it never travels with the registry.
+ */
+export function writeMergeBase(
+  registryRoot: string,
+  manifest: RegistryManifest,
+): void {
+  const stateDir = getStateDir(registryRoot);
+  fs.mkdirSync(stateDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(stateDir, MERGE_BASE_FILE),
+    serializeManifest(manifest),
+  );
+}
+
+export function readMergeBase(registryRoot: string): RegistryManifest | null {
+  const p = path.join(getStateDir(registryRoot), MERGE_BASE_FILE);
+  if (!fs.existsSync(p)) return null;
+  try {
+    return coerceManifestToCurrent(JSON.parse(fs.readFileSync(p, "utf8")));
+  } catch {
+    return null;
+  }
 }

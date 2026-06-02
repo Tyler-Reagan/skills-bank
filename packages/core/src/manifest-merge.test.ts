@@ -6,7 +6,9 @@ import {
   applyManifestResolutions,
   clearPendingManifestConflicts,
   mergeManifests,
+  readMergeBase,
   readPendingManifestConflicts,
+  writeMergeBase,
   writePendingManifestConflicts,
 } from "./manifest-merge.js";
 import { MANIFEST_SCHEMA_VERSION } from "./manifest.js";
@@ -248,6 +250,7 @@ describe("pending-manifest-conflicts persistence", () => {
       mergedAt: "2026-06-01T00:00:00Z",
       conflicts: result.conflicts,
       merged: result.merged,
+      theirs: mf([C()]),
     });
     const back = readPendingManifestConflicts(root);
     expect(back?.mergedAt).toBe("2026-06-01T00:00:00Z");
@@ -262,6 +265,7 @@ describe("pending-manifest-conflicts persistence", () => {
       mergedAt: "t1",
       conflicts: result.conflicts,
       merged: result.merged,
+      theirs: mf([C()]),
     });
     expect(
       fs.existsSync(
@@ -272,6 +276,7 @@ describe("pending-manifest-conflicts persistence", () => {
       mergedAt: "t2",
       conflicts: [],
       merged: result.merged,
+      theirs: mf([]),
     });
     expect(readPendingManifestConflicts(root)).toBeNull();
   });
@@ -282,9 +287,41 @@ describe("pending-manifest-conflicts persistence", () => {
       mergedAt: "t1",
       conflicts: result.conflicts,
       merged: result.merged,
+      theirs: mf([C()]),
     });
     expect(clearPendingManifestConflicts(root)).toEqual({ removed: true });
     expect(clearPendingManifestConflicts(root)).toEqual({ removed: false });
+  });
+});
+
+describe("merge base", () => {
+  let root: string;
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), "skills-bank-merge-base-"));
+  });
+  afterEach(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  test("absent base reads as null", () => {
+    expect(readMergeBase(root)).toBeNull();
+  });
+
+  test("write → read round-trips the manifest skills", () => {
+    writeMergeBase(root, mf([A("alpha"), B("zeta")]));
+    const back = readMergeBase(root);
+    expect(back?.skills.map((s) => s.name)).toEqual(["alpha", "zeta"]);
+  });
+
+  test("stored canonically (no exportedAt churn) and coerced on read", () => {
+    writeMergeBase(root, mf([A("alpha")], { exportedAt: "2026-06-01T00:00Z" }));
+    const raw = fs.readFileSync(
+      path.join(getStateDir(root), "merge-base.json"),
+      "utf8",
+    );
+    expect(raw.includes("exportedAt")).toBe(false);
+    // Coerced back to a whole manifest with the empty exportedAt default.
+    expect(readMergeBase(root)?.exportedAt).toBe("");
   });
 });
 

@@ -15,6 +15,7 @@ import type {
   ImportSkillOutcome,
   InstalledSkill,
   LabelsMap,
+  ManifestConflict,
   ManifestDecisions,
   ManifestDiff,
   ManifestImportProgressEvent,
@@ -107,6 +108,7 @@ export const IPC = {
   readManifestFromRepo: "bank:readManifestFromRepo",
   runManifestImport: "bank:runManifestImport",
   manifestImportRetrySkill: "bank:manifestImportRetrySkill",
+  runManifestMerge: "bank:runManifestMerge",
   getPendingManifestConflicts: "bank:getPendingManifestConflicts",
   clearPendingManifestConflicts: "bank:clearPendingManifestConflicts",
   resolveManifestConflicts: "bank:resolveManifestConflicts",
@@ -575,6 +577,11 @@ export type PushManifestToRepoResult =
       message: string;
       rateLimit: RateLimitInfo;
     }
+  | {
+      ok: false;
+      reason: "diverged";
+      message: string;
+    }
   | { ok: false; reason: "write-failed"; message: string };
 
 export type ReadManifestFromRepoResult =
@@ -591,6 +598,24 @@ export type ReadManifestFromRepoResult =
 export type RunManifestImportResult =
   | { ok: true; message: string; result: ImportRegistryManifestResult }
   | { ok: false; message: string };
+
+/**
+ * Result of a three-way pull-merge. `merged` — applied cleanly, no
+ * conflicts. `conflicts` — divergence the user must resolve; the
+ * conflicts are also persisted, and the renderer opens the resolver
+ * modal. The merge base is advanced only on a clean merge (post-
+ * resolution advances it for the conflict path).
+ */
+export type RunManifestMergeResult =
+  | { ok: true; status: "merged"; message: string; removed: string[] }
+  | { ok: true; status: "conflicts"; conflicts: ManifestConflict[] }
+  | {
+      ok: false;
+      reason: "rate-limit";
+      message: string;
+      rateLimit: RateLimitInfo;
+    }
+  | { ok: false; reason: "read-failed" | "reconcile-failed"; message: string };
 
 export type ResolveManifestConflictsResult =
   | {
@@ -849,6 +874,14 @@ interface SkillsBankAPI {
   runManifestImport(
     manifest: RegistryManifest,
   ): Promise<RunManifestImportResult>;
+  /**
+   * Pull from the linked repo as a three-way merge: fetch the remote
+   * manifest (`theirs`), load the stored merge base, export the local
+   * registry (`ours`), and merge. A clean merge reconciles locally and
+   * advances the base; conflicts are persisted and surfaced through the
+   * resolver modal.
+   */
+  runManifestMerge(): Promise<RunManifestMergeResult>;
   /**
    * Read the queued three-way merge conflicts (if any) so the resolver
    * modal can re-open across restarts. Null when none are pending.
