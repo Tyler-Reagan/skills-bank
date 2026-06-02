@@ -14,8 +14,7 @@ function makeManifest(skills: Partial<ManifestSkill>[]): RegistryManifest {
       bucket: "personal",
       origin: { kind: "none" },
       tags: [],
-      dismissed: false,
-      hidden: false,
+      category: null,
       lastInstalledOn: [],
       ...s,
     })) as ManifestSkill[],
@@ -75,10 +74,10 @@ describe("diffManifests", () => {
     expect(diff.unchanged).toEqual([]);
   });
 
-  test("same name but different dismissed → changed", () => {
+  test("same name but different category → changed", () => {
     const diff = diffManifests(
-      makeManifest([{ name: "epsilon", dismissed: true }]),
-      makeManifest([{ name: "epsilon", dismissed: false }]),
+      makeManifest([{ name: "epsilon", category: "frontend" }]),
+      makeManifest([{ name: "epsilon", category: null }]),
     );
     expect(diff.changed).toEqual(["epsilon"]);
   });

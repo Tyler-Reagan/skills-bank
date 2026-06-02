@@ -862,7 +862,7 @@ function snapshotAfterMutation(): void {
   try {
     const manifest = exportRegistryManifest(registryRoot, {
       sourceBankVersion: app.getVersion(),
-      registryRootLabel: linkedRepo?.fullName ?? undefined,
+      ...manifestExportContext(),
     });
     writeRegistrySnapshot({
       userDataDir: app.getPath("userData"),
@@ -2046,7 +2046,7 @@ async function writeManifestToDisk(): Promise<{
     }
     const manifest = exportRegistryManifest(registryRoot, {
       sourceBankVersion,
-      registryRootLabel: linkedRepo?.fullName ?? undefined,
+      ...manifestExportContext(),
     });
     fs.writeFileSync(result.filePath, JSON.stringify(manifest, null, 2) + "\n");
     return {
@@ -2138,6 +2138,7 @@ async function runManifestImportCore(manifest: RegistryManifest): Promise<
   } finally {
     inFlightImportAbort = null;
   }
+  applyRestoredLabels(importResult.restoredLabels);
   buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
   snapshotAfterMutation();
   const registered = importResult.outcomes.filter(
@@ -2185,6 +2186,7 @@ async function reconcileLocalToManifest(
       }
     },
   });
+  applyRestoredLabels(result.restoredLabels);
   buildRegistryIndex(root, { includeGitInfo: true, writeFile: true });
   invalidateCanonCache(root);
   return (result.removed ?? []).filter((r) => r.ok).map((r) => r.name);
@@ -2260,7 +2262,7 @@ ipcMain.handle(
     const sourceBankVersion = app.getVersion();
     const localManifest = exportRegistryManifest(registryRoot, {
       sourceBankVersion,
-      registryRootLabel: linkedRepo.fullName,
+      ...manifestExportContext(),
     });
     const remoteRes = await readRepoFile({
       repo: linkedRepo.fullName,
@@ -2325,7 +2327,7 @@ ipcMain.handle(
     const sourceBankVersion = app.getVersion();
     const manifest = exportRegistryManifest(registryRoot, {
       sourceBankVersion,
-      registryRootLabel: linkedRepo.fullName,
+      ...manifestExportContext(),
     });
     // Canonical serialization — sorted, stable keys, no `exportedAt`
     // churn (the v4 committed form). This is also the byte-for-byte form
@@ -2530,7 +2532,7 @@ ipcMain.handle(
     const sourceBankVersion = app.getVersion();
     const localManifest = exportRegistryManifest(registryRoot, {
       sourceBankVersion,
-      registryRootLabel: linkedRepo.fullName,
+      ...manifestExportContext(),
     });
     const diff = diffManifests(remoteManifest, localManifest);
     return { ok: true, manifest: remoteManifest, diff };
@@ -2648,7 +2650,7 @@ ipcMain.handle(
 
     const ours = exportRegistryManifest(root, {
       sourceBankVersion: app.getVersion(),
-      registryRootLabel: linkedRepo.fullName,
+      ...manifestExportContext(),
     });
     const base = readMergeBase(root) ?? {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
@@ -4096,6 +4098,42 @@ function readLabelsFile(): import("@skills-bank/core").LabelsMap {
 
 function writeLabelsFile(data: import("@skills-bank/core").LabelsMap): void {
   fs.writeFileSync(labelsFilePath(), JSON.stringify(data, null, 2) + "\n");
+}
+
+/**
+ * Merge the label overrides an import reconstructed from a manifest into
+ * the local `labels.json`. Per-skill, the pulled override replaces the
+ * local one (the manifest is the authority being applied). No-op when the
+ * import reconstructed nothing.
+ */
+function applyRestoredLabels(
+  restored: import("@skills-bank/core").LabelsMap | undefined,
+): void {
+  if (!restored || Object.keys(restored).length === 0) return;
+  const data = readLabelsFile();
+  for (const [name, override] of Object.entries(restored)) {
+    data[name] = override;
+  }
+  writeLabelsFile(data);
+}
+
+/**
+ * Shared `exportRegistryManifest` inputs sourced from app state: the
+ * active linked repo (drives self-origin synthesis + bucket derivation)
+ * and the local curation labels (fill each entry's category + tags).
+ * Spread into every export call site so the manifest is consistent
+ * regardless of which flow produced it.
+ */
+function manifestExportContext(): {
+  registryRootLabel?: string;
+  linkedRepo?: string;
+  labels: import("@skills-bank/core").LabelsMap;
+} {
+  const full = linkedRepo?.fullName ?? undefined;
+  return {
+    ...(full ? { registryRootLabel: full, linkedRepo: full } : {}),
+    labels: readLabelsFile(),
+  };
 }
 
 ipcMain.handle(IPC.readLabels, (): import("@skills-bank/core").LabelsMap => {

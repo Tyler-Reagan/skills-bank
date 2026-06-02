@@ -133,6 +133,28 @@ function parseOrigin(raw: unknown): OriginPointer | undefined {
   return out;
 }
 
+/**
+ * Does this origin point back at the registry's own linked repo, rather
+ * than a third-party upstream? A self-origin is how an authored-here
+ * skill stays re-fetchable through the git-flow: its content lives in
+ * the linked repo itself, so `repo` equals the active link.
+ *
+ * Single mechanism for the "is this mine?" decision — bucket derivation,
+ * the fallback origin scanner, and the drift/sync flows all route
+ * through here so the comparison against the *active* linked repo lives
+ * in one place. `linkedRepo` is the configured `owner/name`; when no
+ * repo is linked (or the origin carries no `repo`), nothing can be a
+ * self-origin and this returns `false`.
+ */
+export function isSelfOrigin(
+  origin: OriginPointer | undefined,
+  linkedRepo: string | undefined,
+): boolean {
+  if (!origin || origin.kind !== "github" || !origin.repo) return false;
+  if (!linkedRepo) return false;
+  return origin.repo === linkedRepo;
+}
+
 export function writeSkillSource(skillDir: string, src: SkillSource): void {
   const p = path.join(skillDir, SKILL_SOURCE_FILENAME);
   fs.mkdirSync(skillDir, { recursive: true });

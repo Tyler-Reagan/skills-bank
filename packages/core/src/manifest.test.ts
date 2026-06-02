@@ -11,10 +11,10 @@ import {
   MANIFEST_SCHEMA_VERSION,
   type RegistryManifest,
 } from "./manifest.js";
-import { hideCanonSkill } from "./hide.js";
-import { writeUpstreamCanonNames } from "./canon.js";
 import { writeSkillSource } from "./source.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
+import { deriveLabels } from "./labels.js";
+import { buildRegistryIndex } from "./build.js";
 
 /**
  * Phase 1 manifest contract:
@@ -145,23 +145,21 @@ describe("exportRegistryManifest", () => {
     expect(typeof m.exportedAt).toBe("string");
   });
 
-  test("records each skill's source, origin, tags, dismissed/hidden", () => {
-    writeSkill("personal", "alpha", { tags: ["a", "b"] });
+  test("records source, origin, derived bucket, and effective labels", () => {
+    writeSkill("personal", "alpha", { description: "a react component skill" });
     writeSkill("vendored", "beta", {
       source: "curated",
-      tags: [],
       origin: {
         repo: "owner/repo",
         skillPath: "skills/beta/SKILL.md",
         skillFolderHash: "deadbeef",
       },
     });
-    writeUpstreamCanonNames(registryRoot, ["beta"], "synced");
-    hideCanonSkill(registryRoot, "beta");
 
     const m = exportRegistryManifest(registryRoot, {
       sourceBankVersion: "1.1.0",
       registryRootLabel: "Tyler-Reagan/skills",
+      labels: { alpha: { addedTags: ["custom"] } },
     });
     expect(m.registryRoot).toBe("Tyler-Reagan/skills");
     expect(m.skills.map((s) => s.name).sort()).toEqual(["alpha", "beta"]);
@@ -169,20 +167,55 @@ describe("exportRegistryManifest", () => {
     const alpha = m.skills.find((s) => s.name === "alpha")!;
     expect(alpha.source).toBe("user");
     expect(alpha.origin).toEqual({ kind: "none" });
-    expect(alpha.tags).toEqual(["a", "b"]);
-    expect(alpha.hidden).toBe(false);
-    expect(alpha.dismissed).toBe(false);
+    // No external origin → personal.
+    expect(alpha.bucket).toBe("personal");
+    // Effective labels = auto-derived + the supplied override.
+    const derivedAlpha = deriveLabels({
+      name: "alpha",
+      description: "a react component skill",
+    });
+    expect(alpha.category).toBe(derivedAlpha.category);
+    expect(alpha.tags).toEqual([...derivedAlpha.tags, "custom"]);
 
     const beta = m.skills.find((s) => s.name === "beta")!;
     expect(beta.source).toBe("curated");
+    // External GitHub origin → vendored.
+    expect(beta.bucket).toBe("vendored");
     expect(beta.origin).toEqual({
       kind: "github",
       repo: "owner/repo",
       skillPath: "skills/beta/SKILL.md",
       skillFolderHash: "deadbeef",
     });
-    expect(beta.hidden).toBe(true);
-    expect(beta.dismissed).toBe(true);
+  });
+
+  test("synthesizes a self-origin from the in-registry path when a repo is linked", () => {
+    writeSkill("personal", "mine", { description: "my own skill" });
+
+    const m = exportRegistryManifest(registryRoot, {
+      sourceBankVersion: "1.1.0",
+      registryRootLabel: "Tyler-Reagan/skills",
+      linkedRepo: "Tyler-Reagan/skills",
+    });
+    const mine = m.skills.find((s) => s.name === "mine")!;
+    expect(mine.origin).toEqual({
+      kind: "github",
+      repo: "Tyler-Reagan/skills",
+      skillPath: "skills/personal/mine/SKILL.md",
+    });
+    // A self-origin is NOT external → personal bucket.
+    expect(mine.bucket).toBe("personal");
+  });
+
+  test("leaves origin `none` for an authored skill when no repo is linked", () => {
+    writeSkill("personal", "local-only", { description: "never pushed" });
+
+    const m = exportRegistryManifest(registryRoot, {
+      sourceBankVersion: "1.1.0",
+    });
+    const skill = m.skills.find((s) => s.name === "local-only")!;
+    expect(skill.origin).toEqual({ kind: "none" });
+    expect(skill.bucket).toBe("personal");
   });
 
   test("lastInstalledOn picks up symlinks under the fake agent dirs", () => {
@@ -230,8 +263,7 @@ describe("importRegistryManifest", () => {
             skillPath: "skills/alpha/SKILL.md",
           },
           tags: ["restored-tag"],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -244,12 +276,13 @@ describe("importRegistryManifest", () => {
     expect(fs.readFileSync(path.join(destDir, "SKILL.md"), "utf8")).toBe(
       "# alpha imported",
     );
-    // Tags restored into meta.json.
-    const meta = JSON.parse(
-      fs.readFileSync(path.join(destDir, "meta.json"), "utf8"),
-    ) as { tags?: string[]; name?: string };
-    expect(meta.tags).toEqual(["restored-tag"]);
-    expect(meta.name).toBe("alpha");
+    // Labels are NOT written to meta.json (the import writes no meta.json
+    // — SKILL.md frontmatter is authoritative). The user's tag delta is
+    // surfaced as a reconstructed override for the caller's labels.json.
+    expect(fs.existsSync(path.join(destDir, "meta.json"))).toBe(false);
+    expect(result.restoredLabels?.["alpha"]).toEqual({
+      addedTags: ["restored-tag"],
+    });
     // Marker stamped with the mirrored folder hash.
     const marker = JSON.parse(
       fs.readFileSync(path.join(destDir, ".skills-bank.json"), "utf8"),
@@ -269,13 +302,10 @@ describe("importRegistryManifest", () => {
     ).toBe(expectedLocalHash);
   });
 
-  test("populates description from SKILL.md frontmatter when upstream has no meta.json", async () => {
-    // Regression for the duplicate "missing description" warnings:
-    // restoreAuxState used to write a fresh meta.json with only
-    // {name, tags}, dropping the description that lived in the
-    // mirrored SKILL.md frontmatter. The on-disk meta.json must
-    // carry description (and version/author when present in
-    // frontmatter) so AJV schema validation passes downstream.
+  test("reads metadata from mirrored SKILL.md frontmatter without writing meta.json", async () => {
+    // Post-v1.15 SKILL.md frontmatter is the authoritative metadata
+    // source — the import writes no meta.json. The mirrored frontmatter
+    // alone must drive the registry index (name/description/version/author).
     let call = 0;
     vi.stubGlobal(
       "fetch",
@@ -305,8 +335,7 @@ describe("importRegistryManifest", () => {
             skillPath: "skills/described/SKILL.md",
           },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -318,20 +347,17 @@ describe("importRegistryManifest", () => {
     ]);
 
     const destDir = path.join(registryRoot, "skills", "personal", "described");
-    const meta = JSON.parse(
-      fs.readFileSync(path.join(destDir, "meta.json"), "utf8"),
-    ) as {
-      name?: string;
-      description?: string;
-      version?: string;
-      author?: string;
-    };
-    expect(meta.name).toBe("described");
-    expect(meta.description).toBe(
+    // No meta.json synthesized — frontmatter is the source of truth.
+    expect(fs.existsSync(path.join(destDir, "meta.json"))).toBe(false);
+    // The registry index reads the description straight from frontmatter.
+    const entry = buildRegistryIndex(registryRoot).entries.find(
+      (e) => e.name === "described",
+    )!;
+    expect(entry.description).toBe(
       "A skill whose description lives in SKILL.md frontmatter only",
     );
-    expect(meta.version).toBe("1.2.3");
-    expect(meta.author).toBe("Test Author");
+    expect(entry.version).toBe("1.2.3");
+    expect(entry.author).toBe("Test Author");
   });
 
   test("places a `source: bundled` skill in skills/vendored/", async () => {
@@ -361,8 +387,7 @@ describe("importRegistryManifest", () => {
             skillPath: "skills/beta/SKILL.md",
           },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -389,8 +414,7 @@ describe("importRegistryManifest", () => {
           bucket: "personal",
           origin: { kind: "none" },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -400,13 +424,13 @@ describe("importRegistryManifest", () => {
     expect(result.outcomes[0]!.result).toBe("origin-unreachable");
   });
 
-  test("same-origin existing skill returns `registered`, restores hidden state", async () => {
+  test("same-origin existing skill returns `registered`, recovers label override", async () => {
     const dir = writeSkill("vendored", "gamma", {
       source: "curated",
+      description: "gamma helper",
       origin: { repo: "owner/repo", skillPath: "skills/gamma/SKILL.md" },
     });
     writeSyncedHash(dir, "baseline");
-    writeUpstreamCanonNames(registryRoot, ["gamma"], "synced");
 
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
@@ -423,8 +447,7 @@ describe("importRegistryManifest", () => {
             skillPath: "skills/gamma/SKILL.md",
           },
           tags: ["t1"],
-          dismissed: true,
-          hidden: true,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -432,17 +455,9 @@ describe("importRegistryManifest", () => {
 
     const result = await importRegistryManifest(registryRoot, manifest);
     expect(result.outcomes).toEqual([{ name: "gamma", result: "registered" }]);
-    const hidden = JSON.parse(
-      fs.readFileSync(
-        path.join(registryRoot, ".skills-bank", "hidden-canon.json"),
-        "utf8",
-      ),
-    ) as { names: string[] };
-    expect(hidden.names).toContain("gamma");
-    const meta = JSON.parse(
-      fs.readFileSync(path.join(dir, "meta.json"), "utf8"),
-    ) as { tags?: string[] };
-    expect(meta.tags).toEqual(["t1"]);
+    // "gamma helper" derives no labels, so the manifest's ["t1"] surfaces
+    // as a reconstructed addedTags override for labels.json.
+    expect(result.restoredLabels?.["gamma"]).toEqual({ addedTags: ["t1"] });
   });
 
   test("surfaces collision when local origin differs from manifest", async () => {
@@ -466,8 +481,7 @@ describe("importRegistryManifest", () => {
             skillPath: "skills/delta/SKILL.md",
           },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -497,8 +511,7 @@ describe("importRegistryManifest", () => {
           bucket: "personal",
           origin: { kind: "none" },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: ["claude", "cursor"],
         },
       ],
@@ -530,8 +543,7 @@ describe("importRegistryManifest", () => {
             skillPath: "skills/alpha/SKILL.md",
           },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
         {
@@ -544,8 +556,7 @@ describe("importRegistryManifest", () => {
             skillPath: "skills/beta/SKILL.md",
           },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
         {
@@ -558,8 +569,7 @@ describe("importRegistryManifest", () => {
             skillPath: "skills/gamma/SKILL.md",
           },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -598,8 +608,7 @@ describe("importRegistryManifest", () => {
           bucket: "personal",
           origin: { kind: "none" },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
         {
@@ -608,8 +617,7 @@ describe("importRegistryManifest", () => {
           bucket: "personal",
           origin: { kind: "none" },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
         {
@@ -618,8 +626,7 @@ describe("importRegistryManifest", () => {
           bucket: "personal",
           origin: { kind: "none" },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -684,8 +691,7 @@ describe("importRegistryManifest", () => {
           bucket: "personal",
           origin: { kind: "none" },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -747,8 +753,7 @@ describe("importRegistryManifest", () => {
           bucket: "personal",
           origin: { kind: "none" },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -821,8 +826,7 @@ describe("coerceManifestToCurrent", () => {
             skillPath: "skills/alpha/SKILL.md",
           },
           tags: ["t1"],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
         {
@@ -830,8 +834,7 @@ describe("coerceManifestToCurrent", () => {
           source: "user" as const,
           origin: { kind: "none" as const },
           tags: [],
-          dismissed: true,
-          hidden: true,
+          category: null,
           lastInstalledOn: ["claude" as const],
         },
       ],
@@ -844,7 +847,7 @@ describe("coerceManifestToCurrent", () => {
     expect(coerced.skills[1]!.lastInstalledOn).toEqual(["claude"]);
   });
 
-  test("v3 manifest: stamps current version, fills field defaults", () => {
+  test("v3 manifest: stamps current version, drops dismissed/hidden, defaults category", () => {
     const v3 = {
       schemaVersion: 3 as const,
       exportedAt: "2026-05-20T00:00:00Z",
@@ -866,13 +869,14 @@ describe("coerceManifestToCurrent", () => {
     expect(coerced.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
     expect(coerced.skills[0]!.bucket).toBe("personal");
     expect(coerced.skills[0]!.tags).toEqual(["t1"]);
-    expect(coerced.skills[0]!.dismissed).toBe(true);
+    expect(coerced.skills[0]!.category).toBeNull();
     expect(coerced.skills[0]!.lastInstalledOn).toEqual(["claude"]);
   });
 
-  test("canonical v4 file (no exportedAt / lastInstalledOn) refills defaults", () => {
-    // The shape `serializeManifest` produces: schemaVersion 4, no
-    // top-level exportedAt, no per-skill lastInstalledOn.
+  test("canonical v4 file (dismissed/hidden, no category) coerces to v5", () => {
+    // The shape the pre-v5 `serializeManifest` produced: schemaVersion 4,
+    // no top-level exportedAt, no per-skill lastInstalledOn, the legacy
+    // dismissed/hidden booleans, and no category.
     const canonical = {
       schemaVersion: 4 as const,
       sourceBankVersion: "1.17.0",
@@ -892,6 +896,8 @@ describe("coerceManifestToCurrent", () => {
     expect(coerced.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
     expect(coerced.exportedAt).toBe("");
     expect(coerced.skills[0]!.lastInstalledOn).toEqual([]);
+    expect(coerced.skills[0]!.category).toBeNull();
+    expect("dismissed" in coerced.skills[0]!).toBe(false);
   });
 
   test("rejects unsupported schemaVersion", () => {
@@ -916,8 +922,7 @@ describe("serializeManifest", () => {
           bucket: "personal",
           origin: { kind: "none" },
           tags: ["b", "a"],
-          dismissed: false,
-          hidden: false,
+          category: "frontend",
           lastInstalledOn: ["claude", "cursor"],
         },
         {
@@ -932,8 +937,7 @@ describe("serializeManifest", () => {
             skillFolderHash: "deadbeef",
           },
           tags: [],
-          dismissed: true,
-          hidden: true,
+          category: null,
           lastInstalledOn: [],
         },
       ],
@@ -952,9 +956,10 @@ describe("serializeManifest", () => {
     expect(skills.map((s) => s["name"])).toEqual(["alpha", "zeta"]);
     // No per-skill lastInstalledOn (local, churn source).
     expect(skills.every((s) => !("lastInstalledOn" in s))).toBe(true);
-    // dismissed/hidden retained (curation intent, compared by diff).
-    expect(skills[0]!["dismissed"]).toBe(true);
-    expect(skills[0]!["hidden"]).toBe(true);
+    // category/tags retained (curation intent, compared by diff). zeta
+    // sorts last, so skills[1] is zeta with its category.
+    expect(skills[0]!["category"]).toBeNull();
+    expect(skills[1]!["category"]).toBe("frontend");
     // skillFolderHash retained as a pin.
     expect(
       (skills[0]!["origin"] as Record<string, unknown>)["skillFolderHash"],
@@ -973,9 +978,8 @@ describe("serializeManifest", () => {
       "source",
       "bucket",
       "origin",
+      "category",
       "tags",
-      "dismissed",
-      "hidden",
     ]);
   });
 
@@ -1015,8 +1019,7 @@ describe("importRegistryManifest — schema migration head", () => {
             skillPath: "skills/zeta/SKILL.md",
           },
           tags: [],
-          dismissed: false,
-          hidden: false,
+          category: null,
           lastInstalledOn: [],
         },
       ],

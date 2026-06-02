@@ -3,6 +3,20 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.18.0
+
+Registry manifest schema → v5: each per-skill record now carries effective curation labels (category + tags) and a re-fetchable origin for authored-here skills, and `bucket` is derived from origin. Sharpens the git-flow so a pull reconstructs the full registry — content, placement, and curation — from the manifest alone.
+
+### Added
+
+- **Effective labels in the manifest.** Each entry records its `category` (single value from the labels taxonomy) and `tags`, computed as `effectiveLabels(deriveLabels(name, description), labels.json override)` at export. The manifest previously read `tags` from `meta.json` (always empty); it now reflects the same auto-derive-then-user-maintain labels pipeline the app UI uses. On pull, `importRegistryManifest` reconstructs the minimal `SkillLabelOverride` per skill and the desktop app merges it into the local `labels.json`, so curation round-trips across machines.
+- **Self-origin for authored-here skills.** An authored skill whose marker is `none` now gets a synthesized self-origin (`kind: "github"`, `repo` = the active linked repo, `skillPath` = its in-registry path) on export when a repo is linked — so it is re-fetchable on pull from the same repo its content commits to, rather than failing as `origin-unreachable`. With no repo linked it stays `none` (untracked until pushed). A new `isSelfOrigin` helper is the single mechanism bucket derivation (and future scan/sync flows) share for the "is this mine?" decision.
+
+### Changed
+
+- **Manifest schema → v5.** `ManifestSkill` drops the duplicated, always-empty `dismissed`/`hidden` booleans and adds `category: string | null`; `tags` is now populated from the labels system. **`bucket` is derived from origin** at export (external GitHub origin → `vendored`; self-origin or no origin → `personal`) rather than read from disk. v2/v3/v4 manifests coerce up through the single `coerceManifestToCurrent` chokepoint (legacy `dismissed`/`hidden` dropped, `category` defaulted to `null`); v1 remains unreadable. `diffManifests` now compares `category`/`tags` as shared curation intent.
+- **Import no longer writes `meta.json`.** SKILL.md frontmatter has been the authoritative metadata source since v1.15; the import path now relies on the mirrored frontmatter alone and writes no `meta.json`, dropping the disconnected hand-rolled write that predated the frontmatter migration.
+
 ## v1.17.0
 
 Multi-master registry sync: the linked repo's `registry-manifest.json` now behaves like git-versioned state. Pull is a three-way merge that preserves intentional divergence; push refuses to clobber a diverged remote. Fixes the cross-machine bug where one host's push silently deleted every skill another host had authored. See [ADR-0009](docs/adr/ADR-0009-multi-master-manifest-merge.md).

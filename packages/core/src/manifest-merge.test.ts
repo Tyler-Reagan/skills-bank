@@ -33,8 +33,7 @@ function sk(name: string, tags: string[], description?: string): ManifestSkill {
     bucket: "personal",
     origin: { kind: "none" },
     tags,
-    dismissed: false,
-    hidden: false,
+    category: null,
     lastInstalledOn: [],
   };
 }

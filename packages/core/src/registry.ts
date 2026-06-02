@@ -25,10 +25,9 @@ export function findEntry(
  * null if the file is absent or has no recognizable frontmatter
  * block. Pure read of the SKILL.md file — does NOT consult meta.json.
  *
- * Exported so callers like `restoreAuxState` can recover descriptions
- * from frontmatter when they're about to write a fresh meta.json, in
- * which case the meta.json-first preference baked into `readSkillMeta`
- * would shadow the frontmatter values they need.
+ * Exported so callers can recover individual frontmatter fields
+ * directly, bypassing the `name`+`description` gate `readSkillMeta`
+ * applies to its structured `SkillMeta` result.
  */
 export function readSkillMdFrontmatter(
   skillDir: string,
@@ -57,8 +56,8 @@ export function readSkillMdFrontmatter(
     // `key: >` (folded — newlines become spaces), with optional chomp
     // indicator (`|-`, `|+`, `>-`, `>+`). Without this branch the
     // captured value would be the literal indicator char (`|`), which
-    // then cascaded through restoreAuxState → meta.json with a
-    // one-character description and tripped drift detection downstream.
+    // would surface as a one-character description and trip drift
+    // detection downstream.
     const blockMatch = rawVal.match(/^([|>])[-+]?\s*$/);
     let val: string;
     if (blockMatch) {

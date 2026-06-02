@@ -19,15 +19,15 @@ export interface ManifestDiff {
  * two engines from drifting apart.
  *
  * Deliberately EXCLUDES `description` (informational, re-derivable from
- * SKILL.md), `bucket` (a path concept), and `lastInstalledOn` (per-
- * machine local). Includes `dismissed`/`hidden` (curation intent).
+ * SKILL.md), `bucket` (a path concept, now derived from origin), and
+ * `lastInstalledOn` (per-machine local). Includes `category`/`tags`
+ * (curation intent).
  */
 export const COMPARED_FIELDS: (keyof ManifestSkill)[] = [
   "source",
   "origin",
+  "category",
   "tags",
-  "hidden",
-  "dismissed",
 ];
 
 export function skillSignature(s: ManifestSkill): string {

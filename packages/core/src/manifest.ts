@@ -2,40 +2,55 @@ import fs from "node:fs";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
 import { buildRegistryIndex } from "./build.js";
-import { hashSkillFolder, readSyncedHash, writeSyncedHash } from "./heal.js";
-import { hideCanonSkill } from "./hide.js";
-import { findSkillFolder, readSkillMdFrontmatter } from "./registry.js";
+import { hashSkillFolder, writeSyncedHash } from "./heal.js";
+import { findSkillFolder } from "./registry.js";
 import {
   readSkillSource,
   writeSkillSource,
+  isSelfOrigin,
   type OriginPointer,
   type SkillOrigin,
 } from "./source.js";
 import { folderPathFromSkillPath, mirrorSkillFolder } from "./origin.js";
 import { deleteFromBankSkill } from "./install.js";
+import {
+  deriveLabels,
+  effectiveLabels,
+  type LabelsMap,
+  type SkillLabelOverride,
+} from "./labels.js";
 
 /**
- * v1.1 Registry manifest (Phase 1 of the curation-layer-reset plan).
+ * Registry manifest — the metadata-only artifact at the heart of the
+ * git-flow push/pull between a registry and its linked repo. It records,
+ * per skill: the source axis, an origin pointer used to re-fetch content,
+ * the on-disk bucket, and the effective curation labels (category + tags).
+ * No file content lives in the manifest — content is re-mirrored from each
+ * skill's origin on import.
  *
- * Metadata-only export of a registry: per-skill source axis, origin
- * pointer, tags, dismissed/hidden state, and a record of which agent
- * dirs the skill was installed in at export time. No file content
- * lives in the manifest — content is re-fetched from each skill's
- * Origin on import.
+ * Origin is what makes a skill re-fetchable on pull. A third-party skill
+ * points at its upstream repo; an *authored-here* skill points back at the
+ * registry's own linked repo (a "self-origin" — `kind: "github"`, `repo` =
+ * the active link), so it reconstructs from the same place its content is
+ * committed. A skill with no resolvable origin (`kind: "none"`) is
+ * effectively untracked — present locally but not yet pullable anywhere.
  *
- * The concept is independent of the deprecated content-bearing
- * `exportRegistry` zip. See `docs/plans/curation-layer-reset.md`
- * sections 5–7.
+ * Category + tags come from the auto-derive-then-user-maintain labels
+ * system (`labels.ts`): `deriveLabels` assigns them at registration,
+ * `SkillLabelOverride` carries the user's edits, and the manifest stores
+ * the *effective* (merged) values so the curation state travels with the
+ * registry.
  */
-export const MANIFEST_SCHEMA_VERSION = 4 as const;
+export const MANIFEST_SCHEMA_VERSION = 5 as const;
 
 /**
- * Oldest manifest version `importRegistryManifest` will coerce up to
- * the current schema. Pre-v2 manifests (the legacy `bundled`/`yours`
- * source vocabulary) are no longer readable — `coerceManifestToCurrent`
- * throws a sentinel error before the migration head if encountered. v2
- * (no `bucket`) and v3 (full per-skill shape) are the legacy forms kept
- * alive while users have manifests exported during the v1.x window.
+ * Oldest manifest version `importRegistryManifest` will coerce up to the
+ * current schema. Pre-v2 manifests (the legacy `bundled`/`yours` source
+ * vocabulary) are no longer readable — `coerceManifestToCurrent` throws a
+ * sentinel error if encountered. v2 (no `bucket`), v3 (full per-skill
+ * shape), and v4 (the `dismissed`/`hidden` booleans, pre-`category`) are
+ * the legacy forms kept alive while users hold manifests exported during
+ * the v1.x window.
  */
 export const MANIFEST_OLDEST_READABLE_VERSION = 2 as const;
 
@@ -58,26 +73,31 @@ export interface ManifestSkill {
   source: SkillOrigin;
   /**
    * On-disk bucket the skill lives in (`skills/<bucket>/<name>/`).
-   * Decoupled from the source axis: a `source: user` skill harvested
-   * from a third-party origin is still `vendored`. The export reads
-   * this directly from the registry index entry.
+   * DERIVED from origin at export: an external GitHub origin → `vendored`
+   * (harvested, link retained); a self-origin or no origin → `personal`
+   * (authored in the linked repo). Decoupled from the source axis — a
+   * `source: user` skill harvested from a third party is still `vendored`.
    */
   bucket: "personal" | "vendored";
   origin: ManifestOrigin;
-  tags: string[];
   /**
-   * `hidden` is the on-disk axis (`<stateDir>/hidden-canon.json`).
-   * `dismissed` is the user-facing UL term for the same state. Both
-   * fields are serialized so a future split — should one ever land —
-   * can populate them independently without a schema bump.
+   * Effective single category from the labels taxonomy (`labels.ts`),
+   * or `null` when no rule matched and the user set none. Auto-derived
+   * from name + description at registration, overridable by the user.
    */
-  dismissed: boolean;
-  hidden: boolean;
+  category: string | null;
+  /**
+   * Effective tag set — auto-derived from name + description, then
+   * adjusted by the user's add/reject overrides. Stored flattened so
+   * the manifest is a complete, human-readable record of curation state.
+   */
+  tags: string[];
   /**
    * Agent dirs that held a symlink to this skill at export time.
    * Import intersects this with the destination machine's available
    * agents and surfaces the intersection as `installHints` for the
-   * user-confirmed batch install.
+   * user-confirmed batch install. In-memory only — `serializeManifest`
+   * drops it from the committed file (per-machine local state).
    */
   lastInstalledOn: AgentId[];
 }
@@ -104,12 +124,22 @@ export interface ExportRegistryManifestOptions {
   sourceBankVersion: string;
   /** Optional label written into `RegistryManifest.registryRoot`. */
   registryRootLabel?: string;
+  /**
+   * Active linked repo `owner/name`. Distinguishes self vs external
+   * origins for bucket derivation, and lets an authored-here skill with
+   * a `none` marker get a synthesized self-origin (pointing at this repo,
+   * at the skill's in-registry path) so it's re-fetchable on pull. Absent
+   * → every GitHub origin is external and no self-origin is synthesized.
+   */
+  linkedRepo?: string;
+  /** Label overrides keyed by skill name (the app's `labels.json`). */
+  labels?: LabelsMap;
 }
 
 /**
- * Pure read: walk the active registry index, fold in per-skill
- * sidecar state, and surface a `RegistryManifest`. Never mutates
- * the registry.
+ * Pure read: walk the active registry index, fold in per-skill sidecar
+ * state + supplied labels, and surface a `RegistryManifest`. Never
+ * mutates the registry; no I/O beyond the index walk.
  */
 export function exportRegistryManifest(
   registryRoot: string,
@@ -119,17 +149,29 @@ export function exportRegistryManifest(
   const installedByName = readInstalledAgentMap();
 
   const skills: ManifestSkill[] = index.entries.map((entry) => {
-    const tags = Array.isArray(entry.tags) ? entry.tags : [];
-    const hidden = entry.hidden === true;
+    const origin = resolveExportOrigin(
+      entry.path,
+      entry.source.origin,
+      opts.linkedRepo,
+    );
+    // Bucket is derived, not read from disk: external GitHub origin →
+    // `vendored`; self-origin or no origin → `personal`.
+    const bucket: "personal" | "vendored" =
+      origin.kind === "github" && !isSelfOrigin(origin, opts.linkedRepo)
+        ? "vendored"
+        : "personal";
+    const { category, tags } = effectiveLabels(
+      deriveLabels({ name: entry.name, description: entry.description ?? "" }),
+      opts.labels?.[entry.name],
+    );
     return {
       name: entry.name,
       ...(entry.description ? { description: entry.description } : {}),
       source: entry.source.source,
-      bucket: entry.bucket ?? "personal",
-      origin: originFromPointer(entry.source.origin),
+      bucket,
+      origin,
+      category,
       tags,
-      dismissed: hidden,
-      hidden,
       lastInstalledOn: installedByName.get(entry.name) ?? [],
     };
   });
@@ -158,7 +200,7 @@ export function exportRegistryManifest(
  *     THIS machine, which is per-machine local state, not shared
  *     registry intent. `diffManifests` already excludes it from
  *     significance; committing it would manufacture cross-machine
- *     conflicts. `dismissed`/`hidden` ARE kept: they're curation intent
+ *     conflicts. `category`/`tags` ARE kept: they're curation intent
  *     and `diffManifests` compares them.
  *   - Trailing newline.
  *
@@ -184,9 +226,8 @@ function canonicalSkill(s: ManifestSkill): Record<string, unknown> {
   out.source = s.source;
   out.bucket = s.bucket;
   out.origin = canonicalOrigin(s.origin);
+  out.category = s.category;
   out.tags = s.tags;
-  out.dismissed = s.dismissed;
-  out.hidden = s.hidden;
   return out;
 }
 
@@ -222,6 +263,14 @@ export interface ImportRegistryManifestResult {
    * propagated). Empty/omitted on a purely additive import.
    */
   removed?: ManifestRemovalResult[];
+  /**
+   * Reconstructed label overrides keyed by skill name, for every
+   * registered skill whose effective category/tags differ from pure
+   * auto-derivation. The caller (desktop main) merges this into the
+   * app's `labels.json` so curation travels with the pull. Skills whose
+   * labels match auto-derivation are omitted (no override needed).
+   */
+  restoredLabels?: LabelsMap;
   /**
    * Set to `true` when the per-skill loop was aborted via the
    * caller-supplied `AbortSignal`. Already-mirrored skills remain
@@ -336,6 +385,7 @@ export async function importRegistryManifest(
 
   const outcomes: ImportSkillOutcome[] = [];
   const installHints: { name: string; agents: AgentId[] }[] = [];
+  const restoredLabels: LabelsMap = {};
   let cancelled = false;
   const total = m.skills.length;
   const manifestNames = m.skills.map((s) => s.name);
@@ -366,15 +416,10 @@ export async function importRegistryManifest(
         readSkillSource(existing.dir).origin,
       );
       if (originsEqual(localOrigin, skill.origin)) {
-        restoreAuxState(registryRoot, existing.dir, skill);
-        // Re-baseline the hash so restoreAuxState's meta.json write
-        // (tags, description) doesn't register as phantom drift on the
-        // next index build. Only re-baseline when a prior baseline
-        // exists — don't create one where the skill was never synced.
-        if (readSyncedHash(existing.dir)) {
-          const h = hashSkillFolder(existing.dir);
-          if (h) writeSyncedHash(existing.dir, h);
-        }
+        // Same-origin re-import: content already on disk and untouched
+        // (labels live in labels.json, not the folder), so no re-hash is
+        // needed. Just recover the label override for the caller.
+        recordLabelOverride(restoredLabels, skill);
         outcomes.push({ name: skill.name, result: "registered" });
       } else {
         outcomes.push({
@@ -423,13 +468,15 @@ export async function importRegistryManifest(
         continue;
       }
       stampOriginMarker(destDir, skill, mirror.folderHash);
-      restoreAuxState(registryRoot, destDir, skill);
-      // Re-hash AFTER restoreAuxState so the baseline covers meta.json
-      // and any other aux files. Mirrors the sync path in upstream.ts.
-      // Uses SHA-256 (hashSkillFolder), not the GitHub tree SHA-1
-      // (mirror.folderHash), which is what drift detection compares.
+      // Re-hash AFTER stamping the marker so the drift baseline matches
+      // what the next index build computes. Uses SHA-256 (hashSkillFolder),
+      // not the GitHub tree SHA-1 (mirror.folderHash) — the SHA-256 is
+      // what drift detection compares. Metadata comes from the mirrored
+      // SKILL.md frontmatter (authoritative post-v1.15); no meta.json is
+      // written. Labels live in labels.json, recovered for the caller below.
       const localHash = hashSkillFolder(destDir);
       if (localHash) writeSyncedHash(destDir, localHash);
+      recordLabelOverride(restoredLabels, skill);
       outcomes.push({ name: skill.name, result: "registered" });
     }
 
@@ -453,8 +500,11 @@ export async function importRegistryManifest(
     });
   }
 
+  const labelsOut =
+    Object.keys(restoredLabels).length > 0 ? { restoredLabels } : {};
+
   if (cancelled) {
-    return { outcomes, installHints, cancelled: true };
+    return { outcomes, installHints, ...labelsOut, cancelled: true };
   }
 
   // Confirmed-removal arm. Runs only on a clean (non-cancelled)
@@ -472,8 +522,37 @@ export async function importRegistryManifest(
   }
 
   return removed
-    ? { outcomes, installHints, removed }
-    : { outcomes, installHints };
+    ? { outcomes, installHints, ...labelsOut, removed }
+    : { outcomes, installHints, ...labelsOut };
+}
+
+/**
+ * Resolve the origin to write into a manifest entry. A GitHub marker is
+ * carried verbatim. A `none`/missing marker is upgraded to a self-origin
+ * (`kind: "github"`, `repo` = `linkedRepo`, `skillPath` = the skill's
+ * in-registry path) when a repo is linked, so an authored-here skill is
+ * re-fetchable on pull from the same repo its content commits to. With no
+ * linked repo it stays `none` (untracked until a repo is linked + pushed).
+ *
+ * `entryPath` is the skill folder's registry-relative path (e.g.
+ * `skills/personal/foo`); the self-origin's `skillPath` appends
+ * `/SKILL.md` — matching where `pushSkillFolder` places authored content.
+ */
+function resolveExportOrigin(
+  entryPath: string,
+  marker: OriginPointer | undefined,
+  linkedRepo: string | undefined,
+): ManifestOrigin {
+  const fromMarker = originFromPointer(marker);
+  if (fromMarker.kind === "github") return fromMarker;
+  if (linkedRepo) {
+    return {
+      kind: "github",
+      repo: linkedRepo,
+      skillPath: `${entryPath.replace(/\/+$/, "")}/SKILL.md`,
+    };
+  }
+  return fromMarker;
 }
 
 function originFromPointer(p: OriginPointer | undefined): ManifestOrigin {
@@ -518,58 +597,48 @@ function stampOriginMarker(
   writeSkillSource(destDir, { source: skill.source, origin });
 }
 
-function restoreAuxState(
-  registryRoot: string,
-  skillDir: string,
+/**
+ * Reconstruct the minimal `SkillLabelOverride` that, re-applied to the
+ * destination's auto-derived labels, reproduces the manifest's effective
+ * category + tags. The manifest stores flattened effective values; this
+ * recovers just the user's deltas (category pin + tag add/reject) so the
+ * rebuilt `labels.json` stays minimal and re-derivation handles the rest.
+ * Returns `undefined` when the effective labels already match pure
+ * auto-derivation (no override needed).
+ */
+function reconstructLabelOverride(
   skill: ManifestSkill,
-): void {
-  // Tags: write into meta.json, preserving any existing fields.
-  const metaPath = path.join(skillDir, "meta.json");
-  let meta: Record<string, unknown> = {};
-  if (fs.existsSync(metaPath)) {
-    try {
-      meta = JSON.parse(fs.readFileSync(metaPath, "utf8")) as Record<
-        string,
-        unknown
-      >;
-    } catch {
-      meta = {};
-    }
+): SkillLabelOverride | undefined {
+  const derived = deriveLabels({
+    name: skill.name,
+    description: skill.description ?? "",
+  });
+  const override: SkillLabelOverride = {};
+  let changed = false;
+  if ((skill.category ?? null) !== derived.category) {
+    override.category = skill.category;
+    override.categorySource = "user";
+    changed = true;
   }
-  // Recover description / version / author from the just-mirrored
-  // SKILL.md frontmatter when meta.json doesn't already supply them.
-  // Without this, restoring a skill whose upstream carries metadata
-  // only in SKILL.md (description in frontmatter, no meta.json) ends
-  // up writing a fresh meta.json that omits `description`, which then
-  // trips both the AJV `required` check and the human-readable
-  // "missing description" warning at build time.
-  const fm = readSkillMdFrontmatter(skillDir);
-  if (fm) {
-    if (!meta["description"] && fm["description"]) {
-      meta["description"] = fm["description"];
-    }
-    if (!meta["version"] && fm["version"]) {
-      meta["version"] = fm["version"];
-    }
-    if (!meta["author"] && fm["author"]) {
-      meta["author"] = fm["author"];
-    }
+  const derivedSet = new Set(derived.tags);
+  const manifestSet = new Set(skill.tags);
+  const added = skill.tags.filter((t) => !derivedSet.has(t));
+  const rejected = derived.tags.filter((t) => !manifestSet.has(t));
+  if (added.length > 0) {
+    override.addedTags = added;
+    changed = true;
   }
-  if (skill.tags.length > 0) {
-    meta["tags"] = skill.tags;
-  } else if ("tags" in meta) {
-    delete meta["tags"];
+  if (rejected.length > 0) {
+    override.rejectedTags = rejected;
+    changed = true;
   }
-  if (!meta["name"]) meta["name"] = skill.name;
-  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + "\n");
+  return changed ? override : undefined;
+}
 
-  // Hide state: only meaningful for canon skills, but hideCanonSkill
-  // is tolerant — it just adds the name to the hidden set. The build
-  // pass gates rendering by both canon AND hidden, so a non-canon
-  // entry in the hidden set stays inert until/unless it becomes canon.
-  if (skill.hidden || skill.dismissed) {
-    hideCanonSkill(registryRoot, skill.name);
-  }
+/** Record a skill's reconstructed label override into the accumulator. */
+function recordLabelOverride(acc: LabelsMap, skill: ManifestSkill): void {
+  const override = reconstructLabelOverride(skill);
+  if (override) acc[skill.name] = override;
 }
 
 /**
@@ -585,18 +654,14 @@ function restoreAuxState(
  *
  * Legacy fallbacks:
  *   - v2 manifests lack `bucket`. Derive it from origin: any GitHub
- *     origin → `vendored`; no-origin entries → `personal`. Skills
- *     authored in the user's own linked repo will mis-bucket as
- *     `vendored` and can be moved with `pnpm update:skill --bucket
- *     personal`. The forward path carries bucket explicitly so this
- *     only matters for one-time legacy imports.
- *   - v3 manifests share v4's per-skill shape; the only delta is the
- *     canonical committed form (v4 omits `exportedAt`/`lastInstalledOn`
- *     via `serializeManifest`). v3→v4 is therefore a version stamp plus
- *     the same defensive field-fill every version goes through.
- *   - v4 files parsed back from disk lack `exportedAt` and
- *     `lastInstalledOn` (serializer-dropped); `normalizeManifestSkill`
- *     refills `lastInstalledOn: []` and the top-level branch refills
+ *     origin → `vendored`; no-origin entries → `personal`. The forward
+ *     path now derives bucket from origin at export, so this matches.
+ *   - v3/v4 carried `dismissed`/`hidden` and no `category`.
+ *     `normalizeManifestSkill` drops the former and defaults
+ *     `category: null`; v5 thus reads v3/v4 files cleanly.
+ *   - Files parsed back from disk lack `exportedAt`/`lastInstalledOn`
+ *     (serializer-dropped); `normalizeManifestSkill` refills
+ *     `lastInstalledOn: []` and the top-level branch refills
  *     `exportedAt: ""` so the in-memory shape stays whole.
  */
 // Quarantined legacy shapes. Only referenced by `coerceManifestToCurrent`.
@@ -618,11 +683,12 @@ interface RegistryManifestV2 {
 }
 
 /**
- * Fill any optional/dropped per-skill field to its canonical default
- * so every downstream consumer sees a whole `ManifestSkill` regardless
- * of which legacy shape — or which serializer-trimmed file — it came
- * from. `lastInstalledOn` is the field a canonical v4 file drops, so it
- * defaults to `[]` here.
+ * Fill any optional/dropped per-skill field to its canonical default so
+ * every downstream consumer sees a whole `ManifestSkill` regardless of
+ * which legacy shape — or which serializer-trimmed file — it came from.
+ * `category` defaults to `null` (absent in v3/v4); legacy `dismissed`/
+ * `hidden` are ignored; `lastInstalledOn` (canonical files drop it)
+ * defaults to `[]`.
  */
 function normalizeManifestSkill(s: Record<string, unknown>): ManifestSkill {
   return {
@@ -631,9 +697,8 @@ function normalizeManifestSkill(s: Record<string, unknown>): ManifestSkill {
     source: s["source"] as SkillOrigin,
     bucket: s["bucket"] as "personal" | "vendored",
     origin: s["origin"] as ManifestOrigin,
+    category: typeof s["category"] === "string" ? s["category"] : null,
     tags: Array.isArray(s["tags"]) ? (s["tags"] as string[]) : [],
-    dismissed: s["dismissed"] === true,
-    hidden: s["hidden"] === true,
     lastInstalledOn: Array.isArray(s["lastInstalledOn"])
       ? (s["lastInstalledOn"] as AgentId[])
       : [],
@@ -651,10 +716,11 @@ export function coerceManifestToCurrent(input: unknown): RegistryManifest {
     registryRoot?: string;
     skills: Record<string, unknown>[];
   };
-  // v3 and v4 share an in-memory shape; the difference is purely in the
-  // canonical committed form (handled by `serializeManifest`). Both
-  // converge here through the same defensive normalize.
-  if (m.schemaVersion === 4 || m.schemaVersion === 3) {
+  // v3, v4, and v5 converge through the same defensive normalize, which
+  // drops the legacy `dismissed`/`hidden` booleans and defaults
+  // `category`. The remaining deltas are purely in the canonical
+  // committed form, handled by `serializeManifest`.
+  if (m.schemaVersion === 5 || m.schemaVersion === 4 || m.schemaVersion === 3) {
     return {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
       exportedAt: m.exportedAt ?? "",

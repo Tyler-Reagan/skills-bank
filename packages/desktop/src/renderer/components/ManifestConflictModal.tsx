@@ -63,11 +63,11 @@ const KIND_LABEL: Record<ManifestConflict["kind"], string> = {
 function summarize(skill: ManifestSkill | null): string {
   if (!skill) return "(deleted)";
   const parts: string[] = [skill.source];
+  if (skill.category) parts.push(`category: ${skill.category}`);
   if (skill.tags.length > 0) parts.push(`tags: ${skill.tags.join(", ")}`);
   if (skill.origin.kind === "github" && skill.origin.repo) {
     parts.push(`origin: ${skill.origin.repo}`);
   }
-  if (skill.hidden || skill.dismissed) parts.push("hidden");
   return parts.join(" · ");
 }
 
