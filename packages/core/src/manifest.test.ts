@@ -666,6 +666,74 @@ describe("importRegistryManifest", () => {
     });
   });
 
+  test("confirmed-removal arm deletes named local skills after the additive pass", async () => {
+    // Gap 2: a skill the merge resolved as deleted-upstream must be
+    // removed locally so the deletion propagates. Two local skills; the
+    // manifest re-registers one and the caller confirms removal of the
+    // other.
+    writeSkill("personal", "keep");
+    writeSkill("personal", "drop");
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.1.0",
+      skills: [
+        {
+          name: "keep",
+          source: "user",
+          bucket: "personal",
+          origin: { kind: "none" },
+          tags: [],
+          dismissed: false,
+          hidden: false,
+          lastInstalledOn: [],
+        },
+      ],
+    };
+    const result = await importRegistryManifest(registryRoot, manifest, {
+      removeNames: ["drop"],
+    });
+    expect(result.removed).toEqual([
+      { name: "drop", ok: true, message: expect.any(String) },
+    ]);
+    expect(
+      fs.existsSync(path.join(registryRoot, "skills", "personal", "keep")),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(registryRoot, "skills", "personal", "drop")),
+    ).toBe(false);
+  });
+
+  test("confirmed-removal of an already-absent skill is a no-op success", async () => {
+    const result = await importRegistryManifest(
+      registryRoot,
+      {
+        schemaVersion: MANIFEST_SCHEMA_VERSION,
+        exportedAt: "2026-05-20T00:00:00Z",
+        sourceBankVersion: "1.1.0",
+        skills: [],
+      } satisfies RegistryManifest,
+      { removeNames: ["ghost"] },
+    );
+    expect(result.removed).toEqual([
+      { name: "ghost", ok: true, message: "ghost not in registry" },
+    ]);
+  });
+
+  test("omitting removeNames leaves the import purely additive (no removed field)", async () => {
+    writeSkill("personal", "stays");
+    const result = await importRegistryManifest(registryRoot, {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.1.0",
+      skills: [],
+    } satisfies RegistryManifest);
+    expect(result.removed).toBeUndefined();
+    expect(
+      fs.existsSync(path.join(registryRoot, "skills", "personal", "stays")),
+    ).toBe(true);
+  });
+
   test("installHints omits skills with empty lastInstalledOn", async () => {
     writeSkill("personal", "zeta");
     const manifest: RegistryManifest = {

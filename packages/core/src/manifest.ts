@@ -12,6 +12,7 @@ import {
   type SkillOrigin,
 } from "./source.js";
 import { folderPathFromSkillPath, mirrorSkillFolder } from "./origin.js";
+import { deleteFromBankSkill } from "./install.js";
 
 /**
  * v1.1 Registry manifest (Phase 1 of the curation-layer-reset plan).
@@ -205,9 +206,22 @@ export type ImportSkillOutcome =
   | { name: string; result: "collision"; existingOrigin: ManifestOrigin }
   | { name: string; result: "skipped"; reason: string };
 
+export interface ManifestRemovalResult {
+  name: string;
+  ok: boolean;
+  message: string;
+}
+
 export interface ImportRegistryManifestResult {
   outcomes: ImportSkillOutcome[];
   installHints: { name: string; agents: AgentId[] }[];
+  /**
+   * Per-skill results of the confirmed-removal arm (Gap 2). Present
+   * only when `opts.removeNames` was supplied. A name absent from the
+   * local registry is a no-op success (the deletion already
+   * propagated). Empty/omitted on a purely additive import.
+   */
+  removed?: ManifestRemovalResult[];
   /**
    * Set to `true` when the per-skill loop was aborted via the
    * caller-supplied `AbortSignal`. Already-mirrored skills remain
@@ -278,6 +292,21 @@ export interface ImportRegistryManifestOptions {
    * mirroring starts. See `ManifestImportProgressEvent`.
    */
   onProgress?: (event: ManifestImportProgressEvent) => void;
+  /**
+   * Confirmed-removal arm (Gap 2). Skill names the caller has decided
+   * should be deleted from the local registry — typically the local
+   * skills that a three-way merge resolved as "deleted upstream" (so
+   * the deletion propagates rather than silently resurrecting on the
+   * next push). Each name is removed via `deleteFromBankSkill` (bank
+   * copy + agent-dir symlinks) AFTER the additive pass.
+   *
+   * Defaulting to additive-only when omitted is deliberate: the broad
+   * import path (account import, wipe-and-re-import) must NEVER delete
+   * a local skill just because the manifest it's applying doesn't list
+   * it. Only the merge-reconcile caller, holding a user-confirmed
+   * removal set, opts in.
+   */
+  removeNames?: string[];
 }
 
 /**
@@ -416,8 +445,26 @@ export async function importRegistryManifest(
     });
   }
 
-  return cancelled
-    ? { outcomes, installHints, cancelled: true }
+  if (cancelled) {
+    return { outcomes, installHints, cancelled: true };
+  }
+
+  // Confirmed-removal arm. Runs only on a clean (non-cancelled)
+  // completion so a half-applied import never also half-deletes.
+  let removed: ManifestRemovalResult[] | undefined;
+  if (opts.removeNames && opts.removeNames.length > 0) {
+    removed = opts.removeNames.map((name) => {
+      if (!findSkillFolder(registryRoot, name)) {
+        // Already gone — the deletion has nothing left to propagate.
+        return { name, ok: true, message: `${name} not in registry` };
+      }
+      const res = deleteFromBankSkill(name, { registryRoot });
+      return { name, ok: res.ok, message: res.message };
+    });
+  }
+
+  return removed
+    ? { outcomes, installHints, removed }
     : { outcomes, installHints };
 }
 
