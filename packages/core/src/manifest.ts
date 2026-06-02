@@ -12,6 +12,7 @@ import {
   type SkillOrigin,
 } from "./source.js";
 import { folderPathFromSkillPath, mirrorSkillFolder } from "./origin.js";
+import { deleteFromBankSkill } from "./install.js";
 
 /**
  * v1.1 Registry manifest (Phase 1 of the curation-layer-reset plan).
@@ -26,15 +27,15 @@ import { folderPathFromSkillPath, mirrorSkillFolder } from "./origin.js";
  * `exportRegistry` zip. See `docs/plans/curation-layer-reset.md`
  * sections 5–7.
  */
-export const MANIFEST_SCHEMA_VERSION = 3 as const;
+export const MANIFEST_SCHEMA_VERSION = 4 as const;
 
 /**
  * Oldest manifest version `importRegistryManifest` will coerce up to
  * the current schema. Pre-v2 manifests (the legacy `bundled`/`yours`
- * source vocabulary) are no longer readable — drop a sentinel error
- * before the migration head if encountered. v2 is the only legacy
- * shape kept alive while users have manifests exported during the
- * v1.x window.
+ * source vocabulary) are no longer readable — `coerceManifestToCurrent`
+ * throws a sentinel error before the migration head if encountered. v2
+ * (no `bucket`) and v3 (full per-skill shape) are the legacy forms kept
+ * alive while users have manifests exported during the v1.x window.
  */
 export const MANIFEST_OLDEST_READABLE_VERSION = 2 as const;
 
@@ -83,6 +84,14 @@ export interface ManifestSkill {
 
 export interface RegistryManifest {
   schemaVersion: typeof MANIFEST_SCHEMA_VERSION;
+  /**
+   * Wall-clock export time. Carried in-memory and in rolling snapshots
+   * (which retain full history), but `serializeManifest` OMITS it from
+   * the committed canonical file — its per-export churn was the leading
+   * source of meaningless manifest diffs. A manifest parsed back from a
+   * canonical file therefore arrives with `exportedAt: ""` (filled by
+   * `coerceManifestToCurrent`).
+   */
   exportedAt: string;
   /** Source bank's package version, e.g. "1.1.0". */
   sourceBankVersion: string;
@@ -135,15 +144,84 @@ export function exportRegistryManifest(
   return out;
 }
 
+/**
+ * Serialize a manifest into the canonical committed form: the exact
+ * bytes that land in `registry-manifest.json`. Deterministic, so a
+ * re-export with no semantic change produces an identical file and git
+ * shows no diff.
+ *
+ * Canonicalization rules:
+ *   - Skills sorted by `name`; stable top-level and per-skill key order.
+ *   - `exportedAt` dropped — its per-export churn was the dominant
+ *     source of empty diffs (snapshots retain history instead).
+ *   - `lastInstalledOn` dropped — it records which agent dirs exist on
+ *     THIS machine, which is per-machine local state, not shared
+ *     registry intent. `diffManifests` already excludes it from
+ *     significance; committing it would manufacture cross-machine
+ *     conflicts. `dismissed`/`hidden` ARE kept: they're curation intent
+ *     and `diffManifests` compares them.
+ *   - Trailing newline.
+ *
+ * Round-trip stable: `serializeManifest(coerceManifestToCurrent(
+ * JSON.parse(serializeManifest(m)))) === serializeManifest(m)`.
+ */
+export function serializeManifest(manifest: RegistryManifest): string {
+  const skills = [...manifest.skills]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(canonicalSkill);
+  const out: Record<string, unknown> = {
+    schemaVersion: manifest.schemaVersion,
+    sourceBankVersion: manifest.sourceBankVersion,
+  };
+  if (manifest.registryRoot) out.registryRoot = manifest.registryRoot;
+  out.skills = skills;
+  return JSON.stringify(out, null, 2) + "\n";
+}
+
+function canonicalSkill(s: ManifestSkill): Record<string, unknown> {
+  const out: Record<string, unknown> = { name: s.name };
+  if (s.description) out.description = s.description;
+  out.source = s.source;
+  out.bucket = s.bucket;
+  out.origin = canonicalOrigin(s.origin);
+  out.tags = s.tags;
+  out.dismissed = s.dismissed;
+  out.hidden = s.hidden;
+  return out;
+}
+
+function canonicalOrigin(o: ManifestOrigin): Record<string, unknown> {
+  if (o.kind !== "github") return { kind: "none" };
+  const out: Record<string, unknown> = { kind: "github" };
+  if (o.repo) out.repo = o.repo;
+  if (o.sourceUrl) out.sourceUrl = o.sourceUrl;
+  if (o.skillPath) out.skillPath = o.skillPath;
+  if (o.skillFolderHash) out.skillFolderHash = o.skillFolderHash;
+  return out;
+}
+
 export type ImportSkillOutcome =
   | { name: string; result: "registered" }
   | { name: string; result: "origin-unreachable"; reason: string }
   | { name: string; result: "collision"; existingOrigin: ManifestOrigin }
   | { name: string; result: "skipped"; reason: string };
 
+export interface ManifestRemovalResult {
+  name: string;
+  ok: boolean;
+  message: string;
+}
+
 export interface ImportRegistryManifestResult {
   outcomes: ImportSkillOutcome[];
   installHints: { name: string; agents: AgentId[] }[];
+  /**
+   * Per-skill results of the confirmed-removal arm (Gap 2). Present
+   * only when `opts.removeNames` was supplied. A name absent from the
+   * local registry is a no-op success (the deletion already
+   * propagated). Empty/omitted on a purely additive import.
+   */
+  removed?: ManifestRemovalResult[];
   /**
    * Set to `true` when the per-skill loop was aborted via the
    * caller-supplied `AbortSignal`. Already-mirrored skills remain
@@ -214,6 +292,21 @@ export interface ImportRegistryManifestOptions {
    * mirroring starts. See `ManifestImportProgressEvent`.
    */
   onProgress?: (event: ManifestImportProgressEvent) => void;
+  /**
+   * Confirmed-removal arm (Gap 2). Skill names the caller has decided
+   * should be deleted from the local registry — typically the local
+   * skills that a three-way merge resolved as "deleted upstream" (so
+   * the deletion propagates rather than silently resurrecting on the
+   * next push). Each name is removed via `deleteFromBankSkill` (bank
+   * copy + agent-dir symlinks) AFTER the additive pass.
+   *
+   * Defaulting to additive-only when omitted is deliberate: the broad
+   * import path (account import, wipe-and-re-import) must NEVER delete
+   * a local skill just because the manifest it's applying doesn't list
+   * it. Only the merge-reconcile caller, holding a user-confirmed
+   * removal set, opts in.
+   */
+  removeNames?: string[];
 }
 
 /**
@@ -352,8 +445,26 @@ export async function importRegistryManifest(
     });
   }
 
-  return cancelled
-    ? { outcomes, installHints, cancelled: true }
+  if (cancelled) {
+    return { outcomes, installHints, cancelled: true };
+  }
+
+  // Confirmed-removal arm. Runs only on a clean (non-cancelled)
+  // completion so a half-applied import never also half-deletes.
+  let removed: ManifestRemovalResult[] | undefined;
+  if (opts.removeNames && opts.removeNames.length > 0) {
+    removed = opts.removeNames.map((name) => {
+      if (!findSkillFolder(registryRoot, name)) {
+        // Already gone — the deletion has nothing left to propagate.
+        return { name, ok: true, message: `${name} not in registry` };
+      }
+      const res = deleteFromBankSkill(name, { registryRoot });
+      return { name, ok: res.ok, message: res.message };
+    });
+  }
+
+  return removed
+    ? { outcomes, installHints, removed }
     : { outcomes, installHints };
 }
 
@@ -469,8 +580,16 @@ function restoreAuxState(
  *     origin → `vendored`; no-origin entries → `personal`. Skills
  *     authored in the user's own linked repo will mis-bucket as
  *     `vendored` and can be moved with `pnpm update:skill --bucket
- *     personal`. The forward path (v3 export) carries bucket
- *     explicitly so this only matters for one-time legacy imports.
+ *     personal`. The forward path carries bucket explicitly so this
+ *     only matters for one-time legacy imports.
+ *   - v3 manifests share v4's per-skill shape; the only delta is the
+ *     canonical committed form (v4 omits `exportedAt`/`lastInstalledOn`
+ *     via `serializeManifest`). v3→v4 is therefore a version stamp plus
+ *     the same defensive field-fill every version goes through.
+ *   - v4 files parsed back from disk lack `exportedAt` and
+ *     `lastInstalledOn` (serializer-dropped); `normalizeManifestSkill`
+ *     refills `lastInstalledOn: []` and the top-level branch refills
+ *     `exportedAt: ""` so the in-memory shape stays whole.
  */
 // Quarantined legacy shapes. Only referenced by `coerceManifestToCurrent`.
 interface ManifestSkillV2 {
@@ -490,13 +609,51 @@ interface RegistryManifestV2 {
   skills: ManifestSkillV2[];
 }
 
+/**
+ * Fill any optional/dropped per-skill field to its canonical default
+ * so every downstream consumer sees a whole `ManifestSkill` regardless
+ * of which legacy shape — or which serializer-trimmed file — it came
+ * from. `lastInstalledOn` is the field a canonical v4 file drops, so it
+ * defaults to `[]` here.
+ */
+function normalizeManifestSkill(s: Record<string, unknown>): ManifestSkill {
+  return {
+    name: s["name"] as string,
+    ...(s["description"] ? { description: s["description"] as string } : {}),
+    source: s["source"] as SkillOrigin,
+    bucket: s["bucket"] as "personal" | "vendored",
+    origin: s["origin"] as ManifestOrigin,
+    tags: Array.isArray(s["tags"]) ? (s["tags"] as string[]) : [],
+    dismissed: s["dismissed"] === true,
+    hidden: s["hidden"] === true,
+    lastInstalledOn: Array.isArray(s["lastInstalledOn"])
+      ? (s["lastInstalledOn"] as AgentId[])
+      : [],
+  };
+}
+
 export function coerceManifestToCurrent(input: unknown): RegistryManifest {
   if (typeof input !== "object" || input === null) {
     throw new Error("manifest: input is not an object");
   }
-  const m = input as { schemaVersion?: unknown };
-  if (m.schemaVersion === MANIFEST_SCHEMA_VERSION) {
-    return input as RegistryManifest;
+  const m = input as {
+    schemaVersion?: unknown;
+    exportedAt?: string;
+    sourceBankVersion: string;
+    registryRoot?: string;
+    skills: Record<string, unknown>[];
+  };
+  // v3 and v4 share an in-memory shape; the difference is purely in the
+  // canonical committed form (handled by `serializeManifest`). Both
+  // converge here through the same defensive normalize.
+  if (m.schemaVersion === 4 || m.schemaVersion === 3) {
+    return {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: m.exportedAt ?? "",
+      sourceBankVersion: m.sourceBankVersion,
+      ...(m.registryRoot ? { registryRoot: m.registryRoot } : {}),
+      skills: m.skills.map(normalizeManifestSkill),
+    };
   }
   if (m.schemaVersion === 2) {
     const v2 = input as RegistryManifestV2;
@@ -505,10 +662,12 @@ export function coerceManifestToCurrent(input: unknown): RegistryManifest {
       exportedAt: v2.exportedAt,
       sourceBankVersion: v2.sourceBankVersion,
       ...(v2.registryRoot ? { registryRoot: v2.registryRoot } : {}),
-      skills: v2.skills.map((s) => ({
-        ...s,
-        bucket: s.origin.kind === "github" ? "vendored" : "personal",
-      })),
+      skills: v2.skills.map((s) =>
+        normalizeManifestSkill({
+          ...s,
+          bucket: s.origin.kind === "github" ? "vendored" : "personal",
+        }),
+      ),
     };
   }
   throw new Error(

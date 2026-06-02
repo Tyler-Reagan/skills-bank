@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import type { ImportRegistryManifestResult } from "@skills-bank/core";
+import type {
+  ImportRegistryManifestResult,
+  ManifestConflict,
+} from "@skills-bank/core";
 import type { LinkedRepoMetadata } from "../../shared/ipc.js";
 import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 import { RepoTransport } from "./RepoTransport.js";
@@ -14,6 +17,10 @@ interface Props {
   onClose: () => void;
   onImportComplete: (result: ImportRegistryManifestResult) => void;
   onExportComplete: (msg: string) => void;
+  /** Clean repo pull-merge — message to flash. */
+  onMerged: (msg: string) => void;
+  /** Repo pull-merge surfaced conflicts — open the resolver modal. */
+  onConflicts: (conflicts: ManifestConflict[]) => void;
 }
 
 export function ManifestModal({
@@ -24,6 +31,8 @@ export function ManifestModal({
   onClose,
   onImportComplete,
   onExportComplete,
+  onMerged,
+  onConflicts,
 }: Props): React.ReactElement {
   const [transport, setTransport] = useState<"repo" | "disk">(
     linkedRepo ? "repo" : "disk",
@@ -64,13 +73,15 @@ export function ManifestModal({
             linkedRepo={linkedRepo}
             importingManifest={importingManifest}
             onCancelImport={onCancelImport}
-            onImportComplete={(result) => {
-              onImportComplete(result);
-              onClose();
-            }}
             onExportComplete={(msg) => {
               onExportComplete(msg);
               onClose();
+            }}
+            onMerged={(msg) => {
+              onMerged(msg);
+            }}
+            onConflicts={(conflicts) => {
+              onConflicts(conflicts);
             }}
             onError={() => {
               // error is surfaced inline inside RepoTransport; don't auto-close

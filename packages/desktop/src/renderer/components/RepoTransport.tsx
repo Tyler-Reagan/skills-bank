@@ -1,8 +1,5 @@
 import React, { useState } from "react";
-import type {
-  ImportRegistryManifestResult,
-  ManifestDiff,
-} from "@skills-bank/core";
+import type { ManifestConflict, ManifestDiff } from "@skills-bank/core";
 import type {
   PreviewManifestPushResult,
   ReadManifestFromRepoResult,
@@ -18,8 +15,11 @@ interface Props {
   linkedRepo: LinkedRepoMetadata;
   importingManifest: boolean;
   onCancelImport: () => void;
-  onImportComplete: (result: ImportRegistryManifestResult) => void;
   onExportComplete: (msg: string) => void;
+  /** Clean pull-merge — message to flash. */
+  onMerged: (msg: string) => void;
+  /** Pull-merge surfaced conflicts — hand off to the resolver modal. */
+  onConflicts: (conflicts: ManifestConflict[]) => void;
   onError: (msg: string) => void;
 }
 
@@ -108,8 +108,9 @@ export function RepoTransport({
   linkedRepo,
   importingManifest,
   onCancelImport,
-  onImportComplete,
   onExportComplete,
+  onMerged,
+  onConflicts,
   onError,
 }: Props): React.ReactElement {
   if (mode === "export") {
@@ -125,7 +126,8 @@ export function RepoTransport({
     <ImportView
       importingManifest={importingManifest}
       onCancelImport={onCancelImport}
-      onImportComplete={onImportComplete}
+      onMerged={onMerged}
+      onConflicts={onConflicts}
       onError={onError}
     />
   );
@@ -254,12 +256,14 @@ function ExportView({
 function ImportView({
   importingManifest,
   onCancelImport,
-  onImportComplete,
+  onMerged,
+  onConflicts,
   onError,
 }: {
   importingManifest: boolean;
   onCancelImport: () => void;
-  onImportComplete: (result: ImportRegistryManifestResult) => void;
+  onMerged: (msg: string) => void;
+  onConflicts: (conflicts: ManifestConflict[]) => void;
   onError: (msg: string) => void;
 }): React.ReactElement {
   const { data, loading } = useIpcQuery<ReadManifestFromRepoResult>(
@@ -268,24 +272,21 @@ function ImportView({
   );
   const [action, setAction] = useState<ImportAction>({ kind: "idle" });
 
-  const runImport = async () => {
+  // The button runs a three-way pull-merge (not an additive import): a
+  // clean merge reconciles locally; conflicts hand off to the resolver
+  // modal. The read above is only the preview diff.
+  const runMerge = async () => {
     setAction({ kind: "importing" });
-    const readRes = await window.skillsBank.readManifestFromRepo();
-    if (!readRes.ok) {
-      const msg =
-        readRes.reason === "not-found"
-          ? "Manifest not found in repo."
-          : ((readRes as { message: string }).message ?? "Unknown error");
-      setAction({ kind: "error", message: msg });
-      onError(msg);
-      return;
-    }
-    const r = await window.skillsBank.runManifestImport(readRes.manifest);
+    const r = await window.skillsBank.runManifestMerge();
     if (!r.ok) {
       setAction({ kind: "error", message: r.message });
       onError(r.message);
+      return;
+    }
+    if (r.status === "conflicts") {
+      onConflicts(r.conflicts);
     } else {
-      onImportComplete(r.result);
+      onMerged(r.message);
     }
   };
 
@@ -352,9 +353,9 @@ function ImportView({
         <button
           className="btn primary"
           type="button"
-          onClick={() => void runImport()}
+          onClick={() => void runMerge()}
         >
-          Import from repo
+          Pull &amp; merge
         </button>
       </div>
     </div>

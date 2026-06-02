@@ -11,7 +11,18 @@ export interface ManifestDiff {
   unchanged: string[];
 }
 
-const COMPARED_FIELDS: (keyof ManifestSkill)[] = [
+/**
+ * The per-skill fields that constitute shared registry intent. Two
+ * entries with an identical signature are "the same skill" for both
+ * diff and three-way merge — so `manifest-merge.ts` imports
+ * `skillSignature` rather than re-deriving the field set, keeping the
+ * two engines from drifting apart.
+ *
+ * Deliberately EXCLUDES `description` (informational, re-derivable from
+ * SKILL.md), `bucket` (a path concept), and `lastInstalledOn` (per-
+ * machine local). Includes `dismissed`/`hidden` (curation intent).
+ */
+export const COMPARED_FIELDS: (keyof ManifestSkill)[] = [
   "source",
   "origin",
   "tags",
@@ -19,7 +30,7 @@ const COMPARED_FIELDS: (keyof ManifestSkill)[] = [
   "dismissed",
 ];
 
-function skillKey(s: ManifestSkill): string {
+export function skillSignature(s: ManifestSkill): string {
   return JSON.stringify(COMPARED_FIELDS.map((f) => s[f]));
 }
 
@@ -45,7 +56,7 @@ export function diffManifests(
     const existing = targetMap.get(name);
     if (!existing) {
       added.push(name);
-    } else if (skillKey(skill) !== skillKey(existing)) {
+    } else if (skillSignature(skill) !== skillSignature(existing)) {
       changed.push(name);
     } else {
       unchanged.push(name);

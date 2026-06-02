@@ -31,6 +31,17 @@ import {
   exportRegistry,
   exportRegistryManifest,
   importRegistryManifest,
+  applyManifestResolutions,
+  mergeManifests,
+  readMergeBase,
+  writeMergeBase,
+  serializeManifest,
+  readPendingManifestConflicts,
+  writePendingManifestConflicts,
+  clearPendingManifestConflicts,
+  resolveRenameTarget,
+  type ManifestDecisions,
+  type RateLimitInfo,
   MANIFEST_SCHEMA_VERSION,
   installSkillFromGithub,
   parseGithubSkillUrl,
@@ -126,7 +137,8 @@ import {
   type PreviewManifestPushResult,
   type PushManifestToRepoResult,
   type ReadManifestFromRepoResult,
-  type RunManifestImportResult,
+  type ResolveManifestConflictsResult,
+  type RunManifestMergeResult,
   type UserRepo,
 } from "../shared/ipc.js";
 import {
@@ -2103,10 +2115,10 @@ async function runManifestImportCore(manifest: RegistryManifest): Promise<
   // schemaVersions are refused so a future-incompatible manifest
   // doesn't silently mismap fields.
   const sv = (manifest as unknown as { schemaVersion: unknown }).schemaVersion;
-  if (sv !== 2 && sv !== 3) {
+  if (sv !== 2 && sv !== 3 && sv !== 4) {
     return {
       ok: false,
-      message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v2 and v3.`,
+      message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v2, v3, and v4.`,
     };
   }
   const controller = new AbortController();
@@ -2145,6 +2157,82 @@ async function runManifestImportCore(manifest: RegistryManifest): Promise<
       `${unreachable} unreachable origin${unreachable === 1 ? "" : "s"}`,
     );
   return { ok: true, message: parts.join(", "), result: importResult };
+}
+
+/**
+ * Reconcile the local registry to `manifest`: import adds + restore aux
+ * state, then delete every local skill the manifest no longer lists.
+ * The removal set is `localNames − manifestNames`, which captures BOTH
+ * conflict-confirmed deletions AND the auto-resolved deletions the merge
+ * already dropped (importRegistryManifest is otherwise additive).
+ * Returns the names actually removed. Caller owns base-snapshot advance.
+ */
+async function reconcileLocalToManifest(
+  root: string,
+  manifest: RegistryManifest,
+): Promise<string[]> {
+  const finalNames = new Set(manifest.skills.map((s) => s.name));
+  const removeNames = walkSkills(root)
+    .map((r) => r.name)
+    .filter((n) => !finalNames.has(n));
+  const result = await importRegistryManifest(root, manifest, {
+    token: getStoredToken(),
+    ...(removeNames.length > 0 ? { removeNames } : {}),
+  });
+  buildRegistryIndex(root, { includeGitInfo: true, writeFile: true });
+  invalidateCanonCache(root);
+  return (result.removed ?? []).filter((r) => r.ok).map((r) => r.name);
+}
+
+/**
+ * Fetch the linked repo's `registry-manifest.json`. A 404 resolves to
+ * an empty manifest (the repo has no manifest yet — everything is an
+ * add); other failures propagate so the caller can surface them.
+ */
+async function fetchRemoteManifest(
+  repo: string,
+  branch: string,
+  token: string,
+): Promise<
+  | { ok: true; manifest: RegistryManifest }
+  | {
+      ok: false;
+      reason: "rate-limit" | "read-failed";
+      message: string;
+      rateLimit?: RateLimitInfo;
+    }
+> {
+  const res = await readRepoFile({
+    repo,
+    path: "registry-manifest.json",
+    ref: branch,
+    token,
+  });
+  const empty: RegistryManifest = {
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
+    exportedAt: "",
+    sourceBankVersion: "",
+    skills: [],
+  };
+  if (!res.ok) {
+    if (res.status === 404) return { ok: true, manifest: empty };
+    return res.rateLimit
+      ? {
+          ok: false,
+          reason: "rate-limit",
+          message: res.message,
+          rateLimit: res.rateLimit,
+        }
+      : { ok: false, reason: "read-failed", message: res.message };
+  }
+  try {
+    return { ok: true, manifest: JSON.parse(res.content) as RegistryManifest };
+  } catch {
+    // A corrupt/unparseable remote manifest is treated as empty rather
+    // than aborting — the merge then reads every local skill as an add,
+    // which the user reviews before any push.
+    return { ok: true, manifest: empty };
+  }
 }
 
 ipcMain.handle(IPC.exportManifest, writeManifestToDisk);
@@ -2233,10 +2321,51 @@ ipcMain.handle(
       sourceBankVersion,
       registryRootLabel: linkedRepo.fullName,
     });
-    const content = JSON.stringify(manifest, null, 2) + "\n";
+    // Canonical serialization — sorted, stable keys, no `exportedAt`
+    // churn (the v4 committed form). This is also the byte-for-byte form
+    // the merge base is stored in, so the divergence check below compares
+    // apples to apples.
+    const content = serializeManifest(manifest);
     const commitMessage = "chore: update registry manifest";
 
     if (!opts.asPR) {
+      // Non-fast-forward guard — the fix for the originating clobber bug.
+      // A direct commit overwrites the branch wholesale, so refuse when
+      // the remote no longer matches our merge base: that means the repo
+      // changed since our last sync (or we've never synced a repo that
+      // already has a manifest), and pushing would silently delete the
+      // other machine's skills. The user must pull-merge first.
+      const remote = await fetchRemoteManifest(
+        linkedRepo.fullName,
+        branch,
+        token,
+      );
+      if (!remote.ok) {
+        return remote.reason === "rate-limit" && remote.rateLimit
+          ? {
+              ok: false,
+              reason: "rate-limit",
+              message: remote.message,
+              rateLimit: remote.rateLimit,
+            }
+          : { ok: false, reason: "write-failed", message: remote.message };
+      }
+      const baseManifest = readMergeBase(registryRoot) ?? {
+        schemaVersion: MANIFEST_SCHEMA_VERSION,
+        exportedAt: "",
+        sourceBankVersion: "",
+        skills: [],
+      };
+      if (
+        serializeManifest(remote.manifest) !== serializeManifest(baseManifest)
+      ) {
+        return {
+          ok: false,
+          reason: "diverged",
+          message:
+            "The linked repo changed since your last sync — pull & merge before pushing.",
+        };
+      }
       const res = await writeRepoFile({
         repo: linkedRepo.fullName,
         path: "registry-manifest.json",
@@ -2255,6 +2384,9 @@ ipcMain.handle(
           };
         return { ok: false, reason: "write-failed", message: res.message };
       }
+      // Remote now equals what we pushed — advance the base so the next
+      // push fast-forwards and the next pull sees no spurious diff.
+      writeMergeBase(registryRoot, manifest);
       return {
         ok: true,
         commitSha: res.commitSha,
@@ -2399,11 +2531,158 @@ ipcMain.handle(
   },
 );
 
+ipcMain.handle(IPC.getPendingManifestConflicts, () => {
+  if (!registryRoot) return null;
+  return readPendingManifestConflicts(registryRoot);
+});
+
+ipcMain.handle(IPC.clearPendingManifestConflicts, () => {
+  if (!registryRoot) return { ok: false, removed: false };
+  const r = clearPendingManifestConflicts(registryRoot);
+  return { ok: true, removed: r.removed };
+});
+
 ipcMain.handle(
-  IPC.runManifestImport,
-  async (_e, manifest: RegistryManifest): Promise<RunManifestImportResult> => {
-    const result = await runManifestImportCore(manifest);
-    return result;
+  IPC.resolveManifestConflicts,
+  async (
+    _e,
+    decisions: ManifestDecisions,
+  ): Promise<ResolveManifestConflictsResult> => {
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    const pending = readPendingManifestConflicts(registryRoot);
+    if (!pending) {
+      return { ok: false, message: "no pending manifest conflicts" };
+    }
+    const root = registryRoot;
+
+    const resolved = applyManifestResolutions(
+      { merged: pending.merged, conflicts: pending.conflicts },
+      decisions,
+    );
+
+    // keep-both forks: rename the local skill out of the way BEFORE the
+    // import re-materializes theirs at the original name. resolveRename-
+    // Target guards against a pre-existing `<name>-local`; when it picks
+    // a different target than the pure layer assumed, patch the manifest
+    // entry so the registered fork matches what landed on disk.
+    const renamed: { from: string; to: string }[] = [];
+    for (const { from, to } of resolved.renamed) {
+      const ref = findSkillFolder(root, from);
+      if (!ref) continue; // nothing local to fork
+      const parent = path.dirname(ref.dir);
+      const actualTo = fs.existsSync(path.join(parent, to))
+        ? resolveRenameTarget(parent, from)
+        : to;
+      fs.renameSync(ref.dir, path.join(parent, actualTo));
+      if (actualTo !== to) {
+        const entry = resolved.manifest.skills.find((s) => s.name === to);
+        if (entry) entry.name = actualTo;
+      }
+      renamed.push({ from, to: actualTo });
+    }
+
+    try {
+      const removed = await reconcileLocalToManifest(root, resolved.manifest);
+      clearPendingManifestConflicts(root);
+      // Local now fully incorporates `theirs` (plus our resolutions), so
+      // it becomes the new merge base — the next pull compares against it.
+      writeMergeBase(root, pending.theirs);
+      return {
+        ok: true,
+        message: `Resolved ${pending.conflicts.length} conflict${
+          pending.conflicts.length === 1 ? "" : "s"
+        }${removed.length > 0 ? `, removed ${removed.length}` : ""}${
+          renamed.length > 0 ? `, forked ${renamed.length}` : ""
+        }.`,
+        removed,
+        renamed,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: `reconcile failed: ${(err as Error).message}`,
+        error: fromCaught("manifest.resolve-failed", err),
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  IPC.runManifestMerge,
+  async (): Promise<RunManifestMergeResult> => {
+    if (!registryRoot)
+      return { ok: false, reason: "read-failed", message: NO_ROOT_MSG };
+    if (!linkedRepo)
+      return { ok: false, reason: "read-failed", message: "no linked repo" };
+    const token = getStoredToken();
+    if (!token)
+      return {
+        ok: false,
+        reason: "read-failed",
+        message: "not authenticated",
+      };
+    const root = registryRoot;
+    const branch = linkedRepo.defaultBranch ?? "main";
+
+    const remote = await fetchRemoteManifest(
+      linkedRepo.fullName,
+      branch,
+      token,
+    );
+    if (!remote.ok) {
+      return remote.reason === "rate-limit" && remote.rateLimit
+        ? {
+            ok: false,
+            reason: "rate-limit",
+            message: remote.message,
+            rateLimit: remote.rateLimit,
+          }
+        : { ok: false, reason: "read-failed", message: remote.message };
+    }
+
+    const ours = exportRegistryManifest(root, {
+      sourceBankVersion: app.getVersion(),
+      registryRootLabel: linkedRepo.fullName,
+    });
+    const base = readMergeBase(root) ?? {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "",
+      sourceBankVersion: "",
+      skills: [],
+    };
+
+    const { merged, conflicts } = mergeManifests(base, ours, remote.manifest);
+
+    if (conflicts.length > 0) {
+      writePendingManifestConflicts(root, {
+        mergedAt: new Date().toISOString(),
+        conflicts,
+        merged,
+        theirs: remote.manifest,
+      });
+      return { ok: true, status: "conflicts", conflicts };
+    }
+
+    try {
+      const removed = await reconcileLocalToManifest(root, merged);
+      // Clean merge — local now reflects everything in `theirs`, so it
+      // becomes the new base.
+      writeMergeBase(root, remote.manifest);
+      return {
+        ok: true,
+        status: "merged",
+        message: `Merged cleanly${
+          removed.length > 0 ? ` (removed ${removed.length})` : ""
+        }.`,
+        removed,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        reason: "reconcile-failed",
+        message: (err as Error).message,
+      };
+    }
   },
 );
 

@@ -52,17 +52,15 @@ export function readSkillMdFrontmatter(
     if (idx === -1) continue;
     const key = line.slice(0, idx).trim();
     if (!key) continue;
-    let val = line
-      .slice(idx + 1)
-      .trim()
-      .replace(/^["']|["']$/g, "");
+    const rawVal = line.slice(idx + 1).trim();
     // YAML block scalars: `key: |` (literal — preserve newlines) or
     // `key: >` (folded — newlines become spaces), with optional chomp
     // indicator (`|-`, `|+`, `>-`, `>+`). Without this branch the
     // captured value would be the literal indicator char (`|`), which
     // then cascaded through restoreAuxState → meta.json with a
     // one-character description and tripped drift detection downstream.
-    const blockMatch = val.match(/^([|>])[-+]?\s*$/);
+    const blockMatch = rawVal.match(/^([|>])[-+]?\s*$/);
+    let val: string;
     if (blockMatch) {
       const mode = blockMatch[1]!;
       const body: string[] = [];
@@ -83,10 +81,57 @@ export function readSkillMdFrontmatter(
         stripped.pop();
       }
       val = mode === ">" ? stripped.join(" ") : stripped.join("\n");
+    } else {
+      val = unquoteScalar(rawVal);
     }
     fm[key] = val;
   }
   return fm;
+}
+
+/**
+ * Resolve a single-line YAML flow scalar to its string value.
+ *
+ *   - Double-quoted: strip the delimiters and resolve backslash
+ *     escapes (`\"`, `\\`, `\n`, …). Skipping the unescape is what
+ *     leaked literal backslashes into meta.json for a description
+ *     authored as `"… \"board not found\" …"` — they then
+ *     re-serialized as a double-escaped `\\\"` on the next export
+ *     (the zmk-debug regression).
+ *   - Single-quoted: strip the delimiters; the only escape YAML
+ *     recognizes inside single quotes is a doubled quote (`''` → `'`).
+ *   - Plain (unquoted): returned verbatim. A plain scalar that merely
+ *     *contains* quotes — `Diagnoses … "board not found" …` — keeps
+ *     them; the old blanket `replace(/^["']|["']$/g, "")` could shear
+ *     a stray edge quote off such values.
+ */
+function unquoteScalar(raw: string): string {
+  if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
+    return raw
+      .slice(1, -1)
+      .replace(/\\(["\\/bfnrt]|u[0-9a-fA-F]{4})/g, (_m, esc: string) => {
+        switch (esc[0]) {
+          case "n":
+            return "\n";
+          case "t":
+            return "\t";
+          case "r":
+            return "\r";
+          case "b":
+            return "\b";
+          case "f":
+            return "\f";
+          case "u":
+            return String.fromCharCode(parseInt(esc.slice(1), 16));
+          default:
+            return esc; // " \ /
+        }
+      });
+  }
+  if (raw.length >= 2 && raw.startsWith("'") && raw.endsWith("'")) {
+    return raw.slice(1, -1).replace(/''/g, "'");
+  }
+  return raw;
 }
 
 /**

@@ -95,8 +95,13 @@ const api = {
   pushManifestToRepo: (opts: { asPR: boolean }) =>
     ipcRenderer.invoke(IPC.pushManifestToRepo, opts),
   readManifestFromRepo: () => ipcRenderer.invoke(IPC.readManifestFromRepo),
-  runManifestImport: (manifest: unknown) =>
-    ipcRenderer.invoke(IPC.runManifestImport, manifest),
+  runManifestMerge: () => ipcRenderer.invoke(IPC.runManifestMerge),
+  getPendingManifestConflicts: () =>
+    ipcRenderer.invoke(IPC.getPendingManifestConflicts),
+  clearPendingManifestConflicts: () =>
+    ipcRenderer.invoke(IPC.clearPendingManifestConflicts),
+  resolveManifestConflicts: (decisions: unknown) =>
+    ipcRenderer.invoke(IPC.resolveManifestConflicts, decisions),
   installFromManifestHint: (payload: unknown) =>
     ipcRenderer.invoke(IPC.installFromManifestHint, payload),
   installSkillFromGithub: (url: string) =>
@@ -178,8 +183,7 @@ const api = {
     return () =>
       ipcRenderer.removeListener(IPC.manifestImportProgress, listener);
   },
-  originUpdate: (name: string) =>
-    ipcRenderer.invoke(IPC.originUpdate, name),
+  originUpdate: (name: string) => ipcRenderer.invoke(IPC.originUpdate, name),
   originRepoMetadata: (repo: string) =>
     ipcRenderer.invoke(IPC.originRepoMetadata, repo),
   originLastCommit: (repo: string, skillPath: string) =>

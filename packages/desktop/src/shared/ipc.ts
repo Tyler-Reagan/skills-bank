@@ -15,9 +15,12 @@ import type {
   ImportSkillOutcome,
   InstalledSkill,
   LabelsMap,
+  ManifestConflict,
+  ManifestDecisions,
   ManifestDiff,
   ManifestImportProgressEvent,
   ManifestSkill,
+  PendingManifestConflicts,
   MergeImportReport,
   PublishState,
   RateLimitInfo,
@@ -103,8 +106,11 @@ export const IPC = {
   previewManifestPush: "bank:previewManifestPush",
   pushManifestToRepo: "bank:pushManifestToRepo",
   readManifestFromRepo: "bank:readManifestFromRepo",
-  runManifestImport: "bank:runManifestImport",
   manifestImportRetrySkill: "bank:manifestImportRetrySkill",
+  runManifestMerge: "bank:runManifestMerge",
+  getPendingManifestConflicts: "bank:getPendingManifestConflicts",
+  clearPendingManifestConflicts: "bank:clearPendingManifestConflicts",
+  resolveManifestConflicts: "bank:resolveManifestConflicts",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
   classifySkillForPublish: "publish:classify",
@@ -570,6 +576,11 @@ export type PushManifestToRepoResult =
       message: string;
       rateLimit: RateLimitInfo;
     }
+  | {
+      ok: false;
+      reason: "diverged";
+      message: string;
+    }
   | { ok: false; reason: "write-failed"; message: string };
 
 export type ReadManifestFromRepoResult =
@@ -583,9 +594,34 @@ export type ReadManifestFromRepoResult =
     }
   | { ok: false; reason: "read-failed" | "parse-failed"; message: string };
 
-export type RunManifestImportResult =
-  | { ok: true; message: string; result: ImportRegistryManifestResult }
-  | { ok: false; message: string };
+/**
+ * Result of a three-way pull-merge. `merged` — applied cleanly, no
+ * conflicts. `conflicts` — divergence the user must resolve; the
+ * conflicts are also persisted, and the renderer opens the resolver
+ * modal. The merge base is advanced only on a clean merge (post-
+ * resolution advances it for the conflict path).
+ */
+export type RunManifestMergeResult =
+  | { ok: true; status: "merged"; message: string; removed: string[] }
+  | { ok: true; status: "conflicts"; conflicts: ManifestConflict[] }
+  | {
+      ok: false;
+      reason: "rate-limit";
+      message: string;
+      rateLimit: RateLimitInfo;
+    }
+  | { ok: false; reason: "read-failed" | "reconcile-failed"; message: string };
+
+export type ResolveManifestConflictsResult =
+  | {
+      ok: true;
+      message: string;
+      /** Skills removed locally to propagate accepted remote deletions. */
+      removed: string[];
+      /** `keep-both` forks applied on disk (`<name>` → `<name>-local`). */
+      renamed: { from: string; to: string }[];
+    }
+  | { ok: false; message: string; error?: AppError };
 
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
@@ -829,10 +865,31 @@ interface SkillsBankAPI {
   }): Promise<PushManifestToRepoResult>;
   /** Read the manifest from the linked repo and diff it against local. */
   readManifestFromRepo(): Promise<ReadManifestFromRepoResult>;
-  /** Run a manifest import from a caller-supplied manifest object. */
-  runManifestImport(
-    manifest: RegistryManifest,
-  ): Promise<RunManifestImportResult>;
+  /**
+   * Pull from the linked repo as a three-way merge: fetch the remote
+   * manifest (`theirs`), load the stored merge base, export the local
+   * registry (`ours`), and merge. A clean merge reconciles locally and
+   * advances the base; conflicts are persisted and surfaced through the
+   * resolver modal.
+   */
+  runManifestMerge(): Promise<RunManifestMergeResult>;
+  /**
+   * Read the queued three-way merge conflicts (if any) so the resolver
+   * modal can re-open across restarts. Null when none are pending.
+   */
+  getPendingManifestConflicts(): Promise<PendingManifestConflicts | null>;
+  /** Discard the queued merge conflicts (stuck-state recovery). */
+  clearPendingManifestConflicts(): Promise<{ ok: boolean; removed: boolean }>;
+  /**
+   * Apply the user's resolver decisions to the queued merge: fold each
+   * choice into the merged manifest, reconcile the local registry
+   * (import adds/restores, delete confirmed removals, fork `keep-both`),
+   * then clear the pending file. Pushing the merged manifest upstream is
+   * a separate action.
+   */
+  resolveManifestConflicts(
+    decisions: ManifestDecisions,
+  ): Promise<ResolveManifestConflictsResult>;
   /**
    * Apply a manifest's install hints — one user-confirmed batch.
    * Calls the existing install path for each `{ name, agents }`

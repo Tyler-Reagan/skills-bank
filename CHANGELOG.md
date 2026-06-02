@@ -3,6 +3,26 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.17.0
+
+Multi-master registry sync: the linked repo's `registry-manifest.json` now behaves like git-versioned state. Pull is a three-way merge that preserves intentional divergence; push refuses to clobber a diverged remote. Fixes the cross-machine bug where one host's push silently deleted every skill another host had authored. See [ADR-0009](docs/adr/ADR-0009-multi-master-manifest-merge.md).
+
+### Added
+
+- **Three-way manifest merge on pull.** "Read from repo" is now **Pull & merge** (`mergeManifests(base, ours, theirs)`). A clean merge reconciles locally; genuine divergence (both sides changed a skill differently, or one edited while the other deleted) surfaces in a new **manifest-conflict resolver modal** with per-skill arms: keep mine / use theirs / keep both (fork the local copy to `<name>-local`). Conflicts persist to `pending-manifest-conflicts.json` so the resolver survives a restart.
+- **Merge base.** A per-machine remote-tracking reference for the linked repo's manifest, advanced after every successful sync, so the merge can distinguish "I changed this" from "they changed this."
+- **Confirmed-removal arm.** Reconcile now propagates deletions (a skill dropped from the merged manifest is removed locally), where the old import was additive-only. The broad import paths (disk import, account restore) stay strictly additive.
+
+### Changed
+
+- **Manifest schema → v4 with a canonical committed form.** `serializeManifest` writes the linked-repo file sorted with stable keys and **without** the volatile/local fields `exportedAt` and `lastInstalledOn`, so a no-op re-push produces no diff. The full-fidelity form (with those fields) is retained by the disk export and userData snapshots. v2/v3 manifests coerce up; v1 remains unreadable.
+- **Push is non-fast-forward-guarded.** A direct push to the linked repo refuses when the remote's manifest no longer matches the local merge base — i.e. it changed since this machine last synced — and tells you to pull & merge first. Pushes the canonical merged manifest and advances the base on success.
+
+### Fixed
+
+- **Frontmatter quote-unescaping** (`registry.ts`). A description authored as a double-quoted YAML scalar with escaped inner quotes (e.g. `"… \"board not found\" …"`) kept its backslashes and re-serialized as a double-escaped `\\\"` (the `zmk-debug` regression). Double-quoted scalars now resolve `\"`/`\\`/`\n` etc.; single-quoted resolve `''`→`'`; plain scalars containing quotes keep them verbatim. (Block scalars `|`/`>`/`>-`/`|-` were already handled in #84.)
+- **Stale synced-hash assertion** in `install-from-github.test.ts` that was red on `main` — the sidecar stores the local SHA-256, not the GitHub tree SHA.
+
 ## v1.16.0
 
 Install skills directly from the Discover tab, tag inference wired end-to-end, Browse UX polish, and a drift false-positive fix for GitHub-installed skills.

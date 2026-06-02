@@ -11,6 +11,7 @@ import { ConflictResolveModal } from "./ConflictResolveModal.js";
 import { InstallConflictModal } from "./InstallConflictModal.js";
 import type { InstallConflictError } from "./InstallConflictModal.js";
 import { ConflictResolutionModal } from "./ConflictResolutionModal.js";
+import { ManifestConflictModal } from "./ManifestConflictModal.js";
 import { DeleteUnregisteredConfirm } from "./DeleteUnregisteredConfirm.js";
 import { SettingsModal } from "./SettingsModal.js";
 import { InstallFromGithubModal } from "./InstallFromGithubModal.js";
@@ -85,6 +86,12 @@ export type ActiveModal =
         sourcePath: string;
         conflicts: import("@skills-bank/core").ConflictEntry[];
         priorReport: import("@skills-bank/core").MergeImportReport;
+      };
+    }
+  | {
+      kind: "manifestConflict";
+      target: {
+        conflicts: import("@skills-bank/core").ManifestConflict[];
       };
     }
   | {
@@ -541,6 +548,23 @@ export function ModalHost({
         />
       )}
 
+      {modal?.kind === "manifestConflict" && (
+        <ManifestConflictModal
+          conflicts={modal.target.conflicts}
+          onClose={() => {
+            closeModal();
+            flash("Merge cancelled — conflicts left pending.");
+          }}
+          onResolve={async (decisions) => {
+            closeModal();
+            const r =
+              await window.skillsBank.resolveManifestConflicts(decisions);
+            flash(r.message);
+            await refresh();
+          }}
+        />
+      )}
+
       {modal?.kind === "delete" && (
         <DeleteUnregisteredConfirm
           name={modal.target.name}
@@ -665,6 +689,15 @@ export function ModalHost({
           onExportComplete={(msg) => {
             closeModal();
             flash(msg);
+          }}
+          onMerged={(msg) => {
+            closeModal();
+            flash(msg);
+            void refresh();
+          }}
+          onConflicts={(conflicts) => {
+            closeModal();
+            openModal({ kind: "manifestConflict", target: { conflicts } });
           }}
         />
       )}
