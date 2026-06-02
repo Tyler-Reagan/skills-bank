@@ -102,8 +102,6 @@ const api = {
     ipcRenderer.invoke(IPC.clearPendingManifestConflicts),
   resolveManifestConflicts: (decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveManifestConflicts, decisions),
-  runManifestImport: (manifest: unknown) =>
-    ipcRenderer.invoke(IPC.runManifestImport, manifest),
   installFromManifestHint: (payload: unknown) =>
     ipcRenderer.invoke(IPC.installFromManifestHint, payload),
   installSkillFromGithub: (url: string) =>

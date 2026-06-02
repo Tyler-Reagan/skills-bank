@@ -138,7 +138,6 @@ import {
   type PushManifestToRepoResult,
   type ReadManifestFromRepoResult,
   type ResolveManifestConflictsResult,
-  type RunManifestImportResult,
   type RunManifestMergeResult,
   type UserRepo,
 } from "../shared/ipc.js";
@@ -2529,14 +2528,6 @@ ipcMain.handle(
     });
     const diff = diffManifests(remoteManifest, localManifest);
     return { ok: true, manifest: remoteManifest, diff };
-  },
-);
-
-ipcMain.handle(
-  IPC.runManifestImport,
-  async (_e, manifest: RegistryManifest): Promise<RunManifestImportResult> => {
-    const result = await runManifestImportCore(manifest);
-    return result;
   },
 );
 

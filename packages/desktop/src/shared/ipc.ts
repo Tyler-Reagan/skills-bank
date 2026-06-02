@@ -106,7 +106,6 @@ export const IPC = {
   previewManifestPush: "bank:previewManifestPush",
   pushManifestToRepo: "bank:pushManifestToRepo",
   readManifestFromRepo: "bank:readManifestFromRepo",
-  runManifestImport: "bank:runManifestImport",
   manifestImportRetrySkill: "bank:manifestImportRetrySkill",
   runManifestMerge: "bank:runManifestMerge",
   getPendingManifestConflicts: "bank:getPendingManifestConflicts",
@@ -595,10 +594,6 @@ export type ReadManifestFromRepoResult =
     }
   | { ok: false; reason: "read-failed" | "parse-failed"; message: string };
 
-export type RunManifestImportResult =
-  | { ok: true; message: string; result: ImportRegistryManifestResult }
-  | { ok: false; message: string };
-
 /**
  * Result of a three-way pull-merge. `merged` — applied cleanly, no
  * conflicts. `conflicts` — divergence the user must resolve; the
@@ -870,10 +865,6 @@ interface SkillsBankAPI {
   }): Promise<PushManifestToRepoResult>;
   /** Read the manifest from the linked repo and diff it against local. */
   readManifestFromRepo(): Promise<ReadManifestFromRepoResult>;
-  /** Run a manifest import from a caller-supplied manifest object. */
-  runManifestImport(
-    manifest: RegistryManifest,
-  ): Promise<RunManifestImportResult>;
   /**
    * Pull from the linked repo as a three-way merge: fetch the remote
    * manifest (`theirs`), load the stored merge base, export the local
