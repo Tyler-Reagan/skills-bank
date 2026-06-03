@@ -361,7 +361,7 @@ export function BrowseTab({
           {filtered.length} of {registry.length} skill
           {registry.length === 1 ? "" : "s"}
         </p>
-        <div className="row-between-8">
+        <div className="row-center-8">
           {onManageLabels && (
             <button type="button" className="btn" onClick={onManageLabels}>
               Manage Labels
