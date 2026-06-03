@@ -436,6 +436,26 @@ export function BrowseTab({
               : undefined
           }
         />
+      ) : sections.length === 1 && sections[0]?.category === "Uncategorized" ? (
+        <SkillsGrid
+          entries={sections[0]?.entries ?? []}
+          installed={installed}
+          onSelect={onSelect}
+          effectiveTagsMap={effectiveTagsMap}
+          {...(onSaveTags && !selectMode ? { onSaveTags } : {})}
+          selectMode={selectMode}
+          selectedNames={selectedNames}
+          onToggleSelect={toggleSelect}
+          isDisabled={(e) => installedNames.has(e.name)}
+          bulkStatus={(e) => {
+            if (!bulkInstall) return undefined;
+            if (bulkInstall.current === e.name) return "installing";
+            if (bulkInstall.succeeded.has(e.name)) return "installed";
+            if (bulkInstall.failed.has(e.name)) return "failed";
+            if (bulkInstall.queue.has(e.name)) return "pending";
+            return undefined;
+          }}
+        />
       ) : (
         sections.map(({ category, entries }) => (
           <CategorySection
