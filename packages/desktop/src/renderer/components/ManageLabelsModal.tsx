@@ -45,6 +45,7 @@ type Phase =
 interface Props {
   onClose: () => void;
   onOpenSkill: (entry: RegistryEntry) => void;
+  drawerOpen?: boolean;
 }
 
 // ── Static option lists ───────────────────────────────────────────────────────
@@ -361,16 +362,24 @@ function SkillLabelRow({
         ) : (
           <button
             type="button"
-            className="manage-labels-cat-edit-btn"
-            title="Click to edit category"
+            className={`manage-labels-cat-edit-btn${category ? " manage-labels-cat-edit-btn--set" : " manage-labels-cat-edit-btn--empty"}`}
             onClick={() => setEditingCategory(true)}
           >
             {category ? (
-              <span className="manage-labels-cat-badge">
-                {categoryDisplayName(category)}
-              </span>
+              <>
+                <span className="manage-labels-cat-badge">
+                  {categoryDisplayName(category)}
+                </span>
+                <Icon
+                  name="chevron-down"
+                  size="sm"
+                  className="manage-labels-cat-chevron"
+                />
+              </>
             ) : (
-              <span className="manage-labels-row-none">—</span>
+              <span className="manage-labels-cat-placeholder">
+                Set category
+              </span>
             )}
           </button>
         )}
@@ -447,6 +456,7 @@ function SkillLabelRow({
 export function ManageLabelsModal({
   onClose,
   onOpenSkill,
+  drawerOpen = false,
 }: Props): React.ReactElement {
   const { registry } = useRegistry();
   const { labelsMap, reload } = useLabels();
@@ -694,7 +704,7 @@ export function ManageLabelsModal({
       <Modal
         label="Manage Labels"
         width={720}
-        onClose={isDismissable ? onClose : undefined}
+        onClose={isDismissable && !drawerOpen ? onClose : undefined}
         trapFocus
       >
         {/* ── Browse phase ───────────────────────────────────────────── */}

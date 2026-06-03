@@ -914,7 +914,11 @@ export function ModalHost({
       )}
 
       {modal?.kind === "manageLabels" && (
-        <ManageLabelsModal onClose={closeModal} onOpenSkill={setSelected} />
+        <ManageLabelsModal
+          onClose={closeModal}
+          onOpenSkill={setSelected}
+          drawerOpen={selected !== null}
+        />
       )}
 
       <DrawerHost

@@ -5480,12 +5480,27 @@ button:disabled {
   cursor: pointer;
   text-align: left;
 }
-.manage-labels-cat-edit-btn:hover .manage-labels-cat-badge {
+.manage-labels-cat-edit-btn--set:hover .manage-labels-cat-badge {
   outline: 1px dashed var(--border-hi);
   border-radius: var(--r-sm);
 }
-.manage-labels-cat-edit-btn:hover .manage-labels-row-none {
-  color: var(--text-2);
+.manage-labels-cat-chevron {
+  opacity: 0;
+  margin-left: 2px;
+  color: var(--text-3);
+  vertical-align: middle;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.manage-labels-cat-edit-btn--set:hover .manage-labels-cat-chevron {
+  opacity: 1;
+}
+.manage-labels-cat-placeholder {
+  color: transparent;
+  font-size: 11px;
+  font-style: italic;
+}
+.manage-labels-cat-edit-btn--empty:hover .manage-labels-cat-placeholder {
+  color: var(--text-3);
 }
 .manage-labels-row-cat-select {
   max-width: 120px;
