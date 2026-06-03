@@ -413,4 +413,48 @@ Manual smoke test path:
 9. "Discard changes" → returns to browse, no writes
 10. "Run again" → returns to Step 1
 11. "Open skill" [↗] button: drawer opens on top of modal (modal visible behind drawer scrim)
-12. Close drawer: modal regains focus, state preserved
+12. Close drawer: modal regains focus, state preserved; label edits made in drawer are reflected immediately
+
+---
+
+## Post-implementation follow-up
+
+This section tracks issues discovered after the initial implementation shipped and the fixes applied.
+Each entry records what was wrong, what changed, and any design decisions made during the fix.
+
+### 1 — LabelsContext: shared label state (follow-up to initial implementation)
+
+**Problem:** `ManageLabelsModal` read `labelsMap` once on mount via a local `useEffect`. When the
+user opened the "Open skill" drawer from inside the modal, edited labels there, and closed the
+drawer, the modal's `labelsMap` was stale. The drawer called `onLabelsChanged()` → App incremented
+`labelsRefreshKey` → `BrowseTab` re-read, but the modal did not.
+
+The proposed fix (thread a new version counter `LabelsHost → ManageLabelsModal`) was rejected as
+cumbersome and identified as re-inventing `labelsRefreshKey`. The deeper issue: `labelsMap` was
+owned as local state in two components (`BrowseTab`, `ManageLabelsModal`) and `DrawerLabelSection`,
+each reading the same IPC source independently with no shared invalidation.
+
+**Fix:** Introduced `LabelsContext` (`src/renderer/LabelsContext.tsx`) providing `{ labelsMap,
+reload }`. All three consumers now read from context; any write calls `reload()` which re-fetches
+once and notifies all subscribers. The `onLabelsChanged` prop chain
+(`DrawerLabelSection → SkillDetailDrawer → DrawerHost → ModalHost → App → labelsRefreshKey`) was
+removed in its entirety, along with `labelsRefreshKey` state in `App.tsx`.
+
+**Files changed:** `LabelsContext.tsx` (new), `App.tsx`, `BrowseTab.tsx`, `DrawerLabelSection.tsx`,
+`ManageLabelsModal.tsx`, `ModalHost.tsx`, `DrawerHost.tsx`, `SkillDetailDrawer.tsx`.
+
+### 2 — In-row label editing in ManageLabelsModal
+
+**Problem:** The only way to edit a skill's labels from inside the modal was to click "Open skill"
+[↗], make edits in the drawer, and close it — three clicks minimum for a single field change. The
+user found this friction excessive for bulk curation sessions.
+
+**Fix:** `SkillLabelRow` gained inline editing:
+
+- Category cell: click badge/dash → `<select>` appears in-place → onChange saves immediately.
+- Tags: chips now have `×` remove buttons; `+` button appends an inline `<input>` (Enter/blur
+  confirms, Escape cancels). Both paths call `patchLabel(name, patch)` → `updateLabel` IPC →
+  `reload()` on context.
+
+The "Open skill" button is retained as an escape hatch for richer per-skill editing (SKILL.md
+preview, install/uninstall, origin, etc.).

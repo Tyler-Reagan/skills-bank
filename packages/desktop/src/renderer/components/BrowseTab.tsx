@@ -1,14 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import type {
-  LabelsMap,
-  ManifestSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import React, { useCallback, useMemo, useState } from "react";
+import type { ManifestSkill, RegistryEntry } from "@skills-bank/core";
 import {
   categoryRules,
   categoryDisplayName,
   effectiveLabels,
 } from "@skills-bank/core/labels";
+import { useLabels } from "../LabelsContext.js";
 import { DisclosureChevron } from "./DisclosureChevron.js";
 import { Icon } from "./Icon.js";
 import { InfoTooltip } from "./InfoTooltip.js";
@@ -84,8 +81,6 @@ interface Props {
   onRetryGhost?: (skill: ManifestSkill) => void;
   /** Dismiss a failed (or pending) ghost; pure renderer-side state. */
   onDismissGhost?: (name: string) => void;
-  /** Increment when label overrides change so the section grouping re-fetches. */
-  labelsRefreshKey?: number;
   /** Start a label-review session over the visible registry. */
   onStartReview?: (entries: RegistryEntry[]) => void;
   /** Open the registry-wide Manage Labels modal. */
@@ -105,7 +100,6 @@ export function BrowseTab({
   manifestImportProgress,
   onRetryGhost,
   onDismissGhost,
-  labelsRefreshKey,
   onStartReview,
   onManageLabels,
 }: Props): React.ReactElement {
@@ -124,24 +118,17 @@ export function BrowseTab({
   const [selectedNames, setSelectedNames] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
-  const [labelsMap, setLabelsMap] = useState<LabelsMap>({});
+  const { labelsMap, reload: reloadLabels } = useLabels();
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     () => new Set(),
   );
-  const [bannerDismissed, setBannerDismissed] = useState<boolean>(false);
+  const bannerDismissed = Boolean(labelsMap["__meta"]?.bannerDismissed);
   const running = bulkInstall != null && bulkInstall.current != null;
 
-  useEffect(() => {
-    void window.skillsBank.readLabels().then((map) => {
-      setLabelsMap(map);
-      setBannerDismissed(Boolean(map["__meta"]?.bannerDismissed));
-    });
-  }, [labelsRefreshKey]);
-
   const dismissBanner = useCallback(async () => {
-    setBannerDismissed(true);
     await window.skillsBank.updateLabel("__meta", { bannerDismissed: true });
-  }, []);
+    await reloadLabels();
+  }, [reloadLabels]);
 
   const toggleSelect = useCallback((name: string) => {
     setSelectedNames((prev) => {

@@ -42,7 +42,6 @@ interface Props {
   /** Persist the "user has seen the unregister-destination hint" bit. */
   unregisterHintShown: () => boolean;
   markUnregisterHintShown: () => void;
-  onLabelsChanged?: () => void;
   reviewContext?: ReviewContext | null;
   /** When true, elevates the drawer overlay above an open modal. */
   elevated?: boolean;
@@ -74,7 +73,6 @@ export function DrawerHost({
   onInstallConflict,
   unregisterHintShown,
   markUnregisterHintShown,
-  onLabelsChanged,
   reviewContext,
   elevated,
 }: Props): React.ReactElement | null {
@@ -282,7 +280,6 @@ export function DrawerHost({
             }
           : undefined
       }
-      onLabelsChanged={onLabelsChanged}
       reviewContext={reviewContext}
       elevated={elevated}
     />

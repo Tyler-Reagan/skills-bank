@@ -47,6 +47,7 @@ import {
 } from "./ModalRegistryContext.js";
 import { SettingsProvider, useSettings } from "./SettingsContext.js";
 import { RegistryProvider, useRegistry } from "./RegistryContext.js";
+import { LabelsProvider } from "./LabelsContext.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 
 // Persistence keys still managed directly by App.tsx (tab + unregister hint).
@@ -83,7 +84,9 @@ export function App(): React.ReactElement {
       <RegistryHostProvider>
         <SettingsProvider>
           <RegistryProvider>
-            <AppContent />
+            <LabelsProvider>
+              <AppContent />
+            </LabelsProvider>
           </RegistryProvider>
         </SettingsProvider>
       </RegistryHostProvider>
@@ -187,11 +190,6 @@ function AppContent(): React.ReactElement {
   const [resolveAllTarget, setResolveAllTarget] = useState<
     InstalledGroup[] | null
   >(null);
-  const [labelsRefreshKey, setLabelsRefreshKey] = useState(0);
-  const handleLabelsChanged = useCallback(
-    () => setLabelsRefreshKey((k) => k + 1),
-    [],
-  );
   const [reviewSession, setReviewSession] = useState<{
     entries: RegistryEntry[];
     index: number;
@@ -926,7 +924,6 @@ function AppContent(): React.ReactElement {
               manifestImportProgress={manifestImportProgress}
               onRetryGhost={(skill) => void retryGhost(skill)}
               onDismissGhost={dismissGhost}
-              labelsRefreshKey={labelsRefreshKey}
               onStartReview={handleStartReview}
               onManageLabels={() => openModal({ kind: "manageLabels" })}
             />
@@ -1127,7 +1124,6 @@ function AppContent(): React.ReactElement {
             // ignore
           }
         }}
-        onLabelsChanged={handleLabelsChanged}
         reviewContext={reviewContext}
       />
     </div>

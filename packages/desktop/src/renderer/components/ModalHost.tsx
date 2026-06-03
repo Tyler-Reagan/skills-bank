@@ -135,7 +135,6 @@ interface Props {
   checkForUpdates: () => void;
   unregisterHintShown: () => boolean;
   markUnregisterHintShown: () => void;
-  onLabelsChanged?: () => void;
   reviewContext?: ReviewContext | null;
 }
 
@@ -165,7 +164,6 @@ export function ModalHost({
   checkForUpdates,
   unregisterHintShown,
   markUnregisterHintShown,
-  onLabelsChanged,
   reviewContext,
 }: Props): React.ReactElement {
   const { registry, installed, pendingSkillUpdates, refresh } = useRegistry();
@@ -916,11 +914,7 @@ export function ModalHost({
       )}
 
       {modal?.kind === "manageLabels" && (
-        <ManageLabelsModal
-          onClose={closeModal}
-          onLabelsChanged={onLabelsChanged ?? (() => {})}
-          onOpenSkill={setSelected}
-        />
+        <ManageLabelsModal onClose={closeModal} onOpenSkill={setSelected} />
       )}
 
       <DrawerHost
@@ -935,7 +929,6 @@ export function ModalHost({
         }
         unregisterHintShown={unregisterHintShown}
         markUnregisterHintShown={markUnregisterHintShown}
-        onLabelsChanged={onLabelsChanged}
         reviewContext={reviewContext}
         elevated={modal?.kind === "manageLabels"}
       />

@@ -150,8 +150,6 @@ interface Props {
    * PublishSection's visibility — no linked repo → no Publish UI.
    */
   linkedRepoName?: string | null;
-  /** Called after any label mutation so BrowseTab can re-group. */
-  onLabelsChanged?: () => void;
   /** When set, the drawer shows review navigation (prev/next/exit). */
   reviewContext?: ReviewContext | null;
   /** Elevates the overlay above an open modal (z-index: 1200). */
@@ -182,7 +180,6 @@ export function SkillDetailDrawer({
   linkedRepoName,
   showOriginActivity,
   onSetManualUpstream,
-  onLabelsChanged,
   reviewContext,
   elevated,
 }: Props): React.ReactElement {
@@ -522,10 +519,7 @@ export function SkillDetailDrawer({
               onSetManualUpstream={onSetManualUpstream}
             />
 
-            <DrawerLabelSection
-              entry={entry}
-              onLabelsChanged={onLabelsChanged ?? (() => undefined)}
-            />
+            <DrawerLabelSection entry={entry} />
 
             {reviewContext && (
               <div className="drawer-review-nav">

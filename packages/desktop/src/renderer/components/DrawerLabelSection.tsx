@@ -9,57 +9,49 @@ import {
   tagRules,
 } from "@skills-bank/core/labels";
 import { Icon } from "./Icon.js";
+import { useLabels } from "../LabelsContext.js";
 
 interface Props {
   entry: RegistryEntry;
-  onLabelsChanged: () => void;
 }
 
-export function DrawerLabelSection({
-  entry,
-  onLabelsChanged,
-}: Props): React.ReactElement {
-  const [override, setOverride] = useState<SkillLabelOverride>({});
+export function DrawerLabelSection({ entry }: Props): React.ReactElement {
+  const { labelsMap, reload } = useLabels();
+  const [override, setOverride] = useState<SkillLabelOverride>(
+    () => labelsMap[entry.name] ?? {},
+  );
   const [addingTag, setAddingTag] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const tagInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Sync with context when entry changes or when an external write reloads the map.
   useEffect(() => {
-    void window.skillsBank
-      .readLabels()
-      .then((map) => setOverride(map[entry.name] ?? {}));
-  }, [entry.name]);
+    setOverride(labelsMap[entry.name] ?? {});
+  }, [entry.name, labelsMap]);
 
   const effective = effectiveLabels({ category: null, tags: [] }, override);
+
+  async function patch(next: SkillLabelOverride): Promise<void> {
+    const merged = { ...override, ...next };
+    setOverride(merged); // optimistic
+    await window.skillsBank.updateLabel(entry.name, next);
+    await reload();
+  }
 
   async function handleAutoCategory(): Promise<void> {
     const derived = deriveLabels({
       name: entry.name,
       description: entry.description,
     });
-    await patch({
-      category: derived.category,
-      tags: derived.tags,
-    });
-  }
-
-  async function patch(next: SkillLabelOverride): Promise<void> {
-    const merged = { ...override, ...next };
-    setOverride(merged);
-    await window.skillsBank.updateLabel(entry.name, next);
-    onLabelsChanged();
+    await patch({ category: derived.category, tags: derived.tags });
   }
 
   async function handleCategoryChange(value: string): Promise<void> {
-    await patch({
-      category: value === "__none__" ? null : value,
-    });
+    await patch({ category: value === "__none__" ? null : value });
   }
 
   async function removeAddedTag(tag: string): Promise<void> {
-    await patch({
-      tags: (override.tags ?? []).filter((t) => t !== tag),
-    });
+    await patch({ tags: (override.tags ?? []).filter((t) => t !== tag) });
   }
 
   async function confirmAddTag(): Promise<void> {

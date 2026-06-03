@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useMemo, useState } from "react";
 import type { LabelsMap, RegistryEntry } from "@skills-bank/core";
 import {
   categoryRules,
   categoryDisplayName,
   deriveLabels,
 } from "@skills-bank/core/labels";
+import { useLabels } from "../LabelsContext.js";
 import { Modal, ModalCloseButton, modalFooter } from "./modalStyles.js";
 import { SearchBar } from "./SearchBar.js";
 import { Icon } from "./Icon.js";
@@ -43,7 +44,6 @@ type Phase =
 
 interface Props {
   onClose: () => void;
-  onLabelsChanged: () => void;
   onOpenSkill: (entry: RegistryEntry) => void;
 }
 
@@ -289,6 +289,10 @@ interface SkillLabelRowProps {
   selected: boolean;
   onToggle: () => void;
   onOpen: () => void;
+  onPatchLabel: (patch: {
+    category?: string | null;
+    tags?: string[];
+  }) => Promise<void>;
 }
 
 function SkillLabelRow({
@@ -297,9 +301,32 @@ function SkillLabelRow({
   selected,
   onToggle,
   onOpen,
+  onPatchLabel,
 }: SkillLabelRowProps) {
   const category = override?.category ?? null;
   const tags = override?.tags ?? [];
+  const [editingCategory, setEditingCategory] = useState(false);
+  const [addingTag, setAddingTag] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+
+  async function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const val = e.target.value;
+    setEditingCategory(false);
+    await onPatchLabel({ category: val === "__none__" ? null : val });
+  }
+
+  async function handleRemoveTag(tag: string) {
+    await onPatchLabel({ tags: tags.filter((t) => t !== tag) });
+  }
+
+  async function handleConfirmTag() {
+    const t = tagInput.trim().toLowerCase().replace(/\s+/g, "-");
+    if (t && !tags.includes(t)) {
+      await onPatchLabel({ tags: [...tags, t] });
+    }
+    setTagInput("");
+    setAddingTag(false);
+  }
 
   return (
     <div
@@ -313,31 +340,95 @@ function SkillLabelRow({
         aria-label={`Select ${entry.name}`}
       />
       <span className="manage-labels-row-name">{entry.name}</span>
+
+      {/* Category — click to edit */}
       <span className="manage-labels-row-category">
-        {category ? (
-          <span className="manage-labels-cat-badge">
-            {categoryDisplayName(category)}
-          </span>
+        {editingCategory ? (
+          <select
+            className="manage-labels-select manage-labels-row-cat-select"
+            value={category ?? "__none__"}
+            onChange={(e) => void handleCategoryChange(e)}
+            onBlur={() => setEditingCategory(false)}
+            autoFocus
+          >
+            <option value="__none__">None</option>
+            {categoryRules.map((r) => (
+              <option key={r.category} value={r.category}>
+                {categoryDisplayName(r.category)}
+              </option>
+            ))}
+          </select>
         ) : (
-          <span className="manage-labels-row-none">—</span>
+          <button
+            type="button"
+            className="manage-labels-cat-edit-btn"
+            title="Click to edit category"
+            onClick={() => setEditingCategory(true)}
+          >
+            {category ? (
+              <span className="manage-labels-cat-badge">
+                {categoryDisplayName(category)}
+              </span>
+            ) : (
+              <span className="manage-labels-row-none">—</span>
+            )}
+          </button>
         )}
       </span>
+
+      {/* Tags — chips with × + inline add */}
       <span className="manage-labels-row-tags">
-        {tags.slice(0, 3).map((t) => (
+        {tags.map((t) => (
           <span
             key={t}
             className="label-chip label-chip--added manage-labels-chip"
           >
             {t}
+            <button
+              type="button"
+              className="label-chip-remove"
+              aria-label={`Remove tag ${t}`}
+              onClick={() => void handleRemoveTag(t)}
+            >
+              <Icon name="x" size="sm" />
+            </button>
           </span>
         ))}
-        {tags.length > 3 && (
-          <span className="manage-labels-row-none">
-            +{tags.length - 3} more
-          </span>
+        {addingTag ? (
+          <input
+            type="text"
+            className="manage-labels-tag-input"
+            value={tagInput}
+            placeholder="tag…"
+            autoFocus
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void handleConfirmTag();
+              }
+              if (e.key === "Escape") {
+                setAddingTag(false);
+                setTagInput("");
+              }
+            }}
+            onBlur={() => void handleConfirmTag()}
+          />
+        ) : (
+          <button
+            type="button"
+            className="manage-labels-add-tag-btn"
+            title="Add tag"
+            onClick={() => setAddingTag(true)}
+          >
+            +
+          </button>
         )}
-        {tags.length === 0 && <span className="manage-labels-row-none">—</span>}
+        {tags.length === 0 && !addingTag && (
+          <span className="manage-labels-row-none">—</span>
+        )}
       </span>
+
       <button
         type="button"
         className="manage-labels-row-open"
@@ -355,22 +446,13 @@ function SkillLabelRow({
 
 export function ManageLabelsModal({
   onClose,
-  onLabelsChanged,
   onOpenSkill,
 }: Props): React.ReactElement {
   const { registry } = useRegistry();
+  const { labelsMap, reload } = useLabels();
 
   // ── Shared state ────────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>({ kind: "browse" });
-  const [labelsMap, setLabelsMap] = useState<LabelsMap>({});
-
-  async function reloadLabels() {
-    const map = await window.skillsBank.readLabels();
-    setLabelsMap(map);
-  }
-  useEffect(() => {
-    void reloadLabels();
-  }, []);
 
   // ── Browse state ────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
@@ -473,8 +555,7 @@ export function ManageLabelsModal({
       await window.skillsBank.resetLabel(name);
     }
     setSelectedNames(new Set());
-    await reloadLabels();
-    onLabelsChanged();
+    await reload();
     setConfirmClear(false);
   }
 
@@ -558,8 +639,7 @@ export function ManageLabelsModal({
       };
     }
     await window.skillsBank.bulkUpdateLabels(updates);
-    await reloadLabels();
-    onLabelsChanged();
+    await reload();
     setPhase({ kind: "browse" });
   }
 
@@ -583,6 +663,15 @@ export function ManageLabelsModal({
       description: "Choose specific skills to generate suggestions for.",
     },
   ];
+
+  // ── In-row label patch ───────────────────────────────────────────────────────
+  async function patchLabel(
+    name: string,
+    patch: { category?: string | null; tags?: string[] },
+  ): Promise<void> {
+    await window.skillsBank.updateLabel(name, patch);
+    await reload();
+  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
   const isDismissable = phase.kind !== "applying";
@@ -703,6 +792,7 @@ export function ManageLabelsModal({
                     setSelectedNames(next);
                   }}
                   onOpen={() => onOpenSkill(entry)}
+                  onPatchLabel={(patch) => patchLabel(entry.name, patch)}
                 />
               ))}
               {filteredSkills.length === 0 && (

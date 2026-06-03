@@ -5471,3 +5471,47 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
 }
+
+/* In-row editing affordances */
+.manage-labels-cat-edit-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.manage-labels-cat-edit-btn:hover .manage-labels-cat-badge {
+  outline: 1px dashed var(--border-hi);
+  border-radius: var(--r-sm);
+}
+.manage-labels-cat-edit-btn:hover .manage-labels-row-none {
+  color: var(--text-2);
+}
+.manage-labels-row-cat-select {
+  max-width: 120px;
+}
+.manage-labels-tag-input {
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  padding: 1px 5px;
+  width: 80px;
+  outline: none;
+}
+.manage-labels-add-tag-btn {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+.manage-labels-add-tag-btn:hover {
+  color: var(--text);
+  border-color: var(--text-3);
+}
