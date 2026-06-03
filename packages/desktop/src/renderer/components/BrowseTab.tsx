@@ -7,7 +7,6 @@ import type {
 import {
   categoryRules,
   categoryDisplayName,
-  deriveLabels,
   effectiveLabels,
 } from "@skills-bank/core/labels";
 import { DisclosureChevron } from "./DisclosureChevron.js";
@@ -191,11 +190,11 @@ export function BrowseTab({
   const effectiveTagsMap = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const entry of registry) {
-      const derived = deriveLabels({
-        name: entry.name,
-        description: entry.description,
-      });
-      map.set(entry.name, effectiveLabels(derived, labelsMap[entry.name]).tags);
+      map.set(
+        entry.name,
+        effectiveLabels({ category: null, tags: [] }, labelsMap[entry.name])
+          .tags,
+      );
     }
     return map;
   }, [registry, labelsMap]);
@@ -239,12 +238,10 @@ export function BrowseTab({
   const sections = useMemo(() => {
     const byCategory = new Map<string | null, RegistryEntry[]>();
     for (const entry of filtered) {
-      const derived = deriveLabels({
-        name: entry.name,
-        description: entry.description,
-      });
-      const effective = effectiveLabels(derived, labelsMap[entry.name]);
-      const cat = effective.category;
+      const cat = effectiveLabels(
+        { category: null, tags: [] },
+        labelsMap[entry.name],
+      ).category;
       const bucket = byCategory.get(cat) ?? [];
       bucket.push(entry);
       byCategory.set(cat, bucket);

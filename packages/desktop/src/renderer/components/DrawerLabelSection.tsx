@@ -30,11 +30,20 @@ export function DrawerLabelSection({
       .then((map) => setOverride(map[entry.name] ?? {}));
   }, [entry.name]);
 
-  const derived = deriveLabels({
-    name: entry.name,
-    description: entry.description,
-  });
-  const effective = effectiveLabels(derived, override);
+  const effective = effectiveLabels({ category: null, tags: [] }, override);
+
+  async function handleAutoCategory(): Promise<void> {
+    const derived = deriveLabels({
+      name: entry.name,
+      description: entry.description,
+    });
+    await patch({
+      category: derived.category,
+      categorySource: "auto",
+      addedTags: derived.tags,
+      rejectedTags: [],
+    });
+  }
 
   async function patch(next: SkillLabelOverride): Promise<void> {
     const merged = { ...override, ...next };
@@ -48,10 +57,6 @@ export function DrawerLabelSection({
       category: value === "__none__" ? null : value,
       categorySource: "user",
     });
-  }
-
-  async function rejectTag(tag: string): Promise<void> {
-    await patch({ rejectedTags: [...(override.rejectedTags ?? []), tag] });
   }
 
   async function removeAddedTag(tag: string): Promise<void> {
@@ -75,7 +80,6 @@ export function DrawerLabelSection({
     setAddingTag(false);
   }
 
-  const addedTagSet = new Set(override.addedTags ?? []);
   const rejectedTags = override.rejectedTags ?? [];
   const currentCategory = effective.category ?? "__none__";
 
@@ -98,6 +102,13 @@ export function DrawerLabelSection({
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => void handleAutoCategory()}
+          >
+            Auto Categorize
+          </button>
           {override.categorySource === "auto" && (
             <span className="label-source-badge">auto</span>
           )}
@@ -107,27 +118,19 @@ export function DrawerLabelSection({
       <div className="label-field">
         <label className="label-field-label">Tags</label>
         <div className="label-chips">
-          {effective.tags.map((tag) => {
-            const isAdded = addedTagSet.has(tag);
-            return (
-              <span
-                key={tag}
-                className={`label-chip ${isAdded ? "label-chip--added" : "label-chip--auto"}`}
+          {effective.tags.map((tag) => (
+            <span key={tag} className="label-chip label-chip--added">
+              {tag}
+              <button
+                type="button"
+                className="label-chip-remove"
+                aria-label={`Remove tag ${tag}`}
+                onClick={() => void removeAddedTag(tag)}
               >
-                {tag}
-                <button
-                  type="button"
-                  className="label-chip-remove"
-                  aria-label={`Remove tag ${tag}`}
-                  onClick={() =>
-                    void (isAdded ? removeAddedTag(tag) : rejectTag(tag))
-                  }
-                >
-                  <Icon name="x" size="sm" />
-                </button>
-              </span>
-            );
-          })}
+                <Icon name="x" size="sm" />
+              </button>
+            </span>
+          ))}
           {effective.tags.length === 0 && !addingTag && (
             <span className="label-no-tags">No tags</span>
           )}
