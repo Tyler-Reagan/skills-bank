@@ -489,7 +489,7 @@ export const tagRules: { tag: string; keywords: string[] }[] = [
 
 export interface SkillLabelOverride {
   category?: string | null;
-  addedTags?: string[];
+  tags?: string[];
   /** App-level meta stored under the "__meta" key in the labels map. */
   bannerDismissed?: boolean;
 }
@@ -551,7 +551,7 @@ export function effectiveLabels(
   const category =
     override.category !== undefined ? override.category : derived.category;
 
-  const added = override.addedTags ?? [];
+  const added = override.tags ?? [];
   const tags = [
     ...derived.tags,
     ...added.filter((t) => !derived.tags.includes(t)),

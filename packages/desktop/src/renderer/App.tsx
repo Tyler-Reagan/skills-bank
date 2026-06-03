@@ -928,6 +928,7 @@ function AppContent(): React.ReactElement {
               onDismissGhost={dismissGhost}
               labelsRefreshKey={labelsRefreshKey}
               onStartReview={handleStartReview}
+              onManageLabels={() => openModal({ kind: "manageLabels" })}
             />
           )}
           {tab === "installed" && (

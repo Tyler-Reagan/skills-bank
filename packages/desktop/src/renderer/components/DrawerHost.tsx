@@ -44,6 +44,8 @@ interface Props {
   markUnregisterHintShown: () => void;
   onLabelsChanged?: () => void;
   reviewContext?: ReviewContext | null;
+  /** When true, elevates the drawer overlay above an open modal. */
+  elevated?: boolean;
 }
 
 /**
@@ -74,6 +76,7 @@ export function DrawerHost({
   markUnregisterHintShown,
   onLabelsChanged,
   reviewContext,
+  elevated,
 }: Props): React.ReactElement | null {
   const { flash, pushAppError } = useRegistryHost();
   const { registryByName, installed, registryRoot, refresh } = useRegistry();
@@ -281,6 +284,7 @@ export function DrawerHost({
       }
       onLabelsChanged={onLabelsChanged}
       reviewContext={reviewContext}
+      elevated={elevated}
     />
   );
 }

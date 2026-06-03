@@ -25,6 +25,7 @@ import { UpdateNotesModal } from "./UpdateNotesModal.js";
 import { RepoPickerModal } from "./RepoPickerModal.js";
 import { DestinationPickerDialog } from "./DestinationPickerDialog.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
+import { ManageLabelsModal } from "./ManageLabelsModal.js";
 import { DrawerHost } from "./DrawerHost.js";
 import type { ReviewContext } from "./SkillDetailDrawer.js";
 import type { InstalledGroup } from "./InstalledTab.js";
@@ -111,7 +112,8 @@ export type ActiveModal =
           entries: Array<{ agent: string; linkPath: string }>;
         }>;
       };
-    };
+    }
+  | { kind: "manageLabels" };
 
 interface Props {
   modal: ActiveModal | null;
@@ -913,6 +915,14 @@ export function ModalHost({
         />
       )}
 
+      {modal?.kind === "manageLabels" && (
+        <ManageLabelsModal
+          onClose={closeModal}
+          onLabelsChanged={onLabelsChanged ?? (() => {})}
+          onOpenSkill={setSelected}
+        />
+      )}
+
       <DrawerHost
         selected={selected}
         onClose={() => setSelected(null)}
@@ -927,6 +937,7 @@ export function ModalHost({
         markUnregisterHintShown={markUnregisterHintShown}
         onLabelsChanged={onLabelsChanged}
         reviewContext={reviewContext}
+        elevated={modal?.kind === "manageLabels"}
       />
     </>
   );

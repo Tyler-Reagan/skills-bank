@@ -88,6 +88,8 @@ interface Props {
   labelsRefreshKey?: number;
   /** Start a label-review session over the visible registry. */
   onStartReview?: (entries: RegistryEntry[]) => void;
+  /** Open the registry-wide Manage Labels modal. */
+  onManageLabels?: () => void;
 }
 
 export function BrowseTab({
@@ -105,6 +107,7 @@ export function BrowseTab({
   onDismissGhost,
   labelsRefreshKey,
   onStartReview,
+  onManageLabels,
 }: Props): React.ReactElement {
   const { visibleRegistry: registry, installed } = useRegistry();
   const {
@@ -372,6 +375,11 @@ export function BrowseTab({
           {registry.length === 1 ? "" : "s"}
         </p>
         <div className="row-between-8">
+          {onManageLabels && (
+            <button type="button" className="btn" onClick={onManageLabels}>
+              Manage Labels
+            </button>
+          )}
           {sections.length >= 2 && (
             <button
               type="button"

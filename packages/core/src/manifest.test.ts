@@ -158,7 +158,7 @@ describe("exportRegistryManifest", () => {
     const m = exportRegistryManifest(registryRoot, {
       sourceBankVersion: "1.1.0",
       registryRootLabel: "Tyler-Reagan/skills",
-      labels: { alpha: { addedTags: ["custom"] } },
+      labels: { alpha: { tags: ["custom"] } },
     });
     expect(m.registryRoot).toBe("Tyler-Reagan/skills");
     expect(m.skills.map((s) => s.name).sort()).toEqual(["alpha", "beta"]);
@@ -276,7 +276,7 @@ describe("importRegistryManifest", () => {
     // surfaced as a reconstructed override for the caller's labels.json.
     expect(fs.existsSync(path.join(destDir, "meta.json"))).toBe(false);
     expect(result.restoredLabels?.["alpha"]).toEqual({
-      addedTags: ["restored-tag"],
+      tags: ["restored-tag"],
     });
     // Marker stamped with the mirrored folder hash.
     const marker = JSON.parse(
@@ -450,9 +450,7 @@ describe("importRegistryManifest", () => {
 
     const result = await importRegistryManifest(registryRoot, manifest);
     expect(result.outcomes).toEqual([{ name: "gamma", result: "registered" }]);
-    // "gamma helper" derives no labels, so the manifest's ["t1"] surfaces
-    // as a reconstructed addedTags override for labels.json.
-    expect(result.restoredLabels?.["gamma"]).toEqual({ addedTags: ["t1"] });
+    expect(result.restoredLabels?.["gamma"]).toEqual({ tags: ["t1"] });
   });
 
   test("surfaces collision when local origin differs from manifest", async () => {

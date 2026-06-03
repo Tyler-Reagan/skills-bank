@@ -39,7 +39,7 @@ export function DrawerLabelSection({
     });
     await patch({
       category: derived.category,
-      addedTags: derived.tags,
+      tags: derived.tags,
     });
   }
 
@@ -58,14 +58,14 @@ export function DrawerLabelSection({
 
   async function removeAddedTag(tag: string): Promise<void> {
     await patch({
-      addedTags: (override.addedTags ?? []).filter((t) => t !== tag),
+      tags: (override.tags ?? []).filter((t) => t !== tag),
     });
   }
 
   async function confirmAddTag(): Promise<void> {
     const t = tagInput.trim().toLowerCase().replace(/\s+/g, "-");
     if (t && !effective.tags.includes(t)) {
-      await patch({ addedTags: [...(override.addedTags ?? []), t] });
+      await patch({ tags: [...(override.tags ?? []), t] });
     }
     setTagInput("");
     setAddingTag(false);
@@ -163,7 +163,6 @@ export function DrawerLabelSection({
           )}
         </div>
       </div>
-
     </div>
   );
 }

@@ -611,7 +611,7 @@ function reconstructLabelOverride(
   if (!hasCategory && !hasTags) return undefined;
   const override: SkillLabelOverride = {};
   if (hasCategory) override.category = skill.category;
-  if (hasTags) override.addedTags = skill.tags;
+  if (hasTags) override.tags = skill.tags;
   return override;
 }
 

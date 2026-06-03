@@ -9,6 +9,7 @@ whole registry. This plan introduces a registry-wide "Manage Labels" modal acces
 BrowseTab toolbar, with a multi-step "Auto-Generate Labels" flow embedded inside it.
 
 Locked design decisions:
+
 - Entry point: BrowseTab toolbar button (not the drawer)
 - Auto-generate flow replaces modal content in-place (slide/phase transition, ← Back breadcrumb)
 - No-change rows in review: collapsed by default
@@ -27,6 +28,7 @@ Single file owning the entire feature. Phase-based, following the `RegisterModal
 pattern.
 
 **Phase union:**
+
 ```typescript
 type LabelScope = "both" | "categories" | "tags";
 
@@ -43,11 +45,18 @@ type Phase =
   | { kind: "browse" }
   | { kind: "gen-scope" }
   | { kind: "gen-skills"; scope: LabelScope }
-  | { kind: "gen-review"; scope: LabelScope; skillNames: string[]; proposals: Proposal[]; checkedNames: Set<string> }
+  | {
+      kind: "gen-review";
+      scope: LabelScope;
+      skillNames: string[];
+      proposals: Proposal[];
+      checkedNames: Set<string>;
+    }
   | { kind: "applying" };
 ```
 
 **Props:**
+
 ```typescript
 interface Props {
   onClose: () => void;
@@ -64,6 +73,7 @@ Uses `useRegistry()` internally to get the full skill list. Reads `labelsMap` vi
 ### Browse phase
 
 **State:**
+
 - `search: string` — text filter across skill name
 - `categoryFilter: string | null` — null = All; matches `categoryRules[*].category` + `"__none__"`
 - `tagFilter: string[]` — empty = All; AND semantics across selected tags
@@ -72,6 +82,7 @@ Uses `useRegistry()` internally to get the full skill list. Reads `labelsMap` vi
 - `labelsMap: LabelsMap`
 
 **Layout:**
+
 ```
 [SearchBar]  Category [All ▾]  Tags [All ▾]  Sort [Name A→Z ▾]
 ──────────────────────────────────────────────────────────────
@@ -92,6 +103,7 @@ Currently one action: "Clear labels" → opens a `ConfirmDialog` before executin
 **Confirmation gate for "Clear labels":**
 Add `confirmClear: boolean` state. When the user triggers "Clear labels" from the dropdown, set
 `confirmClear = true` (do not execute immediately). Render:
+
 ```tsx
 <ConfirmDialog
   open={confirmClear}
@@ -106,11 +118,13 @@ Add `confirmClear: boolean` state. When the user triggers "Clear labels" from th
   }}
 />
 ```
+
 `ConfirmDialog` renders its own `Modal` (`position: fixed; z-index: 1100`) which stacks above the
 manage-labels modal via DOM order. This is the established pattern in the codebase — no z-index
 changes needed.
 
 **Tags multi-select dropdown** (adapt `TagFilter` CSS pattern):
+
 - Trigger button shows `Tags [All ▾]` / `Tags [react +1 ▾]` (first selected + overflow count)
 - Dropdown panel includes a search input (`<input type="text">`) at top for filtering the tag list
 - Selected items float to top of list, separated by a divider from unselected
@@ -128,17 +142,21 @@ Navigation: clicking "✦ Auto-Generate Labels..." sets phase to `{ kind: "gen-s
 gains `← Back to Manage Labels` link (sets phase back to `{ kind: "browse" }`).
 
 **Step indicator** (inline, no separate component):
+
 ```
 Step 1 of 3  ●──○──○
 Step 2 of 3  ●──●──○
 Step 3 of 3  ●──●──●
 ```
+
 CSS: flex row, dots are `::before`/`::after` circles, connecting lines are thin horizontal rules.
 Class: `.gen-step-indicator`.
 
 #### Step 1 — Scope (`gen-scope`)
+
 Three radio options using the `ConflictActionPicker` CSS class pattern
 (`.conflict-action-label`, `.conflict-action-radio`, etc. — reuse exactly):
+
 - "Both categories and tags"
 - "Categories only"
 - "Tags only"
@@ -146,11 +164,14 @@ Three radio options using the `ConflictActionPicker` CSS class pattern
 Footer: `[ ← Back ]` · `[ Next → ]`
 
 #### Step 2 — Skills (`gen-skills`)
+
 Two radio options (same pattern):
+
 - "All skills (N skills)"
 - "Select skills"
 
 When "Select skills" is chosen, a searchable checklist expands inline (no separate step):
+
 - `SearchBar` for filtering
 - Scrollable list of all registry skills, alpha-sorted, with checkboxes
 - Each row: checkbox · name · current category badge · tag count
@@ -167,6 +188,7 @@ skill, then build `Proposal[]` comparing against current `labelsMap`. Respect sc
 copy current category.
 
 Render:
+
 - Header stat line: `N skills · M changes · K unchanged`
 - Changed rows (checked by default, unchecked to exclude from apply):
   ```
@@ -178,6 +200,7 @@ Render:
 - "Select all / deselect all" toggle link above list
 
 Footer:
+
 ```
 [ ↺ Run again ]          [ Discard changes ]   [ Apply changes ]
                                                 ↑ disabled when 0 checked
@@ -200,11 +223,13 @@ matching the pattern used by `RegisterModal` and `ManageLinksModal`.
 ### `packages/desktop/src/shared/ipc.ts`
 
 Add to the `IPC` const:
+
 ```typescript
 bulkUpdateLabels: "labels:bulkUpdate",
 ```
 
 Add to the `SkillsBankAPI` interface:
+
 ```typescript
 bulkUpdateLabels(updates: LabelsMap): Promise<void>;
 ```
@@ -212,6 +237,7 @@ bulkUpdateLabels(updates: LabelsMap): Promise<void>;
 ### `packages/desktop/src/main/main.ts`
 
 Add handler after the existing labels block (line ~4160):
+
 ```typescript
 ipcMain.handle(
   IPC.bulkUpdateLabels,
@@ -228,6 +254,7 @@ ipcMain.handle(
 ### `packages/desktop/src/main/preload.mts`
 
 Add alongside the existing label channel exposures:
+
 ```typescript
 bulkUpdateLabels: (updates: LabelsMap) =>
   ipcRenderer.invoke(IPC.bulkUpdateLabels, updates),
@@ -236,6 +263,7 @@ bulkUpdateLabels: (updates: LabelsMap) =>
 ### `packages/desktop/src/renderer/components/ModalHost.tsx`
 
 1. Add to `ActiveModal` union:
+
 ```typescript
 | { kind: "manageLabels" }
 ```
@@ -243,6 +271,7 @@ bulkUpdateLabels: (updates: LabelsMap) =>
 2. Add import for `ManageLabelsModal`.
 
 3. Add render case in `ModalHost` body:
+
 ```typescript
 {modal?.kind === "manageLabels" && (
   <ManageLabelsModal
@@ -254,6 +283,7 @@ bulkUpdateLabels: (updates: LabelsMap) =>
 ```
 
 4. Add `elevated` prop to `DrawerHost` call:
+
 ```typescript
 elevated={modal?.kind === "manageLabels"}
 ```
@@ -261,11 +291,13 @@ elevated={modal?.kind === "manageLabels"}
 ### `packages/desktop/src/renderer/components/BrowseTab.tsx`
 
 1. Add to `Props`:
+
 ```typescript
 onManageLabels?: () => void;
 ```
 
 2. Add button in the toolbar row (right side, before expand/collapse):
+
 ```typescript
 {onManageLabels && (
   <button
@@ -281,6 +313,7 @@ onManageLabels?: () => void;
 ### `packages/desktop/src/renderer/App.tsx`
 
 Wire `onManageLabels` on the BrowseTab render:
+
 ```typescript
 onManageLabels={() => openModal({ kind: "manageLabels" })}
 ```
@@ -288,11 +321,13 @@ onManageLabels={() => openModal({ kind: "manageLabels" })}
 ### `packages/desktop/src/renderer/components/DrawerHost.tsx`
 
 1. Add to `Props`:
+
 ```typescript
 elevated?: boolean;
 ```
 
 2. Apply class on the overlay element (check whether it lives in `DrawerHost` or `SkillDetailDrawer`):
+
 ```typescript
 <div className={`drawer-overlay${elevated ? " drawer-overlay--elevated" : ""}`}>
 ```
@@ -300,6 +335,7 @@ elevated?: boolean;
 ### `packages/desktop/src/renderer/styles.css`
 
 Add z-index elevation rule (drawer must sit above modal-overlay at 1100):
+
 ```css
 .drawer-overlay--elevated {
   z-index: 1200;
@@ -307,6 +343,7 @@ Add z-index elevation rule (drawer must sit above modal-overlay at 1100):
 ```
 
 Add new component styles:
+
 - `.manage-labels-filters` — filter row layout
 - `.manage-labels-table-header` — select-all + actions + count bar
 - `.manage-labels-row` — skill list row (flex, hover state, hover-reveal for `[↗]`)
@@ -320,31 +357,31 @@ Add new component styles:
 
 ## Reused Without Modification
 
-| What | From |
-|------|------|
-| `Modal` container + focus/escape/scrim | `modalStyles.tsx` |
-| `SearchBar` | `SearchBar.tsx` |
-| `Icon` component | `Icon.tsx` |
-| `.conflict-action-label/radio/desc` CSS | `styles.css` (scope + skills radio steps) |
-| `.tag-filter-panel/item/clear` CSS | `styles.css` (tags dropdown) |
-| `.label-chip` CSS | `styles.css` (tag display in browse rows) |
-| `.btn` / `.btn.primary` | `styles.css` |
-| `categoryRules`, `categoryDisplayName` | `@skills-bank/core/labels` |
-| `deriveLabels`, `effectiveLabels` | `@skills-bank/core/labels` |
-| `useRegistry()` | `RegistryContext.tsx` |
-| `readLabels`, `updateLabel`, `resetLabel` IPC | existing channels |
-| `ConfirmDialog` | `ConfirmDialog.tsx` (destructive-action gate) |
+| What                                          | From                                          |
+| --------------------------------------------- | --------------------------------------------- |
+| `Modal` container + focus/escape/scrim        | `modalStyles.tsx`                             |
+| `SearchBar`                                   | `SearchBar.tsx`                               |
+| `Icon` component                              | `Icon.tsx`                                    |
+| `.conflict-action-label/radio/desc` CSS       | `styles.css` (scope + skills radio steps)     |
+| `.tag-filter-panel/item/clear` CSS            | `styles.css` (tags dropdown)                  |
+| `.label-chip` CSS                             | `styles.css` (tag display in browse rows)     |
+| `.btn` / `.btn.primary`                       | `styles.css`                                  |
+| `categoryRules`, `categoryDisplayName`        | `@skills-bank/core/labels`                    |
+| `deriveLabels`, `effectiveLabels`             | `@skills-bank/core/labels`                    |
+| `useRegistry()`                               | `RegistryContext.tsx`                         |
+| `readLabels`, `updateLabel`, `resetLabel` IPC | existing channels                             |
+| `ConfirmDialog`                               | `ConfirmDialog.tsx` (destructive-action gate) |
 
 ---
 
 ## Destructive-Action Gates
 
-| Action | Confirmation required | Rationale |
-|--------|-----------------------|-----------|
-| Browse — "Clear labels" (any selection) | ✓ `ConfirmDialog` with count + `tone="danger"` | Irreversible data deletion |
-| Gen-review — "Discard changes" | ✗ | Exits proposal only; no data written |
-| Gen-review — "Apply changes" | ✗ | User reviewed a full diff; review is the gate |
-| Gen-review — "Run again" | ✗ | Non-destructive; restarts the flow |
+| Action                                  | Confirmation required                          | Rationale                                     |
+| --------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
+| Browse — "Clear labels" (any selection) | ✓ `ConfirmDialog` with count + `tone="danger"` | Irreversible data deletion                    |
+| Gen-review — "Discard changes"          | ✗                                              | Exits proposal only; no data written          |
+| Gen-review — "Apply changes"            | ✗                                              | User reviewed a full diff; review is the gate |
+| Gen-review — "Run again"                | ✗                                              | Non-destructive; restarts the flow            |
 
 ---
 
@@ -364,6 +401,7 @@ pnpm start         # manual smoke test
 ```
 
 Manual smoke test path:
+
 1. BrowseTab: "Manage Labels" button visible in toolbar
 2. Click opens modal in browse phase — all skills listed, labels shown correctly
 3. Search, category filter, tag filter, sort — all narrow/reorder the list

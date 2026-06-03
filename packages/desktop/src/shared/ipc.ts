@@ -151,6 +151,7 @@ export const IPC = {
   readLabels: "labels:read",
   updateLabel: "labels:update",
   resetLabel: "labels:reset",
+  bulkUpdateLabels: "labels:bulkUpdate",
 } as const;
 
 /**
@@ -1044,6 +1045,7 @@ interface SkillsBankAPI {
   readLabels(): Promise<LabelsMap>;
   updateLabel(name: string, patch: SkillLabelOverride): Promise<void>;
   resetLabel(name: string): Promise<void>;
+  bulkUpdateLabels(updates: LabelsMap): Promise<void>;
 }
 
 declare global {

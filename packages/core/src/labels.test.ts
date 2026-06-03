@@ -84,15 +84,14 @@ describe("effectiveLabels", () => {
     expect(result.category).toBeNull();
   });
 
-  it("addedTags unioned with derived set", () => {
-    const result = effectiveLabels(derived, { addedTags: ["mcp"] });
+  it("tags unioned with derived set", () => {
+    const result = effectiveLabels(derived, { tags: ["mcp"] });
     expect(result.tags).toContain("mcp");
     expect(result.tags).toContain("react");
   });
 
-  it("addedTags not duplicated if already in derived", () => {
-    const result = effectiveLabels(derived, { addedTags: ["react"] });
+  it("tags not duplicated if already in derived", () => {
+    const result = effectiveLabels(derived, { tags: ["react"] });
     expect(result.tags.filter((t) => t === "react")).toHaveLength(1);
   });
-
 });

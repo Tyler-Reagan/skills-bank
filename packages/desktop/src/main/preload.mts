@@ -194,6 +194,8 @@ const api = {
   updateLabel: (name: string, patch: unknown) =>
     ipcRenderer.invoke(IPC.updateLabel, name, patch),
   resetLabel: (name: string) => ipcRenderer.invoke(IPC.resetLabel, name),
+  bulkUpdateLabels: (updates: unknown) =>
+    ipcRenderer.invoke(IPC.bulkUpdateLabels, updates),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);
