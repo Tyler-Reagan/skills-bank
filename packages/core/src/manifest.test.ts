@@ -13,7 +13,6 @@ import {
 } from "./manifest.js";
 import { writeSkillSource } from "./source.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
-import { deriveLabels } from "./labels.js";
 import { buildRegistryIndex } from "./build.js";
 
 /**
@@ -169,13 +168,9 @@ describe("exportRegistryManifest", () => {
     expect(alpha.origin).toEqual({ kind: "none" });
     // No external origin → personal.
     expect(alpha.bucket).toBe("personal");
-    // Effective labels = auto-derived + the supplied override.
-    const derivedAlpha = deriveLabels({
-      name: "alpha",
-      description: "a react component skill",
-    });
-    expect(alpha.category).toBe(derivedAlpha.category);
-    expect(alpha.tags).toEqual([...derivedAlpha.tags, "custom"]);
+    // Effective labels = stored override only; no auto-derivation at export.
+    expect(alpha.category).toBeNull();
+    expect(alpha.tags).toEqual(["custom"]);
 
     const beta = m.skills.find((s) => s.name === "beta")!;
     expect(beta.source).toBe("curated");

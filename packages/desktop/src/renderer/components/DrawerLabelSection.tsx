@@ -39,9 +39,7 @@ export function DrawerLabelSection({
     });
     await patch({
       category: derived.category,
-      categorySource: "auto",
       addedTags: derived.tags,
-      rejectedTags: [],
     });
   }
 
@@ -55,19 +53,12 @@ export function DrawerLabelSection({
   async function handleCategoryChange(value: string): Promise<void> {
     await patch({
       category: value === "__none__" ? null : value,
-      categorySource: "user",
     });
   }
 
   async function removeAddedTag(tag: string): Promise<void> {
     await patch({
       addedTags: (override.addedTags ?? []).filter((t) => t !== tag),
-    });
-  }
-
-  async function restoreTag(tag: string): Promise<void> {
-    await patch({
-      rejectedTags: (override.rejectedTags ?? []).filter((t) => t !== tag),
     });
   }
 
@@ -80,7 +71,6 @@ export function DrawerLabelSection({
     setAddingTag(false);
   }
 
-  const rejectedTags = override.rejectedTags ?? [];
   const currentCategory = effective.category ?? "__none__";
 
   return (
@@ -109,9 +99,6 @@ export function DrawerLabelSection({
           >
             Auto Categorize
           </button>
-          {override.categorySource === "auto" && (
-            <span className="label-source-badge">auto</span>
-          )}
         </div>
       </div>
 
@@ -177,26 +164,6 @@ export function DrawerLabelSection({
         </div>
       </div>
 
-      {rejectedTags.length > 0 && (
-        <div className="label-field">
-          <label className="label-field-label label-field-label--muted">
-            Rejected tags
-          </label>
-          <div className="label-chips">
-            {rejectedTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                className="label-chip label-chip--rejected"
-                title="Click to restore"
-                onClick={() => void restoreTag(tag)}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

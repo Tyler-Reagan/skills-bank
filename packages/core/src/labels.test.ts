@@ -75,23 +75,13 @@ describe("effectiveLabels", () => {
   });
 
   it("user category wins over derived", () => {
-    const result = effectiveLabels(derived, {
-      category: "dx",
-      categorySource: "user",
-    });
+    const result = effectiveLabels(derived, { category: "dx" });
     expect(result.category).toBe("dx");
   });
 
   it("null category override explicitly uncategorizes", () => {
     const result = effectiveLabels(derived, { category: null });
     expect(result.category).toBeNull();
-  });
-
-  it("rejectedTags suppressed from derived set", () => {
-    const result = effectiveLabels(derived, { rejectedTags: ["typescript"] });
-    expect(result.tags).not.toContain("typescript");
-    expect(result.tags).toContain("react");
-    expect(result.tags).toContain("ui");
   });
 
   it("addedTags unioned with derived set", () => {
@@ -105,13 +95,4 @@ describe("effectiveLabels", () => {
     expect(result.tags.filter((t) => t === "react")).toHaveLength(1);
   });
 
-  it("reject and add can be combined", () => {
-    const result = effectiveLabels(derived, {
-      rejectedTags: ["ui"],
-      addedTags: ["mcp"],
-    });
-    expect(result.tags).not.toContain("ui");
-    expect(result.tags).toContain("mcp");
-    expect(result.tags).toContain("react");
-  });
 });

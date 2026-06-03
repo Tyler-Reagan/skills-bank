@@ -489,9 +489,7 @@ export const tagRules: { tag: string; keywords: string[] }[] = [
 
 export interface SkillLabelOverride {
   category?: string | null;
-  categorySource?: "auto" | "user";
   addedTags?: string[];
-  rejectedTags?: string[];
   /** App-level meta stored under the "__meta" key in the labels map. */
   bannerDismissed?: boolean;
 }
@@ -553,10 +551,11 @@ export function effectiveLabels(
   const category =
     override.category !== undefined ? override.category : derived.category;
 
-  const rejected = new Set(override.rejectedTags ?? []);
   const added = override.addedTags ?? [];
-  const base = derived.tags.filter((t) => !rejected.has(t));
-  const tags = [...base, ...added.filter((t) => !base.includes(t))];
+  const tags = [
+    ...derived.tags,
+    ...added.filter((t) => !derived.tags.includes(t)),
+  ];
 
   return { category, tags };
 }
