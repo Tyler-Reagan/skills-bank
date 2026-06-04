@@ -45,9 +45,9 @@ Click any "Not registered" card to manage it: register it into Skills Bank, link
 
 ## Organize with labels
 
-Skills are automatically grouped into categories — frontend, backend, AI tooling, and [twelve more](/reference/labels) — based on each skill's name and description. The Browse tab shows one collapsible section per category.
+The Browse tab groups skills into collapsible category sections — Frontend, Backend, AI Tooling, and [more](/reference/labels). Skills with no category assigned appear together under **Uncategorized** until you label them.
 
-The first time you open Browse you'll see a **Review labels** banner. Click it to step through your registry skill-by-skill: confirm the inferred category, reject or add tags, and move on. You can also open any skill's detail dialog at any time to edit its category and tags directly.
+Click **Manage Labels** in the Registry toolbar to assign or bulk-edit labels across your registry. The **Auto-Generate Labels** flow inside that modal suggests a category and tags for each skill based on its name and description — you review and confirm before anything is saved. You can also edit any skill's category and tags directly from its detail drawer.
 
 ## Next steps
 
