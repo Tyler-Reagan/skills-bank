@@ -339,7 +339,7 @@ export function BrowseTab({
           )}
           {onOpenBulkInstall && (
             <button type="button" className="btn" onClick={onOpenBulkInstall}>
-              Bulk install
+              Install Skills
             </button>
           )}
         </div>
