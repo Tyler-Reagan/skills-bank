@@ -5530,3 +5530,84 @@ button:disabled {
   color: var(--text);
   border-color: var(--text-3);
 }
+
+/* ── BulkInstallModal ────────────────────────────────────────────────────── */
+
+.bulk-install-modal-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s5);
+  border-bottom: 1px solid var(--border);
+}
+.bulk-install-modal-list {
+  max-height: 400px;
+}
+.bulk-install-row-status {
+  flex-shrink: 0;
+  font-size: 12px;
+  margin-left: auto;
+  padding-left: var(--s3);
+}
+.bulk-install-status-installed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-size: 12px;
+}
+.bulk-install-progress-row {
+  min-height: 36px;
+}
+.bulk-install-progress-row--installing .manage-labels-row-name {
+  color: var(--accent);
+}
+.bulk-install-progress-row--done .manage-labels-row-name {
+  color: var(--text-3);
+}
+.bulk-install-progress-row--failed .manage-labels-row-name {
+  color: var(--danger);
+}
+.bulk-install-progress-icon {
+  flex-shrink: 0;
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+}
+.bulk-install-progress-row--done .bulk-install-progress-icon {
+  color: var(--accent);
+}
+.bulk-install-progress-row--failed .bulk-install-progress-icon {
+  color: var(--danger);
+}
+.bulk-install-progress-label {
+  margin-left: auto;
+  padding-left: var(--s3);
+  flex-shrink: 0;
+}
+.bulk-install-pending-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  display: inline-block;
+}
+.bulk-install-done-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s6);
+  padding: var(--s6) var(--s5);
+  font-size: 15px;
+  font-weight: 500;
+}
+.bulk-install-done-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--accent);
+}
+.bulk-install-done-stat--failed {
+  color: var(--danger);
+}

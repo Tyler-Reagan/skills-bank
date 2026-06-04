@@ -26,6 +26,7 @@ import { RepoPickerModal } from "./RepoPickerModal.js";
 import { DestinationPickerDialog } from "./DestinationPickerDialog.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
 import { ManageLabelsModal } from "./ManageLabelsModal.js";
+import { BulkInstallModal } from "./BulkInstallModal.js";
 import { DrawerHost } from "./DrawerHost.js";
 import type { ReviewContext } from "./SkillDetailDrawer.js";
 import type { InstalledGroup } from "./InstalledTab.js";
@@ -113,7 +114,8 @@ export type ActiveModal =
         }>;
       };
     }
-  | { kind: "manageLabels" };
+  | { kind: "manageLabels" }
+  | { kind: "bulkInstall" };
 
 interface Props {
   modal: ActiveModal | null;
@@ -911,6 +913,10 @@ export function ModalHost({
           onPicked={pickRepo}
           onSignOut={signOut}
         />
+      )}
+
+      {modal?.kind === "bulkInstall" && (
+        <BulkInstallModal onClose={closeModal} />
       )}
 
       {modal?.kind === "manageLabels" && (
