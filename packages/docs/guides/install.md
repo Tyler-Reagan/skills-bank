@@ -7,7 +7,7 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 ## Steps
 
 1. Open the **Registry** tab (it's the default tab).
-2. Skills are grouped into collapsible category sections — **Frontend**, **Backend**, **AI Tooling**, and [more](/reference/labels). Click a section header to expand or collapse it, or use **Collapse all / Expand all** in the results row to fold every section at once. Use the search bar or tag filters to narrow the list further; toggle **Installed only** to filter to skills you've already linked.
+2. Skills with categories assigned are grouped into collapsible sections — **Frontend**, **Backend**, **AI Tooling**, and [more](/reference/labels); unlabeled skills appear under **Uncategorized**. Click a section header to expand or collapse it, or use **Collapse all / Expand all** in the results row to fold every section at once. Use the search bar or tag filters to narrow the list further; toggle **Installed only** to filter to skills you've already linked.
 3. Click any card to open its detail dialog. The dialog shows the full `SKILL.md` preview, tags, category, source, and any warnings.
 
    ![Skill detail dialog with SKILL.md preview, Install, Manage agent links](/images/skill-detail.png)
@@ -50,7 +50,18 @@ Two formats are accepted:
   https://github.com/owner/repo/tree/main/skills/skill-name
   ```
 
-Press **Install** (or Enter). The app fetches the skill into your bank and shows a confirmation flash. The skill then appears in the **Registry** tab under its inferred category — click it there and press **Install** to link it into your agent directories.
+Press **Install** (or Enter). The app fetches the skill into your bank and shows a confirmation flash. The skill then appears in the **Registry** tab — click it there and press **Install** to link it into your agent directories. Assign a category via **Manage Labels** in the toolbar or from the skill's detail drawer.
+
+## Install multiple skills at once
+
+Click **Install Skills** in the Registry tab toolbar to open the bulk install modal.
+
+1. Filter the list by status (**Not installed**, **Installed**, or **All**) and search by name. Each row shows the skill's category and tags so you can make informed picks.
+2. Check the skills you want, or use **Select all** to grab everything visible. Already-installed skills show a **✓ installed** badge and their checkboxes are disabled.
+3. Click **Install N selected**. The modal shows per-row progress — pending, installing, done, or failed. Click **Cancel remaining** at any time to stop the queue after the current skill finishes.
+4. When the run completes, a summary shows how many installed successfully and lists any failures.
+
+Install targets respect your **Default install agents** setting (Account menu → Settings…).
 
 ## Uninstall
 

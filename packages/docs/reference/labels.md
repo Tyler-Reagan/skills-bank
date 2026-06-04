@@ -1,20 +1,18 @@
 # Skill labels
 
-Skills Bank auto-derives a **category** and zero or more **tags** for every skill in your registry, based on its name and description. Labels are computed at runtime from static rule tables — nothing is baked into `index.json` or the skill's `SKILL.md` frontmatter.
+Skills Bank organizes your registry by **category** and **tags**. Labels are user-assigned — nothing is set automatically. Skills with no labels appear under **Uncategorized** in the Browse tab until you assign them.
 
-Auto-derived tags appear on skill cards in the Browse grid, power the **Tags ▾** filter dropdown, and are matched during free-text search. Skills with no explicit `tags:` in their `SKILL.md` frontmatter still receive inferred tags.
+The **Auto-Generate** tool (inside Manage Labels) can suggest a category and tags for any skill based on its name and description, but suggestions are always reviewed and confirmed before anything is saved.
 
-You can override any auto-derived label from the skill detail drawer. Overrides are stored in `labels.json` in your app data directory and never touch the skill files themselves.
+Labels are stored in `labels.json` in your app data directory and never touch the skill files themselves. They persist across registry syncs and manifest imports.
 
 ## Browse navigation
 
-Skills are grouped into collapsible category sections. When two or more sections are visible, a **Collapse all / Expand all** toggle appears in the results row — click it to fold or unfold every section at once. Individual sections can still be toggled independently.
-
-<!-- NEW SCREENSHOT (placeholder): this page has no image. Add one showing the Labels section of the detail drawer (category select + tag chips) and/or the collapsible category grouping in the Browse tab. Suggested path: /images/labels.png -->
+Skills are grouped into collapsible category sections when categories have been assigned. When two or more sections are visible, a **Collapse all / Expand all** toggle appears in the results row — click it to fold or unfold every section at once. Individual sections can still be toggled independently. Skills with no category assigned appear together under **Uncategorized**.
 
 ## Categories
 
-Each skill gets at most one category. The first matching rule wins.
+Each skill has at most one category. Skills with no category assigned appear under **Uncategorized** in the Browse tab.
 
 | Category         | Description                                                                            |
 | ---------------- | -------------------------------------------------------------------------------------- |
@@ -34,11 +32,9 @@ Each skill gets at most one category. The first matching rule wins.
 | `research`       | Investigative workflows, competitive analysis, synthesis, and evaluation               |
 | `hardware`       | Embedded systems, microcontrollers, Arduino, Raspberry Pi, and firmware                |
 
-Skills with no matching category appear under **Uncategorized** in the Browse tab.
-
 ## Tags
 
-A skill can have multiple tags. All matching rules fire — order does not matter.
+A skill can have multiple tags.
 
 | Tag             | Matches skills involving                               |
 | --------------- | ------------------------------------------------------ |
@@ -77,13 +73,36 @@ A skill can have multiple tags. All matching rules fire — order does not matte
 | `sql`           | SQL queries, PostgreSQL, MySQL, SQLite, ORMs           |
 | `branding`      | Brand identity, logos, color palettes                  |
 
-## Overriding labels
+## Managing labels
+
+Click **Manage Labels** in the Registry tab toolbar to open the label management modal. From here you can view, edit, and organize labels across your entire registry at once.
+
+**Browse and filter** — the skill list supports search by name, filter by category or tags (multi-select), and sort by name, category, or uncategorized-first.
+
+**Inline editing** — click a category badge (or the `—` placeholder) to get a dropdown and change the category directly. Tag chips have **✕** buttons to remove them; the **+** button adds a new tag inline. Changes save immediately.
+
+**Bulk clear** — select one or more skills with the checkboxes, then open **Actions → Clear labels**. A confirmation dialog shows the count before executing.
+
+**Open skill [↗]** — each row has a hover-revealed button that opens the skill's full detail drawer above the modal, for richer editing (SKILL.md preview, install, origin, etc.).
+
+## Auto-Generate Labels
+
+Inside the Manage Labels modal, click **✦ Auto-Generate Labels…** to open a three-step flow that suggests category and tag values based on each skill's name and description.
+
+**Step 1 — Scope:** Choose whether to generate categories only, tags only, or both.
+
+**Step 2 — Skills:** Apply to all skills or select specific ones from a searchable checklist.
+
+**Step 3 — Review:** Each skill that would change shows a diff of current versus proposed values. Rows are checked by default — uncheck any you want to exclude. Click **Apply changes** to commit the checked rows, or **Discard changes** to exit without writing anything. Partial apply is supported: the footer shows "Apply 2 of 4" when not all are selected.
+
+## Editing labels per skill
 
 Open any skill in the detail drawer and use the **Labels** section to:
 
 - Change the category with the dropdown (saved immediately)
-- Remove an auto-derived tag with **✕** (moves it to the rejected list)
-- Add a tag not in the auto-derived set with **+ Add tag**
-- Restore a rejected tag by clicking it in the rejected row
+- Remove a tag with **✕** on its chip
+- Add a tag with **+ Add tag**
 
-Overrides are per-skill and persist across registry syncs. To reset a skill back to fully auto-derived labels, use **Reset labels** in the same section.
+Click **Auto Categorize** to run the suggestion engine for that one skill — it pre-fills category and tags based on the skill's name and description, saved immediately.
+
+Label edits are per-skill and persist across registry syncs.

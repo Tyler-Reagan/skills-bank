@@ -14,7 +14,6 @@ import {
 import { folderPathFromSkillPath, mirrorSkillFolder } from "./origin.js";
 import { deleteFromBankSkill } from "./install.js";
 import {
-  deriveLabels,
   effectiveLabels,
   type LabelsMap,
   type SkillLabelOverride,
@@ -161,7 +160,7 @@ export function exportRegistryManifest(
         ? "vendored"
         : "personal";
     const { category, tags } = effectiveLabels(
-      deriveLabels({ name: entry.name, description: entry.description ?? "" }),
+      { category: null, tags: [] },
       opts.labels?.[entry.name],
     );
     return {
@@ -598,41 +597,22 @@ function stampOriginMarker(
 }
 
 /**
- * Reconstruct the minimal `SkillLabelOverride` that, re-applied to the
- * destination's auto-derived labels, reproduces the manifest's effective
- * category + tags. The manifest stores flattened effective values; this
- * recovers just the user's deltas (category pin + tag add/reject) so the
- * rebuilt `labels.json` stays minimal and re-derivation handles the rest.
- * Returns `undefined` when the effective labels already match pure
- * auto-derivation (no override needed).
+ * Reconstruct a `SkillLabelOverride` from a manifest skill's effective
+ * category + tags. The manifest is the source of truth; values are stored
+ * directly into `labels.json` on the destination with no derivation.
+ * Returns `undefined` when the manifest carries no labels so `labels.json`
+ * stays clean for genuinely unlabeled skills.
  */
 function reconstructLabelOverride(
   skill: ManifestSkill,
 ): SkillLabelOverride | undefined {
-  const derived = deriveLabels({
-    name: skill.name,
-    description: skill.description ?? "",
-  });
+  const hasCategory = skill.category != null;
+  const hasTags = skill.tags.length > 0;
+  if (!hasCategory && !hasTags) return undefined;
   const override: SkillLabelOverride = {};
-  let changed = false;
-  if ((skill.category ?? null) !== derived.category) {
-    override.category = skill.category;
-    override.categorySource = "user";
-    changed = true;
-  }
-  const derivedSet = new Set(derived.tags);
-  const manifestSet = new Set(skill.tags);
-  const added = skill.tags.filter((t) => !derivedSet.has(t));
-  const rejected = derived.tags.filter((t) => !manifestSet.has(t));
-  if (added.length > 0) {
-    override.addedTags = added;
-    changed = true;
-  }
-  if (rejected.length > 0) {
-    override.rejectedTags = rejected;
-    changed = true;
-  }
-  return changed ? override : undefined;
+  if (hasCategory) override.category = skill.category;
+  if (hasTags) override.tags = skill.tags;
+  return override;
 }
 
 /** Record a skill's reconstructed label override into the accumulator. */

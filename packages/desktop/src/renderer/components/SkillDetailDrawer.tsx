@@ -150,10 +150,10 @@ interface Props {
    * PublishSection's visibility — no linked repo → no Publish UI.
    */
   linkedRepoName?: string | null;
-  /** Called after any label mutation so BrowseTab can re-group. */
-  onLabelsChanged?: () => void;
   /** When set, the drawer shows review navigation (prev/next/exit). */
   reviewContext?: ReviewContext | null;
+  /** Elevates the overlay above an open modal (z-index: 1200). */
+  elevated?: boolean;
 }
 
 export function SkillDetailDrawer({
@@ -180,8 +180,8 @@ export function SkillDetailDrawer({
   linkedRepoName,
   showOriginActivity,
   onSetManualUpstream,
-  onLabelsChanged,
   reviewContext,
+  elevated,
 }: Props): React.ReactElement {
   const drawerRef = useRef<HTMLElement | null>(null);
   // The drawer slides in from the right (~280ms). Until it lands,
@@ -297,7 +297,7 @@ export function SkillDetailDrawer({
 
   return (
     <div
-      className="drawer-overlay"
+      className={`drawer-overlay${elevated ? " drawer-overlay--elevated" : ""}`}
       // Backdrop click closes; click-on-dialog bubbles up here but
       // the currentTarget check filters those out so the dialog body
       // doesn't dismiss on every interaction.
@@ -519,10 +519,7 @@ export function SkillDetailDrawer({
               onSetManualUpstream={onSetManualUpstream}
             />
 
-            <DrawerLabelSection
-              entry={entry}
-              onLabelsChanged={onLabelsChanged ?? (() => undefined)}
-            />
+            <DrawerLabelSection entry={entry} />
 
             {reviewContext && (
               <div className="drawer-review-nav">

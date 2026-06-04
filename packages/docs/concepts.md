@@ -128,18 +128,14 @@ Provenance is a binary on each registry skill — every skill is either **curate
 
 ## Labels
 
-Every skill carries two label axes, both auto-derived from the skill's name and description and fully overridable per-skill from its detail dialog.
+Every skill carries two label axes, both user-assigned and editable per-skill from the detail drawer or in bulk from the **Manage Labels** modal.
 
-- **Category** — exactly one per skill, first-match from a priority list of 15 rules. Skills in the Browse tab are grouped under collapsible category section headers (Frontend, Backend, Infrastructure, …, Uncategorized). You can change a skill's category from the **Labels** section of its detail dialog; the new grouping takes effect immediately.
-- **Tags** — zero or more per skill, all-match from 34 rules. Tags are additive: you can reject auto-derived tags and add your own. The tag filter bar and the **Mine** chip use this axis.
+- **Category** — at most one per skill. Skills in the Browse tab are grouped under collapsible category section headers (Frontend, Backend, Infrastructure, …); skills with no category assigned appear under **Uncategorized**. Change a skill's category from the **Labels** section of its detail drawer; the new grouping takes effect immediately.
+- **Tags** — zero or more per skill. Tags power the tag filter bar and are matched during free-text search. You can add or remove tags on any skill — including curated ones — and they persist across registry syncs.
 
-Both axes are stored as user overrides in `labels.json` under the app's data directory. Only overrides are written — the derived values are always computed at runtime, so adding a new keyword to a future rule update propagates automatically.
+Both axes are stored in `labels.json` under the app's data directory. The **Auto-Generate** tool (in Manage Labels) can suggest category and tag values from a skill's name and description on demand; suggestions are always reviewed before saving.
 
-See [Skill labels](/reference/labels) for the full list of categories and tags.
-
-### Tags are local
-
-Tags are a local-only dimension. You can add or remove tags on any skill — including curated ones — and Sync will preserve your tag edits on the next pull.
+See [Skill labels](/reference/labels) for the full list of categories, tags, and how to manage them in bulk.
 
 ### Card badges
 
@@ -152,7 +148,7 @@ Priority order, highest first:
 - **`UPDATE`** _(info)_ — an update is available from the skill's origin.
 - **`CURATED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the curated-only escape hatch.
 
-User-source skills render no provenance chip. The **Mine** filter on the Registry tab is the single surface for "show me only my skills."
+User-source skills render no provenance chip. The **Personal** filter chip on the Registry tab shows only user-source skills.
 
 ## Installation kind
 
@@ -199,7 +195,7 @@ A lightweight JSON snapshot of a registry's **origin pointers** — not the skil
 
 Manifests are the transport layer for moving a registry's _metadata_ between machines or pushing it to a linked repo. Content transfers (the full skills tree as files) use the disk import/export flow instead.
 
-The current schema is v3. A manifest exported from one machine can be pushed directly to your linked GitHub repo and pulled on another, closing the loop without manual file handling. See [Move your registry](/guides/manifest).
+The current schema is v5. A manifest exported from one machine can be pushed directly to your linked GitHub repo and pulled on another, closing the loop without manual file handling. See [Move your registry](/guides/manifest).
 
 ## Publish
 

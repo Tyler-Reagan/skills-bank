@@ -1677,6 +1677,9 @@ select {
   padding: var(--s5);
   animation: fadeIn var(--t) var(--ease) both;
 }
+.drawer-overlay--elevated {
+  z-index: 1200;
+}
 .drawer {
   /* Detail dialog. Sized for a two-column body: left column holds
      long-form content (Description, Tags, SKILL.md preview, Origin,
@@ -5043,4 +5046,568 @@ button:disabled {
 }
 .labels-banner-dismiss:hover {
   color: var(--text-1);
+}
+
+/* ── ManageLabelsModal ───────────────────────────────────────────────────── */
+
+/* Filters row */
+.manage-labels-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s5);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.manage-labels-search-wrap {
+  flex: 1 1 180px;
+  min-width: 140px;
+}
+.manage-labels-filter-label {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.manage-labels-select {
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+/* Tags dropdown */
+.manage-labels-tags-wrap {
+  position: relative;
+}
+.manage-labels-tags-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 200px;
+  max-width: 260px;
+}
+.manage-labels-tags-search {
+  padding: var(--s2) var(--s3);
+  border-bottom: 1px solid var(--border);
+}
+.manage-labels-tags-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  padding: 3px 6px;
+  outline: none;
+}
+.manage-labels-tags-search-input:focus {
+  border-color: var(--accent);
+}
+.manage-labels-tags-divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--s1) 0;
+}
+
+/* Actions dropdown */
+.actions-dropdown-wrap {
+  position: relative;
+}
+.actions-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 13px;
+}
+.actions-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-hover);
+  padding: var(--s1) 0;
+}
+.actions-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: var(--s2) var(--s4);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.actions-dropdown-item:hover {
+  background: var(--surface-hi);
+}
+.actions-dropdown-item--danger {
+  color: var(--danger);
+}
+
+/* Table header row */
+.manage-labels-table-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.manage-labels-select-all-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+.manage-labels-count {
+  margin-left: auto;
+}
+
+/* Skill list */
+.manage-labels-list {
+  flex: 1 1 0;
+  overflow-y: auto;
+  min-height: 200px;
+  max-height: 380px;
+}
+.manage-labels-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s5);
+  border-bottom: 1px solid var(--border);
+  min-height: 36px;
+  position: relative;
+}
+.manage-labels-row:hover {
+  background: var(--surface-hi);
+}
+.manage-labels-row--selected {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.manage-labels-row-check {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.manage-labels-row-name {
+  flex: 0 0 220px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.manage-labels-row-category {
+  flex: 0 0 120px;
+  font-size: 12px;
+  overflow: hidden;
+}
+.manage-labels-cat-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.manage-labels-row-tags {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  overflow: hidden;
+  flex-wrap: nowrap;
+}
+.manage-labels-chip {
+  font-size: 11px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.manage-labels-row-none {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.manage-labels-row-open {
+  flex-shrink: 0;
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  transition: opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.manage-labels-row:hover .manage-labels-row-open {
+  opacity: 1;
+}
+.manage-labels-row-open:hover {
+  color: var(--text);
+}
+.manage-labels-empty {
+  padding: var(--s5);
+  text-align: center;
+}
+
+/* Applying phase */
+.manage-labels-applying {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--s8);
+}
+
+/* ── Auto-generate flow ──────────────────────────────────────────────────── */
+
+.gen-modal-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s3);
+}
+.gen-back-link {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+.gen-back-link:hover {
+  color: var(--text);
+}
+
+/* Step indicator */
+.gen-step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.gen-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.gen-step-dot--done {
+  background: var(--accent);
+}
+.gen-step-line {
+  width: 20px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.gen-step-line--done {
+  background: var(--accent);
+}
+.gen-step-label {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-left: var(--s3);
+  white-space: nowrap;
+}
+
+/* Gen body: radio options + skill checklist */
+.manage-labels-gen-body {
+  padding: var(--s4) var(--s5);
+  overflow-y: auto;
+  max-height: 440px;
+}
+.gen-skill-checklist {
+  margin-top: var(--s4);
+  border-top: 1px solid var(--border);
+  padding-top: var(--s4);
+}
+.gen-skill-checklist-list {
+  margin-top: var(--s3);
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.gen-skill-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 13px;
+}
+.gen-skill-row:last-child {
+  border-bottom: none;
+}
+.gen-skill-row:hover {
+  background: var(--surface-hi);
+}
+.gen-skill-row-name {
+  flex: 1 1 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Review step */
+.gen-review-stats {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  flex: 1;
+}
+.gen-review-select-all-row {
+  padding: var(--s2) var(--s5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.gen-review-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s3) var(--s5);
+  border-bottom: 1px solid var(--border);
+}
+.gen-review-row:hover {
+  background: var(--surface-hi);
+}
+.gen-review-check {
+  margin-top: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.gen-review-row-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+.gen-review-skill-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+.gen-review-diff {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.gen-review-diff > span:first-child {
+  min-width: 60px;
+}
+.gen-review-current {
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  flex-wrap: wrap;
+}
+.gen-review-arrow {
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.gen-review-proposed {
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  flex-wrap: wrap;
+  font-weight: 500;
+}
+.gen-review-no-change {
+  padding: var(--s3) var(--s5);
+}
+.gen-review-no-change-toggle {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+.gen-review-no-change-toggle:hover {
+  color: var(--text);
+}
+.gen-review-no-change-list {
+  margin-top: var(--s2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+.gen-review-no-change-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 1px 6px;
+}
+.gen-review-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* In-row editing affordances */
+.manage-labels-cat-edit-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.manage-labels-cat-edit-btn--set:hover .manage-labels-cat-badge {
+  outline: 1px dashed var(--border-hi);
+  border-radius: var(--r-sm);
+}
+.manage-labels-cat-chevron {
+  opacity: 0;
+  margin-left: 2px;
+  color: var(--text-3);
+  vertical-align: middle;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.manage-labels-cat-edit-btn--set:hover .manage-labels-cat-chevron {
+  opacity: 1;
+}
+.manage-labels-cat-placeholder {
+  color: transparent;
+  font-size: 11px;
+  font-style: italic;
+}
+.manage-labels-cat-edit-btn--empty:hover .manage-labels-cat-placeholder {
+  color: var(--text-3);
+}
+.manage-labels-row-cat-select {
+  max-width: 120px;
+}
+.manage-labels-tag-input {
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  padding: 1px 5px;
+  width: 80px;
+  outline: none;
+}
+.manage-labels-add-tag-btn {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+.manage-labels-add-tag-btn:hover {
+  color: var(--text);
+  border-color: var(--text-3);
+}
+
+/* ── BulkInstallModal ────────────────────────────────────────────────────── */
+
+.bulk-install-modal-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s5);
+  border-bottom: 1px solid var(--border);
+}
+.bulk-install-modal-list {
+  max-height: 400px;
+}
+.bulk-install-row-status {
+  flex-shrink: 0;
+  font-size: 12px;
+  margin-left: auto;
+  padding-left: var(--s3);
+}
+.bulk-install-status-installed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-size: 12px;
+}
+.bulk-install-progress-row {
+  min-height: 36px;
+}
+.bulk-install-progress-row--installing .manage-labels-row-name {
+  color: var(--accent);
+}
+.bulk-install-progress-row--done .manage-labels-row-name {
+  color: var(--text-3);
+}
+.bulk-install-progress-row--failed .manage-labels-row-name {
+  color: var(--danger);
+}
+.bulk-install-progress-icon {
+  flex-shrink: 0;
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+}
+.bulk-install-progress-row--done .bulk-install-progress-icon {
+  color: var(--accent);
+}
+.bulk-install-progress-row--failed .bulk-install-progress-icon {
+  color: var(--danger);
+}
+.bulk-install-progress-label {
+  margin-left: auto;
+  padding-left: var(--s3);
+  flex-shrink: 0;
+}
+.bulk-install-pending-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  display: inline-block;
+}
+.bulk-install-done-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s6);
+  padding: var(--s6) var(--s5);
+  font-size: 15px;
+  font-weight: 500;
+}
+.bulk-install-done-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--accent);
+}
+.bulk-install-done-stat--failed {
+  color: var(--danger);
 }

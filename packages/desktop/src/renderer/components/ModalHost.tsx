@@ -25,6 +25,8 @@ import { UpdateNotesModal } from "./UpdateNotesModal.js";
 import { RepoPickerModal } from "./RepoPickerModal.js";
 import { DestinationPickerDialog } from "./DestinationPickerDialog.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
+import { ManageLabelsModal } from "./ManageLabelsModal.js";
+import { BulkInstallModal } from "./BulkInstallModal.js";
 import { DrawerHost } from "./DrawerHost.js";
 import type { ReviewContext } from "./SkillDetailDrawer.js";
 import type { InstalledGroup } from "./InstalledTab.js";
@@ -111,7 +113,9 @@ export type ActiveModal =
           entries: Array<{ agent: string; linkPath: string }>;
         }>;
       };
-    };
+    }
+  | { kind: "manageLabels" }
+  | { kind: "bulkInstall" };
 
 interface Props {
   modal: ActiveModal | null;
@@ -133,7 +137,6 @@ interface Props {
   checkForUpdates: () => void;
   unregisterHintShown: () => boolean;
   markUnregisterHintShown: () => void;
-  onLabelsChanged?: () => void;
   reviewContext?: ReviewContext | null;
 }
 
@@ -163,7 +166,6 @@ export function ModalHost({
   checkForUpdates,
   unregisterHintShown,
   markUnregisterHintShown,
-  onLabelsChanged,
   reviewContext,
 }: Props): React.ReactElement {
   const { registry, installed, pendingSkillUpdates, refresh } = useRegistry();
@@ -913,6 +915,18 @@ export function ModalHost({
         />
       )}
 
+      {modal?.kind === "bulkInstall" && (
+        <BulkInstallModal onClose={closeModal} />
+      )}
+
+      {modal?.kind === "manageLabels" && (
+        <ManageLabelsModal
+          onClose={closeModal}
+          onOpenSkill={setSelected}
+          drawerOpen={selected !== null}
+        />
+      )}
+
       <DrawerHost
         selected={selected}
         onClose={() => setSelected(null)}
@@ -925,8 +939,8 @@ export function ModalHost({
         }
         unregisterHintShown={unregisterHintShown}
         markUnregisterHintShown={markUnregisterHintShown}
-        onLabelsChanged={onLabelsChanged}
         reviewContext={reviewContext}
+        elevated={modal?.kind === "manageLabels"}
       />
     </>
   );

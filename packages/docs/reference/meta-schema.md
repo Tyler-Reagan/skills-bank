@@ -31,7 +31,7 @@ The frontmatter is delimited by `---` lines and must be the first thing in the f
 | `version`     | `string`   | No       | Semver string (e.g. `1.0.0` or `2.1.0-beta.1`).                                                            |
 | `author`      | `string`   | No       | Author name or GitHub username.                                                                            |
 
-These are the same fields the app's category/tag inference reads from; see [Skill labels](/reference/labels) for how `tags` interacts with auto-derived labels.
+See [Skill labels](/reference/labels) for the full list of categories and tags the app recognizes.
 
 ## Validation
 

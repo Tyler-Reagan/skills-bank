@@ -75,10 +75,7 @@ describe("effectiveLabels", () => {
   });
 
   it("user category wins over derived", () => {
-    const result = effectiveLabels(derived, {
-      category: "dx",
-      categorySource: "user",
-    });
+    const result = effectiveLabels(derived, { category: "dx" });
     expect(result.category).toBe("dx");
   });
 
@@ -87,31 +84,14 @@ describe("effectiveLabels", () => {
     expect(result.category).toBeNull();
   });
 
-  it("rejectedTags suppressed from derived set", () => {
-    const result = effectiveLabels(derived, { rejectedTags: ["typescript"] });
-    expect(result.tags).not.toContain("typescript");
-    expect(result.tags).toContain("react");
-    expect(result.tags).toContain("ui");
-  });
-
-  it("addedTags unioned with derived set", () => {
-    const result = effectiveLabels(derived, { addedTags: ["mcp"] });
+  it("tags unioned with derived set", () => {
+    const result = effectiveLabels(derived, { tags: ["mcp"] });
     expect(result.tags).toContain("mcp");
     expect(result.tags).toContain("react");
   });
 
-  it("addedTags not duplicated if already in derived", () => {
-    const result = effectiveLabels(derived, { addedTags: ["react"] });
+  it("tags not duplicated if already in derived", () => {
+    const result = effectiveLabels(derived, { tags: ["react"] });
     expect(result.tags.filter((t) => t === "react")).toHaveLength(1);
-  });
-
-  it("reject and add can be combined", () => {
-    const result = effectiveLabels(derived, {
-      rejectedTags: ["ui"],
-      addedTags: ["mcp"],
-    });
-    expect(result.tags).not.toContain("ui");
-    expect(result.tags).toContain("mcp");
-    expect(result.tags).toContain("react");
   });
 });

@@ -4088,9 +4088,24 @@ function readLabelsFile(): import("@skills-bank/core").LabelsMap {
   const p = labelsFilePath();
   if (!fs.existsSync(p)) return {};
   try {
-    return JSON.parse(
-      fs.readFileSync(p, "utf8"),
-    ) as import("@skills-bank/core").LabelsMap;
+    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Record<
+      string,
+      Record<string, unknown>
+    >;
+    // Tolerant read: migrate legacy `addedTags` → `tags` (renamed in v1.19).
+    const out: import("@skills-bank/core").LabelsMap = {};
+    for (const [name, entry] of Object.entries(raw)) {
+      if ("addedTags" in entry && !("tags" in entry)) {
+        const { addedTags, ...rest } = entry;
+        out[name] = {
+          ...rest,
+          tags: addedTags,
+        } as import("@skills-bank/core").SkillLabelOverride;
+      } else {
+        out[name] = entry as import("@skills-bank/core").SkillLabelOverride;
+      }
+    }
+    return out;
   } catch {
     return {};
   }
@@ -4158,3 +4173,14 @@ ipcMain.handle(IPC.resetLabel, (_e, name: string): void => {
   delete data[name];
   writeLabelsFile(data);
 });
+
+ipcMain.handle(
+  IPC.bulkUpdateLabels,
+  (_e, updates: import("@skills-bank/core").LabelsMap): void => {
+    const data = readLabelsFile();
+    for (const [name, override] of Object.entries(updates)) {
+      data[name] = { ...(data[name] ?? {}), ...override };
+    }
+    writeLabelsFile(data);
+  },
+);

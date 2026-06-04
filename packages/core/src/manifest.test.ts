@@ -13,7 +13,6 @@ import {
 } from "./manifest.js";
 import { writeSkillSource } from "./source.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
-import { deriveLabels } from "./labels.js";
 import { buildRegistryIndex } from "./build.js";
 
 /**
@@ -159,7 +158,7 @@ describe("exportRegistryManifest", () => {
     const m = exportRegistryManifest(registryRoot, {
       sourceBankVersion: "1.1.0",
       registryRootLabel: "Tyler-Reagan/skills",
-      labels: { alpha: { addedTags: ["custom"] } },
+      labels: { alpha: { tags: ["custom"] } },
     });
     expect(m.registryRoot).toBe("Tyler-Reagan/skills");
     expect(m.skills.map((s) => s.name).sort()).toEqual(["alpha", "beta"]);
@@ -169,13 +168,9 @@ describe("exportRegistryManifest", () => {
     expect(alpha.origin).toEqual({ kind: "none" });
     // No external origin → personal.
     expect(alpha.bucket).toBe("personal");
-    // Effective labels = auto-derived + the supplied override.
-    const derivedAlpha = deriveLabels({
-      name: "alpha",
-      description: "a react component skill",
-    });
-    expect(alpha.category).toBe(derivedAlpha.category);
-    expect(alpha.tags).toEqual([...derivedAlpha.tags, "custom"]);
+    // Effective labels = stored override only; no auto-derivation at export.
+    expect(alpha.category).toBeNull();
+    expect(alpha.tags).toEqual(["custom"]);
 
     const beta = m.skills.find((s) => s.name === "beta")!;
     expect(beta.source).toBe("curated");
@@ -281,7 +276,7 @@ describe("importRegistryManifest", () => {
     // surfaced as a reconstructed override for the caller's labels.json.
     expect(fs.existsSync(path.join(destDir, "meta.json"))).toBe(false);
     expect(result.restoredLabels?.["alpha"]).toEqual({
-      addedTags: ["restored-tag"],
+      tags: ["restored-tag"],
     });
     // Marker stamped with the mirrored folder hash.
     const marker = JSON.parse(
@@ -455,9 +450,7 @@ describe("importRegistryManifest", () => {
 
     const result = await importRegistryManifest(registryRoot, manifest);
     expect(result.outcomes).toEqual([{ name: "gamma", result: "registered" }]);
-    // "gamma helper" derives no labels, so the manifest's ["t1"] surfaces
-    // as a reconstructed addedTags override for labels.json.
-    expect(result.restoredLabels?.["gamma"]).toEqual({ addedTags: ["t1"] });
+    expect(result.restoredLabels?.["gamma"]).toEqual({ tags: ["t1"] });
   });
 
   test("surfaces collision when local origin differs from manifest", async () => {
