@@ -311,20 +311,15 @@ export function BrowseTab({
         />
       </div>
       <div className="row-between-8 my-8">
-        <p
-          className="results-count mt-0 mb-0"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {filtered.length} of {registry.length} skill
-          {registry.length === 1 ? "" : "s"}
-        </p>
         <div className="row-center-8">
-          {onManageLabels && (
-            <button type="button" className="btn" onClick={onManageLabels}>
-              Manage Labels
-            </button>
-          )}
+          <p
+            className="results-count mt-0 mb-0"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {filtered.length} of {registry.length} skill
+            {registry.length === 1 ? "" : "s"}
+          </p>
           {sections.length >= 2 && (
             <button
               type="button"
@@ -333,6 +328,13 @@ export function BrowseTab({
             >
               <DisclosureChevron open={!allCollapsed} />
               {allCollapsed ? "Expand all" : "Collapse all"}
+            </button>
+          )}
+        </div>
+        <div className="row-center-8">
+          {onManageLabels && (
+            <button type="button" className="btn" onClick={onManageLabels}>
+              Manage Labels
             </button>
           )}
           {onOpenBulkInstall && (
