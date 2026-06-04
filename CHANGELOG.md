@@ -3,6 +3,40 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.19.0
+
+Labels are now fully user-driven, with a new registry-wide Manage Labels modal and a bulk Install Skills modal replacing the inline select-mode bar.
+
+### Added
+
+- **Manage Labels modal.** A "Manage Labels" button in the Registry toolbar opens a 720 px modal for registry-wide label management. The browse phase shows every skill with its current category and tags, with search, category filter (select), tags filter (searchable multi-select with selected items floated to top), and four sort modes. Inline editing per row: click the category badge/placeholder for an in-place select; tag chips have × remove buttons; + appends a tag inline. Select all or a subset → Actions → **Clear labels** (confirm-gated). An **Open skill [↗]** button (hover-revealed) opens the skill's detail drawer elevated above the modal, so label edits from the drawer reflect immediately on close.
+
+- **Auto-Generate Labels flow.** Inside Manage Labels, **✦ Auto-Generate Labels…** launches a 3-step in-place flow: (1) scope — both / categories only / tags only; (2) skills — all or select from a searchable checklist; (3) review — per-skill diff with row checkboxes (all checked by default), partial apply ("Apply 2 of 4"), "Discard changes" exits without writing, "Run again" restarts. An undismissable applying spinner phase covers the write.
+
+- **Install Skills modal.** Replaces the inline bulk-install select bar. Opens from a "Install Skills" button in the Registry toolbar. Filter by install status (Not installed / Installed / All), search by name, see labels per row. Per-row progress during install (pending / installing / done / failed) with cancel-remaining support. Done summary shows succeeded count and any failure reasons.
+
+- **`bulkUpdateLabels` IPC channel.** Writes N label overrides in a single file round-trip, used by the Auto-Generate apply phase.
+
+- **`LabelsContext`.** Replaces the `onLabelsChanged` / `labelsRefreshKey` prop chain with a shared React context (`{ labelsMap, reload }`). Any label write calls `reload()` once; BrowseTab, DrawerLabelSection, and ManageLabelsModal all subscribe and stay in sync automatically. Eliminates the stale-modal bug where label edits in the drawer were not reflected in the modal.
+
+### Changed
+
+- **Labels are fully user-driven.** `deriveLabels` no longer runs automatically at render time, manifest export, or manifest import. It runs only when the user explicitly triggers Auto-Generate or the per-skill Auto Categorize button. Skills with no labels assigned appear under Uncategorized. Manifests export only user-set labels; importing a manifest with empty labels is a no-op for `labels.json`.
+
+- **`SkillLabelOverride` simplified.** `categorySource` and `rejectedTags` removed — both were vestigial after the model change. `addedTags` renamed to `tags` for symmetry with `category`. A tolerant read in `readLabelsFile` migrates legacy `addedTags` entries on first load.
+
+- **Browse toolbar layout.** Results count and Expand/Collapse all moved to the left group (view state). Manage Labels and Install Skills sit on the right (actions). Buttons in the right group now use `row-center-8` (packed) instead of `row-between-8` (spread).
+
+- **Drawer Escape layering.** When the detail drawer is open above the Manage Labels modal, the modal's Escape handler is suppressed (`drawerOpen` prop withholds `onClose` from `useEscapeToClose`). Escape closes the drawer first; a second Escape closes the modal.
+
+- **Category cell affordance in Manage Labels.** When a category is set, hovering reveals a `▾` chevron signalling "dropdown". When empty, hovering shows a "Set category" ghost text replacing the static em dash.
+
+- **BulkInstallState, selectMode, and BulkInstallBar removed from BrowseTab.** The inline select flow and its associated App-level `runBulkInstall` callback are replaced by the Install Skills modal.
+
+### Fixed
+
+- **Toolbar button group layout.** Right-side button group used `row-between-8` (`justify-content: space-between`), spreading Manage Labels, Expand/Collapse, and Bulk Install across the full width. Corrected to `row-center-8`.
+
 ## v1.18.0
 
 Registry manifest schema → v5: each per-skill record now carries effective curation labels (category + tags) and a re-fetchable origin for authored-here skills, and `bucket` is derived from origin. Sharpens the git-flow so a pull reconstructs the full registry — content, placement, and curation — from the manifest alone.
