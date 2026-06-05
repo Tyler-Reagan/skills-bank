@@ -22,7 +22,6 @@ import type {
   ManifestSkill,
   PendingManifestConflicts,
   MergeImportReport,
-  PublishState,
   RateLimitInfo,
   RegistrationAction,
   RegistrationResult,
@@ -30,7 +29,6 @@ import type {
   RegistryManifest,
   ScanReport,
   SkillLabelOverride,
-  SkillPublishFlow,
   SyncDecisions,
   SyncReport,
 } from "@skills-bank/core";
@@ -95,7 +93,6 @@ export const IPC = {
   reposRefreshCurrent: "repos:refreshCurrent",
   openExternal: "system:openExternal",
   openSelfHostDocs: "system:openSelfHostDocs",
-  exportRegistry: "skills:exportRegistry",
   importRegistry: "skills:importRegistry",
   importRegistryMerge: "skills:importRegistryMerge",
   importRegistryMergeApply: "skills:importRegistryMergeApply",
@@ -113,21 +110,14 @@ export const IPC = {
   resolveManifestConflicts: "bank:resolveManifestConflicts",
   installFromManifestHint: "bank:installFromManifestHint",
   installSkillFromGithub: "bank:installSkillFromGithub",
-  classifySkillForPublish: "publish:classify",
-  publishSkill: "publish:skill",
-  getPublishState: "publish:state",
-  getPublishStates: "publish:states",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   localDiagnosticsScan: "diagnostics:scan",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
-  deregister: "skills:deregister",
   unregister: "skills:unregister",
   deleteUnregistered: "skills:deleteUnregistered",
   hide: "skills:hide",
   unhide: "skills:unhide",
-  acceptDrift: "skills:acceptDrift",
-  takeCanonical: "skills:takeCanonical",
   forgetMissing: "skills:forgetMissing",
   repointExternal: "skills:repointExternal",
   clearPendingConflicts: "registry:clearPendingConflicts",
@@ -428,7 +418,6 @@ export type DiscoverStatus =
 export type HeaderMenuAction =
   | "changeRegistry"
   | "mergeRegistry"
-  | "exportRegistry"
   | "openSettings"
   | "openShortcuts"
   | "signOut"
@@ -474,12 +463,6 @@ interface UninstallIPCResult extends IPCFailureFields {
   keptCount?: number;
 }
 
-interface DeregisterIPCResult extends IPCFailureFields {
-  ok: boolean;
-  deletedPath?: string;
-  removedSymlinkCount?: number;
-}
-
 interface UnregisterIPCResult extends IPCFailureFields {
   ok: boolean;
   /** Where adopted files were moved to. Absent for non-adopted skills. */
@@ -487,71 +470,6 @@ interface UnregisterIPCResult extends IPCFailureFields {
   /** True when the unregistered skill was previously adopted. */
   wasAdopted: boolean;
 }
-
-/**
- * Phase 5 (v1.5): options for the `publishSkill` IPC.
- */
-export interface PublishSkillOptions {
-  /**
-   * Required for Flow 3 (fork) confirmation. The classifier
-   * surfaces the fork case; the renderer shows a confirmation
-   * modal; the user accepting flips this to `true` on the
-   * subsequent publishSkill call. Without it, fork-eligible
-   * skills surface a `fork-confirmation-required` error.
-   */
-  confirmFork?: boolean;
-  /** Editable PR metadata overriding the classifier's defaults. */
-  prMeta?: { title?: string; body?: string };
-}
-
-/**
- * Phase 5 (v1.5): the orchestrated publish result. Composes
- * `forkSkill` (Flow 3 only) with `pushSkillFolder`. Discriminated
- * by `reason` so the renderer keys its toast / error UI cleanly.
- */
-export type PublishSkillResult =
-  | {
-      ok: true;
-      prUrl: string;
-      prNumber: number;
-      updated: boolean;
-      flow: "new" | "safekeeping" | "fork";
-    }
-  | { ok: false; reason: "no-linked-repo"; message: string }
-  | { ok: false; reason: "missing-auth"; message: string }
-  | { ok: false; reason: "not-publishable"; message: string }
-  | {
-      ok: false;
-      reason: "fork-confirmation-required";
-      message: string;
-    }
-  | {
-      ok: false;
-      reason: "fork-collision";
-      message: string;
-      existingDir: string;
-    }
-  | { ok: false; reason: "fork-no-origin"; message: string }
-  | { ok: false; reason: "fork-swap-failed"; message: string }
-  | {
-      ok: false;
-      reason: "rate-limit";
-      message: string;
-      rateLimit: RateLimitInfo;
-    }
-  | {
-      ok: false;
-      reason: "push-failed";
-      message: string;
-      step: 1 | 2 | 3 | 4 | 5 | 6;
-      /** Set when step 5 succeeded but step 6 (PR creation) failed. */
-      branchUrl?: string;
-    }
-  | {
-      ok: false;
-      reason: "branch-resolution-failed";
-      message: string;
-    };
 
 export type PreviewManifestPushResult =
   | {
@@ -663,7 +581,6 @@ interface SkillsBankAPI {
    * detail drawer.
    */
   uninstall(name: string, agents?: AgentId[]): Promise<UninstallIPCResult>;
-  deregister(name: string): Promise<DeregisterIPCResult>;
   unregister(
     name: string,
     destination: AgentId,
@@ -684,12 +601,6 @@ interface SkillsBankAPI {
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   unhide(
-    name: string,
-  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  acceptDrift(
-    name: string,
-  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  takeCanonical(
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   forgetMissing(
@@ -818,19 +729,6 @@ interface SkillsBankAPI {
   }>;
   openExternal(url: string): Promise<void>;
   openSelfHostDocs(): Promise<{ ok: boolean; message?: string }>;
-  exportRegistry(): Promise<{
-    ok: boolean;
-    message: string;
-    skillCount?: number;
-  }>;
-  /**
-   * Phase 1 manifest export. Saves a metadata-only JSON manifest of
-   * the active registry to a user-picked location. The legacy
-   * `exportRegistry` (content-bearing zip) is `@deprecated` in favor
-   * of this path. Manifest reliability depends on origin reachability
-   * during a future import — Phase 5 closes the loop with a
-   * safekeep fallback.
-   */
   exportManifest(): Promise<{
     ok: boolean;
     message: string;
@@ -920,34 +818,6 @@ interface SkillsBankAPI {
     | { ok: false; reason: "url-parse-error"; message: string }
     | { ok: false; reason: "no-registry-root"; message: string }
   >;
-  /**
-   * Phase 5 (v1.5): classify a skill into one of three publish
-   * sub-flows (new / safekeeping / fork) or `not-publishable`.
-   * Pure call; doesn't mutate anything. The drawer calls this on
-   * open to decide which Publish UI surface to render.
-   */
-  classifySkillForPublish(
-    name: string,
-  ): Promise<
-    { ok: true; flow: SkillPublishFlow } | { ok: false; message: string }
-  >;
-  /**
-   * Phase 5 (v1.5): execute the publish flow. Orchestrates
-   * forkSkill (Flow 3 only, after confirmation) and pushSkillFolder.
-   * Returns the discriminated PublishResult so the renderer can
-   * key its toast / error UI on `reason`.
-   */
-  publishSkill(
-    name: string,
-    options: PublishSkillOptions,
-  ): Promise<PublishSkillResult>;
-  /** Phase 5 (v1.5): publish state for one skill. Uses the cached
-   *  tree probe in remote-API mode (5-min TTL per ADR-0008). */
-  getPublishState(name: string): Promise<PublishState>;
-  /** Phase 5 (v1.5): publish state for many skills in one call.
-   *  Cheaper than N round-trips when the drawer or registry view
-   *  wants chips for a batch of entries. */
-  getPublishStates(names: string[]): Promise<Record<string, PublishState>>;
   importRegistry(): Promise<{
     ok: boolean;
     message: string;

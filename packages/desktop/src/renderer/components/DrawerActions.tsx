@@ -7,7 +7,6 @@ import type {
 } from "@skills-bank/core";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { Icon } from "./Icon.js";
-import { PublishSection } from "./PublishSection.js";
 
 type ActionState =
   | null
@@ -17,10 +16,6 @@ type ActionState =
   | "unregistering"
   | "hiding"
   | "unhiding"
-  | "accepting-drift"
-  | "taking-canonical"
-  | "resetting-to-origin"
-  | "retrying-probe"
   | "updating"
   | "forgetting"
   | "repointing";
@@ -39,16 +34,12 @@ interface Props {
   }) => void;
   onChanged: (msg: string) => void | Promise<void>;
   onClose: () => void;
-  linkedRepoName?: string | null;
   onManageLinks?: () => void;
   onResolveConflicts?: () => void;
   onRegister?: () => Promise<void> | void;
   onUnregister?: () => Promise<void> | void;
   onHide?: () => Promise<void> | void;
   onUnhide?: () => Promise<void> | void;
-  onAcceptDrift?: () => Promise<void> | void;
-  onTakeCanonical?: () => Promise<void> | void;
-  onTakeUpstream?: () => Promise<void> | void;
   onUpdate?: () => Promise<void> | void;
   onForgetMissing?: () => Promise<void> | void;
   onRepoint?: () => Promise<void> | void;
@@ -70,16 +61,12 @@ export function DrawerActions({
   onInstallConflict,
   onChanged,
   onClose,
-  linkedRepoName,
   onManageLinks,
   onResolveConflicts,
   onRegister,
   onUnregister,
   onHide,
   onUnhide,
-  onAcceptDrift,
-  onTakeCanonical,
-  onTakeUpstream,
   onUpdate,
   onForgetMissing,
   onRepoint,
@@ -218,168 +205,6 @@ export function DrawerActions({
               off adoption in Settings. Preserved through Refresh via
               diff-before-apply; cross-agent linkable. If your registry mirrors
               a GitHub repo, commit to persist across machines.
-            </p>
-          </>
-        )}
-
-        {/* Origin-unreachable heal — N consecutive probe failures
-        on the per-skill origin. The local copy under
-        skills/.../<name>/ is intact; the user picks Keep this
-        skill (unlink origin, stop checking) or Retry probe
-        (re-run the probe pass). The classifier also sets
-        canAcceptDrift on this state so the existing main
-        dispatch routes through unlinkOrigin for github origins.
-        v1.4. */}
-        {caps.canRetryOriginProbe && onAcceptDrift && (
-          <>
-            <button
-              className="btn primary"
-              disabled={action !== null}
-              onClick={() => {
-                setAction("retrying-probe");
-                void window.skillsBank
-                  .originProbe()
-                  .finally(() => setAction(null));
-              }}
-              title="Re-run the origin probe pass for every github-origin skill. If this skill's origin is reachable again, the unreachable state clears."
-            >
-              {action === "retrying-probe" ? (
-                <>
-                  <span className="spinner inline" /> Retrying
-                </>
-              ) : (
-                "Retry probe"
-              )}
-            </button>
-            <button
-              className="btn"
-              disabled={action !== null}
-              onClick={() => {
-                setAction("accepting-drift");
-                void Promise.resolve(onAcceptDrift()).finally(() =>
-                  setAction(null),
-                );
-              }}
-              title={`Stop checking ${
-                entry.source.origin?.repo ?? "the origin"
-              } for updates. Your local copy stays; the origin pointer clears.`}
-            >
-              {action === "accepting-drift" ? (
-                <>
-                  <span className="spinner inline" /> Unlinking{" "}
-                </>
-              ) : (
-                "Keep this skill"
-              )}
-            </button>
-            <p className="drawer-action-hint">
-              The origin <code>{entry.source.origin?.repo ?? "Origin"}</code>{" "}
-              hasn't been reachable for the last few probes. Your local copy is
-              intact.
-              <strong> Retry probe</strong> re-runs the check.
-              <strong> Keep this skill</strong> clears the origin pointer —
-              future probes won't surface this skill again.
-            </p>
-          </>
-        )}
-
-        {/* Drift heal — fan-out by source axis. The classifier emits
-        `canAcceptDrift` for both bundled-sync drift and upstream-
-        pointer drift; render the sub-arm and hint copy that
-        matches the actual axis on this entry.
-
-        Copy migrated to the canonical glossary verbs:
-          edited-with-origin:  [Reset to origin] (primary, danger)  [Unlink origin]
-          edited-without-origin:       [Re-baseline]     (primary)          [Accept drift] */}
-        {caps.canAcceptDrift && onAcceptDrift && !caps.canRetryOriginProbe && (
-          <>
-            {caps.canResetToOrigin && onTakeUpstream && (
-              <button
-                className="btn danger"
-                disabled={action !== null}
-                onClick={() => {
-                  setAction("resetting-to-origin");
-                  void Promise.resolve(onTakeUpstream()).finally(() =>
-                    setAction(null),
-                  );
-                }}
-                title={`Discard local edits and re-fetch from ${entry.source.origin?.repo ?? "Origin"}. Your changes are lost.`}
-              >
-                {action === "resetting-to-origin" ? (
-                  <>
-                    <span className="spinner inline" /> Resetting{" "}
-                  </>
-                ) : (
-                  "Reset to origin"
-                )}
-              </button>
-            )}
-            {caps.canTakeCanonical && onTakeCanonical && (
-              <button
-                className="btn primary"
-                disabled={action !== null}
-                onClick={() => {
-                  setAction("taking-canonical");
-                  void Promise.resolve(onTakeCanonical()).finally(() =>
-                    setAction(null),
-                  );
-                }}
-                title="Re-baseline the current on-disk state as canonical. Drift clears; the skill stays under Sync, which can still overwrite on the next pull."
-              >
-                {action === "taking-canonical" ? (
-                  <>
-                    <span className="spinner inline" /> Re-baselining{" "}
-                  </>
-                ) : (
-                  "Re-baseline"
-                )}
-              </button>
-            )}
-            <button
-              className="btn"
-              disabled={action !== null}
-              onClick={() => {
-                setAction("accepting-drift");
-                void Promise.resolve(onAcceptDrift()).finally(() =>
-                  setAction(null),
-                );
-              }}
-              title={
-                caps.canResetToOrigin
-                  ? "Keep your local edits and clear the Origin pointer. Future probes won't surface this skill as having an update available."
-                  : "Keep your local edits and stop treating this skill as canonical. Future syncs won't overwrite it."
-              }
-            >
-              {action === "accepting-drift" ? (
-                <>
-                  <span className="spinner inline" />{" "}
-                  {caps.canResetToOrigin ? "Unlinking…" : "Accepting…"}
-                </>
-              ) : caps.canResetToOrigin ? (
-                "Unlink origin"
-              ) : (
-                "Accept drift"
-              )}
-            </button>
-            <p className="drawer-action-hint">
-              {caps.canResetToOrigin ? (
-                <>
-                  Your local copy diverges from{" "}
-                  {entry.source.origin?.repo ?? "its Origin"}.
-                  <strong> Reset to origin</strong> discards your edits and
-                  refetches.
-                  <strong> Unlink origin</strong> keeps your edits and clears
-                  the Origin pointer.
-                </>
-              ) : (
-                <>
-                  This canonical skill differs from its synced baseline.
-                  <strong> Re-baseline</strong> re-snaps the current state as
-                  the new synced version; Sync still owns the skill.
-                  <strong> Accept drift</strong> detaches from Sync — your edits
-                  stay, Sync stops overwriting.
-                </>
-              )}
             </p>
           </>
         )}
@@ -722,16 +547,6 @@ export function DrawerActions({
           </button>
         )}
 
-        {/* Phase 5: Publish surface. Renders only when a linked
-        repo is configured. Owns its own fetch of publish-state
-        + classifier + Fork-confirm modal. */}
-        {linkedRepoName && (
-          <PublishSection
-            entry={entry}
-            linkedRepoName={linkedRepoName}
-            onPublished={onClose}
-          />
-        )}
       </div>
 
       {repairState.kind === "confirm-delete" && (

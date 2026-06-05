@@ -283,15 +283,6 @@ export function ModalHost({
     });
   }, [flash, refresh, openModal]);
 
-  const exportRegistry = useCallback(async () => {
-    const r = await window.skillsBank.exportRegistry();
-    if (!r.ok && r.message !== "export cancelled") {
-      flash(`Export failed: ${r.message}`);
-    } else if (r.ok) {
-      flash(r.message);
-    }
-  }, [flash]);
-
   const signOut = useCallback(async () => {
     const s = await window.skillsBank.authLogout();
     setAuthStatus(s);
@@ -629,10 +620,6 @@ export function ModalHost({
           onMergeRegistry={async () => {
             closeModal();
             await mergeRegistry();
-          }}
-          onExportRegistry={async () => {
-            closeModal();
-            await exportRegistry();
           }}
           onOpenImportManifest={() =>
             openModal({ kind: "manifest", mode: "import" })

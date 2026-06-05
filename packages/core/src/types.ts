@@ -6,15 +6,6 @@ export interface SkillMeta {
   author?: string;
 }
 
-/**
- * Publish state of a registry skill, derived from git: whether the
- * canonical commit touching the skill folder is reachable from the
- * upstream remote. Drives the "is this a clean published skill or a
- * local-only edit?" badge on cards. Only meaningful when computed
- * inside a git working tree.
- */
-export type PublishState = "pushed" | "draft" | "untracked" | "unknown";
-
 export interface RegistryEntry extends SkillMeta {
   /** Path relative to registry root, e.g. "skills/hello". */
   path: string;

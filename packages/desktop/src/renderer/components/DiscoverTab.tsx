@@ -78,7 +78,7 @@ export function DiscoverTab({
       const r = await window.skillsBank.installSkillFromGithub(resolved);
       if (r.ok) {
         setInstallUrl("");
-        flash(`${r.name} added to your bank — find it in Browse to install`);
+        flash(`${r.name} installed`);
         onInstalled();
         return;
       }
@@ -95,6 +95,10 @@ export function DiscoverTab({
         default:
           setInstallError(r.message);
       }
+    } catch (err) {
+      setInstallError(
+        err instanceof Error ? err.message : "Install failed — check your network and try again.",
+      );
     } finally {
       setInstallBusy(false);
     }

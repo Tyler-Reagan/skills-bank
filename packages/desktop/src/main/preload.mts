@@ -17,15 +17,12 @@ const api = {
     ipcRenderer.invoke(IPC.install, name, force, agents),
   uninstall: (name: string, agents?: unknown) =>
     ipcRenderer.invoke(IPC.uninstall, name, agents),
-  deregister: (name: string) => ipcRenderer.invoke(IPC.deregister, name),
   unregister: (name: string, destination: string, force?: boolean) =>
     ipcRenderer.invoke(IPC.unregister, name, destination, force),
   deleteUnregistered: (name: string) =>
     ipcRenderer.invoke(IPC.deleteUnregistered, name),
   hide: (name: string) => ipcRenderer.invoke(IPC.hide, name),
   unhide: (name: string) => ipcRenderer.invoke(IPC.unhide, name),
-  acceptDrift: (name: string) => ipcRenderer.invoke(IPC.acceptDrift, name),
-  takeCanonical: (name: string) => ipcRenderer.invoke(IPC.takeCanonical, name),
   forgetMissing: (name: string) => ipcRenderer.invoke(IPC.forgetMissing, name),
   repointExternal: (name: string) =>
     ipcRenderer.invoke(IPC.repointExternal, name),
@@ -83,7 +80,6 @@ const api = {
   reposRefreshCurrent: () => ipcRenderer.invoke(IPC.reposRefreshCurrent),
   openExternal: (url: string) => ipcRenderer.invoke(IPC.openExternal, url),
   openSelfHostDocs: () => ipcRenderer.invoke(IPC.openSelfHostDocs),
-  exportRegistry: () => ipcRenderer.invoke(IPC.exportRegistry),
   importRegistry: () => ipcRenderer.invoke(IPC.importRegistry),
   importRegistryMerge: () => ipcRenderer.invoke(IPC.importRegistryMerge),
   importRegistryMergeApply: (sourcePath: string, decisions: unknown) =>
@@ -106,14 +102,6 @@ const api = {
     ipcRenderer.invoke(IPC.installFromManifestHint, payload),
   installSkillFromGithub: (url: string) =>
     ipcRenderer.invoke(IPC.installSkillFromGithub, url),
-  classifySkillForPublish: (name: string) =>
-    ipcRenderer.invoke(IPC.classifySkillForPublish, name),
-  publishSkill: (name: string, options: unknown) =>
-    ipcRenderer.invoke(IPC.publishSkill, name, options),
-  getPublishState: (name: string) =>
-    ipcRenderer.invoke(IPC.getPublishState, name),
-  getPublishStates: (names: string[]) =>
-    ipcRenderer.invoke(IPC.getPublishStates, names),
   repairBrokenLinks: (name: string) =>
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>

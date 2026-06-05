@@ -24,10 +24,10 @@ export interface InstallFromGithubOptions {
    *  output from `parseGithubSkillUrl`. */
   skillPath: string;
   /**
-   * Local bucket the installed skill lands in. Default: `personal`
-   * with `source: "user"` semantics. Pass `vendored` from the
-   * maintainer-only CLI / future advanced surface for skills the
-   * maintainer wants the bank to track as curated.
+   * Local bucket the installed skill lands in. Default: `personal`.
+   * Rule: `personal` when the origin repo is the user's linked registry
+   * (user-authored content); `vendored` for everything else (third-party
+   * Discover tab installs, any origin repo the user doesn't own).
    */
   bucket?: "personal" | "vendored";
   /**
@@ -68,7 +68,7 @@ export async function installSkillFromGithub(
   opts: InstallFromGithubOptions,
 ): Promise<InstallFromGithubResult> {
   const bucket = opts.bucket ?? "personal";
-  const source = bucket === "personal" ? "user" : "curated";
+  const source = bucket === "personal" ? "user" : "vendored";
   const folderPath = folderPathFromSkillPath(opts.skillPath);
 
   // Provisional name = final segment of the folder path. We rename

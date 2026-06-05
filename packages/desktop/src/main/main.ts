@@ -25,10 +25,8 @@ import {
   createOriginProbeRunner,
   clearPendingConflicts,
   computeFolderDiff,
-  deleteFromBankSkill,
   deleteUnregisteredSkill,
   exportSkill,
-  exportRegistry,
   exportRegistryManifest,
   importRegistryManifest,
   applyManifestResolutions,
@@ -48,25 +46,14 @@ import {
   writeRegistrySnapshot,
   type ManifestSkill,
   type RegistryManifest,
-  // Phase 5 / publish flow
-  classifySkillForPublish,
-  computePublishStatesFromGit,
-  computePublishStatesFromRemote,
-  detectPublishStateMode,
   findSkillFolder,
-  forkSkill,
   pushSkillFolder,
-  type PublishState,
-  type PublishStateMode,
   fetchCanonicalTarball,
-  keepLocalDetach,
-  unlinkOrigin,
   hashSkillFolder,
   readSkillSource,
   writeSkillSource,
   writeRuntimeState,
   writeSyncedHash,
-  rebaselineHash,
   finalizeSkillsDir,
   listTopLevelSymlinks,
   forgetMissingEntry,
@@ -83,7 +70,6 @@ import {
   readPendingConflicts,
   readSyncDecisions,
   findFolderHash,
-  mirrorSkillFolder,
   folderPathFromSkillPath,
   fetchOriginTree,
   readRepoFile,
@@ -96,7 +82,6 @@ import {
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
   walkSkills,
-  type GitTreeEntry,
   uninstallSkill,
   removeBrokenLinks,
   repairBrokenLinks,
@@ -122,7 +107,6 @@ import {
   type HeaderMenuAction,
   type LinkedRepoMetadata,
   type RegistrySource,
-  type SkillDiffFile,
   type SkillDiffRequest,
   type SkillDiffResult,
   type SyncStatus,
@@ -132,8 +116,6 @@ import {
   type OriginProbeCompleteEvent,
   type OriginProbeResult,
   type OriginRepoMetadata,
-  type PublishSkillOptions,
-  type PublishSkillResult,
   type PreviewManifestPushResult,
   type PushManifestToRepoResult,
   type ReadManifestFromRepoResult,
@@ -1458,37 +1440,6 @@ mutatingHandle(
 // is denied here that wasn't already denied by deregisterSkill's own
 // guards; M5 turns this into the real enforcement point for canon
 // protection.
-mutatingHandle(IPC.deregister, (_e, name: string) => {
-  if (!registryRoot) {
-    return { ok: false, message: NO_ROOT_MSG, errors: [] };
-  }
-  const classification = classifySkillByName(registryRoot, name);
-  if (classification && !classification.capabilities.canDeleteFromBank) {
-    return {
-      ok: false,
-      message: `Cannot delete ${name} from this state (${classification.state}).`,
-      errors: [],
-    };
-  }
-  try {
-    const r = deleteFromBankSkill(name, { registryRoot });
-    const removedSymlinkCount =
-      r.symlinkRemovals?.filter((s) => s.removed).length ?? 0;
-    return {
-      ok: r.ok,
-      message: r.message,
-      deletedPath: r.deletedPath,
-      removedSymlinkCount,
-      errors: r.errors,
-    };
-  } catch (err) {
-    return (() => {
-      const error = fromCaught("ipc.unknown", err);
-      return { ok: false, message: error.message, error, errors: [] };
-    })();
-  }
-});
-
 // M5: hide a canon skill from the default views. Canon skills can't
 // be unregistered or deleted from the UI (those would be irrecoverable
 // — the upstream owns them), so Hide is the only canon-side action a
@@ -1522,86 +1473,6 @@ mutatingHandle(IPC.unhide, (_e, name: string) => {
   try {
     unhideCanonSkill(registryRoot, name);
     return { ok: true, message: `Unhid ${name}.` };
-  } catch (err) {
-    return (() => {
-      const error = fromCaught("ipc.unknown", err);
-      return { ok: false, message: error.message, error };
-    })();
-  }
-});
-
-// M6: canon-drift heal — keep local edits, clear the canonical
-// marker. After this, the skill is `source: user` and sync stops
-// trying to overwrite it.
-mutatingHandle(IPC.acceptDrift, (_e, name: string) => {
-  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  const index = buildRegistryIndex(registryRoot);
-  const entry = index.entries.find((e) => e.name === name);
-  if (!entry) return { ok: false, message: `${name} is not in the registry` };
-  if (entry.adopted === false) {
-    return {
-      ok: false,
-      message: `${name} isn't adopted — drift doesn't apply`,
-    };
-  }
-  const skillDir = path.join(registryRoot, entry.path);
-  // Dispatch based on the source axis carrying the drift signal.
-  // - Skills with a per-skill `origin` pointer route through
-  //   `unlinkOrigin` — clears the origin pointer and drops the
-  //   baseline so future probes don't surface it as having an
-  //   update available. Source axis (curated/user) is preserved.
-  // - Skills without an origin (the original curated-sync drift
-  //   case) route through `keepLocalDetach` — flips source to "user"
-  //   so future syncs leave the skill alone.
-  const hasOrigin = entry.source.origin?.kind === "github";
-  try {
-    if (hasOrigin) unlinkOrigin(skillDir);
-    else keepLocalDetach(skillDir);
-    buildRegistryIndex(registryRoot, {
-      includeGitInfo: true,
-      writeFile: true,
-    });
-    return {
-      ok: true,
-      message: hasOrigin
-        ? `Unlinked origin on ${name}; future probes will leave it alone.`
-        : `Kept local edits to ${name}; future syncs will leave it alone.`,
-    };
-  } catch (err) {
-    return (() => {
-      const error = fromCaught("ipc.unknown", err);
-      return { ok: false, message: error.message, error };
-    })();
-  }
-});
-
-// Canon-drift heal — take-canonical arm. Re-snapshots the current
-// hash so drift clears; source stays canonical so Sync continues to
-// own the skill. Distinct from acceptDrift (which detaches from
-// Sync). Use this when drift surfaced spuriously and the current
-// post-sync state is acceptable.
-mutatingHandle(IPC.takeCanonical, (_e, name: string) => {
-  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  const index = buildRegistryIndex(registryRoot);
-  const entry = index.entries.find((e) => e.name === name);
-  if (!entry) return { ok: false, message: `${name} is not in the registry` };
-  if (entry.adopted === false) {
-    return {
-      ok: false,
-      message: `${name} isn't adopted — drift doesn't apply`,
-    };
-  }
-  const skillDir = path.join(registryRoot, entry.path);
-  try {
-    rebaselineHash(skillDir);
-    buildRegistryIndex(registryRoot, {
-      includeGitInfo: true,
-      writeFile: true,
-    });
-    return {
-      ok: true,
-      message: `Re-baselined ${name} as canonical; drift cleared.`,
-    };
   } catch (err) {
     return (() => {
       const error = fromCaught("ipc.unknown", err);
@@ -1988,33 +1859,6 @@ ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
       ok: true,
       message: `exported ${name} (${r.kind}) → ${r.destPath}`,
       result: r,
-    };
-  } catch (err) {
-    return (() => {
-      const error = fromCaught("ipc.unknown", err);
-      return { ok: false, message: error.message, error };
-    })();
-  }
-});
-
-ipcMain.handle(IPC.exportRegistry, async () => {
-  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  try {
-    const date = new Date().toISOString().slice(0, 10);
-    const win = BrowserWindow.getFocusedWindow();
-    const result = await dialog.showSaveDialog(win ?? undefined!, {
-      title: "Export registry",
-      defaultPath: `skills-bank-registry-${date}.zip`,
-      filters: [{ name: "Zip Archive", extensions: ["zip"] }],
-    });
-    if (result.canceled || !result.filePath) {
-      return { ok: false, message: "export cancelled" };
-    }
-    const r = await exportRegistry(registryRoot, result.filePath);
-    return {
-      ok: true,
-      message: `Exported ${r.skillCount} skill${r.skillCount === 1 ? "" : "s"} → ${r.destPath}`,
-      skillCount: r.skillCount,
     };
   } catch (err) {
     return (() => {
@@ -2795,23 +2639,28 @@ mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
       message: parsed.message,
     } as const;
   }
-  // Bucket attribution: a skill whose origin repo matches the user's
-  // linked registry repo is their own authored content (→ personal);
-  // anything else is harvested from a third party (→ vendored). Without
-  // this, every GitHub-URL install landed in personal/ regardless of
-  // origin, which then propagated through manifest export/import (all
-  // entries stamped `source: user` → bucket inferred as personal on the
-  // receiving machine).
+  // personal only when the origin repo is the user's linked registry; everything else is vendored.
   const ownsOriginRepo =
     linkedRepo !== null && linkedRepo.fullName === parsed.repo;
-  const result = await installSkillFromGithub({
-    registryRoot,
-    repo: parsed.repo,
-    skillPath: parsed.skillPath,
-    bucket: ownsOriginRepo ? "personal" : "vendored",
-    token: getStoredToken(),
-  });
+  let result: Awaited<ReturnType<typeof installSkillFromGithub>>;
+  try {
+    result = await installSkillFromGithub({
+      registryRoot,
+      repo: parsed.repo,
+      skillPath: parsed.skillPath,
+      bucket: ownsOriginRepo ? "personal" : "vendored",
+      token: getStoredToken(),
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      reason: "mirror-failed",
+      message:
+        err instanceof Error ? err.message : "Unexpected error during install.",
+    } as const;
+  }
   if (result.ok) {
+    installSkill(result.name, { registryRoot, force: false });
     buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
   }
   return result;
@@ -3519,10 +3368,6 @@ function commitGithubLinkage(meta: LinkedRepoMetadata): void {
   registrySource = "github";
   linkedRepo = meta;
   persistConfig();
-  // Phase 5: linked-repo change invalidates the publish-state
-  // cache + mode detection. Next consumer call re-detects.
-  publishStateMode = undefined;
-  publishStateCache = null;
 }
 
 async function replaceRegistryWithRepo(fullName: string): Promise<{
@@ -3831,252 +3676,6 @@ void app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
-
-// ─── Publish flow (Phase 5 / v1.5) ────────────────────────────────
-//
-// Tree-probe cache for the remote-mode publish-state computation.
-// 5-minute TTL per ADR-0008 Invariant 7. Invalidated on push
-// success (we changed the tree ourselves) + on a user-initiated
-// rescan. Other registry mutations don't change the linked repo's
-// tree, so they're safe to leave the cache alone.
-
-const PUBLISH_STATE_CACHE_TTL_MS = 5 * 60 * 1000;
-
-interface PublishStateCacheEntry {
-  states: Map<string, PublishState>;
-  fetchedAt: number;
-}
-
-let publishStateCache: PublishStateCacheEntry | null = null;
-let publishStateMode: PublishStateMode | null | undefined;
-
-function resolvePublishStateMode(): PublishStateMode | null {
-  if (publishStateMode !== undefined) return publishStateMode;
-  if (!registryRoot) {
-    publishStateMode = null;
-    return null;
-  }
-  publishStateMode = detectPublishStateMode(registryRoot, {
-    linkedRepo,
-    token: getStoredToken(),
-  });
-  return publishStateMode;
-}
-
-function invalidatePublishStateCache(): void {
-  publishStateCache = null;
-}
-
-async function getCachedPublishStates(): Promise<Map<string, PublishState>> {
-  if (!registryRoot) return new Map();
-  const mode = resolvePublishStateMode();
-  if (!mode) return new Map();
-  if (mode.kind === "git") {
-    // git path is fast; no cache needed.
-    return computePublishStatesFromGit(registryRoot);
-  }
-  const now = Date.now();
-  if (
-    publishStateCache &&
-    now - publishStateCache.fetchedAt < PUBLISH_STATE_CACHE_TTL_MS
-  ) {
-    return publishStateCache.states;
-  }
-  const r = await computePublishStatesFromRemote({
-    registryRoot,
-    repo: mode.repo,
-    token: mode.token,
-    baseBranch: linkedRepo?.fullName === BUNDLED_REPO ? "main" : "main",
-  });
-  publishStateCache = { states: r.states, fetchedAt: now };
-  return r.states;
-}
-
-ipcMain.handle(IPC.getPublishState, async (_e, name: string) => {
-  const states = await getCachedPublishStates();
-  return states.get(name) ?? "unknown";
-});
-
-ipcMain.handle(IPC.getPublishStates, async (_e, names: string[]) => {
-  const states = await getCachedPublishStates();
-  const out: Record<string, PublishState> = {};
-  for (const n of names) out[n] = states.get(n) ?? "unknown";
-  return out;
-});
-
-ipcMain.handle(IPC.classifySkillForPublish, async (_e, name: string) => {
-  if (!registryRoot) {
-    return { ok: false, message: NO_ROOT_MSG };
-  }
-  const index = buildRegistryIndex(registryRoot);
-  const entry = index.entries.find((e) => e.name === name);
-  if (!entry) {
-    return { ok: false, message: `${name} is not in the registry` };
-  }
-  const states = await getCachedPublishStates();
-  const publishState = states.get(name) ?? "unknown";
-  const existingPersonal = findSkillFolder(registryRoot, name);
-  const personalNameInUse =
-    !!existingPersonal && existingPersonal.bucket === "personal";
-  const flow = classifySkillForPublish({
-    linkedRepo,
-    entry,
-    publishState,
-    personalNameInUse,
-    ...(personalNameInUse && existingPersonal
-      ? { existingPersonalDir: existingPersonal.dir }
-      : {}),
-  });
-  return { ok: true, flow };
-});
-
-mutatingHandle(
-  IPC.publishSkill,
-  async (
-    _e,
-    name: string,
-    options: PublishSkillOptions = {},
-  ): Promise<PublishSkillResult> => {
-    if (!registryRoot) {
-      return {
-        ok: false,
-        reason: "not-publishable",
-        message: NO_ROOT_MSG,
-      };
-    }
-    if (!linkedRepo) {
-      return {
-        ok: false,
-        reason: "no-linked-repo",
-        message:
-          "No linked repository. Settings → Account → Sign in with GitHub.",
-      };
-    }
-    const token = getStoredToken();
-    if (!token) {
-      return {
-        ok: false,
-        reason: "missing-auth",
-        message: "GitHub auth required to publish.",
-      };
-    }
-    const index = buildRegistryIndex(registryRoot);
-    const entry = index.entries.find((e) => e.name === name);
-    if (!entry) {
-      return {
-        ok: false,
-        reason: "not-publishable",
-        message: `${name} is not in the registry`,
-      };
-    }
-    const states = await getCachedPublishStates();
-    const publishState = states.get(name) ?? "unknown";
-    const existingPersonal = findSkillFolder(registryRoot, name);
-    const personalNameInUse =
-      !!existingPersonal && existingPersonal.bucket === "personal";
-    const flow = classifySkillForPublish({
-      linkedRepo,
-      entry,
-      publishState,
-      personalNameInUse,
-      ...(personalNameInUse && existingPersonal
-        ? { existingPersonalDir: existingPersonal.dir }
-        : {}),
-    });
-    if (flow.flow === "not-publishable") {
-      return {
-        ok: false,
-        reason: "not-publishable",
-        message:
-          flow.reason === "no-linked-repo"
-            ? "No linked repository to publish to."
-            : `${name} is missing meta.json description — fix the metadata before publishing.`,
-      };
-    }
-
-    // Fork flow gates on user confirmation. Renderer surfaces a
-    // modal; on accept, re-invokes publishSkill with confirmFork: true.
-    if (flow.flow === "fork" && !options.confirmFork) {
-      return {
-        ok: false,
-        reason: "fork-confirmation-required",
-        message: `Publishing edits to ${name} forks it from its origin. Confirm to proceed.`,
-      };
-    }
-
-    let sourceDir = path.resolve(registryRoot, entry.path);
-    if (flow.flow === "fork") {
-      const fork = forkSkill(registryRoot, name);
-      if (!fork.ok) {
-        if (fork.reason === "collision") {
-          return {
-            ok: false,
-            reason: "fork-collision",
-            message: fork.message,
-            existingDir: fork.existingDir,
-          };
-        }
-        if (fork.reason === "no-origin") {
-          return {
-            ok: false,
-            reason: "fork-no-origin",
-            message: fork.message,
-          };
-        }
-        // swap-failed / source-missing / not-vendored all collapse
-        // to fork-swap-failed for the renderer's UI.
-        return {
-          ok: false,
-          reason: "fork-swap-failed",
-          message: fork.message,
-        };
-      }
-      sourceDir = fork.newDir;
-    }
-
-    const prMeta = options.prMeta ?? flow.defaultPrMeta;
-    const push = await pushSkillFolder({
-      repo: linkedRepo.fullName,
-      sourceDir,
-      targetPath: flow.targetPath,
-      baseBranch: "main",
-      token,
-      prMeta,
-    });
-    if (push.ok) {
-      invalidatePublishStateCache();
-      return {
-        ok: true,
-        prUrl: push.prUrl,
-        prNumber: push.prNumber,
-        updated: push.updated,
-        flow: flow.flow,
-      };
-    }
-    if (push.reason === "rate-limit") {
-      return {
-        ok: false,
-        reason: "rate-limit",
-        message: push.message,
-        rateLimit: push.rateLimit,
-      };
-    }
-    if (push.reason === "branch-resolution-failed") {
-      return {
-        ok: false,
-        reason: "branch-resolution-failed",
-        message: push.message,
-      };
-    }
-    return {
-      ok: false,
-      reason: "push-failed",
-      message: push.message,
-      step: push.step,
-      ...(push.branchUrl ? { branchUrl: push.branchUrl } : {}),
-    };
-  },
-);
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 

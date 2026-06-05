@@ -85,32 +85,7 @@ interface Props {
   onHide?: () => Promise<void> | void;
   /** M5: undo Hide. Only meaningful in the canon-hidden state. */
   onUnhide?: () => Promise<void> | void;
-  /**
-   * Canon-drift heal — keep-mine arm. Clears the canonical marker
-   * so future syncs leave the skill alone. Only meaningful in the
-   * canon-drift state.
-   */
-  onAcceptDrift?: () => Promise<void> | void;
-  /**
-   * Canon-drift heal — take-canonical arm. Re-snapshots the current
-   * on-disk hash as the canonical baseline; drift clears, source
-   * stays canonical, Sync still owns the skill. Use when drift
-   * surfaced spuriously and the current state is acceptable.
-   */
-  onTakeCanonical?: () => Promise<void> | void;
-  /**
-   * Upstream-drift heal — revert arm. Re-fetches from the linked
-   * upstream via `npx skills update`, discarding local edits.
-   * Companion to `onAcceptDrift` in the
-   * `edited-with-origin` heal flow.
-   */
-  onTakeUpstream?: () => Promise<void> | void;
-  /**
-   * Apply an available upstream update in place. Same backend as
-   * `onTakeUpstream` but surfaced in the
-   * `origin-update-available` state where there's no local
-   * drift to clobber.
-   */
+  /** Apply an available upstream update in place. */
   onUpdate?: () => Promise<void> | void;
   /**
    * Settings → "Show upstream activity" toggle. When true and the
@@ -144,12 +119,6 @@ interface Props {
    * external.json target. Only granted in external-target-missing.
    */
   onRepoint?: () => Promise<void> | void;
-  /**
-   * v1.5 Phase 5: full-name of the linked GitHub repo, or null
-   * when the user is on the bundled default. Drives the
-   * PublishSection's visibility — no linked repo → no Publish UI.
-   */
-  linkedRepoName?: string | null;
   /** When set, the drawer shows review navigation (prev/next/exit). */
   reviewContext?: ReviewContext | null;
   /** Elevates the overlay above an open modal (z-index: 1200). */
@@ -171,13 +140,9 @@ export function SkillDetailDrawer({
   onUnregister,
   onHide,
   onUnhide,
-  onAcceptDrift,
-  onTakeCanonical,
-  onTakeUpstream,
   onUpdate,
   onForgetMissing,
   onRepoint,
-  linkedRepoName,
   showOriginActivity,
   onSetManualUpstream,
   reviewContext,
@@ -577,16 +542,12 @@ export function SkillDetailDrawer({
             onInstallConflict={onInstallConflict}
             onChanged={onChanged}
             onClose={onClose}
-            linkedRepoName={linkedRepoName}
             onManageLinks={onManageLinks}
             onResolveConflicts={onResolveConflicts}
             onRegister={onRegister}
             onUnregister={onUnregister}
             onHide={onHide}
             onUnhide={onUnhide}
-            onAcceptDrift={onAcceptDrift}
-            onTakeCanonical={onTakeCanonical}
-            onTakeUpstream={onTakeUpstream}
             onUpdate={onUpdate}
             onForgetMissing={onForgetMissing}
             onRepoint={onRepoint}

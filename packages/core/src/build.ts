@@ -94,12 +94,7 @@ export function buildRegistryIndex(
   // folder entries (registered names that don't exist on disk anymore).
   // Read happens BEFORE we potentially overwrite below.
   const priorNames = readPriorIndexNames(registryRoot);
-  // v1.5 (ADR-0008): canon derivation lives in main.ts now, which
-  // calls computePublishStatesFromGit / FromRemote on demand + caches
-  // the tree for the remote path. The build pass no longer stores
-  // publishState on RegistryEntry; canon is computed against the
-  // upstream-canon snapshot only here and topped up at the IPC
-  // layer with the publish-state lookup.
+  // Canon is computed against the upstream-canon snapshot only here.
   const upstreamCanon = readUpstreamCanonNames(registryRoot);
   const hiddenCanon = readHiddenCanonNames(registryRoot);
 

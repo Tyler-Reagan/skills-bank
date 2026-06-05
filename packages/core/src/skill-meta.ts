@@ -140,64 +140,6 @@ export function parseSkillFrontmatter(
   return out;
 }
 
-export type SynthesizeSkillMetaResult =
-  | { ok: true; written: true; path: string }
-  | {
-      ok: true;
-      written: false;
-      reason:
-        | "meta-already-exists"
-        | "no-frontmatter"
-        | "missing-name-or-description";
-    };
-
-/**
- * Synthesize a `meta.json` into `skillDir` from the SKILL.md
- * frontmatter when (a) meta.json doesn't already exist and (b) the
- * frontmatter yields at minimum a `name` and `description`. No-op
- * with structured reason otherwise.
- *
- * Field set is the maintainable subset of `SkillMeta` plus optional
- * `license` (schema's `additionalProperties: true` round-trips it).
- *
- * Used by both `vendor:skill` (mirror-then-synthesize path) and
- * `applyOriginUpdate` (post-mirror synthesis for upstreams that
- * don't ship a meta.json). Closes the gap reported in
- * `docs/bug-reports/2026-05-19-origin-update-missing-meta-synthesis.md`.
- */
-export function synthesizeSkillMeta(
-  skillDir: string,
-): SynthesizeSkillMetaResult {
-  const metaPath = path.join(skillDir, "meta.json");
-  if (fs.existsSync(metaPath)) {
-    return { ok: true, written: false, reason: "meta-already-exists" };
-  }
-  const fm = parseSkillFrontmatter(path.join(skillDir, "SKILL.md"));
-  if (!fm) {
-    return { ok: true, written: false, reason: "no-frontmatter" };
-  }
-  const name = typeof fm["name"] === "string" ? fm["name"] : null;
-  const description =
-    typeof fm["description"] === "string" ? fm["description"] : null;
-  if (!name || !description) {
-    return { ok: true, written: false, reason: "missing-name-or-description" };
-  }
-  const meta: Record<string, string | string[]> = { name, description };
-  const version = typeof fm["version"] === "string" ? fm["version"] : "0.1.0";
-  meta["version"] = version;
-  if (Array.isArray(fm["tags"]) && fm["tags"].length > 0) {
-    meta["tags"] = fm["tags"];
-  }
-  if (typeof fm["license"] === "string" && fm["license"]) {
-    meta["license"] = fm["license"];
-  }
-  if (typeof fm["author"] === "string" && fm["author"]) {
-    meta["author"] = fm["author"];
-  }
-  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + "\n", "utf8");
-  return { ok: true, written: true, path: metaPath };
-}
-
 export type ValidateSkillMetaResult =
   | { ok: true }
   | { ok: false; reason: "missing-frontmatter" }

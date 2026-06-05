@@ -87,7 +87,7 @@ const ROWS: Row[] = [
     expectedCaps: { canForgetMissing: true, canRepoint: true },
   },
   {
-    label: "drift + upstream-github → edited-with-origin (Accept/TakeUpstream)",
+    label: "drift + upstream-github → edited-with-origin",
     entry: entry({
       drift: true,
       source: {
@@ -103,27 +103,22 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-with-origin",
-    expectedPrimary: "accept-drift",
+    expectedPrimary: "manage-links",
     expectedCaps: {
-      canAcceptDrift: true,
-      canResetToOrigin: true,
-      // Bail-out: stuck drift (e.g. broken upstream) must be removable
-      // without first severing the origin.
       canUnregister: true,
+      canExport: true,
     },
   },
   {
-    label:
-      "drift + bundled-no-upstream → edited-without-origin (Accept/TakeCanonical)",
+    label: "drift + bundled-no-upstream → edited-without-origin",
     entry: entry({ drift: true, source: { source: "curated" } }),
     installed: [],
     isRegistered: true,
     expectedState: "edited-without-origin",
-    expectedPrimary: "accept-drift",
+    expectedPrimary: "manage-links",
     expectedCaps: {
-      canAcceptDrift: true,
-      canTakeCanonical: true,
       canUnregister: true,
+      canExport: true,
     },
   },
   {
@@ -144,8 +139,8 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-with-origin",
-    expectedPrimary: "accept-drift",
-    expectedCaps: { canResetToOrigin: true, canTakeCanonical: false },
+    expectedPrimary: "manage-links",
+    expectedCaps: { canUnregister: true },
   },
   {
     label:
@@ -155,7 +150,7 @@ const ROWS: Row[] = [
     isRegistered: true,
     expectedState: "origin-update-available",
     expectedPrimary: "update",
-    expectedCaps: { canUpdate: true, canAcceptDrift: false },
+    expectedCaps: { canUpdate: true },
   },
   {
     label: "drift + originUpdateAvailable → drift wins (edited-with-origin)",
@@ -175,7 +170,7 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-with-origin",
-    expectedPrimary: "accept-drift",
+    expectedPrimary: "manage-links",
     expectedCaps: { canUpdate: false },
   },
   // v1.4: origin-unreachable.
@@ -195,10 +190,9 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "origin-unreachable",
-    expectedPrimary: "retry-probe",
+    expectedPrimary: "manage-links",
     expectedCaps: {
-      canRetryOriginProbe: true,
-      canAcceptDrift: true,
+      canManageLinks: true,
       canUnregister: true,
     },
   },
@@ -214,7 +208,7 @@ const ROWS: Row[] = [
     // Falls through to registered-available since no other state matches.
     expectedState: "registered-available",
     expectedPrimary: "install",
-    expectedCaps: { canRetryOriginProbe: false },
+    expectedCaps: { canUpdate: false },
   },
   {
     label:
@@ -234,8 +228,8 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-with-origin",
-    expectedPrimary: "accept-drift",
-    expectedCaps: { canRetryOriginProbe: false },
+    expectedPrimary: "manage-links",
+    expectedCaps: { canUpdate: false },
   },
   {
     label:
@@ -255,8 +249,8 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "origin-unreachable",
-    expectedPrimary: "retry-probe",
-    expectedCaps: { canRetryOriginProbe: true, canUpdate: false },
+    expectedPrimary: "manage-links",
+    expectedCaps: { canManageLinks: true, canUpdate: false },
   },
 
   // ── Unregistered branch ─────────────────────────────────

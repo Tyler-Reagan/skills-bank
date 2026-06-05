@@ -53,10 +53,7 @@ export type PrimaryAction =
   | "resolve-registration-conflicts"
   | "repair-broken"
   | "unhide"
-  | "accept-drift"
-  | "take-upstream"
   | "update"
-  | "retry-probe"
   | "forget-missing"
   | "repoint";
 
@@ -89,42 +86,11 @@ export interface DrawerCapabilities {
   /** Undo Dismiss. Granted only in the bundled-skill-dismissed state. */
   canUnhide: boolean;
   /**
-   * Bundled-skill-edited heal — keep the local edits as the user's
-   * own. Clears the bundled source marker so future syncs leave the
-   * skill alone.
-   */
-  canAcceptDrift: boolean;
-  /**
-   * Bundled-skill-edited heal — re-baseline the current on-disk state
-   * as the bundled version. Re-snapshots the synced hash so the next
-   * build sees no drift; source marker stays bundled and Sync
-   * continues to own the skill.
-   */
-  canTakeCanonical: boolean;
-  /**
-   * `edited-with-origin` heal — revert local content to the
-   * skill's upstream copy (re-fetch via `npx skills update <name>`).
-   * Distinct from `canTakeCanonical` because the source axis here is
-   * the per-skill `upstream` pointer, not the registry-level bundled
-   * snapshot — the action and the post-state are different.
-   */
-  canResetToOrigin: boolean;
-  /**
    * `origin-update-available` heal — apply the upstream change in
    * place. Runs `npx skills update <name>`; the new content replaces
    * the on-disk skill and the baseline hash is re-snapshotted.
-   * Conflict-aware: when local edits and upstream changes coexist,
-   * the classifier surfaces `edited-with-origin` first and
-   * this capability is gated to that flow's conflict path instead.
    */
   canUpdate: boolean;
-  /**
-   * `origin-unreachable` heal — re-run the per-skill origin probe.
-   * On success, the runtime sidecar's `probeFailureCount` resets and
-   * the state clears; on failure, the counter increments (capped at
-   * the threshold so the state doesn't degrade further). v1.4.
-   */
-  canRetryOriginProbe: boolean;
   /**
    * Forget a missing entry — drop the registry/external record. For
    * adopted missing: the entry naturally drops on next index build
@@ -182,11 +148,7 @@ const NEVER: DrawerCapabilities = {
   canRegister: false,
   canHide: false,
   canUnhide: false,
-  canAcceptDrift: false,
-  canTakeCanonical: false,
-  canResetToOrigin: false,
   canUpdate: false,
-  canRetryOriginProbe: false,
   canForgetMissing: false,
   canRepoint: false,
   canResolveConflicts: false,
@@ -256,13 +218,6 @@ export function classifyDrawerState(
   // marker if the user chooses Keep mine.
   if (isRegistered && entry.drift === true) {
     if (entry.source.origin?.kind === "github") {
-      // canUnregister is granted here so a stuck drifted skill —
-      // typically one whose upstream is broken or has moved — can be
-      // removed without first severing the origin pointer. Without
-      // this, the only way out is Accept drift → transition state →
-      // Remove, which is a UX dead end when the origin probe itself
-      // is failing. applyCanonGate will strip Unregister for canon
-      // skills and grant Hide instead.
       return applyCanonGate(entry, {
         state: "edited-with-origin",
         brokenCount: 0,
@@ -270,11 +225,9 @@ export function classifyDrawerState(
         capabilities: {
           ...NEVER,
           canRevealInFinder: true,
-          canAcceptDrift: true,
-          canResetToOrigin: true,
           canExport: true,
           canUnregister: true,
-          primary: "accept-drift",
+          primary: "manage-links",
         },
       });
     }
@@ -285,11 +238,9 @@ export function classifyDrawerState(
       capabilities: {
         ...NEVER,
         canRevealInFinder: true,
-        canAcceptDrift: true,
-        canTakeCanonical: true,
         canExport: true,
         canUnregister: true,
-        primary: "accept-drift",
+        primary: "manage-links",
       },
     });
   }
@@ -314,17 +265,8 @@ export function classifyDrawerState(
         canRevealInFinder: true,
         canManageLinks: true,
         canExport: true,
-        // Keep this skill: route through acceptDrift which already
-        // dispatches to unlinkOrigin for github-origin entries (v1.3
-        // wired this).
-        canAcceptDrift: true,
-        canRetryOriginProbe: true,
-        // Bail-out path. If the origin stays unreachable indefinitely
-        // (deleted upstream, repo renamed past our redirect window),
-        // the user needs a way to remove the registry entry without
-        // first navigating through Accept drift.
         canUnregister: true,
-        primary: "retry-probe",
+        primary: "manage-links",
       },
     });
   }

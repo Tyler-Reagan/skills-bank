@@ -5,7 +5,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   parseSkillFrontmatter,
-  synthesizeSkillMeta,
   validateSkillMeta,
   SKILL_META_SCHEMA,
 } from "./skill-meta.js";
@@ -85,71 +84,6 @@ describe("parseSkillFrontmatter", () => {
       name: "my-skill",
       description: "desc",
     });
-  });
-});
-
-describe("synthesizeSkillMeta", () => {
-  test("writes a meta.json when none exists and SKILL.md has full frontmatter", () => {
-    fs.writeFileSync(
-      path.join(scratch, "SKILL.md"),
-      "---\nname: my-skill\ndescription: A helpful skill\nversion: 2.1.0\ntags: [foo, bar]\n---\nbody\n",
-    );
-    const r = synthesizeSkillMeta(scratch);
-    expect(r.ok).toBe(true);
-    expect(r.ok && r.written).toBe(true);
-    const written = JSON.parse(
-      fs.readFileSync(path.join(scratch, "meta.json"), "utf8"),
-    );
-    expect(written).toEqual({
-      name: "my-skill",
-      description: "A helpful skill",
-      version: "2.1.0",
-      tags: ["foo", "bar"],
-    });
-  });
-
-  test("defaults version to 0.1.0 when frontmatter has none", () => {
-    fs.writeFileSync(
-      path.join(scratch, "SKILL.md"),
-      "---\nname: my-skill\ndescription: A helpful skill\n---\n",
-    );
-    synthesizeSkillMeta(scratch);
-    const written = JSON.parse(
-      fs.readFileSync(path.join(scratch, "meta.json"), "utf8"),
-    );
-    expect(written["version"]).toBe("0.1.0");
-  });
-
-  test("no-ops when meta.json already exists (does not overwrite)", () => {
-    fs.writeFileSync(
-      path.join(scratch, "SKILL.md"),
-      "---\nname: my-skill\ndescription: New desc\n---\n",
-    );
-    const existing = { name: "my-skill", description: "Pre-existing" };
-    fs.writeFileSync(path.join(scratch, "meta.json"), JSON.stringify(existing));
-    const r = synthesizeSkillMeta(scratch);
-    expect(r.ok && !r.written && r.reason).toBe("meta-already-exists");
-    const after = JSON.parse(
-      fs.readFileSync(path.join(scratch, "meta.json"), "utf8"),
-    );
-    expect(after).toEqual(existing);
-  });
-
-  test("no-ops when SKILL.md has no frontmatter", () => {
-    fs.writeFileSync(path.join(scratch, "SKILL.md"), "no frontmatter\n");
-    const r = synthesizeSkillMeta(scratch);
-    expect(r.ok && !r.written && r.reason).toBe("no-frontmatter");
-    expect(fs.existsSync(path.join(scratch, "meta.json"))).toBe(false);
-  });
-
-  test("no-ops when frontmatter lacks required name or description", () => {
-    fs.writeFileSync(
-      path.join(scratch, "SKILL.md"),
-      "---\nname: my-skill\n---\n",
-    );
-    const r = synthesizeSkillMeta(scratch);
-    expect(r.ok && !r.written && r.reason).toBe("missing-name-or-description");
-    expect(fs.existsSync(path.join(scratch, "meta.json"))).toBe(false);
   });
 });
 
