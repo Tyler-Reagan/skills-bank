@@ -46,6 +46,14 @@ export interface ConflictEntry {
 export interface SyncReport {
   /** Skills written/overwritten as canonical this run. */
   upserted: string[];
+  /**
+   * Previously-synced skills skipped because their content hash
+   * matches the incoming canonical copy. Lets callers tell an
+   * already-up-to-date sync (discoveries > 0, all unchanged) apart
+   * from a tree with no recognizable skills — both report zero
+   * upserts.
+   */
+  unchanged: string[];
   /** Skills skipped because a non-canonical local version exists. */
   conflicts: ConflictEntry[];
   /** Skills locally tagged canonical but absent from the canonical tarball. */
@@ -190,6 +198,7 @@ export async function applyCanonicalSync(
 
   const syncedAt = new Date().toISOString();
   const upserted: string[] = [];
+  const unchanged: string[] = [];
   const conflicts: ConflictEntry[] = [];
   const resolved: ResolvedEntry[] = [];
 
@@ -264,6 +273,7 @@ export async function applyCanonicalSync(
         const incomingHash = hashSkillFolder(sourceDir);
         const storedHash = readSyncedHash(localPath);
         if (incomingHash && storedHash && incomingHash === storedHash) {
+          unchanged.push(name);
           continue;
         }
         // Overwrite in place. Preserve the existing source's `upstream`
@@ -328,6 +338,7 @@ export async function applyCanonicalSync(
 
   const report: SyncReport = {
     upserted,
+    unchanged,
     conflicts,
     orphaned,
     commitSha,
@@ -374,7 +385,9 @@ export function readLastSyncReport(registryRoot: string): SyncReport | null {
   const p = path.join(getStateDir(registryRoot), "last-sync.json");
   if (!fs.existsSync(p)) return null;
   try {
-    return JSON.parse(fs.readFileSync(p, "utf8")) as SyncReport;
+    const parsed = JSON.parse(fs.readFileSync(p, "utf8")) as SyncReport;
+    // Tolerant read: reports persisted before v1.20.1 lack `unchanged`.
+    return { ...parsed, unchanged: parsed.unchanged ?? [] };
   } catch {
     return null;
   }
