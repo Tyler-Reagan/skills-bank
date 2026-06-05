@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import type { AppError } from "@skills-bank/core";
 
-export type ToastAction = { label: string; onClick: () => void };
+type ToastAction = { label: string; onClick: () => void };
 
 interface ToastShape {
   message: string;

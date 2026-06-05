@@ -17,46 +17,6 @@ import {
 const GH_API_BASE = "https://api.github.com";
 const USER_AGENT = "skills-bank";
 
-// Read the `tags` field from a skill's meta.json, if present and valid.
-// Returns null when the file is missing, malformed, or has no tag list.
-function readMetaTags(skillDir: string): string[] | null {
-  const metaPath = path.join(skillDir, "meta.json");
-  if (!fs.existsSync(metaPath)) return null;
-  try {
-    const raw = JSON.parse(fs.readFileSync(metaPath, "utf8")) as Record<
-      string,
-      unknown
-    >;
-    const tags = raw["tags"];
-    if (!Array.isArray(tags)) return null;
-    return tags.filter((t): t is string => typeof t === "string");
-  } catch {
-    return null;
-  }
-}
-
-// Splice a tag list into a freshly-written canonical meta.json,
-// preserving the user's local tag edits across a Sync.
-function writeMetaTags(skillDir: string, tags: string[]): void {
-  const metaPath = path.join(skillDir, "meta.json");
-  if (!fs.existsSync(metaPath)) return;
-  let raw: Record<string, unknown>;
-  try {
-    raw = JSON.parse(fs.readFileSync(metaPath, "utf8")) as Record<
-      string,
-      unknown
-    >;
-  } catch {
-    return;
-  }
-  if (tags.length === 0) {
-    delete raw["tags"];
-  } else {
-    raw["tags"] = tags;
-  }
-  fs.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
-}
-
 export interface FetchTarballOptions {
   owner: string;
   repo: string;
@@ -245,13 +205,8 @@ export async function applyCanonicalSync(
     const localPath = existing?.dir ?? path.join(localBucketDir, name);
     const localExists = existing !== null;
 
-    // Capture local tags before any destructive step so a canonical
-    // overwrite preserves the user's tag edits. Tags are a local-only
-    // dimension; Sync never overwrites them.
-    let preservedTags: string[] | null = null;
     let preservedSource: SkillSource | null = null;
     if (localExists) {
-      preservedTags = readMetaTags(localPath);
       const existingSource = readSkillSource(localPath);
       // v1.5: conflict detection keys off `syncedFromCommit`, not
       // the source axis. Pre-v1.5 used `source !== "curated"` as a
@@ -262,7 +217,15 @@ export async function applyCanonicalSync(
       // surface as fake conflicts because their source is `user`.
       // The correct discriminator is `syncedFromCommit` presence —
       // every sync stamps it; user-authored skills don't carry one.
-      const isPreviouslySynced = !!existingSource.syncedFromCommit;
+      //
+      // Also treat source: "curated" skills as previously-synced even
+      // when syncedFromCommit is absent. These are seeded bundled skills
+      // (from seedManagedRegistryIfEmpty or reset:fresh) — not
+      // user-authored content. The first boot-sync overwrites them
+      // cleanly and stamps a real syncedFromCommit.
+      const isPreviouslySynced =
+        !!existingSource.syncedFromCommit ||
+        existingSource.source === "curated";
       if (!isPreviouslySynced) {
         const decision = decisions[name];
         if (decision) {
@@ -316,21 +279,24 @@ export async function applyCanonicalSync(
     const mountPath = path.join(localBucketDir, name);
     fs.mkdirSync(path.dirname(mountPath), { recursive: true });
     fs.cpSync(sourceDir, mountPath, { recursive: true });
-    if (preservedTags !== null) {
-      writeMetaTags(mountPath, preservedTags);
-    }
     // Read whatever source-axis state the mirrored .skills-bank.json
     // carries so per-skill `origin` survives the sync stamp. Without
     // this spread, every sync silently wipes origin attribution
     // (pre-existing oddity since v0.11.3, fixed in v1.2).
     //
-    // v1.5: source axis is mountTo-derived. `vendored` (the
-    // curated-set sync) stamps `curated`; `personal` (the
-    // user-linked-repo sync) stamps `user`. Pre-Phase-1 logic
-    // hard-coded `curated` for every mount target, which
-    // mislabelled linked-repo skills as part of the curated set.
+    // v1.5: source axis is mountTo-derived. `personal` syncs stamp
+    // `user`. `vendored` syncs preserve `"curated"` for already-
+    // committed bundled skills and use `"vendored"` for anything else —
+    // the sync path must never produce NEW `"curated"` entries; that
+    // designation is reserved for committed `.skills-bank.json` files.
     const mirroredSource = readSkillSource(mountPath);
-    const sourceForBucket = mountTo === "vendored" ? "curated" : "user";
+    const priorSource = (preservedSource ?? mirroredSource).source;
+    const sourceForBucket =
+      mountTo === "personal"
+        ? "user"
+        : priorSource === "curated"
+          ? "curated"
+          : "vendored";
     const merged: SkillSource = {
       ...(preservedSource ?? mirroredSource),
       source: sourceForBucket,

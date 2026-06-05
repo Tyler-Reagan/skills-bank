@@ -2,18 +2,23 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * Binary provenance for a registry skill. Any skill the user didn't
- * get from the curated set originated from them — whether authored
- * locally, merged from another bank, or added by hand.
+ * Provenance for a registry skill.
  *
- * Internal `entry.canon` (a derived boolean — "currently in the
- * curated upstream snapshot") is the separate axis used purely for
- * destructive-action protection; it never surfaces to the user and
- * is intentionally not part of this enum.
+ * - `"curated"` — shipped with the app by the maintainer. Only set via
+ *   committed `.skills-bank.json` files in the repo; no runtime install
+ *   or sync path may produce this value for new skills.
+ * - `"user"` — from the user's own linked GitHub registry repo.
+ * - `"vendored"` — user-chosen third-party install (Discover tab or
+ *   Settings → Install from GitHub) that is not from the linked repo.
  *
- * Renamed from `bundled`/`yours` in v1.3 (see `docs/plans/vocabulary-rename.md`).
+ * Internal `entry.canon` (a derived boolean — "currently in the curated
+ * upstream snapshot") is the separate axis used purely for destructive-
+ * action protection; it never surfaces to the user and is intentionally
+ * not part of this type.
+ *
+ * Renamed from `bundled`/`yours` in v1.3. `"vendored"` added in v1.20.
  */
-export type SkillOrigin = "curated" | "user";
+export type SkillOrigin = "curated" | "user" | "vendored";
 
 /**
  * Per-skill Origin pointer — independent of the registry-level
@@ -78,6 +83,10 @@ export const SKILL_SOURCE_FILENAME = ".skills-bank.json";
 function normalizeSourceValue(raw: unknown): SkillOrigin {
   if (raw === "curated") return "curated";
   if (raw === "user") return "user";
+  if (raw === "vendored") return "vendored";
+  // Legacy values from before v1.3 vocabulary rename.
+  if (raw === "bundled") return "curated";
+  if (raw === "yours") return "user";
   return "user";
 }
 

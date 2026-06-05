@@ -39,7 +39,7 @@ import { fileURLToPath } from "node:url";
 import {
   findFolderHash,
   folderPathFromSkillPath,
-  mirrorSkillFolder,
+  installSkillFiles,
   ORIGIN_KIND_GITHUB,
   probeOriginTree,
   readSkillSource,
@@ -268,7 +268,7 @@ async function refresh(): Promise<void> {
         });
         continue;
       }
-      const mirror = await mirrorSkillFolder(
+      const mirror = await installSkillFiles(
         c.repo,
         folderPath,
         c.skillDir,

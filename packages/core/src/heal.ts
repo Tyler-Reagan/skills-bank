@@ -7,7 +7,6 @@ import {
   readExternalRegistry,
   removeExternalRegistryEntry,
 } from "./external.js";
-import { readSkillSource, writeSkillSource } from "./source.js";
 
 /**
  * Heal helpers. Three bad states the classifier surfaces:
@@ -201,94 +200,6 @@ export function writeRuntimeState(skillDir: string, state: RuntimeState): void {
 }
 
 /**
- * Heal action — keep-mine on an edited-without-origin state. Clears
- * the source marker so the skill's `source` becomes "user" going
- * forward and subsequent syncs leave it alone. Idempotent.
- */
-export function keepLocalDetach(skillDir: string): void {
-  const src = readSkillSource(skillDir);
-  if (src.source !== "curated") return;
-  writeSkillSource(skillDir, { source: "user" });
-  // Drop the synced-hash so the next build doesn't flag this as
-  // drift again.
-  const hashPath = path.join(skillDir, SYNCED_HASH_FILE);
-  if (fs.existsSync(hashPath)) {
-    try {
-      fs.unlinkSync(hashPath);
-    } catch {
-      // ignore
-    }
-  }
-}
-
-/**
- * Heal action — clear the per-skill origin pointer on an
- * `edited-with-origin` state. The user keeps their local edits and
- * unlinks the origin so future probes don't surface the skill as
- * having an update available. The source axis (`curated` / `user`)
- * is preserved — this is a per-skill-origin operation, not a
- * registry-level one. Idempotent on skills without an `origin` field.
- *
- * Renamed from `acceptDriftSeverUpstream` in v1.3 to match UL canon.
- */
-export function unlinkOrigin(skillDir: string): void {
-  const src = readSkillSource(skillDir);
-  if (!src.origin) return;
-  const next: typeof src = { ...src };
-  delete next.origin;
-  writeSkillSource(skillDir, next);
-  // Drop the synced-hash so the next build doesn't flag this as
-  // edited-with-origin again. (The drift gate in build.ts
-  // checks `source.origin` and `source.source === "curated"`;
-  // with origin cleared and source unchanged, drift detection
-  // disengages for non-curated skills.)
-  const hashPath = path.join(skillDir, SYNCED_HASH_FILE);
-  if (fs.existsSync(hashPath)) {
-    try {
-      fs.unlinkSync(hashPath);
-    } catch {
-      // ignore
-    }
-  }
-}
-
-/**
- * Flip a skill's source axis from `curated` → `user`. Idempotent
- * on already-`user` skills. Composed by `forkSkill` (ADR-0006) on
- * its scratch dir after `unlinkOrigin` has dropped the origin
- * pointer; the pairing transitions a vendored-with-origin skill
- * into a user-owned skill in one well-bounded sequence.
- *
- * Doesn't touch any other axis (`syncedFromCommit`, `syncedAt`).
- * Preserves whatever else is in the marker — only the axis value
- * changes. v1.5.
- */
-export function flipSourceToUser(skillDir: string): void {
-  const src = readSkillSource(skillDir);
-  if (src.source === "user") return;
-  writeSkillSource(skillDir, { ...src, source: "user" });
-}
-
-/**
- * Heal action — revert on a edited-without-origin state. The user
- * acknowledges that the current on-disk content is the curated
- * baseline going forward: re-snapshot the hash so the next build
- * sees no drift. Source marker stays `curated` — Sync still owns
- * the skill and would still overwrite on the next pull.
- *
- * Distinct from `keepLocalDetach` (which flips source to `user` and
- * detaches from Sync entirely). Use this when the drift indicator
- * surfaced after a sync but the post-sync state is what you want —
- * clearing the indicator without reclassifying the skill.
- */
-export function rebaselineHash(skillDir: string): void {
-  const src = readSkillSource(skillDir);
-  if (src.source !== "curated") return;
-  const h = hashSkillFolder(skillDir);
-  if (h) writeSyncedHash(skillDir, h);
-}
-
-/**
  * Heal action — repoint a non-adopted external entry whose target has
  * moved. Validates the new target exists and contains a SKILL.md, then
  * rewrites the external.json row in place (preserving `registeredAt`).
@@ -355,9 +266,3 @@ export function forgetMissingEntry(
     message: `forgot ${name}`,
   };
 }
-
-// v1.13 renames — one-cycle deprecated aliases for SDK consumers.
-/** @deprecated v1.13 — renamed to `keepLocalDetach`. */
-export const acceptDriftKeepLocal = keepLocalDetach;
-/** @deprecated v1.13 — renamed to `rebaselineHash`. */
-export const acceptDriftTakeCanonical = rebaselineHash;

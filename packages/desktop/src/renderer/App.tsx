@@ -248,6 +248,18 @@ function AppContent(): React.ReactElement {
     conflictModalEntries,
     setConflictModalEntries,
   } = useSyncFeed();
+
+  // Rate-limit sync errors are already surfaced by the origin-probe toast
+  // (useRescanController → flashError). Showing both the banner AND the toast
+  // for the same root cause is redundant. Suppress the banner by resetting to
+  // idle; the toast carries the "Sign in" CTA and cleaner copy.
+  useEffect(() => {
+    if (syncStatus.kind !== "error") return;
+    if (/rate.?limit|403/i.test(syncStatus.message)) {
+      setSyncStatus({ kind: "idle" });
+    }
+  }, [syncStatus, setSyncStatus]);
+
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
 
   // Overlay reconciliation: if a skill referenced by an open drawer or
@@ -843,7 +855,6 @@ function AppContent(): React.ReactElement {
               manifestImportProgress={manifestImportProgress}
               onRetryGhost={(skill) => void retryGhost(skill)}
               onDismissGhost={dismissGhost}
-              onStartReview={handleStartReview}
               onManageLabels={() => openModal({ kind: "manageLabels" })}
             />
           )}

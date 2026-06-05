@@ -19,7 +19,7 @@ import { buildRegistryIndex } from "./build.js";
  * Phase 1 manifest contract:
  *   - export is pure read, captures source axis + origin pointer +
  *     tags + hide state + installed-agent map.
- *   - import mirrors content via mirrorSkillFolder for new entries,
+ *   - import mirrors content via installSkillFiles for new entries,
  *     restores aux state, surfaces origin collisions.
  *   - snapshot writer rotates to last N by mtime.
  *

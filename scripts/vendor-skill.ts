@@ -17,19 +17,11 @@
 //      `npx skills find` against the catalog when `@skill-id` is
 //      supplied, or via the explicit `--path` flag).
 //   2. Mirrors the skill folder into `<repo-root>/skills/<name>/`
-//      using the shared `mirrorSkillFolder` helper from core.
-//   3. If the mirrored folder lacks meta.json, synthesizes one from
-//      SKILL.md frontmatter so the rest of the toolchain (which
-//      generally expects a per-skill meta.json) doesn't have to
-//      fall back to frontmatter parsing for every consumer. Skipped
-//      with `--no-synthesize-meta`. Never overwrites an existing
-//      upstream meta.json — preserved verbatim.
-//   4. Writes `.skills-bank.json` with `kind: "github"`, repo,
+//      using the shared `installSkillFiles` helper from core.
+//   3. Writes `.skills-bank.json` with `kind: "github"`, repo,
 //      sourceUrl, skillPath, skillFolderHash, installedAt, fetchedAt.
-//   5. Writes `.skills-bank-hash` as the drift baseline (post-vendor
-//      content == new clean state, including any synthesized
-//      meta.json).
-//   6. Prints `git status` for the maintainer to review and commit.
+//   4. Writes `.skills-bank-hash` as the drift baseline.
+//   5. Prints `git status` for the maintainer to review and commit.
 //
 // Refuses to overwrite an existing `skills/<name>/` unless `--force`
 // is given — protects against accidental clobbering.
@@ -45,10 +37,9 @@ import { promisify } from "node:util";
 import {
   folderPathFromSkillPath,
   hashSkillFolder,
-  mirrorSkillFolder,
+  installSkillFiles,
   readSkillSource,
   ORIGIN_KIND_GITHUB,
-  synthesizeSkillMeta,
   writeSkillSource,
   writeSyncedHash,
   type OriginPointer,
@@ -69,21 +60,16 @@ interface ParsedArg {
   localName: string | null;
   bucket: import("../packages/core/src/index.js").SkillBucket;
   force: boolean;
-  synthesizeMeta: boolean;
 }
 
 function usage(): never {
   console.error(
-    "usage: pnpm vendor:skill <owner/repo>@<skill-id> [--as <name>] [--personal] [--force] [--no-synthesize-meta]\n" +
-      "       pnpm vendor:skill <owner/repo> --path <SKILL.md path> [--as <name>] [--personal] [--force] [--no-synthesize-meta]\n" +
+    "usage: pnpm vendor:skill <owner/repo>@<skill-id> [--as <name>] [--personal] [--force]\n" +
+      "       pnpm vendor:skill <owner/repo> --path <SKILL.md path> [--as <name>] [--personal] [--force]\n" +
       "\n" +
       "Defaults destination to skills/vendored/<name>/. Pass --personal to write\n" +
       "to skills/personal/<name>/ instead — for forks the maintainer is taking\n" +
-      "ownership of.\n" +
-      "\n" +
-      "By default, synthesizes a meta.json from SKILL.md frontmatter when the\n" +
-      "mirrored folder lacks one. Pass --no-synthesize-meta to skip — useful for\n" +
-      "the rare upstream that intentionally ships SKILL.md only.",
+      "ownership of.",
   );
   process.exit(1);
 }
@@ -99,7 +85,6 @@ function parseArgs(): ParsedArg {
     localName: null,
     bucket: "vendored",
     force: false,
-    synthesizeMeta: true,
   };
   const atIdx = spec.indexOf("@");
   if (atIdx >= 0) {
@@ -123,10 +108,6 @@ function parseArgs(): ParsedArg {
       out.bucket = "personal";
     } else if (args[i] === "--vendored") {
       out.bucket = "vendored";
-    } else if (args[i] === "--no-synthesize-meta") {
-      out.synthesizeMeta = false;
-    } else if (args[i] === "--synthesize-meta") {
-      out.synthesizeMeta = true;
     } else {
       console.error(`unknown arg: ${args[i]}`);
       usage();
@@ -293,22 +274,10 @@ async function main(): Promise<void> {
 
   console.log(`vendoring ${args.repo}/${folderPath} → ${destRel}/ ...`);
 
-  const mirror = await mirrorSkillFolder(args.repo, folderPath, destDir, token);
+  const mirror = await installSkillFiles(args.repo, folderPath, destDir, token);
   if (!mirror.ok) {
     console.error(`mirror failed: ${mirror.message}`);
     process.exit(1);
-  }
-
-  // Synthesize meta.json from frontmatter when the upstream folder
-  // didn't ship one. Runs BEFORE the drift baseline so the synthesized
-  // file is part of the clean state; otherwise the first install
-  // would immediately register as drifted. Skipped via
-  // `--no-synthesize-meta` and a no-op when meta.json already exists.
-  if (args.synthesizeMeta) {
-    const result = synthesizeSkillMeta(destDir);
-    if (result.ok && result.written) {
-      console.log(`  synthesized meta.json from SKILL.md frontmatter`);
-    }
   }
 
   // Write marker + baseline.

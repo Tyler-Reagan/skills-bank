@@ -320,20 +320,6 @@ function PublishBadge({
       </span>
     );
   }
-  if (entry.drift) {
-    return (
-      <span
-        className="skill-state-badge drift"
-        title={
-          entry.source.origin?.kind === "github"
-            ? "You've edited this skill since the last Origin fetch. Open to unlink the Origin (keep edits) or reset to Origin (discard edits)."
-            : "You've edited this bundled skill. Open to re-baseline or accept the drift."
-        }
-      >
-        EDITED
-      </span>
-    );
-  }
   if (entry.originUnreachable && entry.source.origin?.kind === "github") {
     return (
       <span

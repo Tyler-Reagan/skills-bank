@@ -22,7 +22,6 @@ interface Props {
   onRefreshRegistry: () => void | Promise<void>;
   onImportRegistry: () => void | Promise<void>;
   onMergeRegistry: () => void | Promise<void>;
-  onExportRegistry: () => void | Promise<void>;
   /**
    * Manifest-shaped moves. Open the ManifestModal for the appropriate
    * mode — the modal owns the full transport flow (repo or disk).
@@ -48,7 +47,6 @@ export function AccountModal({
   onRefreshRegistry,
   onImportRegistry,
   onMergeRegistry,
-  onExportRegistry,
   onOpenImportManifest,
   onOpenExportManifest,
   onSignOut,
@@ -201,13 +199,6 @@ export function AccountModal({
             disabled={importingManifest}
           >
             Merge from disk
-          </button>
-          <button
-            className="btn"
-            type="button"
-            onClick={() => void onExportRegistry()}
-          >
-            Export as folder
           </button>
         </div>
 

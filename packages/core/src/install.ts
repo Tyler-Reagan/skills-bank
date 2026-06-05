@@ -10,29 +10,22 @@ import {
 import { buildRegistryIndex } from "./build.js";
 import { findEntry, resolveEntryPath } from "./registry.js";
 
-export interface InstallOptions {
-  registryRoot: string;
-  /**
-   * Agents to install for. Default: every agent dir that already exists
-   * on disk (or just Claude Code if none exist yet — we create the
-   * directory in that case).
-   */
-  agents?: AgentId[];
+export interface LinkToAgentsOptions {
   /** If true, replace an existing symlink at the target. Defaults to false. */
   force?: boolean;
 }
 
-export interface InstallTargetResult {
+export interface LinkTargetResult {
   agent: AgentId;
   linkPath: string;
   target: string;
   alreadyInstalled: boolean;
 }
 
-export interface InstallResult {
+export interface LinkResult {
   name: string;
   /** One result per agent dir we wrote (or attempted to write). */
-  installs: InstallTargetResult[];
+  installs: LinkTargetResult[];
   /**
    * Per-agent failures (e.g. existing real-dir without --force). The
    * caller decides whether partial success is acceptable.
@@ -45,33 +38,26 @@ export interface InstallResult {
 }
 
 /**
- * Symlink the registry skill into one or more agent directories.
+ * Symlink the skill at `skillPath` into one or more agent directories.
  * Default behavior installs to every agent dir that exists on disk so
  * the same skill is available wherever the user runs an AI tool.
  * Failures on any single target are collected and returned; we don't
  * abort partial successes.
  */
-export function installSkill(
-  name: string,
-  opts: InstallOptions,
-): InstallResult {
-  const index = buildRegistryIndex(opts.registryRoot);
-  const entry = findEntry(index, name);
-  if (!entry) {
-    throw new Error(
-      `Skill "${name}" not found. Verify a folder exists at <root>/skills/${name} with a valid meta.json.`,
-    );
-  }
-  const target = resolveEntryPath(opts.registryRoot, entry);
-  if (!fs.existsSync(target)) {
-    throw new Error(`Registry skill folder missing on disk: ${target}`);
+export function linkSkillToAgents(
+  skillPath: string,
+  agents: AgentDef[],
+  opts?: LinkToAgentsOptions,
+): LinkResult {
+  if (!fs.existsSync(skillPath)) {
+    throw new Error(`Registry skill folder missing on disk: ${skillPath}`);
   }
 
-  const targets: AgentDef[] = opts.agents
-    ? opts.agents.map(getAgent)
-    : getDefaultInstallAgents();
+  const name = path.basename(skillPath);
+  const targets = agents;
+  const target = skillPath;
 
-  const installs: InstallTargetResult[] = [];
+  const installs: LinkTargetResult[] = [];
   const errors: Array<{ agent: AgentId; message: string }> = [];
 
   for (const agent of targets) {
@@ -98,7 +84,7 @@ export function installSkill(
           });
           continue;
         }
-        if (!opts.force) {
+        if (!opts?.force) {
           errors.push({
             agent: agent.id,
             message: `${linkPath} is a symlink to ${resolved}; refusing to overwrite without force.`,
@@ -143,15 +129,15 @@ export function installSkill(
   };
 }
 
-export interface UninstallTargetResult {
+export interface UnlinkTargetResult {
   agent: AgentId;
   linkPath: string;
   removed: boolean;
 }
 
-export interface UninstallResult {
+export interface UnlinkResult {
   name: string;
-  removals: UninstallTargetResult[];
+  removals: UnlinkTargetResult[];
   errors: Array<{ agent: AgentId; message: string }>;
   /** Convenience: true if any agent dir actually had a symlink to remove. */
   removed: boolean;
@@ -159,17 +145,17 @@ export interface UninstallResult {
   linkPath: string;
 }
 
-export function uninstallSkill(
+export function unlinkSkillFromAgents(
   name: string,
   opts: { agents?: AgentId[] } = {},
-): UninstallResult {
+): UnlinkResult {
   const targets: AgentDef[] = opts.agents
     ? opts.agents.map(getAgent)
     : getDefaultInstallAgents();
-  // Even if a target dir doesn't exist, we don't error — uninstalling
+  // Even if a target dir doesn't exist, we don't error — unlinking
   // from a never-existing agent is a no-op.
 
-  const removals: UninstallTargetResult[] = [];
+  const removals: UnlinkTargetResult[] = [];
   const errors: Array<{ agent: AgentId; message: string }> = [];
   let firstLinkPath = "";
 
@@ -225,7 +211,7 @@ export interface DeleteFromBankResult {
   /** Absolute path that was deleted (when ok). */
   deletedPath?: string;
   /** Result of the symlink cleanup pass. */
-  symlinkRemovals?: UninstallTargetResult[];
+  symlinkRemovals?: UnlinkTargetResult[];
   /** Aggregate errors from symlink cleanup + delete. */
   errors: Array<{ agent?: AgentId; message: string }>;
 }
@@ -277,7 +263,7 @@ export function deleteFromBankSkill(
     };
   }
 
-  const uninstall = uninstallSkill(name);
+  const uninstall = unlinkSkillFromAgents(name);
   const errors: Array<{ agent?: AgentId; message: string }> = [
     ...uninstall.errors,
   ];
@@ -303,7 +289,7 @@ export function deleteFromBankSkill(
     writeFile: true,
   });
 
-  const removedCount = uninstall.removals.filter((r) => r.removed).length;
+  const removedCount = uninstall.removals.filter((r: UnlinkTargetResult) => r.removed).length;
   const message =
     removedCount > 0
       ? `Deleted ${name} from Skills Bank and removed ${removedCount} symlink(s).`

@@ -14,7 +14,6 @@ import { ConflictResolutionModal } from "./ConflictResolutionModal.js";
 import { ManifestConflictModal } from "./ManifestConflictModal.js";
 import { DeleteUnregisteredConfirm } from "./DeleteUnregisteredConfirm.js";
 import { SettingsModal } from "./SettingsModal.js";
-import { InstallFromGithubModal } from "./InstallFromGithubModal.js";
 import { KeyboardShortcutsOverlay } from "./KeyboardShortcutsOverlay.js";
 import { AccountModal } from "./AccountModal.js";
 import { ManifestImportConfirmModal } from "./ManifestImportConfirmModal.js";
@@ -49,7 +48,6 @@ import type {
 export type ActiveModal =
   | { kind: "register" }
   | { kind: "settings" }
-  | { kind: "installFromGithub" }
   | { kind: "shortcuts" }
   | { kind: "account" }
   | { kind: "connectGithub" }
@@ -282,15 +280,6 @@ export function ModalHost({
       },
     });
   }, [flash, refresh, openModal]);
-
-  const exportRegistry = useCallback(async () => {
-    const r = await window.skillsBank.exportRegistry();
-    if (!r.ok && r.message !== "export cancelled") {
-      flash(`Export failed: ${r.message}`);
-    } else if (r.ok) {
-      flash(r.message);
-    }
-  }, [flash]);
 
   const signOut = useCallback(async () => {
     const s = await window.skillsBank.authLogout();
@@ -595,16 +584,6 @@ export function ModalHost({
         />
       )}
 
-      {modal?.kind === "installFromGithub" && (
-        <InstallFromGithubModal
-          onClose={() => closeModal()}
-          onInstalled={() => {
-            closeModal();
-            void refresh();
-          }}
-        />
-      )}
-
       {modal?.kind === "shortcuts" && (
         <KeyboardShortcutsOverlay onClose={() => closeModal()} />
       )}
@@ -629,10 +608,6 @@ export function ModalHost({
           onMergeRegistry={async () => {
             closeModal();
             await mergeRegistry();
-          }}
-          onExportRegistry={async () => {
-            closeModal();
-            await exportRegistry();
           }}
           onOpenImportManifest={() =>
             openModal({ kind: "manifest", mode: "import" })

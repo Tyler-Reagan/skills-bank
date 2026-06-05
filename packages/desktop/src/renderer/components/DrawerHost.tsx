@@ -102,7 +102,6 @@ export function DrawerHost({
       showOriginActivity={
         settings.showOriginActivity && Boolean(authStatus?.user)
       }
-      linkedRepoName={authStatus?.linkedRepo?.fullName ?? null}
       onSetManualUpstream={async (choice: OriginManualChoice) => {
         const r = await window.skillsBank.originSetManual(
           selected.name,
@@ -160,36 +159,6 @@ export function DrawerHost({
               ]);
               const r = results[0]!;
               flash(r.message);
-              if (r.ok) onClose();
-              await refresh();
-            }
-          : undefined
-      }
-      onAcceptDrift={
-        caps.canAcceptDrift
-          ? async () => {
-              const r = await window.skillsBank.acceptDrift(selected.name);
-              flash(r.message);
-              if (r.ok) onClose();
-              await refresh();
-            }
-          : undefined
-      }
-      onTakeCanonical={
-        caps.canTakeCanonical
-          ? async () => {
-              const r = await window.skillsBank.takeCanonical(selected.name);
-              flash(r.message);
-              if (r.ok) onClose();
-              await refresh();
-            }
-          : undefined
-      }
-      onTakeUpstream={
-        caps.canResetToOrigin
-          ? async () => {
-              const r = await window.skillsBank.originUpdate(selected.name);
-              onUpdateResult(r);
               if (r.ok) onClose();
               await refresh();
             }

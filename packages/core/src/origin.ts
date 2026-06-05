@@ -62,6 +62,13 @@ export interface ProbeOptions {
   ref?: string;
   /** AbortSignal for cancellation (e.g. on app quit). */
   signal?: AbortSignal;
+  /**
+   * When true, bypass the idempotency guard and always re-fetch even
+   * if `destDir` already exists and is non-empty. Used by
+   * `applyOriginUpdate` which intentionally overwrites an existing
+   * skill folder with the latest upstream content.
+   */
+  force?: boolean;
 }
 
 /**
@@ -193,7 +200,7 @@ export interface MirrorResultErr {
 export type MirrorResult = MirrorResultOk | MirrorResultErr;
 
 /**
- * Fetch every file under `<folderPath>/` from `repo` and mirror them
+ * Fetch every file under `<folderPath>/` from `repo` and write them
  * into `destDir`. Wipe + recopy semantics — `destDir` is cleared
  * before writing, so files removed upstream are removed locally too.
  *
@@ -205,11 +212,16 @@ export type MirrorResult = MirrorResultOk | MirrorResultErr;
  * can retry without worrying about partial state.
  *
  * Does NOT write `.skills-bank.json` / `.skills-bank-hash` sidecars —
- * those are app-state concerns the caller wires after the mirror
+ * those are app-state concerns the caller wires after the install
  * succeeds (so vendor-new-skill, update-in-place, and
  * preview-into-temp-dir can each manage marker state appropriately).
+ *
+ * Idempotent: if `destDir` already exists and is non-empty the function
+ * returns immediately with `{ ok: true, folderHash: "", fileCount: 0 }`.
+ * This makes it safe to call even when files are already present — the
+ * Browse "Install" two-primitive chain relies on this property.
  */
-export async function mirrorSkillFolder(
+export async function installSkillFiles(
   repo: string,
   folderPath: string,
   destDir: string,
@@ -218,6 +230,18 @@ export async function mirrorSkillFolder(
 ): Promise<MirrorResult> {
   const fs = await import("node:fs");
   const path = await import("node:path");
+
+  // Idempotency guard: if destDir already exists and has files, skip the
+  // download entirely. Safe to call multiple times (e.g. Browse Install chain).
+  // Pass `options.force = true` to bypass (used by applyOriginUpdate which
+  // intentionally overwrites an existing folder with fresh upstream content).
+  if (
+    !options.force &&
+    fs.existsSync(destDir) &&
+    fs.readdirSync(destDir).length > 0
+  ) {
+    return { ok: true, folderHash: "", fileCount: 0 };
+  }
 
   const probe = await fetchOriginTree(repo, token, options);
   if (!probe.ok) {
@@ -325,7 +349,7 @@ export async function mirrorSkillFolder(
  * concerns, not core concerns).
  *
  * Side effects: writes to disk under `<registryRoot>/skills/<entry.path>`.
- * No network access beyond `mirrorSkillFolder`'s own fetches; no
+ * No network access beyond `installSkillFiles`'s own fetches; no
  * mutation of `~/.agents/.skill-lock.json` or any other CLI-owned
  * state.
  */
@@ -387,13 +411,7 @@ export async function applyOriginUpdate(
   );
   const existingSource = readSkillSource(registrySkillDir);
 
-  // Preserve user-curated tags across the Update. mirrorSkillFolder
-  // wipe-and-recopies destDir, so a local meta.json that wasn't in
-  // upstream would be lost — and with it, the user's tags. Sync has
-  // the same splice (see `sync.ts:readMetaTags`); Update needs the
-  // same protection.
   const fs = await import("node:fs");
-  const preservedTags = readMetaTagsFromSkillDir(registrySkillDir, fs);
 
   // Stash the pre-mirror skill folder so we can roll back if the
   // post-mirror invariants check fails (synthesis can't fill in,
@@ -422,14 +440,15 @@ export async function applyOriginUpdate(
     }
   };
 
-  const mirror = await mirrorSkillFolder(
+  const mirror = await installSkillFiles(
     origin.repo,
     folderPath,
     registrySkillDir,
     ctx.token,
+    { force: true },
   );
   if (!mirror.ok) {
-    // Mirror itself didn't mutate destDir (ADR-0001 Suite 4); just
+    // installSkillFiles didn't mutate destDir (ADR-0001 Suite 4); just
     // discard the scratch and propagate.
     cleanupScratch();
     if (mirror.status === 429 && mirror.rateLimit) {
@@ -455,18 +474,10 @@ export async function applyOriginUpdate(
     };
   }
 
-  // Post-mirror invariants check (synthesis + validation). The
-  // mirror's wipe-and-recopy may have left the registry copy without
-  // a meta.json (upstream didn't ship one) or with an invalid one
-  // (upstream's meta.json has an empty description, missing required
-  // fields, etc.). Both bugs were filed alongside this fix:
-  //   - docs/bug-reports/2026-05-19-origin-update-missing-meta-synthesis.md
-  //   - docs/bug-reports/2026-05-19-origin-update-missing-validation.md
-  // Synthesis attempts to fill the gap from SKILL.md frontmatter;
-  // validation then runs the schema check.
-  const { synthesizeSkillMeta, validateSkillMeta } =
-    await import("./skill-meta.js");
-  synthesizeSkillMeta(registrySkillDir);
+  // Validate the mirrored SKILL.md frontmatter. If the upstream ships
+  // a SKILL.md with missing required fields, reject and roll back rather
+  // than freezing bad state as the new baseline.
+  const { validateSkillMeta } = await import("./skill-meta.js");
   const metaCheck = validateSkillMeta(registrySkillDir);
   if (!metaCheck.ok) {
     // Roll back: discard the mirrored content, restore from stash.
@@ -504,81 +515,10 @@ export async function applyOriginUpdate(
       skillFolderHash: mirror.folderHash,
     },
   });
-  // Restore user tags. Two cases:
-  //   - Upstream shipped meta.json → splice tags in (preserve other
-  //     upstream-curated fields like description).
-  //   - Upstream didn't ship meta.json → synthesis above produced one;
-  //     splice tags in so the user's curated tag list survives.
-  if (preservedTags !== null && preservedTags.length > 0) {
-    restoreMetaTags(registrySkillDir, preservedTags, ctx.name, fs);
-  }
-
   writeRuntimeState(registrySkillDir, { fetchedAt: now });
-  // Re-hash AFTER restoring meta.json so the baseline reflects the
-  // final on-disk state. Otherwise drift fires immediately because
-  // the hash recorded by mirror would mismatch the post-restore tree.
+  // Re-hash so the baseline reflects the final on-disk state.
   const newBaseline = hashSkillFolder(registrySkillDir);
   if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
 
   return { ok: true, message: `Updated ${ctx.name} from ${origin.repo}.` };
-}
-
-function readMetaTagsFromSkillDir(
-  skillDir: string,
-  fsMod: typeof import("node:fs"),
-): string[] | null {
-  const metaPath = `${skillDir}/meta.json`;
-  if (!fsMod.existsSync(metaPath)) return null;
-  try {
-    const raw = JSON.parse(fsMod.readFileSync(metaPath, "utf8")) as Record<
-      string,
-      unknown
-    >;
-    const tags = raw["tags"];
-    if (!Array.isArray(tags)) return null;
-    return tags.filter((t): t is string => typeof t === "string");
-  } catch {
-    return null;
-  }
-}
-
-function restoreMetaTags(
-  skillDir: string,
-  tags: string[],
-  name: string,
-  fsMod: typeof import("node:fs"),
-): void {
-  const metaPath = `${skillDir}/meta.json`;
-  if (fsMod.existsSync(metaPath)) {
-    // Splice — preserve upstream's other fields.
-    try {
-      const raw = JSON.parse(fsMod.readFileSync(metaPath, "utf8")) as Record<
-        string,
-        unknown
-      >;
-      raw["tags"] = tags;
-      fsMod.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
-    } catch {
-      // Malformed upstream meta.json — fall through to synthesize.
-      synthesizeMetaJson(skillDir, name, tags, fsMod);
-    }
-    return;
-  }
-  // Upstream shipped no meta.json — synthesize a minimal one with the
-  // user's tags so they survive Update + the "missing meta.json"
-  // warning doesn't fire for a skill the user had metadata for.
-  synthesizeMetaJson(skillDir, name, tags, fsMod);
-}
-
-function synthesizeMetaJson(
-  skillDir: string,
-  name: string,
-  tags: string[],
-  fsMod: typeof import("node:fs"),
-): void {
-  const metaPath = `${skillDir}/meta.json`;
-  fsMod.writeFileSync(
-    metaPath,
-    JSON.stringify({ name, description: "", tags }, null, 2) + "\n",
-  );
 }

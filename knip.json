@@ -8,9 +8,6 @@
     "packages/core": {
       "project": "src/**/*.ts"
     },
-    "packages/cli": {
-      "project": "src/**/*.ts"
-    },
     "packages/desktop": {
       "entry": ["src/main/main.ts", "src/renderer/index.html"],
       "project": "src/**/*.{ts,tsx,mts}"
