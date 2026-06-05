@@ -1,6 +1,6 @@
 # ADR-0007 — `pushSkillFolder` primitive: atomicity, branch resolution, rate-limit handling
 
-**Status:** Proposed (post-v1.0)
+**Status:** Superseded by [ADR-0010](ADR-0010-heal-fork-publish-removed.md) (v1.20.0)
 
 ## Context
 

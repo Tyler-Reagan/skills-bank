@@ -32,24 +32,12 @@ Drag to Applications, launch from Spotlight. Signed and notarized — Gatekeeper
 > [!TIP]
 > **📖 Read the docs: [skills-bank-desktop.vercel.app](https://skills-bank-desktop.vercel.app/)** — the source of truth for getting started, concepts, guides, and reference. The markdown sources live under [`packages/docs/`](packages/docs/) if you want to edit them.
 
-### CLI
-
-```bash
-pnpm install && pnpm run build
-node packages/cli/dist/index.js list [--json]
-node packages/cli/dist/index.js install <name> [--agent <id>]
-node packages/cli/dist/index.js uninstall <name> [--agent <id>]
-node packages/cli/dist/index.js installed [--json]
-node packages/cli/dist/index.js path <name>
-```
-
 ## What's in this repo
 
 | Path                                   | Purpose                                                                           |
 | -------------------------------------- | --------------------------------------------------------------------------------- |
 | [`skills/`](skills/)                   | Bundled registry — one folder per skill, each a `SKILL.md` with YAML frontmatter. |
 | [`packages/core`](packages/core)       | Shared TypeScript library: registry IO, install, sync, registration.              |
-| [`packages/cli`](packages/cli)         | The `skills-bank` CLI — five commands for shell composition.                      |
 | [`packages/desktop`](packages/desktop) | Electron + React desktop app.                                                     |
 | [`packages/docs`](packages/docs)       | VitePress docs site.                                                              |
 
@@ -78,6 +66,6 @@ pnpm validate && pnpm build:index
 
 ## Cutting a release
 
-Releases are tag-driven. Merge the feature PR, bump the version in all `package.json` files (`./`, `packages/core`, `packages/desktop`, `packages/cli`) and update `CHANGELOG.md`, then commit as `chore: release vX.Y.Z`, tag, and push `vX.Y.Z`. The [release workflow](.github/workflows/release.yml) builds signed + notarized DMGs and creates a draft; publish the draft from the GitHub UI to ship.
+Releases are tag-driven. Merge the feature PR, bump the version in all `package.json` files (`./`, `packages/core`, `packages/desktop`) and update `CHANGELOG.md`, then commit as `chore: release vX.Y.Z`, tag, and push `vX.Y.Z`. The [release workflow](.github/workflows/release.yml) builds signed + notarized DMGs and creates a draft; publish the draft from the GitHub UI to ship.
 
 See [`CLAUDE.md`](CLAUDE.md) for the full release checklist and agent-facing scripts.

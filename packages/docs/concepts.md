@@ -121,10 +121,11 @@ Self-hosting (forking the entire app) remains a separate developer path; see [Se
 
 ## Source (provenance)
 
-Provenance is a binary on each registry skill — every skill is either **curated** (came from the curated set the bank tracks) or **user** (you added it, however it got there). Stored as `source` in a sibling `.skills-bank.json` per skill so the marker doesn't pollute upstream.
+Provenance is a three-value axis on each registry skill, stored as `source` in a sibling `.skills-bank.json` per skill so the marker doesn't pollute upstream.
 
-- **`curated`** — Part of the curated set the bank tracks. Sync keeps it current.
-- **`user`** — Anything that didn't come from the curated set — authored locally, merged in from another bank's export, imported from elsewhere. Sync never touches it.
+- **`curated`** — Part of the committed curated set the app ships. Reserved for `.skills-bank.json` files committed to the app's registry repo — no install or sync path ever mints a new one. Sync keeps these current.
+- **`vendored`** — A third-party skill you chose to bring in, with its origin pointer preserved so updates from the original author still surface.
+- **`user`** — Yours — authored locally, merged in from another bank's export, or pulled from your own linked repo. Sync never touches it.
 
 ## Labels
 
@@ -144,8 +145,8 @@ Each card surfaces a single badge. Actionable state badges take priority; proven
 Priority order, highest first:
 
 - **`MISSING`** _(danger)_ — files are gone. Open the dialog to **Forget this entry**.
-- **`EDITED`** _(warn)_ — you've edited a curated skill. Open the dialog to keep your edits or revert. Files the skill ignores via its own `.gitignore` (e.g. a runtime-installed `node_modules/`) don't count as edits.
-- **`UPDATE`** _(info)_ — an update is available from the skill's origin.
+- **`UNREACHABLE`** _(danger)_ — the skill's origin hasn't answered the last few update probes. Your local copy is intact.
+- **`UPDATE`** _(info)_ — an update is available from the skill's origin. Skills you've edited locally are held out of one-click updates (files the skill ignores via its own `.gitignore`, e.g. a runtime-installed `node_modules/`, don't count as edits).
 - **`CURATED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the curated-only escape hatch.
 
 User-source skills render no provenance chip. The **Personal** filter chip on the Registry tab shows only user-source skills.
@@ -191,28 +192,8 @@ Pulling a third-party skill from its origin GitHub repo into the bank, preservin
 
 ## Manifest
 
-A lightweight JSON snapshot of a registry's **origin pointers** — not the skill content itself. Each entry carries the skill's name, source axis, origin pointer (repo + path), tags, and hidden/dismissed state. On import, each skill is re-fetched from its origin, so transfers are tiny but require the origins to still be reachable.
+A lightweight JSON snapshot of a registry's **origin pointers** — not the skill content itself. Each entry carries the skill's name, source axis, bucket, origin pointer (repo + path), and curation labels (category + tags). On import, each skill is re-fetched from its origin, so transfers are tiny but require the origins to still be reachable.
 
-Manifests are the transport layer for moving a registry's _metadata_ between machines or pushing it to a linked repo. Content transfers (the full skills tree as files) use the disk import/export flow instead.
+Manifests are the transport layer for moving a registry's _metadata_ between machines or pushing it to a linked repo. Content transfers (the full skills tree as files) use the disk import flow instead.
 
 The current schema is v5. A manifest exported from one machine can be pushed directly to your linked GitHub repo and pulled on another, closing the loop without manual file handling. See [Move your registry](/guides/manifest).
-
-## Publish
-
-Pushing a skill from the local registry to the user's linked repo as a pull request. Three sub-flows by trigger condition:
-
-- **New skill** — no origin, user-authored. Published to `skills/personal/`, `source: user`.
-- **Vendored skill (safekeeping)** — has origin, no local drift. Published to `skills/vendored/` with the origin pointer preserved.
-- **Edited vendored skill** — has origin, drift detected. Forces the user to confirm a [Fork](#fork) before publishing.
-
-The action is always PR-only — the linked repo's default branch is never written directly.
-
-## Fork
-
-Unlinking a vendored skill's origin and taking ownership locally. Triggered when the user publishes edits to a vendored skill: a confirmation modal makes the unlink explicit, since the action drops the origin pointer and stops the update probe from surfacing future changes from the original author. After confirmation the skill's `source` flips `curated → user`, the origin pointer is dropped, and the folder moves from `skills/vendored/` to `skills/personal/`.
-
-Forking is irreversible without re-vendoring from scratch.
-
-## Safekeeping
-
-The reason vendoring-and-publishing is a flow distinct from forking. A user vendors a third-party skill, then publishes the (unedited) vendored copy to their linked repo. The copy in the linked repo is the safekept version — if the origin is deleted, transferred, or otherwise goes dark, the user still has the content. The origin pointer is preserved so future-author updates remain visible.

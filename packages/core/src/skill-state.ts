@@ -203,19 +203,14 @@ export function classifyDrawerState(
   }
 
   // Drift fan-out: local content has diverged from the recorded
-  // baseline. Which heal flow applies depends on the source axis.
-  //   - Upstream-pointer skills (`source.origin` set) →
-  //     `edited-with-origin`. Two arms: Keep my edits
-  //     (sever the upstream) or Revert to upstream (re-fetch via
-  //     `npx skills update`).
-  //   - Bundled skills without an upstream pointer → preserved
-  //     `edited-without-origin` semantics (Keep mine / Re-baseline
-  //     against bundled).
-  // An upstream-stamped skill that ALSO has `source: "curated"` —
-  // possible when the user has the same name installed via raw npx
-  // — routes to the upstream branch since that's the more specific
-  // signal and its heal flow can fall back to clearing the bundled
-  // marker if the user chooses Keep mine.
+  // baseline. The states are still classified (origin-pointer skills →
+  // `edited-with-origin`, others → `edited-without-origin`) but the
+  // heal actions that used to hang off them (Keep my edits /
+  // Re-baseline / Reset to origin) were removed in v1.20 (ADR-0010)
+  // pending a redesign with proper source-axis semantics — both arms
+  // expose only the baseline capabilities. Drift still gates one-click
+  // updates: a drifted skill classifies here before the
+  // origin-update-available arm below can grant `canUpdate`.
   if (isRegistered && entry.drift === true) {
     if (entry.source.origin?.kind === "github") {
       return applyCanonGate(entry, {

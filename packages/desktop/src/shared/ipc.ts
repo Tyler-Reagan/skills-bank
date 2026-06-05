@@ -813,7 +813,12 @@ interface SkillsBankAPI {
   ): Promise<
     | { ok: true; name: string }
     | { ok: false; reason: "url-parse-error"; message: string }
-    | { ok: false; reason: "mirror-failed"; message: string; rateLimit?: RateLimitInfo }
+    | {
+        ok: false;
+        reason: "mirror-failed";
+        message: string;
+        rateLimit?: RateLimitInfo;
+      }
     | { ok: false; reason: "no-skill-md"; message: string }
   >;
   importRegistry(): Promise<{

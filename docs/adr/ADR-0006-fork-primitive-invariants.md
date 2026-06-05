@@ -1,6 +1,6 @@
 # ADR-0006 — `forkSkill` primitive: atomicity, collision, trigger
 
-**Status:** Proposed (post-v1.0)
+**Status:** Superseded by [ADR-0010](ADR-0010-heal-fork-publish-removed.md) (v1.20.0)
 
 ## Context
 

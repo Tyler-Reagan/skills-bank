@@ -3,6 +3,46 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.20.0
+
+Paradigm-enforcement cull: the source axis is now enforced end-to-end, the install domain is recomposed into orthogonal primitives, and the stale heal/fork/publish surface, meta.json shims, and CLI package are removed. Net −3,847 lines. See [ADR-0010](docs/adr/ADR-0010-heal-fork-publish-removed.md).
+
+### Added
+
+- **`"vendored"` source value.** Third-party Discover tab installs stamp `source: "vendored"`; `"curated"` is reserved exclusively for committed `.skills-bank.json` files — no runtime install or sync path may produce it for new skills. The sync path preserves existing `"curated"` on bundled skills and stamps `"vendored"` for non-curated vendored syncs.
+
+- **`pnpm reset:fresh`.** Packaged-first-install simulation for `pnpm dev`/`pnpm start`: cleans untracked app-installed skills, reverts runtime-modified sidecars, wipes `~/.skills-bank-dev/`, seeds an isolated managed registry with the committed curated skills, and pre-writes `config.json`. Next boot shows find-skills with no conflicts.
+
+- **[ADR-0010](docs/adr/ADR-0010-heal-fork-publish-removed.md)** — records the heal/fork/publish removal decision; supersedes ADR-0006.
+
+### Changed
+
+- **Install domain primitives renamed and recomposed.** `mirrorSkillFolder` → `installSkillFiles` (idempotent — skips when the destination is non-empty); `installSkill` → `linkSkillToAgents` (direct skillPath, explicit `agents[]`); `uninstallSkill` → `unlinkSkillFromAgents`. Browse Install now composes `installSkillFiles` + `linkSkillToAgents` with the default on-disk agents.
+
+- **Discover tab installs go direct to the agent dir.** The `installSkillFromGithub` IPC now writes GitHub → `~/.agents/skills/<name>` via `installSkillFiles` — no bank entry, no symlinks — producing the same "unregistered" state in the Installed tab as a terminal install outside the app.
+
+- **Discover install feedback** is an inline dismissable banner in the discover-callout area (above the WebContentsView, never behind it) instead of a toast.
+
+### Removed
+
+- **Heal/fork/publish surface** (ADR-0010): `fork.ts`, `publish-classify.ts`, `publish-state.ts`, their tests, and `PublishSection.tsx`; all associated IPC handlers, preload exports, channel constants, interface methods, and capabilities (`canAcceptDrift`, `canTakeCanonical`, `canResetToOrigin`); heal action functions (`keepLocalDetach`, `unlinkOrigin`, `flipSourceToUser`, `rebaselineHash`); the drift badge on `SkillCard`. The concept is intentionally cleared for redesign with proper source-axis semantics.
+
+- **meta.json, fully** (no backward compat): all tag-preservation shims (`readMetaTags`, `writeMetaTags`, `readMetaTagsFromSkillDir`, `restoreMetaTags`, `synthesizeMetaJson`, `synthesizeSkillMeta`) — SKILL.md frontmatter has been canonical since v1.15. The retired one-shot migration scripts (`migrate-meta-to-frontmatter.ts`, `migrate-source-markers.ts`) are deleted along with the stale `skills/personal/gh-cli/meta.json` artifact.
+
+- **`packages/cli`** deleted entirely — the desktop app is the product.
+
+- **Dead IPC**: the `deregister` chain (superseded by `unregister → deleteUnregistered`) and the `exportRegistry` zip chain (deprecated v1.1; manifest export is the live path). Also `InstallFromGithubModal.tsx` (already unwired — no trigger existed) and the `install-from-github.ts` core function + tests.
+
+### Fixed
+
+- **Discover tab `submitInstall` silently swallowed IPC rejections** — missing `catch` block added; the `installSkillFromGithub` IPC handler is wrapped in `try/catch` and returns `mirror-failed` instead of propagating unexpected throws.
+
+- **Discover-installed skills no longer masquerade as "Curated"** — they previously stamped `source: "curated"` and rendered the Curated badge as if they were app-curated content.
+
+- **Core test suite re-pinned to the new contracts.** The refactor landed with 9 stale tests red (CI runs typecheck/build, not `pnpm test`): the `installSkillFiles` partial-failure invariant tests now pass `force: true` past the new idempotency guard (which gets its own pinning test), and the `applyCanonicalSync` tests assert the never-mint-new-curated rule and the removal of the meta.json tag splice.
+
+- **Docs and comments swept for staleness.** Docs site: CLI page + nav removed; Discover install guide rewritten for the direct-to-agent-dir flow; heal guide drops the removed drift-heal arms; concepts updated to the three-value source axis, current card badges, v5 manifest fields, and the Publish/Fork/Safekeeping sections removed; meta.json migration section removed. ADR-0006/0007/0008 stamped Superseded by ADR-0010. Stale code comments fixed (old primitive names, removed heal/publish references); dead `missing-meta-json` branches in `update:skill` and the orphaned `ghRateLimit.ts` deleted; UpdatesModal hint no longer points at the removed drift heal flow.
+
 ## v1.19.0
 
 Labels are now fully user-driven, with a new registry-wide Manage Labels modal and a bulk Install Skills modal replacing the inline select-mode bar.

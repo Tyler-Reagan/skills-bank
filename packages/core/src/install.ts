@@ -289,7 +289,9 @@ export function deleteFromBankSkill(
     writeFile: true,
   });
 
-  const removedCount = uninstall.removals.filter((r: UnlinkTargetResult) => r.removed).length;
+  const removedCount = uninstall.removals.filter(
+    (r: UnlinkTargetResult) => r.removed,
+  ).length;
   const message =
     removedCount > 0
       ? `Deleted ${name} from Skills Bank and removed ${removedCount} symlink(s).`

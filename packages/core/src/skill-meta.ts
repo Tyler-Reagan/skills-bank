@@ -1,18 +1,17 @@
-// Skill `meta.json` helpers — synthesis from SKILL.md frontmatter and
-// schema validation. Shared between the maintainer CLI paths
-// (`vendor:skill`, `update:skill`) and the in-app Origin Update path
+// SKILL.md frontmatter validation against the SkillMeta schema.
+// Shared between the maintainer script paths (`vendor:skill`,
+// `update:skill`) and the in-app Origin Update path
 // (`applyOriginUpdate`) so all three converge on one contract for
-// "post-mirror invariants."
+// "post-mirror invariants." (The meta.json synthesis that used to
+// live here was removed in v1.20 along with meta.json itself.)
 //
-// Synthesis (extracted from scripts/vendor-skill.ts) creates a
-// minimal meta.json from SKILL.md frontmatter when the mirrored
-// folder lacks one. Validation runs the same Ajv schema check
-// `docs/meta-schema.json` documents — inlined here as
-// SKILL_META_SCHEMA so packaged-app instances (where `docs/` is
-// outside the registry tree) get the same check. A test in
-// skill-meta.test.ts ensures the inlined schema matches the
-// docs/-canonical file byte-for-byte structurally; drift between
-// the two surfaces in CI rather than at runtime.
+// Validation runs the same Ajv schema check `docs/meta-schema.json`
+// documents — inlined here as SKILL_META_SCHEMA so packaged-app
+// instances (where `docs/` is outside the registry tree) get the
+// same check. A test in skill-meta.test.ts ensures the inlined
+// schema matches the docs/-canonical file byte-for-byte
+// structurally; drift between the two surfaces in CI rather than
+// at runtime.
 
 import fs from "node:fs";
 import path from "node:path";

@@ -78,8 +78,8 @@ export function UpdatesModal({
         These skills have a newer version available from their{" "}
         <strong>Origin</strong>. Updating fetches the latest content directly
         from each skill's Origin and mirrors it into your registry — local edits
-        are not preserved, so skills you've edited surface via the Drift heal
-        flow (Reset to origin / Unlink origin) instead.
+        are not preserved, so skills you've edited are held out of one-click
+        updates.
       </p>
 
       <div className="updates-modal-list">

@@ -55,7 +55,6 @@ Content transfers always use a file dialog. In **Account → Move my registry �
 
 - **Import from disk (replace)** — swap the active registry root for a different folder. Use when restoring from a `git clone` or switching to a completely different upstream.
 - **Merge from disk** — additive import. Non-colliding skills are added; name collisions surface the same resolver as Pull (default: keep yours). Merged skills are marked `source: user`.
-- **Export as folder** — saves the full `skills/` tree to a folder you choose.
 
 ## Rate limits
 

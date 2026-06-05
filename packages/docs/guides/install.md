@@ -50,7 +50,7 @@ Two formats are accepted:
   https://github.com/owner/repo/tree/main/skills/skill-name
   ```
 
-Press **Install** (or Enter). The app fetches the skill into your bank and shows a confirmation flash. The skill then appears in the **Registry** tab — click it there and press **Install** to link it into your agent directories. Assign a category via **Manage Labels** in the toolbar or from the skill's detail drawer.
+Press **Install** (or Enter). The app fetches the skill's folder straight into your agent skills directory (`~/.agents/skills/<name>`) and shows an inline confirmation banner — exactly what a terminal `npx skills add` outside the app would produce. No registry entry is created at this point: the skill appears under **Not registered** in the **Installed** tab, where you can **Register** it into your bank to get syncing, labels, and per-agent link management.
 
 ## Install multiple skills at once
 

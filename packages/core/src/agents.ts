@@ -31,7 +31,7 @@ export function getExistingAgents(): AgentDef[] {
 /**
  * Default install targets: every existing agent dir, plus Claude as a
  * fallback when no dirs exist (the "fresh-install user" case). The
- * fallback dir is created at install time by installSkill itself.
+ * fallback dir is created at install time by linkSkillToAgents itself.
  */
 export function getDefaultInstallAgents(): AgentDef[] {
   const existing = getExistingAgents();

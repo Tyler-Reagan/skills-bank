@@ -149,23 +149,20 @@ function validateSourceFolder(
   }
   const meta = validateSkillMeta(folder);
   if (meta.ok) return { ok: true };
-  if (meta.reason === "missing-meta-json") {
+  if (meta.reason === "missing-frontmatter") {
     return {
       ok: false,
-      reason: `missing meta.json in ${folder} — every bank skill ships one`,
+      reason: `missing SKILL.md frontmatter in ${folder}`,
     };
-  }
-  if (meta.reason === "invalid-json") {
-    return { ok: false, reason: `meta.json is invalid JSON: ${meta.message}` };
   }
   return {
     ok: false,
-    reason: `meta.json fails schema validation: ${meta.errors.join("; ")}`,
+    reason: `SKILL.md frontmatter fails schema validation: ${meta.errors.join("; ")}`,
   };
 }
 
 // Wipe the destination and copy. Mirrors the semantics of
-// mirrorSkillFolder (the vendoring path): files removed at the
+// installSkillFiles (the vendoring path): files removed at the
 // source disappear from the bank too, so the working-tree diff is
 // always a faithful before/after of the upstream state. Skips the
 // source-side `.skills-bank.json` / `.skills-bank-hash` sidecars —

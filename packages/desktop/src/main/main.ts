@@ -1406,7 +1406,11 @@ mutatingHandle(
       const source = readSkillSource(skillPath);
 
       // Ensure files are on disk (idempotent — skips if already present).
-      if (source.origin?.kind === "github" && source.origin.repo && source.origin.skillPath) {
+      if (
+        source.origin?.kind === "github" &&
+        source.origin.repo &&
+        source.origin.skillPath
+      ) {
         await installSkillFiles(
           source.origin.repo,
           folderPathFromSkillPath(source.origin.skillPath),
@@ -1415,10 +1419,13 @@ mutatingHandle(
         );
       }
 
-      const targetAgents = agents && agents.length > 0
-        ? agents.map(getAgent)
-        : getDefaultInstallAgents();
-      const r = linkSkillToAgents(skillPath, targetAgents, { force: force ?? false });
+      const targetAgents =
+        agents && agents.length > 0
+          ? agents.map(getAgent)
+          : getDefaultInstallAgents();
+      const r = linkSkillToAgents(skillPath, targetAgents, {
+        force: force ?? false,
+      });
       const wrote = r.installs.filter((i) => !i.alreadyInstalled);
       if (wrote.length > 0) {
         return {
@@ -2614,9 +2621,10 @@ ipcMain.handle(
       try {
         const found = findSkillFolder(registryRoot, name);
         if (!found) throw new Error(`Skill "${name}" not found in registry.`);
-        const targetAgents = (agents as AgentId[]).length > 0
-          ? (agents as AgentId[]).map(getAgent)
-          : getDefaultInstallAgents();
+        const targetAgents =
+          (agents as AgentId[]).length > 0
+            ? (agents as AgentId[]).map(getAgent)
+            : getDefaultInstallAgents();
         const r = linkSkillToAgents(found.dir, targetAgents);
         if (r.anyNew) installedCount++;
         for (const e of r.errors) {
@@ -2655,7 +2663,8 @@ mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
   }
 
   const folderPath = folderPathFromSkillPath(parsed.skillPath);
-  const provisionalName = folderPath.split("/").filter(Boolean).pop() ?? "skill";
+  const provisionalName =
+    folderPath.split("/").filter(Boolean).pop() ?? "skill";
   const destDir = path.join(
     getAgentSkillsDir(getAgent("agents")),
     provisionalName,
@@ -2663,16 +2672,27 @@ mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
 
   let mirror: Awaited<ReturnType<typeof installSkillFiles>>;
   try {
-    mirror = await installSkillFiles(parsed.repo, folderPath, destDir, getStoredToken());
+    mirror = await installSkillFiles(
+      parsed.repo,
+      folderPath,
+      destDir,
+      getStoredToken(),
+    );
   } catch (err) {
     return {
       ok: false,
       reason: "mirror-failed",
-      message: err instanceof Error ? err.message : "Unexpected error during install.",
+      message:
+        err instanceof Error ? err.message : "Unexpected error during install.",
     } as const;
   }
   if (!mirror.ok) {
-    return { ok: false, reason: "mirror-failed", message: mirror.message, rateLimit: mirror.rateLimit } as const;
+    return {
+      ok: false,
+      reason: "mirror-failed",
+      message: mirror.message,
+      rateLimit: mirror.rateLimit,
+    } as const;
   }
 
   const meta = readSkillMeta(destDir);
@@ -2688,7 +2708,10 @@ mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
   // Rename to canonical name if frontmatter declares one.
   let finalName = provisionalName;
   if (meta.name && meta.name !== provisionalName) {
-    const canonDest = path.join(getAgentSkillsDir(getAgent("agents")), meta.name);
+    const canonDest = path.join(
+      getAgentSkillsDir(getAgent("agents")),
+      meta.name,
+    );
     fs.renameSync(destDir, canonDest);
     finalName = meta.name;
   }

@@ -15,7 +15,6 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/getting-started' },
       { text: 'Concepts', link: '/concepts' },
-      { text: 'CLI', link: '/cli' },
       {
         text: 'GitHub',
         link: 'https://github.com/Tyler-Reagan/skills-bank',
@@ -46,7 +45,6 @@ export default defineConfig({
       {
         text: 'Reference',
         items: [
-          { text: 'CLI', link: '/cli' },
           { text: 'Keyboard shortcuts', link: '/reference/keyboard' },
           { text: 'Skill labels', link: '/reference/labels' },
           { text: 'Skill metadata', link: '/reference/meta-schema' },

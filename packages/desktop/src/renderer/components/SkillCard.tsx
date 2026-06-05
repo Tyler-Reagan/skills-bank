@@ -290,18 +290,20 @@ export function agentsForSkill(
 }
 
 /**
- * Single badge per card. Provenance is the primary signal (bundled vs
- * yours); actionable state badges (drift, missing, update) override
+ * Single badge per card. Actionable state badges override provenance
  * when present. Priority order, highest wins:
  *
- *   1. MISSING  — entry.missing: files gone. Open drawer to forget.
- *   2. EDITED   — entry.drift: you've edited a bundled-or-upstream skill.
- *   3. UPDATE   — entry.originUpdateAvailable: upstream changed, local
- *                 content is clean. Open drawer to apply.
- *   4. BUNDLED  — source: bundled. Sync owns this; destructive verbs
- *                 are gated.
- *   5. YOURS    — source: yours (everything else — authored locally,
- *                 merged in from another bank, etc.). Safe from Sync.
+ *   1. MISSING     — entry.missing: files gone. Open drawer to forget.
+ *   2. UNREACHABLE — origin hasn't answered the last few probes; the
+ *                    local copy is intact.
+ *   3. UPDATE      — entry.originUpdateAvailable: upstream changed,
+ *                    local content is clean. Open drawer to apply.
+ *   4. CURATED     — source: curated (part of the committed curated
+ *                    set). Sync owns this; destructive verbs are gated.
+ *
+ * The EDITED drift badge was removed in v1.20 (ADR-0010) along with
+ * the heal arms it pointed at; user/vendored skills render without a
+ * provenance chip.
  */
 function PublishBadge({
   entry,
@@ -356,8 +358,8 @@ function PublishBadge({
   // YOURS chip). The "Mine" filter on the Registry tab is the
   // single surface for "show me only my skills." User-source and
   // unregistered skills render without a provenance chip — other
-  // state badges (MISSING / EDITED / UPDATE) still take priority
-  // when applicable.
+  // state badges (MISSING / UNREACHABLE / UPDATE) still take
+  // priority when applicable.
   return null;
 }
 

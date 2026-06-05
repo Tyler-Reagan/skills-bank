@@ -93,7 +93,7 @@ function readLocal(
 }
 
 describe("applyCanonicalSync (mountTo: vendored — default)", () => {
-  test("Branch 1: no-collision upsert writes canonical + stamps bundled", async () => {
+  test("Branch 1: no-collision upsert writes canonical + stamps vendored", async () => {
     writeCanonical("alpha", { "SKILL.md": "# canonical alpha" });
 
     const report = await applyCanonicalSync(registryRoot, canonicalRoot, "abc");
@@ -104,10 +104,12 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
       "# canonical alpha",
     );
 
+    // New skills never get "curated" from a sync — that designation is
+    // reserved for committed .skills-bank.json files.
     const src = readSkillSource(
       path.join(registryRoot, "skills", "vendored", "alpha"),
     );
-    expect(src.source).toBe("curated");
+    expect(src.source).toBe("vendored");
     expect(src.syncedFromCommit).toBe("abc");
   });
 
@@ -195,10 +197,12 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
     expect(readLocal("vendored", "epsilon", "SKILL.md")).toBe(
       "# canonical epsilon",
     );
+    // Prior source was "user", not "curated" — the overwrite stamps
+    // "vendored", never minting a new "curated".
     const src = readSkillSource(
       path.join(registryRoot, "skills", "vendored", "epsilon"),
     );
-    expect(src.source).toBe("curated");
+    expect(src.source).toBe("vendored");
   });
 
   test("Branch 5: rename-mine renames local + writes canonical to original name", async () => {
@@ -224,7 +228,11 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
     expect(readLocal("vendored", renamedTo, "SKILL.md")).toBe("# my zeta");
   });
 
-  test("meta.json tag-preservation splice — tags survive a canonical overwrite", async () => {
+  test("no meta.json splice — canonical content overwrites wholesale", async () => {
+    // The pre-v1.20 tag-preservation splice (local meta.json tags
+    // surviving a canonical overwrite) is removed along with meta.json
+    // itself — SKILL.md frontmatter is canonical since v1.15. A
+    // canonical overwrite now replaces folder content verbatim.
     writeLocal(
       "vendored",
       "eta",
@@ -253,7 +261,7 @@ describe("applyCanonicalSync (mountTo: vendored — default)", () => {
     const meta = JSON.parse(readLocal("vendored", "eta", "meta.json")!) as {
       tags: string[];
     };
-    expect(meta.tags).toEqual(["mine-1", "mine-2"]);
+    expect(meta.tags).toEqual(["canonical-1"]);
   });
 
   test("Orphan reporting — previously-curated-synced local skill not in canonical set is reported, not deleted", async () => {
@@ -353,7 +361,7 @@ describe("applyCanonicalSync (mountTo: personal — linked-repo flow)", () => {
     expect(src.origin?.skillPath).toBe("alpha/SKILL.md");
   });
 
-  test("source axis follows mountTo: vendored → curated (curated-set sync)", async () => {
+  test("source axis follows mountTo: vendored → vendored for new skills (never new curated)", async () => {
     writeCanonical(
       "beta",
       { "SKILL.md": "---\nname: beta\ndescription: x\n---\n# beta" },
@@ -366,10 +374,13 @@ describe("applyCanonicalSync (mountTo: personal — linked-repo flow)", () => {
       {},
       { mountTo: "vendored" },
     );
+    // v1.20: vendored-mount syncs preserve an existing "curated" stamp
+    // but stamp "vendored" for anything new — no sync path may mint a
+    // fresh "curated".
     const src = readSkillSource(
       path.join(registryRoot, "skills", "vendored", "beta"),
     );
-    expect(src.source).toBe("curated");
+    expect(src.source).toBe("vendored");
   });
 
   test("re-sync of an already-linked repo: previously-synced skills overwrite cleanly, NOT surfaced as conflicts", async () => {

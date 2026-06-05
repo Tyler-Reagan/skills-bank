@@ -11,6 +11,12 @@ import { installSkillFiles } from "./origin.js";
  * and no way to recover from the UI. The implementation fetches
  * every blob into memory FIRST and only touches disk after every
  * fetch resolves — these tests are the contract.
+ *
+ * The failure-path tests pre-seed destDir with a sentinel, which
+ * would trip the idempotency guard (non-empty destDir → early
+ * ok-skip), so they pass `force: true` to exercise the fetch path —
+ * the same way applyOriginUpdate calls it. The guard itself is
+ * pinned by its own test at the bottom.
  */
 
 const REPO = "owner/repo";
@@ -120,7 +126,9 @@ describe("installSkillFiles — partial-failure invariant", () => {
       }),
     );
 
-    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null, {
+      force: true,
+    });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(404);
@@ -150,7 +158,9 @@ describe("installSkillFiles — partial-failure invariant", () => {
       }),
     );
 
-    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null, {
+      force: true,
+    });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(0);
@@ -167,7 +177,9 @@ describe("installSkillFiles — partial-failure invariant", () => {
     const fetchMock = vi.fn(async () => make404());
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null, {
+      force: true,
+    });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(404);
@@ -190,7 +202,9 @@ describe("installSkillFiles — partial-failure invariant", () => {
       vi.fn(async () => emptyTree),
     );
 
-    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null, {
+      force: true,
+    });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(404);
@@ -222,11 +236,33 @@ describe("installSkillFiles — partial-failure invariant", () => {
       vi.fn(async () => truncated),
     );
 
-    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null, {
+      force: true,
+    });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.message).toMatch(/truncated/);
     expect(fs.readFileSync(path.join(destDir, "sentinel"), "utf8")).toBe("x");
+  });
+
+  test("idempotency guard: non-empty destDir skips without any fetch", async () => {
+    fs.mkdirSync(destDir, { recursive: true });
+    fs.writeFileSync(path.join(destDir, "SKILL.md"), "# already here");
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("must not fetch");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.folderHash).toBe("");
+    expect(result.fileCount).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fs.readFileSync(path.join(destDir, "SKILL.md"), "utf8")).toBe(
+      "# already here",
+    );
   });
 
   test("does not write .skills-bank.json / .skills-bank-hash sidecars", async () => {

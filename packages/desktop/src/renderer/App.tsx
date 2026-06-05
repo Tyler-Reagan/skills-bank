@@ -669,11 +669,11 @@ function AppContent(): React.ReactElement {
         case "checkForUpdates":
           checkForUpdates();
           break;
-        // Other actions (changeRegistry, mergeRegistry, exportRegistry,
-        // signOut, githubLinkComingSoon) are no longer dispatched from
-        // any surface — the in-app dropdown that fired them is gone
-        // and the menubar doesn't include them. Kept in the union for
-        // back-compat with the IPC shape; the cases are unreachable.
+        // Other actions (changeRegistry, mergeRegistry, signOut) are no
+        // longer dispatched from any surface — the in-app dropdown that
+        // fired them is gone and the menubar doesn't include them. Kept
+        // in the union for back-compat with the IPC shape; the cases
+        // are unreachable.
       }
     });
   }, [rescan, sync, checkForUpdates]);

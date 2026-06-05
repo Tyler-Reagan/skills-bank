@@ -48,7 +48,6 @@ Two shapes in the Account modal's **Move my registry** section:
 
 - **Import from disk (replace)…** — point the app at a different folder; the active registry root is swapped. Use when switching to a different upstream entirely or restoring from a fresh `git clone`.
 - **Merge from disk…** — additive. Scans the picked folder's `skills/`, adds non-colliding entries to your active registry, and surfaces collisions through the same resolver Refresh uses (default: keep yours). Merged-in skills are marked `source: user`.
-- **Export as folder** — saves the full skills tree to a folder you pick.
 
 Both disk-import modes accept any folder with a `skills/` subdirectory.
 

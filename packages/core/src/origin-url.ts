@@ -108,8 +108,7 @@ export function parseGithubSkillUrl(
   const rawPath = pathSegs.join("/");
 
   if (refType === "blob") {
-    // Blob URL must end with SKILL.md or meta.json — we treat
-    // SKILL.md as canonical. Anything else means the user pointed
+    // Blob URL must end with SKILL.md. Anything else means the user pointed
     // at a different file in the skill folder; the install path
     // would still find SKILL.md, but accepting non-SKILL.md blob
     // URLs would let the user mistake e.g. references/THEMES.md

@@ -38,13 +38,3 @@ See [Skill labels](/reference/labels) for the full list of categories and tags t
 Run `pnpm validate` from the repo root to validate every skill's `SKILL.md` frontmatter against the schema. It fails a skill that is missing frontmatter or whose frontmatter violates the schema. CI runs this on every push.
 
 The full JSON schema is at [`docs/meta-schema.json`](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/meta-schema.json) on GitHub — it now describes the frontmatter fields above.
-
-## Migrating an existing `meta.json`
-
-If you have older skills that still carry their metadata in a `meta.json`, fold it into the SKILL.md frontmatter with:
-
-```bash
-pnpm migrate:meta-to-frontmatter
-```
-
-After migrating, `pnpm validate && pnpm build:index` and commit. The standalone `meta.json` is no longer needed as a source.
