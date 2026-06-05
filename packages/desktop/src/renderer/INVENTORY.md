@@ -1,144 +1,133 @@
-# Renderer inventory (internal working doc)
+# Renderer inventory
 
-Temporary, internal-only inventory of everything under `src/renderer/` — the
-working map for the renderer pruning effort. **Not published to the docs site**
-(`packages/docs/` is the published surface; this file is repo-internal).
-Delete this file when the cleanup series lands.
+Reference inventory of everything under `src/renderer/`: what each component,
+hook, context, and support file does and who consumes it. Repo-internal — not
+published to the docs site (`packages/docs/` is the published surface).
 
-Status legend: **keep** (cohesive, justified) · **watch** (acceptable now,
-revisit if it grows) · **converge** (planned merge into a shared component) ·
-**done** (handled in this PR).
+> **Freshness: accurate as of commit `3af3bbf` (2026-06-05), branch
+> `refactor/renderer-cheap-wins`.** LOC and used-by columns are snapshots from
+> that tree. When the renderer changes materially, re-verify (`wc -l`, grep
+> the import graph) and re-stamp this line — or distrust the numbers and
+> trust only the purposes, which drift slower.
 
-LOC figures are from the cheap-wins branch (post-consolidation); re-run
-`wc -l` before trusting them in a later PR.
+## Structure conventions
 
-## Cleanup series
+- `*Modal` — full overlay routed through `ModalHost` (single-slot: at most
+  one open, swapping not stacking).
+- `*Dialog` — small confirm-style affordance.
+- `Drawer*` — sub-panels composed by `SkillDetailDrawer`.
+- `primitives.tsx` — stateless rendered micro-primitives; `modalStyles.tsx`
+  — modal chrome. A component earns its own file when it has state or a
+  domain; pure shared chrome lives in these two gathering files.
+- `components/manifest/` — the manifest import/export feature cluster.
 
-1. **Cheap wins** (this PR): `primitives.tsx` merge, `TagFilter` →
-   `RegistryFilters`, `DiscoverEmpty` → `DiscoverTab`, `ImportIndicator` →
-   `Header`, `manifest/` subfolder, renames (`SyncConflictModal`,
-   `InstallCollisionModal`, `DeleteUnregisteredDialog`, `StateBadge`), dead
-   `isRegistered` prop chain pruned from `SkillCard`. 52 component files → 44
-   (40 flat + 4 under `manifest/`) after both passes.
-2. **Resolver convergence** (also this PR): generic `ConflictResolver`
-   owns the shared skeleton (Modal + bulk toolbar + rows + action picker +
-   tally + footer); the three domain modals are thin controlled wrappers.
-   `BulkSelectToolbar` / `ConflictActionPicker` folded in as internals
-   (picker re-exported for ManageLabelsModal). 5 files → 4; LOC roughly
-   flat (904 → 924) — the win is structural: the skeleton exists once, so
-   the v1.11-era drift between resolvers is impossible to repeat. Legacy
-   `conflict-row`/`conflict-scroll-list`/`conflict-tally`/`conflict-footer`
-   CSS removed; rows unified on `conflict-res-*`. `InstallConflictModal`
-   stays — it's a gate that bounces _to_ a resolver, not one itself.
-3. **Convergence-dependent cleanup** (also this PR): stale "slims when
-   resolvers converge" note on ModalHost resolved (its resolver routing was
-   already thin pass-throughs — the remaining bulk is the inline
-   resolve-all / overwrite / bulk-repair handlers), and the styles.css
-   orphaned-selector sweep: 67 dead classes (88 rules, ~550 lines) removed —
-   corpses of the publish section, fork confirm, LoginScreen/setup screens,
-   the retired header dropdown, v1.19's bulk-install bar, and unused
-   utilities. Checker: extract `^\.([\w-]+)` selectors from styles.css and
-   grep each against `renderer/**/*.ts*`; treat template-literal-composed
-   names (`modal-body--w${"$"}{width}`, `bulk-install-progress-row--${"$"}{status}`)
-   as live.
-4. **Renderer root + hooks** (this doc's second half): candidates listed
-   below; scope TBD.
+## components/ (44 files)
 
-## components/
-
-| File                                    | LOC  | Purpose                                                                                                                  | Used by                                         | Verdict                                                                                                                    |
-| --------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| ManageLabelsModal.tsx                   | 1217 | Registry-wide label management + auto-generate flow                                                                      | ModalHost                                       | keep (recent feature, cohesive)                                                                                            |
-| ModalHost.tsx                           | 922  | Modal router: 16-kind `ActiveModal` union + inline handlers (resolve-all, overwrite, bulk-repair)                        | App                                             | keep (resolver routing is thin pass-throughs; remaining bulk is the inline resolve-all / overwrite / bulk-repair handlers) |
-| InstalledTab.tsx                        | 708  | Installed view; needs-attention / unregistered / registered sections; `CustomSkillsDirs`, `LocalScanResultsSection` subs | App, ModalHost                                  | keep                                                                                                                       |
-| BrowseTab.tsx                           | 606  | Registry view; category sections, `GhostBand` import ghosts, filter/sort pipeline                                        | App                                             | keep                                                                                                                       |
-| DrawerActions.tsx                       | 587  | Capability-gated action panel + repair confirm sub-dialog                                                                | SkillDetailDrawer                               | keep (cohesive post-v1.20 cull)                                                                                            |
-| RegistryFilters.tsx                     | ~570 | Filter chips + sort + dropdowns; `TagFilter` folded in as internal sub-component                                         | BrowseTab                                       | done (absorbed TagFilter)                                                                                                  |
-| SkillDetailDrawer.tsx                   | 559  | Skill detail panel; composes the three Drawer\*Section/Actions subs                                                      | DrawerHost, ModalHost                           | keep                                                                                                                       |
-| RegisterModal.tsx                       | 499  | Scan → plan → apply registration (Register All)                                                                          | ModalHost                                       | keep                                                                                                                       |
-| SettingsModal.tsx                       | 485  | App preferences                                                                                                          | App, ModalHost                                  | keep                                                                                                                       |
-| Header.tsx                              | ~470 | App chrome: sync/scan buttons, theme/density, account chip; `ImportIndicator` folded in                                  | App, SettingsContext                            | done (absorbed ImportIndicator)                                                                                            |
-| SkillCard.tsx                           | ~420 | Card + `StateBadge` + `StatusChip` + quick tags                                                                          | InstalledTab, SkillsGrid                        | done (StateBadge rename, dead prop pruned)                                                                                 |
-| BulkInstallModal.tsx                    | 404  | Bulk install select → run → done                                                                                         | ModalHost                                       | keep                                                                                                                       |
-| manifest/RepoTransport.tsx              | 384  | Manifest push / pull-merge pane (`ExportView`/`ImportView`, `DiffTable`)                                                 | ManifestModal                                   | done (moved)                                                                                                               |
-| DiscoverTab.tsx                         | ~350 | skills.sh embed + install callout; `DiscoverEmpty` folded in                                                             | App                                             | done (absorbed DiscoverEmpty)                                                                                              |
-| ConflictResolver.tsx                    | 288  | Generic resolver skeleton: Modal + bulk toolbar + rows + `ConflictActionPicker` + tally + footer (controlled picks)      | 3 resolver wrappers, ManageLabelsModal (picker) | done (new)                                                                                                                 |
-| DrawerOriginSection.tsx                 | 287  | Origin metadata + manual-link picker                                                                                     | SkillDetailDrawer                               | keep                                                                                                                       |
-| ConnectGithubModal.tsx                  | 282  | GitHub device-flow auth                                                                                                  | ModalHost                                       | keep                                                                                                                       |
-| AccountModal.tsx                        | 271  | Identity + registry source + move-my-registry                                                                            | ModalHost                                       | keep                                                                                                                       |
-| SyncBanner.tsx                          | 265  | Sync status banner + expandable detail lists                                                                             | App                                             | keep                                                                                                                       |
-| InstallCollisionModal.tsx               | 261  | Agent-dir collision resolver wrapper (per-agent rows, error retry, delete-all gate)                                      | ModalHost                                       | done (wrapper over ConflictResolver)                                                                                       |
-| DrawerHost.tsx                          | 256  | Drawer wiring glue: context pulls + capability callbacks                                                                 | ModalHost                                       | watch (pure glue; fold into ModalHost if it stops earning its keep)                                                        |
-| Icon.tsx                                | 244  | Icon registry (35+ inline Lucide SVGs)                                                                                   | ~29 files                                       | keep                                                                                                                       |
-| SyncConflictModal.tsx                   | 206  | Sync-collision resolver wrapper (per-skill rows + lazy diff)                                                             | ModalHost                                       | done (wrapper over ConflictResolver)                                                                                       |
-| DestinationPickerDialog.tsx             | 202  | Agent-dir picker for unregister destination                                                                              | ModalHost                                       | keep (optional: ConfirmDialog body-slot rebase)                                                                            |
-| ManageLinksModal.tsx                    | 173  | Per-agent symlink plan → apply                                                                                           | ModalHost                                       | keep                                                                                                                       |
-| ManifestConflictModal.tsx               | 169  | Manifest 3-way merge resolver wrapper (intent compare rows)                                                              | ModalHost                                       | done (wrapper over ConflictResolver)                                                                                       |
-| UpdatesModal.tsx                        | 162  | Skill-origin updates list (distinct from app-release UpdateNotesModal)                                                   | ModalHost                                       | keep                                                                                                                       |
-| DrawerLabelSection.tsx                  | 160  | Category/tags override UI                                                                                                | SkillDetailDrawer                               | keep                                                                                                                       |
-| primitives.tsx                          | ~160 | Stateless micro-primitives: `SearchBar`, `InfoTooltip`, `DisclosureChevron`, `SkillTagList`, `SplashScreen`              | 7 files                                         | done (new; absorbs 5 files)                                                                                                |
-| UpdateNotesModal.tsx                    | 153  | App release notes + download/restart flow                                                                                | ModalHost                                       | keep                                                                                                                       |
-| RepoPickerModal.tsx                     | 147  | Linked-repo picker                                                                                                       | ModalHost                                       | keep                                                                                                                       |
-| DiffViewer.tsx                          | 140  | Generic unified-diff renderer                                                                                            | SyncConflictModal                               | keep (generic, reusable)                                                                                                   |
-| ErrorPanel.tsx                          | 133  | Persistent error surface + suggested actions                                                                             | App                                             | keep (distinct from SyncBanner)                                                                                            |
-| DeleteUnregisteredDialog.tsx            | 132  | Structured delete confirm (was `DeleteUnregisteredConfirm`)                                                              | ModalHost                                       | done (renamed)                                                                                                             |
-| modalStyles.tsx                         | 118  | Modal chrome: scrim, focus trap, close button, layout constants                                                          | 19 files                                        | keep (the pattern primitives.tsx copies)                                                                                   |
-| manifest/ManifestModal.tsx              | 111  | Transport-mode wrapper (repo vs disk)                                                                                    | ModalHost                                       | done (moved)                                                                                                               |
-| manifest/ManifestImportConfirmModal.tsx | 111  | Post-import re-link confirm                                                                                              | ModalHost                                       | done (moved)                                                                                                               |
-| SkillsGrid.tsx                          | 108  | Dumb entries → cards mapper + empty state                                                                                | BrowseTab                                       | keep                                                                                                                       |
-| InstallConflictModal.tsx                | 96   | Pre-install gate (Cancel / Resolve per-agent / Force)                                                                    | ModalHost                                       | keep separate (gate, not resolver)                                                                                         |
-| ConfirmDialog.tsx                       | 88   | Generic confirm dialog                                                                                                   | ManageLabelsModal, ModalHost                    | keep                                                                                                                       |
-| manifest/DiskTransport.tsx              | 72   | OS-dialog manifest transport                                                                                             | ManifestModal                                   | done (moved)                                                                                                               |
-| Tabs.tsx                                | 67   | Tab nav (Browse / Installed / Discover)                                                                                  | App                                             | keep (domain-specific)                                                                                                     |
-| KeyboardShortcutsOverlay.tsx            | 61   | Static shortcuts table                                                                                                   | ModalHost                                       | keep                                                                                                                       |
-| skillState.ts                           | 8    | Vite-safety re-export of `classifyDrawerState`                                                                           | 3 files                                         | keep (required shim)                                                                                                       |
-
-Naming convention (now consistent): `*Modal` = full overlay routed through
-ModalHost; `*Dialog` = small confirm-style affordance; `*Section` = drawer
-sub-panel; primitives live in `primitives.tsx`.
+| File                                    | LOC  | Purpose                                                                                                                                                                                       | Used by                                                                                          |
+| --------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| ManageLabelsModal.tsx                   | 1214 | Registry-wide label management: browse/edit categories + tags per skill, bulk clear, 3-step auto-generate flow (scope → skills → review)                                                      | ModalHost                                                                                        |
+| ModalHost.tsx                           | 922  | Modal router: `ActiveModal` discriminated union → one rendered modal, plus inline handlers for resolve-all, overwrite, and bulk-repair flows; also mounts DrawerHost                          | App                                                                                              |
+| InstalledTab.tsx                        | 706  | Installed view; needs-attention / unregistered / registered sections; `CustomSkillsDirs` and `LocalScanResultsSection` sub-components                                                         | App, ModalHost                                                                                   |
+| BrowseTab.tsx                           | 604  | Registry view; collapsible category sections, `GhostBand` manifest-import ghost cards, search/tag/sort filter pipeline                                                                        | App                                                                                              |
+| DrawerActions.tsx                       | 587  | Capability-gated action panel at the bottom of the drawer (install, register, unregister, repair, update, …) + repair confirm sub-dialog                                                      | SkillDetailDrawer                                                                                |
+| RegistryFilters.tsx                     | 583  | Filter chip strip (state + bucket), installed-only toggle, sort controls, tags dropdown (`TagFilter` internal sub-component)                                                                  | BrowseTab                                                                                        |
+| SkillDetailDrawer.tsx                   | 559  | Skill detail panel: metadata, tag editing, SKILL.md preview; composes DrawerLabelSection, DrawerOriginSection, DrawerActions                                                                  | DrawerHost, ModalHost                                                                            |
+| RegisterModal.tsx                       | 499  | Scan agent dirs → plan → apply registration ("Register All")                                                                                                                                  | ModalHost                                                                                        |
+| SettingsModal.tsx                       | 485  | App preferences: agents, debounce, grid layout, hidden skills, symlink finalization                                                                                                           | App, ModalHost                                                                                   |
+| Header.tsx                              | 483  | App chrome: brand, refresh/sync/check-updates/local-scan buttons, theme + density toggles, account chip; `ImportIndicator` manifest-progress chip internal                                    | App, SettingsContext                                                                             |
+| SkillCard.tsx                           | 429  | Grid card: name, description, quick tag edit, `StateBadge` (MISSING / UNREACHABLE / UPDATE / CURATED), `StatusChip` (install kind), bulk-select mode                                          | InstalledTab, SkillsGrid                                                                         |
+| BulkInstallModal.tsx                    | 404  | Bulk install: filter/select skills → per-row install progress → done summary                                                                                                                  | ModalHost                                                                                        |
+| manifest/RepoTransport.tsx              | 383  | Manifest push / pull-merge pane for the linked-repo transport (`ExportView`/`ImportView`, diff preview, rate-limit handling)                                                                  | ManifestModal                                                                                    |
+| DiscoverTab.tsx                         | 360  | skills.sh embedded WebContentsView + install callout (paste `npx skills add` or GitHub URL → direct install to agent dir); `DiscoverEmpty` error card internal                                | App                                                                                              |
+| ConflictResolver.tsx                    | 288  | Generic resolver skeleton: Modal + bulk "Select all" toolbar + per-row `ConflictActionPicker` + live tally + Cancel/Apply footer. Picks are controlled — state lives in each domain wrapper   | SyncConflictModal, InstallCollisionModal, ManifestConflictModal; ManageLabelsModal (picker only) |
+| DrawerOriginSection.tsx                 | 287  | Origin metadata (repo, stars, path, last commit) + manual-link picker for unlinked-adopted skills                                                                                             | SkillDetailDrawer                                                                                |
+| ConnectGithubModal.tsx                  | 282  | GitHub device-flow auth (start / resume)                                                                                                                                                      | ModalHost                                                                                        |
+| AccountModal.tsx                        | 271  | Identity, registry source, move-my-registry (disk import/merge, manifest entry point)                                                                                                         | ModalHost                                                                                        |
+| SyncBanner.tsx                          | 265  | Sync status banner above the tabs (fetching / applying / done / error) with expandable upserted/orphaned detail lists                                                                         | App                                                                                              |
+| InstallCollisionModal.tsx               | 261  | Agent-dir collision resolver (per-agent rows, per-row error retry, delete-all confirmation gate, registered vs unregistered action variants); wrapper over ConflictResolver                   | ModalHost                                                                                        |
+| DrawerHost.tsx                          | 256  | Drawer wiring glue between ModalHost and SkillDetailDrawer: context pulls + capability-gated callbacks                                                                                        | ModalHost                                                                                        |
+| Icon.tsx                                | 244  | Icon registry: 35+ inline Lucide SVGs behind a name/size/stroke API                                                                                                                           | ~29 files                                                                                        |
+| SyncConflictModal.tsx                   | 206  | Sync-collision resolver (per-skill rows, lazy diff loading via DiffViewer, `SyncDecisions` mapping); wrapper over ConflictResolver                                                            | ModalHost                                                                                        |
+| DestinationPickerDialog.tsx             | 202  | Agent-dir picker when an unregister destination collides                                                                                                                                      | ModalHost                                                                                        |
+| ManageLinksModal.tsx                    | 173  | Per-agent symlink management: plan → applying → result                                                                                                                                        | ModalHost                                                                                        |
+| ManifestConflictModal.tsx               | 169  | Manifest 3-way merge resolver (base/ours/theirs intent compare rows); wrapper over ConflictResolver                                                                                           | ModalHost                                                                                        |
+| UpdatesModal.tsx                        | 162  | Skill-origin updates list with per-row and update-all actions (skill updates — distinct from app-release UpdateNotesModal)                                                                    | ModalHost                                                                                        |
+| DrawerLabelSection.tsx                  | 160  | Category + tags override UI backed by LabelsContext                                                                                                                                           | SkillDetailDrawer                                                                                |
+| primitives.tsx                          | 154  | Stateless micro-primitives: `SearchBar`, `InfoTooltip`, `DisclosureChevron`, `SkillTagList`, `SplashScreen`                                                                                   | App, BrowseTab, BulkInstallModal, InstalledTab, ManageLabelsModal, RepoTransport, SyncBanner     |
+| UpdateNotesModal.tsx                    | 153  | App release notes + download/restart flow (app updates — distinct from skill UpdatesModal)                                                                                                    | ModalHost                                                                                        |
+| RepoPickerModal.tsx                     | 147  | Linked-repo picker over the authenticated user's repos                                                                                                                                        | ModalHost                                                                                        |
+| DiffViewer.tsx                          | 140  | Generic unified-diff renderer: per-file collapsible rows, presentational only                                                                                                                 | SyncConflictModal                                                                                |
+| ErrorPanel.tsx                          | 133  | Persistent dismissable error surface: expandable details, copy button, suggested-action buttons                                                                                               | App                                                                                              |
+| DeleteUnregisteredDialog.tsx            | 132  | Structured delete confirm for unregistered skills (lists what's deleted vs unlinked)                                                                                                          | ModalHost                                                                                        |
+| modalStyles.tsx                         | 118  | Modal chrome: `Modal` (scrim, focus trap, Escape, width union), `ModalCloseButton`, layout class constants                                                                                    | 19 files                                                                                         |
+| manifest/ManifestModal.tsx              | 111  | Manifest transport-mode wrapper (repo vs disk)                                                                                                                                                | ModalHost                                                                                        |
+| manifest/ManifestImportConfirmModal.tsx | 111  | Post-import re-link confirmation (hoisted to App level so import → refresh → confirm sequences cleanly)                                                                                       | ModalHost                                                                                        |
+| SkillsGrid.tsx                          | 108  | Dumb entries → SkillCard mapper + empty state with optional clear-filters CTA                                                                                                                 | BrowseTab                                                                                        |
+| InstallConflictModal.tsx                | 96   | Pre-install gate when something blocks symlink creation: Cancel / Resolve per-agent (bounces to InstallCollisionModal) / Force. A gate, not a resolver — deliberately not on ConflictResolver | ModalHost                                                                                        |
+| ConfirmDialog.tsx                       | 88   | Generic confirm dialog (title, body, button labels, tone)                                                                                                                                     | ManageLabelsModal, ModalHost                                                                     |
+| manifest/DiskTransport.tsx              | 72   | OS-dialog manifest export/import transport                                                                                                                                                    | ManifestModal                                                                                    |
+| Tabs.tsx                                | 67   | Tab nav (Browse / Installed / Discover) with counts + arrow-key navigation                                                                                                                    | App                                                                                              |
+| KeyboardShortcutsOverlay.tsx            | 61   | Static keyboard-shortcuts reference table                                                                                                                                                     | ModalHost                                                                                        |
+| skillState.ts                           | 8    | Vite-safety re-export of `classifyDrawerState` from `@skills-bank/core/skill-state` (renderer must not deep-import core)                                                                      | DrawerHost, InstalledTab, SkillDetailDrawer                                                      |
 
 ## Renderer root
 
-| File                     | LOC  | Purpose                                                                                                       | Verdict / notes                                                                                                                                                                  |
-| ------------------------ | ---- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| App.tsx                  | 1061 | Root composition: provider nest, tab state, suggested-action dispatch, review-session state, ModalHost wiring | watch — largest file in the renderer; prior extractions (contexts, hooks, DrawerHost) all came from here. Next candidates: suggested-action dispatch table, review-session state |
-| RegistryHostContext.tsx  | 213  | Toast + AppError state and UI                                                                                 | keep                                                                                                                                                                             |
-| RegistryContext.tsx      | 208  | Registry/installed snapshots + refresh/rebuild lifecycle                                                      | keep                                                                                                                                                                             |
-| SettingsContext.tsx      | 158  | AppSettings + theme/density persistence                                                                       | keep                                                                                                                                                                             |
-| ModalRegistryContext.tsx | 77   | Mounted-`<Modal>` counter (`useAnyModalOpen`)                                                                 | keep                                                                                                                                                                             |
-| LabelsContext.tsx        | 44   | Shared labels map + reload                                                                                    | keep                                                                                                                                                                             |
-| agentDisplay.ts          | 18   | `AGENT_LABELS` / `AGENT_PATHS` display constants                                                              | keep (or fold into a future constants module)                                                                                                                                    |
-| main.tsx                 | 12   | Entry point                                                                                                   | keep                                                                                                                                                                             |
-| index.html               | —    | Vite shell                                                                                                    | keep                                                                                                                                                                             |
-| styles.css               | 5070 | Single global stylesheet                                                                                      | done (orphan sweep this PR: 67 dead selectors removed; re-run the checker from series item 3 after future component removals)                                                    |
-| theme.css                | —    | Theme variables                                                                                               | keep                                                                                                                                                                             |
+| File                     | LOC  | Purpose                                                                                                                                                                     |
+| ------------------------ | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App.tsx                  | 1061 | Root composition: provider nest (ModalRegistry → RegistryHost → Settings → Registry → Labels), tab state, suggested-action dispatch, review-session state, ModalHost wiring |
+| RegistryHostContext.tsx  | 213  | Toast + AppError state and rendering; flash/flashError/pushAppError callbacks                                                                                               |
+| RegistryContext.tsx      | 208  | Registry/installed snapshots + refresh/rebuild lifecycle (the only mutation entry points)                                                                                   |
+| SettingsContext.tsx      | 158  | AppSettings object + theme/density scalars, persisted to localStorage, dataset writes                                                                                       |
+| ModalRegistryContext.tsx | 77   | Mounted-`<Modal>` counter; `useAnyModalOpen` replaces hand-curated OR-chains                                                                                                |
+| LabelsContext.tsx        | 44   | Shared labels map + single `reload()` all label surfaces subscribe to                                                                                                       |
+| agentDisplay.ts          | 18   | `AGENT_LABELS` / `AGENT_PATHS` display constants                                                                                                                            |
+| main.tsx                 | 12   | Entry point                                                                                                                                                                 |
+| index.html               | —    | Vite shell                                                                                                                                                                  |
+| styles.css               | 5070 | Single global stylesheet                                                                                                                                                    |
+| theme.css                | 147  | Theme variables                                                                                                                                                             |
 
-## hooks/
+### styles.css orphan checker
 
-| File                         | LOC | Purpose                                   | Verdict / notes                                                                |
-| ---------------------------- | --- | ----------------------------------------- | ------------------------------------------------------------------------------ |
-| useRescanController.ts       | 177 | Header rescan button state machine        | keep                                                                           |
-| useIpcQuery.ts               | 110 | Cancellation-aware IPC query boilerplate  | keep                                                                           |
-| useBrowseFilters.ts          | 93  | BrowseTab filter state + persistence      | keep                                                                           |
-| useFocusTrap.ts              | 85  | Tab-focus trap for modals/drawer          | keep                                                                           |
-| useManifestImportProgress.ts | 84  | Per-skill import progress feed            | keep                                                                           |
-| useAutoDismiss.ts            | 84  | Self-dismiss timer for transient surfaces | keep                                                                           |
-| useSyncFeed.ts               | 68  | Sync status feed + boot hydration         | keep                                                                           |
-| useUpdateFeed.ts             | 65  | Auto-update status feed + dismissal gate  | keep                                                                           |
-| useFocusReturn.ts            | 51  | Restore focus on modal close              | keep                                                                           |
-| useEscapeToClose.ts          | 48  | Stacked Escape-to-close handling          | keep                                                                           |
-| useDisclosure.ts             | 36  | Boolean expand/collapse state             | keep — tiny but a hook, not a component; primitives.tsx is for rendered chrome |
-| useModalRouter.ts            | 26  | Single-slot modal union state             | keep                                                                           |
-| useReducedMotion.ts          | 26  | `prefers-reduced-motion` tracker          | keep                                                                           |
+After removing components, re-run: extract `^\.([\w-]+)` class selectors from
+`styles.css` and grep each against `renderer/**/*.ts*`. Treat
+template-literal-composed names as live — currently
+`modal-body--w${width}` (modalStyles) and
+`bulk-install-progress-row--${status}` (BulkInstallModal). A selector whose
+every compound requires a dead class can never match and is safe to delete.
 
-The hooks directory is in good shape — every hook has ≥1 real consumer and a
-distinct job. No consolidation proposed.
+## hooks/ (13 files)
 
-## Known follow-ups beyond the resolver convergence
+| File                         | LOC | Purpose                                                                                 |
+| ---------------------------- | --- | --------------------------------------------------------------------------------------- |
+| useRescanController.ts       | 177 | Header rescan button state machine end-to-end                                           |
+| useIpcQuery.ts               | 110 | Cancellation-aware `useEffect → IPC → setState` boilerplate                             |
+| useBrowseFilters.ts          | 93  | BrowseTab filter state + localStorage persistence (sort intentionally session-only)     |
+| useFocusTrap.ts              | 85  | Tab-focus trap for modals/drawer                                                        |
+| useManifestImportProgress.ts | 84  | Per-skill progress feed for in-flight manifest imports (Header chip + BrowseTab ghosts) |
+| useAutoDismiss.ts            | 84  | Self-dismiss timer for transient surfaces (reduced-motion aware)                        |
+| useSyncFeed.ts               | 68  | Sync status feed + boot hydration; auto-opens the sync resolver on conflicts            |
+| useUpdateFeed.ts             | 65  | Auto-update status feed + per-version dismissal gate                                    |
+| useFocusReturn.ts            | 51  | Restore focus to the opener on modal close                                              |
+| useEscapeToClose.ts          | 48  | Stacked Escape handling: only top-of-stack closes per keypress                          |
+| useDisclosure.ts             | 36  | Boolean expand/collapse state with stable toggle                                        |
+| useModalRouter.ts            | 26  | Single-slot modal union state (open replaces, never stacks)                             |
+| useReducedMotion.ts          | 26  | `prefers-reduced-motion` media-query tracker                                            |
 
-- **DrawerHost** (256L of glue): fold into ModalHost or App if it doesn't
-  grow a real job by the next cleanup pass.
-- **App.tsx** (1061L): extract the suggested-action dispatch table and
-  review-session state if it crosses ~1200L.
-- **ConfirmDialog body-slot**: optionally rebase `DeleteUnregisteredDialog` /
-  `DestinationPickerDialog` on `ConfirmDialog` with a rich `body` ReactNode.
+Every hook has ≥1 real consumer and a distinct job.
+
+## Known refactor candidates
+
+Durable observations, not scheduled work:
+
+- **DrawerHost** (256L): pure glue between ModalHost and the drawer —
+  defensible separation today; fold into ModalHost if it never grows a real
+  job of its own.
+- **App.tsx** (1061L): largest renderer file; prior extractions (contexts,
+  hooks, DrawerHost) all came from here. Next natural extractions if it
+  keeps growing: the suggested-action dispatch table, review-session state.
+- **ModalHost** (922L): the resolver routing is thin pass-throughs; the bulk
+  is the inline resolve-all / overwrite / bulk-repair handlers, which could
+  become components if they grow.
+- **ConfirmDialog body-slot**: `DeleteUnregisteredDialog` and
+  `DestinationPickerDialog` could rebase on `ConfirmDialog` with a rich
+  `body` ReactNode if a third specialized confirm appears.
