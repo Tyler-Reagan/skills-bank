@@ -3,6 +3,20 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.20.1
+
+Patch release: a pull from a linked repo with zero remote changes no longer fails with "&lt;repo&gt; has no skills the app can recognize".
+
+### Fixed
+
+- **No-op linked-repo pull misreported as an error.** Since v1.13.2's unchanged-hash skip, a pull where every skill already matched its local content hash returned zero upserts — and `replaceRegistryWithRepo` read "0 upserted + 0 conflicts" as "the repo has no recognizable skills". `SyncReport` gains an `unchanged: string[]` field (the hash-skip reports what it skipped; `readLastSyncReport` tolerant-reads older persisted reports), and an all-unchanged pull now succeeds with "&lt;repo&gt; is already up to date (N skill(s) unchanged)". The no-skills error fires only when discovery genuinely finds nothing. Not a v1.20.0 regression — reproduced identically on v1.19.0; the v1.20.0 auto-update timing was coincidental.
+
+- **Stale error copy.** Dropped "or meta.json" from the no-skills message (meta.json was removed in v1.20.0).
+
+### CI
+
+- `pnpm run test` added to `ci.yml` (#113) — the workflow never ran the vitest suite despite CLAUDE.md documenting it, which is how #112 merged with 9 red tests.
+
 ## v1.20.0
 
 Paradigm-enforcement cull: the source axis is now enforced end-to-end, the install domain is recomposed into orthogonal primitives, and the stale heal/fork/publish surface, meta.json shims, and CLI package are removed. Net −3,847 lines. See [ADR-0010](docs/adr/ADR-0010-heal-fork-publish-removed.md).
