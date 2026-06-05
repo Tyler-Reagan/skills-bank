@@ -217,7 +217,15 @@ export async function applyCanonicalSync(
       // surface as fake conflicts because their source is `user`.
       // The correct discriminator is `syncedFromCommit` presence —
       // every sync stamps it; user-authored skills don't carry one.
-      const isPreviouslySynced = !!existingSource.syncedFromCommit;
+      //
+      // Also treat source: "curated" skills as previously-synced even
+      // when syncedFromCommit is absent. These are seeded bundled skills
+      // (from seedManagedRegistryIfEmpty or reset:fresh) — not
+      // user-authored content. The first boot-sync overwrites them
+      // cleanly and stamps a real syncedFromCommit.
+      const isPreviouslySynced =
+        !!existingSource.syncedFromCommit ||
+        existingSource.source === "curated";
       if (!isPreviouslySynced) {
         const decision = decisions[name];
         if (decision) {

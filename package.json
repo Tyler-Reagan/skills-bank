@@ -27,15 +27,13 @@
     "knip": "knip",
     "reset": "tsx scripts/reset-desktop-config.ts",
     "reset:hard": "tsx scripts/reset-desktop-config.ts --hard && pnpm reset:seed",
+    "reset:fresh": "tsx scripts/reset-dev-fresh.ts",
     "reset:seed": "tsx scripts/seed-source-markers.ts",
     "backfill:bundled": "tsx scripts/backfill-bundled-upstream.ts",
-    "backfill:deployed": "tsx scripts/backfill-deployed-upstream.ts",
     "discover:bundled": "tsx scripts/discover-bundled-upstream.ts",
     "vendor:skill": "tsx scripts/vendor-skill.ts",
     "vendor:refresh": "tsx scripts/vendor-refresh.ts",
-    "update:skill": "tsx scripts/update-skill.ts",
-    "migrate:source-markers": "tsx scripts/migrate-source-markers.ts",
-    "migrate:meta-to-frontmatter": "tsx scripts/migrate-meta-to-frontmatter.ts"
+    "update:skill": "tsx scripts/update-skill.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

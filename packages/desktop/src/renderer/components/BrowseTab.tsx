@@ -59,8 +59,6 @@ interface Props {
   onRetryGhost?: (skill: ManifestSkill) => void;
   /** Dismiss a failed (or pending) ghost; pure renderer-side state. */
   onDismissGhost?: (name: string) => void;
-  /** Start a label-review session over the visible registry. */
-  onStartReview?: (entries: RegistryEntry[]) => void;
   /** Open the registry-wide Manage Labels modal. */
   onManageLabels?: () => void;
 }
@@ -77,7 +75,6 @@ export function BrowseTab({
   manifestImportProgress,
   onRetryGhost,
   onDismissGhost,
-  onStartReview,
   onManageLabels,
 }: Props): React.ReactElement {
   const { visibleRegistry: registry, installed } = useRegistry();
@@ -95,12 +92,6 @@ export function BrowseTab({
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     () => new Set(),
   );
-  const bannerDismissed = Boolean(labelsMap["__meta"]?.bannerDismissed);
-
-  const dismissBanner = useCallback(async () => {
-    await window.skillsBank.updateLabel("__meta", { bannerDismissed: true });
-    await reloadLabels();
-  }, [reloadLabels]);
   if (registry.length === 0) {
     return (
       <div className="empty-state">
@@ -286,14 +277,6 @@ export function BrowseTab({
           )}
         </span>
       </div>
-      {!bannerDismissed && onStartReview && registry.length > 0 && (
-        <LabelsFirstRunBanner
-          onReview={() =>
-            onStartReview(filtered.length > 0 ? filtered : registry)
-          }
-          onDismiss={() => void dismissBanner()}
-        />
-      )}
       <div className="filters-section">
         <SearchBar value={search} onChange={setSearch} ref={searchInputRef} />
         <RegistryFilters
