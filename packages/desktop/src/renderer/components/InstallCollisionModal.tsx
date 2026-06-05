@@ -78,7 +78,7 @@ const BULK_ACTIONS_NO_REPLACE: BulkAction<ConflictResolveAction>[] = [
  * Scope is "registered + has duplicates"; broken symlinks have their
  * own dedicated repair flow (Fix broken link(s) button).
  */
-export function ConflictResolveModal({
+export function InstallCollisionModal({
   name,
   conflicts,
   onClose,

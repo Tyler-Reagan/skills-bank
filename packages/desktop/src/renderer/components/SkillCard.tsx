@@ -30,13 +30,6 @@ interface Props {
   /** Agents this skill is currently installed for. Used to render chips. */
   agents?: AgentId[];
   /**
-   * True when the entry corresponds to a real registry skill (the skill
-   * has a folder under `<repo>/skills/<name>/`). Drives the publish
-   * badge: not-in-registry skills always render YOURS, in-registry
-   * skills render DRAFT only when locally modified or unpushed.
-   */
-  isRegistered?: boolean;
-  /**
    * Save a tag list directly from the card (quick X + quick add).
    * When omitted, tags render as plain chips with no inline edit
    * affordance — caller can still edit via the detail drawer.
@@ -66,7 +59,6 @@ export function SkillCard({
   onSelect,
   index = 0,
   agents,
-  isRegistered = true,
   onSaveTags,
   selectMode = false,
   selected = false,
@@ -163,7 +155,7 @@ export function SkillCard({
                   : "•"}
           </span>
         )}
-        <PublishBadge entry={entry} isRegistered={isRegistered} />
+        <StateBadge entry={entry} />
         <StatusChip status={status} warnings={entry.warnings?.length ?? 0} />
       </div>
 
@@ -305,12 +297,10 @@ export function agentsForSkill(
  * the heal arms it pointed at; user/vendored skills render without a
  * provenance chip.
  */
-function PublishBadge({
+function StateBadge({
   entry,
-  isRegistered,
 }: {
   entry: RegistryEntry;
-  isRegistered: boolean;
 }): React.ReactElement | null {
   if (entry.missing) {
     return (

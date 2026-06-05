@@ -34,7 +34,7 @@ import { getStateDir } from "./paths.js";
  * never disagree about what counts as a change.
  *
  * Conflicted skills are OMITTED from `merged`; they carry no entry
- * there until the resolver (`ConflictResolutionModal`) folds a decision
+ * there until the resolver (`ManifestConflictModal`) folds a decision
  * back in. The function is pure — no I/O, no clock — so it is fully
  * table-testable and safe to call from either process.
  */

@@ -40,7 +40,7 @@ interface UseIpcQueryResult<T> {
 /**
  * Wraps the cancellation-aware `useEffect → window.skillsBank.foo() →
  * setState → catch` boilerplate that appears across SkillDetailDrawer,
- * PublishSection, RepoPickerModal, and several App.tsx loaders. Each
+ * RepoPickerModal, and several App.tsx loaders. Each
  * inlined version was 10–15 lines of identical shape with subtle
  * differences (some forgot the cancellation guard, some swallowed
  * errors silently, some reset state on dep change and some didn't).

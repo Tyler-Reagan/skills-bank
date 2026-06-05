@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { SplashScreen } from "./components/primitives.js";
 import type {
   AgentId,
   ConflictEntry,
@@ -22,7 +23,6 @@ import {
 // directly on bundled-default; GitHub linking is reached via Settings
 // → Account → "Sign in with GitHub" (ConnectGithubModal, which owns
 // device-flow + resume).
-import { SplashScreen } from "./components/SplashScreen.js";
 import {
   DEFAULT_SETTINGS,
   type AppSettings,

@@ -1,14 +1,13 @@
 import React, { useState } from "react";
+import { DisclosureChevron, SkillTagList } from "../primitives.js";
 import type { ManifestConflict, ManifestDiff } from "@skills-bank/core";
 import type {
   PreviewManifestPushResult,
   ReadManifestFromRepoResult,
-} from "../../shared/ipc.js";
-import type { LinkedRepoMetadata } from "../../shared/ipc.js";
-import { useDisclosureSet } from "../hooks/useDisclosure.js";
-import { useIpcQuery } from "../hooks/useIpcQuery.js";
-import { DisclosureChevron } from "./DisclosureChevron.js";
-import { SkillTagList } from "./SkillTagList.js";
+} from "../../../shared/ipc.js";
+import type { LinkedRepoMetadata } from "../../../shared/ipc.js";
+import { useDisclosureSet } from "../../hooks/useDisclosure.js";
+import { useIpcQuery } from "../../hooks/useIpcQuery.js";
 
 interface Props {
   mode: "export" | "import";

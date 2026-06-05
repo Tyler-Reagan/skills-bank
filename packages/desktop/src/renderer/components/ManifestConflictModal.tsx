@@ -73,7 +73,7 @@ function summarize(skill: ManifestSkill | null): string {
 
 /**
  * Resolver for three-way manifest-merge conflicts. The metadata sibling
- * of `ConflictResolutionModal` (which resolves file-content sync
+ * of `SyncConflictModal` (which resolves file-content sync
  * collisions): here each row compares the base/ours/theirs *intent*
  * fields rather than a file diff, and the arms are keep-mine /
  * use-theirs / keep-both. Reuses the shared `Modal`,

@@ -7,17 +7,17 @@ import type {
 } from "@skills-bank/core";
 import { RegisterModal } from "./RegisterModal.js";
 import { ManageLinksModal } from "./ManageLinksModal.js";
-import { ConflictResolveModal } from "./ConflictResolveModal.js";
+import { InstallCollisionModal } from "./InstallCollisionModal.js";
 import { InstallConflictModal } from "./InstallConflictModal.js";
 import type { InstallConflictError } from "./InstallConflictModal.js";
-import { ConflictResolutionModal } from "./ConflictResolutionModal.js";
+import { SyncConflictModal } from "./SyncConflictModal.js";
 import { ManifestConflictModal } from "./ManifestConflictModal.js";
-import { DeleteUnregisteredConfirm } from "./DeleteUnregisteredConfirm.js";
+import { DeleteUnregisteredDialog } from "./DeleteUnregisteredDialog.js";
 import { SettingsModal } from "./SettingsModal.js";
 import { KeyboardShortcutsOverlay } from "./KeyboardShortcutsOverlay.js";
 import { AccountModal } from "./AccountModal.js";
-import { ManifestImportConfirmModal } from "./ManifestImportConfirmModal.js";
-import { ManifestModal } from "./ManifestModal.js";
+import { ManifestImportConfirmModal } from "./manifest/ManifestImportConfirmModal.js";
+import { ManifestModal } from "./manifest/ManifestModal.js";
 import { ConnectGithubModal } from "./ConnectGithubModal.js";
 import { UpdatesModal } from "./UpdatesModal.js";
 import { UpdateNotesModal } from "./UpdateNotesModal.js";
@@ -345,7 +345,7 @@ export function ModalHost({
       )}
 
       {modal?.kind === "conflict" && (
-        <ConflictResolveModal
+        <InstallCollisionModal
           name={modal.target.name}
           conflicts={modal.target.conflicts}
           allowReplaceWithSymlink={modal.target.allowReplaceWithSymlink}
@@ -509,7 +509,7 @@ export function ModalHost({
       )}
 
       {modal?.kind === "mergeConflict" && (
-        <ConflictResolutionModal
+        <SyncConflictModal
           conflicts={modal.target.conflicts}
           onClose={() => {
             const prior = modal.target.priorReport;
@@ -557,7 +557,7 @@ export function ModalHost({
       )}
 
       {modal?.kind === "delete" && (
-        <DeleteUnregisteredConfirm
+        <DeleteUnregisteredDialog
           name={modal.target.name}
           installations={modal.target.installations}
           onCancel={() => closeModal()}
@@ -875,7 +875,7 @@ export function ModalHost({
         )}
 
       {conflictModalEntries && (
-        <ConflictResolutionModal
+        <SyncConflictModal
           conflicts={conflictModalEntries}
           onClose={() => setConflictModalEntries(null)}
           onResolve={resolveConflicts}

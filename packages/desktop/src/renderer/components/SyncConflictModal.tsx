@@ -54,7 +54,7 @@ const BULK_ACTIONS: BulkAction<ConflictAction>[] = [
   },
 ];
 
-export function ConflictResolutionModal({
+export function SyncConflictModal({
   conflicts,
   onClose,
   onResolve,

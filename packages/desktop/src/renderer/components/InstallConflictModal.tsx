@@ -20,7 +20,7 @@ interface Props {
 /**
  * Surfaced when installSkill returns a "refusing to overwrite without
  * force" error from at least one agent. Distinct from the post-install
- * ConflictResolveModal — that one handles stragglers AFTER a successful
+ * InstallCollisionModal — that one handles stragglers AFTER a successful
  * install. This one is the gate: agents currently block the install
  * because something is already at the link path.
  */

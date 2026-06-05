@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useMemo, useState } from "react";
+import { SearchBar } from "./primitives.js";
 import type { LabelsMap, RegistryEntry } from "@skills-bank/core";
 import {
   categoryRules,
@@ -7,7 +8,6 @@ import {
 } from "@skills-bank/core/labels";
 import { useLabels } from "../LabelsContext.js";
 import { Modal, ModalCloseButton, modalFooter } from "./modalStyles.js";
-import { SearchBar } from "./SearchBar.js";
 import { Icon } from "./Icon.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
 import {
