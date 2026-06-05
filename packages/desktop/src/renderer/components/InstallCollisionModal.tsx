@@ -6,13 +6,11 @@ import type {
   InstalledSkill,
 } from "@skills-bank/core";
 import { AGENT_LABELS } from "../agentDisplay.js";
-import { BulkSelectToolbar, type BulkAction } from "./BulkSelectToolbar.js";
 import {
-  ConflictActionPicker,
+  ConflictResolver,
+  type BulkAction,
   type PickerOption,
-} from "./ConflictActionPicker.js";
-import { Icon } from "./Icon.js";
-import { Modal } from "./modalStyles.js";
+} from "./ConflictResolver.js";
 
 const KIND_LABEL: Record<InstalledSkill["kind"], string> = {
   ours: "registered",
@@ -76,7 +74,9 @@ const BULK_ACTIONS_NO_REPLACE: BulkAction<ConflictResolveAction>[] = [
  * keeps surfacing the skill in "Not registered" until cleaned up.
  *
  * Scope is "registered + has duplicates"; broken symlinks have their
- * own dedicated repair flow (Fix broken link(s) button).
+ * own dedicated repair flow (Fix broken link(s) button). Thin domain
+ * wrapper over the shared `ConflictResolver` — owns the picks state,
+ * the per-agent error surface, and the IPC apply.
  */
 export function InstallCollisionModal({
   name,
@@ -91,27 +91,24 @@ export function InstallCollisionModal({
   //   - Unregistered case → keep (non-destructive default; deletion
   //     must be an explicit per-row choice or the bulk "Delete all"
   //     button, both of which trigger the orphan-warning path).
-  // The previous unregistered default was delete, which contradicted
-  // the modal's intro copy and silently primed every row for removal.
   const defaultAction: ConflictResolveAction = allowReplaceWithSymlink
     ? "replace-with-symlink"
     : "keep";
   const ACTIONS = allowReplaceWithSymlink
     ? ALL_ACTIONS
     : ALL_ACTIONS.filter((a) => a.value !== "replace-with-symlink");
-  const [picks, setPicks] = useState<Record<AgentId, ConflictResolveAction>>(
+  const [picks, setPicks] = useState<Record<string, ConflictResolveAction>>(
     () => {
-      const initial: Partial<Record<AgentId, ConflictResolveAction>> = {};
+      const initial: Record<string, ConflictResolveAction> = {};
       for (const c of conflicts) initial[c.agent] = defaultAction;
-      return initial as Record<AgentId, ConflictResolveAction>;
+      return initial;
     },
   );
-  const [submitting, setSubmitting] = useState(false);
   // Per-agent error messages surfaced from the most recent Apply.
   // Keyed by AgentId so each row can show its own failure inline. The
   // modal stays open after a partial/total failure so the user sees
-  // *why* — closing on failure was the previous behavior and gave the
-  // user a generic "Resolved 0; N failed" toast with no remediation.
+  // *why* — closing on failure gave the user a generic "Resolved 0; N
+  // failed" toast with no remediation.
   const [errorMessages, setErrorMessages] = useState<
     Partial<Record<AgentId, string>>
   >({});
@@ -125,8 +122,6 @@ export function InstallCollisionModal({
     [conflicts, picks],
   );
 
-  // Action tallies for the live summary line under the picker. The
-  // counts update as the user toggles individual rows.
   const counts = useMemo(() => {
     let keep = 0;
     let del = 0;
@@ -151,155 +146,116 @@ export function InstallCollisionModal({
     decisions.length > 0 && decisions.every((d) => d.action === "delete");
   const wouldOrphan = wouldDeleteAll && !allowReplaceWithSymlink;
 
-  const setAll = (action: ConflictResolveAction) => {
-    const next: Record<AgentId, ConflictResolveAction> = { ...picks };
-    for (const c of conflicts) next[c.agent] = action;
-    setPicks(next);
+  const apply = async () => {
+    setErrorMessages({});
+    const r = await window.skillsBank.resolveSkillConflicts(name, decisions);
+    const okCount = r.applied.length;
+    const failCount = r.errors.length;
+    if (failCount === 0) {
+      onFlash(
+        `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} for ${name}`,
+      );
+      await onClose();
+      return;
+    }
+    // Partial or total failure — keep the modal open and surface
+    // each agent's error message so the user can adjust their picks
+    // and retry without losing context.
+    const messages: Partial<Record<AgentId, string>> = {};
+    for (const e of r.errors) messages[e.agent] = e.message;
+    setErrorMessages(messages);
+    onFlash(
+      okCount === 0
+        ? `Couldn't resolve ${failCount} conflict${failCount === 1 ? "" : "s"} for ${name}`
+        : `Resolved ${okCount}; ${failCount} failed (see details)`,
+    );
   };
 
-  const apply = async () => {
-    setSubmitting(true);
-    setErrorMessages({});
-    try {
-      const r = await window.skillsBank.resolveSkillConflicts(name, decisions);
-      const okCount = r.applied.length;
-      const failCount = r.errors.length;
-      if (failCount === 0) {
-        onFlash(
-          `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} for ${name}`,
-        );
-        await onClose();
-        return;
-      }
-      // Partial or total failure — keep the modal open and surface
-      // each agent's error message so the user can adjust their picks
-      // and retry without losing context.
-      const messages: Partial<Record<AgentId, string>> = {};
-      for (const e of r.errors) messages[e.agent] = e.message;
-      setErrorMessages(messages);
-      onFlash(
-        okCount === 0
-          ? `Couldn't resolve ${failCount} conflict${failCount === 1 ? "" : "s"} for ${name}`
-          : `Resolved ${okCount}; ${failCount} failed (see details)`,
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const title = allowReplaceWithSymlink
+    ? `Resolve install collision — ${name}`
+    : `Resolve tracking ambiguity — ${name}`;
 
   return (
-    <Modal
-      label={
-        allowReplaceWithSymlink
-          ? `Resolve install collision — ${name}`
-          : `Resolve tracking ambiguity — ${name}`
-      }
-      onClose={() => void onClose()}
+    <ConflictResolver
+      title={title}
       width={600}
-      bodyClass="modal-body--no-scroll"
-    >
-      <h2 className="mt-0">
-        {allowReplaceWithSymlink
-          ? `Resolve install collision — ${name}`
-          : `Resolve tracking ambiguity — ${name}`}
-      </h2>
-      <p className="text-muted text-13 mt-4">
-        {allowReplaceWithSymlink
+      intro={
+        allowReplaceWithSymlink
           ? `Install collision: ${name} is registered, but some agent directories have stragglers that aren't symlinks to the registry copy. Pick how to handle each.`
-          : `Tracking ambiguity: multiple copies of ${name} exist across agent directories — Skills Bank can't tell which one is the real one. All copies are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`}
-      </p>
-
-      <BulkSelectToolbar
-        actions={
-          allowReplaceWithSymlink ? BULK_ACTIONS_FULL : BULK_ACTIONS_NO_REPLACE
-        }
-        onSelectAll={setAll}
-      />
-
-      <div className="conflict-scroll-list">
-        {conflicts.map((c) => (
-          <div
-            key={c.agent}
-            className={`conflict-row${errorMessages[c.agent] ? " conflict-row--error" : ""}`}
-          >
-            <div className="conflict-row-header">
-              <strong>{AGENT_LABELS[c.agent]}</strong>
-              <span className="text-subtle text-11">{KIND_LABEL[c.kind]}</span>
-            </div>
-            <code className="conflict-row-path">{c.linkPath}</code>
-            {errorMessages[c.agent] && (
-              <div role="alert" className="conflict-row-error">
-                {errorMessages[c.agent]}
-              </div>
-            )}
-            <ConflictActionPicker
-              name={`conflict-${c.agent}`}
-              options={ACTIONS}
-              value={picks[c.agent] ?? defaultAction}
-              onChange={(next) =>
-                setPicks((prev) => ({ ...prev, [c.agent]: next }))
-              }
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Live tally — gives the user a single-glance read on what
-            Apply will actually do, complementing the per-row colors. */}
-      <p
-        className={`conflict-tally${counts.del > 0 ? " text-muted" : " text-subtle"}`}
-      >
-        {[
+          : `Tracking ambiguity: multiple copies of ${name} exist across agent directories — Skills Bank can't tell which one is the real one. All copies are kept by default. Mark individual copies for deletion to remove them; the rest stay where they are. After resolving, you can register this skill from the Unregistered section.`
+      }
+      items={conflicts}
+      itemKey={(c) => c.agent}
+      options={ACTIONS}
+      bulkActions={
+        allowReplaceWithSymlink ? BULK_ACTIONS_FULL : BULK_ACTIONS_NO_REPLACE
+      }
+      picks={picks}
+      defaultAction={defaultAction}
+      onPickChange={(key, next) => setPicks((p) => ({ ...p, [key]: next }))}
+      onSetAll={(action) => {
+        setPicks((prev) => {
+          const next = { ...prev };
+          for (const c of conflicts) next[c.agent] = action;
+          return next;
+        });
+      }}
+      tally={
+        [
           counts.keep > 0 ? `Keep ${counts.keep}` : null,
           counts.del > 0 ? `Delete ${counts.del}` : null,
           counts.replace > 0 ? `Replace ${counts.replace}` : null,
         ]
           .filter(Boolean)
-          .join(" · ") || "Nothing selected"}
-      </p>
-
-      {wouldDeleteAll && (
-        <div role="alert" className="conflict-delete-warning">
-          {wouldOrphan ? (
-            <>
-              <strong>All copies of {name} will be deleted.</strong> The skill
-              will no longer be on this machine. Re-importing from its source is
-              the only way back.
-            </>
-          ) : (
-            <>
-              <strong>
-                All {decisions.length} conflicting{" "}
-                {decisions.length === 1 ? "entry" : "entries"} will be deleted.
-              </strong>{" "}
-              The registered installation in Skills Bank stays intact.
-            </>
+          .join(" · ") || "Nothing selected"
+      }
+      renderRow={(c) => (
+        <>
+          <div className="conflict-res-row-header">
+            <strong>{AGENT_LABELS[c.agent]}</strong>
+            <span className="text-subtle text-11">{KIND_LABEL[c.kind]}</span>
+          </div>
+          <code className="conflict-row-path">{c.linkPath}</code>
+          {errorMessages[c.agent] && (
+            <div role="alert" className="conflict-row-error">
+              {errorMessages[c.agent]}
+            </div>
           )}
-        </div>
+        </>
       )}
-
-      <div className="conflict-footer">
-        <button onClick={() => void onClose()} disabled={submitting}>
-          Cancel
-        </button>
-        <button
-          className={wouldDeleteAll ? "btn danger" : "primary"}
-          onClick={() => void apply()}
-          disabled={submitting}
-        >
-          {submitting ? (
-            <>
-              <Icon name="check" size="sm" /> Applying
-            </>
-          ) : Object.keys(errorMessages).length > 0 ? (
-            "Retry"
-          ) : wouldDeleteAll ? (
-            "Confirm delete all"
-          ) : (
-            "Apply"
-          )}
-        </button>
-      </div>
-    </Modal>
+      rowHasError={(c) => !!errorMessages[c.agent]}
+      warning={
+        wouldDeleteAll ? (
+          <div role="alert" className="conflict-delete-warning">
+            {wouldOrphan ? (
+              <>
+                <strong>All copies of {name} will be deleted.</strong> The skill
+                will no longer be on this machine. Re-importing from its source
+                is the only way back.
+              </>
+            ) : (
+              <>
+                <strong>
+                  All {decisions.length} conflicting{" "}
+                  {decisions.length === 1 ? "entry" : "entries"} will be
+                  deleted.
+                </strong>{" "}
+                The registered installation in Skills Bank stays intact.
+              </>
+            )}
+          </div>
+        ) : undefined
+      }
+      applyLabel={
+        Object.keys(errorMessages).length > 0
+          ? "Retry"
+          : wouldDeleteAll
+            ? "Confirm delete all"
+            : "Apply"
+      }
+      applyDanger={wouldDeleteAll}
+      onApply={apply}
+      onClose={onClose}
+    />
   );
 }

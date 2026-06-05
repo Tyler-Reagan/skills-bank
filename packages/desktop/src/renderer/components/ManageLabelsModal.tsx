@@ -10,10 +10,7 @@ import { useLabels } from "../LabelsContext.js";
 import { Modal, ModalCloseButton, modalFooter } from "./modalStyles.js";
 import { Icon } from "./Icon.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
-import {
-  ConflictActionPicker,
-  type PickerOption,
-} from "./ConflictActionPicker.js";
+import { ConflictActionPicker, type PickerOption } from "./ConflictResolver.js";
 import { useRegistry } from "../RegistryContext.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

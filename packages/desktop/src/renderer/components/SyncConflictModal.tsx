@@ -6,13 +6,12 @@ import type {
 } from "@skills-bank/core";
 import type { SkillDiffResult } from "../../shared/ipc.js";
 import { useIpcQuery } from "../hooks/useIpcQuery.js";
-import { BulkSelectToolbar, type BulkAction } from "./BulkSelectToolbar.js";
 import {
-  ConflictActionPicker,
+  ConflictResolver,
+  type BulkAction,
   type PickerOption,
-} from "./ConflictActionPicker.js";
+} from "./ConflictResolver.js";
 import { DiffViewer } from "./DiffViewer.js";
-import { Modal } from "./modalStyles.js";
 
 interface Props {
   conflicts: ConflictEntry[];
@@ -54,6 +53,12 @@ const BULK_ACTIONS: BulkAction<ConflictAction>[] = [
   },
 ];
 
+/**
+ * Resolver for registry-sync collisions: a skill changed in both the
+ * local registry and the incoming update. Thin domain wrapper over the
+ * shared `ConflictResolver` — owns the picks state, the lazy per-row
+ * diff loading, and the SyncDecisions mapping.
+ */
 export function SyncConflictModal({
   conflicts,
   onClose,
@@ -66,7 +71,6 @@ export function SyncConflictModal({
     for (const c of conflicts) out[c.name] = "keep-mine";
     return out;
   });
-  const [submitting, setSubmitting] = useState(false);
   // Per-skill diff state. Loaded lazily on first expand and cached so
   // re-opening a row doesn't refetch. Failures cache too so we don't
   // hammer the IPC if the source path went away.
@@ -113,29 +117,13 @@ export function SyncConflictModal({
   };
 
   const apply = async () => {
-    setSubmitting(true);
     const decisions: SyncDecisions = {};
     const decidedAt = new Date().toISOString();
     for (const c of conflicts) {
       const action = picks[c.name];
       if (action) decisions[c.name] = { action, decidedAt };
     }
-    try {
-      await onResolve(decisions);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Bulk-action helpers. Sync collisions following a fresh clone or a
-  // major upstream rewrite can affect every skill at once; per-row
-  // clicking gets hostile fast without these.
-  const setAll = (action: ConflictAction) => {
-    setPicks((prev) => {
-      const next = { ...prev };
-      for (const c of conflicts) next[c.name] = action;
-      return next;
-    });
+    await onResolve(decisions);
   };
 
   // Live tally of pending actions, so the user can see at a glance what
@@ -154,80 +142,65 @@ export function SyncConflictModal({
   })();
 
   return (
-    <Modal
-      label="Incoming update conflicts"
-      onClose={onClose}
-      width={640}
-      bodyClass="modal-body--no-scroll"
-    >
-      <h2 className="mt-0">Incoming update conflicts</h2>
-      <p className="text-muted text-13 mt-4">
-        {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} changed in
-        both your local registry and the incoming update. Choose what to keep
-        for each — your decision is saved and won't be asked again unless the
-        upstream changes.
-      </p>
-
-      <BulkSelectToolbar
-        actions={BULK_ACTIONS}
-        onSelectAll={setAll}
-        disabled={submitting}
-        tally={
-          [
-            counts.keep > 0 ? `Keep ${counts.keep}` : null,
-            counts.use > 0 ? `Use incoming ${counts.use}` : null,
-            counts.rename > 0 ? `Rename ${counts.rename}` : null,
-          ]
-            .filter(Boolean)
-            .join(" · ") || "Nothing selected"
-        }
-      />
-
-      <div className="conflict-res-scroll">
-        {conflicts.map((c) => (
-          <div key={c.name} className="conflict-res-row">
-            <div className="conflict-res-row-header">
-              <strong className="conflict-res-row-name">{c.name}</strong>
-              <button
-                type="button"
-                className="link-btn conflict-res-compare-btn"
-                onClick={() => toggleDiff(c)}
-                aria-expanded={!!expanded[c.name]}
-              >
-                {expanded[c.name] ? "Hide diff" : "Compare changes"}
-              </button>
-            </div>
-            {expanded[c.name] && (
-              <div className="conflict-res-diff-wrap">
-                <DiffViewer
-                  result={diffs[c.name]?.result ?? null}
-                  loading={diffs[c.name]?.loading ?? true}
-                  error={diffs[c.name]?.error ?? null}
-                />
-              </div>
-            )}
-            <ConflictActionPicker
-              name={`conflict-${c.name}`}
-              options={ACTIONS}
-              value={picks[c.name] ?? "keep-mine"}
-              onChange={(next) => setPicks((p) => ({ ...p, [c.name]: next }))}
-            />
+    <ConflictResolver
+      title="Incoming update conflicts"
+      intro={
+        <>
+          {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} changed in
+          both your local registry and the incoming update. Choose what to keep
+          for each — your decision is saved and won't be asked again unless the
+          upstream changes.
+        </>
+      }
+      items={conflicts}
+      itemKey={(c) => c.name}
+      options={ACTIONS}
+      bulkActions={BULK_ACTIONS}
+      picks={picks}
+      defaultAction="keep-mine"
+      onPickChange={(key, next) => setPicks((p) => ({ ...p, [key]: next }))}
+      onSetAll={(action) => {
+        setPicks((prev) => {
+          const next = { ...prev };
+          for (const c of conflicts) next[c.name] = action;
+          return next;
+        });
+      }}
+      tally={
+        [
+          counts.keep > 0 ? `Keep ${counts.keep}` : null,
+          counts.use > 0 ? `Use incoming ${counts.use}` : null,
+          counts.rename > 0 ? `Rename ${counts.rename}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "Nothing selected"
+      }
+      renderRow={(c) => (
+        <>
+          <div className="conflict-res-row-header">
+            <strong className="conflict-res-row-name">{c.name}</strong>
+            <button
+              type="button"
+              className="link-btn conflict-res-compare-btn"
+              onClick={() => toggleDiff(c)}
+              aria-expanded={!!expanded[c.name]}
+            >
+              {expanded[c.name] ? "Hide diff" : "Compare changes"}
+            </button>
           </div>
-        ))}
-      </div>
-
-      <div className="row-end mt-12">
-        <button onClick={onClose} disabled={submitting}>
-          Cancel
-        </button>
-        <button
-          className="primary"
-          onClick={() => void apply()}
-          disabled={submitting}
-        >
-          {submitting ? "Applying…" : "Apply"}
-        </button>
-      </div>
-    </Modal>
+          {expanded[c.name] && (
+            <div className="conflict-res-diff-wrap">
+              <DiffViewer
+                result={diffs[c.name]?.result ?? null}
+                loading={diffs[c.name]?.loading ?? true}
+                error={diffs[c.name]?.error ?? null}
+              />
+            </div>
+          )}
+        </>
+      )}
+      onApply={apply}
+      onClose={onClose}
+    />
   );
 }

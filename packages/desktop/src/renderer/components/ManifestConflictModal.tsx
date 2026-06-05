@@ -5,12 +5,11 @@ import type {
   ManifestResolution,
   ManifestSkill,
 } from "@skills-bank/core";
-import { BulkSelectToolbar, type BulkAction } from "./BulkSelectToolbar.js";
 import {
-  ConflictActionPicker,
+  ConflictResolver,
+  type BulkAction,
   type PickerOption,
-} from "./ConflictActionPicker.js";
-import { Modal } from "./modalStyles.js";
+} from "./ConflictResolver.js";
 
 interface Props {
   conflicts: ManifestConflict[];
@@ -73,11 +72,10 @@ function summarize(skill: ManifestSkill | null): string {
 
 /**
  * Resolver for three-way manifest-merge conflicts. The metadata sibling
- * of `SyncConflictModal` (which resolves file-content sync
- * collisions): here each row compares the base/ours/theirs *intent*
- * fields rather than a file diff, and the arms are keep-mine /
- * use-theirs / keep-both. Reuses the shared `Modal`,
- * `ConflictActionPicker`, and `BulkSelectToolbar` building blocks.
+ * of `SyncConflictModal` (which resolves file-content sync collisions):
+ * here each row compares the base/ours/theirs *intent* fields rather
+ * than a file diff, and the arms are keep-mine / use-theirs /
+ * keep-both. Thin domain wrapper over the shared `ConflictResolver`.
  */
 export function ManifestConflictModal({
   conflicts,
@@ -91,28 +89,14 @@ export function ManifestConflictModal({
     for (const c of conflicts) out[c.name] = "keep-mine";
     return out;
   });
-  const [submitting, setSubmitting] = useState(false);
-
-  const setAll = (action: ManifestResolution) => {
-    setPicks((prev) => {
-      const next = { ...prev };
-      for (const c of conflicts) next[c.name] = action;
-      return next;
-    });
-  };
 
   const apply = async () => {
-    setSubmitting(true);
     const decisions: ManifestDecisions = {};
     for (const c of conflicts) {
       const action = picks[c.name];
       if (action) decisions[c.name] = action;
     }
-    try {
-      await onResolve(decisions);
-    } finally {
-      setSubmitting(false);
-    }
+    await onResolve(decisions);
   };
 
   const counts = (() => {
@@ -129,73 +113,57 @@ export function ManifestConflictModal({
   })();
 
   return (
-    <Modal
-      label="Registry merge conflicts"
-      onClose={onClose}
-      width={640}
-      bodyClass="modal-body--no-scroll"
-    >
-      <h2 className="mt-0">Registry merge conflicts</h2>
-      <p className="text-muted text-13 mt-4">
-        {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} changed in
-        both your local registry and the linked repo. Choose what to keep for
-        each.
-      </p>
-
-      <BulkSelectToolbar
-        actions={BULK_ACTIONS}
-        onSelectAll={setAll}
-        disabled={submitting}
-        tally={
-          [
-            counts.keep > 0 ? `Keep ${counts.keep}` : null,
-            counts.use > 0 ? `Use theirs ${counts.use}` : null,
-            counts.both > 0 ? `Keep both ${counts.both}` : null,
-          ]
-            .filter(Boolean)
-            .join(" · ") || "Nothing selected"
-        }
-      />
-
-      <div className="conflict-res-scroll">
-        {conflicts.map((c) => (
-          <div key={c.name} className="conflict-res-row">
-            <div className="conflict-res-row-header">
-              <strong className="conflict-res-row-name">{c.name}</strong>
-              <span className="text-muted text-12">{KIND_LABEL[c.kind]}</span>
-            </div>
-            <div className="manifest-conflict-compare text-12">
-              <div>
-                <span className="text-muted">Yours:</span> {summarize(c.ours)}
-              </div>
-              <div>
-                <span className="text-muted">Theirs:</span>{" "}
-                {summarize(c.theirs)}
-              </div>
-              <div className="text-muted">Base: {summarize(c.base)}</div>
-            </div>
-            <ConflictActionPicker
-              name={`manifest-conflict-${c.name}`}
-              options={ACTIONS}
-              value={picks[c.name] ?? "keep-mine"}
-              onChange={(next) => setPicks((p) => ({ ...p, [c.name]: next }))}
-            />
+    <ConflictResolver
+      title="Registry merge conflicts"
+      intro={
+        <>
+          {conflicts.length} skill{conflicts.length === 1 ? "" : "s"} changed in
+          both your local registry and the linked repo. Choose what to keep for
+          each.
+        </>
+      }
+      items={conflicts}
+      itemKey={(c) => c.name}
+      options={ACTIONS}
+      bulkActions={BULK_ACTIONS}
+      picks={picks}
+      defaultAction="keep-mine"
+      onPickChange={(key, next) => setPicks((p) => ({ ...p, [key]: next }))}
+      onSetAll={(action) => {
+        setPicks((prev) => {
+          const next = { ...prev };
+          for (const c of conflicts) next[c.name] = action;
+          return next;
+        });
+      }}
+      tally={
+        [
+          counts.keep > 0 ? `Keep ${counts.keep}` : null,
+          counts.use > 0 ? `Use theirs ${counts.use}` : null,
+          counts.both > 0 ? `Keep both ${counts.both}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "Nothing selected"
+      }
+      renderRow={(c) => (
+        <>
+          <div className="conflict-res-row-header">
+            <strong className="conflict-res-row-name">{c.name}</strong>
+            <span className="text-muted text-12">{KIND_LABEL[c.kind]}</span>
           </div>
-        ))}
-      </div>
-
-      <div className="row-end mt-12">
-        <button onClick={onClose} disabled={submitting}>
-          Cancel
-        </button>
-        <button
-          className="primary"
-          onClick={() => void apply()}
-          disabled={submitting}
-        >
-          {submitting ? "Applying…" : "Apply"}
-        </button>
-      </div>
-    </Modal>
+          <div className="manifest-conflict-compare text-12">
+            <div>
+              <span className="text-muted">Yours:</span> {summarize(c.ours)}
+            </div>
+            <div>
+              <span className="text-muted">Theirs:</span> {summarize(c.theirs)}
+            </div>
+            <div className="text-muted">Base: {summarize(c.base)}</div>
+          </div>
+        </>
+      )}
+      onApply={apply}
+      onClose={onClose}
+    />
   );
 }
