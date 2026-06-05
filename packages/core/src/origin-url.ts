@@ -1,7 +1,7 @@
 /**
  * Phase 4 (v1.5): GitHub-URL parser for the in-app install flow.
  * Pure URL pattern matching — never probes GitHub. A follow-up
- * `mirrorSkillFolder` call at install time validates that the
+ * `installSkillFiles` call at install time validates that the
  * parsed `{repo, skillPath}` actually contains a SKILL.md.
  *
  * Accepts the two URL shapes that GitHub's web UI exposes for a

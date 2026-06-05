@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { mirrorSkillFolder } from "./origin.js";
+import { installSkillFiles } from "./origin.js";
 
 /**
- * Pins the "no partial mutation" contract for `mirrorSkillFolder`
+ * Pins the "no partial mutation" contract for `installSkillFiles`
  * (ADR-0001 Suite 4). Update relies on it: if a blob fetch fails
  * after the wipe began, the user is left with a torn skill folder
  * and no way to recover from the UI. The implementation fetches
@@ -75,7 +75,7 @@ afterEach(() => {
   fs.rmSync(scratch, { recursive: true, force: true });
 });
 
-describe("mirrorSkillFolder — partial-failure invariant", () => {
+describe("installSkillFiles — partial-failure invariant", () => {
   test("success path writes every blob + reports folderHash", async () => {
     let call = 0;
     vi.stubGlobal(
@@ -89,7 +89,7 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
       }),
     );
 
-    const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.folderHash).toBe("foldersha");
@@ -120,7 +120,7 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
       }),
     );
 
-    const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(404);
@@ -150,7 +150,7 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
       }),
     );
 
-    const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(0);
@@ -167,7 +167,7 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
     const fetchMock = vi.fn(async () => make404());
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(404);
@@ -190,7 +190,7 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
       vi.fn(async () => emptyTree),
     );
 
-    const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(404);
@@ -222,7 +222,7 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
       vi.fn(async () => truncated),
     );
 
-    const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.message).toMatch(/truncated/);
@@ -242,7 +242,7 @@ describe("mirrorSkillFolder — partial-failure invariant", () => {
       }),
     );
 
-    const result = await mirrorSkillFolder(REPO, FOLDER, destDir, null);
+    const result = await installSkillFiles(REPO, FOLDER, destDir, null);
     expect(result.ok).toBe(true);
     // The mirror primitive doesn't manage sidecars — callers do.
     // Tests pin this so a "convenience" addition that stamps markers

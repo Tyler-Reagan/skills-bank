@@ -11,7 +11,7 @@ import {
   type OriginPointer,
   type SkillOrigin,
 } from "./source.js";
-import { folderPathFromSkillPath, mirrorSkillFolder } from "./origin.js";
+import { folderPathFromSkillPath, installSkillFiles } from "./origin.js";
 import { deleteFromBankSkill } from "./install.js";
 import {
   effectiveLabels,
@@ -360,7 +360,7 @@ export interface ImportRegistryManifestOptions {
 /**
  * Apply a manifest to `registryRoot`. For each manifest entry with
  * no local record, mirror content from its Origin via
- * `mirrorSkillFolder` and stamp the resulting marker. Existing
+ * `installSkillFiles` and stamp the resulting marker. Existing
  * entries are inspected for origin collisions; same-origin matches
  * have their auxiliary state (tags + hide) restored, divergent
  * origins surface as `collision` outcomes.
@@ -451,7 +451,7 @@ export async function importRegistryManifest(
       );
       fs.mkdirSync(path.dirname(destDir), { recursive: true });
       const folderPath = folderPathFromSkillPath(skill.origin.skillPath);
-      const mirror = await mirrorSkillFolder(
+      const mirror = await installSkillFiles(
         skill.origin.repo,
         folderPath,
         destDir,

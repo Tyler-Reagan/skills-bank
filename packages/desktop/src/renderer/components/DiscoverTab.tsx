@@ -1,6 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { DiscoverStatus } from "../../shared/ipc.js";
-import { useRegistryHost } from "../RegistryHostContext.js";
 import { DiscoverEmpty } from "./DiscoverEmpty.js";
 
 const HOME = "https://skills.sh";
@@ -59,10 +58,10 @@ export function DiscoverTab({
   terminalApp,
   onInstalled,
 }: Props): React.ReactElement {
-  const { flash, flashError } = useRegistryHost();
   const [installUrl, setInstallUrl] = useState("");
   const [installBusy, setInstallBusy] = useState(false);
   const [installError, setInstallError] = useState<string | null>(null);
+  const [installBanner, setInstallBanner] = useState<string | null>(null);
 
   const submitInstall = async () => {
     const resolved = parseInstallInput(installUrl);
@@ -74,24 +73,16 @@ export function DiscoverTab({
     }
     setInstallBusy(true);
     setInstallError(null);
+    setInstallBanner(null);
     try {
       const r = await window.skillsBank.installSkillFromGithub(resolved);
       if (r.ok) {
         setInstallUrl("");
-        flash(`${r.name} installed`);
+        setInstallBanner(`${r.name} installed`);
         onInstalled();
         return;
       }
       switch (r.reason) {
-        case "name-collision":
-          setInstallError(
-            `"${r.name}" is already in your bank (${r.existingBucket}). Uninstall it first or rename it.`,
-          );
-          break;
-        case "mirror-failed":
-          flashError(r.message);
-          setInstallError(r.message);
-          break;
         default:
           setInstallError(r.message);
       }
@@ -246,6 +237,19 @@ export function DiscoverTab({
           >
             {installError}
           </p>
+        )}
+        {installBanner && (
+          <div className="discover-install-banner" role="status">
+            <span>{installBanner}</span>
+            <button
+              type="button"
+              className="discover-install-banner-dismiss"
+              aria-label="Dismiss"
+              onClick={() => setInstallBanner(null)}
+            >
+              ✕
+            </button>
+          </div>
         )}
       </div>
       <div

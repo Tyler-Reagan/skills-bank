@@ -11,7 +11,6 @@ import type {
   ExportResult,
   FinalizeResult,
   ImportRegistryManifestResult,
-  InstallFromGithubResult,
   ImportSkillOutcome,
   InstalledSkill,
   LabelsMap,
@@ -805,18 +804,17 @@ interface SkillsBankAPI {
   }>;
   /**
    * Phase 4 (v1.5): one-shot install from a GitHub URL. The
-   * renderer passes the raw URL string; the main process parses,
-   * composes the core install primitive, and returns either the
-   * `InstallFromGithubResult` (success) or a discriminated error
-   * including the `url-parse-error` arm for URLs that didn't
-   * pass `parseGithubSkillUrl`.
+   * Discover tab: mirror a GitHub skill directly to the shared
+   * ~/.agents/skills/ directory. No bank entry created; skill appears
+   * as "unregistered" in the Installed tab.
    */
   installSkillFromGithub(
     url: string,
   ): Promise<
-    | InstallFromGithubResult
+    | { ok: true; name: string }
     | { ok: false; reason: "url-parse-error"; message: string }
-    | { ok: false; reason: "no-registry-root"; message: string }
+    | { ok: false; reason: "mirror-failed"; message: string; rateLimit?: RateLimitInfo }
+    | { ok: false; reason: "no-skill-md"; message: string }
   >;
   importRegistry(): Promise<{
     ok: boolean;

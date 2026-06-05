@@ -2,7 +2,7 @@
  * Publish a local skill folder to the linked repo as a pull request.
  * See ADR-0007 for the six-step invariant pin.
  *
- * Symmetric counterpart to `mirrorSkillFolder` in `origin.ts`. Drives
+ * Symmetric counterpart to `installSkillFiles` in `origin.ts`. Drives
  * the GitHub REST API directly via the user's Device Flow OAuth token
  * to commit a local skill folder onto a `publish/<name>` branch and
  * open (or update) a pull request. Six-step sequence with the ref

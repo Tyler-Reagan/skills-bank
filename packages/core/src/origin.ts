@@ -62,6 +62,13 @@ export interface ProbeOptions {
   ref?: string;
   /** AbortSignal for cancellation (e.g. on app quit). */
   signal?: AbortSignal;
+  /**
+   * When true, bypass the idempotency guard and always re-fetch even
+   * if `destDir` already exists and is non-empty. Used by
+   * `applyOriginUpdate` which intentionally overwrites an existing
+   * skill folder with the latest upstream content.
+   */
+  force?: boolean;
 }
 
 /**
@@ -193,7 +200,7 @@ export interface MirrorResultErr {
 export type MirrorResult = MirrorResultOk | MirrorResultErr;
 
 /**
- * Fetch every file under `<folderPath>/` from `repo` and mirror them
+ * Fetch every file under `<folderPath>/` from `repo` and write them
  * into `destDir`. Wipe + recopy semantics — `destDir` is cleared
  * before writing, so files removed upstream are removed locally too.
  *
@@ -205,11 +212,16 @@ export type MirrorResult = MirrorResultOk | MirrorResultErr;
  * can retry without worrying about partial state.
  *
  * Does NOT write `.skills-bank.json` / `.skills-bank-hash` sidecars —
- * those are app-state concerns the caller wires after the mirror
+ * those are app-state concerns the caller wires after the install
  * succeeds (so vendor-new-skill, update-in-place, and
  * preview-into-temp-dir can each manage marker state appropriately).
+ *
+ * Idempotent: if `destDir` already exists and is non-empty the function
+ * returns immediately with `{ ok: true, folderHash: "", fileCount: 0 }`.
+ * This makes it safe to call even when files are already present — the
+ * Browse "Install" two-primitive chain relies on this property.
  */
-export async function mirrorSkillFolder(
+export async function installSkillFiles(
   repo: string,
   folderPath: string,
   destDir: string,
@@ -218,6 +230,18 @@ export async function mirrorSkillFolder(
 ): Promise<MirrorResult> {
   const fs = await import("node:fs");
   const path = await import("node:path");
+
+  // Idempotency guard: if destDir already exists and has files, skip the
+  // download entirely. Safe to call multiple times (e.g. Browse Install chain).
+  // Pass `options.force = true` to bypass (used by applyOriginUpdate which
+  // intentionally overwrites an existing folder with fresh upstream content).
+  if (
+    !options.force &&
+    fs.existsSync(destDir) &&
+    fs.readdirSync(destDir).length > 0
+  ) {
+    return { ok: true, folderHash: "", fileCount: 0 };
+  }
 
   const probe = await fetchOriginTree(repo, token, options);
   if (!probe.ok) {
@@ -325,7 +349,7 @@ export async function mirrorSkillFolder(
  * concerns, not core concerns).
  *
  * Side effects: writes to disk under `<registryRoot>/skills/<entry.path>`.
- * No network access beyond `mirrorSkillFolder`'s own fetches; no
+ * No network access beyond `installSkillFiles`'s own fetches; no
  * mutation of `~/.agents/.skill-lock.json` or any other CLI-owned
  * state.
  */
@@ -416,14 +440,15 @@ export async function applyOriginUpdate(
     }
   };
 
-  const mirror = await mirrorSkillFolder(
+  const mirror = await installSkillFiles(
     origin.repo,
     folderPath,
     registrySkillDir,
     ctx.token,
+    { force: true },
   );
   if (!mirror.ok) {
-    // Mirror itself didn't mutate destDir (ADR-0001 Suite 4); just
+    // installSkillFiles didn't mutate destDir (ADR-0001 Suite 4); just
     // discard the scratch and propagate.
     cleanupScratch();
     if (mirror.status === 429 && mirror.rateLimit) {

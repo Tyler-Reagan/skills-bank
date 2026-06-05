@@ -6,13 +6,12 @@ Agent operating instructions for the `skills-bank` repo. Auto-loaded by Claude C
 
 Monorepo (pnpm workspaces):
 
-- **`packages/core`** — pure TypeScript registry/install logic. Consumed by both desktop and CLI; no Electron, no DOM dependencies.
+- **`packages/core`** — pure TypeScript registry/install logic. No Electron, no DOM dependencies.
 - **`packages/desktop`** — Electron app (main + renderer). The primary product.
-- **`packages/cli`** — Node CLI. Five-command scripting surface (`list`, `installed`, `install`, `uninstall`, `path`) with hidden redirect-stubs for the four commands removed in v1.6 (`import`, `export`, `finalize`, `sync-installed`). Not feature-parity with the desktop app — interactive flows live there.
 - **`skills/`** — bundled skill content. Houses the **Curated set** the app ships under `skills/vendored/<name>/`. The post-Phase-1 (v1.1) Curated set is intentionally minimal — just `find-skills` — see the [CHANGELOG](./CHANGELOG.md) v1.2.0 entry. The bucket layout (`skills/{personal,vendored}/<name>/`) is universal across registries (see `UBIQUITOUS_LANGUAGE.md`), but the curation layer uses only `vendored/` by composition: the maintainer's authored skills live in their own origin repo, `Tyler-Reagan/skills` (extracted from the former `skills/personal/` via `git subtree split` in v1.1). The maintainer's end-user flow links `Tyler-Reagan/skills` as their registry from Account → Sign in with GitHub.
 - **`scripts/`** — maintenance + agent operations (validation, index build, reset, etc.).
 
-The desktop app is the product. The CLI is a scripting surface, not a feature-parity peer.
+The desktop app is the product.
 
 ## Scripts split
 

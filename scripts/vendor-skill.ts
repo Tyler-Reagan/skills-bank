@@ -17,7 +17,7 @@
 //      `npx skills find` against the catalog when `@skill-id` is
 //      supplied, or via the explicit `--path` flag).
 //   2. Mirrors the skill folder into `<repo-root>/skills/<name>/`
-//      using the shared `mirrorSkillFolder` helper from core.
+//      using the shared `installSkillFiles` helper from core.
 //   3. Writes `.skills-bank.json` with `kind: "github"`, repo,
 //      sourceUrl, skillPath, skillFolderHash, installedAt, fetchedAt.
 //   4. Writes `.skills-bank-hash` as the drift baseline.
@@ -37,7 +37,7 @@ import { promisify } from "node:util";
 import {
   folderPathFromSkillPath,
   hashSkillFolder,
-  mirrorSkillFolder,
+  installSkillFiles,
   readSkillSource,
   ORIGIN_KIND_GITHUB,
   writeSkillSource,
@@ -274,7 +274,7 @@ async function main(): Promise<void> {
 
   console.log(`vendoring ${args.repo}/${folderPath} → ${destRel}/ ...`);
 
-  const mirror = await mirrorSkillFolder(args.repo, folderPath, destDir, token);
+  const mirror = await installSkillFiles(args.repo, folderPath, destDir, token);
   if (!mirror.ok) {
     console.error(`mirror failed: ${mirror.message}`);
     process.exit(1);

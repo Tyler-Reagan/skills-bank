@@ -41,12 +41,12 @@ import {
   type ManifestDecisions,
   type RateLimitInfo,
   MANIFEST_SCHEMA_VERSION,
-  installSkillFromGithub,
   parseGithubSkillUrl,
   writeRegistrySnapshot,
   type ManifestSkill,
   type RegistryManifest,
   findSkillFolder,
+  readSkillMeta,
   pushSkillFolder,
   fetchCanonicalTarball,
   hashSkillFolder,
@@ -61,7 +61,10 @@ import {
   fromCaught,
   getExportInfo,
   hideCanonSkill,
-  installSkill,
+  linkSkillToAgents,
+  installSkillFiles,
+  getAgent,
+  getDefaultInstallAgents,
   invalidateCanonCache,
   makeAppError,
   mergeImportRegistry,
@@ -82,7 +85,7 @@ import {
   scanAndStampUpstreamFromLock,
   scanExistingInstalls,
   walkSkills,
-  uninstallSkill,
+  unlinkSkillFromAgents,
   removeBrokenLinks,
   repairBrokenLinks,
   scanLocalDiagnostics,
@@ -1394,14 +1397,28 @@ ipcMain.handle(
 
 mutatingHandle(
   IPC.install,
-  (_e, name: string, force?: boolean, agents?: AgentId[]) => {
+  async (_e, name: string, force?: boolean, agents?: AgentId[]) => {
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, errors: [] };
     try {
-      const r = installSkill(name, {
-        registryRoot,
-        force: force ?? false,
-        ...(agents && agents.length > 0 ? { agents } : {}),
-      });
+      const found = findSkillFolder(registryRoot, name);
+      if (!found) throw new Error(`Skill "${name}" not found in registry.`);
+      const skillPath = found.dir;
+      const source = readSkillSource(skillPath);
+
+      // Ensure files are on disk (idempotent — skips if already present).
+      if (source.origin?.kind === "github" && source.origin.repo && source.origin.skillPath) {
+        await installSkillFiles(
+          source.origin.repo,
+          folderPathFromSkillPath(source.origin.skillPath),
+          skillPath,
+          getStoredToken(),
+        );
+      }
+
+      const targetAgents = agents && agents.length > 0
+        ? agents.map(getAgent)
+        : getDefaultInstallAgents();
+      const r = linkSkillToAgents(skillPath, targetAgents, { force: force ?? false });
       const wrote = r.installs.filter((i) => !i.alreadyInstalled);
       if (wrote.length > 0) {
         return {
@@ -1654,7 +1671,7 @@ ipcMain.handle(IPC.clearPendingConflicts, () => {
 // keeps the legacy "remove from every agent dir" behavior.
 mutatingHandle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
   try {
-    const r = uninstallSkill(
+    const r = unlinkSkillFromAgents(
       name,
       agents && agents.length > 0 ? { agents } : {},
     );
@@ -2595,10 +2612,12 @@ ipcMain.handle(
     let installedCount = 0;
     for (const name of names) {
       try {
-        const r = installSkill(name, {
-          registryRoot,
-          agents,
-        });
+        const found = findSkillFolder(registryRoot, name);
+        if (!found) throw new Error(`Skill "${name}" not found in registry.`);
+        const targetAgents = (agents as AgentId[]).length > 0
+          ? (agents as AgentId[]).map(getAgent)
+          : getDefaultInstallAgents();
+        const r = linkSkillToAgents(found.dir, targetAgents);
         if (r.anyNew) installedCount++;
         for (const e of r.errors) {
           errors.push(`${name} → ${e.agent}: ${e.message}`);
@@ -2622,15 +2641,10 @@ ipcMain.handle(
 
 // Phase 4 (v1.5): one-shot install from a pasted GitHub URL.
 // Parses the URL, composes the core install primitive, rebuilds
-// the registry index so the new skill is immediately visible.
+// Discover tab install: mirror from GitHub directly into the shared
+// ~/.agents/skills/ directory. No bank entry created — the skill lands
+// as an "unregistered" real directory, identical to a terminal install.
 mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
-  if (!registryRoot) {
-    return {
-      ok: false,
-      reason: "no-registry-root",
-      message: NO_ROOT_MSG,
-    } as const;
-  }
   const parsed = parseGithubSkillUrl(url);
   if ("kind" in parsed) {
     return {
@@ -2639,31 +2653,47 @@ mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
       message: parsed.message,
     } as const;
   }
-  // personal only when the origin repo is the user's linked registry; everything else is vendored.
-  const ownsOriginRepo =
-    linkedRepo !== null && linkedRepo.fullName === parsed.repo;
-  let result: Awaited<ReturnType<typeof installSkillFromGithub>>;
+
+  const folderPath = folderPathFromSkillPath(parsed.skillPath);
+  const provisionalName = folderPath.split("/").filter(Boolean).pop() ?? "skill";
+  const destDir = path.join(
+    getAgentSkillsDir(getAgent("agents")),
+    provisionalName,
+  );
+
+  let mirror: Awaited<ReturnType<typeof installSkillFiles>>;
   try {
-    result = await installSkillFromGithub({
-      registryRoot,
-      repo: parsed.repo,
-      skillPath: parsed.skillPath,
-      bucket: ownsOriginRepo ? "personal" : "vendored",
-      token: getStoredToken(),
-    });
+    mirror = await installSkillFiles(parsed.repo, folderPath, destDir, getStoredToken());
   } catch (err) {
     return {
       ok: false,
       reason: "mirror-failed",
-      message:
-        err instanceof Error ? err.message : "Unexpected error during install.",
+      message: err instanceof Error ? err.message : "Unexpected error during install.",
     } as const;
   }
-  if (result.ok) {
-    installSkill(result.name, { registryRoot, force: false });
-    buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
+  if (!mirror.ok) {
+    return { ok: false, reason: "mirror-failed", message: mirror.message, rateLimit: mirror.rateLimit } as const;
   }
-  return result;
+
+  const meta = readSkillMeta(destDir);
+  if (!meta) {
+    fs.rmSync(destDir, { recursive: true, force: true });
+    return {
+      ok: false,
+      reason: "no-skill-md",
+      message: `${parsed.repo}/${folderPath} doesn't contain a SKILL.md with frontmatter.`,
+    } as const;
+  }
+
+  // Rename to canonical name if frontmatter declares one.
+  let finalName = provisionalName;
+  if (meta.name && meta.name !== provisionalName) {
+    const canonDest = path.join(getAgentSkillsDir(getAgent("agents")), meta.name);
+    fs.renameSync(destDir, canonDest);
+    finalName = meta.name;
+  }
+
+  return { ok: true, name: finalName } as const;
 });
 
 ipcMain.handle(IPC.importRegistry, async () => {

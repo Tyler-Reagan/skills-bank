@@ -14,7 +14,6 @@ import { ConflictResolutionModal } from "./ConflictResolutionModal.js";
 import { ManifestConflictModal } from "./ManifestConflictModal.js";
 import { DeleteUnregisteredConfirm } from "./DeleteUnregisteredConfirm.js";
 import { SettingsModal } from "./SettingsModal.js";
-import { InstallFromGithubModal } from "./InstallFromGithubModal.js";
 import { KeyboardShortcutsOverlay } from "./KeyboardShortcutsOverlay.js";
 import { AccountModal } from "./AccountModal.js";
 import { ManifestImportConfirmModal } from "./ManifestImportConfirmModal.js";
@@ -49,7 +48,6 @@ import type {
 export type ActiveModal =
   | { kind: "register" }
   | { kind: "settings" }
-  | { kind: "installFromGithub" }
   | { kind: "shortcuts" }
   | { kind: "account" }
   | { kind: "connectGithub" }
@@ -583,16 +581,6 @@ export function ModalHost({
             await refresh();
           }}
           isAuthed={Boolean(authStatus?.user)}
-        />
-      )}
-
-      {modal?.kind === "installFromGithub" && (
-        <InstallFromGithubModal
-          onClose={() => closeModal()}
-          onInstalled={() => {
-            closeModal();
-            void refresh();
-          }}
         />
       )}
 

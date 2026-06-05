@@ -9,7 +9,7 @@ import {
   removeExternalRegistryEntry,
 } from "./external.js";
 import type { RegistryEntry } from "./types.js";
-import type { UninstallTargetResult } from "./install.js";
+import type { UnlinkTargetResult } from "./install.js";
 import { buildRegistryIndex } from "./build.js";
 
 export interface UnregisterOptions {
@@ -42,7 +42,7 @@ export interface UnregisterResult {
   /** Whether the entry was adopted before unregister. */
   wasAdopted: boolean;
   /** Symlinks rewritten to point at the new location (adopted). */
-  rewrites: UninstallTargetResult[];
+  rewrites: UnlinkTargetResult[];
   /** Per-row failures, structured. */
   errors: AppError[];
   /** Top-level error when `ok=false`. */
@@ -273,7 +273,7 @@ function unregisterAdopted(
   // Sweep agent dirs and repoint symlinks that pointed at the old
   // sourceDir to the new destDir. Real-directory entries are left
   // alone (they may be unrelated content).
-  const rewrites: UninstallTargetResult[] = [];
+  const rewrites: UnlinkTargetResult[] = [];
   for (const agent of AGENTS) {
     const linkPath = path.join(getAgentSkillsDir(agent), name);
     let stat: fs.Stats | null = null;
