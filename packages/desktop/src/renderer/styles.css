@@ -3656,6 +3656,9 @@ button:disabled {
 }
 
 /* ── BrowseTab ghost band ──────────────────────────────── */
+.ghost-band {
+  margin-bottom: 10px;
+}
 .ghost-band-grid {
   list-style: none;
   padding: 0;
@@ -5018,7 +5021,7 @@ button:disabled {
   justify-content: space-between;
   gap: var(--s3);
   padding: var(--s3) var(--s4);
-  margin-bottom: var(--s4);
+  margin-bottom: 10px;
   background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
   border-radius: 8px;

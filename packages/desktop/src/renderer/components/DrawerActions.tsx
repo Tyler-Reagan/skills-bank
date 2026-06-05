@@ -546,7 +546,6 @@ export function DrawerActions({
             )}
           </button>
         )}
-
       </div>
 
       {repairState.kind === "confirm-delete" && (

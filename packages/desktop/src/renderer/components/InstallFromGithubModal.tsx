@@ -67,7 +67,9 @@ export function InstallFromGithubModal({
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Install failed — check your network and try again.",
+        err instanceof Error
+          ? err.message
+          : "Install failed — check your network and try again.",
       );
     } finally {
       setBusy(false);

@@ -17,7 +17,6 @@ import {
 const GH_API_BASE = "https://api.github.com";
 const USER_AGENT = "skills-bank";
 
-
 export interface FetchTarballOptions {
   owner: string;
   repo: string;

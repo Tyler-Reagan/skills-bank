@@ -97,7 +97,9 @@ export function DiscoverTab({
       }
     } catch (err) {
       setInstallError(
-        err instanceof Error ? err.message : "Install failed — check your network and try again.",
+        err instanceof Error
+          ? err.message
+          : "Install failed — check your network and try again.",
       );
     } finally {
       setInstallBusy(false);

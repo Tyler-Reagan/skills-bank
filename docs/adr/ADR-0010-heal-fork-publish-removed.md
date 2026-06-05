@@ -53,7 +53,7 @@ Reasons:
 2. **Source axis conflation made fork unruly.** Pre-v1.20 `source: "curated"`
    applied to both app-bundled skills AND user-installed third-party skills
    from any origin. This made the fork source condition (`anything source:
-   "curated"`) overcrowded and impossible to reason about precisely.
+"curated"`) overcrowded and impossible to reason about precisely.
 
 3. **`source: "vendored"` introduced in v1.20 stabilises semantics.**
    With the source axis now carrying `"curated"` for app-bundled skills and

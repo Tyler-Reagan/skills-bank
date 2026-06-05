@@ -1,15 +1,60 @@
 {
-  "generatedAt": "2026-06-02T15:03:37.143Z",
+  "generatedAt": "2026-06-05T16:00:10.146Z",
   "registry": "skills-bank",
   "entries": [
+    {
+      "name": "audit-memories",
+      "description": "Audits a project's Claude Code memory files — classifies each entry keep/prune/merge/fix, verifies project and reference claims against the live repo, finds redundancy and dangling [[links]], and proposes a review-first consolidation plan before changing anything. Use when the user says \"audit my memories\", \"clean up memory\", \"prune stale memories\", \"consolidate memories\", \"are my memories stale\", or wants memory hygiene over the ~/.claude memory files.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/audit-memories",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "doc-taxonomy-cleanup",
+      "description": "Cleans up a poisoned documentation tree by discovering the repo's actual doc surface, triaging every file into a plans / decisions / archive / delete taxonomy, rewriting promoted docs as code-grounded decision records, and distilling stale content into a single load-bearing troubleshooting.md. Adapts to whatever convention the repo already uses (ADR, MADR, RFC, decisions/) instead of imposing defaults. Use when the user says \"clean up stale docs\", \"audit my docs\", \"prune docs\", \"doc cleanup\", \"stale documentation\", \"consolidate docs\", \"establish doc taxonomy\", \"differentiate plans from decisions\", or \"docs are poisoning context\".",
+      "version": "1.0.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/doc-taxonomy-cleanup",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "eureka",
+      "description": "Turns a raw shower thought or pivot idea into a structured outline ready for Grill-Me. Use when the user says \"eureka\", has a loose idea they want to develop (\"I'm thinking about...\", \"what if we...\", \"we should drop X and become Y\"), wants to brainstorm a pivot or new direction, or wants to pressure-test a rough concept before committing to a plan. Challenges the idea — pushes on why, what breaks, and what's gained — rather than just expanding it.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/eureka",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
     {
       "name": "find-skills",
       "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
       "path": "skills/vendored/find-skills",
       "source": {
         "source": "curated",
-        "syncedFromCommit": "7e5cd4650884e82c6165be33d5f9ab51d07315ee",
-        "syncedAt": "2026-05-29T05:33:48.798Z",
+        "syncedFromCommit": "ad2ae97ce4c5227d415296a0d9a2728c56a300a0",
+        "syncedAt": "2026-06-05T15:58:57.714Z",
         "origin": {
           "kind": "github",
           "repo": "vercel-labs/skills",
@@ -26,6 +71,354 @@
         "message": "chore: release v1.16.0"
       },
       "bucket": "vendored",
+      "canon": false
+    },
+    {
+      "name": "gitlab-ci-inspector",
+      "description": "Fetches and diagnoses GitLab CI/CD job logs using glab CLI or the REST API. Use when the user shares a gitlab.com job or pipeline URL, asks \"why did my pipeline fail\", \"what does this CI job say\", or \"check the build logs\" — accepts job URLs, pipeline URLs, or project + job name pairs.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/gitlab-ci-inspector",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills.git",
+          "skillPath": "skills/infrastructure/gitlab-ci-inspector/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4dbe99c5887cbe94ef7a694735b45bca46505ee9",
+        "date": "2026-05-20 12:03:26 -0700",
+        "message": "chore(skills/personal): remove from curation layer after subtree split"
+      },
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "gitlab-mr-writing",
+      "description": "Writes calibrated GitLab merge request descriptions and optional technical reviewer guides. Use when the user says \"write my MR description\", \"draft the merge request body\", \"help me document this change\", or asks for a technical reviewer summary — especially for architecture changes, cross-package refactors, or MRs that are too large to read linearly.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/gitlab-mr-writing",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills.git",
+          "skillPath": "skills/infrastructure/gitlab-mr-writing/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4dbe99c5887cbe94ef7a694735b45bca46505ee9",
+        "date": "2026-05-20 12:03:26 -0700",
+        "message": "chore(skills/personal): remove from curation layer after subtree split"
+      },
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "homebrew-cli-release",
+      "description": "Directs the end-to-end process of shipping a self-contained compiled CLI as a `brew install`-able command. The build half is GoReleaser for Go (and GoReleaser's prebuilt builder or a sibling tool like cargo-dist for Rust/Zig/etc.); the Homebrew half — tap, release token, cask, quarantine, license — is language-agnostic. Use when the user says \"distribute this on homebrew\", \"make my CLI installable\", \"brew install my tool\", \"set up a homebrew tap\", \"release my Go CLI\", \"use goreleaser\", \"invoke it via command instead of go run / cargo run\", or wants prebuilt binaries on a GitHub Release with an auto-updated Homebrew formula/cask. Covers version-injection wiring, the homebrew_casks-vs-deprecated-brews choice, personal-tap-vs-homebrew-core, the cross-repo release token, macOS Gatekeeper quarantine handling, the license gate, and cutting plus verifying the first tagged release.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/homebrew-cli-release",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "pretty-mermaid",
+      "description": "Renders Mermaid diagrams to styled SVG or ASCII art using beautiful-mermaid, with 15 themes and batch support. Use when the user wants to render a .mmd file, asks to \"create a flowchart / sequence diagram / ER diagram / state diagram\", wants to \"apply a theme\" or \"beautify a diagram\", needs a terminal-friendly ASCII version of a Mermaid chart, or wants to batch-render multiple diagrams at once.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/pretty-mermaid",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills.git",
+          "skillPath": "skills/tools/pretty-mermaid/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4dbe99c5887cbe94ef7a694735b45bca46505ee9",
+        "date": "2026-05-20 12:03:26 -0700",
+        "message": "chore(skills/personal): remove from curation layer after subtree split"
+      },
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "pretty-qmk-keymap",
+      "description": "Generates visual keymap diagrams embedded as comments in QMK keymap.c files. Two styles are supported — the overlay style (//╷ alignment markers, binding columns align with diagram cells) and the decorative block-comment style (human-readable, Totem/hand-drawn aesthetic). Use when asked to \"add a keymap diagram\", \"draw the layout\", \"make the keymap readable\", or \"add ascii art above the layers\".",
+      "version": "1.1.0",
+      "author": "tylerreagan98@gmail.com",
+      "path": "skills/personal/pretty-qmk-keymap",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "pretty-zmk-keymap",
+      "description": "Generates box-drawing ASCII art keymap diagrams embedded as comments in ZMK .keymap files, aligned to each layer's bindings block. Use when the user asks to \"add a keymap diagram\", \"draw the layout\", \"make the keymap readable\", \"add ascii art above the layers\", or wants a visual representation of their key layout in the .keymap file itself.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/pretty-zmk-keymap",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "qmk-config",
+      "description": "QMK project configuration specialist for keyboard.json, rules.mk, config.h, and Vial setup. Use when editing keyboard hardware definitions, enabling features, configuring split keyboard wiring, setting up Vial/VIA, or working with the user config repo + QMK source tree sync pattern.",
+      "version": "1.1.0",
+      "author": "tylerreagan98@gmail.com",
+      "path": "skills/personal/qmk-config",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "qmk-debug",
+      "description": "Diagnoses and resolves common QMK/Vial firmware failures across four categories — build errors, flash failures, split keyboard issues, and Vial problems. Use when the user reports a compile error, a key not working after flashing, split halves not communicating, Vial not connecting, or wrong keys firing.",
+      "version": "1.1.0",
+      "author": "tylerreagan98@gmail.com",
+      "path": "skills/personal/qmk-debug",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "qmk-keymap",
+      "description": "QMK keymap specialist covering keymap.c authoring — basic/shifted keycodes, modifier wrappers, MT/LT hold-tap, tap-dance, combos, one-shot keys, macros, and tap-hold configuration. Use when editing keymap.c, asking about MT or LT behavior, home-row mods, tap dance, combos, SEND_STRING macros, or which keycodes to use for shifted symbols.",
+      "version": "1.1.0",
+      "author": "tylerreagan98@gmail.com",
+      "path": "skills/personal/qmk-keymap",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "qmk-new-config",
+      "description": "Scaffolds a new QMK keyboard keymap by generating keymap.c, config.h, rules.mk, and (optionally) a Vial setup from answers to five questions about hardware and features. Use when the user wants to start a new QMK keymap, set up Vial for the first time, or create a personal keymap for an existing keyboard.",
+      "version": "1.1.0",
+      "author": "tylerreagan98@gmail.com",
+      "path": "skills/personal/qmk-new-config",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "scatterbrain",
+      "description": "Focus-recovery skill for when tangential drill-downs have buried the main conversational thread. Use when the user says \"scatterbrain\", wants to bookmark the current discussion so they can resurface after a tangent, realizes they've lost the thread of what was being discussed, or wants to identify where a session went sideways. Surfaces the drift point and classifies the tangent as productive or derailing before prompting a return to the main thread.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/scatterbrain",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "terraform-plan-summary",
+      "description": "Parses Terraform plan output or GitLab CI job logs into a concise infrastructure impact summary. Use when the user pastes a terraform plan, shares a CI job log with plan output, asks \"what would this change\", \"summarize the plan\", or \"what gets destroyed\" — strips GitLab runner noise and ANSI escapes automatically.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/terraform-plan-summary",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Tyler-Reagan/skills",
+          "sourceUrl": "https://github.com/Tyler-Reagan/skills.git",
+          "skillPath": "skills/infrastructure/terraform-plan-summary/SKILL.md",
+          "installedAt": "2026-05-18T08:09:59.482Z"
+        }
+      },
+      "adopted": true,
+      "lastCommit": {
+        "sha": "4dbe99c5887cbe94ef7a694735b45bca46505ee9",
+        "date": "2026-05-20 12:03:26 -0700",
+        "message": "chore(skills/personal): remove from curation layer after subtree split"
+      },
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "workflow-fit",
+      "description": "Rates how well each of six multi-agent workflow patterns fits a given task (0-10 with grounded reasons) and recommends a composite orchestration. Use when the user asks \"which workflow pattern\", \"rate the workflow patterns\", \"pick a workflow pattern for this\", \"how should we orchestrate this\", \"what pattern fits this task\", wants to choose between classify/fanout/verify/generate/tournament/loop before spawning agents, or says \"ultracode\" and wants to choose the right harness first.",
+      "version": "1.2.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/workflow-fit",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "write-a-skill",
+      "description": "Authors or updates a Claude Code skill that loads cleanly into whatever skills repo or collection you're working in — discovering that repo's layout, frontmatter, and registration instead of assuming them. Use when the user says \"write a skill\", \"create a skill\", \"new skill\", \"add a skill\", \"update a skill\", or wants to author a new agent capability.",
+      "version": "3.0.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/write-a-skill",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "zmk-config",
+      "description": "ZMK project configuration specialist for west.yml manifests, build.yaml CI targets, and Kconfig .conf files. Use when the user is setting up or editing a ZMK config repo, asks about module pinning, shield or board identifiers, build targets, ZMK Studio, split keyboard wiring, CONFIG_ZMK_ Kconfig options, or the UF2 flash workflow.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/zmk-config",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "zmk-debug",
+      "description": "Diagnoses and resolves common ZMK firmware failures across five categories: build errors, flash failures, split pairing issues, display problems, and ZMK Studio connection failures. Use when the user reports a build error, CI failure, \"board not found\", \"KeyError qualifiers\", keyboard not pairing, display blank or not compiling, or ZMK Studio not connecting.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/zmk-debug",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "zmk-display",
+      "description": "ZMK display subsystem specialist covering nice!view, SSD1306 OLED, IL0323 ePaper, and dongle screens. Use when the user asks about adding a display to a ZMK keyboard, writing a custom status screen, using LVGL widgets, integrating nice-view-gem or other display modules, or configuring CONFIG_ZMK_DISPLAY options.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/zmk-display",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "zmk-keymap",
+      "description": "ZMK keymap specialist covering the full behavior library across v0.3 and ZMK main. Use when the user is editing a .keymap file, asks about hold-tap flavors, tap-dance, mod-morph, combos, or macros, references &mt, &lt, &mo, &sk, &caps_word, or sensor bindings, or wants to know which header to include for mouse or Bluetooth behaviors.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/zmk-keymap",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "zmk-lvgl-migrate",
+      "description": "Migrates ZMK nice!view display modules from LVGL v8 (ZMK v0.3 / Zephyr 3.5) to LVGL v9 (ZMK main / Zephyr 4.1). Use when the user says \"port this display to ZMK main\", \"migrate from v8 to v9\", \"lv_canvas_draw_rect undeclared\", \"LV_IMG_CF_TRUE_COLOR undeclared\", or wants to use a community display module that only works on ZMK v0.3. Pairs with zmk-display (v8 API reference) and zmk-config (west.yml / build.yaml changes).",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/zmk-lvgl-migrate",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
+      "canon": true
+    },
+    {
+      "name": "zmk-new-config",
+      "description": "Scaffolds a new ZMK keyboard config repo by generating west.yml, build.yaml, and per-side .conf files from answers to six questions about hardware and features. Use when the user wants to start a new ZMK keyboard project, asks \"how do I set up a ZMK config repo\", \"create my zmk config\", or has a new keyboard and no existing config files.",
+      "version": "1.1.0",
+      "author": "uraniborglabs@gmail.com",
+      "path": "skills/personal/zmk-new-config",
+      "source": {
+        "source": "user",
+        "syncedFromCommit": "79f771864e6c3ff775a85ac3e7dfb19d21386d7d",
+        "syncedAt": "2026-06-05T15:59:52.197Z"
+      },
+      "adopted": true,
+      "bucket": "personal",
       "canon": true
     }
   ]

@@ -497,4 +497,3 @@ export async function applyOriginUpdate(
 
   return { ok: true, message: `Updated ${ctx.name} from ${origin.repo}.` };
 }
-
