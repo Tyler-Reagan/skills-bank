@@ -3464,7 +3464,15 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
         // remote layouts all link cleanly.
         { mountTo: "personal" },
       );
-      if (report.upserted.length === 0 && report.conflicts.length === 0) {
+      // Only a report with zero discoveries means "no recognizable
+      // skills". A pull where every skill matched its local content
+      // hash also upserts nothing (`unchanged` carries the skips) —
+      // that's a successful no-op, handled by the success path below.
+      if (
+        report.upserted.length === 0 &&
+        report.conflicts.length === 0 &&
+        report.unchanged.length === 0
+      ) {
         broadcastSyncStatus({ kind: "idle" });
         const detail =
           (report.discoveryCollisions ?? []).length > 0
@@ -3472,7 +3480,7 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
             : "";
         return {
           ok: false,
-          message: `${fullName} has no skills the app can recognize${detail}. A skill folder needs a SKILL.md or meta.json.`,
+          message: `${fullName} has no skills the app can recognize${detail}. A skill folder needs a SKILL.md.`,
         };
       }
       broadcastSyncStatus({
@@ -3507,7 +3515,9 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
       const message =
         report.conflicts.length > 0
           ? `synced ${report.upserted.length} from ${fullName}, ${report.conflicts.length} conflict(s) need review`
-          : `synced ${report.upserted.length} skill(s) from ${fullName}`;
+          : report.upserted.length === 0
+            ? `${fullName} is already up to date (${report.unchanged.length} skill(s) unchanged)`
+            : `synced ${report.upserted.length} skill(s) from ${fullName}`;
       return {
         ok: true,
         message,

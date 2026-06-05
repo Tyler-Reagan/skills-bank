@@ -535,6 +535,12 @@ describe("applyCanonicalSync — hash-gate (no-op when content unchanged)", () =
       "new-sha",
     );
     expect(report.upserted).toEqual([]);
+    // The skip is reported, not silent — callers use `unchanged` to
+    // tell an already-up-to-date sync apart from a tree with no
+    // recognizable skills (both have zero upserts). The packaged-app
+    // "Tyler-Reagan/skills has no skills the app can recognize" bug
+    // on no-op pulls came from conflating the two.
+    expect(report.unchanged).toEqual(["alpha"]);
     expect(readLocal("vendored", "alpha", "SKILL.md")).toBe("# alpha");
   });
 
@@ -560,6 +566,7 @@ describe("applyCanonicalSync — hash-gate (no-op when content unchanged)", () =
       "new-sha",
     );
     expect(report.upserted).toEqual(["beta"]);
+    expect(report.unchanged).toEqual([]);
     expect(readLocal("vendored", "beta", "SKILL.md")).toBe("# updated");
   });
 
