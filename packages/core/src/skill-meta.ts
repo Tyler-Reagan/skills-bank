@@ -79,11 +79,17 @@ function compiledValidator(): SchemaValidator {
 }
 
 /**
- * Parse a SKILL.md's YAML frontmatter into a flat record. Supports
- * scalar `key: value` lines, inline-array tags (`tags: [a, b]`), and
- * block-array tags (one `- item` per line after a `tags:` header).
- * Anything else is silently dropped — only a small fixed set of
- * fields matters for meta.json synthesis.
+ * Parse a SKILL.md's YAML frontmatter into a flat record. The single
+ * frontmatter parser in core (registry.ts's `readSkillMeta` delegates
+ * here; its former `readSkillMdFrontmatter` is a deprecated wrapper).
+ * Supports:
+ *   - scalar `key: value` lines (quoted scalars resolved via
+ *     `unquoteScalar` — proper escape handling, not a blanket strip)
+ *   - block scalars `key: |` / `key: >` with optional chomp indicator
+ *   - inline arrays (`tags: [a, b]`) and block arrays (`- item` lines)
+ *   - `#` comment lines (skipped)
+ * Anything else is silently dropped — only the fixed SkillMeta field
+ * set matters for validation and index building.
  *
  * Returns null when the file is missing or has no frontmatter block.
  */
@@ -101,6 +107,9 @@ export function parseSkillFrontmatter(
     const line = lines[i]!;
     i++;
     if (!line.trim() || line.trim().startsWith("#")) continue;
+    // Indented lines belong to the previous key's block scalar
+    // (consumed inline below) — never start a new key.
+    if (/^\s/.test(line)) continue;
     const idx = line.indexOf(":");
     if (idx === -1) continue;
     const key = line.slice(0, idx).trim();
@@ -114,7 +123,7 @@ export function parseSkillFrontmatter(
       } else {
         out[key] = inner
           .split(",")
-          .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+          .map((s) => unquoteScalar(s.trim()))
           .filter(Boolean);
       }
       continue;
@@ -123,20 +132,91 @@ export function parseSkillFrontmatter(
     if (rest === "" && i < lines.length && lines[i]!.trim().startsWith("-")) {
       const arr: string[] = [];
       while (i < lines.length && lines[i]!.trim().startsWith("-")) {
-        const item = lines[i]!.trim()
-          .replace(/^-\s*/, "")
-          .replace(/^["']|["']$/g, "");
+        const item = unquoteScalar(lines[i]!.trim().replace(/^-\s*/, ""));
         if (item) arr.push(item);
         i++;
       }
       out[key] = arr;
       continue;
     }
-    // Scalar (strip surrounding quotes).
-    const stripped = rest.replace(/^["']|["']$/g, "");
-    out[key] = stripped;
+    // Block scalars: `key: |` (literal — preserve newlines) or
+    // `key: >` (folded — newlines become spaces), with optional chomp
+    // indicator (`|-`, `|+`, `>-`, `>+`). Without this branch the
+    // captured value would be the literal indicator char (`|`), which
+    // would surface as a one-character description and trip drift
+    // detection downstream.
+    const blockMatch = rest.match(/^([|>])[-+]?\s*$/);
+    if (blockMatch) {
+      const mode = blockMatch[1]!;
+      const body: string[] = [];
+      while (i < lines.length) {
+        const next = lines[i]!;
+        // Block ends at the first non-empty, un-indented line.
+        if (next.length > 0 && !/^\s/.test(next)) break;
+        body.push(next);
+        i++;
+      }
+      const nonEmpty = body.filter((l) => l.trim().length > 0);
+      const minIndent =
+        nonEmpty.length > 0
+          ? Math.min(...nonEmpty.map((l) => /^\s*/.exec(l)![0].length))
+          : 0;
+      const stripped = body.map((l) => l.slice(minIndent));
+      while (stripped.length > 0 && !stripped[stripped.length - 1]!.trim()) {
+        stripped.pop();
+      }
+      out[key] = mode === ">" ? stripped.join(" ") : stripped.join("\n");
+      continue;
+    }
+    // Plain or quoted scalar.
+    out[key] = unquoteScalar(rest);
   }
   return out;
+}
+
+/**
+ * Resolve a single-line YAML flow scalar to its string value.
+ *
+ *   - Double-quoted: strip the delimiters and resolve backslash
+ *     escapes (`\"`, `\\`, `\n`, …). Skipping the unescape is what
+ *     leaked literal backslashes into exports for a description
+ *     authored as `"… \"board not found\" …"` — they then
+ *     re-serialized as a double-escaped `\\\"` on the next export
+ *     (the zmk-debug regression).
+ *   - Single-quoted: strip the delimiters; the only escape YAML
+ *     recognizes inside single quotes is a doubled quote (`''` → `'`).
+ *   - Plain (unquoted): returned verbatim. A plain scalar that merely
+ *     *contains* quotes — `Diagnoses … "board not found" …` — keeps
+ *     them; a blanket `replace(/^["']|["']$/g, "")` could shear a
+ *     stray edge quote off such values.
+ */
+function unquoteScalar(raw: string): string {
+  if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
+    return raw
+      .slice(1, -1)
+      .replace(/\\(["\\/bfnrt]|u[0-9a-fA-F]{4})/g, (_m, esc: string) => {
+        switch (esc[0]) {
+          case "n":
+            return "\n";
+          case "t":
+            return "\t";
+          case "r":
+            return "\r";
+          case "b":
+            return "\b";
+          case "f":
+            return "\f";
+          case "u":
+            return String.fromCharCode(parseInt(esc.slice(1), 16));
+          default:
+            return esc; // " \ /
+        }
+      });
+  }
+  if (raw.length >= 2 && raw.startsWith("'") && raw.endsWith("'")) {
+    return raw.slice(1, -1).replace(/''/g, "'");
+  }
+  return raw;
 }
 
 export type ValidateSkillMetaResult =

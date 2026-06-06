@@ -39,7 +39,9 @@ export interface SkillRecord {
   runtime: RuntimeState;
 }
 
-/** Single-shot read of all three sidecars for a skill. */
+/** Single-shot read of all three sidecars for a skill. *
+ * @deprecated since v1.20.2 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle).
+ */
 export function readSkillRecord(skillDir: string): SkillRecord {
   return {
     source: readSkillSource(skillDir),
@@ -55,6 +57,8 @@ export function readSkillRecord(skillDir: string): SkillRecord {
  * which makes the intent clearer (e.g. "I'm only updating the
  * runtime sidecar" reads better than "I'm writing the whole record
  * but only changed runtime").
+ *
+ * @deprecated since v1.20.2 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle).
  */
 export function writeSkillRecord(skillDir: string, record: SkillRecord): void {
   writeSkillSource(skillDir, record.source);

@@ -34,8 +34,9 @@ import {
  * committed. A skill with no resolvable origin (`kind: "none"`) is
  * effectively untracked — present locally but not yet pullable anywhere.
  *
- * Category + tags come from the auto-derive-then-user-maintain labels
- * system (`labels.ts`): `deriveLabels` assigns them at registration,
+ * Category + tags come from the labels system (`labels.ts`): since
+ * v1.19 labels are fully user-driven — `deriveLabels` runs only on
+ * explicit Auto-Generate / Auto-Categorize actions in the renderer —
  * `SkillLabelOverride` carries the user's edits, and the manifest stores
  * the *effective* (merged) values so the curation state travels with the
  * registry.

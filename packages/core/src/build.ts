@@ -27,8 +27,9 @@ export interface BuildIndexOptions {
    */
   writeFile?: boolean;
   /**
-   * Strict mode: drop entries whose meta.json fails schema validation,
-   * and drop folders missing both meta.json and SKILL.md frontmatter.
+   * Strict mode: drop entries whose SKILL.md frontmatter fails schema
+   * validation, and drop folders with no usable frontmatter at all.
+   * (meta.json is gone as of v1.20 — frontmatter is canonical.)
    * Defaults to false — UI consumers should see every skill folder, even
    * imperfectly described ones, with warnings attached so the user can
    * fix the metadata in place.
@@ -73,12 +74,13 @@ function loadValidator(registryRoot: string): SchemaValidator | null {
 }
 
 /**
- * Walk `<registryRoot>/skills/<name>/meta.json` and produce a RegistryIndex
- * in memory. Synchronous and dependency-free at runtime so it can be called
- * from the Electron main process without a subprocess.
+ * Walk `<registryRoot>/skills/<bucket>/<name>/SKILL.md` frontmatter and
+ * produce a RegistryIndex in memory. Synchronous and dependency-free at
+ * runtime so it can be called from the Electron main process without a
+ * subprocess.
  *
- * Lenient by default: a folder with only SKILL.md, or one whose meta.json
- * fails schema validation, still becomes an entry (with warnings). This
+ * Lenient by default: a folder whose frontmatter is incomplete or
+ * fails schema validation still becomes an entry (with warnings). This
  * matches the user expectation that every folder under skills/ is visible,
  * regardless of metadata polish. Pass `strict: true` (CI / authoring) to
  * fail closed instead.
@@ -248,9 +250,8 @@ function buildOneEntry(
 
   let meta: Partial<SkillMeta> = {};
 
-  // Primary path: SKILL.md frontmatter. Uses parseSkillFrontmatter so
-  // block/inline tag arrays are captured (readSkillMdFrontmatter only
-  // returns Record<string, string>).
+  // SKILL.md frontmatter via the consolidated parser (handles block
+  // scalars, quoted scalars, and inline/block tag arrays).
   if (hasSkillMd) {
     const fm = parseSkillFrontmatter(skillMdPath);
     if (fm && fm["name"] && fm["description"]) {

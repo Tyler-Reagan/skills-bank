@@ -113,6 +113,7 @@ export interface DeletePreview {
   willUnlinkSymlinks: InstalledSkill[];
 }
 
+/** @deprecated since v1.20.2 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle). */
 export function previewDeleteUnregistered(
   registryRoot: string,
   name: string,
