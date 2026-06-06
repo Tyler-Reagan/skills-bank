@@ -4,8 +4,7 @@ Reference inventory of everything under `src/renderer/`: what each component,
 hook, context, and support file does and who consumes it. Repo-internal — not
 published to the docs site (`packages/docs/` is the published surface).
 
-> **Freshness: accurate as of commit `e1fbdf6` (2026-06-05), branch
-> `refactor/renderer-cheap-wins`.** LOC and used-by columns are snapshots from
+> **Freshness: accurate as of commit `7a19fd6` (2026-06-05), `main`.** LOC and used-by columns are snapshots from
 > that tree. When the renderer changes materially, re-verify (`wc -l`, grep
 > the import graph) and re-stamp this line — or distrust the numbers and
 > trust only the purposes, which drift slower.
@@ -122,7 +121,7 @@ Components scale to their **current** job: pure glue gets folded into its
 only consumer now (and re-extracted later if it grows a real job), and
 abstractions are built when the need exists — never "kept in case" or
 "folded if it never grows". Applied to date: DrawerHost (pure glue,
-single consumer) folded into ModalHost at `e1fbdf6`.
+single consumer) folded into ModalHost in #115.
 
 Standing observations — each states the condition that triggers action,
 where the condition is a present-tense fact check, not a hypothetical:
