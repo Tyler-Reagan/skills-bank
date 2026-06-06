@@ -5,7 +5,7 @@ import { parseSkillFrontmatter } from "./skill-meta.js";
 
 const INDEX_FILE = "index.json";
 
-/** @deprecated since v1.20.2 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle). */
+/** @deprecated since v1.20.3 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle). */
 export function loadIndex(registryRoot: string): RegistryIndex {
   const p = path.join(registryRoot, INDEX_FILE);
   if (!fs.existsSync(p)) {
@@ -25,7 +25,7 @@ export function findEntry(
 /**
  * Read SKILL.md YAML frontmatter as a flat string map.
  *
- * @deprecated since v1.20.2 — frontmatter parsing is consolidated in
+ * @deprecated since v1.20.3 — frontmatter parsing is consolidated in
  * `skill-meta.ts`. Import `parseSkillFrontmatter` instead (it returns
  * array fields too); this wrapper filters its result to string values
  * and will be removed after one minor cycle.

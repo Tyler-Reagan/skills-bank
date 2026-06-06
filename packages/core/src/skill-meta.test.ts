@@ -151,7 +151,7 @@ describe("validateSkillMeta", () => {
 });
 
 // ── Block-scalar + quoted-scalar coverage (moved from registry.test.ts
-// when frontmatter parsing consolidated here in v1.20.2) ──
+// when frontmatter parsing consolidated here in v1.20.3) ──
 
 function writeSkillMdFile(body: string): string {
   const dir = path.join(scratch, "skill");

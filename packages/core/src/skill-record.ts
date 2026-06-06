@@ -40,7 +40,7 @@ export interface SkillRecord {
 }
 
 /** Single-shot read of all three sidecars for a skill. *
- * @deprecated since v1.20.2 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle).
+ * @deprecated since v1.20.3 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle).
  */
 export function readSkillRecord(skillDir: string): SkillRecord {
   return {
@@ -58,7 +58,7 @@ export function readSkillRecord(skillDir: string): SkillRecord {
  * runtime sidecar" reads better than "I'm writing the whole record
  * but only changed runtime").
  *
- * @deprecated since v1.20.2 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle).
+ * @deprecated since v1.20.3 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle).
  */
 export function writeSkillRecord(skillDir: string, record: SkillRecord): void {
   writeSkillSource(skillDir, record.source);

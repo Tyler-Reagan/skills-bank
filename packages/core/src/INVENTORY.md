@@ -4,7 +4,8 @@ Reference inventory of everything under `packages/core/src/`: what each
 module does, who consumes it, and the conventions that govern the package.
 Repo-internal — not published to the docs site.
 
-> **Freshness: accurate as of 2026-06-06 (v1.20.2 + the core-cleanup PR).**
+> **Freshness: accurate as of commit `a11fc5e` (2026-06-06), `main` —
+> the #117 squash, released as v1.20.3.**
 > LOC and consumer columns are snapshots; re-verify (`wc -l`, grep the
 > import graph) and re-stamp when the package changes materially — or
 > distrust the numbers and trust only the purposes, which drift slower.
