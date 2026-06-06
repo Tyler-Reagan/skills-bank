@@ -3,6 +3,29 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.20.2
+
+Renderer pruning release: 52 → 43 component files (net −1,170 lines), the conflict resolvers converged on one skeleton, a CSS orphan sweep, and one small behavior change — Manage agent links only appears once a skill is actually installed.
+
+### Changed
+
+- **Manage agent links requires an installation.** A registered skill with zero installations now offers **Install** as the entry point; Manage agent links appears once links exist. The `origin-unreachable` / `origin-update-available` drawer states gate the same way, offering Install instead when uninstalled.
+
+- **Conflict resolvers converged.** The sync-collision, install-collision, and manifest-merge resolvers — previously three structural clones — now share one generic `ConflictResolver` skeleton (bulk toolbar, per-row action picker, live tally, footer) with thin domain wrappers. Two minor UI unifications: install-collision rows use the shared row styling and its tally moved into the bulk toolbar.
+
+- **Renderer component consolidation.** Five stateless micro-components gathered into `primitives.tsx`; `TagFilter`, `DiscoverEmpty`, and `ImportIndicator` folded into their single parents; the manifest feature cluster grouped under `components/manifest/`; `DrawerHost` (pure glue) folded into `ModalHost`.
+
+- **Component renames** (internal): `ConflictResolutionModal` → `SyncConflictModal`, `ConflictResolveModal` → `InstallCollisionModal`, `DeleteUnregisteredConfirm` → `DeleteUnregisteredDialog`, SkillCard's `PublishBadge` → `StateBadge`.
+
+### Removed
+
+- **67 orphaned CSS classes** (~550 lines) — leftovers from the removed publish section, fork confirm, LoginScreen/setup screens, the retired header dropdown, and v1.19's bulk-install bar.
+- Dead `isRegistered` prop chain in `SkillCard`/`StateBadge`.
+
+### Added
+
+- **`src/renderer/INVENTORY.md`** — persistent internal reference of every renderer component, hook, and context (LOC, purpose, consumers), freshness-stamped per commit. Not published to the docs site.
+
 ## v1.20.1
 
 Patch release: a pull from a linked repo with zero remote changes no longer fails with "&lt;repo&gt; has no skills the app can recognize".
