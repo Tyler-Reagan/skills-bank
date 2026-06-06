@@ -149,3 +149,159 @@ describe("validateSkillMeta", () => {
     }
   });
 });
+
+// ── Block-scalar + quoted-scalar coverage (moved from registry.test.ts
+// when frontmatter parsing consolidated here in v1.20.2) ──
+
+function writeSkillMdFile(body: string): string {
+  const dir = path.join(scratch, "skill");
+  fs.mkdirSync(dir, { recursive: true });
+  const p = path.join(dir, "SKILL.md");
+  fs.writeFileSync(p, body);
+  return p;
+}
+
+describe("parseSkillFrontmatter — block scalars", () => {
+  test("inline scalar parses unchanged", () => {
+    const dir = writeSkillMdFile(
+      "---\nname: foo\ndescription: a short single line\n---\n# foo\n",
+    );
+    const fm = parseSkillFrontmatter(dir);
+    expect(fm).toEqual({
+      name: "foo",
+      description: "a short single line",
+    });
+  });
+
+  test("literal block (`|`) joins lines with newlines and strips indent", () => {
+    // Regression for fix-knip-unused-exports and any other harvested
+    // skill whose author wrote the description as a YAML literal block.
+    // Pre-fix the parser captured `|` as the value and the description
+    // collapsed to a one-character string, which then propagated through
+    // restoreAuxState into a malformed meta.json.
+    const dir = writeSkillMdFile(
+      [
+        "---",
+        "name: fix-knip",
+        "description: |",
+        "  Fix knip violations. Handles all categories: test-only exports",
+        "  (extract to new file), dead barrel re-exports, internally-only.",
+        "  Use when `npm run knip` reports unused exports.",
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = parseSkillFrontmatter(dir);
+    expect(fm).not.toBeNull();
+    expect(fm!["name"]).toBe("fix-knip");
+    expect(fm!["description"]).toBe(
+      [
+        "Fix knip violations. Handles all categories: test-only exports",
+        "(extract to new file), dead barrel re-exports, internally-only.",
+        "Use when `npm run knip` reports unused exports.",
+      ].join("\n"),
+    );
+  });
+
+  test("folded block (`>`) joins lines with spaces", () => {
+    const dir = writeSkillMdFile(
+      [
+        "---",
+        "name: folded",
+        "description: >",
+        "  one line",
+        "  another line",
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = parseSkillFrontmatter(dir);
+    expect(fm!["description"]).toBe("one line another line");
+  });
+
+  test("chomp indicator (`|-`) parses and strips trailing blank lines", () => {
+    const dir = writeSkillMdFile(
+      ["---", "name: chomp", "description: |-", "  body", "", "---"].join(
+        "\n",
+      ) + "\n",
+    );
+    const fm = parseSkillFrontmatter(dir);
+    expect(fm!["description"]).toBe("body");
+  });
+
+  test("folded-strip block (`>-`) joins with spaces, no trailing newline", () => {
+    // Regression for aqua-diagram, whose description was authored as a
+    // `>-` folded-strip block. Pre-fix the parser captured the literal
+    // indicator `">-"` as the entire description.
+    const dir = writeSkillMdFile(
+      [
+        "---",
+        "name: aqua-diagram",
+        "description: >-",
+        "  Renders aquatic diagrams from a DSL.",
+        "  Use when the user asks for a tank layout.",
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = parseSkillFrontmatter(dir);
+    expect(fm!["description"]).toBe(
+      "Renders aquatic diagrams from a DSL. Use when the user asks for a tank layout.",
+    );
+  });
+});
+
+describe("parseSkillFrontmatter — quoted scalars", () => {
+  test("double-quoted value unescapes inner escaped quotes", () => {
+    // Regression for zmk-debug: a description authored as a YAML
+    // double-quoted scalar with escaped inner quotes. The old parser
+    // stripped the delimiters but left the backslashes, so the value
+    // re-serialized into meta.json as a double-escaped `\\\"`.
+    const dir = writeSkillMdFile(
+      [
+        "---",
+        "name: zmk-debug",
+        'description: "Diagnoses ZMK failures. Use when the user reports \\"board not found\\" or \\"KeyError\\"."',
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = parseSkillFrontmatter(dir);
+    expect(fm!["description"]).toBe(
+      'Diagnoses ZMK failures. Use when the user reports "board not found" or "KeyError".',
+    );
+  });
+
+  test("plain scalar containing quotes keeps them verbatim", () => {
+    // The current on-disk zmk-debug form: an unquoted plain scalar that
+    // merely contains double quotes. The old blanket edge-quote strip
+    // is gone, so interior quotes survive and no edge quote is sheared.
+    const dir = writeSkillMdFile(
+      [
+        "---",
+        "name: zmk-debug",
+        'description: Diagnoses failures. Use when the user reports "board not found", "KeyError".',
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = parseSkillFrontmatter(dir);
+    expect(fm!["description"]).toBe(
+      'Diagnoses failures. Use when the user reports "board not found", "KeyError".',
+    );
+  });
+
+  test("single-quoted value unescapes doubled quotes", () => {
+    const dir = writeSkillMdFile(
+      [
+        "---",
+        "name: q",
+        "description: 'It''s a folded layout'",
+        "---",
+        "# body",
+      ].join("\n") + "\n",
+    );
+    const fm = parseSkillFrontmatter(dir);
+    expect(fm!["description"]).toBe("It's a folded layout");
+  });
+});

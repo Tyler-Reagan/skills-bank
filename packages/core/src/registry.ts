@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { RegistryEntry, RegistryIndex, SkillMeta } from "./types.js";
+import { parseSkillFrontmatter } from "./skill-meta.js";
 
 const INDEX_FILE = "index.json";
 
+/** @deprecated since v1.20.2 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle). */
 export function loadIndex(registryRoot: string): RegistryIndex {
   const p = path.join(registryRoot, INDEX_FILE);
   if (!fs.existsSync(p)) {
@@ -21,116 +23,23 @@ export function findEntry(
 }
 
 /**
- * Read SKILL.md YAML frontmatter as a flat key/value map. Returns
- * null if the file is absent or has no recognizable frontmatter
- * block. Pure read of the SKILL.md file — does NOT consult meta.json.
+ * Read SKILL.md YAML frontmatter as a flat string map.
  *
- * Exported so callers can recover individual frontmatter fields
- * directly, bypassing the `name`+`description` gate `readSkillMeta`
- * applies to its structured `SkillMeta` result.
+ * @deprecated since v1.20.2 — frontmatter parsing is consolidated in
+ * `skill-meta.ts`. Import `parseSkillFrontmatter` instead (it returns
+ * array fields too); this wrapper filters its result to string values
+ * and will be removed after one minor cycle.
  */
 export function readSkillMdFrontmatter(
   skillDir: string,
 ): Record<string, string> | null {
-  const skillMd = path.join(skillDir, "SKILL.md");
-  if (!fs.existsSync(skillMd)) return null;
-  const content = fs.readFileSync(skillMd, "utf8");
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-  const fm: Record<string, string> = {};
-  const lines = match[1].split("\n");
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i]!;
-    i++;
-    if (!line.trim()) continue;
-    // Indented lines belong to the previous key's block scalar
-    // (handled inline below) — never starts a new key.
-    if (/^\s/.test(line)) continue;
-    const idx = line.indexOf(":");
-    if (idx === -1) continue;
-    const key = line.slice(0, idx).trim();
-    if (!key) continue;
-    const rawVal = line.slice(idx + 1).trim();
-    // YAML block scalars: `key: |` (literal — preserve newlines) or
-    // `key: >` (folded — newlines become spaces), with optional chomp
-    // indicator (`|-`, `|+`, `>-`, `>+`). Without this branch the
-    // captured value would be the literal indicator char (`|`), which
-    // would surface as a one-character description and trip drift
-    // detection downstream.
-    const blockMatch = rawVal.match(/^([|>])[-+]?\s*$/);
-    let val: string;
-    if (blockMatch) {
-      const mode = blockMatch[1]!;
-      const body: string[] = [];
-      while (i < lines.length) {
-        const next = lines[i]!;
-        // Block ends at the first non-empty, un-indented line.
-        if (next.length > 0 && !/^\s/.test(next)) break;
-        body.push(next);
-        i++;
-      }
-      const nonEmpty = body.filter((l) => l.trim().length > 0);
-      const minIndent =
-        nonEmpty.length > 0
-          ? Math.min(...nonEmpty.map((l) => /^\s*/.exec(l)![0].length))
-          : 0;
-      const stripped = body.map((l) => l.slice(minIndent));
-      while (stripped.length > 0 && !stripped[stripped.length - 1]!.trim()) {
-        stripped.pop();
-      }
-      val = mode === ">" ? stripped.join(" ") : stripped.join("\n");
-    } else {
-      val = unquoteScalar(rawVal);
-    }
-    fm[key] = val;
+  const fm = parseSkillFrontmatter(path.join(skillDir, "SKILL.md"));
+  if (!fm) return null;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(fm)) {
+    if (typeof v === "string") out[k] = v;
   }
-  return fm;
-}
-
-/**
- * Resolve a single-line YAML flow scalar to its string value.
- *
- *   - Double-quoted: strip the delimiters and resolve backslash
- *     escapes (`\"`, `\\`, `\n`, …). Skipping the unescape is what
- *     leaked literal backslashes into meta.json for a description
- *     authored as `"… \"board not found\" …"` — they then
- *     re-serialized as a double-escaped `\\\"` on the next export
- *     (the zmk-debug regression).
- *   - Single-quoted: strip the delimiters; the only escape YAML
- *     recognizes inside single quotes is a doubled quote (`''` → `'`).
- *   - Plain (unquoted): returned verbatim. A plain scalar that merely
- *     *contains* quotes — `Diagnoses … "board not found" …` — keeps
- *     them; the old blanket `replace(/^["']|["']$/g, "")` could shear
- *     a stray edge quote off such values.
- */
-function unquoteScalar(raw: string): string {
-  if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
-    return raw
-      .slice(1, -1)
-      .replace(/\\(["\\/bfnrt]|u[0-9a-fA-F]{4})/g, (_m, esc: string) => {
-        switch (esc[0]) {
-          case "n":
-            return "\n";
-          case "t":
-            return "\t";
-          case "r":
-            return "\r";
-          case "b":
-            return "\b";
-          case "f":
-            return "\f";
-          case "u":
-            return String.fromCharCode(parseInt(esc.slice(1), 16));
-          default:
-            return esc; // " \ /
-        }
-      });
-  }
-  if (raw.length >= 2 && raw.startsWith("'") && raw.endsWith("'")) {
-    return raw.slice(1, -1).replace(/''/g, "'");
-  }
-  return raw;
+  return out;
 }
 
 /**
@@ -138,13 +47,23 @@ function unquoteScalar(raw: string): string {
  * Returns null if the file is absent or frontmatter lacks name/description.
  */
 export function readSkillMeta(skillDir: string): SkillMeta | null {
-  const fm = readSkillMdFrontmatter(skillDir);
-  if (fm && fm["name"] && fm["description"]) {
+  const fm = parseSkillFrontmatter(path.join(skillDir, "SKILL.md"));
+  if (
+    fm &&
+    typeof fm["name"] === "string" &&
+    fm["name"] &&
+    typeof fm["description"] === "string" &&
+    fm["description"]
+  ) {
     return {
       name: fm["name"],
       description: fm["description"],
-      ...(fm["version"] ? { version: fm["version"] } : {}),
-      ...(fm["author"] ? { author: fm["author"] } : {}),
+      ...(typeof fm["version"] === "string" && fm["version"]
+        ? { version: fm["version"] }
+        : {}),
+      ...(typeof fm["author"] === "string" && fm["author"]
+        ? { author: fm["author"] }
+        : {}),
     };
   }
   return null;

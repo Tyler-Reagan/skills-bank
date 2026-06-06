@@ -138,6 +138,8 @@ export function scanLocalDiagnostics(
 /**
  * Group a diagnostic report's items by category. Stable key order for
  * predictable section rendering. Renderer-friendly.
+ *
+ * @deprecated since v1.20.2 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle).
  */
 export function groupDiagnosticsByCategory(
   report: DiagnosticReport,
