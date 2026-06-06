@@ -150,7 +150,18 @@ const ROWS: Row[] = [
     isRegistered: true,
     expectedState: "origin-update-available",
     expectedPrimary: "update",
-    expectedCaps: { canUpdate: true },
+    // Uninstalled → Install offered, nothing to manage-links.
+    expectedCaps: { canUpdate: true, canInstall: true, canManageLinks: false },
+  },
+  {
+    label:
+      "originUpdateAvailable + installed → manage-links granted, install not",
+    entry: entry({ originUpdateAvailable: true }),
+    installed: [inst()],
+    isRegistered: true,
+    expectedState: "origin-update-available",
+    expectedPrimary: "update",
+    expectedCaps: { canUpdate: true, canInstall: false, canManageLinks: true },
   },
   {
     label: "drift + originUpdateAvailable → drift wins (edited-with-origin)",
@@ -190,9 +201,35 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "origin-unreachable",
+    // Uninstalled → Install is the primary; manage-links requires an
+    // installation to manage.
+    expectedPrimary: "install",
+    expectedCaps: {
+      canManageLinks: false,
+      canInstall: true,
+      canUnregister: true,
+    },
+  },
+  {
+    label: "originUnreachable + installed → manage-links primary preserved",
+    entry: entry({
+      originUnreachable: true,
+      source: {
+        source: "user",
+        origin: {
+          kind: "github",
+          repo: "u/r",
+          skillPath: "skills/test/SKILL.md",
+        },
+      },
+    }),
+    installed: [inst()],
+    isRegistered: true,
+    expectedState: "origin-unreachable",
     expectedPrimary: "manage-links",
     expectedCaps: {
       canManageLinks: true,
+      canInstall: false,
       canUnregister: true,
     },
   },
@@ -249,8 +286,8 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "origin-unreachable",
-    expectedPrimary: "manage-links",
-    expectedCaps: { canManageLinks: true, canUpdate: false },
+    expectedPrimary: "install",
+    expectedCaps: { canManageLinks: false, canUpdate: false },
   },
 
   // ── Unregistered branch ─────────────────────────────────
@@ -358,7 +395,9 @@ const ROWS: Row[] = [
     isRegistered: true,
     expectedState: "registered-available",
     expectedPrimary: "install",
-    expectedCaps: { canInstall: true },
+    // No installations → Manage agent links is withheld; Install is
+    // the entry point.
+    expectedCaps: { canInstall: true, canManageLinks: false },
   },
   {
     label:
