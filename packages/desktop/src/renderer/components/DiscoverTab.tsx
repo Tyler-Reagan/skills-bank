@@ -1,6 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { DiscoverStatus } from "../../shared/ipc.js";
-import { DiscoverEmpty } from "./DiscoverEmpty.js";
 
 const HOME = "https://skills.sh";
 
@@ -317,6 +316,44 @@ export function DiscoverTab({
             onOpenExternal={onOpenExternal}
           />
         )}
+      </div>
+    </div>
+  );
+}
+
+// Error-state card shown when skills.sh can't be reached. Folded in
+// from its own file: single-use, no logic.
+
+interface DiscoverEmptyProps {
+  description: string;
+  onRetry: () => void;
+  onOpenExternal: () => void;
+}
+
+function DiscoverEmpty({
+  description,
+  onRetry,
+  onOpenExternal,
+}: DiscoverEmptyProps): React.ReactElement {
+  return (
+    <div className="discover-empty" role="status" aria-live="polite">
+      <div className="discover-empty-card">
+        <div className="discover-empty-eyebrow">skills.sh</div>
+        <h2 className="discover-empty-title">Can't reach skills.sh</h2>
+        <p className="discover-empty-body">{description}</p>
+        <div className="discover-empty-actions">
+          <button
+            type="button"
+            className="btn primary"
+            onClick={onRetry}
+            autoFocus
+          >
+            Retry
+          </button>
+          <button type="button" className="btn ghost" onClick={onOpenExternal}>
+            Open in browser
+          </button>
+        </div>
       </div>
     </div>
   );

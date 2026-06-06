@@ -1,10 +1,9 @@
 import React, { useEffect } from "react";
+import { DisclosureChevron, SkillTagList } from "./primitives.js";
 import type { SyncStatus } from "../../shared/ipc.js";
 import { useAutoDismiss } from "../hooks/useAutoDismiss.js";
 import { useDisclosure } from "../hooks/useDisclosure.js";
-import { DisclosureChevron } from "./DisclosureChevron.js";
 import { Icon } from "./Icon.js";
-import { SkillTagList } from "./SkillTagList.js";
 
 interface Props {
   status: SyncStatus;

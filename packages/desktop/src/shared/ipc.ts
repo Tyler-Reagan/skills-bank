@@ -808,9 +808,7 @@ interface SkillsBankAPI {
    * ~/.agents/skills/ directory. No bank entry created; skill appears
    * as "unregistered" in the Installed tab.
    */
-  installSkillFromGithub(
-    url: string,
-  ): Promise<
+  installSkillFromGithub(url: string): Promise<
     | { ok: true; name: string }
     | { ok: false; reason: "url-parse-error"; message: string }
     | {
@@ -831,7 +829,7 @@ interface SkillsBankAPI {
    * M8: open a folder picker, scan its skills/ dir, attempt to merge
    * into the active registry. Returns the merge report; if it
    * contains conflicts, the renderer routes them through
-   * ConflictResolutionModal and calls importRegistryMergeApply with
+   * SyncConflictModal and calls importRegistryMergeApply with
    * the user's decisions.
    */
   importRegistryMerge(): Promise<

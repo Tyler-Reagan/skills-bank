@@ -3,8 +3,8 @@ import type {
   ImportRegistryManifestResult,
   ManifestConflict,
 } from "@skills-bank/core";
-import type { LinkedRepoMetadata } from "../../shared/ipc.js";
-import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
+import type { LinkedRepoMetadata } from "../../../shared/ipc.js";
+import { Modal, ModalCloseButton, modalHeader } from "../modalStyles.js";
 import { RepoTransport } from "./RepoTransport.js";
 import { DiskTransport } from "./DiskTransport.js";
 

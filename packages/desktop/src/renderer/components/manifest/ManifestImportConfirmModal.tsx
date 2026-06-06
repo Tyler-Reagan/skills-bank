@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
 import type { AgentId, ImportRegistryManifestResult } from "@skills-bank/core";
-import { AGENT_LABELS } from "../agentDisplay.js";
+import { AGENT_LABELS } from "../../agentDisplay.js";
 import {
   Modal,
   ModalCloseButton,
   modalHeader,
   modalFooter,
-} from "./modalStyles.js";
+} from "../modalStyles.js";
 
 /**
  * After a successful manifest import, surfaces the install-hint

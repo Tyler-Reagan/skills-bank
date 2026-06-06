@@ -314,7 +314,7 @@ export function DrawerActions({
 
         {/* Resolve registration conflicts — primary for unregistered
         skills with multiple non-ours installations. Routes through
-        ConflictResolveModal in its level-pure mode (delete/keep
+        InstallCollisionModal in its level-pure mode (delete/keep
         only) so this Needs-attention action does not silently
         also register the skill. After resolution the card lands
         in Unregistered for the separate Register step. */}

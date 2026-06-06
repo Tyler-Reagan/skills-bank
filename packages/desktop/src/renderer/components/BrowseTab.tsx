@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
+import { SearchBar, InfoTooltip, DisclosureChevron } from "./primitives.js";
 import type { ManifestSkill, RegistryEntry } from "@skills-bank/core";
 import {
   categoryRules,
@@ -6,10 +7,7 @@ import {
   effectiveLabels,
 } from "@skills-bank/core/labels";
 import { useLabels } from "../LabelsContext.js";
-import { DisclosureChevron } from "./DisclosureChevron.js";
 import { Icon } from "./Icon.js";
-import { InfoTooltip } from "./InfoTooltip.js";
-import { SearchBar } from "./SearchBar.js";
 import { SkillsGrid } from "./SkillsGrid.js";
 import {
   RegistryFilters,

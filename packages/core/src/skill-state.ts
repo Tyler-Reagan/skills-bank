@@ -163,6 +163,12 @@ export function classifyDrawerState(
   isRegistered: boolean,
   _options: ClassifyOptions = {},
 ): DrawerStateClassification {
+  // Manage-links is only meaningful when the skill has at least one
+  // installation to manage — a registered-but-uninstalled skill offers
+  // Install instead. Computed up front because the origin-* arms below
+  // fire before the per-installation partition (`mine`).
+  const hasAnyInstallation = installed.some((i) => i.name === entry.name);
+
   // Bundled + dismissed short-circuits to a dedicated state. Dismiss
   // is purely a UI dormancy flag — installations and metadata are
   // preserved — so this state still allows install/remove/etc. but
@@ -258,10 +264,11 @@ export function classifyDrawerState(
       capabilities: {
         ...NEVER,
         canRevealInFinder: true,
-        canManageLinks: true,
+        canInstall: !hasAnyInstallation,
+        canManageLinks: hasAnyInstallation,
         canExport: true,
         canUnregister: true,
-        primary: "manage-links",
+        primary: hasAnyInstallation ? "manage-links" : "install",
       },
     });
   }
@@ -277,7 +284,8 @@ export function classifyDrawerState(
       capabilities: {
         ...NEVER,
         canRevealInFinder: true,
-        canManageLinks: true,
+        canInstall: !hasAnyInstallation,
+        canManageLinks: hasAnyInstallation,
         canExport: true,
         canUpdate: true,
         canUnregister: true,
@@ -470,7 +478,9 @@ export function classifyDrawerState(
     capabilities: {
       ...NEVER,
       canInstall: true,
-      canManageLinks: true,
+      // No installations yet → nothing to manage; Install is the
+      // entry point. Manage links appears once links exist.
+      canManageLinks: false,
       canExport: true,
       canRevealInFinder: true,
       canDeleteFromBank: true,

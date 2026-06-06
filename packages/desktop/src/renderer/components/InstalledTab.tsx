@@ -1,4 +1,5 @@
 import React from "react";
+import { InfoTooltip } from "./primitives.js";
 import type {
   AgentId,
   DiagnosticCategory,
@@ -9,7 +10,6 @@ import type {
 } from "@skills-bank/core";
 import { useRegistry } from "../RegistryContext.js";
 import { useSettings } from "../SettingsContext.js";
-import { InfoTooltip } from "./InfoTooltip.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
 import { Icon } from "./Icon.js";
 import { classifyDrawerState } from "./skillState.js";
@@ -312,7 +312,7 @@ export function InstalledTab({
       {needsAttention.length > 0 &&
         (() => {
           // Bulk-resolve only applies to registered conflicts (the
-          // primary the existing ConflictResolveModal can handle). It
+          // primary the existing InstallCollisionModal can handle). It
           // skips broken-symlink groups (need source decisions) and
           // unregistered-conflicts groups (need per-installation
           // registration choices, not per-agent replace/delete/keep).
@@ -404,7 +404,7 @@ export function InstalledTab({
                     prim === "resolve-registration-conflicts" &&
                     onResolveConflicts
                   ) {
-                    // Multi-install unregistered: route to ConflictResolveModal
+                    // Multi-install unregistered: route to InstallCollisionModal
                     // in its level-pure mode (delete/keep only, no
                     // replace-with-symlink, no adopt). After resolving,
                     // the card lands in Unregistered where the separate
@@ -440,7 +440,6 @@ export function InstalledTab({
                         onSelect={onCardClick}
                         index={i}
                         agents={g.agents}
-                        isRegistered={registryHit !== undefined}
                       />
                     </div>
                   );
@@ -513,7 +512,6 @@ export function InstalledTab({
                     onSelect={() => onRegisterOne(s)}
                     index={i}
                     agents={g.agents}
-                    isRegistered={registryHit !== undefined}
                   />
                 </div>
               );

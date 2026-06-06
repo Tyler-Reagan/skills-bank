@@ -1,8 +1,8 @@
 import React, { useMemo, useRef, useState } from "react";
+import { SearchBar } from "./primitives.js";
 import type { RegistryEntry } from "@skills-bank/core";
 import { categoryDisplayName } from "@skills-bank/core/labels";
 import { Modal, ModalCloseButton, modalFooter } from "./modalStyles.js";
-import { SearchBar } from "./SearchBar.js";
 import { Icon } from "./Icon.js";
 import { useRegistry } from "../RegistryContext.js";
 import { useLabels } from "../LabelsContext.js";

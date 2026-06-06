@@ -21,7 +21,7 @@ interface Props {
  * deliberate — symlink targets are user-owned and often belong to
  * other git repos. This modal makes that contract visible.
  */
-export function DeleteUnregisteredConfirm({
+export function DeleteUnregisteredDialog({
   name,
   installations,
   onCancel,

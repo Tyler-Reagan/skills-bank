@@ -12,7 +12,7 @@ import type { ConflictEntry, SyncDecisions } from "./sync.js";
 
 /**
  * Result of a merge-import. Mirrors SyncReport's shape so callers can
- * surface progress / conflicts using the same UI (ConflictResolutionModal).
+ * surface progress / conflicts using the same UI (SyncConflictModal).
  */
 export interface MergeImportReport {
   /** Skill names successfully copied into the active registry. */
@@ -40,7 +40,7 @@ export interface MergeImportReport {
  * become canon under the active linked registry.
  *
  * Decision shape reuses SyncDecisions so the renderer can route
- * collisions through the existing ConflictResolutionModal. Default
+ * collisions through the existing SyncConflictModal. Default
  * (no decisions) returns the collisions in the report; a second call
  * with decisions resolves them.
  */
