@@ -1,6 +1,6 @@
 {
   "name": "@skills-bank/core",
-  "version": "1.20.2",
+  "version": "1.20.3",
   "private": true,
   "type": "module",
   "main": "dist/index.js",

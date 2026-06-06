@@ -3,6 +3,26 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.20.3
+
+Core cleanup release: frontmatter parsing consolidated into one superset parser (fixing a latent block-scalar bug), dead SDK exports deprecated, and a persistent core inventory doc.
+
+### Fixed
+
+- **One frontmatter parser.** Core had two partial parsers — `registry.ts`'s handled block scalars and proper quoted-scalar escape resolution; `skill-meta.ts`'s handled inline/block tag arrays and comments but returned a literal `"|"` for block-scalar descriptions and used a blanket quote-strip. `parseSkillFrontmatter` is now the single superset parser used by validation, index building, and `readSkillMeta`. The bug was latent (no committed skill uses block scalars), but the first `description: |` would have validated and indexed as `"|"`.
+
+### Deprecated
+
+- **Eight exports with zero callers**, removal at the next minor per the post-1.0 convention: `readSkillMdFrontmatter` (use `parseSkillFrontmatter`), `previewDeleteUnregistered`, `groupDiagnosticsByCategory`, `getClaudeHome`, `getClaudeSkillsDir` (CLI-era leftovers), `loadIndex`, `readSkillRecord`, `writeSkillRecord`.
+
+### Added
+
+- **`packages/core/src/INVENTORY.md`** — persistent reference of all 40 core modules (LOC, purpose, consumers, tests), package conventions (SDK surface, renderer-safe subpaths, ADR-0002 sidecar trio), and layering maps. Repo-internal, like the renderer inventory.
+
+### Changed
+
+- Stale docs fixed: `build.ts` no longer documents walking `meta.json` (frontmatter canonical since v1.20); `manifest.ts` no longer claims `deriveLabels` runs at registration (on-demand since v1.19).
+
 ## v1.20.2
 
 Renderer pruning release: 52 → 43 component files (net −1,170 lines), the conflict resolvers converged on one skeleton, a CSS orphan sweep, and one small behavior change — Manage agent links only appears once a skill is actually installed.
