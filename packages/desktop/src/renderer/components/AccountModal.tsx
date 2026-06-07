@@ -1,6 +1,6 @@
 import React from "react";
 import { BUNDLED_REPO, type AuthStatus } from "../../shared/ipc.js";
-import { Icon } from "./Icon.js";
+import { InfoTooltip } from "./primitives.js";
 import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
 /**
@@ -16,7 +16,6 @@ import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
  */
 interface Props {
   authStatus: AuthStatus | null;
-  appVersion: string;
   onClose: () => void;
   onChangeRegistry: () => void | Promise<void>;
   onRefreshRegistry: () => void | Promise<void>;
@@ -29,7 +28,6 @@ interface Props {
   onOpenImportManifest: () => void;
   onOpenExportManifest: () => void;
   onSignOut: () => void | Promise<void>;
-  onCheckForUpdates: () => void | Promise<void>;
   onConnectGithub: () => void;
   /**
    * Tier 1 v2 manifest-import affordance. When `true`, corruption-
@@ -41,7 +39,6 @@ interface Props {
 
 export function AccountModal({
   authStatus,
-  appVersion,
   onClose,
   onChangeRegistry,
   onRefreshRegistry,
@@ -50,7 +47,6 @@ export function AccountModal({
   onOpenImportManifest,
   onOpenExportManifest,
   onSignOut,
-  onCheckForUpdates,
   onConnectGithub,
   importingManifest,
 }: Props): React.ReactElement {
@@ -69,179 +65,123 @@ export function AccountModal({
         <ModalCloseButton onClose={onClose} />
       </div>
 
-      <section className="account-section">
-        <h3 className="account-section-title">Registry source</h3>
-        <p className="account-hint">
-          The GitHub repo your registry mirrors. Refresh re-fetches its
-          contents; your local edits and added skills are preserved through the
-          diff-before-apply flow.
-        </p>
-        <div className="account-source-row">
-          <span className="account-source-chip">{linkedLabel}</span>
-        </div>
-        {linkedRepo && (
-          <div className="account-hint mt-8">
-            Last fetched: {formatRelativeTime(linkedRepo.lastFetchedAt)} ·{" "}
-            <code>{linkedRepo.syncedFromCommit.slice(0, 7)}</code>
-          </div>
-        )}
-        {!linkedRepo && (
-          <div className="account-hint mt-8">
-            Last fetched: never — click <strong>Refresh</strong> to pull the
-            latest.
-          </div>
-        )}
-        <div className="account-btn-stack mt-10">
-          <button
-            className="btn primary"
-            type="button"
-            onClick={() => void onRefreshRegistry()}
-            disabled={importingManifest}
-          >
-            Refresh from{" "}
-            {isBundledDefault ? BUNDLED_REPO : linkedRepo!.fullName}
-          </button>
-          <button
-            className="btn"
-            type="button"
-            onClick={() => void onChangeRegistry()}
-            disabled={!isAuthed || importingManifest}
-            title={
-              isAuthed
-                ? "Pick a different GitHub repo to mirror."
-                : "Sign in with GitHub to pick a different repo."
-            }
-          >
-            {linkedRepo && !isBundledDefault
-              ? "Choose a different repo"
-              : "Change linked repo"}
-          </button>
-        </div>
-      </section>
-
-      <section className="account-section">
-        <h3 className="account-section-title">Identity</h3>
-        {isAuthed ? (
-          <>
-            <div className="account-hint">
-              Signed in as <strong>@{user!.login}</strong> · 5000 GitHub API
-              requests/hour available for Refresh.
+      <div className="prefs-group">
+        <p className="prefs-group-label">GitHub</p>
+        <div className="prefs-card account-kv-table">
+          <div className="account-kv-row">
+            <span className="account-kv-key">Account</span>
+            <div className="account-kv-val">
+              {isAuthed ? (
+                <span>@{user!.login}</span>
+              ) : (
+                <span className="account-hint">Not signed in</span>
+              )}
             </div>
-            <div className="mt-8">
+            <div className="account-kv-action">
+              {isAuthed ? (
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={() => void onSignOut()}
+                  disabled={importingManifest}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={onConnectGithub}
+                  disabled={!authStatus?.isAuthConfigured || importingManifest}
+                  title={
+                    authStatus?.isAuthConfigured
+                      ? "Authenticate with GitHub via Device Flow."
+                      : "GitHub OAuth isn't configured for this build."
+                  }
+                >
+                  Sign in with GitHub
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="account-kv-row">
+            <span className="account-kv-key">Repository</span>
+            <div className="account-kv-val">
+              <span className="account-source-chip">{linkedLabel}</span>
+              <div className="account-kv-meta">
+                {linkedRepo
+                  ? `Last fetched: ${formatRelativeTime(linkedRepo.lastFetchedAt)} · ${linkedRepo.syncedFromCommit.slice(0, 7)}`
+                  : "Last fetched: never"}
+              </div>
+            </div>
+            <div className="account-kv-action">
               <button
-                className="btn danger"
+                className="btn ghost"
                 type="button"
-                onClick={() => void onSignOut()}
-                disabled={importingManifest}
+                onClick={() => void onChangeRegistry()}
+                disabled={!isAuthed || importingManifest}
+                title={
+                  isAuthed
+                    ? "Pick a different GitHub repo to mirror."
+                    : "Sign in with GitHub to pick a different repo."
+                }
               >
-                Sign out of GitHub
+                Change
               </button>
             </div>
-          </>
-        ) : (
-          <>
-            <div className="account-hint">
-              Not signed in — Refresh uses the unauthenticated GitHub limit (60
-              requests/hour). Sign in for 5000/hr and access to private repos.
-            </div>
-            <div className="mt-8">
+          </div>
+        </div>
+
+        {!isAuthed && !authStatus?.isAuthConfigured && (
+          <div className="account-hint mt-6 text-11">
+            GitHub OAuth Client ID not set. See <code>auth-config.ts</code>.
+          </div>
+        )}
+      </div>
+
+      <div className="prefs-group">
+        <p className="prefs-group-label">Manage your registry</p>
+        <div className="prefs-card">
+          <div className="prefs-row">
+            <span className="prefs-row-label">
+              Manifest
+              <InfoTooltip
+                label="About manifest transfers"
+                text="A manifest moves a JSON snapshot of metadata for each skill. On import, each skill is re-fetched from its origin, so transfers are tiny but require the origins to still be reachable."
+              />
+            </span>
+            <span className="prefs-row-control account-subgroup-hint">
+              Origin pointers, JSON
+            </span>
+          </div>
+          <div className="prefs-row">
+            <div className="account-btn-stack">
               <button
                 className="btn"
                 type="button"
-                onClick={onConnectGithub}
-                disabled={!authStatus?.isAuthConfigured || importingManifest}
-                title={
-                  authStatus?.isAuthConfigured
-                    ? "Authenticate with GitHub via Device Flow."
-                    : "GitHub OAuth isn't configured for this build."
-                }
+                onClick={onOpenImportManifest}
+                disabled={importingManifest}
               >
-                Sign in with GitHub
+                {importingManifest ? (
+                  <>
+                    <span className="spinner inline" /> Importing
+                  </>
+                ) : (
+                  "Import manifest"
+                )}
               </button>
-              {!authStatus?.isAuthConfigured && (
-                <div className="account-hint mt-6 text-11">
-                  GitHub OAuth Client ID not set. See{" "}
-                  <code>auth-config.ts</code>.
-                </div>
-              )}
+              <button
+                className="btn"
+                type="button"
+                onClick={onOpenExportManifest}
+              >
+                Export manifest
+              </button>
             </div>
-          </>
-        )}
-      </section>
-
-      <section className="account-section">
-        <h3 className="account-section-title">Move my registry</h3>
-        <p className="account-hint">
-          Two shapes you can move between machines. <strong>Content</strong>{" "}
-          moves the entire skills tree — drop-in restore, no network needed.{" "}
-          <strong>Manifest</strong> moves a JSON snapshot of origin pointers; on
-          import each skill is re-fetched from its origin, so transfers are tiny
-          but require the origins to still be reachable.
-        </p>
-
-        <div className="account-subgroup-header">
-          <span className="account-subgroup-label">Content</span>
-          <span className="account-subgroup-hint">The skills tree itself</span>
+          </div>
         </div>
-        <div className="account-btn-stack">
-          <button
-            className="btn"
-            type="button"
-            onClick={() => void onImportRegistry()}
-            disabled={importingManifest}
-          >
-            Import from disk (replace)
-          </button>
-          <button
-            className="btn"
-            type="button"
-            onClick={() => void onMergeRegistry()}
-            disabled={importingManifest}
-          >
-            Merge from disk
-          </button>
-        </div>
-
-        <div className="account-subgroup-header">
-          <span className="account-subgroup-label">Manifest</span>
-          <span className="account-subgroup-hint">Origin pointers, JSON</span>
-        </div>
-        <div className="account-btn-stack">
-          <button
-            className="btn"
-            type="button"
-            onClick={onOpenImportManifest}
-            disabled={importingManifest}
-          >
-            {importingManifest ? (
-              <>
-                <span className="spinner inline" /> Importing
-              </>
-            ) : (
-              "Import manifest"
-            )}
-          </button>
-          <button className="btn" type="button" onClick={onOpenExportManifest}>
-            Export manifest
-          </button>
-        </div>
-      </section>
-
-      <section className="account-section mt-12">
-        <h3 className="account-section-title">About this app</h3>
-        <div className="account-hint">
-          Version <code>{appVersion}</code>
-        </div>
-        <div className="mt-8">
-          <button
-            className="btn"
-            type="button"
-            onClick={() => void onCheckForUpdates()}
-          >
-            <Icon name="refresh" size="sm" /> Check for app updates
-          </button>
-        </div>
-      </section>
+      </div>
 
       <div className="account-footer">
         <button className="btn primary" type="button" onClick={onClose}>

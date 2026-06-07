@@ -1,4 +1,5 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, useCallback, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "./Icon.js";
 
 // Stateless UI micro-primitives, gathered into one file the way
@@ -56,22 +57,58 @@ interface InfoTooltipProps {
  * Small info icon that shows a tooltip on hover or keyboard focus.
  * Used inline next to ambiguous terms to disambiguate without
  * cluttering the primary copy. Width-capped so long explanations wrap.
+ *
+ * The bubble is portaled to <body> and positioned `fixed` from the
+ * icon's rect — an absolutely-positioned child would be clipped by any
+ * ancestor with `overflow: hidden`/`auto` (e.g. `.prefs-card`,
+ * `.modal-body`), which is exactly where these tooltips live.
  */
 export function InfoTooltip({
   text,
   label,
 }: InfoTooltipProps): React.ReactElement {
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(
+    null,
+  );
+
+  const show = useCallback(() => {
+    const el = anchorRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    // Anchor below the icon, growing rightward, then clamp into the
+    // viewport so a near-edge icon doesn't push the bubble off-screen.
+    const width = Math.min(280, window.innerWidth * 0.8);
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - width - 8));
+    setCoords({ top: r.bottom + 8, left });
+  }, []);
+
+  const hide = useCallback(() => setCoords(null), []);
+
   return (
     <span
+      ref={anchorRef}
       className="info-tooltip"
       tabIndex={0}
       role="img"
       aria-label={label ?? text}
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
     >
       <Icon name="info" size="sm" />
-      <span className="info-tooltip-bubble" role="tooltip">
-        {text}
-      </span>
+      {coords &&
+        createPortal(
+          <span
+            className="info-tooltip-bubble"
+            role="tooltip"
+            style={{ top: coords.top, left: coords.left }}
+          >
+            {text}
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }

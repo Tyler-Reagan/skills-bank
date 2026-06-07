@@ -8,6 +8,7 @@ import {
 } from "../agentDisplay.js";
 import { useIpcQuery } from "../hooks/useIpcQuery.js";
 import { Icon } from "./Icon.js";
+import { InfoTooltip } from "./primitives.js";
 import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
 type GridColumns = "auto" | "2" | "3" | "4";
@@ -89,6 +90,8 @@ interface Props {
    * user enable a feature that would silently fail.
    */
   isAuthed: boolean;
+  appVersion: string;
+  onCheckForUpdates: () => void;
 }
 
 /**
@@ -101,6 +104,8 @@ export function SettingsModal({
   hiddenCanon,
   onUnhide,
   isAuthed,
+  appVersion,
+  onCheckForUpdates,
 }: Props): React.ReactElement {
   const { settings, saveSettings: onSave } = useSettings();
   const [draft, setDraft] = useState<AppSettings>(settings);
@@ -178,307 +183,305 @@ export function SettingsModal({
         <h2 className="mt-0 mb-0">Settings</h2>
         <ModalCloseButton onClose={onClose} />
       </div>
-      <p className="settings-hint">
-        Preferences for how the app behaves day-to-day. Registry source and
-        identity live under <strong>Account</strong> settings.
-      </p>
 
-      <h3 className="settings-group-heading">Skills</h3>
-      <section className="settings-section">
-        <h3 className="settings-section-title">Registration</h3>
-        <p className="settings-hint">
-          When you register a skill, move its files into Skills Bank
-          (recommended). With this off, the registry just records the skill's
-          external location and leaves files where they are — useful for skills
-          you actively edit in their own git repo.
-        </p>
-        <label className="settings-checkbox-row mt-8">
-          <input
-            type="checkbox"
-            checked={draft.registerAdopts}
-            onChange={() =>
-              setDraft((prev) => ({
-                ...prev,
-                registerAdopts: !prev.registerAdopts,
-              }))
-            }
-          />
-          <strong>Move files into Skills Bank on Register</strong>
-        </label>
-      </section>
-
-      <section className="settings-section">
-        <h3 className="settings-section-title">Upstream activity</h3>
-        <p className="settings-hint">
-          Show the most recent commit to each skill's folder in its source repo
-          (in the drawer's Origin section). Uses your GitHub token for 1 API
-          call per skill — heavy registries can pressure your rate-limit budget,
-          so it's off by default.
-        </p>
-        <label
-          className={`settings-checkbox-row mt-8${isAuthed ? "" : " settings-checkbox-row-disabled"}`}
-        >
-          <input
-            type="checkbox"
-            checked={draft.showOriginActivity && isAuthed}
-            disabled={!isAuthed}
-            onChange={() =>
-              setDraft((prev) => ({
-                ...prev,
-                showOriginActivity: !prev.showOriginActivity,
-              }))
-            }
-          />
-          <strong>Show Origin activity</strong>
-        </label>
-        {!isAuthed && (
-          <p className="settings-hint mt-6 text-11">
-            Sign in with GitHub to enable — Account → Sign in with GitHub.
-          </p>
-        )}
-      </section>
-
-      <section className="settings-section">
-        <h3 className="settings-section-title">Unregister destination</h3>
-        <p className="settings-hint">
-          When you unregister an adopted skill, its files move out of Skills
-          Bank into the agent dir picked here. The default,
-          <code className="ml-4 mr-4">~/.agents/skills/</code>, is the shared
-          location all agents can read. Non-adopted (symlink-mode) skills aren't
-          moved — their origin files stay in place.
-        </p>
-        <div className="settings-radio-row">
-          {ALL_AGENTS.map((id) => (
-            <label key={id} className="settings-radio-option">
+      <div className="prefs-group">
+        <p className="prefs-group-label">Behavior</p>
+        <div className="prefs-card">
+          <div className="prefs-row">
+            <label className="prefs-checkbox">
               <input
-                type="radio"
-                name="unregister-dest"
-                checked={draft.unregisterDestinationAgent === id}
+                type="checkbox"
+                checked={draft.registerAdopts}
                 onChange={() =>
                   setDraft((prev) => ({
                     ...prev,
-                    unregisterDestinationAgent: id,
+                    registerAdopts: !prev.registerAdopts,
                   }))
                 }
               />
-              <span>{AGENT_LABELS[id]}</span>
+              <span>Move files into Skills Bank on Register</span>
             </label>
-          ))}
-        </div>
-      </section>
-
-      <section className="settings-section">
-        <h3 className="settings-section-title">Default agents</h3>
-        {/* end of Skills group; Display + Advanced groups follow. */}
-        <p className="settings-hint">
-          When you install or register a skill, link it into these agent
-          directories. Leave all unchecked to broadcast to every agent directory
-          that exists on this machine.
-        </p>
-        <div className="mt-8">
-          {ALL_AGENTS.map((id) => (
-            <label key={id} className="settings-checkbox-row">
+          </div>
+          <div className="prefs-row">
+            <label
+              className={`prefs-checkbox${isAuthed ? "" : " prefs-checkbox-disabled"}`}
+            >
               <input
                 type="checkbox"
-                checked={draft.defaultInstallAgents.includes(id)}
-                onChange={() => toggleAgent(id)}
-              />
-              <strong className="min-w-120">{AGENT_LABELS[id]}</strong>
-              <code className="text-subtle text-11">
-                {AGENT_PATHS[id]}/skills/
-              </code>
-            </label>
-          ))}
-        </div>
-      </section>
-
-      <section className="settings-section">
-        <h3 className="settings-section-title">Curated skills</h3>
-        <p className="settings-hint">
-          Skills bundled with the app, maintained centrally. Read-only — curated
-          skills update automatically on app restart.
-        </p>
-        {curatedSkills.length === 0 ? (
-          <p className="settings-hint italic">None present in this registry.</p>
-        ) : (
-          <ul className="settings-list">
-            {curatedSkills.map((s) => (
-              <li key={s.name} className="mb-4">
-                <code>{s.name}</code>
-                {s.description ? (
-                  <span className="text-subtle"> — {s.description}</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="settings-hint mt-6 text-11">
-          Last checked:{" "}
-          {curatedLastCheckedAt
-            ? new Date(curatedLastCheckedAt).toLocaleString()
-            : "never"}
-        </p>
-      </section>
-
-      <h3 className="settings-group-heading">Display</h3>
-      <section className="settings-section">
-        <h3 className="settings-section-title">Card grid columns</h3>
-        <p className="settings-hint">
-          Auto adapts to the window width; fixed values give you consistent card
-          density at the cost of overflow on narrow windows.
-        </p>
-        <div className="settings-radio-row">
-          {(["auto", "2", "3", "4"] as GridColumns[]).map((v) => (
-            <label key={v} className="settings-radio-option">
-              <input
-                type="radio"
-                name="grid-cols"
-                checked={draft.gridColumns === v}
+                checked={draft.showOriginActivity && isAuthed}
+                disabled={!isAuthed}
                 onChange={() =>
-                  setDraft((prev) => ({ ...prev, gridColumns: v }))
+                  setDraft((prev) => ({
+                    ...prev,
+                    showOriginActivity: !prev.showOriginActivity,
+                  }))
                 }
               />
-              <span>{v === "auto" ? "Auto" : `${v} columns`}</span>
+              <span>Show Origin activity</span>
             </label>
-          ))}
-        </div>
-      </section>
-
-      <h3 className="settings-group-heading">Advanced</h3>
-      <section className="settings-section">
-        <h3 className="settings-section-title">Search debounce</h3>
-        <p className="settings-hint">
-          Delay before search filtering applies. Higher values keep the UI
-          smooth on large registries.
-        </p>
-        <div className="settings-radio-row">
-          {(["off", "100", "250"] as SearchDebounce[]).map((v) => (
-            <label key={v} className="settings-radio-option">
-              <input
-                type="radio"
-                name="search-debounce"
-                checked={draft.searchDebounceMs === v}
-                onChange={() =>
-                  setDraft((prev) => ({ ...prev, searchDebounceMs: v }))
+            <span className="prefs-row-control">
+              <InfoTooltip
+                label="About Show Origin activity"
+                text={
+                  isAuthed
+                    ? "Shows each skill's last upstream commit in the drawer. Uses 1 GitHub API call per skill — off by default on large registries."
+                    : "Sign in with GitHub to enable — Account → Sign in with GitHub."
                 }
               />
-              <span>{v === "off" ? "Off" : `${v} ms`}</span>
-            </label>
-          ))}
+            </span>
+          </div>
         </div>
-      </section>
+      </div>
 
-      {topLevelSymlinks.length > 0 && (
-        <section className="settings-section">
-          <h3 className="settings-section-title">
-            Collapse symlinked agent dirs
-          </h3>
-          <p className="settings-hint">
-            {topLevelSymlinks.length === 1
-              ? "One"
-              : `${topLevelSymlinks.length}`}{" "}
-            agent skills directory
-            {topLevelSymlinks.length === 1 ? " is" : "s are"} symlinked to
-            another location:
-          </p>
-          <ul className="settings-list">
-            {topLevelSymlinks.map((tls) => (
-              <li key={tls.agent} className="mb-2">
-                <code>{tls.agent}</code> → <code>{tls.resolvedTarget}</code>
-                {!tls.exists && <span className="text-danger"> (missing)</span>}
-              </li>
-            ))}
-          </ul>
-          <p className="settings-hint">
-            Finalize collapses each symlink into a real directory in place,
-            moving content from the resolved target. Skills must be registered
-            first — finalize refuses while real-directory entries remain
-            unregistered.
-          </p>
-          <button
-            className="btn"
-            type="button"
-            disabled={finalizing}
-            onClick={() => void runFinalize()}
-          >
-            {finalizing ? (
-              <>
-                <span className="spinner inline" /> Finalizing
-              </>
+      <div className="prefs-group">
+        <p className="prefs-group-label">Agent targets</p>
+        <div className="prefs-card">
+          <div className="prefs-row prefs-row--stack">
+            <span className="prefs-sublabel">Unregister sends files to</span>
+            <div className="settings-radio-row">
+              {ALL_AGENTS.map((id) => (
+                <label key={id} className="settings-radio-option">
+                  <input
+                    type="radio"
+                    name="unregister-dest"
+                    checked={draft.unregisterDestinationAgent === id}
+                    onChange={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        unregisterDestinationAgent: id,
+                      }))
+                    }
+                  />
+                  <span>{AGENT_LABELS[id]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="prefs-row prefs-row--stack">
+            <span className="prefs-sublabel">
+              Default install targets
+              <InfoTooltip
+                label="About default install targets"
+                text="Leave all unchecked to broadcast to every existing agent dir. Check specific agents to scope where an Install action writes by default."
+              />
+            </span>
+            <div>
+              {ALL_AGENTS.map((id) => (
+                <label key={id} className="settings-checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={draft.defaultInstallAgents.includes(id)}
+                    onChange={() => toggleAgent(id)}
+                  />
+                  <strong className="min-w-120">{AGENT_LABELS[id]}</strong>
+                  <code className="text-subtle text-11">
+                    {AGENT_PATHS[id]}/skills/
+                  </code>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="prefs-group">
+        <p className="prefs-group-label">Curated skills</p>
+        <div className="prefs-card">
+          <div className="prefs-row prefs-row--stack">
+            {curatedSkills.length === 0 ? (
+              <p className="settings-hint italic mt-0 mb-0">
+                None present in this registry.
+              </p>
             ) : (
-              "Finalize now"
+              <ul className="settings-list">
+                {curatedSkills.map((s) => (
+                  <li key={s.name} className="mb-4">
+                    <code>{s.name}</code>
+                    {s.description ? (
+                      <span className="text-subtle"> — {s.description}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             )}
-          </button>
-          {finalizeError && (
-            <pre className="mt-8 text-11 text-danger pre-wrap">
-              {finalizeError}
-            </pre>
-          )}
-        </section>
-      )}
-
-      <section className="settings-section">
-        <h3 className="settings-section-title">Terminal app (macOS)</h3>
-        <p className="settings-hint">
-          Used by the "Open Terminal" button in the Discover tab. The chosen app
-          must be installed — uninstalled apps will fall back to Terminal.
-        </p>
-        <div className="settings-radio-row">
-          {(
-            [
-              ["system", "Terminal"],
-              ["iterm2", "iTerm2"],
-              ["warp", "Warp"],
-              ["hyper", "Hyper"],
-              ["alacritty", "Alacritty"],
-              ["kitty", "kitty"],
-            ] as [TerminalApp, string][]
-          ).map(([v, label]) => (
-            <label key={v} className="settings-radio-option">
-              <input
-                type="radio"
-                name="terminal-app"
-                checked={draft.terminalApp === v}
-                onChange={() =>
-                  setDraft((prev) => ({ ...prev, terminalApp: v }))
-                }
-              />
-              <span>{label}</span>
-            </label>
-          ))}
+            <p className="settings-hint text-11 mt-0 mb-0">
+              Last checked:{" "}
+              {curatedLastCheckedAt
+                ? new Date(curatedLastCheckedAt).toLocaleString()
+                : "never"}
+            </p>
+          </div>
         </div>
-      </section>
+      </div>
+
+      <div className="prefs-group">
+        <p className="prefs-group-label">Interface</p>
+        <div className="prefs-card">
+          <div className="prefs-row">
+            <span className="prefs-row-label">Card grid columns</span>
+            <div className="prefs-row-control">
+              <div className="settings-radio-row">
+                {(["auto", "2", "3", "4"] as GridColumns[]).map((v) => (
+                  <label key={v} className="settings-radio-option">
+                    <input
+                      type="radio"
+                      name="grid-cols"
+                      checked={draft.gridColumns === v}
+                      onChange={() =>
+                        setDraft((prev) => ({ ...prev, gridColumns: v }))
+                      }
+                    />
+                    <span>{v === "auto" ? "Auto" : `${v} columns`}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="prefs-row">
+            <span className="prefs-row-label">Search debounce</span>
+            <div className="prefs-row-control">
+              <div className="settings-radio-row">
+                {(["off", "100", "250"] as SearchDebounce[]).map((v) => (
+                  <label key={v} className="settings-radio-option">
+                    <input
+                      type="radio"
+                      name="search-debounce"
+                      checked={draft.searchDebounceMs === v}
+                      onChange={() =>
+                        setDraft((prev) => ({ ...prev, searchDebounceMs: v }))
+                      }
+                    />
+                    <span>{v === "off" ? "Off" : `${v} ms`}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="prefs-group">
+        <p className="prefs-group-label">Advanced</p>
+        <div className="prefs-card">
+          <div className="prefs-row">
+            <span className="prefs-row-label">Terminal app (macOS)</span>
+            <div className="prefs-row-control">
+              <div className="settings-radio-row">
+                {(
+                  [
+                    ["system", "Terminal"],
+                    ["iterm2", "iTerm2"],
+                    ["warp", "Warp"],
+                    ["hyper", "Hyper"],
+                    ["alacritty", "Alacritty"],
+                    ["kitty", "kitty"],
+                  ] as [TerminalApp, string][]
+                ).map(([v, label]) => (
+                  <label key={v} className="settings-radio-option">
+                    <input
+                      type="radio"
+                      name="terminal-app"
+                      checked={draft.terminalApp === v}
+                      onChange={() =>
+                        setDraft((prev) => ({ ...prev, terminalApp: v }))
+                      }
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {topLevelSymlinks.length > 0 && (
+            <div className="prefs-row prefs-row--stack">
+              <span className="prefs-sublabel">
+                Collapse symlinked agent dirs
+                <InfoTooltip
+                  label="About collapsing symlinked agent dirs"
+                  text="Finalize collapses each symlink into a real directory in place, moving content from the resolved target. Skills must be registered first — finalize refuses while real-directory entries remain unregistered."
+                />
+              </span>
+              <p className="settings-hint mt-0 mb-0">
+                {topLevelSymlinks.length === 1
+                  ? "One"
+                  : `${topLevelSymlinks.length}`}{" "}
+                agent skills directory
+                {topLevelSymlinks.length === 1 ? " is" : "s are"} symlinked to
+                another location:
+              </p>
+              <ul className="settings-list">
+                {topLevelSymlinks.map((tls) => (
+                  <li key={tls.agent} className="mb-2">
+                    <code>{tls.agent}</code> → <code>{tls.resolvedTarget}</code>
+                    {!tls.exists && (
+                      <span className="text-danger"> (missing)</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <button
+                className="btn"
+                type="button"
+                disabled={finalizing}
+                onClick={() => void runFinalize()}
+              >
+                {finalizing ? (
+                  <>
+                    <span className="spinner inline" /> Finalizing
+                  </>
+                ) : (
+                  "Finalize now"
+                )}
+              </button>
+              {finalizeError && (
+                <pre className="mt-8 text-11 text-danger pre-wrap">
+                  {finalizeError}
+                </pre>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {hiddenCanon.length > 0 && (
-        <section className="settings-section">
-          <h3 className="settings-section-title">Dismissed bundled skills</h3>
-          <p className="settings-hint">
-            Bundled skills you've dismissed from the default Browse view.
-            Unhiding restores them everywhere. Their installations and metadata
-            are preserved while dismissed — this is a UI dormancy flag, not an
-            uninstall.
-          </p>
-          <ul className="settings-unhide-list">
-            {hiddenCanon.map((name) => (
-              <li key={name} className="settings-unhide-item">
-                <code className="text-13">{name}</code>
-                <button
-                  className="link-btn"
-                  onClick={() => void onUnhide(name)}
-                >
-                  Unhide
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <div className="prefs-group">
+          <p className="prefs-group-label">Dismissed bundled skills</p>
+          <div className="prefs-card">
+            <div className="prefs-row prefs-row--stack">
+              <ul className="settings-unhide-list mt-0">
+                {hiddenCanon.map((name) => (
+                  <li key={name} className="settings-unhide-item">
+                    <code className="text-13">{name}</code>
+                    <button
+                      className="link-btn"
+                      onClick={() => void onUnhide(name)}
+                    >
+                      Unhide
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
       )}
 
-      <div className="row-end mt-16">
-        <button onClick={onClose}>Cancel</button>
-        <button className="primary" onClick={apply}>
-          Save
+      <div className="prefs-footer">
+        <span className="settings-hint">
+          Version <code>{appVersion}</code>
+        </span>
+        <button className="btn ghost" type="button" onClick={onCheckForUpdates}>
+          <Icon name="refresh" size="sm" /> Check for updates
         </button>
+        <div className="prefs-footer-actions">
+          <button className="btn ghost" type="button" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="btn primary" type="button" onClick={apply}>
+            Save
+          </button>
+        </div>
       </div>
     </Modal>
   );

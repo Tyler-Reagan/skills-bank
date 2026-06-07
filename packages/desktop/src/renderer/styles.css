@@ -587,9 +587,7 @@ select {
   /* Establish a stacking context above .skills-grid so the absolutely-
      positioned popovers inside (.filter-glossary-panel, .tag-filter-panel)
      don't get painted behind .skill-card elements, each of which creates
-     its own stacking context via `transform: translateZ(0)` (paint perf).
-     Stays below .tab-intro (z-index: 10) so its info tooltip still wins
-     against this strip. */
+     its own stacking context via `transform: translateZ(0)` (paint perf). */
   position: relative;
   z-index: 5;
 }
@@ -1207,20 +1205,12 @@ select {
   color: var(--accent);
   outline: none;
 }
-/* Lift the tab-intro paragraph above its sibling .filters-section so the
-   tooltip bubble (positioned absolutely below the icon) renders on top of
-   the search bar / tag pills instead of behind them. */
-.tab-intro {
-  position: relative;
-  z-index: 10;
-}
 .info-tooltip-bubble {
-  position: absolute;
-  /* Anchor BELOW the icon; tab-intro is at the top of the content area
-     so a bubble positioned above gets clipped by the header. Left-anchor
-     to the icon and grow rightward. */
-  top: calc(100% + var(--s2));
-  left: 0;
+  /* Portaled to <body> and positioned `fixed` from the icon's rect
+     (top/left set inline by InfoTooltip) so no ancestor `overflow` can
+     clip it. z-index clears the overlay layer (.modal-overlay = 1100,
+     drawer = 1200) since the bubble is now a body sibling, not a child. */
+  position: fixed;
   width: 280px;
   max-width: min(80vw, 320px);
   padding: var(--s3);
@@ -1235,16 +1225,9 @@ select {
   text-transform: none;
   font-family: var(--font-sans);
   box-shadow: var(--shadow-hover);
-  opacity: 0;
   pointer-events: none;
-  transition: opacity var(--t-fast) var(--ease);
-  z-index: 200;
+  z-index: 2000;
   white-space: normal;
-}
-.info-tooltip:hover .info-tooltip-bubble,
-.info-tooltip:focus-visible .info-tooltip-bubble {
-  opacity: 1;
-  pointer-events: auto;
 }
 /* Arrow points UP toward the icon, anchored near the bubble's left edge
    so it lines up with the icon center regardless of bubble width. */
@@ -3113,6 +3096,7 @@ button:disabled {
   max-height: 85vh;
   overflow-y: auto;
   outline: none;
+  animation: dialogPop 0.2s cubic-bezier(0.32, 1.1, 0.6, 1) both;
 }
 .modal-body--w520 {
   width: 520px;
@@ -3206,32 +3190,10 @@ button:disabled {
 }
 
 /* ── SettingsModal section/group styles ─────────────────── */
-.settings-section {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-}
-.settings-section-title {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0 0 4px 0;
-}
-.settings-group-heading {
-  margin: 20px 0 4px 0;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-3);
-}
 .settings-hint {
   font-size: 12px;
   color: var(--text-2);
   margin: 0;
-}
-.settings-checkbox-row-disabled {
-  opacity: 0.5;
 }
 .pre-wrap {
   white-space: pre-wrap;
@@ -3240,22 +3202,54 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 0;
+  padding: 4px 6px;
+  margin: 0 -6px;
+  border-radius: var(--r-sm);
   font-size: 13px;
   cursor: pointer;
+  transition: background var(--t-fast) var(--ease);
+}
+.settings-checkbox-row:hover {
+  background: var(--surface-hi);
 }
 .settings-radio-row {
   display: flex;
-  gap: 12px;
+  gap: 6px;
   margin-top: 8px;
   flex-wrap: wrap;
 }
 .settings-radio-option {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 0;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  transition:
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+.settings-radio-option:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+.settings-radio-option:has(input:checked) {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.settings-radio-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
 .settings-list {
   list-style: none;
@@ -3275,6 +3269,110 @@ button:disabled {
   justify-content: space-between;
   padding: 6px 0;
   border-bottom: 1px solid var(--border);
+}
+
+/* ── Grouped "settings card" primitives (macOS System Settings
+   style) — shared by SettingsModal and AccountModal. Each group is a
+   small-caps label above a rounded inset surface card; rows inside the
+   card are divided by inset hairlines (the card's overflow clip keeps
+   them off the rounded corners), not full-bleed page dividers. ──── */
+.prefs-group {
+  margin-bottom: var(--s5);
+}
+.prefs-group:last-child {
+  margin-bottom: 0;
+}
+.prefs-group-label {
+  margin: 0 0 var(--s2) var(--s1);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+}
+.prefs-card {
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.prefs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.prefs-row + .prefs-row {
+  border-top: 1px solid var(--border);
+}
+.prefs-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s2);
+}
+.prefs-row-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--text);
+  font-weight: 500;
+}
+.prefs-row-control {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+/* Pills sit flush inside a row — drop the standalone top margin. */
+.prefs-row .settings-radio-row {
+  margin-top: 0;
+}
+.prefs-row--stack .settings-radio-row {
+  margin-top: var(--s1);
+}
+/* Checkbox affordance inside a card row: checkbox + label, no negative
+   margins / hover band (the card already groups it). */
+.prefs-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+.prefs-checkbox-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* Sub-label inside a stacked row (e.g. "Default install targets"). */
+.prefs-sublabel {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+/* AccountModal's key/value table reused as a card body: pad rows to the
+   card's inner gutter and drop the table's standalone top margin. */
+.prefs-card.account-kv-table {
+  margin-top: 0;
+}
+.prefs-card .account-kv-row {
+  padding: 10px 14px;
+}
+/* Consolidated modal footer: meta/secondary on the left, actions right. */
+.prefs-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s5);
+}
+.prefs-footer-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--s2);
 }
 
 /* ── BrowseTab ghost band ──────────────────────────────── */
@@ -3484,38 +3582,11 @@ button:disabled {
 }
 
 /* ── AccountModal ──────────────────────────────────────── */
-.account-section {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-.account-section-title {
-  margin: 0 0 6px 0;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-2);
-}
 .account-hint {
   font-size: 12px;
-  color: var(--text-3);
-  margin: 4px 0;
-  line-height: 1.5;
-}
-.account-subgroup-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-top: 16px;
-  margin-bottom: 6px;
-}
-.account-subgroup-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--text-2);
+  margin: 4px 0;
+  line-height: 1.6;
 }
 .account-subgroup-hint {
   font-size: 11px;
@@ -3523,30 +3594,76 @@ button:disabled {
 }
 .account-btn-stack {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.account-source-row {
-  display: flex;
-  align-items: center;
-  margin-top: 8px;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .account-source-chip {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 12px;
+  border-radius: var(--r);
   background: var(--surface-hi);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hi);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--text);
 }
 .account-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
+}
+
+/* ── AccountModal key/value table ─────────────────────── */
+.account-kv-table {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+.account-kv-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.account-kv-row:last-child {
+  border-bottom: none;
+}
+.account-kv-key {
+  font-size: 12px;
+  color: var(--text-3);
+  flex-shrink: 0;
+  min-width: 96px;
+}
+.account-kv-val {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+.account-kv-val .account-source-chip {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  width: auto;
+  padding: 2px 8px;
+}
+.account-kv-meta {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 3px;
+  font-family: var(--font-mono);
+}
+.account-kv-action {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ── ConflictResolveModal ──────────────────────────────── */

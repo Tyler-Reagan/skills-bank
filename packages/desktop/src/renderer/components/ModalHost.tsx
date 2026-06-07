@@ -585,6 +585,8 @@ export function ModalHost({
             await refresh();
           }}
           isAuthed={Boolean(authStatus?.user)}
+          appVersion="dev"
+          onCheckForUpdates={checkForUpdates}
         />
       )}
 
@@ -595,7 +597,6 @@ export function ModalHost({
       {modal?.kind === "account" && (
         <AccountModal
           authStatus={authStatus}
-          appVersion={"dev"}
           onClose={() => closeModal()}
           onChangeRegistry={async () => {
             closeModal();
@@ -624,7 +625,6 @@ export function ModalHost({
             closeModal();
             await signOut();
           }}
-          onCheckForUpdates={checkForUpdates}
           onConnectGithub={() => openModal({ kind: "connectGithub" })}
         />
       )}
