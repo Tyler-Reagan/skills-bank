@@ -15,9 +15,9 @@
 // the Installed tab; per-item fix actions reuse the existing register /
 // deleteUnregistered / forgetMissing IPCs.
 
-import { buildRegistryIndex } from "./registry/build.js";
+import { buildRegistryIndex } from "../registry/build.js";
 import { listInstalled } from "./installed.js";
-import type { InstalledSkill } from "./shared/types.js";
+import type { InstalledSkill } from "../shared/types.js";
 
 export type DiagnosticCategory =
   | "unregistered-installs"

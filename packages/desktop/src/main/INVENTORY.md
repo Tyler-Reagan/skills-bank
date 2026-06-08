@@ -78,8 +78,9 @@ layout), reorg into 5 concept dirs. Locked names: `manifest`, `registry`,
 - `skills/` — install, register, unregister, delete, conflicts, installed, export, diagnostics
 - `manifest/` — manifest, diff, merge, import, reconcile\*, disk-import
 
-Headline split: today's `import.ts` mixes two concerns → `manifest/import.ts`
-(manifest import) + `skills/register.ts` + `skills/conflicts.ts`. (`*` = new.)
+Headline split (corrected): `import.ts` is 100% skills-domain — it splits
+WITHIN `skills/` into `register.ts` + `conflicts.ts`. (`importRegistryManifest`
+was never in `import.ts`; it lives in `manifest.ts`.) (`*` = new.)
 Barrel stays `export *` (repointed paths); the 3 renderer-safe subpaths
 (`labels`, `agents-data`, `skill-state`) keep their specifiers, repoint dist
 targets. Pure file moves — no public-API change.
@@ -254,6 +255,52 @@ Verified: typecheck, 257 tests, knip, build all clean; `dist/registry/{labels,wa
 
 > Lesson for remaining steps: grep `scripts/` for deep `core/src/<mod>.js`
 > imports, and check moved files/tests for `__dirname`-relative repo-root paths.
+
+## Reorg step 4 — `skills/` (done, `<commit>`)
+
+> **Headline correction:** `import.ts` does NOT contain `importRegistryManifest`
+> — that lives in `manifest.ts` (→ `manifest/` in step 5). So `import.ts` is
+> **100% skills-domain** (registration / finalize / install-repair /
+> conflict-resolution); there is no `manifest/import.ts` to carve out. The old
+> "import.ts split spans skills + manifest" framing was based on a wrong read.
+
+Into `packages/core/src/skills/`:
+
+| Current `src/`                 | New                     | Note                         |
+| ------------------------------ | ----------------------- | ---------------------------- |
+| `install.ts`                   | `skills/install.ts`     | link/unlink/delete-from-bank |
+| `unregister.ts`                | `skills/unregister.ts`  |                              |
+| `installed.ts` (+test)         | `skills/installed.ts`   |                              |
+| `export.ts`                    | `skills/export.ts`      |                              |
+| `delete-unregistered.ts`       | `skills/delete.ts`      | **rename**                   |
+| `local-diagnostics.ts` (+test) | `skills/diagnostics.ts` | **rename**                   |
+| `import.ts`                    | `skills/register.ts`    | **rename** — see decision 1  |
+
+**Import-rewrite rules** (same engine): inbound gets `skills/` inserted with
+renames (`./delete-unregistered.js`→`./skills/delete.js`,
+`./local-diagnostics.js`→`./skills/diagnostics.js`, `./import.js`→`./skills/register.js`);
+intra-`skills` stays `./` (e.g. `unregister`→`install`, `delete`/`diagnostics`/`register`→`installed`);
+`skills`→out becomes `../registry/…` and `../shared/…` (the only out-edges).
+
+**Cross-domain retouch** (deps other domains carried for skills modules):
+
+- `shared/skill-state-server.ts` → `../skills/installed.js` (the `../installed.js` left pending since step 2)
+- `manifest.ts` → `./skills/install.js` (`deleteFromBankSkill`) and any `./installed.js`/`./import.js` refs
+
+**Subpath exports:** none — `skills/` owns no renderer-safe subpath (all three
+already placed: `shared/skill-state`, `shared/agents-data`, `registry/labels`).
+No `package.json` change; no desktop change.
+
+**Executed as approved** (decision 1: **split**; renames `delete` / `diagnostics`
+/ `register`). `import.ts` → `skills/register.ts` (registration / finalize /
+scan) + `skills/conflicts.ts` (repair / remove / resolveSkillConflicts). The
+`isSymlink` private util moved to `conflicts.ts` — it was the file's only caller
+of it (`resolveSkillConflicts`), so the split needed no duplication. Barrel
+exports both halves. Cross-domain retouch landed (`shared/skill-state-server`
+→ `../skills/installed.js`; `manifest.ts` → `./skills/install.js`). No
+`scripts/` deep-imports or `__dirname` path issues this time.
+
+Verified: typecheck, 257 tests, knip, build all clean; `dist/skills/{register,conflicts,delete,diagnostics}.js` materialized.
 
 ## Verify (for the refactor)
 

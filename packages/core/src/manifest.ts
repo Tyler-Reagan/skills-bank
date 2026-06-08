@@ -13,7 +13,7 @@ import {
   type SkillOrigin,
 } from "./registry/source.js";
 import { folderPathFromSkillPath, installSkillFiles } from "./github/origin.js";
-import { deleteFromBankSkill } from "./install.js";
+import { deleteFromBankSkill } from "./skills/install.js";
 import { readRepoFile } from "./github/files.js";
 import type { RateLimitInfo } from "./github/http.js";
 import {

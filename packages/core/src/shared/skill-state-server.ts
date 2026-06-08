@@ -1,5 +1,5 @@
 import { buildRegistryIndex } from "../registry/build.js";
-import { listInstalled } from "../installed.js";
+import { listInstalled } from "../skills/installed.js";
 import {
   classifyDrawerState,
   type ClassifyOptions,

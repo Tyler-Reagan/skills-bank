@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { AGENTS, getAgentSkillsDir, type AgentDef } from "./shared/agents.js";
-import { buildRegistryIndex } from "./registry/build.js";
+import { AGENTS, getAgentSkillsDir, type AgentDef } from "../shared/agents.js";
+import { buildRegistryIndex } from "../registry/build.js";
 import type {
   InstalledKind,
   InstalledSkill,
   RegistryEntry,
   RegistryIndex,
-} from "./shared/types.js";
+} from "../shared/types.js";
 
 export interface ListInstalledOptions {
   /**

@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import archiver from "archiver";
-import { findEntry, resolveEntryPath } from "./registry/walk.js";
-import { buildRegistryIndex } from "./registry/build.js";
+import { findEntry, resolveEntryPath } from "../registry/walk.js";
+import { buildRegistryIndex } from "../registry/build.js";
 
 export type ExportKind = "standalone" | "bundled";
 
