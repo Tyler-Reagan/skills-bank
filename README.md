@@ -50,7 +50,7 @@ pnpm start    # one-shot production build, then launch
 ```
 
 > [!TIP]
-> Set `SKILLS_BANK_ROOT=/path/to/skills-bank` to work against the cloned `skills/` folder directly. On a fresh clone, run `pnpm reset:seed` once first.
+> Set `SKILLS_BANK_ROOT=/path/to/skills-bank` to work against the cloned `skills/` folder directly.
 
 ```bash
 pnpm docs:dev   # run the docs site locally

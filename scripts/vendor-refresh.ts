@@ -7,10 +7,10 @@
 //
 // Usage:
 //
-//   pnpm vendor:refresh                 # review mode — print drift report, no writes
-//   pnpm vendor:refresh --apply         # re-mirror skills whose upstream hash changed
-//   pnpm vendor:refresh --only foo,bar  # restrict to a subset (comma-separated names)
-//   pnpm vendor:refresh --json          # machine-readable report on stdout
+//   pnpm bank refresh                 # review mode — print drift report, no writes
+//   pnpm bank refresh --apply         # re-mirror skills whose upstream hash changed
+//   pnpm bank refresh --only foo,bar  # restrict to a subset (comma-separated names)
+//   pnpm bank refresh --json          # machine-readable report on stdout
 //
 // Per-skill opt-out: add `"refresh": "manual"` at the top level of
 // `<skill>/.skills-bank.json` to pin a vendored skill against bulk
@@ -21,7 +21,7 @@
 //
 //   * Follow GitHub repo renames/moves. A 404 on the upstream is
 //     reported as "missing"; the maintainer updates the pointer by
-//     hand or via `vendor:skill <new-owner/repo>@<id> --force`.
+//     hand or via `pnpm bank vendor <new-owner/repo>@<id> --force`.
 //   * Delete locally vendored skills whose upstream has vanished —
 //     reported as "missing"; removal is a maintainer decision.
 //   * Rewrite source markers beyond the upstream block. `source`
@@ -81,7 +81,7 @@ function parseArgs(): Args {
       );
     } else if (a === "--help" || a === "-h") {
       console.log(
-        "usage: pnpm vendor:refresh [--apply] [--only name1,name2] [--json]",
+        "usage: pnpm bank refresh [--apply] [--only name1,name2] [--json]",
       );
       process.exit(0);
     } else {
@@ -357,6 +357,6 @@ function printReport(results: Result[], applied: boolean): void {
 }
 
 refresh().catch((err) => {
-  console.error("vendor:refresh failed:", err);
+  console.error("bank refresh failed:", err);
   process.exit(1);
 });

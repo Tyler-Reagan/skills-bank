@@ -16,6 +16,14 @@
 //
 // After running: `pnpm dev` boots showing find-skills with the CURATED badge,
 // no conflict modal, no error banners — exactly like a packaged first install.
+//
+// Scope invariant: every target is either the repo working tree (skills/,
+// via git) or ~/.skills-bank-dev/ — the dev redirect main.ts installs in its
+// `!app.isPackaged` branch. The packaged install's userData
+// (~/Library/Application Support/Skills Bank/) and the real ~/.claude /
+// ~/.cursor agent sinks are NEVER referenced here, so a dev reset cannot
+// reach the installed app. Keep it that way: only touch devHome (below) and
+// repo paths. See CLAUDE.md → "Dev-mode isolation".
 
 import fs from "node:fs";
 import os from "node:os";

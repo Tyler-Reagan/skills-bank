@@ -12,10 +12,6 @@
     "build": "pnpm run build:main && pnpm run build:renderer",
     "dev": "pnpm run build:main && vite build --watch & sleep 1 && env -u ELECTRON_RUN_AS_NODE SKILLS_BANK_DEVTOOLS=1 electron .",
     "start": "pnpm run build && env -u ELECTRON_RUN_AS_NODE electron .",
-    "package:mac:arm64": "pnpm run build && electron-builder --mac --arm64",
-    "package:mac:x64": "pnpm run build && electron-builder --mac --x64",
-    "package:mac": "pnpm run build && electron-builder --mac --arm64 --x64",
-    "package:win": "pnpm run build && electron-builder --win",
     "typecheck": "tsc -b tsconfig.main.json && tsc -p tsconfig.json --noEmit",
     "icons": "bash scripts/build-icons.sh"
   },

@@ -5,18 +5,18 @@
 // skills/personal/<name>/ or skills/vendored/<name>/, so the
 // maintainer's offline edits land in the bank.
 //
-// This is the counterpart to `vendor:skill` (which pulls from an
-// upstream GitHub repo INTO the bank) and `vendor:refresh` (which
+// This is the counterpart to `bank vendor` (which pulls from an
+// upstream GitHub repo INTO the bank) and `bank refresh` (which
 // bulk-refreshes vendored skills against their upstreams). This
 // script is the "I edited the deployed copy in ~/.claude/skills/
 // and want those edits committed back to the bank" path.
 //
 // Usage:
 //
-//   pnpm update:skill <name>              # auto-detect bucket from existing skills/<bucket>/<name>
-//   pnpm update:skill <name> --from <path># override source path
-//   pnpm update:skill <name> --bucket personal|vendored   # required for new skills
-//   pnpm update:skill <name> --dry        # validate + diff preview, no writes
+//   pnpm bank update <name>              # auto-detect bucket from existing skills/<bucket>/<name>
+//   pnpm bank update <name> --from <path># override source path
+//   pnpm bank update <name> --bucket personal|vendored   # required for new skills
+//   pnpm bank update <name> --dry        # validate + diff preview, no writes
 //
 // Default source: ~/.claude/skills/<name>/. Bucket auto-detected if
 // the skill already exists in exactly one of skills/personal/ or
@@ -54,7 +54,7 @@ interface Args {
 
 function usage(): never {
   console.error(
-    "usage: pnpm update:skill <name> [--from <path>] [--bucket personal|vendored] [--dry]",
+    "usage: pnpm bank update <name> [--from <path>] [--bucket personal|vendored] [--dry]",
   );
   process.exit(1);
 }
@@ -176,7 +176,7 @@ function syncFolder(
   if (fs.existsSync(dest)) {
     // Preserve `.skills-bank.json` and `.skills-bank-hash` on the
     // destination if they exist — those are the bank's provenance
-    // markers (set by vendor:skill / seed:source-markers) and must
+    // markers (set by `bank vendor`) and must
     // survive a content refresh.
     for (const entry of fs.readdirSync(dest, { withFileTypes: true })) {
       if (

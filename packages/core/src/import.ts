@@ -316,7 +316,7 @@ function adoptIntoRegistry(
   // Brand-new adoptions default to `personal/`: the Register-from-
   // installed flow has no upstream-attribution machinery, so "user"
   // semantics + personal bucket is the safe default. The maintainer
-  // can promote to vendored later via `pnpm update:skill --bucket`.
+  // can promote to vendored later via `pnpm bank update --bucket`.
   const existing = findSkillFolder(opts.registryRoot, entry.name);
   const destDir = existing
     ? existing.dir

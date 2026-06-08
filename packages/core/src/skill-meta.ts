@@ -1,6 +1,6 @@
 // SKILL.md frontmatter validation against the SkillMeta schema.
-// Shared between the maintainer script paths (`vendor:skill`,
-// `update:skill`) and the in-app Origin Update path
+// Shared between the maintainer script paths (`bank vendor`,
+// `bank update`) and the in-app Origin Update path
 // (`applyOriginUpdate`) so all three converge on one contract for
 // "post-mirror invariants." (The meta.json synthesis that used to
 // live here was removed in v1.20 along with meta.json itself.)
@@ -227,7 +227,7 @@ export type ValidateSkillMetaResult =
 /**
  * Validate SKILL.md frontmatter for `skillDir` against the SkillMeta schema.
  *
- * Used by `update:skill` (pre-publish gate) and `applyOriginUpdate`
+ * Used by `bank update` (pre-publish gate) and `applyOriginUpdate`
  * (post-mirror gate).
  *
  * Returns a discriminated union so callers can render flow-specific

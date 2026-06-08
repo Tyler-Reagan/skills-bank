@@ -13,8 +13,8 @@
 // CLI install ever happens.
 //
 // Usage:
-//   tsx scripts/backfill-bundled-upstream.ts          # write
-//   tsx scripts/backfill-bundled-upstream.ts --dry    # report only
+//   pnpm bank backfill          # write
+//   pnpm bank backfill --dry    # report only
 //
 // The script also writes a SHA-256 baseline via `.skills-bank-hash`
 // for each newly-stamped skill so subsequent index builds can detect

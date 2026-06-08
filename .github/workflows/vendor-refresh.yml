@@ -39,11 +39,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: Run vendor:refresh
+      - name: Run vendor refresh
         id: refresh
         env:
           # The workflow's GITHUB_TOKEN is enough to lift unauth requests
-          # past the 60/hr ceiling on the upstream probes — vendor:refresh
+          # past the 60/hr ceiling on the upstream probes — bank refresh
           # picks it up automatically.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -54,8 +54,8 @@ jobs:
           if [ -n "${{ inputs.only }}" ]; then
             ARGS="$ARGS --only ${{ inputs.only }}"
           fi
-          echo "Running: pnpm vendor:refresh $ARGS"
-          pnpm vendor:refresh $ARGS | tee refresh.log
+          echo "Running: pnpm bank refresh $ARGS"
+          pnpm bank refresh $ARGS | tee refresh.log
 
       - name: Re-validate + rebuild index
         # Always run these — if --apply was off, both are no-ops; if

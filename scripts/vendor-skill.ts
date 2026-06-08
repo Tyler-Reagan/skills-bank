@@ -6,11 +6,11 @@
 //
 // Usage:
 //
-//   pnpm vendor:skill <owner/repo>@<skill-id>
-//   pnpm vendor:skill <owner/repo> --path <path-to-SKILL.md>
-//   pnpm vendor:skill <owner/repo>@<skill-id> --as <local-name>
-//   pnpm vendor:skill <owner/repo>@<skill-id> --force
-//   pnpm vendor:skill <owner/repo>@<skill-id> --no-synthesize-meta
+//   pnpm bank vendor <owner/repo>@<skill-id>
+//   pnpm bank vendor <owner/repo> --path <path-to-SKILL.md>
+//   pnpm bank vendor <owner/repo>@<skill-id> --as <local-name>
+//   pnpm bank vendor <owner/repo>@<skill-id> --force
+//   pnpm bank vendor <owner/repo>@<skill-id> --no-synthesize-meta
 //
 // The script:
 //   1. Resolves the in-repo path to the skill's SKILL.md (via
@@ -64,8 +64,8 @@ interface ParsedArg {
 
 function usage(): never {
   console.error(
-    "usage: pnpm vendor:skill <owner/repo>@<skill-id> [--as <name>] [--personal] [--force]\n" +
-      "       pnpm vendor:skill <owner/repo> --path <SKILL.md path> [--as <name>] [--personal] [--force]\n" +
+    "usage: pnpm bank vendor <owner/repo>@<skill-id> [--as <name>] [--personal] [--force]\n" +
+      "       pnpm bank vendor <owner/repo> --path <SKILL.md path> [--as <name>] [--personal] [--force]\n" +
       "\n" +
       "Defaults destination to skills/vendored/<name>/. Pass --personal to write\n" +
       "to skills/personal/<name>/ instead — for forks the maintainer is taking\n" +
@@ -163,7 +163,7 @@ async function npxFindMatch(
 
 /**
  * Locate SKILL.md in the repo via frontmatter `name:` match — the
- * same fallback discover-bundled-upstream uses. Lets vendor:skill
+ * same fallback discover-bundled-upstream uses. Lets bank vendor
  * succeed when skills.sh's skill-id doesn't match the source folder
  * name. Only fires when `--path` isn't supplied.
  */

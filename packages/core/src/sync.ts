@@ -229,7 +229,7 @@ export async function applyCanonicalSync(
       //
       // Also treat source: "curated" skills as previously-synced even
       // when syncedFromCommit is absent. These are seeded bundled skills
-      // (from seedManagedRegistryIfEmpty or reset:fresh) — not
+      // (from seedManagedRegistryIfEmpty or pnpm reset) — not
       // user-authored content. The first boot-sync overwrites them
       // cleanly and stamps a real syncedFromCommit.
       const isPreviouslySynced =

@@ -188,7 +188,7 @@ Collapse a symlinked top-level agent dir (e.g. `~/.claude/skills` → `~/.agents
 
 ## Vendor
 
-Pulling a third-party skill from its origin GitHub repo into the bank, preserving the origin pointer so future updates from the original author still surface via the update probe. Vendored skills live under `skills/vendored/<name>/`. The CLI counterpart is `pnpm vendor:skill`; the bulk-refresh counterpart is `pnpm vendor:refresh`. Vendoring does NOT take ownership — the user is mirroring, not forking.
+Pulling a third-party skill from its origin GitHub repo into the bank, preserving the origin pointer so future updates from the original author still surface via the update probe. Vendored skills live under `skills/vendored/<name>/`. The CLI counterpart is `pnpm bank vendor`; the bulk-refresh counterpart is `pnpm bank refresh`. Vendoring does NOT take ownership — the user is mirroring, not forking.
 
 ## Manifest
 

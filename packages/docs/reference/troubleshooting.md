@@ -45,11 +45,12 @@ The app polls the GitHub Releases feed once on launch. If you've been running th
 
 For packaged-app users, manually delete `~/Library/Application Support/@skills-bank/` to start fresh. (To remove the app itself too, see [Uninstalling Skills Bank](#uninstalling-skills-bank).)
 
-Two reset scripts are also available if you're running from source:
+A reset script is also available if you're running from source:
 
 ```bash
-pnpm reset          # clear dev-mode userData (registry source choice + auth token)
-pnpm reset:hard     # also wipe the app-managed registry directory and re-seed
+pnpm reset          # restore the dev app to a first-install state:
+                    # wipe ~/.skills-bank-dev/, drop app-installed skills,
+                    # and seed a fresh isolated managed registry
 ```
 
 Set `unset SKILLS_BANK_ROOT` in your shell first if you've been pointing the app at a checkout.

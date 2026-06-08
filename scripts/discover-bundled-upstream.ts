@@ -9,11 +9,11 @@
 //
 // Workflow:
 //
-//   tsx scripts/discover-bundled-upstream.ts                            # write candidate JSON to stdout
-//   tsx scripts/discover-bundled-upstream.ts --out CAND.json            # write to file
-//   tsx scripts/discover-bundled-upstream.ts --apply CAND.json          # apply markers from JSON
-//   tsx scripts/discover-bundled-upstream.ts --apply CAND.json --source yours
-//                                                                       # override default source axis
+//   pnpm bank discover                            # write candidate JSON to stdout
+//   pnpm bank discover --out CAND.json            # write to file
+//   pnpm bank discover --apply CAND.json          # apply markers from JSON
+//   pnpm bank discover --apply CAND.json --source yours
+//                                                 # override default source axis
 //
 // The two-phase split is deliberate: discovery emits a candidate
 // mapping the maintainer can review (and hand-correct for skills
