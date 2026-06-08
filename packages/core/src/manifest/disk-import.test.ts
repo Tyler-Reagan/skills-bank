@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { mergeImportRegistry } from "./merge.js";
-import { readSkillSource, writeSkillSource } from "./registry/source.js";
+import { mergeImportRegistry } from "./disk-import.js";
+import { readSkillSource, writeSkillSource } from "../registry/source.js";
 import {
   readUpstreamCanonNames,
   writeUpstreamCanonNames,
-} from "./registry/canon.js";
+} from "../registry/canon.js";
 
 /**
  * mergeImportRegistry mirrors applyCanonicalSync's conflict surface

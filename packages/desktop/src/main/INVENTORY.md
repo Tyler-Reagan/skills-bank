@@ -302,6 +302,61 @@ exports both halves. Cross-domain retouch landed (`shared/skill-state-server`
 
 Verified: typecheck, 257 tests, knip, build all clean; `dist/skills/{register,conflicts,delete,diagnostics}.js` materialized.
 
+## Reorg step 5 — `manifest/` (done, `<commit>`) — FINAL domain
+
+The cleanest domain: it sits at the top of the dependency stack, so **nothing
+outside the cluster imports it except the barrel** — no cross-domain retouch,
+and (confirmed) no `scripts/` deep-imports or `__dirname`/repoRoot test paths.
+Into `packages/core/src/manifest/`:
+
+| Current `src/`              | New                       | Note                                                                             |
+| --------------------------- | ------------------------- | -------------------------------------------------------------------------------- |
+| `manifest.ts` (+test)       | `manifest/manifest.ts`    | move whole — see decision 1                                                      |
+| `manifest-diff.ts` (+test)  | `manifest/diff.ts`        | **rename**                                                                       |
+| `manifest-merge.ts` (+test) | `manifest/merge.ts`       | **rename**                                                                       |
+| `merge.ts` (+test)          | `manifest/disk-import.ts` | **rename** (the folder 3-way import; avoids colliding with manifest-merge→merge) |
+
+**Import-rewrite rules:**
+
+- **Inbound** — only the barrel `index.ts`: `./manifest.js`→`./manifest/manifest.js`,
+  `./manifest-diff.js`→`./manifest/diff.js`, `./manifest-merge.js`→`./manifest/merge.js`,
+  `./merge.js`→`./manifest/disk-import.js`.
+- **Intra-`manifest`** (stay `./`, renamed in place): `diff`→`manifest`,
+  `merge`→`diff`+`manifest`. (`disk-import` is referenced only by the barrel.)
+- **`manifest`→out** (the bulk): `./github/…`, `./registry/…`, `./shared/…`,
+  `./skills/install.js` all become `../…`. These resolve cleanly — every other
+  domain is already in place, so this is the step where the last `../` lands on
+  final paths (no future retouch).
+
+**No** `package.json` change (manifest owns no subpath export), **no** desktop
+change, **no** cross-domain retouch.
+
+**Executed as approved (decision 1: split).** `manifest.ts` split three ways:
+
+- `manifest/manifest.ts` — schema + types + `exportRegistryManifest` +
+  `serializeManifest` + `coerceManifestToCurrent` + `writeRegistrySnapshot` +
+  `fetchRemoteManifest`. Now also exports the manifest-domain helpers
+  `originFromPointer` / `originsEqual` / `stampOriginMarker` /
+  `recordLabelOverride` (kept here — they're origin/label utilities — and
+  imported by `import.ts`, per "defined once, imported").
+- `manifest/import.ts` — `importRegistryManifest` + its types
+  (`ImportSkillOutcome`, `ManifestImportProgressEvent`, options/result).
+- `manifest/reconcile.ts` — `computeManifestRemovals` + `ReconcileResult` +
+  `reconcileRegistryToManifest`.
+
+Done by `sed`-extraction (two contiguous cuts: the import cluster 247–530 and
+the reconcile tail 886–942) — no retyping. `manifest.test.ts` repointed its
+`importRegistryManifest`/`computeManifestRemovals` imports to the new modules
+(only fix needed). Barrel exports all three. No cross-domain retouch.
+
+Verified: typecheck, 257 tests, knip, build all clean; `dist/manifest/{manifest,import,reconcile,diff,merge,disk-import}.js` materialized.
+
+**After this step:** `core/src/` = `index.ts` (barrel) + five domain dirs
+(`shared/`, `github/`, `registry/`, `skills/`, `manifest/`). Reorg complete.
+
+**Verify the step:** `pnpm typecheck && pnpm test && pnpm knip`, then `pnpm build`
+(confirm `dist/manifest/*.js` + the renderer still resolves all three subpaths).
+
 ## Verify (for the refactor)
 
 `pnpm typecheck && pnpm test` — pure units (`classifySyncDisposition`,

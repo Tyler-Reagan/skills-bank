@@ -1,14 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
-import { invalidateCanonCache } from "./registry/canon.js";
-import { applyConflictDecision } from "./shared/conflict.js";
-import { hashSkillFolder, writeSyncedHash } from "./registry/heal.js";
+import { invalidateCanonCache } from "../registry/canon.js";
+import { applyConflictDecision } from "../shared/conflict.js";
+import { hashSkillFolder, writeSyncedHash } from "../registry/heal.js";
 import {
   readSkillSource,
   writeSkillSource,
   type SkillSource,
-} from "./registry/source.js";
-import type { ConflictEntry, SyncDecisions } from "./registry/sync.js";
+} from "../registry/source.js";
+import type { ConflictEntry, SyncDecisions } from "../registry/sync.js";
 
 /**
  * Result of a merge-import. Mirrors SyncReport's shape so callers can

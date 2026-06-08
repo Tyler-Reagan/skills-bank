@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { diffManifests } from "./manifest-diff.js";
+import { diffManifests } from "./diff.js";
 import { MANIFEST_SCHEMA_VERSION } from "./manifest.js";
 import type { RegistryManifest, ManifestSkill } from "./manifest.js";
 

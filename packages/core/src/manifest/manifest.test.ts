@@ -4,17 +4,17 @@ import os from "node:os";
 import path from "node:path";
 import {
   coerceManifestToCurrent,
-  computeManifestRemovals,
   exportRegistryManifest,
-  importRegistryManifest,
   serializeManifest,
   writeRegistrySnapshot,
   MANIFEST_SCHEMA_VERSION,
   type RegistryManifest,
 } from "./manifest.js";
-import { writeSkillSource } from "./registry/source.js";
-import { hashSkillFolder, writeSyncedHash } from "./registry/heal.js";
-import { buildRegistryIndex } from "./registry/build.js";
+import { importRegistryManifest } from "./import.js";
+import { computeManifestRemovals } from "./reconcile.js";
+import { writeSkillSource } from "../registry/source.js";
+import { hashSkillFolder, writeSyncedHash } from "../registry/heal.js";
+import { buildRegistryIndex } from "../registry/build.js";
 
 /**
  * Phase 1 manifest contract:
