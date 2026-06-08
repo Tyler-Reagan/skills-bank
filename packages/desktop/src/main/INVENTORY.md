@@ -144,6 +144,44 @@ domains move in later steps — `tsc` flags any stale path.
 stale relative paths + unused exports), then `pnpm build` to confirm
 `dist/github/*.js` materializes.
 
+## Reorg step 2 — `shared/` (done, `<commit>`)
+
+The foundation domain — widest blast radius (errors/types/paths are imported
+almost everywhere) and it owns two of the three renderer-safe subpaths
+(`skill-state`, `agents-data`). Moved into `packages/core/src/shared/`
+(git-tracked renames):
+
+`errors.ts  types.ts  paths.ts  diff.ts  skill-lock.ts  conflict.ts
+skill-state.ts (+test)  skill-state-server.ts  agents.ts  agents-data.ts`
+
+No decomposition — pure moves. Import rewrites:
+
+- **Inbound** (every non-`shared` core file importing a moved module): insert
+  `shared/` into the relative path — `./errors.js`→`./shared/errors.js` at top
+  level, `../paths.js`→`../shared/paths.js` from `github/`. ~19 files; the
+  barrel `index.ts` is rewritten the same way.
+- **Intra-`shared`** (e.g. `agents`→`agents-data`, `skill-state`→`types`,
+  `skill-state-server`→`skill-state`/`types`): stay `./` (same dir).
+- **`shared`→out** (the only hand-fixed edges): `types`→`../source`/`../registry`,
+  `skill-lock`→`../heal`/`../registry`/`../source`, `conflict`→`../sync`,
+  `skill-state-server`→`../build`/`../installed`. These point at modules that
+  later move to `registry/` — retouched then; `tsc` flags any stale path.
+
+**Subpath exports** (`package.json`): retarget `./skill-state` and
+`./agents-data` to `./dist/shared/…` (specifiers unchanged, so the renderer's
+`@skills-bank/core/skill-state` import is untouched; the vite build resolving
+confirms it). `./labels` stays flat — `labels.ts` is in the not-yet-moved
+`registry` domain.
+
+**Carried cross-domain deps:** `shared/` files reaching into `registry/`
+modules (`source`, `registry`, `heal`, `build`, `installed`, `sync`) keep `../`
+until those move.
+
+Verified: typecheck, 257 tests, knip, build all clean; `dist/shared/{skill-state,agents-data}.js` materialized.
+
+> Process note: this map was added AFTER execution by mistake. Future domain
+> steps record the map here and get approval BEFORE the move.
+
 ## Verify (for the refactor)
 
 `pnpm typecheck && pnpm test` — pure units (`classifySyncDisposition`,

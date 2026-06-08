@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { ConflictDecision } from "./sync.js";
+import type { ConflictDecision } from "../sync.js";
 
 /**
  * v0.11.9 M5: shared conflict-resolution primitive. Sync and Merge

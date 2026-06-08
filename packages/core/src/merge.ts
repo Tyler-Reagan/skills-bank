@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { invalidateCanonCache } from "./canon.js";
-import { applyConflictDecision } from "./conflict.js";
+import { applyConflictDecision } from "./shared/conflict.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 import {
   readSkillSource,

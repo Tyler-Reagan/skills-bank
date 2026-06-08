@@ -1,14 +1,18 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { hashSkillFolder, writeRuntimeState, writeSyncedHash } from "./heal.js";
-import { walkSkills } from "./registry.js";
+import {
+  hashSkillFolder,
+  writeRuntimeState,
+  writeSyncedHash,
+} from "../heal.js";
+import { walkSkills } from "../registry.js";
 import {
   readSkillSource,
   ORIGIN_KIND_GITHUB,
   writeSkillSource,
   type OriginPointer,
-} from "./source.js";
+} from "../source.js";
 
 /**
  * Reader + upstream inference for the `vercel-labs/skills` CLI's

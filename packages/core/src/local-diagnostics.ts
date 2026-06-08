@@ -17,7 +17,7 @@
 
 import { buildRegistryIndex } from "./build.js";
 import { listInstalled } from "./installed.js";
-import type { InstalledSkill } from "./types.js";
+import type { InstalledSkill } from "./shared/types.js";
 
 export type DiagnosticCategory =
   | "unregistered-installs"

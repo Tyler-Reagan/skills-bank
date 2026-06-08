@@ -6,8 +6,8 @@ import {
   getAgentSkillsDir,
   type AgentDef,
   type AgentId,
-} from "./agents.js";
-import { getStateDir } from "./paths.js";
+} from "./shared/agents.js";
+import { getStateDir } from "./shared/paths.js";
 import { writeExternalRegistry } from "./external.js";
 import { listInstalled } from "./installed.js";
 import { findSkillFolder, readSkillMeta } from "./registry.js";
@@ -19,7 +19,7 @@ import type {
   RegistrationResult,
   ScanReport,
   TopLevelSymlinkInfo,
-} from "./types.js";
+} from "./shared/types.js";
 
 /**
  * Lightweight probe for "is any agent dir a symlink we could finalize?"

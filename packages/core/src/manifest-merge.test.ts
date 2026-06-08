@@ -12,7 +12,7 @@ import {
   writePendingManifestConflicts,
 } from "./manifest-merge.js";
 import { MANIFEST_SCHEMA_VERSION } from "./manifest.js";
-import { getStateDir } from "./paths.js";
+import { getStateDir } from "./shared/paths.js";
 import type { ManifestSkill, RegistryManifest } from "./manifest.js";
 
 /**

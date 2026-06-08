@@ -14,7 +14,7 @@ export interface RegistryEntry extends SkillMeta {
    * Origin marker for this skill. Read from a sibling .skills-bank.json
    * inside the skill folder; absent means user-authored.
    */
-  source: import("./source.js").SkillSource;
+  source: import("../source.js").SkillSource;
   /**
    * Taxonomy axis: true when the skill's files physically live under
    * `<registryRoot>/skills/<bucket>/<name>/`. False when the registry
@@ -33,7 +33,7 @@ export interface RegistryEntry extends SkillMeta {
    * Absent on external (non-adopted) entries, since those don't live
    * under the bucket subtree.
    */
-  bucket?: import("./registry.js").SkillBucket;
+  bucket?: import("../registry.js").SkillBucket;
   /**
    * Internal-only taxonomy axis: true when this skill's name appears
    * in the active linked registry's upstream bundled snapshot — local

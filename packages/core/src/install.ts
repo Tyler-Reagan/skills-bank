@@ -6,7 +6,7 @@ import {
   getAgent,
   getAgentSkillsDir,
   getDefaultInstallAgents,
-} from "./agents.js";
+} from "./shared/agents.js";
 import { buildRegistryIndex } from "./build.js";
 import { findEntry, resolveEntryPath } from "./registry.js";
 

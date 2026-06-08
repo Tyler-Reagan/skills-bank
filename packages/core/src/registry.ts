@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { RegistryEntry, RegistryIndex, SkillMeta } from "./types.js";
+import type {
+  RegistryEntry,
+  RegistryIndex,
+  SkillMeta,
+} from "./shared/types.js";
 import { parseSkillFrontmatter } from "./skill-meta.js";
 
 const INDEX_FILE = "index.json";

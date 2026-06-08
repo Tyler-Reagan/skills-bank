@@ -3,10 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import * as tar from "tar";
 import { writeUpstreamCanonNames } from "./canon.js";
-import { applyConflictDecision } from "./conflict.js";
+import { applyConflictDecision } from "./shared/conflict.js";
 import { discoverSkillsInTree } from "./discovery.js";
 import { hashSkillFolder, readSyncedHash, writeSyncedHash } from "./heal.js";
-import { getStateDir } from "./paths.js";
+import { getStateDir } from "./shared/paths.js";
 import { findSkillFolder, walkSkills, type SkillBucket } from "./registry.js";
 import {
   readSkillSource,

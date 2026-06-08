@@ -1,14 +1,14 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
+import { AGENTS, getAgentSkillsDir, type AgentId } from "./shared/agents.js";
 import { invalidateCanonCache } from "./canon.js";
-import { type AppError, fromCaught, makeAppError } from "./errors.js";
+import { type AppError, fromCaught, makeAppError } from "./shared/errors.js";
 import {
   readExternalRegistry,
   removeExternalRegistryEntry,
 } from "./external.js";
-import type { RegistryEntry } from "./types.js";
+import type { RegistryEntry } from "./shared/types.js";
 import type { UnlinkTargetResult } from "./install.js";
 import { buildRegistryIndex } from "./build.js";
 

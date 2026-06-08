@@ -8,8 +8,8 @@ import {
 } from "./origin.js";
 import { buildRegistryIndex } from "../build.js";
 import { readRuntimeState, writeRuntimeState } from "../heal.js";
-import { getStateDir } from "../paths.js";
-import { ORIGIN_UNREACHABLE_THRESHOLD } from "../skill-state.js";
+import { getStateDir } from "../shared/paths.js";
+import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 
 /**
  * The origin probe scheduler. Lifted from

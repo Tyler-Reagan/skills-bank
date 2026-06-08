@@ -8,7 +8,7 @@ import {
   type RegistryManifest,
 } from "./manifest.js";
 import { skillSignature } from "./manifest-diff.js";
-import { getStateDir } from "./paths.js";
+import { getStateDir } from "./shared/paths.js";
 
 /**
  * Three-way merge of registry manifests — the engine behind git-like

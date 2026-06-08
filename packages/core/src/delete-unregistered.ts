@@ -1,8 +1,8 @@
 import fs from "node:fs";
-import type { AgentId } from "./agents.js";
+import type { AgentId } from "./shared/agents.js";
 import { buildRegistryIndex } from "./build.js";
 import { listInstalled } from "./installed.js";
-import type { InstalledSkill } from "./types.js";
+import type { InstalledSkill } from "./shared/types.js";
 
 export interface DeleteUnregisteredResult {
   ok: boolean;

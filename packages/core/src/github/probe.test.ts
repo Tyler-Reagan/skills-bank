@@ -9,7 +9,7 @@ import {
   type ProbeCompleteEvent,
 } from "./probe.js";
 import { readRuntimeState } from "../heal.js";
-import { ORIGIN_UNREACHABLE_THRESHOLD } from "../skill-state.js";
+import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 
 /**
  * Phase 3 contract: probe-failure counter behavior. Pins the

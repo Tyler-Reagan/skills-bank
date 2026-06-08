@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { AGENTS, getAgentSkillsDir, type AgentId } from "./agents.js";
+import { AGENTS, getAgentSkillsDir, type AgentId } from "./shared/agents.js";
 import { buildRegistryIndex } from "./build.js";
 import { invalidateCanonCache } from "./canon.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";

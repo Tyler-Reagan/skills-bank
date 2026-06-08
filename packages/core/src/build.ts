@@ -11,8 +11,12 @@ import { parseSkillFrontmatter } from "./skill-meta.js";
 import { readSkillMeta, walkSkills } from "./registry.js";
 import { readSkillSource } from "./source.js";
 import { readRuntimeState } from "./heal.js";
-import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
-import type { RegistryEntry, RegistryIndex, SkillMeta } from "./types.js";
+import { ORIGIN_UNREACHABLE_THRESHOLD } from "./shared/skill-state.js";
+import type {
+  RegistryEntry,
+  RegistryIndex,
+  SkillMeta,
+} from "./shared/types.js";
 
 export interface BuildIndexOptions {
   /**

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { getStateDir } from "./paths.js";
+import { getStateDir } from "./shared/paths.js";
 
 const UPSTREAM_CANON_FILE = "upstream-canon.json";
 const CACHE_TTL_MS = 30_000;
