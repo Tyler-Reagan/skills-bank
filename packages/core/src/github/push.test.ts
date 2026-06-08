@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { pushSkillFolder } from "./publish-push.js";
+import { pushSkillFolder } from "./push.js";
 
 /**
  * Suite 7 per ADR-0007 — pushSkillFolder invariants. Each test

@@ -14,7 +14,7 @@
  * granularity.
  */
 
-import { GH_API, ghFetch, type RateLimitInfo } from "./github-http.js";
+import { GH_API, ghFetch, type RateLimitInfo } from "./http.js";
 
 export interface PushPrMeta {
   title?: string;

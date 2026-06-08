@@ -9,7 +9,7 @@
  *   - `writeRepoFileAsBranch` — IO: write to a named branch, creating it if absent
  */
 
-import { GH_API, ghFetch, type RateLimitInfo } from "./github-http.js";
+import { GH_API, ghFetch, type RateLimitInfo } from "./http.js";
 
 // ─── readRepoFile ───────────────────────────────────────────────────
 

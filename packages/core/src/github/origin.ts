@@ -14,7 +14,7 @@
  * single-repo and stateless.
  */
 
-import type { RateLimitInfo } from "./github-http.js";
+import type { RateLimitInfo } from "./http.js";
 
 export interface GitTreeEntry {
   path: string;
@@ -385,10 +385,10 @@ export async function applyOriginUpdate(
   // Lazy imports keep this file tree-shake-friendly for the renderer's
   // skill-state subpath consumers — none of them want the build/sync
   // dependency graph that buildRegistryIndex pulls in.
-  const { buildRegistryIndex } = await import("./build.js");
-  const { readSkillSource, writeSkillSource } = await import("./source.js");
+  const { buildRegistryIndex } = await import("../build.js");
+  const { readSkillSource, writeSkillSource } = await import("../source.js");
   const { hashSkillFolder, writeRuntimeState, writeSyncedHash } =
-    await import("./heal.js");
+    await import("../heal.js");
   const path = await import("node:path");
 
   const index = buildRegistryIndex(ctx.registryRoot);
@@ -477,7 +477,7 @@ export async function applyOriginUpdate(
   // Validate the mirrored SKILL.md frontmatter. If the upstream ships
   // a SKILL.md with missing required fields, reject and roll back rather
   // than freezing bad state as the new baseline.
-  const { validateSkillMeta } = await import("./skill-meta.js");
+  const { validateSkillMeta } = await import("../skill-meta.js");
   const metaCheck = validateSkillMeta(registrySkillDir);
   if (!metaCheck.ok) {
     // Roll back: discard the mirrored content, restore from stash.

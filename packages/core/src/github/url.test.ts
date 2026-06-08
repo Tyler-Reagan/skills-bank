@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseGithubSkillUrl } from "./origin-url.js";
+import { parseGithubSkillUrl } from "./url.js";
 
 describe("parseGithubSkillUrl", () => {
   test("folder URL canonicalizes skillPath to <path>/SKILL.md", () => {

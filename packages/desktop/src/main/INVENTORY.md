@@ -84,6 +84,66 @@ Barrel stays `export *` (repointed paths); the 3 renderer-safe subpaths
 (`labels`, `agents-data`, `skill-state`) keep their specifiers, repoint dist
 targets. Pure file moves — no public-API change.
 
+### Domain boundaries (the governing rule)
+
+- A file lives in the domain dir of the operation it implements. `github/`
+  holds GitHub operations that are NOT specialized to another domain.
+- A domain-specialized operation lives in its own domain and imports the
+  generic primitive — e.g. `fetchRemoteManifest` is in `manifest/` and
+  imports `readRepoFile` from `github/`; it does not live in `github/`.
+- Cross-domain imports are allowed and expected (manifest/registry/skills
+  freely import `github/`). Locality across domains may duplicate similar-
+  looking logic — that's acceptable — but a genuine primitive is defined
+  ONCE in its home domain and imported, never re-implemented.
+- Mechanics: `dist/` is generated (`tsc`, `rootDir: src` → `outDir: dist`),
+  so it mirrors `src/` automatically — we only reorganize `src/`. Desktop
+  imports core through the `@skills-bank/core` barrel, so internal moves are
+  invisible to it; only `index.ts` (the barrel) and intra-core relative
+  imports change. Subpath dist targets update only for the 3 renderer-safe
+  modules when they move.
+
+## Reorg step 1 — `github/`
+
+Best first domain: nearly self-contained (only `manifest.ts` imports it from
+outside the set), touches none of the renderer-safe subpaths, and is the
+foundation the later domains import from. Settling it first means
+manifest/registry/skills moves later point at final `github/` paths.
+
+**Moves** (source → target; tests move alongside):
+
+| Current `src/`            | New `src/github/` | Import rewrites inside the file                                                                                                                                                        |
+| ------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `github-http.ts`          | `http.ts`         | — (0 internal imports); **split out** `fetchUserRepos`, `fetchRepoDefaultBranch`, `GithubRepoSummary` → `repos.ts`                                                                     |
+| _(new)_                   | `repos.ts`        | the 3 split symbols; `import "./http.js"`                                                                                                                                              |
+| `github-files.ts`         | `files.ts`        | `./github-http.js` → `./http.js`                                                                                                                                                       |
+| `origin.ts` (+test)       | `origin.ts`       | `./github-http.js` → `./http.js`                                                                                                                                                       |
+| `origin-url.ts` (+test)   | `url.ts`          | — (0 internal imports)                                                                                                                                                                 |
+| `origin-probe.ts` (+test) | `probe.ts`        | `./github-http.js`→`./http.js`, `./origin.js` stays same-dir; `./build.js`→`../build.js`, `./heal.js`→`../heal.js`, `./paths.js`→`../paths.js`, `./skill-state.js`→`../skill-state.js` |
+| `publish-push.ts` (+test) | `push.ts`         | `./github-http.js` → `./http.js`                                                                                                                                                       |
+
+**The one decomposition:** `repos.ts` is split out of `http.ts` so `http.ts`
+stays generic transport (`ghFetch`, `GH_API`, `RateLimitInfo`,
+`GhFetchResult`) and repo-metadata ops live separately. Everything else is a
+move + relative-path rewrite, no logic change.
+
+**External importer to repoint** (the only non-moving core file that imports
+the set): `manifest.ts` — `./github-files.js`→`./github/files.js`,
+`./github-http.js`→`./github/http.js`, `./origin.js`→`./github/origin.js`.
+
+**Barrel** (`index.ts`): repoint the 6 moved lines to `./github/{http,files,origin,url,probe,push}.js` and add `./github/repos.js`.
+
+**No change:** `package.json` (no github file is subpath-exported); desktop
+`main.ts` / renderer (barrel absorbs the move).
+
+**Carried cross-domain deps (allowed):** `github/probe.ts` imports
+`../build.js` (registry), `../heal.js`, `../paths.js`, `../skill-state.js`
+(shared). These get retouched to `../registry/…` / `../shared/…` when those
+domains move in later steps — `tsc` flags any stale path.
+
+**Verify the step:** `pnpm typecheck && pnpm test && pnpm knip` (knip catches
+stale relative paths + unused exports), then `pnpm build` to confirm
+`dist/github/*.js` materializes.
+
 ## Verify (for the refactor)
 
 `pnpm typecheck && pnpm test` — pure units (`classifySyncDisposition`,

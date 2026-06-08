@@ -12,10 +12,10 @@ import {
   type OriginPointer,
   type SkillOrigin,
 } from "./source.js";
-import { folderPathFromSkillPath, installSkillFiles } from "./origin.js";
+import { folderPathFromSkillPath, installSkillFiles } from "./github/origin.js";
 import { deleteFromBankSkill } from "./install.js";
-import { readRepoFile } from "./github-files.js";
-import type { RateLimitInfo } from "./github-http.js";
+import { readRepoFile } from "./github/files.js";
+import type { RateLimitInfo } from "./github/http.js";
 import {
   effectiveLabels,
   type LabelsMap,

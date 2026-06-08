@@ -1,15 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { RateLimitInfo } from "./github-http.js";
+import type { RateLimitInfo } from "./http.js";
 import {
   folderPathFromSkillPath,
   fetchOriginTree,
   type GitTreeEntry,
 } from "./origin.js";
-import { buildRegistryIndex } from "./build.js";
-import { readRuntimeState, writeRuntimeState } from "./heal.js";
-import { getStateDir } from "./paths.js";
-import { ORIGIN_UNREACHABLE_THRESHOLD } from "./skill-state.js";
+import { buildRegistryIndex } from "../build.js";
+import { readRuntimeState, writeRuntimeState } from "../heal.js";
+import { getStateDir } from "../paths.js";
+import { ORIGIN_UNREACHABLE_THRESHOLD } from "../skill-state.js";
 
 /**
  * The origin probe scheduler. Lifted from
