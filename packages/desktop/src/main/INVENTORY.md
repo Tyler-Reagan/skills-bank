@@ -256,7 +256,7 @@ Verified: typecheck, 257 tests, knip, build all clean; `dist/registry/{labels,wa
 > Lesson for remaining steps: grep `scripts/` for deep `core/src/<mod>.js`
 > imports, and check moved files/tests for `__dirname`-relative repo-root paths.
 
-## Reorg step 4 — `skills/` (done, `<commit>`)
+## Reorg step 4 — `skills/` (done, `c1eff37`)
 
 > **Headline correction:** `import.ts` does NOT contain `importRegistryManifest`
 > — that lives in `manifest.ts` (→ `manifest/` in step 5). So `import.ts` is
