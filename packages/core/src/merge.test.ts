@@ -3,8 +3,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { mergeImportRegistry } from "./merge.js";
-import { readSkillSource, writeSkillSource } from "./source.js";
-import { readUpstreamCanonNames, writeUpstreamCanonNames } from "./canon.js";
+import { readSkillSource, writeSkillSource } from "./registry/source.js";
+import {
+  readUpstreamCanonNames,
+  writeUpstreamCanonNames,
+} from "./registry/canon.js";
 
 /**
  * mergeImportRegistry mirrors applyCanonicalSync's conflict surface

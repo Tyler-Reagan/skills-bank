@@ -8,10 +8,10 @@ import {
   type AgentId,
 } from "./shared/agents.js";
 import { getStateDir } from "./shared/paths.js";
-import { writeExternalRegistry } from "./external.js";
+import { writeExternalRegistry } from "./registry/external.js";
 import { listInstalled } from "./installed.js";
-import { findSkillFolder, readSkillMeta } from "./registry.js";
-import { buildRegistryIndex } from "./build.js";
+import { findSkillFolder, readSkillMeta } from "./registry/walk.js";
+import { buildRegistryIndex } from "./registry/build.js";
 import type {
   FinalizeResult,
   InstalledSkill,

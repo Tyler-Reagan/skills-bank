@@ -29,7 +29,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { buildRegistryIndex } from "../packages/core/src/build.js";
+import { buildRegistryIndex } from "../packages/core/src/registry/build.js";
 
 const repoRoot = process.cwd();
 const devHome = path.join(os.homedir(), ".skills-bank-dev");

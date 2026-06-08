@@ -6,8 +6,8 @@ import {
   fetchOriginTree,
   type GitTreeEntry,
 } from "./origin.js";
-import { buildRegistryIndex } from "../build.js";
-import { readRuntimeState, writeRuntimeState } from "../heal.js";
+import { buildRegistryIndex } from "../registry/build.js";
+import { readRuntimeState, writeRuntimeState } from "../registry/heal.js";
 import { getStateDir } from "../shared/paths.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 

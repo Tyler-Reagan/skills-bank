@@ -7,12 +7,12 @@ import {
   parseSkillFrontmatter,
   validateSkillMeta,
   SKILL_META_SCHEMA,
-} from "./skill-meta.js";
+} from "./meta.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Two levels up from packages/core/src/, then into docs/.
-const repoRoot = path.resolve(__dirname, "..", "..", "..");
+const repoRoot = path.resolve(__dirname, "..", "..", "..", "..");
 
 let scratch: string;
 

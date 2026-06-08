@@ -7,8 +7,8 @@ import {
   getAgentSkillsDir,
   getDefaultInstallAgents,
 } from "./shared/agents.js";
-import { buildRegistryIndex } from "./build.js";
-import { findEntry, resolveEntryPath } from "./registry.js";
+import { buildRegistryIndex } from "./registry/build.js";
+import { findEntry, resolveEntryPath } from "./registry/walk.js";
 
 export interface LinkToAgentsOptions {
   /** If true, replace an existing symlink at the target. Defaults to false. */

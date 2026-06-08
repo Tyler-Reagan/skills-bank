@@ -182,6 +182,79 @@ Verified: typecheck, 257 tests, knip, build all clean; `dist/shared/{skill-state
 > Process note: this map was added AFTER execution by mistake. Future domain
 > steps record the map here and get approval BEFORE the move.
 
+## Reorg step 3 — `registry/` (done, `<commit>`)
+
+The biggest domain and the one `shared/` + `github/` currently reach up for
+(`source`, `heal`, `build`, `registry`, `sync`, `skill-meta`). Moving it
+resolves those `../` deps to `../registry/…`. Into `packages/core/src/registry/`:
+
+**Moves + renames** (3 files are renamed, not just relocated):
+
+| Current `src/`          | New                     | Note                                                               |
+| ----------------------- | ----------------------- | ------------------------------------------------------------------ |
+| `registry.ts`           | `registry/walk.ts`      | **rename** — walkSkills/findSkillFolder/findEntry/resolveEntryPath |
+| `skill-meta.ts` (+test) | `registry/meta.ts`      | **rename** — the one frontmatter parser                            |
+| `skill-record.ts`       | `registry/record.ts`    | **rename** — sidecar facade                                        |
+| `source.ts` (+test)     | `registry/source.ts`    | sidecar trio                                                       |
+| `heal.ts` (+test)       | `registry/heal.ts`      | sidecar trio                                                       |
+| `build.ts` (+test)      | `registry/build.ts`     | index build                                                        |
+| `canon.ts`              | `registry/canon.ts`     |                                                                    |
+| `hide.ts`               | `registry/hide.ts`      |                                                                    |
+| `external.ts`           | `registry/external.ts`  |                                                                    |
+| `labels.ts` (+test)     | `registry/labels.ts`    | **renderer-safe subpath**                                          |
+| `sync.ts` (+test)       | `registry/sync.ts`      | moved whole — see decision 1                                       |
+| `discovery.ts` (+test)  | `registry/discovery.ts` |                                                                    |
+
+**Import-rewrite rules** (same engine as step 2, plus the renames):
+
+- **Inbound** (every non-`registry` file importing a moved module): insert
+  `registry/` into the path, applying the renames — e.g. `./build.js`→
+  `./registry/build.js`; `./registry.js`→`./registry/walk.js`;
+  `./skill-meta.js`→`./registry/meta.js`; `./skill-record.js`→`./registry/record.js`.
+  Touches the barrel + many core files (`install`, `import`, `manifest`,
+  `export`, `merge`, `manifest-merge`, …).
+- **Intra-`registry`** (e.g. `sync`→`canon`/`heal`/`discovery`, `build`→`source`,
+  `skill-lock`-style refs): stay `./`, but renamed targets update in place
+  (`./registry.js`→`./walk.js`, `./skill-meta.js`→`./meta.js`).
+- **`registry`→out**: `./shared/…`→`../shared/…`, `./github/…`→`../github/…`;
+  refs to not-yet-moved skills/manifest modules (`installed`, `install`,
+  `manifest*`, `import`, `merge`) stay `../…` and become `../skills|manifest/…`
+  in later steps.
+
+**Renderer-safe subpath** (`package.json`): retarget `./labels` →
+`./dist/registry/labels.js` (+ `.d.ts`). Specifier unchanged; `labels.ts` stays
+pure (no `fs`), so the renderer import is unaffected — the third and last
+subpath now points into a domain dir. (`skill-state`/`agents-data` already at
+`shared/`.)
+
+**Cross-domain retouch** (the `../` deps from earlier steps now resolve):
+
+- `shared/types.ts` → `../registry/source.js`, `../registry/walk.js`
+- `shared/skill-lock.ts` → `../registry/heal.js`, `../registry/walk.js`, `../registry/source.js`
+- `shared/conflict.ts` → `../registry/sync.js`
+- `shared/skill-state-server.ts` → `../registry/build.js` (`../installed.js` stays → skills)
+- `github/probe.ts` → `../registry/build.js`, `../registry/heal.js`
+- `github/origin.ts` (lazy imports) → `../registry/{build,source,heal,meta}.js`
+
+**No desktop changes** — barrel + the 3 subpaths absorb it.
+
+**Executed as proposed** (sync moved whole; `registry.ts`→`walk.ts`; sidecar
+flat). Two path-depth fixes surfaced beyond the import rewrites — both because
+moved files now sit one level deeper:
+
+- `build.test.ts` / `meta.test.ts` compute `repoRoot` via `__dirname` — bumped
+  `path.resolve(__dirname, "..", "..", "..")` to four `..`. (`build.ts` itself
+  resolves `meta-schema.json` from the runtime `registryRoot`, so it needed no
+  change.)
+- Two scripts deep-import core (not via the barrel): `scripts/build-index.ts`
+  and `scripts/reset-dev-fresh.ts` repointed `core/src/build.js` →
+  `core/src/registry/build.js`. (All other scripts use the `index.js` barrel.)
+
+Verified: typecheck, 257 tests, knip, build all clean; `dist/registry/{labels,walk,meta,record}.js` materialized and the renderer resolves `@skills-bank/core/labels`.
+
+> Lesson for remaining steps: grep `scripts/` for deep `core/src/<mod>.js`
+> imports, and check moved files/tests for `__dirname`-relative repo-root paths.
+
 ## Verify (for the refactor)
 
 `pnpm typecheck && pnpm test` — pure units (`classifySyncDisposition`,

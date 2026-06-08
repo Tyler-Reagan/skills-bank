@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { readSkillMeta } from "./registry.js";
+import { readSkillMeta } from "./walk.js";
 
 /**
  * Per-skill discovery output from `discoverSkillsInTree`. Captures

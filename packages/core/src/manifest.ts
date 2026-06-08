@@ -1,17 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir, type AgentId } from "./shared/agents.js";
-import { buildRegistryIndex } from "./build.js";
-import { invalidateCanonCache } from "./canon.js";
-import { hashSkillFolder, writeSyncedHash } from "./heal.js";
-import { findSkillFolder, walkSkills } from "./registry.js";
+import { buildRegistryIndex } from "./registry/build.js";
+import { invalidateCanonCache } from "./registry/canon.js";
+import { hashSkillFolder, writeSyncedHash } from "./registry/heal.js";
+import { findSkillFolder, walkSkills } from "./registry/walk.js";
 import {
   readSkillSource,
   writeSkillSource,
   isSelfOrigin,
   type OriginPointer,
   type SkillOrigin,
-} from "./source.js";
+} from "./registry/source.js";
 import { folderPathFromSkillPath, installSkillFiles } from "./github/origin.js";
 import { deleteFromBankSkill } from "./install.js";
 import { readRepoFile } from "./github/files.js";
@@ -20,7 +20,7 @@ import {
   effectiveLabels,
   type LabelsMap,
   type SkillLabelOverride,
-} from "./labels.js";
+} from "./registry/labels.js";
 
 /**
  * Registry manifest — the metadata-only artifact at the heart of the

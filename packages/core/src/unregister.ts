@@ -2,15 +2,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir, type AgentId } from "./shared/agents.js";
-import { invalidateCanonCache } from "./canon.js";
+import { invalidateCanonCache } from "./registry/canon.js";
 import { type AppError, fromCaught, makeAppError } from "./shared/errors.js";
 import {
   readExternalRegistry,
   removeExternalRegistryEntry,
-} from "./external.js";
+} from "./registry/external.js";
 import type { RegistryEntry } from "./shared/types.js";
 import type { UnlinkTargetResult } from "./install.js";
-import { buildRegistryIndex } from "./build.js";
+import { buildRegistryIndex } from "./registry/build.js";
 
 export interface UnregisterOptions {
   registryRoot: string;

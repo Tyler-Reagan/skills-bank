@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir, type AgentDef } from "./shared/agents.js";
-import { buildRegistryIndex } from "./build.js";
+import { buildRegistryIndex } from "./registry/build.js";
 import type {
   InstalledKind,
   InstalledSkill,

@@ -4,8 +4,8 @@ import type {
   RegistryEntry,
   RegistryIndex,
   SkillMeta,
-} from "./shared/types.js";
-import { parseSkillFrontmatter } from "./skill-meta.js";
+} from "../shared/types.js";
+import { parseSkillFrontmatter } from "./meta.js";
 
 const INDEX_FILE = "index.json";
 

@@ -1,4 +1,4 @@
-import { buildRegistryIndex } from "../build.js";
+import { buildRegistryIndex } from "../registry/build.js";
 import { listInstalled } from "../installed.js";
 import {
   classifyDrawerState,

@@ -7,16 +7,16 @@ import { readUpstreamCanonNames } from "./canon.js";
 import { readExternalRegistry } from "./external.js";
 import { hashSkillFolder, readSyncedHash } from "./heal.js";
 import { readHiddenCanonNames } from "./hide.js";
-import { parseSkillFrontmatter } from "./skill-meta.js";
-import { readSkillMeta, walkSkills } from "./registry.js";
+import { parseSkillFrontmatter } from "./meta.js";
+import { readSkillMeta, walkSkills } from "./walk.js";
 import { readSkillSource } from "./source.js";
 import { readRuntimeState } from "./heal.js";
-import { ORIGIN_UNREACHABLE_THRESHOLD } from "./shared/skill-state.js";
+import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 import type {
   RegistryEntry,
   RegistryIndex,
   SkillMeta,
-} from "./shared/types.js";
+} from "../shared/types.js";
 
 export interface BuildIndexOptions {
   /**
@@ -45,7 +45,7 @@ export interface BuildIndexOptions {
    * prevent untracked `skills/personal/` content from landing in the
    * committed `index.json`.
    */
-  buckets?: import("./registry.js").SkillBucket[];
+  buckets?: import("./walk.js").SkillBucket[];
 }
 
 interface SchemaValidator {
@@ -399,7 +399,7 @@ function buildExternalEntry(
 interface PriorIndexEntry {
   name: string;
   path: string;
-  bucket?: import("./registry.js").SkillBucket;
+  bucket?: import("./walk.js").SkillBucket;
 }
 
 function readPriorIndexNames(registryRoot: string): PriorIndexEntry[] {

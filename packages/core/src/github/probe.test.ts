@@ -8,7 +8,7 @@ import {
   recordProbeSuccess,
   type ProbeCompleteEvent,
 } from "./probe.js";
-import { readRuntimeState } from "../heal.js";
+import { readRuntimeState } from "../registry/heal.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 
 /**

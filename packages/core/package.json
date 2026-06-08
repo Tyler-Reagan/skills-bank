@@ -22,9 +22,9 @@
       "default": "./dist/shared/agents-data.js"
     },
     "./labels": {
-      "types": "./dist/labels.d.ts",
-      "import": "./dist/labels.js",
-      "default": "./dist/labels.js"
+      "types": "./dist/registry/labels.d.ts",
+      "import": "./dist/registry/labels.js",
+      "default": "./dist/registry/labels.js"
     }
   },
   "scripts": {

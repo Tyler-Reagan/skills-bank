@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { getStateDir } from "./shared/paths.js";
+import { getStateDir } from "../shared/paths.js";
 
 /**
  * Persistence for non-adopted (symlink-mode) registry entries. M3
