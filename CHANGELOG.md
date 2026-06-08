@@ -3,6 +3,23 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.20.4
+
+Maintenance release: info tooltips no longer hide behind modals, modal internals tidied, and the maintenance-script surface consolidated.
+
+### Fixed
+
+- **Info tooltips no longer clipped.** `InfoTooltip`'s bubble was absolutely positioned, so any ancestor with `overflow: hidden`/`auto` (e.g. `.prefs-card`, `.modal-body`) clipped it — tooltips in the Settings and Account modals rendered hidden or cut off. The bubble now renders through a portal to `<body>`, positioned `fixed` from the icon's rect and lifted above the overlay layer, so it escapes all ancestor clipping.
+
+### Changed
+
+- **Modal cleanup.** `AccountModal` and `SettingsModal` internals refactored; `ModalHost` wiring simplified.
+- **Maintenance-script surface consolidated** (root `package.json` scripts 24 → 14). The reset family collapsed to a single dev-only `reset` (the former `reset`/`reset:hard`/`reset:seed` and the two bash reset scripts removed). The provenance/vendoring scripts (`vendor:skill`, `vendor:refresh`, `backfill:bundled`, `discover:bundled`, `update:skill`) unified under one `pnpm bank <command>` dispatcher. Unused `package:*` and `docs:build`/`docs:preview` aliases dropped — release packaging and Vercel invoke their tools directly. A new `SCRIPTS.md` documents the surface.
+
+### Removed
+
+- **Dead scripts and artifacts:** the orphaned `backfill-deployed-upstream.ts`, the `reset-desktop-config.ts` / `seed-source-markers.ts` reset helpers, the bash `skills-bank-full-reset` / `skills-bank-partial-reset` scripts, and stale `packages/cli` build artifacts.
+
 ## v1.20.3
 
 Core cleanup release: frontmatter parsing consolidated into one superset parser (fixing a latent block-scalar bug), dead SDK exports deprecated, and a persistent core inventory doc.
