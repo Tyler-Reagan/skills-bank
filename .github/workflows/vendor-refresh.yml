@@ -63,7 +63,20 @@ jobs:
         # break before we open the PR.
         run: |
           pnpm validate
+          # Did the refresh actually re-mirror any vendored skill content?
+          # Capture before rebuilding: build:index rewrites index.json's
+          # volatile fields (generatedAt timestamp, git-derived lastCommit,
+          # canon cache) on every run regardless of drift, which would
+          # otherwise leave the tree dirty and make create-pull-request open
+          # an empty PR each run.
+          if git diff --quiet -- skills/; then DRIFT=0; else DRIFT=1; fi
           pnpm build:index
+          # No real drift → discard the volatile index.json churn so the PR
+          # step stays a true no-op. On real drift, keep the regenerated
+          # index so the PR carries a consistent index.
+          if [ "$DRIFT" = "0" ]; then
+            git checkout -- index.json
+          fi
 
       - name: Compose PR body
         id: body
