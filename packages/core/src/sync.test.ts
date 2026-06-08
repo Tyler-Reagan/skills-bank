@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { applyCanonicalSync } from "./sync.js";
+import {
+  applyCanonicalSync,
+  classifySyncDisposition,
+  detectSyncOrphans,
+} from "./sync.js";
 import { readSkillSource, writeSkillSource } from "./source.js";
 import { hashSkillFolder, writeSyncedHash } from "./heal.js";
 
@@ -588,5 +592,93 @@ describe("applyCanonicalSync — hash-gate (no-op when content unchanged)", () =
       "new-sha",
     );
     expect(report.upserted).toEqual(["gamma"]);
+  });
+});
+
+describe("classifySyncDisposition (pure)", () => {
+  const decision = { action: "use-canonical" as const, decidedAt: "t" };
+
+  test("no local copy → fresh", () => {
+    expect(classifySyncDisposition(null, "h", null, undefined).kind).toBe(
+      "fresh",
+    );
+  });
+
+  test("previously-synced (syncedFromCommit) + matching hash → unchanged", () => {
+    const d = classifySyncDisposition(
+      { source: "user", syncedFromCommit: "sha" },
+      "same",
+      "same",
+      undefined,
+    );
+    expect(d.kind).toBe("unchanged");
+  });
+
+  test("previously-synced + changed hash → overwrite, preserving source", () => {
+    const existing = { source: "user" as const, syncedFromCommit: "sha" };
+    const d = classifySyncDisposition(existing, "new", "old", undefined);
+    expect(d).toEqual({ kind: "overwrite", preservedSource: existing });
+  });
+
+  test("source:curated counts as previously-synced even without a commit", () => {
+    const d = classifySyncDisposition(
+      { source: "curated" },
+      "new",
+      "old",
+      undefined,
+    );
+    expect(d.kind).toBe("overwrite");
+  });
+
+  test("user-authored collision, no decision → conflict", () => {
+    const d = classifySyncDisposition(
+      { source: "user" },
+      null,
+      null,
+      undefined,
+    );
+    expect(d.kind).toBe("conflict");
+  });
+
+  test("user-authored collision, with decision → decided", () => {
+    const d = classifySyncDisposition({ source: "user" }, null, null, decision);
+    expect(d).toEqual({ kind: "decided", decision });
+  });
+});
+
+describe("detectSyncOrphans", () => {
+  test("flags channel-matched, synced skills absent upstream; never others", () => {
+    writeLocal(
+      "vendored",
+      "stays",
+      { "SKILL.md": "# s" },
+      { source: "curated", syncedFromCommit: "sha" },
+    );
+    writeLocal(
+      "vendored",
+      "orphan",
+      { "SKILL.md": "# o" },
+      { source: "curated", syncedFromCommit: "sha" },
+    );
+    // Wrong channel (user) and never-synced (no commit) must be ignored.
+    writeLocal(
+      "personal",
+      "wrong-channel",
+      { "SKILL.md": "# w" },
+      { source: "user", syncedFromCommit: "sha" },
+    );
+    writeLocal(
+      "vendored",
+      "authored",
+      { "SKILL.md": "# a" },
+      { source: "user" },
+    );
+
+    const orphans = detectSyncOrphans(
+      registryRoot,
+      new Set(["stays"]),
+      "curated",
+    );
+    expect(orphans).toEqual(["orphan"]);
   });
 });

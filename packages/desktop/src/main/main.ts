@@ -17,7 +17,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  applyCanonicalSync,
   applyRegistration,
   buildRegistryIndex,
   applyOriginUpdate as coreApplyOriginUpdate,
@@ -48,7 +47,6 @@ import {
   findSkillFolder,
   readSkillMeta,
   pushSkillFolder,
-  fetchCanonicalTarball,
   hashSkillFolder,
   readSkillSource,
   writeSkillSource,
@@ -71,7 +69,7 @@ import {
   listInstalled,
   readLastSyncReport,
   readPendingConflicts,
-  readSyncDecisions,
+  syncTarballToRegistry,
   findFolderHash,
   folderPathFromSkillPath,
   fetchOriginTree,
@@ -3194,53 +3192,42 @@ async function runSync(): Promise<{
 }> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
-    broadcastSyncStatus({ kind: "fetching" });
     // Opportunistically authenticate the tarball fetch when a token is
     // already on disk (typically from a prior GitHub-linked session).
     // Unauthenticated GitHub API calls share a 60 req/hr ceiling per IP
     // — easy to exhaust on NAT'd networks. The token is irrelevant to
     // local-bundled semantics; it just raises the ceiling to 5000/hr.
     const token = getStoredToken();
-    const fetched = await fetchCanonicalTarball({
+    // syncCanonical mirrors the curated/bundled repo; its discovered
+    // skills land in the vendored bucket per the bucket UL (curated
+    // origin → vendored locally).
+    const report = await syncTarballToRegistry({
+      registryRoot,
       owner: CANONICAL_OWNER,
       repo: CANONICAL_REPO,
       ...(token ? { token } : {}),
+      mountTo: "vendored",
+      onStatus: (phase) => broadcastSyncStatus({ kind: phase }),
     });
-    try {
-      broadcastSyncStatus({ kind: "applying" });
-      const decisions = readSyncDecisions(registryRoot);
-      const report = await applyCanonicalSync(
-        registryRoot,
-        fetched.extractedRoot,
-        fetched.commitSha,
-        decisions,
-        // syncCanonical mirrors the curated/bundled repo; its
-        // discovered skills land in the vendored bucket per the
-        // bucket UL (curated origin → vendored locally).
-        { mountTo: "vendored" },
-      );
-      broadcastSyncStatus({
-        kind: "done",
-        upserted: report.upserted,
-        conflicts: report.conflicts.length,
-        orphaned: report.orphaned,
-        commitSha: report.commitSha,
-      });
-      return {
-        ok: true,
-        message: `synced ${report.upserted.length} skill(s)${
-          report.conflicts.length > 0
-            ? `, ${report.conflicts.length} conflict(s) pending`
-            : ""
-        }${
-          report.resolved.length > 0
-            ? `, ${report.resolved.length} auto-resolved`
-            : ""
-        }`,
-      };
-    } finally {
-      fetched.cleanup();
-    }
+    broadcastSyncStatus({
+      kind: "done",
+      upserted: report.upserted,
+      conflicts: report.conflicts.length,
+      orphaned: report.orphaned,
+      commitSha: report.commitSha,
+    });
+    return {
+      ok: true,
+      message: `synced ${report.upserted.length} skill(s)${
+        report.conflicts.length > 0
+          ? `, ${report.conflicts.length} conflict(s) pending`
+          : ""
+      }${
+        report.resolved.length > 0
+          ? `, ${report.resolved.length} auto-resolved`
+          : ""
+      }`,
+    };
   } catch (err) {
     const error = fromCaught("sync.run-failed", err);
     broadcastSyncStatus({ kind: "error", message: error.message });
@@ -3261,8 +3248,8 @@ ipcMain.handle(IPC.getPendingConflicts, () => {
 });
 
 // Persist user choices and immediately re-run sync so the resolutions
-// take effect without a separate user action. The re-run consumes the
-// just-written decisions via readSyncDecisions inside runSync.
+// take effect without a separate user action. The re-run reads the
+// just-written decisions inside syncTarballToRegistry.
 mutatingHandle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
@@ -3441,92 +3428,84 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
   const repo = fullName.slice(slash + 1);
 
   try {
-    broadcastSyncStatus({ kind: "fetching" });
-    const fetched = await fetchCanonicalTarball({ owner, repo, token });
-    try {
-      // v1.5: dropped the migrateLegacyGithubMarkers call. The
-      // pre-v0.11 heuristic ("source: user + syncedFromCommit ⇒
-      // legacy linked-repo entry ⇒ stamp curated") was inverted
-      // by Phase 1's mountTo policy — linked-repo skills are now
-      // correctly stamped `user`, so re-stamping them to `curated`
-      // is destructive. Any v0.10-era config that still needed the
-      // migration has been through multiple minor cycles by now.
-      broadcastSyncStatus({ kind: "applying" });
-      const decisions = readSyncDecisions(registryRoot);
-      const report = await applyCanonicalSync(
-        registryRoot,
-        fetched.extractedRoot,
-        fetched.commitSha,
-        decisions,
-        // Linking a user's own GitHub repo: discovered skills land
-        // in the personal bucket. Discovery walks the whole repo
-        // tree by file convention, so flat / bucketed / nested
-        // remote layouts all link cleanly.
-        { mountTo: "personal" },
-      );
-      // Only a report with zero discoveries means "no recognizable
-      // skills". A pull where every skill matched its local content
-      // hash also upserts nothing (`unchanged` carries the skips) —
-      // that's a successful no-op, handled by the success path below.
-      if (
-        report.upserted.length === 0 &&
-        report.conflicts.length === 0 &&
-        report.unchanged.length === 0
-      ) {
-        broadcastSyncStatus({ kind: "idle" });
-        const detail =
-          (report.discoveryCollisions ?? []).length > 0
-            ? ` (${report.discoveryCollisions!.length} name collision${report.discoveryCollisions!.length === 1 ? "" : "s"} in the source tree)`
-            : "";
-        return {
-          ok: false,
-          message: `${fullName} has no skills the app can recognize${detail}. A skill folder needs a SKILL.md.`,
-        };
-      }
-      broadcastSyncStatus({
-        kind: "done",
-        upserted: report.upserted,
-        conflicts: report.conflicts.length,
-        orphaned: report.orphaned,
-        commitSha: report.commitSha,
-      });
-      // v0.11.9 M8: linkage commit step extracted so other paths
-      // (re-link, restore from session) can reuse it.
-      // Fetch the repo's default branch so push/read operations can
-      // target the correct base without hardcoding "main".
-      let fetchedDefaultBranch: string | undefined;
-      try {
-        const repoMetaRes = await coreGhFetch<{ default_branch: string }>(
-          `${GH_API}/repos/${fullName}`,
-          { method: "GET" },
-          token,
-        );
-        if (repoMetaRes.ok)
-          fetchedDefaultBranch = repoMetaRes.body.default_branch;
-      } catch {
-        // Non-fatal — defaultBranch stays undefined; handlers fall back to "main".
-      }
-      commitGithubLinkage({
-        fullName,
-        lastFetchedAt: report.syncedAt,
-        syncedFromCommit: fetched.commitSha,
-        defaultBranch: fetchedDefaultBranch,
-      });
-      const message =
-        report.conflicts.length > 0
-          ? `synced ${report.upserted.length} from ${fullName}, ${report.conflicts.length} conflict(s) need review`
-          : report.upserted.length === 0
-            ? `${fullName} is already up to date (${report.unchanged.length} skill(s) unchanged)`
-            : `synced ${report.upserted.length} skill(s) from ${fullName}`;
+    // v1.5: dropped the migrateLegacyGithubMarkers call. The pre-v0.11
+    // heuristic ("source: user + syncedFromCommit ⇒ legacy linked-repo
+    // entry ⇒ stamp curated") was inverted by Phase 1's mountTo policy —
+    // linked-repo skills are now correctly stamped `user`, so re-stamping
+    // them to `curated` is destructive. Any v0.10-era config that still
+    // needed the migration has been through multiple minor cycles by now.
+    //
+    // Linking a user's own GitHub repo: discovered skills land in the
+    // personal bucket. Discovery walks the whole repo tree by file
+    // convention, so flat / bucketed / nested remote layouts all link.
+    const report = await syncTarballToRegistry({
+      registryRoot,
+      owner,
+      repo,
+      token,
+      mountTo: "personal",
+      onStatus: (phase) => broadcastSyncStatus({ kind: phase }),
+    });
+    // Only a report with zero discoveries means "no recognizable
+    // skills". A pull where every skill matched its local content
+    // hash also upserts nothing (`unchanged` carries the skips) —
+    // that's a successful no-op, handled by the success path below.
+    if (
+      report.upserted.length === 0 &&
+      report.conflicts.length === 0 &&
+      report.unchanged.length === 0
+    ) {
+      broadcastSyncStatus({ kind: "idle" });
+      const detail =
+        (report.discoveryCollisions ?? []).length > 0
+          ? ` (${report.discoveryCollisions!.length} name collision${report.discoveryCollisions!.length === 1 ? "" : "s"} in the source tree)`
+          : "";
       return {
-        ok: true,
-        message,
-        importedCount: report.upserted.length,
-        conflictCount: report.conflicts.length,
+        ok: false,
+        message: `${fullName} has no skills the app can recognize${detail}. A skill folder needs a SKILL.md.`,
       };
-    } finally {
-      fetched.cleanup();
     }
+    broadcastSyncStatus({
+      kind: "done",
+      upserted: report.upserted,
+      conflicts: report.conflicts.length,
+      orphaned: report.orphaned,
+      commitSha: report.commitSha,
+    });
+    // v0.11.9 M8: linkage commit step extracted so other paths
+    // (re-link, restore from session) can reuse it.
+    // Fetch the repo's default branch so push/read operations can
+    // target the correct base without hardcoding "main".
+    let fetchedDefaultBranch: string | undefined;
+    try {
+      const repoMetaRes = await coreGhFetch<{ default_branch: string }>(
+        `${GH_API}/repos/${fullName}`,
+        { method: "GET" },
+        token,
+      );
+      if (repoMetaRes.ok)
+        fetchedDefaultBranch = repoMetaRes.body.default_branch;
+    } catch {
+      // Non-fatal — defaultBranch stays undefined; handlers fall back to "main".
+    }
+    commitGithubLinkage({
+      fullName,
+      lastFetchedAt: report.syncedAt,
+      syncedFromCommit: report.commitSha,
+      defaultBranch: fetchedDefaultBranch,
+    });
+    const message =
+      report.conflicts.length > 0
+        ? `synced ${report.upserted.length} from ${fullName}, ${report.conflicts.length} conflict(s) need review`
+        : report.upserted.length === 0
+          ? `${fullName} is already up to date (${report.unchanged.length} skill(s) unchanged)`
+          : `synced ${report.upserted.length} skill(s) from ${fullName}`;
+    return {
+      ok: true,
+      message,
+      importedCount: report.upserted.length,
+      conflictCount: report.conflicts.length,
+    };
   } catch (err) {
     const error = fromCaught("ipc.unknown", err);
     broadcastSyncStatus({ kind: "error", message: error.message });

@@ -212,112 +212,70 @@ export async function applyCanonicalSync(
     // duplicated under the mount bucket.
     const existing = findSkillFolder(registryRoot, name);
     const localPath = existing?.dir ?? path.join(localBucketDir, name);
-    const localExists = existing !== null;
+    const existingSource = existing ? readSkillSource(localPath) : null;
+    const incomingHash = existing ? hashSkillFolder(sourceDir) : null;
+    const storedHash = existing ? readSyncedHash(localPath) : null;
 
+    const disposition = classifySyncDisposition(
+      existingSource,
+      incomingHash,
+      storedHash,
+      decisions[name],
+    );
+
+    if (disposition.kind === "unchanged") {
+      unchanged.push(name);
+      continue;
+    }
+    if (disposition.kind === "conflict") {
+      conflicts.push({
+        name,
+        localSource: existingSource!,
+        canonicalPath: sourceDir,
+      });
+      continue;
+    }
+
+    // `fresh`, `overwrite`, and the write arms of `decided` all fall
+    // through to the mount below. `preservedSource` carries a prior
+    // origin pointer through an overwrite; it stays null otherwise.
     let preservedSource: SkillSource | null = null;
-    if (localExists) {
-      const existingSource = readSkillSource(localPath);
-      // v1.5: conflict detection keys off `syncedFromCommit`, not
-      // the source axis. Pre-v1.5 used `source !== "curated"` as a
-      // proxy for "is this user-authored?", which worked when every
-      // sync stamped curated. With v1.5's mountTo policy
-      // (linked-repo syncs stamp `source: user`), the proxy
-      // misfires: legitimately-previously-synced linked-repo skills
-      // surface as fake conflicts because their source is `user`.
-      // The correct discriminator is `syncedFromCommit` presence —
-      // every sync stamps it; user-authored skills don't carry one.
-      //
-      // Also treat source: "curated" skills as previously-synced even
-      // when syncedFromCommit is absent. These are seeded bundled skills
-      // (from seedManagedRegistryIfEmpty or pnpm reset) — not
-      // user-authored content. The first boot-sync overwrites them
-      // cleanly and stamps a real syncedFromCommit.
-      const isPreviouslySynced =
-        !!existingSource.syncedFromCommit ||
-        existingSource.source === "curated";
-      if (!isPreviouslySynced) {
-        const decision = decisions[name];
-        if (decision) {
-          // Apply the stored resolution via the shared primitive.
-          // keep-mine skips the canonical write entirely; the other
-          // two arms fall through to the cpSync below.
-          const effect = applyConflictDecision({
-            localSkillsDir: path.dirname(localPath),
-            localPath,
-            name,
-            decision,
-          });
-          if (effect.kind === "keep-mine") {
-            resolved.push({ name, action: "keep-mine" });
-            continue;
-          }
-          if (effect.kind === "rename-mine") {
-            resolved.push({
-              name,
-              action: "rename-mine",
-              renamedTo: effect.renamedTo,
-            });
-          } else {
-            resolved.push({ name, action: "use-canonical" });
-          }
-        } else {
-          conflicts.push({
-            name,
-            localSource: existingSource,
-            canonicalPath: sourceDir,
-          });
-          continue;
-        }
-      } else {
-        // Canonical → canonical: skip if content hash is unchanged.
-        const incomingHash = hashSkillFolder(sourceDir);
-        const storedHash = readSyncedHash(localPath);
-        if (incomingHash && storedHash && incomingHash === storedHash) {
-          unchanged.push(name);
-          continue;
-        }
-        // Overwrite in place. Preserve the existing source's `upstream`
-        // pointer so per-skill origin attribution survives the wipe.
-        preservedSource = existingSource;
-        fs.rmSync(localPath, { recursive: true, force: true });
+    if (disposition.kind === "decided") {
+      // Apply the stored resolution via the shared primitive. keep-mine
+      // skips the canonical write entirely; the other two arms free the
+      // path and fall through to the mount.
+      const effect = applyConflictDecision({
+        localSkillsDir: path.dirname(localPath),
+        localPath,
+        name,
+        decision: disposition.decision,
+      });
+      if (effect.kind === "keep-mine") {
+        resolved.push({ name, action: "keep-mine" });
+        continue;
       }
+      if (effect.kind === "rename-mine") {
+        resolved.push({
+          name,
+          action: "rename-mine",
+          renamedTo: effect.renamedTo,
+        });
+      } else {
+        resolved.push({ name, action: "use-canonical" });
+      }
+    } else if (disposition.kind === "overwrite") {
+      preservedSource = disposition.preservedSource;
+      fs.rmSync(localPath, { recursive: true, force: true });
     }
 
     // Mount path is always under `mountTo`, even if `existing` was in
-    // the other bucket — the conflict arms above handled the
-    // non-bundled-other-bucket case; this branch is a fresh write.
-    const mountPath = path.join(localBucketDir, name);
-    fs.mkdirSync(path.dirname(mountPath), { recursive: true });
-    fs.cpSync(sourceDir, mountPath, { recursive: true });
-    // Read whatever source-axis state the mirrored .skills-bank.json
-    // carries so per-skill `origin` survives the sync stamp. Without
-    // this spread, every sync silently wipes origin attribution
-    // (pre-existing oddity since v0.11.3, fixed in v1.2).
-    //
-    // v1.5: source axis is mountTo-derived. `personal` syncs stamp
-    // `user`. `vendored` syncs preserve `"curated"` for already-
-    // committed bundled skills and use `"vendored"` for anything else —
-    // the sync path must never produce NEW `"curated"` entries; that
-    // designation is reserved for committed `.skills-bank.json` files.
-    const mirroredSource = readSkillSource(mountPath);
-    const priorSource = (preservedSource ?? mirroredSource).source;
-    const sourceForBucket =
-      mountTo === "personal"
-        ? "user"
-        : priorSource === "curated"
-          ? "curated"
-          : "vendored";
-    const merged: SkillSource = {
-      ...(preservedSource ?? mirroredSource),
-      source: sourceForBucket,
-      syncedFromCommit: commitSha,
+    // the other bucket — the arms above freed the original location.
+    mountSkillFromSource(sourceDir, path.join(localBucketDir, name), {
+      commitSha,
       syncedAt,
-    };
-    writeSkillSource(mountPath, merged);
-    // Snapshot content hash so future builds can detect local edits
-    // to bundled copies (the edited-without-origin heal state).
-    const h = hashSkillFolder(mountPath);
-    if (h) writeSyncedHash(mountPath, h);
+      mountTo,
+      preservedSource,
+    });
     upserted.push(name);
   }
 
@@ -327,14 +285,11 @@ export async function applyCanonicalSync(
   // like find-skills (curated + syncedFromCommit) are falsely flagged
   // when pulling from a linked repo that doesn't include them.
   const expectedSource = mountTo === "vendored" ? "curated" : "user";
-  const orphaned: string[] = [];
-  for (const ref of walkSkills(registryRoot)) {
-    if (canonicalNames.has(ref.name)) continue;
-    const src = readSkillSource(ref.dir);
-    if (src.syncedFromCommit && src.source === expectedSource) {
-      orphaned.push(ref.name);
-    }
-  }
+  const orphaned = detectSyncOrphans(
+    registryRoot,
+    canonicalNames,
+    expectedSource,
+  );
 
   const report: SyncReport = {
     upserted,
@@ -379,6 +334,158 @@ export async function applyCanonicalSync(
   }
 
   return report;
+}
+
+/**
+ * Per-skill outcome of comparing a discovered source skill against any
+ * local copy — the pure decision `applyCanonicalSync` acts on. No fs.
+ *
+ *   - `fresh`     — no local copy; mount it.
+ *   - `unchanged` — previously synced, content hash matches; skip.
+ *   - `overwrite` — previously synced but changed; wipe + remount,
+ *     `preservedSource` carrying the prior origin pointer.
+ *   - `conflict`  — a user-authored local skill collides, no decision.
+ *   - `decided`   — a collision with a stored resolution to apply.
+ */
+export type SyncDisposition =
+  | { kind: "fresh" }
+  | { kind: "unchanged" }
+  | { kind: "overwrite"; preservedSource: SkillSource }
+  | { kind: "conflict" }
+  | { kind: "decided"; decision: ConflictDecision };
+
+/**
+ * "Previously synced" keys off `syncedFromCommit` (every sync stamps
+ * it), not the source axis — under the mountTo policy a linked-repo sync
+ * stamps `source: "user"`, so the old `source !== "curated"` proxy
+ * misfired and surfaced legitimately-synced skills as fake conflicts.
+ * `source: "curated"` also counts: seeded bundled skills carry no
+ * syncedFromCommit until the first boot-sync overwrites them cleanly.
+ */
+export function classifySyncDisposition(
+  existing: SkillSource | null,
+  incomingHash: string | null,
+  storedHash: string | null,
+  decision: ConflictDecision | undefined,
+): SyncDisposition {
+  if (!existing) return { kind: "fresh" };
+  const isPreviouslySynced =
+    !!existing.syncedFromCommit || existing.source === "curated";
+  if (isPreviouslySynced) {
+    if (incomingHash && storedHash && incomingHash === storedHash) {
+      return { kind: "unchanged" };
+    }
+    return { kind: "overwrite", preservedSource: existing };
+  }
+  return decision ? { kind: "decided", decision } : { kind: "conflict" };
+}
+
+/**
+ * Copy a discovered skill into the registry at `mountPath`, then stamp
+ * its source sidecar and content hash — the single "write one skill into
+ * the bank" op. The source axis is mountTo-derived: `personal` syncs
+ * stamp `user`; `vendored` syncs preserve `"curated"` for already-
+ * committed bundled skills and otherwise stamp `"vendored"` (the sync
+ * path never mints NEW `"curated"` entries). A `preservedSource` keeps a
+ * prior origin pointer alive across an overwrite.
+ */
+export function mountSkillFromSource(
+  sourceDir: string,
+  mountPath: string,
+  stamp: {
+    commitSha: string;
+    syncedAt: string;
+    mountTo: SkillBucket;
+    preservedSource: SkillSource | null;
+  },
+): void {
+  fs.mkdirSync(path.dirname(mountPath), { recursive: true });
+  fs.cpSync(sourceDir, mountPath, { recursive: true });
+  const mirroredSource = readSkillSource(mountPath);
+  const priorSource = (stamp.preservedSource ?? mirroredSource).source;
+  const sourceForBucket =
+    stamp.mountTo === "personal"
+      ? "user"
+      : priorSource === "curated"
+        ? "curated"
+        : "vendored";
+  const merged: SkillSource = {
+    ...(stamp.preservedSource ?? mirroredSource),
+    source: sourceForBucket,
+    syncedFromCommit: stamp.commitSha,
+    syncedAt: stamp.syncedAt,
+  };
+  writeSkillSource(mountPath, merged);
+  const h = hashSkillFolder(mountPath);
+  if (h) writeSyncedHash(mountPath, h);
+}
+
+/**
+ * Local skills synced from this channel but absent from the upstream set
+ * — reported, never deleted. `expectedSource` scopes detection to the
+ * channel (`curated` for vendored syncs, `user` for personal) so a
+ * curated skill like find-skills isn't flagged when pulling a linked
+ * repo that omits it.
+ */
+export function detectSyncOrphans(
+  registryRoot: string,
+  canonicalNames: Set<string>,
+  expectedSource: SkillSource["source"],
+): string[] {
+  const orphaned: string[] = [];
+  for (const ref of walkSkills(registryRoot)) {
+    if (canonicalNames.has(ref.name)) continue;
+    const src = readSkillSource(ref.dir);
+    if (src.syncedFromCommit && src.source === expectedSource) {
+      orphaned.push(ref.name);
+    }
+  }
+  return orphaned;
+}
+
+export interface SyncTarballToRegistryOptions {
+  registryRoot: string;
+  owner: string;
+  repo: string;
+  /** Branch, tag, or SHA. Defaults to "main" (via fetchCanonicalTarball). */
+  ref?: string;
+  token?: string;
+  mountTo: SkillBucket;
+  /** Resolutions to auto-apply; defaults to the persisted decisions. */
+  decisions?: SyncDecisions;
+  /** Progress hook for the fetch→apply phases; the caller owns done/error. */
+  onStatus?: (phase: "fetching" | "applying") => void;
+}
+
+/**
+ * Download a repo tarball and apply it to the registry — the shared
+ * fetch→decisions→apply→cleanup skeleton behind both the curated sync
+ * and the linked-repo "Pull". Callers supply only what differs (tarball
+ * source, `mountTo`) and wrap the returned report in their own messaging.
+ */
+export async function syncTarballToRegistry(
+  opts: SyncTarballToRegistryOptions,
+): Promise<SyncReport> {
+  opts.onStatus?.("fetching");
+  const fetched = await fetchCanonicalTarball({
+    owner: opts.owner,
+    repo: opts.repo,
+    ...(opts.ref ? { ref: opts.ref } : {}),
+    ...(opts.token ? { token: opts.token } : {}),
+  });
+  try {
+    opts.onStatus?.("applying");
+    const decisions = opts.decisions ?? readSyncDecisions(opts.registryRoot);
+    return await applyCanonicalSync(
+      opts.registryRoot,
+      fetched.extractedRoot,
+      fetched.commitSha,
+      decisions,
+      { mountTo: opts.mountTo },
+    );
+  } finally {
+    fetched.cleanup();
+  }
 }
 
 export function readLastSyncReport(registryRoot: string): SyncReport | null {
