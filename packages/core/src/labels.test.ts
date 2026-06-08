@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { deriveLabels, effectiveLabels } from "./labels.js";
+import {
+  applySkillLabel,
+  clearSkillLabel,
+  deriveLabels,
+  effectiveLabels,
+} from "./labels.js";
 
 describe("deriveLabels", () => {
   it("returns expected category + tags for a react skill", () => {
@@ -93,5 +98,37 @@ describe("effectiveLabels", () => {
   it("tags not duplicated if already in derived", () => {
     const result = effectiveLabels(derived, { tags: ["react"] });
     expect(result.tags.filter((t) => t === "react")).toHaveLength(1);
+  });
+});
+
+describe("applySkillLabel / clearSkillLabel (pure)", () => {
+  it("patch-merges into an existing entry without mutating the input", () => {
+    const map = { foo: { category: "dx", tags: ["a"] } };
+    const next = applySkillLabel(map, "foo", { tags: ["b"] });
+    expect(next.foo).toEqual({ category: "dx", tags: ["b"] });
+    expect(map.foo.tags).toEqual(["a"]); // input untouched
+  });
+
+  it("creates an entry for a new skill", () => {
+    expect(applySkillLabel({}, "bar", { category: "ai" })).toEqual({
+      bar: { category: "ai" },
+    });
+  });
+
+  it("clear removes the entry immutably; no-op for an absent name", () => {
+    const map = { foo: { category: "dx" } };
+    expect(clearSkillLabel(map, "foo")).toEqual({});
+    expect(map.foo).toEqual({ category: "dx" });
+    expect(clearSkillLabel(map, "missing")).toBe(map);
+  });
+
+  it("bulk update is a fold of applySkillLabel", () => {
+    const updates = { a: { category: "x" }, b: { tags: ["t"] } };
+    let data: Record<string, { category?: string | null; tags?: string[] }> =
+      {};
+    for (const [name, patch] of Object.entries(updates)) {
+      data = applySkillLabel(data, name, patch);
+    }
+    expect(data).toEqual(updates);
   });
 });

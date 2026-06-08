@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   coerceManifestToCurrent,
+  computeManifestRemovals,
   exportRegistryManifest,
   importRegistryManifest,
   serializeManifest,
@@ -1024,5 +1025,36 @@ describe("importRegistryManifest — schema migration head", () => {
     expect(
       fs.existsSync(path.join(registryRoot, "skills", "vendored", "zeta")),
     ).toBe(true);
+  });
+});
+
+describe("computeManifestRemovals (pure)", () => {
+  const manifest = (...names: string[]): RegistryManifest => ({
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
+    exportedAt: "",
+    sourceBankVersion: "",
+    skills: names.map((name) => ({
+      name,
+      source: "user",
+      bucket: "personal",
+      origin: { kind: "none" },
+      category: null,
+      tags: [],
+      lastInstalledOn: [],
+    })),
+  });
+
+  test("returns local names absent from the manifest", () => {
+    expect(
+      computeManifestRemovals(["a", "b", "c"], manifest("a", "c")),
+    ).toEqual(["b"]);
+  });
+
+  test("empty when every local skill is still listed", () => {
+    expect(computeManifestRemovals(["a", "b"], manifest("a", "b"))).toEqual([]);
+  });
+
+  test("empty manifest ⇒ every local skill is a removal candidate", () => {
+    expect(computeManifestRemovals(["a", "b"], manifest())).toEqual(["a", "b"]);
   });
 });

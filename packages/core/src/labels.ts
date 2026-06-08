@@ -559,3 +559,26 @@ export function effectiveLabels(
 
   return { category, tags };
 }
+
+/**
+ * Patch-merge a skill's user-set labels into the map and return a new
+ * map (immutable; no I/O). The persistence boundary — reading/writing
+ * the app's `labels.json` — stays with the Electron caller, since that
+ * file lives in userData, not the registry. A batch update is just a
+ * fold of this over each entry.
+ */
+export function applySkillLabel(
+  map: LabelsMap,
+  name: string,
+  patch: SkillLabelOverride,
+): LabelsMap {
+  return { ...map, [name]: { ...(map[name] ?? {}), ...patch } };
+}
+
+/** Drop a skill's labels from the map and return a new map (immutable). */
+export function clearSkillLabel(map: LabelsMap, name: string): LabelsMap {
+  if (!(name in map)) return map;
+  const next = { ...map };
+  delete next[name];
+  return next;
+}

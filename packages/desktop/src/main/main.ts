@@ -28,6 +28,9 @@ import {
   exportSkill,
   exportRegistryManifest,
   importRegistryManifest,
+  reconcileRegistryToManifest,
+  applySkillLabel,
+  clearSkillLabel,
   applyManifestResolutions,
   mergeManifests,
   readMergeBase,
@@ -1996,12 +1999,7 @@ async function runManifestImportCore(manifest: RegistryManifest): Promise<
     importResult = await importRegistryManifest(registryRoot, manifest, {
       token: getStoredToken(),
       signal: controller.signal,
-      onProgress: (event) => {
-        for (const win of BrowserWindow.getAllWindows()) {
-          if (!win.isDestroyed())
-            win.webContents.send(IPC.manifestImportProgress, event);
-        }
-      },
+      onProgress: broadcastManifestImportProgress,
     });
   } finally {
     inFlightImportAbort = null;
@@ -2029,35 +2027,37 @@ async function runManifestImportCore(manifest: RegistryManifest): Promise<
 }
 
 /**
- * Reconcile the local registry to `manifest`: import adds + restore aux
- * state, then delete every local skill the manifest no longer lists.
- * The removal set is `localNames − manifestNames`, which captures BOTH
- * conflict-confirmed deletions AND the auto-resolved deletions the merge
- * already dropped (importRegistryManifest is otherwise additive).
- * Returns the names actually removed. Caller owns base-snapshot advance.
+ * Fan a manifest-import progress event out to every renderer window —
+ * the Electron boundary the core import/reconcile primitives accept as
+ * their `onProgress` callback.
+ */
+function broadcastManifestImportProgress(
+  event: import("@skills-bank/core").ManifestImportProgressEvent,
+): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed())
+      win.webContents.send(IPC.manifestImportProgress, event);
+  }
+}
+
+/**
+ * Reconcile the local registry to `manifest` via the core primitive,
+ * then persist the labels it reconstructed (the app's `labels.json`
+ * lives outside the registry root, so reconcile hands them back rather
+ * than writing them). Returns the names actually removed; caller owns
+ * the base-snapshot advance.
  */
 async function reconcileLocalToManifest(
   root: string,
   manifest: RegistryManifest,
 ): Promise<string[]> {
-  const finalNames = new Set(manifest.skills.map((s) => s.name));
-  const removeNames = walkSkills(root)
-    .map((r) => r.name)
-    .filter((n) => !finalNames.has(n));
-  const result = await importRegistryManifest(root, manifest, {
-    token: getStoredToken(),
-    ...(removeNames.length > 0 ? { removeNames } : {}),
-    onProgress: (event) => {
-      for (const win of BrowserWindow.getAllWindows()) {
-        if (!win.isDestroyed())
-          win.webContents.send(IPC.manifestImportProgress, event);
-      }
-    },
-  });
-  applyRestoredLabels(result.restoredLabels);
-  buildRegistryIndex(root, { includeGitInfo: true, writeFile: true });
-  invalidateCanonCache(root);
-  return (result.removed ?? []).filter((r) => r.ok).map((r) => r.name);
+  const { removed, restoredLabels } = await reconcileRegistryToManifest(
+    root,
+    manifest,
+    { token: getStoredToken(), onProgress: broadcastManifestImportProgress },
+  );
+  applyRestoredLabels(restoredLabels);
+  return removed;
 }
 
 ipcMain.handle(IPC.exportManifest, writeManifestToDisk);
@@ -3681,24 +3681,21 @@ ipcMain.handle(
     name: string,
     patch: import("@skills-bank/core").SkillLabelOverride,
   ): void => {
-    const data = readLabelsFile();
-    data[name] = { ...(data[name] ?? {}), ...patch };
-    writeLabelsFile(data);
+    writeLabelsFile(applySkillLabel(readLabelsFile(), name, patch));
   },
 );
 
 ipcMain.handle(IPC.resetLabel, (_e, name: string): void => {
-  const data = readLabelsFile();
-  delete data[name];
-  writeLabelsFile(data);
+  writeLabelsFile(clearSkillLabel(readLabelsFile(), name));
 });
 
+// Bulk is a fold of the single-skill primitive, not its own primitive.
 ipcMain.handle(
   IPC.bulkUpdateLabels,
   (_e, updates: import("@skills-bank/core").LabelsMap): void => {
-    const data = readLabelsFile();
-    for (const [name, override] of Object.entries(updates)) {
-      data[name] = { ...(data[name] ?? {}), ...override };
+    let data = readLabelsFile();
+    for (const [name, patch] of Object.entries(updates)) {
+      data = applySkillLabel(data, name, patch);
     }
     writeLabelsFile(data);
   },
