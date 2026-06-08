@@ -182,7 +182,7 @@ Verified: typecheck, 257 tests, knip, build all clean; `dist/shared/{skill-state
 > Process note: this map was added AFTER execution by mistake. Future domain
 > steps record the map here and get approval BEFORE the move.
 
-## Reorg step 3 — `registry/` (done, `<commit>`)
+## Reorg step 3 — `registry/` (done, `ba23247`)
 
 The biggest domain and the one `shared/` + `github/` currently reach up for
 (`source`, `heal`, `build`, `registry`, `sync`, `skill-meta`). Moving it
