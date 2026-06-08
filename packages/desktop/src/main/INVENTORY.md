@@ -144,7 +144,7 @@ domains move in later steps — `tsc` flags any stale path.
 stale relative paths + unused exports), then `pnpm build` to confirm
 `dist/github/*.js` materializes.
 
-## Reorg step 2 — `shared/` (done, `<commit>`)
+## Reorg step 2 — `shared/` (done, `850388a`)
 
 The foundation domain — widest blast radius (errors/types/paths are imported
 almost everywhere) and it owns two of the three renderer-safe subpaths
