@@ -10,10 +10,10 @@ import {
   readPendingManifestConflicts,
   writeMergeBase,
   writePendingManifestConflicts,
-} from "./merge.js";
-import { MANIFEST_SCHEMA_VERSION } from "./manifest.js";
-import { getStateDir } from "../shared/paths.js";
-import type { ManifestSkill, RegistryManifest } from "./manifest.js";
+} from "../merge.js";
+import { MANIFEST_SCHEMA_VERSION } from "../manifest.js";
+import { getStateDir } from "../../shared/paths.js";
+import type { ManifestSkill, RegistryManifest } from "../manifest.js";
 
 /**
  * Three-way merge truth table. Each case fixes (base, ours, theirs) for

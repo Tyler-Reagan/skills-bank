@@ -9,12 +9,12 @@ import {
   writeRegistrySnapshot,
   MANIFEST_SCHEMA_VERSION,
   type RegistryManifest,
-} from "./manifest.js";
-import { importRegistryManifest } from "./import.js";
-import { computeManifestRemovals } from "./reconcile.js";
-import { writeSkillSource } from "../registry/source.js";
-import { hashSkillFolder, writeSyncedHash } from "../registry/heal.js";
-import { buildRegistryIndex } from "../registry/build.js";
+} from "../manifest.js";
+import { importRegistryManifest } from "../import.js";
+import { computeManifestRemovals } from "../reconcile.js";
+import { writeSkillSource } from "../../registry/source.js";
+import { hashSkillFolder, writeSyncedHash } from "../../registry/heal.js";
+import { buildRegistryIndex } from "../../registry/build.js";
 
 /**
  * Phase 1 manifest contract:

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { diffManifests } from "./diff.js";
-import { MANIFEST_SCHEMA_VERSION } from "./manifest.js";
-import type { RegistryManifest, ManifestSkill } from "./manifest.js";
+import { diffManifests } from "../diff.js";
+import { MANIFEST_SCHEMA_VERSION } from "../manifest.js";
+import type { RegistryManifest, ManifestSkill } from "../manifest.js";
 
 function makeManifest(skills: Partial<ManifestSkill>[]): RegistryManifest {
   return {
