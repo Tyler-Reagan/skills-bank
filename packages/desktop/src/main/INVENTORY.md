@@ -302,7 +302,7 @@ exports both halves. Cross-domain retouch landed (`shared/skill-state-server`
 
 Verified: typecheck, 257 tests, knip, build all clean; `dist/skills/{register,conflicts,delete,diagnostics}.js` materialized.
 
-## Reorg step 5 — `manifest/` (done, `<commit>`) — FINAL domain
+## Reorg step 5 — `manifest/` (done, `c51af7a`) — FINAL domain
 
 The cleanest domain: it sits at the top of the dependency stack, so **nothing
 outside the cluster imports it except the barrel** — no cross-domain retouch,
