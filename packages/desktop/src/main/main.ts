@@ -38,7 +38,9 @@ import {
   clearPendingManifestConflicts,
   resolveRenameTarget,
   type ManifestDecisions,
-  type RateLimitInfo,
+  fetchRemoteManifest,
+  fetchUserRepos,
+  fetchRepoDefaultBranch,
   MANIFEST_SCHEMA_VERSION,
   parseGithubSkillUrl,
   writeRegistrySnapshot,
@@ -2058,57 +2060,6 @@ async function reconcileLocalToManifest(
   return (result.removed ?? []).filter((r) => r.ok).map((r) => r.name);
 }
 
-/**
- * Fetch the linked repo's `registry-manifest.json`. A 404 resolves to
- * an empty manifest (the repo has no manifest yet — everything is an
- * add); other failures propagate so the caller can surface them.
- */
-async function fetchRemoteManifest(
-  repo: string,
-  branch: string,
-  token: string,
-): Promise<
-  | { ok: true; manifest: RegistryManifest }
-  | {
-      ok: false;
-      reason: "rate-limit" | "read-failed";
-      message: string;
-      rateLimit?: RateLimitInfo;
-    }
-> {
-  const res = await readRepoFile({
-    repo,
-    path: "registry-manifest.json",
-    ref: branch,
-    token,
-  });
-  const empty: RegistryManifest = {
-    schemaVersion: MANIFEST_SCHEMA_VERSION,
-    exportedAt: "",
-    sourceBankVersion: "",
-    skills: [],
-  };
-  if (!res.ok) {
-    if (res.status === 404) return { ok: true, manifest: empty };
-    return res.rateLimit
-      ? {
-          ok: false,
-          reason: "rate-limit",
-          message: res.message,
-          rateLimit: res.rateLimit,
-        }
-      : { ok: false, reason: "read-failed", message: res.message };
-  }
-  try {
-    return { ok: true, manifest: JSON.parse(res.content) as RegistryManifest };
-  } catch {
-    // A corrupt/unparseable remote manifest is treated as empty rather
-    // than aborting — the merge then reads every local skill as an add,
-    // which the user reviews before any push.
-    return { ok: true, manifest: empty };
-  }
-}
-
 ipcMain.handle(IPC.exportManifest, writeManifestToDisk);
 ipcMain.handle(IPC.importManifest, readManifestFromDisk);
 
@@ -2130,41 +2081,19 @@ ipcMain.handle(
       sourceBankVersion,
       ...manifestExportContext(),
     });
-    const remoteRes = await readRepoFile({
-      repo: linkedRepo.fullName,
-      path: "registry-manifest.json",
-      ref: branch,
+    const remote = await fetchRemoteManifest(
+      linkedRepo.fullName,
+      branch,
       token,
-    });
-    let remoteManifest: import("@skills-bank/core").RegistryManifest;
-    if (!remoteRes.ok) {
-      if (remoteRes.status === 404) {
-        remoteManifest = {
-          schemaVersion: MANIFEST_SCHEMA_VERSION,
-          exportedAt: "",
-          sourceBankVersion: "",
-          skills: [],
-        };
-      } else {
-        return {
-          ok: false,
-          message: remoteRes.message,
-          rateLimit: remoteRes.rateLimit,
-        };
-      }
-    } else {
-      try {
-        remoteManifest = JSON.parse(remoteRes.content) as typeof remoteManifest;
-      } catch {
-        remoteManifest = {
-          schemaVersion: MANIFEST_SCHEMA_VERSION,
-          exportedAt: "",
-          sourceBankVersion: "",
-          skills: [],
-        };
-      }
+    );
+    if (!remote.ok) {
+      return {
+        ok: false,
+        message: remote.message,
+        rateLimit: remote.rateLimit,
+      };
     }
-    const diff = diffManifests(localManifest, remoteManifest);
+    const diff = diffManifests(localManifest, remote.manifest);
     return {
       ok: true,
       diff,
@@ -3350,50 +3279,10 @@ ipcMain.handle(IPC.authLogout, async () => {
 
 // ─── User repos + registry replace (M4) ─────────────────────────────────────
 
-async function ghFetch(
-  pathSuffix: string,
-  init?: RequestInit,
-): Promise<Response> {
+ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
   const token = getStoredToken();
   if (!token) throw new Error("not authenticated");
-  return fetch(`https://api.github.com${pathSuffix}`, {
-    ...init,
-    headers: {
-      ...(init?.headers ?? {}),
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "User-Agent": "skills-bank",
-    },
-  });
-}
-
-ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
-  const out: UserRepo[] = [];
-  // Up to 3 pages (300 repos) — enough for nearly every user.
-  for (let page = 1; page <= 3; page++) {
-    const res = await ghFetch(
-      `/user/repos?per_page=100&page=${page}&sort=updated&affiliation=owner,collaborator,organization_member`,
-    );
-    if (!res.ok) {
-      throw new Error(`GitHub /user/repos: ${res.status}`);
-    }
-    const repos = (await res.json()) as Array<{
-      full_name: string;
-      private: boolean;
-      default_branch: string;
-      description: string | null;
-    }>;
-    for (const r of repos) {
-      out.push({
-        fullName: r.full_name,
-        isPrivate: r.private,
-        defaultBranch: r.default_branch,
-        description: r.description ?? null,
-      });
-    }
-    if (repos.length < 100) break;
-  }
-  return out;
+  return fetchUserRepos(token);
 });
 
 /**
@@ -3473,21 +3362,10 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
       commitSha: report.commitSha,
     });
     // v0.11.9 M8: linkage commit step extracted so other paths
-    // (re-link, restore from session) can reuse it.
-    // Fetch the repo's default branch so push/read operations can
-    // target the correct base without hardcoding "main".
-    let fetchedDefaultBranch: string | undefined;
-    try {
-      const repoMetaRes = await coreGhFetch<{ default_branch: string }>(
-        `${GH_API}/repos/${fullName}`,
-        { method: "GET" },
-        token,
-      );
-      if (repoMetaRes.ok)
-        fetchedDefaultBranch = repoMetaRes.body.default_branch;
-    } catch {
-      // Non-fatal — defaultBranch stays undefined; handlers fall back to "main".
-    }
+    // (re-link, restore from session) can reuse it. Fetch the repo's
+    // default branch so push/read operations target the correct base
+    // without hardcoding "main" (undefined on failure → fall back).
+    const fetchedDefaultBranch = await fetchRepoDefaultBranch(fullName, token);
     commitGithubLinkage({
       fullName,
       lastFetchedAt: report.syncedAt,

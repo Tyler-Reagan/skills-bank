@@ -13,6 +13,8 @@ import {
 } from "./source.js";
 import { folderPathFromSkillPath, installSkillFiles } from "./origin.js";
 import { deleteFromBankSkill } from "./install.js";
+import { readRepoFile } from "./github-files.js";
+import type { RateLimitInfo } from "./github-http.js";
 import {
   effectiveLabels,
   type LabelsMap,
@@ -825,5 +827,57 @@ function safeMtimeMs(p: string): number {
     return fs.statSync(p).mtimeMs;
   } catch {
     return 0;
+  }
+}
+
+export type FetchRemoteManifestResult =
+  | { ok: true; manifest: RegistryManifest }
+  | {
+      ok: false;
+      reason: "rate-limit" | "read-failed";
+      message: string;
+      rateLimit?: RateLimitInfo;
+    };
+
+/**
+ * Read a linked repo's committed `registry-manifest.json`. A 404 (no
+ * manifest yet) or an unparseable body resolves to an EMPTY manifest, so
+ * the merge reads every local skill as an add rather than aborting; only
+ * a real read/rate-limit failure surfaces as `ok: false`. The single
+ * authoritative "what does the remote manifest say" — callers must not
+ * re-derive the 404 fallback.
+ */
+export async function fetchRemoteManifest(
+  repo: string,
+  branch: string,
+  token: string,
+): Promise<FetchRemoteManifestResult> {
+  const empty: RegistryManifest = {
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
+    exportedAt: "",
+    sourceBankVersion: "",
+    skills: [],
+  };
+  const res = await readRepoFile({
+    repo,
+    path: "registry-manifest.json",
+    ref: branch,
+    token,
+  });
+  if (!res.ok) {
+    if (res.status === 404) return { ok: true, manifest: empty };
+    return res.rateLimit
+      ? {
+          ok: false,
+          reason: "rate-limit",
+          message: res.message,
+          rateLimit: res.rateLimit,
+        }
+      : { ok: false, reason: "read-failed", message: res.message };
+  }
+  try {
+    return { ok: true, manifest: JSON.parse(res.content) as RegistryManifest };
+  } catch {
+    return { ok: true, manifest: empty };
   }
 }

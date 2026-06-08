@@ -13,16 +13,16 @@ and add thin orchestrators that remove the `main.ts` duplication.
 
 ## Sync operation → `SyncReport`
 
-| Current (location)                                      | Responsibility                                               | Function                                                           | Status                 |
-| ------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------ | ---------------------- |
-| `fetchCanonicalTarball` (sync.ts:115)                   | resolve ref→SHA, download+extract tarball                    | `fetchCanonicalTarball`                                            | EXISTS                 |
-| `readSyncDecisions` (sync.ts:428)                       | load persisted conflict resolutions                          | `readSyncDecisions`                                                | EXISTS                 |
-| `discoverSkillsInTree` (discovery.ts)                   | enumerate skill folders in the source tree                   | `discoverSkillsInTree`                                             | EXISTS                 |
-| applyCanonicalSync 217–283                              | per-skill: previously-synced? unchanged? conflict? resolved? | `classifySyncDisposition(existing, incomingHash, storedHash, decision)`  | **NEW** (pure)         |
-| applyCanonicalSync 289–321                              | copy source→mount, stamp source + content hash               | `mountSkillFromSource(sourceDir, destDir, stamp)`                  | **NEW**                |
-| applyCanonicalSync 329–337                              | local skills synced here but absent upstream (never deletes) | `detectSyncOrphans(root, canonicalNames, expectedSource)`          | **NEW** (pure-ish)     |
-| applyCanonicalSync 357–379                              | persist last-sync report + pending-conflicts                 | `writeLastSyncReport` / `writePendingConflicts`                    | **NEW** (thin)         |
-| `runSync` (3190) + `replaceRegistryWithRepo` (3426), ×2 | fetch → decisions → apply → cleanup                          | `syncTarballToRegistry({owner, repo, token?, mountTo, onStatus?})` | **NEW** (orchestrator) |
+| Current (location)                                      | Responsibility                                               | Function                                                                | Status                 |
+| ------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------- |
+| `fetchCanonicalTarball` (sync.ts:115)                   | resolve ref→SHA, download+extract tarball                    | `fetchCanonicalTarball`                                                 | EXISTS                 |
+| `readSyncDecisions` (sync.ts:428)                       | load persisted conflict resolutions                          | `readSyncDecisions`                                                     | EXISTS                 |
+| `discoverSkillsInTree` (discovery.ts)                   | enumerate skill folders in the source tree                   | `discoverSkillsInTree`                                                  | EXISTS                 |
+| applyCanonicalSync 217–283                              | per-skill: previously-synced? unchanged? conflict? resolved? | `classifySyncDisposition(existing, incomingHash, storedHash, decision)` | **NEW** (pure)         |
+| applyCanonicalSync 289–321                              | copy source→mount, stamp source + content hash               | `mountSkillFromSource(sourceDir, destDir, stamp)`                       | **NEW**                |
+| applyCanonicalSync 329–337                              | local skills synced here but absent upstream (never deletes) | `detectSyncOrphans(root, canonicalNames, expectedSource)`               | **NEW** (pure-ish)     |
+| applyCanonicalSync 357–379                              | persist last-sync report + pending-conflicts                 | `writeLastSyncReport` / `writePendingConflicts`                         | **NEW** (thin)         |
+| `runSync` (3190) + `replaceRegistryWithRepo` (3426), ×2 | fetch → decisions → apply → cleanup                          | `syncTarballToRegistry({owner, repo, token?, mountTo, onStatus?})`      | **NEW** (orchestrator) |
 
 `applyCanonicalSync` stays as the per-tree orchestrator, now composing the
 classify / mount / detect-orphans / write units.
