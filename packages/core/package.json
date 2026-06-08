@@ -12,19 +12,19 @@
       "default": "./dist/index.js"
     },
     "./skill-state": {
-      "types": "./dist/skill-state.d.ts",
-      "import": "./dist/skill-state.js",
-      "default": "./dist/skill-state.js"
+      "types": "./dist/shared/skill-state.d.ts",
+      "import": "./dist/shared/skill-state.js",
+      "default": "./dist/shared/skill-state.js"
     },
     "./agents-data": {
-      "types": "./dist/agents-data.d.ts",
-      "import": "./dist/agents-data.js",
-      "default": "./dist/agents-data.js"
+      "types": "./dist/shared/agents-data.d.ts",
+      "import": "./dist/shared/agents-data.js",
+      "default": "./dist/shared/agents-data.js"
     },
     "./labels": {
-      "types": "./dist/labels.d.ts",
-      "import": "./dist/labels.js",
-      "default": "./dist/labels.js"
+      "types": "./dist/registry/labels.d.ts",
+      "import": "./dist/registry/labels.js",
+      "default": "./dist/registry/labels.js"
     }
   },
   "scripts": {

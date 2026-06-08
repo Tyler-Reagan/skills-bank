@@ -4,14 +4,17 @@ Reference inventory of everything under `packages/core/src/`: what each
 module does, who consumes it, and the conventions that govern the package.
 Repo-internal — not published to the docs site.
 
-> **Freshness: accurate as of commit `a11fc5e` (2026-06-06), `main` —
-> the #117 squash, released as v1.20.3.**
+> **Freshness: accurate as of commit `f24cc03` (2026-06-08), branch
+> `refactor/registry-ipc-primitives` — the 5-dir domain reorg.**
 > LOC and consumer columns are snapshots; re-verify (`wc -l`, grep the
 > import graph) and re-stamp when the package changes materially — or
 > distrust the numbers and trust only the purposes, which drift slower.
 
-Tables are sorted alphabetically by file name. Every module has a
-colocated `*.test.ts` where noted; entry criteria live in ADR-0001.
+`core/src/` is organized into **five concept directories**, each scoped to one
+domain's operations. The only top-level files are `index.ts` (the barrel) and
+this doc — see [Why only two files sit at the root](#why-only-two-files-sit-at-the-root).
+Tables below are grouped by directory, then sorted by file name. Tests are
+colocated (`*.test.ts`); entry criteria live in ADR-0001.
 
 ## Conventions
 
@@ -19,101 +22,144 @@ colocated `*.test.ts` where noted; entry criteria live in ADR-0001.
   renaming or removing an export ships a `@deprecated` alias for one minor
   cycle before cutting. JSON wire formats (`.skills-bank.json`) tolerate a
   legacy read for one minor cycle on shape changes.
-- **Renderer-safe subpaths.** The Vite renderer cannot import the main
-  barrel (it transitively pulls `node:child_process` via `build.ts`).
-  Renderer-safe modules are exposed as subpath exports —
-  `@skills-bank/core/agents-data`, `/labels`, `/skill-state` — and must
-  stay free of `fs`/`os`/`path`-at-module-scope side effects.
-- **Sidecar trio (ADR-0002).** Per-skill on-disk state lives in three
-  sidecars, each owned by the module adjacent to its logic:
+- **Domain boundaries.** A file lives in the domain dir of the operation it
+  implements. A domain-specialized op lives in its own domain and imports the
+  generic primitive — e.g. `manifest/manifest.ts#fetchRemoteManifest` imports
+  `github/files.ts#readRepoFile` rather than living in `github/`. Cross-domain
+  imports are expected; a genuine primitive is defined once and imported, never
+  re-implemented. Dependency direction: `shared` ← `github`/`registry` ←
+  `skills`/`manifest` (no cycles; `shared/conflict.ts` is shared by
+  `registry/sync` + `manifest/` so it lives in `shared`).
+- **Renderer-safe subpaths.** The Vite renderer cannot import the main barrel
+  (it transitively pulls `node:child_process` via `registry/build.ts`).
+  Renderer-safe modules are exposed as subpath exports — `@skills-bank/core/agents-data`
+  (→ `shared/agents-data`), `/skill-state` (→ `shared/skill-state`), `/labels`
+  (→ `registry/labels`) — and must stay free of `fs`/`os`/`path`-at-module-scope
+  side effects. The import specifiers are stable; only the `dist/` targets moved
+  with the reorg.
+- **Sidecar trio (ADR-0002).** Per-skill on-disk state lives in three sidecars,
+  each owned by the module adjacent to its logic, all under `registry/`:
   `.skills-bank.json` (source axis + origin pointer — `source.ts`),
   `.skills-bank-hash` (synced content baseline — `heal.ts`),
-  `.skills-bank-runtime.json` (probe state — `heal.ts`).
-  `skill-record.ts` is the unified read/write facade over all three.
-- **Source axis** is `curated` / `user` / `vendored`; legacy
-  `bundled`/`yours` and `upstream`→`origin` are tolerated on read only.
+  `.skills-bank-runtime.json` (probe state — `heal.ts`). `record.ts` is the
+  unified read/write facade.
+- **Source axis** is `curated` / `user` / `vendored`; legacy `bundled`/`yours`
+  and `upstream`→`origin` are tolerated on read only.
 - **Manifest schema is v5**; v2–v4 coerce up through the single
-  `coerceManifestToCurrent` chokepoint in `manifest.ts`; v1 is unreadable.
+  `coerceManifestToCurrent` chokepoint in `manifest/manifest.ts`; v1 unreadable.
 - **Frontmatter parsing** has exactly one parser:
-  `skill-meta.ts#parseSkillFrontmatter` (block scalars, quoted-scalar
-  escape resolution, inline/block arrays, comments). `registry.ts`'s
+  `registry/meta.ts#parseSkillFrontmatter`. `registry/walk.ts`'s
   `readSkillMdFrontmatter` is a deprecated wrapper, removal next minor.
 
-## Modules (40 files, ~9.7k lines excl. tests)
+## `shared/` — foundation (imported by every other domain)
 
-| File                   | LOC | Purpose                                                                                                                                                                                                                         | Consumed by (core → / external)                                                               | Tests                |
-| ---------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------- |
-| agents-data.ts         | 50  | Renderer-safe agent metadata: `AGENTS` list, `AgentDef`/`AgentId`, `getAgent`                                                                                                                                                   | agents.ts / renderer via `/agents-data` subpath                                               | —                    |
-| agents.ts              | 40  | Node-side agent helpers: skills-dir resolution, existing-agents scan, default install targets                                                                                                                                   | install, installed, import, manifest, unregister, delete-unregistered / desktop main          | —                    |
-| build.ts               | 460 | Walk `skills/<bucket>/<name>/SKILL.md` frontmatter → RegistryIndex (lenient by default, `strict` for CI); folds sidecars, external entries, canon + hidden state                                                                | 10 core modules / desktop main, scripts                                                       | ✓                    |
-| canon.ts               | 99  | Canon (upstream-owned) name set: machine-written cache with TTL read                                                                                                                                                            | build, merge, sync, unregister / desktop main                                                 | ✓                    |
-| conflict.ts            | 82  | Shared conflict-decision disk primitive (rename/delete/no-op) + `-local` rename target picker — extracted once sync and merge duplicated it                                                                                     | merge, sync / —                                                                               | —                    |
-| delete-unregistered.ts | 147 | Delete unregistered skills from agent dirs (real dirs recursively; symlinks unlinked, never followed). `previewDeleteUnregistered` deprecated (unused)                                                                          | — / desktop main                                                                              | —                    |
-| diff.ts                | 170 | Per-file folder diff (size-capped, binary-skipping, sidecar-aware) for the DiffViewer                                                                                                                                           | — / desktop main                                                                              | —                    |
-| discovery.ts           | 174 | File-convention skill discovery in an arbitrary tree (any folder with SKILL.md); collision + nested-skill reporting                                                                                                             | sync / —                                                                                      | ✓                    |
-| errors.ts              | 77  | Structured `AppError` (code, copyable details, suggested actions) + `fromCaught`                                                                                                                                                | unregister / desktop main + renderer                                                          | —                    |
-| export.ts              | 137 | Single-skill export to disk: standalone SKILL.md vs bundled zip decision + write                                                                                                                                                | — / desktop main                                                                              | —                    |
-| external.ts            | 77  | Persistence for non-adopted (symlink-mode) entries in `.skills-bank/external.json`                                                                                                                                              | build, heal, import, unregister / —                                                           | —                    |
-| github-files.ts        | 214 | GitHub Contents API primitives: read / write / write-as-branch                                                                                                                                                                  | — / desktop main (manifest repo transport)                                                    | —                    |
-| github-http.ts         | 105 | Shared GitHub REST client + rate-limit normalization (`ghFetch`, `RateLimitInfo`)                                                                                                                                               | github-files, origin, origin-probe, publish-push / desktop                                    | —                    |
-| heal.ts                | 268 | Three adjacent concerns: content hashing (`hashSkillFolder`, gitignore-aware), the hash + runtime sidecars, and the missing-entry heal actions (`repointExternalEntry`, `forgetMissingEntry`)                                   | build, manifest, merge, origin-probe, skill-lock, skill-record, sync / desktop main           | ✓                    |
-| hide.ts                | 66  | User-mutable hidden-skill set (canon skills' Dismiss)                                                                                                                                                                           | build / desktop main                                                                          | —                    |
-| import.ts              | 861 | Registration domain (largest module): install scanning, registration routing, adopt-into-registry, symlink-mode register, agent-link reconciliation, finalize top-level symlink, broken-link repair/remove, conflict resolution | — / desktop main (IPC dispatch targets)                                                       | —                    |
-| index.ts               | 38  | Barrel: `export *` over every module — the SDK surface                                                                                                                                                                          | — / desktop, scripts                                                                          | —                    |
-| install.ts             | 308 | Symlink primitives: `linkSkillToAgents`, `unlinkSkillFromAgents`; `deleteFromBankSkill` (non-UI path)                                                                                                                           | manifest, unregister / desktop main                                                           | —                    |
-| installed.ts           | 150 | Scan agent + custom dirs; classify installs (ours / foreign-symlink / real-directory / broken-symlink)                                                                                                                          | delete-unregistered, import, local-diagnostics, skill-state-server / desktop main             | ✓                    |
-| labels.ts              | 561 | Category/tag taxonomy + rules, `deriveLabels` suggestion engine (on-demand since v1.19), `SkillLabelOverride` persistence, `effectiveLabels` merge                                                                              | manifest / renderer via `/labels` subpath, desktop main                                       | ✓                    |
-| local-diagnostics.ts   | 157 | Aggregate local-disk anomalies into a `DiagnosticReport` (4 categories). `groupDiagnosticsByCategory` deprecated (unused)                                                                                                       | — / desktop main                                                                              | ✓                    |
-| manifest-diff.ts       | 69  | Two-manifest diff at skill granularity; owns `COMPARED_FIELDS`, the shared change-signature field set                                                                                                                           | manifest-merge / desktop main                                                                 | ✓                    |
-| manifest-merge.ts      | 329 | Three-way manifest merge (ADR-0009): merge core, conflict classification, resolution application, pending-conflict + merge-base persistence                                                                                     | — / desktop main                                                                              | ✓                    |
-| manifest.ts            | 829 | Registry manifest v5: export (fold sidecars + labels), canonical serialization, import (re-fetch per skill from origin, collision + removal arms), origin stamping, v2–v5 coercion chokepoint, snapshot rotation                | manifest-diff, manifest-merge / desktop main                                                  | ✓                    |
-| merge.ts               | 121 | Merge-from-disk: additive import of another tree's `skills/`, queueing collisions for the sync resolver                                                                                                                         | — / desktop main                                                                              | ✓                    |
-| origin-probe.ts        | 408 | Stateful origin-probe runner: scheduled upstream tree fetches, per-repo cache + TTL, update flagging, failure-count tracking                                                                                                    | — / desktop main                                                                              | ✓                    |
-| origin-url.ts          | 135 | GitHub URL / `npx skills add` command parser for the install callout                                                                                                                                                            | — / desktop main                                                                              | ✓                    |
-| origin.ts              | 524 | Origin primitives: tree probe, `installSkillFiles` mirror (idempotent, no-partial-mutation), `applyOriginUpdate`                                                                                                                | manifest, origin-probe / desktop main, scripts                                                | ✓                    |
-| paths.ts               | 57  | Registry-root resolution (cwd walk-up). `getClaudeHome` / `getClaudeSkillsDir` deprecated (CLI-era leftovers)                                                                                                                   | canon, external, hide, import, manifest-merge, origin-probe, sync / desktop main              | ✓                    |
-| publish-push.ts        | 451 | Push a skill folder to the linked repo as a PR — six-step atomic commit sequence (ADR-0007). Distinct from manifest push (github-files)                                                                                         | — / desktop main                                                                              | ✓                    |
-| registry.ts            | 231 | RegistryIndex read/find helpers, `readSkillMeta` (delegates to the consolidated parser), entry path resolution, `walkSkills`. `loadIndex` + `readSkillMdFrontmatter` deprecated                                                 | build, discovery, export, import, install, manifest, skill-lock, sync / desktop main, scripts | (moved → skill-meta) |
-| skill-lock.ts          | 195 | Read `~/.agents/.skill-lock.json` (the `npx skills` CLI's lock) and stamp GitHub origins onto CLI-installed skills                                                                                                              | — / desktop main                                                                              | —                    |
-| skill-meta.ts          | 263 | The frontmatter parser (`parseSkillFrontmatter`) + `validateSkillMeta` against the inlined `SKILL_META_SCHEMA` (parity-tested against docs/meta-schema.json)                                                                    | build, registry / scripts (`bank update`)                                                     | ✓                    |
-| skill-record.ts        | 82  | Unified three-sidecar read/write facade + per-axis re-exports. `readSkillRecord`/`writeSkillRecord` deprecated (unused — call sites stayed per-axis)                                                                            | — / — (vocabulary module)                                                                     | —                    |
-| skill-state-server.ts  | 44  | Node-only wrapper joining the pure classifier with build/installed for main-process callers                                                                                                                                     | — / desktop main                                                                              | —                    |
-| skill-state.ts         | 523 | Pure drawer-state classifier: installation partition → state + capability fan-out (single source of truth for drawer actions)                                                                                                   | build, origin-probe, skill-state-server / renderer via `/skill-state` subpath                 | ✓                    |
-| source.ts              | 182 | `.skills-bank.json` sidecar: source axis + origin pointer read/write with the legacy tolerant-read window                                                                                                                       | build, manifest, merge, skill-lock, skill-record, sync / desktop main                         | ✓                    |
-| sync.ts                | 468 | Canonical tarball fetch + conflict-aware registry upsert (`applyCanonicalSync`, mountTo policy, unchanged-hash skip + reporting), sync report/decision persistence                                                              | conflict, merge / desktop main                                                                | ✓                    |
-| types.ts               | 227 | Shared shapes: `RegistryEntry`, `RegistryIndex`, `SkillMeta`, warnings                                                                                                                                                          | 10 core modules / desktop, renderer                                                           | (via consumers)      |
-| unregister.ts          | 371 | M4 destructive ladder step: drop registry entry; adopted skills move files to a destination agent dir with collision + EXDEV handling                                                                                           | — / desktop main                                                                              | ✓                    |
+| File                    | LOC | Purpose                                                                                       | Consumed by                                                | Tests |
+| ----------------------- | --- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ----- |
+| `agents-data.ts`        | 50  | Renderer-safe agent metadata: `AGENTS` list, `AgentDef`/`AgentId`, `getAgent`                 | `agents` / renderer via `/agents-data`                     | —     |
+| `agents.ts`             | 40  | Node-side agent helpers: skills-dir resolution, existing-agents scan, default install targets | skills/\_, manifest, registry / desktop main               | —     |
+| `conflict.ts`           | 82  | Shared conflict-decision disk primitive (rename/delete/no-op) + `-local` rename-target picker | registry/sync, manifest/disk-import / —                    | —     |
+| `diff.ts`               | 170 | Per-file folder diff (size-capped, binary-skipping, sidecar-aware) for the DiffViewer         | — / desktop main                                           | —     |
+| `errors.ts`             | 77  | Structured `AppError` (code, copyable details, suggested actions) + `fromCaught`              | skills/unregister / desktop main + renderer                | —     |
+| `paths.ts`              | 57  | Registry-root resolution (cwd walk-up). `getClaudeHome`/`getClaudeSkillsDir` deprecated       | registry/\_, manifest/merge, github/probe / desktop main   | ✓     |
+| `skill-lock.ts`         | 199 | Read the `npx skills` CLI lock + stamp GitHub origins onto CLI-installed skills               | — / desktop main                                           | —     |
+| `skill-state-server.ts` | 44  | Node-only wrapper joining the pure classifier with build/installed for main-process callers   | — / desktop main                                           | —     |
+| `skill-state.ts`        | 523 | Pure drawer-state classifier: installation partition → state + capability fan-out             | registry/build, github/probe / renderer via `/skill-state` | ✓     |
+| `types.ts`              | 227 | Shared shapes: `RegistryEntry`, `RegistryIndex`, `SkillMeta`, warnings                        | ~10 modules / desktop, renderer                            | —     |
+
+## `github/` — GitHub transport + upstream attribution
+
+| File        | LOC | Purpose                                                                                                         | Consumed by                                    | Tests |
+| ----------- | --- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ----- |
+| `http.ts`   | 105 | Shared GitHub REST client + rate-limit normalization (`ghFetch`, `GH_API`, `RateLimitInfo`)                     | files, repos, origin, probe, push, manifest    | —     |
+| `files.ts`  | 214 | GitHub Contents API primitives: read / write / write-as-branch                                                  | manifest / desktop (manifest repo transport)   | —     |
+| `repos.ts`  | 67  | Repo-metadata ops: `fetchUserRepos` (link picker), `fetchRepoDefaultBranch` (split out of `http`)               | — / desktop main                               | —     |
+| `origin.ts` | 525 | Origin primitives: tree probe, `installSkillFiles` mirror (idempotent), `applyOriginUpdate`                     | manifest/import, probe / desktop main, scripts | ✓     |
+| `probe.ts`  | 408 | Stateful origin-probe runner: scheduled upstream fetches, per-repo cache + TTL, update flagging                 | — / desktop main                               | ✓     |
+| `push.ts`   | 451 | Push a skill folder to the linked repo as a PR — six-step atomic commit (ADR-0007); distinct from manifest push | — / desktop main                               | ✓     |
+| `url.ts`    | 135 | GitHub URL / `npx skills add` command parser for the install callout                                            | — / desktop main                               | ✓     |
+
+## `registry/` — the local bank: layout, index, curation, sidecars, sync
+
+| File           | LOC | Purpose                                                                                                                            | Consumed by                                      | Tests |
+| -------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ----- |
+| `walk.ts`      | 235 | RegistryIndex find helpers, `walkSkills`, entry-path resolution, `readSkillMeta`. `loadIndex`/`readSkillMdFrontmatter` deprecated  | build, discovery, manifest, skills/\_, sync      | —     |
+| `build.ts`     | 464 | Walk `skills/<bucket>/<name>/SKILL.md` → RegistryIndex (lenient/`strict`); folds sidecars + external + canon + hidden              | ~10 modules / desktop main, scripts              | ✓     |
+| `canon.ts`     | 99  | Canon (upstream-owned) name set: machine-written cache with TTL read                                                               | build, sync, disk-import, manifest/reconcile     | ✓     |
+| `discovery.ts` | 174 | File-convention skill discovery in an arbitrary tree; collision + nested-skill reporting                                           | sync / —                                         | ✓     |
+| `external.ts`  | 77  | Persistence for non-adopted (symlink-mode) entries in `.skills-bank/external.json`                                                 | build, heal, skills/register, skills/unregister  | —     |
+| `heal.ts`      | 268 | Content hashing + the hash & runtime sidecars + missing-entry heal actions                                                         | build, manifest, sync, skill-lock, record, probe | ✓     |
+| `hide.ts`      | 66  | User-mutable hidden-skill set (canon skills' Dismiss)                                                                              | build / desktop main                             | —     |
+| `labels.ts`    | 584 | Category/tag taxonomy + rules, `deriveLabels` (on-demand since v1.19), pure `applySkillLabel`/`clearSkillLabel`, `effectiveLabels` | manifest / renderer via `/labels`, desktop main  | ✓     |
+| `meta.ts`      | 263 | The frontmatter parser (`parseSkillFrontmatter`) + `validateSkillMeta` vs the inlined `SKILL_META_SCHEMA`                          | build, walk / scripts (`bank update`)            | ✓     |
+| `record.ts`    | 82  | Unified three-sidecar facade + per-axis re-exports. `readSkillRecord`/`writeSkillRecord` deprecated (unused)                       | — / — (vocabulary module)                        | —     |
+| `source.ts`    | 182 | `.skills-bank.json` sidecar: source axis + origin pointer read/write, legacy tolerant-read window                                  | build, manifest, sync, skill-lock, record        | ✓     |
+| `sync.ts`      | 575 | Canonical tarball pull, decomposed: `classifySyncDisposition`/`mountSkillFromSource`/`detectSyncOrphans` + `syncTarballToRegistry` | disk-import / desktop main                       | ✓     |
+
+## `skills/` — operations on individual skills (lifecycle)
+
+| File             | LOC | Purpose                                                                                                                       | Consumed by                                       | Tests |
+| ---------------- | --- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ----- |
+| `install.ts`     | 308 | Symlink primitives: `linkSkillToAgents`, `unlinkSkillFromAgents`, `deleteFromBankSkill` (non-UI path)                         | manifest, unregister / desktop main               | —     |
+| `register.ts`    | 663 | Registration: install scanning, register routing, adopt-into-registry, symlink-mode register, agent-link reconcile, finalize  | — / desktop main (split from import.ts)           | —     |
+| `conflicts.ts`   | 203 | Broken-link repair/remove + registry-vs-installed conflict resolution (split from import.ts; owns the `isSymlink` util)       | — / desktop main                                  | —     |
+| `installed.ts`   | 150 | Scan agent + custom dirs; classify installs (ours / foreign-symlink / real-directory / broken-symlink)                        | delete, diagnostics, register, skill-state-server | ✓     |
+| `delete.ts`      | 147 | Delete unregistered skills from agent dirs (real dirs recursively; symlinks unlinked). `previewDeleteUnregistered` deprecated | — / desktop main                                  | —     |
+| `diagnostics.ts` | 157 | Aggregate local-disk anomalies into a `DiagnosticReport`. `groupDiagnosticsByCategory` deprecated                             | — / desktop main                                  | ✓     |
+| `export.ts`      | 137 | Single-skill export to disk: standalone SKILL.md vs bundled zip decision + write                                              | — / desktop main                                  | —     |
+| `unregister.ts`  | 371 | Destructive-ladder step: drop registry entry; adopted skills move files to a destination agent dir (collision + EXDEV)        | — / desktop main                                  | ✓     |
+
+## `manifest/` — the registry-manifest artifact
+
+| File             | LOC | Purpose                                                                                                                                                                                              | Consumed by                              | Tests |
+| ---------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ----- |
+| `manifest.ts`    | 607 | Schema v5 + types, `exportRegistryManifest`, canonical `serializeManifest`, `coerceManifestToCurrent`, snapshot rotation, `fetchRemoteManifest`; exports the origin/label helpers `import.ts` reuses | import, reconcile, diff, merge / desktop | ✓     |
+| `import.ts`      | 313 | `importRegistryManifest` — re-fetch per skill from origin, collision + confirmed-removal arms, origin stamping (split from manifest.ts)                                                              | reconcile / desktop main                 | —     |
+| `reconcile.ts`   | 67  | `computeManifestRemovals` (pure set diff) + `reconcileRegistryToManifest` (walk → diff → import → rebuild)                                                                                           | — / desktop main                         | —     |
+| `diff.ts`        | 69  | Two-manifest diff at skill granularity; owns `COMPARED_FIELDS`, the shared change-signature field set                                                                                                | merge / desktop main                     | ✓     |
+| `merge.ts`       | 329 | Three-way manifest merge (ADR-0009): merge core, conflict classification, resolution, pending-conflict + merge-base persistence                                                                      | — / desktop main                         | ✓     |
+| `disk-import.ts` | 121 | Merge-from-disk: additive import of another tree's `skills/`, queueing collisions for the sync resolver                                                                                              | — / desktop main                         | ✓     |
+
+## Why only two files sit at the root
+
+`index.ts` and this `INVENTORY.md` are **not domain modules**, so neither moves
+into a domain dir:
+
+- **`index.ts`** is the package's public entry point — `package.json`'s `main`
+  and the `.` export resolve `@skills-bank/core` → `dist/index.js`. It's the
+  barrel (`export *` over all five domains): cross-cutting by definition, owned
+  by no single domain, and pinned at the package root by the export map. Moving
+  it would just force a longer export path for zero benefit.
+- **`INVENTORY.md`** is documentation, not code — it describes all domains, so
+  it belongs above them, not inside one.
+
+Everything that _is_ a domain module was moved; the reorg left no stray
+implementation files at the root (verified: `ls core/src` → `index.ts`,
+`INVENTORY.md`, and the five dirs).
 
 ## Layering notes
 
-- **GitHub stack**: `github-http` (client) ← `github-files` (Contents API)
-  / `origin` (tree + mirror primitives) ← `origin-probe` (scheduler) /
-  `publish-push` (PR flow). `origin-url` is a pure parser beside them.
-- **Destructive ladder**: `unregister` (drop entry, move files) is distinct
-  from `delete-unregistered` (wipe agent-dir presence of already-
-  unregistered skills) — sequential stages, not overlap.
-- **sync vs merge vs manifest-merge**: sync = canonical tarball pull;
-  merge = additive merge-from-disk; manifest-merge = three-way metadata
-  merge. All three share `conflict.ts` / `SyncDecisions` vocabulary.
+- **GitHub stack** (`github/`): `http` (client) ← `files` (Contents API) /
+  `origin` (tree + mirror) ← `probe` (scheduler) / `push` (PR flow). `repos` and
+  `url` are thin leaves beside them.
+- **Destructive ladder** (`skills/`): `unregister` (drop entry, move files) is
+  distinct from `delete` (wipe agent-dir presence of already-unregistered
+  skills) — sequential stages, not overlap.
+- **sync vs disk-import vs manifest/merge**: `registry/sync` = canonical tarball
+  pull; `manifest/disk-import` = additive merge-from-disk; `manifest/merge` =
+  three-way metadata merge. All three share `shared/conflict.ts` vocabulary.
 
 ## Standing observations
 
-Scale-to-current-size: collapse glue into its only consumer now; build
-abstractions when the need exists. Each observation names a present-tense
-trigger:
+Scale-to-current-size: collapse glue into its only consumer; build abstractions
+when the need exists.
 
-- **Deprecated exports** (`previewDeleteUnregistered`,
-  `groupDiagnosticsByCategory`, `getClaudeHome`, `getClaudeSkillsDir`,
-  `loadIndex`, `readSkillRecord`, `writeSkillRecord`,
-  `readSkillMdFrontmatter`): delete when cutting the next minor — the
-  one-cycle deprecation window will have elapsed.
-- **manifest.ts** (829L): the v2–v5 coercion block is already quarantined
-  with a comment; split it to `manifest-coerce.ts` when the next schema
-  bump touches it anyway.
-- **import.ts** (861L): seven sections, one registration domain — split
-  only if a feature adds an eighth concern that isn't registration.
-- **heal.ts**: hashing + two sidecars + heal actions share a file; rename
-  or split when a fourth concern arrives, not before.
-- **skill-record.ts**: the unified facade nobody adopted — once the
-  deprecated pair is cut it's pure re-exports; fold those into `index.ts`
-  at that point and delete the file.
+- **Deprecated exports** (`previewDeleteUnregistered`, `groupDiagnosticsByCategory`,
+  `getClaudeHome`, `getClaudeSkillsDir`, `loadIndex`, `readSkillRecord`,
+  `writeSkillRecord`, `readSkillMdFrontmatter`): delete when cutting the next
+  minor — the one-cycle deprecation window will have elapsed.
+- **`manifest/manifest.ts`** (607L): the v2–v5 coercion block stays quarantined;
+  split to `manifest/coerce.ts` when the next schema bump touches it.
+- **`registry/heal.ts`**: hashing + two sidecars + heal actions share a file;
+  split when a fourth concern arrives, not before.
+- **`registry/record.ts`**: the unified facade nobody adopted — once the
+  deprecated pair is cut it's pure re-exports; fold into `index.ts` then.

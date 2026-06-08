@@ -17,7 +17,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  applyCanonicalSync,
   applyRegistration,
   buildRegistryIndex,
   applyOriginUpdate as coreApplyOriginUpdate,
@@ -29,6 +28,9 @@ import {
   exportSkill,
   exportRegistryManifest,
   importRegistryManifest,
+  reconcileRegistryToManifest,
+  applySkillLabel,
+  clearSkillLabel,
   applyManifestResolutions,
   mergeManifests,
   readMergeBase,
@@ -39,7 +41,9 @@ import {
   clearPendingManifestConflicts,
   resolveRenameTarget,
   type ManifestDecisions,
-  type RateLimitInfo,
+  fetchRemoteManifest,
+  fetchUserRepos,
+  fetchRepoDefaultBranch,
   MANIFEST_SCHEMA_VERSION,
   parseGithubSkillUrl,
   writeRegistrySnapshot,
@@ -48,7 +52,6 @@ import {
   findSkillFolder,
   readSkillMeta,
   pushSkillFolder,
-  fetchCanonicalTarball,
   hashSkillFolder,
   readSkillSource,
   writeSkillSource,
@@ -71,7 +74,7 @@ import {
   listInstalled,
   readLastSyncReport,
   readPendingConflicts,
-  readSyncDecisions,
+  syncTarballToRegistry,
   findFolderHash,
   folderPathFromSkillPath,
   fetchOriginTree,
@@ -1996,12 +1999,7 @@ async function runManifestImportCore(manifest: RegistryManifest): Promise<
     importResult = await importRegistryManifest(registryRoot, manifest, {
       token: getStoredToken(),
       signal: controller.signal,
-      onProgress: (event) => {
-        for (const win of BrowserWindow.getAllWindows()) {
-          if (!win.isDestroyed())
-            win.webContents.send(IPC.manifestImportProgress, event);
-        }
-      },
+      onProgress: broadcastManifestImportProgress,
     });
   } finally {
     inFlightImportAbort = null;
@@ -2029,86 +2027,37 @@ async function runManifestImportCore(manifest: RegistryManifest): Promise<
 }
 
 /**
- * Reconcile the local registry to `manifest`: import adds + restore aux
- * state, then delete every local skill the manifest no longer lists.
- * The removal set is `localNames − manifestNames`, which captures BOTH
- * conflict-confirmed deletions AND the auto-resolved deletions the merge
- * already dropped (importRegistryManifest is otherwise additive).
- * Returns the names actually removed. Caller owns base-snapshot advance.
+ * Fan a manifest-import progress event out to every renderer window —
+ * the Electron boundary the core import/reconcile primitives accept as
+ * their `onProgress` callback.
+ */
+function broadcastManifestImportProgress(
+  event: import("@skills-bank/core").ManifestImportProgressEvent,
+): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed())
+      win.webContents.send(IPC.manifestImportProgress, event);
+  }
+}
+
+/**
+ * Reconcile the local registry to `manifest` via the core primitive,
+ * then persist the labels it reconstructed (the app's `labels.json`
+ * lives outside the registry root, so reconcile hands them back rather
+ * than writing them). Returns the names actually removed; caller owns
+ * the base-snapshot advance.
  */
 async function reconcileLocalToManifest(
   root: string,
   manifest: RegistryManifest,
 ): Promise<string[]> {
-  const finalNames = new Set(manifest.skills.map((s) => s.name));
-  const removeNames = walkSkills(root)
-    .map((r) => r.name)
-    .filter((n) => !finalNames.has(n));
-  const result = await importRegistryManifest(root, manifest, {
-    token: getStoredToken(),
-    ...(removeNames.length > 0 ? { removeNames } : {}),
-    onProgress: (event) => {
-      for (const win of BrowserWindow.getAllWindows()) {
-        if (!win.isDestroyed())
-          win.webContents.send(IPC.manifestImportProgress, event);
-      }
-    },
-  });
-  applyRestoredLabels(result.restoredLabels);
-  buildRegistryIndex(root, { includeGitInfo: true, writeFile: true });
-  invalidateCanonCache(root);
-  return (result.removed ?? []).filter((r) => r.ok).map((r) => r.name);
-}
-
-/**
- * Fetch the linked repo's `registry-manifest.json`. A 404 resolves to
- * an empty manifest (the repo has no manifest yet — everything is an
- * add); other failures propagate so the caller can surface them.
- */
-async function fetchRemoteManifest(
-  repo: string,
-  branch: string,
-  token: string,
-): Promise<
-  | { ok: true; manifest: RegistryManifest }
-  | {
-      ok: false;
-      reason: "rate-limit" | "read-failed";
-      message: string;
-      rateLimit?: RateLimitInfo;
-    }
-> {
-  const res = await readRepoFile({
-    repo,
-    path: "registry-manifest.json",
-    ref: branch,
-    token,
-  });
-  const empty: RegistryManifest = {
-    schemaVersion: MANIFEST_SCHEMA_VERSION,
-    exportedAt: "",
-    sourceBankVersion: "",
-    skills: [],
-  };
-  if (!res.ok) {
-    if (res.status === 404) return { ok: true, manifest: empty };
-    return res.rateLimit
-      ? {
-          ok: false,
-          reason: "rate-limit",
-          message: res.message,
-          rateLimit: res.rateLimit,
-        }
-      : { ok: false, reason: "read-failed", message: res.message };
-  }
-  try {
-    return { ok: true, manifest: JSON.parse(res.content) as RegistryManifest };
-  } catch {
-    // A corrupt/unparseable remote manifest is treated as empty rather
-    // than aborting — the merge then reads every local skill as an add,
-    // which the user reviews before any push.
-    return { ok: true, manifest: empty };
-  }
+  const { removed, restoredLabels } = await reconcileRegistryToManifest(
+    root,
+    manifest,
+    { token: getStoredToken(), onProgress: broadcastManifestImportProgress },
+  );
+  applyRestoredLabels(restoredLabels);
+  return removed;
 }
 
 ipcMain.handle(IPC.exportManifest, writeManifestToDisk);
@@ -2132,41 +2081,19 @@ ipcMain.handle(
       sourceBankVersion,
       ...manifestExportContext(),
     });
-    const remoteRes = await readRepoFile({
-      repo: linkedRepo.fullName,
-      path: "registry-manifest.json",
-      ref: branch,
+    const remote = await fetchRemoteManifest(
+      linkedRepo.fullName,
+      branch,
       token,
-    });
-    let remoteManifest: import("@skills-bank/core").RegistryManifest;
-    if (!remoteRes.ok) {
-      if (remoteRes.status === 404) {
-        remoteManifest = {
-          schemaVersion: MANIFEST_SCHEMA_VERSION,
-          exportedAt: "",
-          sourceBankVersion: "",
-          skills: [],
-        };
-      } else {
-        return {
-          ok: false,
-          message: remoteRes.message,
-          rateLimit: remoteRes.rateLimit,
-        };
-      }
-    } else {
-      try {
-        remoteManifest = JSON.parse(remoteRes.content) as typeof remoteManifest;
-      } catch {
-        remoteManifest = {
-          schemaVersion: MANIFEST_SCHEMA_VERSION,
-          exportedAt: "",
-          sourceBankVersion: "",
-          skills: [],
-        };
-      }
+    );
+    if (!remote.ok) {
+      return {
+        ok: false,
+        message: remote.message,
+        rateLimit: remote.rateLimit,
+      };
     }
-    const diff = diffManifests(localManifest, remoteManifest);
+    const diff = diffManifests(localManifest, remote.manifest);
     return {
       ok: true,
       diff,
@@ -3194,53 +3121,42 @@ async function runSync(): Promise<{
 }> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
-    broadcastSyncStatus({ kind: "fetching" });
     // Opportunistically authenticate the tarball fetch when a token is
     // already on disk (typically from a prior GitHub-linked session).
     // Unauthenticated GitHub API calls share a 60 req/hr ceiling per IP
     // — easy to exhaust on NAT'd networks. The token is irrelevant to
     // local-bundled semantics; it just raises the ceiling to 5000/hr.
     const token = getStoredToken();
-    const fetched = await fetchCanonicalTarball({
+    // syncCanonical mirrors the curated/bundled repo; its discovered
+    // skills land in the vendored bucket per the bucket UL (curated
+    // origin → vendored locally).
+    const report = await syncTarballToRegistry({
+      registryRoot,
       owner: CANONICAL_OWNER,
       repo: CANONICAL_REPO,
       ...(token ? { token } : {}),
+      mountTo: "vendored",
+      onStatus: (phase) => broadcastSyncStatus({ kind: phase }),
     });
-    try {
-      broadcastSyncStatus({ kind: "applying" });
-      const decisions = readSyncDecisions(registryRoot);
-      const report = await applyCanonicalSync(
-        registryRoot,
-        fetched.extractedRoot,
-        fetched.commitSha,
-        decisions,
-        // syncCanonical mirrors the curated/bundled repo; its
-        // discovered skills land in the vendored bucket per the
-        // bucket UL (curated origin → vendored locally).
-        { mountTo: "vendored" },
-      );
-      broadcastSyncStatus({
-        kind: "done",
-        upserted: report.upserted,
-        conflicts: report.conflicts.length,
-        orphaned: report.orphaned,
-        commitSha: report.commitSha,
-      });
-      return {
-        ok: true,
-        message: `synced ${report.upserted.length} skill(s)${
-          report.conflicts.length > 0
-            ? `, ${report.conflicts.length} conflict(s) pending`
-            : ""
-        }${
-          report.resolved.length > 0
-            ? `, ${report.resolved.length} auto-resolved`
-            : ""
-        }`,
-      };
-    } finally {
-      fetched.cleanup();
-    }
+    broadcastSyncStatus({
+      kind: "done",
+      upserted: report.upserted,
+      conflicts: report.conflicts.length,
+      orphaned: report.orphaned,
+      commitSha: report.commitSha,
+    });
+    return {
+      ok: true,
+      message: `synced ${report.upserted.length} skill(s)${
+        report.conflicts.length > 0
+          ? `, ${report.conflicts.length} conflict(s) pending`
+          : ""
+      }${
+        report.resolved.length > 0
+          ? `, ${report.resolved.length} auto-resolved`
+          : ""
+      }`,
+    };
   } catch (err) {
     const error = fromCaught("sync.run-failed", err);
     broadcastSyncStatus({ kind: "error", message: error.message });
@@ -3261,8 +3177,8 @@ ipcMain.handle(IPC.getPendingConflicts, () => {
 });
 
 // Persist user choices and immediately re-run sync so the resolutions
-// take effect without a separate user action. The re-run consumes the
-// just-written decisions via readSyncDecisions inside runSync.
+// take effect without a separate user action. The re-run reads the
+// just-written decisions inside syncTarballToRegistry.
 mutatingHandle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   try {
@@ -3363,50 +3279,10 @@ ipcMain.handle(IPC.authLogout, async () => {
 
 // ─── User repos + registry replace (M4) ─────────────────────────────────────
 
-async function ghFetch(
-  pathSuffix: string,
-  init?: RequestInit,
-): Promise<Response> {
+ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
   const token = getStoredToken();
   if (!token) throw new Error("not authenticated");
-  return fetch(`https://api.github.com${pathSuffix}`, {
-    ...init,
-    headers: {
-      ...(init?.headers ?? {}),
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "User-Agent": "skills-bank",
-    },
-  });
-}
-
-ipcMain.handle(IPC.reposListMine, async (): Promise<UserRepo[]> => {
-  const out: UserRepo[] = [];
-  // Up to 3 pages (300 repos) — enough for nearly every user.
-  for (let page = 1; page <= 3; page++) {
-    const res = await ghFetch(
-      `/user/repos?per_page=100&page=${page}&sort=updated&affiliation=owner,collaborator,organization_member`,
-    );
-    if (!res.ok) {
-      throw new Error(`GitHub /user/repos: ${res.status}`);
-    }
-    const repos = (await res.json()) as Array<{
-      full_name: string;
-      private: boolean;
-      default_branch: string;
-      description: string | null;
-    }>;
-    for (const r of repos) {
-      out.push({
-        fullName: r.full_name,
-        isPrivate: r.private,
-        defaultBranch: r.default_branch,
-        description: r.description ?? null,
-      });
-    }
-    if (repos.length < 100) break;
-  }
-  return out;
+  return fetchUserRepos(token);
 });
 
 /**
@@ -3441,92 +3317,73 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
   const repo = fullName.slice(slash + 1);
 
   try {
-    broadcastSyncStatus({ kind: "fetching" });
-    const fetched = await fetchCanonicalTarball({ owner, repo, token });
-    try {
-      // v1.5: dropped the migrateLegacyGithubMarkers call. The
-      // pre-v0.11 heuristic ("source: user + syncedFromCommit ⇒
-      // legacy linked-repo entry ⇒ stamp curated") was inverted
-      // by Phase 1's mountTo policy — linked-repo skills are now
-      // correctly stamped `user`, so re-stamping them to `curated`
-      // is destructive. Any v0.10-era config that still needed the
-      // migration has been through multiple minor cycles by now.
-      broadcastSyncStatus({ kind: "applying" });
-      const decisions = readSyncDecisions(registryRoot);
-      const report = await applyCanonicalSync(
-        registryRoot,
-        fetched.extractedRoot,
-        fetched.commitSha,
-        decisions,
-        // Linking a user's own GitHub repo: discovered skills land
-        // in the personal bucket. Discovery walks the whole repo
-        // tree by file convention, so flat / bucketed / nested
-        // remote layouts all link cleanly.
-        { mountTo: "personal" },
-      );
-      // Only a report with zero discoveries means "no recognizable
-      // skills". A pull where every skill matched its local content
-      // hash also upserts nothing (`unchanged` carries the skips) —
-      // that's a successful no-op, handled by the success path below.
-      if (
-        report.upserted.length === 0 &&
-        report.conflicts.length === 0 &&
-        report.unchanged.length === 0
-      ) {
-        broadcastSyncStatus({ kind: "idle" });
-        const detail =
-          (report.discoveryCollisions ?? []).length > 0
-            ? ` (${report.discoveryCollisions!.length} name collision${report.discoveryCollisions!.length === 1 ? "" : "s"} in the source tree)`
-            : "";
-        return {
-          ok: false,
-          message: `${fullName} has no skills the app can recognize${detail}. A skill folder needs a SKILL.md.`,
-        };
-      }
-      broadcastSyncStatus({
-        kind: "done",
-        upserted: report.upserted,
-        conflicts: report.conflicts.length,
-        orphaned: report.orphaned,
-        commitSha: report.commitSha,
-      });
-      // v0.11.9 M8: linkage commit step extracted so other paths
-      // (re-link, restore from session) can reuse it.
-      // Fetch the repo's default branch so push/read operations can
-      // target the correct base without hardcoding "main".
-      let fetchedDefaultBranch: string | undefined;
-      try {
-        const repoMetaRes = await coreGhFetch<{ default_branch: string }>(
-          `${GH_API}/repos/${fullName}`,
-          { method: "GET" },
-          token,
-        );
-        if (repoMetaRes.ok)
-          fetchedDefaultBranch = repoMetaRes.body.default_branch;
-      } catch {
-        // Non-fatal — defaultBranch stays undefined; handlers fall back to "main".
-      }
-      commitGithubLinkage({
-        fullName,
-        lastFetchedAt: report.syncedAt,
-        syncedFromCommit: fetched.commitSha,
-        defaultBranch: fetchedDefaultBranch,
-      });
-      const message =
-        report.conflicts.length > 0
-          ? `synced ${report.upserted.length} from ${fullName}, ${report.conflicts.length} conflict(s) need review`
-          : report.upserted.length === 0
-            ? `${fullName} is already up to date (${report.unchanged.length} skill(s) unchanged)`
-            : `synced ${report.upserted.length} skill(s) from ${fullName}`;
+    // v1.5: dropped the migrateLegacyGithubMarkers call. The pre-v0.11
+    // heuristic ("source: user + syncedFromCommit ⇒ legacy linked-repo
+    // entry ⇒ stamp curated") was inverted by Phase 1's mountTo policy —
+    // linked-repo skills are now correctly stamped `user`, so re-stamping
+    // them to `curated` is destructive. Any v0.10-era config that still
+    // needed the migration has been through multiple minor cycles by now.
+    //
+    // Linking a user's own GitHub repo: discovered skills land in the
+    // personal bucket. Discovery walks the whole repo tree by file
+    // convention, so flat / bucketed / nested remote layouts all link.
+    const report = await syncTarballToRegistry({
+      registryRoot,
+      owner,
+      repo,
+      token,
+      mountTo: "personal",
+      onStatus: (phase) => broadcastSyncStatus({ kind: phase }),
+    });
+    // Only a report with zero discoveries means "no recognizable
+    // skills". A pull where every skill matched its local content
+    // hash also upserts nothing (`unchanged` carries the skips) —
+    // that's a successful no-op, handled by the success path below.
+    if (
+      report.upserted.length === 0 &&
+      report.conflicts.length === 0 &&
+      report.unchanged.length === 0
+    ) {
+      broadcastSyncStatus({ kind: "idle" });
+      const detail =
+        (report.discoveryCollisions ?? []).length > 0
+          ? ` (${report.discoveryCollisions!.length} name collision${report.discoveryCollisions!.length === 1 ? "" : "s"} in the source tree)`
+          : "";
       return {
-        ok: true,
-        message,
-        importedCount: report.upserted.length,
-        conflictCount: report.conflicts.length,
+        ok: false,
+        message: `${fullName} has no skills the app can recognize${detail}. A skill folder needs a SKILL.md.`,
       };
-    } finally {
-      fetched.cleanup();
     }
+    broadcastSyncStatus({
+      kind: "done",
+      upserted: report.upserted,
+      conflicts: report.conflicts.length,
+      orphaned: report.orphaned,
+      commitSha: report.commitSha,
+    });
+    // v0.11.9 M8: linkage commit step extracted so other paths
+    // (re-link, restore from session) can reuse it. Fetch the repo's
+    // default branch so push/read operations target the correct base
+    // without hardcoding "main" (undefined on failure → fall back).
+    const fetchedDefaultBranch = await fetchRepoDefaultBranch(fullName, token);
+    commitGithubLinkage({
+      fullName,
+      lastFetchedAt: report.syncedAt,
+      syncedFromCommit: report.commitSha,
+      defaultBranch: fetchedDefaultBranch,
+    });
+    const message =
+      report.conflicts.length > 0
+        ? `synced ${report.upserted.length} from ${fullName}, ${report.conflicts.length} conflict(s) need review`
+        : report.upserted.length === 0
+          ? `${fullName} is already up to date (${report.unchanged.length} skill(s) unchanged)`
+          : `synced ${report.upserted.length} skill(s) from ${fullName}`;
+    return {
+      ok: true,
+      message,
+      importedCount: report.upserted.length,
+      conflictCount: report.conflicts.length,
+    };
   } catch (err) {
     const error = fromCaught("ipc.unknown", err);
     broadcastSyncStatus({ kind: "error", message: error.message });
@@ -3824,24 +3681,21 @@ ipcMain.handle(
     name: string,
     patch: import("@skills-bank/core").SkillLabelOverride,
   ): void => {
-    const data = readLabelsFile();
-    data[name] = { ...(data[name] ?? {}), ...patch };
-    writeLabelsFile(data);
+    writeLabelsFile(applySkillLabel(readLabelsFile(), name, patch));
   },
 );
 
 ipcMain.handle(IPC.resetLabel, (_e, name: string): void => {
-  const data = readLabelsFile();
-  delete data[name];
-  writeLabelsFile(data);
+  writeLabelsFile(clearSkillLabel(readLabelsFile(), name));
 });
 
+// Bulk is a fold of the single-skill primitive, not its own primitive.
 ipcMain.handle(
   IPC.bulkUpdateLabels,
   (_e, updates: import("@skills-bank/core").LabelsMap): void => {
-    const data = readLabelsFile();
-    for (const [name, override] of Object.entries(updates)) {
-      data[name] = { ...(data[name] ?? {}), ...override };
+    let data = readLabelsFile();
+    for (const [name, patch] of Object.entries(updates)) {
+      data = applySkillLabel(data, name, patch);
     }
     writeLabelsFile(data);
   },
