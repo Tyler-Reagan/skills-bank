@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { classifyDrawerState } from "./skill-state.js";
+import { classifyDrawerState } from "../skill-state.js";
 import type {
   DrawerState,
   PrimaryAction,
   DrawerCapabilities,
-} from "./skill-state.js";
-import type { InstalledSkill, RegistryEntry } from "./types.js";
+} from "../skill-state.js";
+import type { InstalledSkill, RegistryEntry } from "../types.js";
 
 /**
  * Table-driven classifier tests. Each row pins a triple

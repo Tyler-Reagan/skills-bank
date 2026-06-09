@@ -7,6 +7,8 @@ import {
   readExternalRegistry,
   removeExternalRegistryEntry,
 } from "./external.js";
+import { readSkillSource, writeSkillSource } from "./source.js";
+import { walkSkills } from "./walk.js";
 
 /**
  * Heal helpers. Three bad states the classifier surfaces:
@@ -238,6 +240,39 @@ export function repointExternalEntry(
   fs.mkdirSync(path.dirname(p), { recursive: true });
   fs.writeFileSync(p, JSON.stringify(next, null, 2) + "\n");
   return { ok: true, message: `repointed ${name} → ${newTarget}` };
+}
+
+/**
+ * One-shot marker migration — downgrade falsely-`curated` markers.
+ *
+ * An older manifest-import path stamped `source: "curated"` verbatim from
+ * the imported manifest, so third-party github installs whose manifest
+ * claimed `curated` landed with a CURATED badge they shouldn't have (see
+ * `stampOriginMarker`, now fixed). The fingerprint of such a marker is
+ * `curated` + a github origin + NO curated-channel sync provenance
+ * (`syncedFromCommit`/`syncedAt`).
+ *
+ * Legitimately-curated skills never match: the first-launch seed stamps
+ * `syncedAt` and no github origin, and curated sync stamps both
+ * `syncedFromCommit` and `syncedAt`. `find-skills` (curated + github +
+ * `syncedFromCommit`) is therefore untouched. Returns the names healed;
+ * idempotent on a clean registry.
+ */
+export function healFalselyCuratedMarkers(registryRoot: string): string[] {
+  const healed: string[] = [];
+  for (const ref of walkSkills(registryRoot)) {
+    const src = readSkillSource(ref.dir);
+    if (
+      src.source === "curated" &&
+      src.origin?.kind === "github" &&
+      !src.syncedFromCommit &&
+      !src.syncedAt
+    ) {
+      writeSkillSource(ref.dir, { ...src, source: "vendored" });
+      healed.push(ref.name);
+    }
+  }
+  return healed;
 }
 
 /**

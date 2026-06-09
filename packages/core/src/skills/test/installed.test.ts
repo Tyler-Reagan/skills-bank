@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { listInstalled } from "./installed.js";
+import { listInstalled } from "../installed.js";
 
 /**
  * Pins the data invariant the RegisterModal collision bug fix relies on:

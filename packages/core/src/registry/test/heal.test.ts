@@ -4,10 +4,11 @@ import os from "node:os";
 import path from "node:path";
 import {
   hashSkillFolder,
+  healFalselyCuratedMarkers,
   readRuntimeState,
   writeRuntimeState,
-} from "./heal.js";
-import { readSkillSource, writeSkillSource } from "./source.js";
+} from "../heal.js";
+import { readSkillSource, writeSkillSource } from "../source.js";
 
 /**
  * Contracts pinned by these suites (from ADR-0001):
@@ -351,5 +352,62 @@ describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
     );
     const src = readSkillSource(dir);
     expect(src.origin?.fetchedAt).toBe("2026-05-18T12:00:00Z");
+  });
+});
+
+describe("healFalselyCuratedMarkers", () => {
+  function seedSkill(
+    bucket: "personal" | "vendored",
+    name: string,
+    marker: Parameters<typeof writeSkillSource>[1],
+  ): string {
+    const dir = path.join(scratch, "skills", bucket, name);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, "SKILL.md"), `# ${name}\n`);
+    writeSkillSource(dir, marker);
+    return dir;
+  }
+
+  const githubOrigin = {
+    kind: "github" as const,
+    repo: "third/party",
+    skillPath: "skills/x/SKILL.md",
+  };
+
+  test("downgrades curated + github origin with no sync provenance", () => {
+    const dir = seedSkill("vendored", "bad", {
+      source: "curated",
+      origin: githubOrigin,
+    });
+    expect(healFalselyCuratedMarkers(scratch)).toEqual(["bad"]);
+    expect(readSkillSource(dir).source).toBe("vendored");
+    // origin pointer is preserved — only the source axis changes.
+    expect(readSkillSource(dir).origin?.repo).toBe("third/party");
+  });
+
+  test("leaves curated + github + syncedFromCommit untouched (find-skills shape)", () => {
+    const dir = seedSkill("vendored", "find-skills", {
+      source: "curated",
+      syncedFromCommit: "abc123",
+      syncedAt: "2026-06-05T00:00:00Z",
+      origin: { kind: "github", repo: "vercel-labs/skills" },
+    });
+    expect(healFalselyCuratedMarkers(scratch)).toEqual([]);
+    expect(readSkillSource(dir).source).toBe("curated");
+  });
+
+  test("leaves seeded curated (syncedAt, no origin) untouched", () => {
+    const dir = seedSkill("vendored", "seeded", {
+      source: "curated",
+      syncedAt: "2026-06-05T00:00:00Z",
+    });
+    expect(healFalselyCuratedMarkers(scratch)).toEqual([]);
+    expect(readSkillSource(dir).source).toBe("curated");
+  });
+
+  test("is idempotent — a healed registry yields no further changes", () => {
+    seedSkill("vendored", "bad", { source: "curated", origin: githubOrigin });
+    expect(healFalselyCuratedMarkers(scratch)).toEqual(["bad"]);
+    expect(healFalselyCuratedMarkers(scratch)).toEqual([]);
   });
 });

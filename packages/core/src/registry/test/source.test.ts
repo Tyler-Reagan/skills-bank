@@ -6,7 +6,7 @@ import {
   readSkillSource,
   writeSkillSource,
   SKILL_SOURCE_FILENAME,
-} from "./source.js";
+} from "../source.js";
 
 /**
  * Pins the v1.3 vocabulary (`curated`/`user`, `origin` wire key).

@@ -6,13 +6,15 @@ import {
   coerceManifestToCurrent,
   exportRegistryManifest,
   serializeManifest,
+  stampOriginMarker,
   writeRegistrySnapshot,
   MANIFEST_SCHEMA_VERSION,
+  type ManifestSkill,
   type RegistryManifest,
 } from "../manifest.js";
 import { importRegistryManifest } from "../import.js";
 import { computeManifestRemovals } from "../reconcile.js";
-import { writeSkillSource } from "../../registry/source.js";
+import { readSkillSource, writeSkillSource } from "../../registry/source.js";
 import { hashSkillFolder, writeSyncedHash } from "../../registry/heal.js";
 import { buildRegistryIndex } from "../../registry/build.js";
 
@@ -1056,5 +1058,92 @@ describe("computeManifestRemovals (pure)", () => {
 
   test("empty manifest ⇒ every local skill is a removal candidate", () => {
     expect(computeManifestRemovals(["a", "b"], manifest())).toEqual(["a", "b"]);
+  });
+});
+
+describe("stampOriginMarker — runtime import never mints curated", () => {
+  function stamp(
+    source: ManifestSkill["source"],
+    originKind: "github" | "none",
+  ): ReturnType<typeof readSkillSource> {
+    const dir = path.join(registryRoot, "skills", "vendored", "stamped");
+    fs.mkdirSync(dir, { recursive: true });
+    const skill: ManifestSkill = {
+      name: "stamped",
+      source,
+      bucket: "vendored",
+      origin:
+        originKind === "github"
+          ? {
+              kind: "github",
+              repo: "owner/repo",
+              skillPath: "skills/stamped/SKILL.md",
+            }
+          : { kind: "none" },
+      category: null,
+      tags: [],
+      lastInstalledOn: [],
+    };
+    stampOriginMarker(dir, skill, "hash123");
+    return readSkillSource(dir);
+  }
+
+  test("curated + github origin downgrades to vendored", () => {
+    const s = stamp("curated", "github");
+    expect(s.source).toBe("vendored");
+    expect(s.origin?.kind).toBe("github");
+    expect(s.origin?.repo).toBe("owner/repo");
+  });
+
+  test("curated + none origin downgrades to user", () => {
+    expect(stamp("curated", "none").source).toBe("user");
+  });
+
+  test("non-curated sources pass through unchanged", () => {
+    expect(stamp("vendored", "github").source).toBe("vendored");
+    expect(stamp("user", "github").source).toBe("user");
+  });
+});
+
+describe("importRegistryManifest — curated github entry lands as vendored", () => {
+  test("a manifest claiming curated for a github skill is stored vendored", async () => {
+    let call = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        call++;
+        if (call === 1) return makeTreeResponse("skills/kappa");
+        if (call === 2) return makeBlobResponse("# kappa");
+        throw new Error(`unexpected call #${call}`);
+      }),
+    );
+
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.1.0",
+      skills: [
+        {
+          name: "kappa",
+          source: "curated",
+          bucket: "vendored",
+          origin: {
+            kind: "github",
+            repo: "owner/repo",
+            skillPath: "skills/kappa/SKILL.md",
+          },
+          tags: [],
+          category: null,
+          lastInstalledOn: [],
+        },
+      ],
+    };
+
+    await importRegistryManifest(registryRoot, manifest);
+    const marker = readSkillSource(
+      path.join(registryRoot, "skills", "vendored", "kappa"),
+    );
+    expect(marker.source).toBe("vendored");
+    expect(marker.origin?.repo).toBe("owner/repo");
   });
 });
