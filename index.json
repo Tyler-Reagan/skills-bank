@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-05T16:23:19.809Z",
+  "generatedAt": "2026-06-09T13:08:06.624Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -21,10 +21,40 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "96dfaf445211ff02ea6c09a17d4fc79fb6b45950",
-        "date": "2026-06-05 09:01:45 -0700",
-        "message": "pnpm format and style cleanup"
+        "sha": "34d123dbe5c536f7d50206f084cff6afec070a62",
+        "date": "2026-06-05 14:16:28 -0700",
+        "message": "refactor: source-axis enforcement, install primitive overhaul, meta.json/CLI/publish cull (#112)"
       },
+      "bucket": "vendored",
+      "canon": false
+    },
+    {
+      "name": "x-twitter-scraper",
+      "description": "Use Xquik for X (Twitter) data and confirmation-gated account actions from AI agents: tweet search, user lookup, followers, media, monitors, webhooks, MCP, SDKs, posting, replies, likes, DMs, and profile updates. Requires a Xquik API key.",
+      "tags": [
+        "x",
+        "twitter",
+        "social-data",
+        "mcp",
+        "webhooks",
+        "api"
+      ],
+      "version": "2.4.16",
+      "author": "Xquik",
+      "path": "skills/vendored/x-twitter-scraper",
+      "source": {
+        "source": "curated",
+        "syncedFromCommit": "e3fd5758acb668965d11732fe734d73465c04603",
+        "syncedAt": "2026-06-09T12:57:59.178Z",
+        "origin": {
+          "kind": "github",
+          "repo": "Xquik-dev/x-twitter-scraper",
+          "sourceUrl": "https://github.com/Xquik-dev/x-twitter-scraper.git",
+          "skillPath": "skills/x-twitter-scraper/SKILL.md",
+          "installedAt": "2026-06-09T12:57:59.178Z"
+        }
+      },
+      "adopted": true,
       "bucket": "vendored",
       "canon": false
     }
