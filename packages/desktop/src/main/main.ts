@@ -53,6 +53,7 @@ import {
   readSkillMeta,
   pushSkillFolder,
   hashSkillFolder,
+  healFalselyCuratedMarkers,
   readSkillSource,
   writeSkillSource,
   writeRuntimeState,
@@ -322,6 +323,18 @@ function defaultManagedRegistryRoot(): string {
   // have a populated registry but no upstream-canon.json, so canon
   // attribution would otherwise be false for every bundled skill.
   ensureManagedCanonAttribution(root);
+  // Repair markers a pre-fix manifest import mislabeled `curated` (see
+  // healFalselyCuratedMarkers). Forward-looking imports are fixed at the
+  // source in stampOriginMarker; this self-heals already-installed skills
+  // so a false CURATED badge clears on the next boot.
+  try {
+    const healed = healFalselyCuratedMarkers(root);
+    if (healed.length > 0) {
+      console.error(`healed falsely-curated markers: ${healed.join(", ")}`);
+    }
+  } catch (err) {
+    console.error("healFalselyCuratedMarkers failed:", err);
+  }
   return root;
 }
 

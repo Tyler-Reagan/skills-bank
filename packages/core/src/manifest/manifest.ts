@@ -302,9 +302,22 @@ export function stampOriginMarker(
   skill: ManifestSkill,
   folderHash: string,
 ): void {
+  // Manifest import is a runtime path; per the `source.ts` doctrine it
+  // may never mint `curated`. That value is reserved for the maintainer's
+  // committed markers, reached only via the first-launch seed and curated
+  // sync (both call `writeSkillSource` directly, never this function). A
+  // manifest claiming `curated` is another registry's attribution and
+  // does not transfer here, so downgrade it: github origin → vendored,
+  // self/none origin → user.
+  const source: SkillOrigin =
+    skill.source === "curated"
+      ? skill.origin.kind === "github"
+        ? "vendored"
+        : "user"
+      : skill.source;
   if (skill.origin.kind !== "github") {
     writeSkillSource(destDir, {
-      source: skill.source,
+      source,
       origin: { kind: "none" },
     });
     return;
@@ -317,7 +330,7 @@ export function stampOriginMarker(
   if (skill.origin.repo) origin.repo = skill.origin.repo;
   if (skill.origin.sourceUrl) origin.sourceUrl = skill.origin.sourceUrl;
   if (skill.origin.skillPath) origin.skillPath = skill.origin.skillPath;
-  writeSkillSource(destDir, { source: skill.source, origin });
+  writeSkillSource(destDir, { source, origin });
 }
 
 /**
