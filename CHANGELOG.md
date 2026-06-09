@@ -3,6 +3,16 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.20.5
+
+Bug-fix release: third-party installs no longer masquerade as curated, and the test suite (red on `main` since the v1.20 test-subdir reorg) is green again.
+
+### Fixed
+
+- **Manifest import no longer mints `source: "curated"`.** Installing a third-party skill whose manifest claimed `curated` (e.g. `kubernetes-specialist`, `soultrace`) persisted that value verbatim via `stampOriginMarker`, surfacing a false **CURATED** badge on what are user-installed `vendored` skills. Per the `source.ts` doctrine, no runtime install/sync path may mint `curated` — that value is reserved for the maintainer's committed set, reached only via the first-launch seed and curated sync. Import now downgrades an incoming `curated`: github origin → `vendored`, self/none origin → `user`. The fix lives at the runtime boundary (not in `writeSkillSource`) because github-origin is not a valid discriminator — `find-skills` is legitimately curated *and* github-origin; the true signal is curated-channel sync provenance (`syncedFromCommit`/`syncedAt`).
+- **Self-heal for already-installed skills.** A new boot-time `healFalselyCuratedMarkers` pass repairs managed-registry markers matching the bug fingerprint (`curated` + github origin + no sync provenance), so a stale CURATED badge clears on the next launch. Seeded/synced curated skills carry sync stamps and are left untouched.
+- **Test suite restored.** The v1.20 "organized test sub-dirs" reorg moved test files one level deeper without updating their relative paths, leaving the `registry/test/` suite unloadable and `pnpm typecheck` failing (CI doesn't run the suite, so it slipped through). Repaired 15 sibling imports (`./X.js` → `../X.js`) across 8 files and the `repoRoot` depth in `build.test.ts` / `meta.test.ts`.
+
 ## v1.20.4
 
 Maintenance release: info tooltips no longer hide behind modals, modal internals tidied, and the maintenance-script surface consolidated.
