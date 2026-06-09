@@ -4,7 +4,7 @@ import {
   clearSkillLabel,
   deriveLabels,
   effectiveLabels,
-} from "./labels.js";
+} from "../labels.js";
 
 describe("deriveLabels", () => {
   it("returns expected category + tags for a react skill", () => {

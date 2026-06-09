@@ -6,9 +6,9 @@ import {
   applyCanonicalSync,
   classifySyncDisposition,
   detectSyncOrphans,
-} from "./sync.js";
-import { readSkillSource, writeSkillSource } from "./source.js";
-import { hashSkillFolder, writeSyncedHash } from "./heal.js";
+} from "../sync.js";
+import { readSkillSource, writeSkillSource } from "../source.js";
+import { hashSkillFolder, writeSyncedHash } from "../heal.js";
 
 /**
  * applyCanonicalSync's conflict-resolution branches + the meta.json

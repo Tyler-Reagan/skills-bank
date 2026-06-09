@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { discoverSkillsInTree } from "./discovery.js";
+import { discoverSkillsInTree } from "../discovery.js";
 
 /**
  * Phase 1 scope-expansion contract: discoverSkillsInTree replaces the

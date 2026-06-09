@@ -3,12 +3,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildRegistryIndex } from "./build.js";
+import { buildRegistryIndex } from "../build.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Two levels up from packages/core/src/, then into docs/.
-const repoRoot = path.resolve(__dirname, "..", "..", "..", "..");
+// Climb from src/registry/test/ up to the repo root, then into docs/.
+const repoRoot = path.resolve(__dirname, "..", "..", "..", "..", "..");
 const realSchemaPath = path.join(repoRoot, "docs", "meta-schema.json");
 
 let scratch: string;
