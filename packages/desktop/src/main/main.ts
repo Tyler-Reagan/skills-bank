@@ -541,8 +541,8 @@ ipcMain.handle(IPC.originProbe, async () => runUpstreamProbe());
  * Update backend. Fetches the skill's folder content directly from
  * its authoritative upstream (`entry.source.origin.repo`) via
  * GitHub's REST API and mirrors it into our registry. Replaces the
- * prior `npx skills update <name>` shell-out (see PR γ of
- * docs/plans/origin-paradigm-reframe.md).
+ * prior `npx skills update <name>` shell-out (origin-paradigm
+ * reframe, v0.11.x — see CHANGELOG).
  *
  * Why direct fetch:
  *   - Origin under the new paradigm is the authoritative author's

@@ -308,7 +308,6 @@ interface PickCustomSkillsDirResult {
  * equal to `BUNDLED_REPO`. Renderer code checks the `linkedRepo` field
  * on `AuthStatus` directly; no separate `mode()` helper, since every
  * relevant branch collapses to "do I have a non-bundled linkedRepo?"
- * (See `docs/plans/github-first-onboarding.md`.)
  */
 export const BUNDLED_REPO = "Tyler-Reagan/skills-bank";
 

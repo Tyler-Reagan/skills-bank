@@ -2923,11 +2923,6 @@ button:disabled {
   justify-content: flex-end;
   gap: 8px;
 }
-.row-end-6 {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-}
 .row-between {
   display: flex;
   align-items: center;
@@ -3035,9 +3030,6 @@ button:disabled {
 }
 .mt-8 {
   margin-top: 8px;
-}
-.mt-10 {
-  margin-top: 10px;
 }
 .mt-12 {
   margin-top: 12px;
@@ -4267,81 +4259,6 @@ button:disabled {
 }
 .updates-modal-footer-spacer {
   flex-grow: 1;
-}
-
-/* ── RegisterModal ─────────────────────────────────────── */
-.register-modal-error-msg {
-  color: var(--danger);
-  font-family: monospace;
-  font-size: 13px;
-}
-.register-modal-hint {
-  color: var(--text-2);
-  font-size: 13px;
-}
-.register-modal-registry-hint {
-  color: var(--text-3);
-  font-size: 12px;
-  font-family: monospace;
-}
-.register-modal-spinner-center {
-  display: flex;
-  justify-content: center;
-  padding: 24px 0;
-}
-.register-modal-spinner-center--tall {
-  display: flex;
-  justify-content: center;
-  padding: 32px 0;
-}
-.register-modal-rebuilding {
-  color: var(--text-2);
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.register-modal-rebuild-ok {
-  color: var(--success);
-  font-size: 12px;
-}
-.register-modal-result-scroll {
-  max-height: 320px;
-  overflow: auto;
-  margin-top: 12px;
-  margin-bottom: 16px;
-}
-.register-modal-result-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
-}
-.register-modal-result-icon--ok {
-  color: var(--success);
-  display: inline-flex;
-  align-items: center;
-}
-.register-modal-result-icon--err {
-  color: var(--danger);
-  display: inline-flex;
-  align-items: center;
-}
-.register-modal-result-main {
-  flex: 1;
-  font-size: 13px;
-}
-.register-modal-result-msg--ok {
-  color: var(--text-2);
-}
-.register-modal-result-msg--err {
-  color: var(--danger);
-}
-.register-modal-plan-scroll {
-  max-height: 400px;
-  overflow: auto;
-  margin-bottom: 16px;
 }
 
 /* ── ConfirmDialog ─────────────────────────────────────── */
