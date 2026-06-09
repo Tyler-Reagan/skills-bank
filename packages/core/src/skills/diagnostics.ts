@@ -134,24 +134,3 @@ export function scanLocalDiagnostics(
 
   return { items, scannedAt };
 }
-
-/**
- * Group a diagnostic report's items by category. Stable key order for
- * predictable section rendering. Renderer-friendly.
- *
- * @deprecated since v1.20.3 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle).
- */
-export function groupDiagnosticsByCategory(
-  report: DiagnosticReport,
-): Record<DiagnosticCategory, DiagnosticItem[]> {
-  const out: Record<DiagnosticCategory, DiagnosticItem[]> = {
-    "unregistered-installs": [],
-    "broken-symlinks": [],
-    "external-target-missing": [],
-    "registry-folder-missing": [],
-  };
-  for (const item of report.items) {
-    out[item.category].push(item);
-  }
-  return out;
-}

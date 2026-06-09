@@ -1,11 +1,11 @@
 import { buildRegistryIndex } from "../registry/build.js";
-import { listInstalled } from "../skills/installed.js";
+import { listInstalled } from "./installed.js";
 import {
   classifyDrawerState,
   type ClassifyOptions,
   type DrawerStateClassification,
-} from "./skill-state.js";
-import type { RegistryEntry } from "./types.js";
+} from "../shared/skill-state.js";
+import type { RegistryEntry } from "../shared/types.js";
 
 /**
  * Classify a skill by name against the current state of `registryRoot`.

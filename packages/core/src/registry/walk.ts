@@ -7,43 +7,11 @@ import type {
 } from "../shared/types.js";
 import { parseSkillFrontmatter } from "./meta.js";
 
-const INDEX_FILE = "index.json";
-
-/** @deprecated since v1.20.3 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle). */
-export function loadIndex(registryRoot: string): RegistryIndex {
-  const p = path.join(registryRoot, INDEX_FILE);
-  if (!fs.existsSync(p)) {
-    return { generatedAt: new Date(0).toISOString(), entries: [] };
-  }
-  const data = JSON.parse(fs.readFileSync(p, "utf8")) as RegistryIndex;
-  return data;
-}
-
 export function findEntry(
   index: RegistryIndex,
   name: string,
 ): RegistryEntry | undefined {
   return index.entries.find((e) => e.name === name);
-}
-
-/**
- * Read SKILL.md YAML frontmatter as a flat string map.
- *
- * @deprecated since v1.20.3 — frontmatter parsing is consolidated in
- * `skill-meta.ts`. Import `parseSkillFrontmatter` instead (it returns
- * array fields too); this wrapper filters its result to string values
- * and will be removed after one minor cycle.
- */
-export function readSkillMdFrontmatter(
-  skillDir: string,
-): Record<string, string> | null {
-  const fm = parseSkillFrontmatter(path.join(skillDir, "SKILL.md"));
-  if (!fm) return null;
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(fm)) {
-    if (typeof v === "string") out[k] = v;
-  }
-  return out;
 }
 
 /**
