@@ -702,7 +702,7 @@ function AppContent(): React.ReactElement {
   // unreachable. Main-process boot normalizes it to "local" before the
   // renderer ever sees AuthStatus, so this gate would have stayed dead
   // code if not removed. The legacy v1.2 path that routed here on
-  // first launch is documented in `docs/plans/vocabulary-rename.md`.
+  // first launch is in the CHANGELOG (v1.2.0, vocabulary rename).
 
   // Plain functions (not useCallback) — this code lives below early-return
   // gates above (no authStatus, persona unresolved). A hook here would be a

@@ -12,7 +12,6 @@ import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
  * Registry-source section (linked repo label, last-fetched chrome,
  * Refresh primary, Change linked repo secondary) and one Identity row
  * (authed → @login + Sign out, unauth → Sign in with GitHub).
- * (See `docs/plans/github-first-onboarding.md`.)
  */
 interface Props {
   authStatus: AuthStatus | null;
