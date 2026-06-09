@@ -2,7 +2,6 @@ import fs from "node:fs";
 import type { AgentId } from "../shared/agents.js";
 import { buildRegistryIndex } from "../registry/build.js";
 import { listInstalled } from "./installed.js";
-import type { InstalledSkill } from "../shared/types.js";
 
 export interface DeleteUnregisteredResult {
   ok: boolean;
@@ -95,34 +94,6 @@ export function deleteUnregisteredSkill(
     removedDirs,
     removedSymlinks,
     errors,
-  };
-}
-
-/**
- * Build a preview of what `deleteUnregisteredSkill(name)` would do
- * without doing it. Used by the renderer's confirmation modal to
- * show the user exactly which paths will be removed.
- */
-export interface DeletePreview {
-  /** Real-directory installations that would be deleted (rm -rf). */
-  willRemoveDirs: InstalledSkill[];
-  /**
-   * Symlink installations that would be unlinked. Target paths are
-   * preserved so the modal can show "external target NOT touched".
-   */
-  willUnlinkSymlinks: InstalledSkill[];
-}
-
-/** @deprecated since v1.20.3 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle). */
-export function previewDeleteUnregistered(
-  registryRoot: string,
-  name: string,
-): DeletePreview {
-  const installed = listInstalled(registryRoot);
-  const mine = installed.filter((i) => i.name === name);
-  return {
-    willRemoveDirs: mine.filter((i) => i.kind === "real-directory"),
-    willUnlinkSymlinks: mine.filter((i) => i.kind !== "real-directory"),
   };
 }
 

@@ -1,16 +1,5 @@
-import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
-
-/** @deprecated since v1.20.3 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle). */
-export function getClaudeHome(): string {
-  return process.env["CLAUDE_HOME"] ?? path.join(os.homedir(), ".claude");
-}
-
-/** @deprecated since v1.20.3 — no callers anywhere in the repo; removal target: next minor (post-1.0 convention: one deprecation cycle). */
-export function getClaudeSkillsDir(): string {
-  return path.join(getClaudeHome(), "skills");
-}
 
 /**
  * Walks up from `start` looking for a directory that contains both `package.json`

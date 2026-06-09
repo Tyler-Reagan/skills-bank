@@ -12,8 +12,7 @@ import {
   type ManifestSkill,
   type RegistryManifest,
 } from "../manifest.js";
-import { importRegistryManifest } from "../import.js";
-import { computeManifestRemovals } from "../reconcile.js";
+import { importRegistryManifest, computeManifestRemovals } from "../import.js";
 import { readSkillSource, writeSkillSource } from "../../registry/source.js";
 import { hashSkillFolder, writeSyncedHash } from "../../registry/heal.js";
 import { buildRegistryIndex } from "../../registry/build.js";
