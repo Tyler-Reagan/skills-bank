@@ -156,11 +156,6 @@ export function SkillDetailDrawer({
   // entrance animation settles.
   const [overlayReady, setOverlayReady] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
-  const [editingTags, setEditingTags] = useState(false);
-  const [tagDraft, setTagDraft] = useState<string[]>(entry.tags ?? []);
-  const [tagInput, setTagInput] = useState("");
-  const [tagInputError, setTagInputError] = useState<string | null>(null);
-  const [savingTags, setSavingTags] = useState(false);
 
   useFocusReturn();
   useInitialFocus(drawerRef);
@@ -178,16 +173,11 @@ export function SkillDetailDrawer({
     [entry.name],
   );
 
-  // Reset drawer-local UI state when the selected entry changes
-  // identity (a different skill, or the same skill with a refreshed
-  // tag list). Cheap synchronous resets; runs independently of the
-  // SKILL.md fetch above.
+  // Reset drawer-local UI state when the selected skill changes.
+  // Cheap synchronous reset; runs independently of the SKILL.md fetch above.
   useEffect(() => {
     setDescExpanded(false);
-    setEditingTags(false);
-    setTagDraft(entry.tags ?? []);
-    setTagInput("");
-  }, [entry.name, entry.tags]);
+  }, [entry.name]);
 
   useEscapeToClose(onClose);
 
@@ -220,45 +210,6 @@ export function SkillDetailDrawer({
     !descExpanded && isLongDescription
       ? description.slice(0, DESCRIPTION_SOFT_CAP).trimEnd()
       : description;
-
-  const addTag = () => {
-    const t = tagInput.trim();
-    if (!t) return;
-    if (t.length > 64) {
-      setTagInputError(`tag is ${t.length} chars; 64 max`);
-      return;
-    }
-    if (tagDraft.includes(t)) {
-      setTagInputError(`"${t}" is already in the list`);
-      return;
-    }
-    setTagDraft([...tagDraft, t]);
-    setTagInput("");
-    setTagInputError(null);
-  };
-  const removeTag = (t: string) => {
-    setTagDraft(tagDraft.filter((x) => x !== t));
-  };
-  const cancelTagEdit = () => {
-    setEditingTags(false);
-    setTagDraft(entry.tags ?? []);
-    setTagInput("");
-    setTagInputError(null);
-  };
-  const saveTags = async () => {
-    setSavingTags(true);
-    try {
-      const r = await window.skillsBank.editTags(entry.name, tagDraft);
-      if (r.ok) {
-        setEditingTags(false);
-        await onChanged(r.message);
-      } else {
-        await onChanged(`tag save failed: ${r.message}`);
-      }
-    } finally {
-      setSavingTags(false);
-    }
-  };
 
   return (
     <div
@@ -346,95 +297,6 @@ export function SkillDetailDrawer({
                 </>
               ) : (
                 <p className="text-subtle italic">(no description)</p>
-              )}
-            </div>
-
-            <div className="drawer-section">
-              <div className="row-between mb-8">
-                <h3 className="mt-0 mb-0">Tags</h3>
-                {!editingTags ? (
-                  <button
-                    className="link-btn"
-                    onClick={() => setEditingTags(true)}
-                    aria-label="Edit tags"
-                  >
-                    Edit
-                  </button>
-                ) : (
-                  <div className="row-center-6">
-                    <button
-                      className="link-btn"
-                      onClick={cancelTagEdit}
-                      disabled={savingTags}
-                      aria-label="Cancel tag edit"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="link-btn text-accent"
-                      onClick={() => void saveTags()}
-                      disabled={savingTags}
-                      aria-label="Save tags"
-                    >
-                      {savingTags ? "Saving" : "Save"}
-                    </button>
-                  </div>
-                )}
-              </div>
-              {editingTags ? (
-                <div>
-                  <div className="skill-tags mb-8">
-                    {tagDraft.map((t) => (
-                      <span key={t} className="skill-tag editable">
-                        #{t}
-                        <button
-                          type="button"
-                          className="tag-remove"
-                          aria-label={`Remove tag ${t}`}
-                          title={`Remove tag ${t}`}
-                          onClick={() => removeTag(t)}
-                        >
-                          <Icon name="x" size="sm" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => {
-                      setTagInput(e.target.value);
-                      if (tagInputError) setTagInputError(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addTag();
-                      }
-                    }}
-                    placeholder="add a tag, press Enter"
-                    className={`tag-input ${tagInputError ? "invalid" : ""}`}
-                    aria-invalid={tagInputError ? true : undefined}
-                    aria-describedby={
-                      tagInputError ? "tag-input-error" : undefined
-                    }
-                  />
-                  {tagInputError && (
-                    <p id="tag-input-error" className="form-error" role="alert">
-                      {tagInputError}
-                    </p>
-                  )}
-                </div>
-              ) : entry.tags && entry.tags.length > 0 ? (
-                <div className="skill-tags">
-                  {entry.tags.map((t) => (
-                    <span key={t} className="skill-tag">
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-subtle italic text-12">(no tags)</p>
               )}
             </div>
 

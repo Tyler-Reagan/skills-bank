@@ -38,8 +38,6 @@ const api = {
   readSkillMd: (name: string) => ipcRenderer.invoke(IPC.readSkillMd, name),
   openInFinder: (absolutePath: string) =>
     ipcRenderer.invoke(IPC.openInFinder, absolutePath),
-  editTags: (name: string, tags: string[]) =>
-    ipcRenderer.invoke(IPC.editTags, name, tags),
   getConfig: () => ipcRenderer.invoke(IPC.getConfig),
   setRegistryRoot: () => ipcRenderer.invoke(IPC.setRegistryRoot),
   checkForUpdates: () => ipcRenderer.invoke(IPC.checkForUpdates),

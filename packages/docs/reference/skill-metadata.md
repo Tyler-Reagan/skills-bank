@@ -3,7 +3,7 @@
 A skill's metadata — the name, description, and tags shown in the Registry tab — lives in the **YAML frontmatter at the top of `SKILL.md`**. The app reads it automatically on refresh.
 
 > [!NOTE]
-> As of **v1.15.0**, SKILL.md frontmatter is the **sole** source of skill metadata. Earlier versions also read a sibling `meta.json` as a fallback ("shim"); that read path was removed. A `meta.json` may still appear inside a skill folder, but only as an app-**synthesized** artifact (generated from the frontmatter for agents that expect one) — you never author or edit it, and it is not read back as a source of truth.
+> As of **v1.15.0**, SKILL.md frontmatter is the **sole** source of skill metadata. Earlier versions also read a sibling `meta.json` as a fallback ("shim"), and for a time the app synthesized one for compatibility — both behaviors have since been removed. The app neither writes nor reads `meta.json`; frontmatter is authoritative. (A third-party skill may ship its own `meta.json`, but the app ignores it.)
 
 ## Example
 

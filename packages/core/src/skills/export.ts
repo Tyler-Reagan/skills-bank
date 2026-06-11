@@ -23,19 +23,19 @@ export interface ExportInfo {
   contents: string[];
 }
 
-const STANDALONE_ALLOWED = new Set(["SKILL.md", "meta.json"]);
+const STANDALONE_ALLOWED = new Set(["SKILL.md"]);
 
 /**
  * Inspect a registry skill folder and decide how it should be exported.
  * Standalone (raw SKILL.md) when the folder contains nothing other than
- * SKILL.md and (optionally) meta.json; otherwise bundled (zip).
+ * SKILL.md; otherwise bundled (zip).
  */
 export function getExportInfo(registryRoot: string, name: string): ExportInfo {
   const index = buildRegistryIndex(registryRoot);
   const entry = findEntry(index, name);
   if (!entry) {
     throw new Error(
-      `Skill "${name}" not found. Verify a folder exists at <root>/skills/<category>/${name} with a valid meta.json.`,
+      `Skill "${name}" not found. Verify a folder exists at <root>/skills/<category>/${name} with a valid SKILL.md.`,
     );
   }
   const skillDir = resolveEntryPath(registryRoot, entry);

@@ -2756,68 +2756,6 @@ ipcMain.handle(IPC.openInFinder, async (_e, absolutePath: string) => {
   await shell.openPath(absolutePath);
 });
 
-mutatingHandle(
-  IPC.editTags,
-  (
-    _e,
-    name: string,
-    tags: unknown,
-  ): {
-    ok: boolean;
-    message: string;
-    error?: import("@skills-bank/core").AppError;
-  } => {
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    if (!Array.isArray(tags)) {
-      return { ok: false, message: "tags must be an array" };
-    }
-    const cleaned: string[] = [];
-    for (const t of tags) {
-      if (typeof t !== "string") continue;
-      const trimmed = t.trim();
-      if (!trimmed) continue;
-      if (trimmed.length > 64) {
-        return {
-          ok: false,
-          message: `tag "${trimmed.slice(0, 24)}" exceeds 64 chars`,
-        };
-      }
-      if (cleaned.includes(trimmed)) continue;
-      cleaned.push(trimmed);
-    }
-    const index = buildRegistryIndex(registryRoot);
-    const entry = index.entries.find((x) => x.name === name);
-    if (!entry) {
-      return { ok: false, message: `skill "${name}" not in registry` };
-    }
-    const metaPath = path.join(registryRoot, entry.path, "meta.json");
-    if (!fs.existsSync(metaPath)) {
-      return { ok: false, message: `meta.json missing at ${entry.path}` };
-    }
-    let raw: Record<string, unknown>;
-    try {
-      raw = JSON.parse(fs.readFileSync(metaPath, "utf8"));
-    } catch (err) {
-      const error = fromCaught("edit-tags.meta-parse-failed", err);
-      return { ok: false, message: `meta.json: ${error.message}`, error };
-    }
-    if (cleaned.length === 0) delete raw["tags"];
-    else raw["tags"] = cleaned;
-    try {
-      fs.writeFileSync(metaPath, JSON.stringify(raw, null, 2) + "\n");
-    } catch (err) {
-      return (() => {
-        const error = fromCaught("ipc.unknown", err);
-        return { ok: false, message: error.message, error };
-      })();
-    }
-    return {
-      ok: true,
-      message: `Tags updated (${cleaned.length})`,
-    };
-  },
-);
-
 // ─── Auto-updates ───────────────────────────────────────────────────────────
 //
 // Auto-update is intentionally a no-op outside packaged builds: electron-updater
