@@ -10,7 +10,7 @@ import {
 import { getStateDir } from "../shared/paths.js";
 import { writeExternalRegistry } from "../registry/external.js";
 import { listInstalled } from "./installed.js";
-import { findSkillFolder, readSkillMeta } from "../registry/walk.js";
+import { findSkillFolder } from "../registry/walk.js";
 import { buildRegistryIndex } from "../registry/build.js";
 import type {
   FinalizeResult,
@@ -338,21 +338,6 @@ function adoptIntoRegistry(
       fs.rmSync(destDir, { recursive: true, force: true });
     }
     fs.renameSync(sourcePath, destDir);
-  }
-
-  // Synthesize meta.json if missing (skills installed via the CLI rarely
-  // ship one). Done after move so we write directly into the registry copy.
-  const metaPath = path.join(destDir, "meta.json");
-  if (!fs.existsSync(metaPath)) {
-    const meta = readSkillMeta(destDir) ?? {
-      name: entry.name,
-      description:
-        "(adopted via Register existing skills; description missing)",
-    };
-    fs.writeFileSync(
-      metaPath,
-      JSON.stringify({ ...meta, name: entry.name }, null, 2) + "\n",
-    );
   }
 
   // Sweep every known agent dir and reconcile its <name> entry with the

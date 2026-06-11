@@ -47,7 +47,7 @@ import {
 } from "./ModalRegistryContext.js";
 import { SettingsProvider, useSettings } from "./SettingsContext.js";
 import { RegistryProvider, useRegistry } from "./RegistryContext.js";
-import { LabelsProvider } from "./LabelsContext.js";
+import { LabelsProvider, useLabels } from "./LabelsContext.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 
 // Persistence keys still managed directly by App.tsx (tab + unregister hint).
@@ -130,8 +130,8 @@ function AppContent(): React.ReactElement {
     uniqueInstalledCount,
     refresh,
     rebuild,
-    mutateRegistry,
   } = useRegistry();
+  const { reload: reloadLabels } = useLabels();
 
   const [tab, setTab] = useState<TabId>(
     (readLS(LS_KEYS.tab, "browse") as TabId) ?? "browse",
@@ -512,27 +512,16 @@ function AppContent(): React.ReactElement {
     })();
   }, []);
 
-  // Quick tag editing from card affordances (X to remove, "+ tag" to
-  // add). Drawer's full edit flow stays available; this skips it for
-  // single-edit speed.
-  //
-  // Optimistic: paint the new tags into local state before the IPC
-  // round-trip + registry rebuild resolves. Background refresh picks
-  // up any source/publishState changes (e.g. auto-protect after
-  // editing a canonical skill) without blocking the user's next click.
+  // Quick tag editing from card affordances (✕ to remove, "+ tag" to
+  // add) writes the labels plane (labels.json) — the same store the
+  // drawer's Labels section edits. Card chips render from the effective
+  // labels map, so reloading the labels context repaints them.
   const saveCardTags = useCallback(
     async (name: string, next: string[]) => {
-      mutateRegistry((prev) =>
-        prev.map((e) => (e.name === name ? { ...e, tags: next } : e)),
-      );
-      const r = await window.skillsBank.editTags(name, next);
-      flash(r.message);
-      // Refresh in the background either way — on success to pick up
-      // source/publishState changes, on failure to roll back the
-      // optimistic paint.
-      void refresh();
+      await window.skillsBank.updateLabel(name, { tags: next });
+      await reloadLabels();
     },
-    [flash, refresh, mutateRegistry],
+    [reloadLabels],
   );
 
   const sync = useCallback(async () => {

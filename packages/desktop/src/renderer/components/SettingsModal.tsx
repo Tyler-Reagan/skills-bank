@@ -199,8 +199,14 @@ export function SettingsModal({
                   }))
                 }
               />
-              <span>Move files into Skills Bank on Register</span>
+              <span>Move skill files into Skills Bank when registering</span>
             </label>
+            <span className="prefs-row-control">
+              <InfoTooltip
+                label="About moving files on register"
+                text="On (default): registering copies a skill's files into your registry, so it's portable and travels via sync. Off: the registry tracks the skill where it already lives — for skills you can't or shouldn't move (e.g. a work repo). Folders like that can be scanned via Custom directories on the Installed tab."
+              />
+            </span>
           </div>
           <div className="prefs-row">
             <label

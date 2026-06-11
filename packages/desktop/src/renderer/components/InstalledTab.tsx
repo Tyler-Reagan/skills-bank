@@ -19,9 +19,10 @@ const INSTALLED_TOOLTIP =
   "in the registry or installed elsewhere.";
 
 const REGISTER_TOOLTIP =
-  "Moves files into your registry. The skill becomes cross-agent linkable " +
-  "and is preserved through Refresh via the diff-before-apply flow. If your " +
-  "registry mirrors a GitHub repo, commit and push to persist across machines.";
+  "Registering lets the app manage the skill — cross-agent linking, labels, " +
+  "and sync. By default it moves the files into your registry (portable; " +
+  'travels via sync). Turn off "Move skill files" in Settings (or use the ' +
+  "drawer) to instead track a skill where it already lives, e.g. a work repo.";
 
 export interface InstalledGroup {
   name: string;
@@ -570,7 +571,7 @@ function CustomSkillsDirs({
         <span className="custom-skills-dirs-title">
           <strong>Custom directories</strong>
           <InfoTooltip
-            text="Scan any folder of skill subfolders alongside the known agent dirs."
+            text="Scan any folder of skill subfolders alongside the known agent dirs — including skills that must stay where they are, like a work repo you can't move into the bank."
             label="What are custom directories?"
           />
         </span>

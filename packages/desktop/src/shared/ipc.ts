@@ -64,7 +64,6 @@ export const IPC = {
   exportSkill: "skills:export",
   readSkillMd: "skills:readSkillMd",
   openInFinder: "skills:openInFinder",
-  editTags: "skills:editTags",
   getConfig: "skills:getConfig",
   setRegistryRoot: "skills:setRegistryRoot",
   checkForUpdates: "app:checkForUpdates",
@@ -636,10 +635,6 @@ interface SkillsBankAPI {
   ): Promise<{ ok: boolean; message: string; result?: ExportResult }>;
   readSkillMd(name: string): Promise<string | null>;
   openInFinder(absolutePath: string): Promise<void>;
-  editTags(
-    name: string,
-    tags: string[],
-  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   getConfig(): Promise<{
     registryRoot: string | null;
     configValid: boolean;
