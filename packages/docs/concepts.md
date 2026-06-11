@@ -86,7 +86,7 @@ Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **
 
 ## Skill
 
-A folder containing a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist. (As of v1.15.0 the frontmatter is the sole metadata source; a `meta.json` may still appear as an app-synthesized artifact for agents that read one — see [Skill metadata](/reference/meta-schema).)
+A folder containing a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist. (As of v1.15.0 the frontmatter is the sole metadata source; a `meta.json` may still appear as an app-synthesized artifact for agents that read one — see [Skill metadata](/reference/skill-metadata).)
 
 ## Agent directory
 

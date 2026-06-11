@@ -6,7 +6,7 @@ import addFormats from "ajv-formats";
 import { readHiddenCanonNames, readUpstreamCanonNames } from "./canon.js";
 import { readExternalRegistry } from "./external.js";
 import { hashSkillFolder, readSyncedHash } from "./heal.js";
-import { parseSkillFrontmatter } from "./meta.js";
+import { parseSkillFrontmatter } from "./frontmatter.js";
 import { readSkillMeta, walkSkills } from "./walk.js";
 import { readSkillSource } from "./source.js";
 import { readRuntimeState } from "./heal.js";
@@ -61,7 +61,11 @@ let cachedValidator: SchemaValidator | null = null;
 
 function loadValidator(registryRoot: string): SchemaValidator | null {
   if (cachedValidator) return cachedValidator;
-  const schemaPath = path.join(registryRoot, "docs", "meta-schema.json");
+  const schemaPath = path.join(
+    registryRoot,
+    "docs",
+    "skill-frontmatter-schema.json",
+  );
   if (!fs.existsSync(schemaPath)) return null;
   try {
     const ajv = new Ajv({ allErrors: true, strict: false });

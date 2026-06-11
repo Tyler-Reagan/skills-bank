@@ -32,7 +32,7 @@ export * from "./skills/delete.js";
 export * from "./registry/external.js";
 export * from "./registry/heal.js";
 export * from "./manifest/disk-import.js";
-export * from "./registry/meta.js";
+export * from "./registry/frontmatter.js";
 export * from "./shared/skill-state.js";
 export * from "./skills/classify.js";
 export * from "./skills/unregister.js";

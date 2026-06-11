@@ -69,7 +69,7 @@ colocated (`*.test.ts`); entry criteria live in ADR-0001.
 - **Manifest schema is v5**; v2–v4 coerce up through the single
   `coerceManifestToCurrent` chokepoint in `manifest/manifest.ts`; v1 unreadable.
 - **Frontmatter parsing** has exactly one parser:
-  `registry/meta.ts#parseSkillFrontmatter`.
+  `registry/frontmatter.ts#parseSkillFrontmatter`.
 
 ## `shared/` — foundation (imported by every other domain)
 
@@ -108,7 +108,7 @@ colocated (`*.test.ts`); entry criteria live in ADR-0001.
 | `external.ts`  | 77  | Persistence for non-adopted (symlink-mode) entries in `.skills-bank/external.json`                                                 | build, heal, skills/register, skills/unregister | —     |
 | `heal.ts`      | 303 | Content hashing + the hash & runtime sidecars + missing-entry heal actions                                                         | build, manifest, sync, skill-lock, probe        | ✓     |
 | `labels.ts`    | 584 | Category/tag taxonomy + rules, `deriveLabels` (on-demand since v1.19), pure `applySkillLabel`/`clearSkillLabel`, `effectiveLabels` | manifest / renderer via `/labels`, desktop main | ✓     |
-| `meta.ts`      | 263 | The frontmatter parser (`parseSkillFrontmatter`) + `validateSkillMeta` vs the inlined `SKILL_META_SCHEMA`                          | build, walk / scripts (`bank update`)           | ✓     |
+| `frontmatter.ts` | 271 | The frontmatter parser (`parseSkillFrontmatter`) + `validateSkillMeta` vs the inlined `SKILL_FRONTMATTER_SCHEMA`                | build, walk / scripts (`bank update`)           | ✓     |
 | `source.ts`    | 182 | `.skills-bank.json` sidecar: source axis + origin pointer read/write, legacy tolerant-read window                                  | build, manifest, sync, skill-lock               | ✓     |
 | `sync.ts`      | 575 | Canonical tarball pull, decomposed: `classifySyncDisposition`/`mountSkillFromSource`/`detectSyncOrphans` + `syncTarballToRegistry` | disk-import / desktop main                      | ✓     |
 

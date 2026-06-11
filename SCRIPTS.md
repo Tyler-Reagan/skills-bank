@@ -47,7 +47,7 @@ runs it on the user's behalf (verify/maintenance) · **M** = maintainer-internal
 | -------------- | ---------------------------------- | --------------------------------------------------------------------- |
 | `typecheck`    | `-r --if-present run typecheck`    | Recursive `tsc --noEmit`. CI runs this.                               |
 | `test`         | `-r --if-present run test`         | Recursive vitest (only `core` defines a suite today). CI runs this.   |
-| `validate`     | `tsx scripts/validate-all.ts`      | Validate `skills/*/SKILL.md` frontmatter against the meta-schema. CI. |
+| `validate`     | `tsx scripts/validate-all.ts`      | Validate `skills/*/SKILL.md` frontmatter against the frontmatter schema. CI. |
 | `build:index`  | `tsx scripts/build-index.ts`       | Regenerate root `index.json` from the skills tree. CI.                |
 | `docs:check`   | `node scripts/check-doc-links.mjs` | Walk markdown, fail on broken links/images/anchors.                   |
 | `format`       | `prettier --write … --cache`       | Format all source. (Always the final step in a change.)               |

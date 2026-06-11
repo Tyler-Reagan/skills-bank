@@ -1,14 +1,14 @@
-// SKILL.md frontmatter validation against the SkillMeta schema.
+// SKILL.md frontmatter validation against the SkillFrontmatter schema.
 // Shared between the maintainer script paths (`bank vendor`,
 // `bank update`) and the in-app Origin Update path
 // (`applyOriginUpdate`) so all three converge on one contract for
 // "post-mirror invariants." (The meta.json synthesis that used to
 // live here was removed in v1.20 along with meta.json itself.)
 //
-// Validation runs the same Ajv schema check `docs/meta-schema.json`
-// documents — inlined here as SKILL_META_SCHEMA so packaged-app
+// Validation runs the same Ajv schema check `docs/skill-frontmatter-schema.json`
+// documents — inlined here as SKILL_FRONTMATTER_SCHEMA so packaged-app
 // instances (where `docs/` is outside the registry tree) get the
-// same check. A test in skill-meta.test.ts ensures the inlined
+// same check. A test in frontmatter.test.ts ensures the inlined
 // schema matches the docs/-canonical file byte-for-byte
 // structurally; drift between the two surfaces in CI rather than
 // at runtime.
@@ -19,21 +19,22 @@ import Ajv from "ajv";
 import addFormats from "ajv-formats";
 
 /**
- * Canonical SkillMeta schema, kept in sync with `docs/meta-schema.json`.
+ * Canonical SkillFrontmatter schema, kept in sync with
+ * `docs/skill-frontmatter-schema.json`.
  * Loaded once and cached for the process lifetime.
  *
  * Two copies of the schema exist by design:
  *   - This TS constant — used by the runtime (`applyOriginUpdate`,
  *     `validate-all.ts`, `build.ts`) so packaged-app instances don't
  *     depend on a docs/ file existing inside the user's registry.
- *   - `docs/meta-schema.json` — the canonical published version that
- *     external consumers can fetch via the `$id` URL.
- * The skill-meta.test.ts suite verifies parity.
+ *   - `docs/skill-frontmatter-schema.json` — the canonical published
+ *     version that external consumers can fetch via the `$id` URL.
+ * The frontmatter.test.ts suite verifies parity.
  */
-export const SKILL_META_SCHEMA = {
+export const SKILL_FRONTMATTER_SCHEMA = {
   $schema: "http://json-schema.org/draft-07/schema#",
-  $id: "https://github.com/Tyler-Reagan/skills-bank/docs/meta-schema.json",
-  title: "SkillMeta",
+  $id: "https://github.com/Tyler-Reagan/skills-bank/docs/skill-frontmatter-schema.json",
+  title: "SkillFrontmatter",
   type: "object",
   required: ["name", "description"],
   additionalProperties: true,
@@ -73,7 +74,7 @@ function compiledValidator(): SchemaValidator {
   const ajv = new Ajv({ allErrors: true, strict: false });
   addFormats(ajv);
   cachedValidator = ajv.compile(
-    SKILL_META_SCHEMA,
+    SKILL_FRONTMATTER_SCHEMA,
   ) as unknown as SchemaValidator;
   return cachedValidator;
 }

@@ -3,6 +3,19 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+Docs-readability pass ahead of the `packages/docs` refresh: pruned the orphaned internal `docs/` tree and retired the last `meta.json`-era naming on the frontmatter schema.
+
+### Changed
+
+- **`meta-schema` → `skill-frontmatter` naming.** The JSON Schema that validates SKILL.md frontmatter read as "schema _for_ `meta.json`" — but `meta.json` was removed in v1.20. Renamed `docs/meta-schema.json` → `docs/skill-frontmatter-schema.json`, the inlined `SKILL_META_SCHEMA` constant → `SKILL_FRONTMATTER_SCHEMA` (schema `title` `SkillMeta` → `SkillFrontmatter`, a direct rename with no compat alias — the constant had no external callers), the module `registry/meta.ts` → `registry/frontmatter.ts`, and the docs route `/reference/meta-schema` → `/reference/skill-metadata` (page title "Skill metadata" unchanged). The data-layer symbols whose "metadata" meaning is still accurate — `SkillMeta`, `readSkillMeta`, `validateSkillMeta` — were left as-is.
+
+### Removed
+
+- **Orphaned `docs/images/` tree.** Ten unreferenced screenshots (superseded by the canonical `packages/docs/public/images/` set) plus `registry.png`, which README now sources from the `packages/docs` copy.
+- **`docs/plans/manage-labels-modal.md`** — the feature shipped (`ManageLabelsModal.tsx` + `LabelsContext.tsx`); `docs/plans/` was retired in v1.6 and the content survives in git history.
+
 ## v1.20.5
 
 Bug-fix release: third-party installs no longer masquerade as curated, and the test suite (red on `main` since the v1.20 test-subdir reorg) is green again.
