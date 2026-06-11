@@ -293,7 +293,7 @@ export function agentsForSkill(
  *   4. CURATED     — source: curated (part of the committed curated
  *                    set). Sync owns this; destructive verbs are gated.
  *
- * The EDITED drift badge was removed in v1.20 (ADR-0010) along with
+ * The EDITED drift badge was removed in v1.20 along with
  * the heal arms it pointed at; user/vendored skills render without a
  * provenance chip.
  */

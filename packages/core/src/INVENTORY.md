@@ -94,7 +94,6 @@ colocated (`*.test.ts`); entry criteria live in ADR-0001.
 | `repos.ts`  | 67  | Repo-metadata ops: `fetchUserRepos` (link picker), `fetchRepoDefaultBranch` (split out of `http`)               | — / desktop main                               | —     |
 | `origin.ts` | 525 | Origin primitives: tree probe, `installSkillFiles` mirror (idempotent), `applyOriginUpdate`                     | manifest/import, probe / desktop main, scripts | ✓     |
 | `probe.ts`  | 408 | Stateful origin-probe runner: scheduled upstream fetches, per-repo cache + TTL, update flagging                 | — / desktop main                               | ✓     |
-| `push.ts`   | 451 | Push a skill folder to the linked repo as a PR — six-step atomic commit (ADR-0007); distinct from manifest push | — / desktop main                               | ✓     |
 | `url.ts`    | 135 | GitHub URL / `npx skills add` command parser for the install callout                                            | — / desktop main                               | ✓     |
 
 ## `registry/` — the local bank: layout, index, curation, sidecars, sync

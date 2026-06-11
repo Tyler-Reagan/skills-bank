@@ -51,7 +51,6 @@ import {
   type RegistryManifest,
   findSkillFolder,
   readSkillMeta,
-  pushSkillFolder,
   hashSkillFolder,
   healFalselyCuratedMarkers,
   readSkillSource,

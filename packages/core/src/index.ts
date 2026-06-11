@@ -21,7 +21,6 @@ export * from "./manifest/diff.js";
 export * from "./manifest/merge.js";
 export * from "./github/origin.js";
 export * from "./github/probe.js";
-export * from "./github/push.js";
 export * from "./skills/diagnostics.js";
 export * from "./shared/skill-lock.js";
 export * from "./registry/sync.js";

@@ -122,10 +122,7 @@ export function buildRegistryIndex(
       );
       if (built) {
         built.bucket = ref.bucket;
-        // v1.5 (ADR-0008): publish-state-derived canon is layered
-        // at the IPC level. Here we set canon only from the
-        // upstream-canon snapshot; main.ts unions the publish-state
-        // "pushed" set on top via the cached tree-probe path.
+        // Canon is set from the upstream-canon snapshot.
         built.canon = upstreamCanon.has(ref.name);
         // Hide flag is only meaningful for canon entries (non-canon
         // skills are just unregisterable). Stale entries in the
