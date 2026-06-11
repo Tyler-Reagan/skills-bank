@@ -2,9 +2,6 @@
 
 The vocabulary the app uses, defined in one place. Skim this once and the rest of the docs (and the UI itself) become a lot more obvious.
 
-> [!NOTE]
-> This document is the user-facing concept guide. The engineering glossary — including precise "aliases to avoid" lists, the canonical operation verbs, and flagged ambiguities the codebase has worked through — lives in [`UBIQUITOUS_LANGUAGE.md`](https://github.com/Tyler-Reagan/skills-bank/blob/main/UBIQUITOUS_LANGUAGE.md) on GitHub. When the two documents disagree, UL is canonical.
-
 ## Taxonomy
 
 Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.

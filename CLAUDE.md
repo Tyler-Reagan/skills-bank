@@ -8,7 +8,7 @@ Monorepo (pnpm workspaces):
 
 - **`packages/core`** — pure TypeScript registry/install logic. No Electron, no DOM dependencies.
 - **`packages/desktop`** — Electron app (main + renderer). The primary product.
-- **`skills/`** — bundled skill content. Houses the **Curated set** the app ships under `skills/vendored/<name>/`. The post-Phase-1 (v1.1) Curated set is intentionally minimal — just `find-skills` — see the [CHANGELOG](./CHANGELOG.md) v1.2.0 entry. The bucket layout (`skills/{personal,vendored}/<name>/`) is universal across registries (see `UBIQUITOUS_LANGUAGE.md`), but the curation layer uses only `vendored/` by composition: the maintainer's authored skills live in their own origin repo, `Tyler-Reagan/skills` (extracted from the former `skills/personal/` via `git subtree split` in v1.1). The maintainer's end-user flow links `Tyler-Reagan/skills` as their registry from Account → Sign in with GitHub.
+- **`skills/`** — bundled skill content. Houses the **Curated set** the app ships under `skills/vendored/<name>/`. The post-Phase-1 (v1.1) Curated set is intentionally minimal — just `find-skills` — see the [CHANGELOG](./CHANGELOG.md) v1.2.0 entry. The bucket layout (`skills/{personal,vendored}/<name>/`) is universal across registries, but the curation layer uses only `vendored/` by composition: the maintainer's authored skills live in their own origin repo, `Tyler-Reagan/skills` (extracted from the former `skills/personal/` via `git subtree split` in v1.1). The maintainer's end-user flow links `Tyler-Reagan/skills` as their registry from Account → Sign in with GitHub.
 - **`scripts/`** — maintenance + agent operations (validation, index build, reset, etc.).
 
 The desktop app is the product.
