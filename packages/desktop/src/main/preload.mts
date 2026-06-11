@@ -80,10 +80,6 @@ const api = {
   reposRefreshCurrent: () => ipcRenderer.invoke(IPC.reposRefreshCurrent),
   openExternal: (url: string) => ipcRenderer.invoke(IPC.openExternal, url),
   openSelfHostDocs: () => ipcRenderer.invoke(IPC.openSelfHostDocs),
-  importRegistry: () => ipcRenderer.invoke(IPC.importRegistry),
-  importRegistryMerge: () => ipcRenderer.invoke(IPC.importRegistryMerge),
-  importRegistryMergeApply: (sourcePath: string, decisions: unknown) =>
-    ipcRenderer.invoke(IPC.importRegistryMergeApply, sourcePath, decisions),
   exportManifest: () => ipcRenderer.invoke(IPC.exportManifest),
   importManifest: () => ipcRenderer.invoke(IPC.importManifest),
   importManifestCancel: () => ipcRenderer.invoke(IPC.importManifestCancel),

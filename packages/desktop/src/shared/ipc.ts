@@ -20,7 +20,6 @@ import type {
   ManifestImportProgressEvent,
   ManifestSkill,
   PendingManifestConflicts,
-  MergeImportReport,
   RateLimitInfo,
   RegistrationAction,
   RegistrationResult,
@@ -92,9 +91,6 @@ export const IPC = {
   reposRefreshCurrent: "repos:refreshCurrent",
   openExternal: "system:openExternal",
   openSelfHostDocs: "system:openSelfHostDocs",
-  importRegistry: "skills:importRegistry",
-  importRegistryMerge: "skills:importRegistryMerge",
-  importRegistryMergeApply: "skills:importRegistryMergeApply",
   exportManifest: "bank:exportManifest",
   importManifest: "bank:importManifest",
   importManifestCancel: "bank:importManifestCancel",
@@ -818,37 +814,6 @@ interface SkillsBankAPI {
       }
     | { ok: false; reason: "no-skill-md"; message: string }
   >;
-  importRegistry(): Promise<{
-    ok: boolean;
-    message: string;
-    registryRoot: string | null;
-    skillCount?: number;
-  }>;
-  /**
-   * M8: open a folder picker, scan its skills/ dir, attempt to merge
-   * into the active registry. Returns the merge report; if it
-   * contains conflicts, the renderer routes them through
-   * SyncConflictModal and calls importRegistryMergeApply with
-   * the user's decisions.
-   */
-  importRegistryMerge(): Promise<
-    | { ok: false; message: string }
-    | {
-        ok: true;
-        message: string;
-        sourcePath: string;
-        report: MergeImportReport;
-      }
-  >;
-  /**
-   * M8: resolve a prior import-merge's queued conflicts with the
-   * user's decisions. The active registry is the destination; the
-   * `sourcePath` is the folder picked in the original merge call.
-   */
-  importRegistryMergeApply(
-    sourcePath: string,
-    decisions: SyncDecisions,
-  ): Promise<{ ok: boolean; message: string; report: MergeImportReport }>;
   repairBrokenLinks(name: string): Promise<BrokenLinkRepairReport>;
   removeBrokenLinks(
     name: string,
