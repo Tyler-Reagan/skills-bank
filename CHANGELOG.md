@@ -3,18 +3,30 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## v1.21.0
 
-Docs-readability pass ahead of the `packages/docs` refresh: pruned the orphaned internal `docs/` tree and retired the last `meta.json`-era naming on the frontmatter schema.
-
-### Changed
-
-- **`meta-schema` → `skill-frontmatter` naming.** The JSON Schema that validates SKILL.md frontmatter read as "schema _for_ `meta.json`" — but `meta.json` was removed in v1.20. Renamed `docs/meta-schema.json` → `docs/skill-frontmatter-schema.json`, the inlined `SKILL_META_SCHEMA` constant → `SKILL_FRONTMATTER_SCHEMA` (schema `title` `SkillMeta` → `SkillFrontmatter`, a direct rename with no compat alias — the constant had no external callers), the module `registry/meta.ts` → `registry/frontmatter.ts`, and the docs route `/reference/meta-schema` → `/reference/skill-metadata` (page title "Skill metadata" unchanged). The data-layer symbols whose "metadata" meaning is still accurate — `SkillMeta`, `readSkillMeta`, `validateSkillMeta` — were left as-is.
+Consolidation + cleanup release. The post-reorg core/desktop consolidation lands; `meta.json` is finally eliminated end-to-end; several orphaned code paths and stale decision records are culled; and the documentation surface — internal docs and the published site — is pruned and trued-up against the live app.
 
 ### Removed
 
-- **Orphaned `docs/images/` tree.** Ten unreferenced screenshots (superseded by the canonical `packages/docs/public/images/` set) plus `registry.png`, which README now sources from the `packages/docs` copy.
-- **`docs/plans/manage-labels-modal.md`** — the feature shipped (`ManageLabelsModal.tsx` + `LabelsContext.tsx`); `docs/plans/` was retired in v1.6 and the content survives in git history.
+- **`meta.json`, for real.** The v1.20 cull missed two stranded paths that kept writing it: the adopt-path synthesis in `adoptIntoRegistry`, and the `editTags` IPC. Both were inert (the index reads SKILL.md frontmatter; Registry cards already render labels-plane tags), yet both were UI-reachable. Removed end-to-end — core write, IPC channel/handler/preload, and the `export.ts` standalone allowance. The app now neither writes nor reads `meta.json`.
+- **Orphaned Content (disk) registry import/merge.** `importRegistry` / `importRegistryMerge` / `importRegistryMergeApply` (IPC + `main.ts` handlers), `manifest/disk-import.ts` (`mergeImportRegistry` + `MergeImportReport`, hard-cut from the SDK surface), and the renderer `mergeConflict` modal + dead `AccountModal` props — all live in code but with no UI entry point. The live `bank:*Manifest*` transport and the shared `SyncConflictModal` were surgically preserved.
+- **Orphaned `push.ts`** (`pushSkillFolder`) — imported but never called; no IPC, no UI. Leftover from the v1.20 publish cull.
+- **Dead decision records** — ADR-0006 (fork), ADR-0007 (push-skill-folder), ADR-0008 (publish), and ADR-0010 (their removal tombstone). The features are gone; the removals live in this changelog.
+- **`UBIQUITOUS_LANGUAGE.md`** retired — roughly a third documented the removed Publish/Fork/Safekeeping surface.
+- **Eight zero-caller SDK exports** (deprecated in v1.20.3; one-minor window elapsed): `readSkillMdFrontmatter`, `previewDeleteUnregistered`, `groupDiagnosticsByCategory`, `getClaudeHome`, `getClaudeSkillsDir`, `loadIndex`, `readSkillRecord`, `writeSkillRecord`. Glue modules collapsed: `registry/record.ts` deleted, `hide.ts` → `canon.ts`, `manifest/reconcile.ts` → `import.ts`, `skill-state-server.ts` → `skills/classify.ts`.
+- **Orphaned `docs/` cruft** — the unreferenced `docs/images/` tree (superseded by `packages/docs/public/images/`) and the shipped `docs/plans/manage-labels-modal.md`.
+
+### Changed
+
+- **Tag editing moved to the labels plane.** The card and drawer tag affordances now write `labels.json` via `updateLabel` instead of the inert `meta.json` path; the drawer's redundant standalone "Tags" section was removed (`DrawerLabelSection` owns label-tag editing).
+- **`meta-schema` → `skill-frontmatter` naming.** `docs/meta-schema.json` → `docs/skill-frontmatter-schema.json`; the inlined `SKILL_META_SCHEMA` → `SKILL_FRONTMATTER_SCHEMA` (**direct rename, no compat alias** — no external callers); module `registry/meta.ts` → `registry/frontmatter.ts`; docs route `/reference/meta-schema` → `/reference/skill-metadata`. The accurate "metadata" data symbols (`SkillMeta`, `readSkillMeta`, `validateSkillMeta`) were left as-is.
+- **Desktop consolidation** — dead-CSS sweep and renderer inventory truth-up.
+- **Published docs site trued-up to the live app.** Code-grounded accuracy pass: removed stale CLI / publish / canon-drift references and the wrong tab name; fixed verbatim label mismatches (`Default install targets`, `Manage your registry`, `Delete from this machine`, `Unregister sends files to`, `Unregistered`, the adopt-setting label/group); trimmed the now-removed Content transport to Manifest-only. Internal `CLAUDE.md` cruft (the v0.11.3-era maintainer-heal section) trimmed.
+
+### Notes
+
+- **Heal** is unchanged: only the **drift-resolution** arm was removed back in v1.20; the bad-state heals (install collisions, broken-symlink repair, missing-entry "Forget") remain live. Restoring drift resolution with proper source-axis semantics is tracked separately.
 
 ## v1.20.5
 
