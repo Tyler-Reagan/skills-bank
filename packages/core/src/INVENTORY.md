@@ -87,29 +87,29 @@ colocated (`*.test.ts`); entry criteria live in ADR-0001.
 
 ## `github/` — GitHub transport + upstream attribution
 
-| File        | LOC | Purpose                                                                                                         | Consumed by                                    | Tests |
-| ----------- | --- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ----- |
-| `http.ts`   | 105 | Shared GitHub REST client + rate-limit normalization (`ghFetch`, `GH_API`, `RateLimitInfo`)                     | files, repos, origin, probe, push, manifest    | —     |
-| `files.ts`  | 214 | GitHub Contents API primitives: read / write / write-as-branch                                                  | manifest / desktop (manifest repo transport)   | —     |
-| `repos.ts`  | 67  | Repo-metadata ops: `fetchUserRepos` (link picker), `fetchRepoDefaultBranch` (split out of `http`)               | — / desktop main                               | —     |
-| `origin.ts` | 525 | Origin primitives: tree probe, `installSkillFiles` mirror (idempotent), `applyOriginUpdate`                     | manifest/import, probe / desktop main, scripts | ✓     |
-| `probe.ts`  | 408 | Stateful origin-probe runner: scheduled upstream fetches, per-repo cache + TTL, update flagging                 | — / desktop main                               | ✓     |
-| `url.ts`    | 135 | GitHub URL / `npx skills add` command parser for the install callout                                            | — / desktop main                               | ✓     |
+| File        | LOC | Purpose                                                                                           | Consumed by                                    | Tests |
+| ----------- | --- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ----- |
+| `http.ts`   | 105 | Shared GitHub REST client + rate-limit normalization (`ghFetch`, `GH_API`, `RateLimitInfo`)       | files, repos, origin, probe, push, manifest    | —     |
+| `files.ts`  | 214 | GitHub Contents API primitives: read / write / write-as-branch                                    | manifest / desktop (manifest repo transport)   | —     |
+| `repos.ts`  | 67  | Repo-metadata ops: `fetchUserRepos` (link picker), `fetchRepoDefaultBranch` (split out of `http`) | — / desktop main                               | —     |
+| `origin.ts` | 525 | Origin primitives: tree probe, `installSkillFiles` mirror (idempotent), `applyOriginUpdate`       | manifest/import, probe / desktop main, scripts | ✓     |
+| `probe.ts`  | 408 | Stateful origin-probe runner: scheduled upstream fetches, per-repo cache + TTL, update flagging   | — / desktop main                               | ✓     |
+| `url.ts`    | 135 | GitHub URL / `npx skills add` command parser for the install callout                              | — / desktop main                               | ✓     |
 
 ## `registry/` — the local bank: layout, index, curation, sidecars, sync
 
-| File           | LOC | Purpose                                                                                                                            | Consumed by                                     | Tests |
-| -------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ----- |
-| `walk.ts`      | 203 | RegistryIndex find helpers, `walkSkills`, entry-path resolution, `readSkillMeta`                                                   | build, discovery, manifest, skills/\_, sync     | —     |
-| `build.ts`     | 464 | Walk `skills/<bucket>/<name>/SKILL.md` → RegistryIndex (lenient/`strict`); folds sidecars + external + canon + hidden              | ~10 modules / desktop main, scripts             | ✓     |
-| `canon.ts`     | 161 | Canon (upstream-owned) name set: machine-written cache with TTL read; + the user-mutable hidden-canon set (Dismiss)                | build, sync, disk-import, manifest/import       | ✓     |
-| `discovery.ts` | 174 | File-convention skill discovery in an arbitrary tree; collision + nested-skill reporting                                           | sync / —                                        | ✓     |
-| `external.ts`  | 77  | Persistence for non-adopted (symlink-mode) entries in `.skills-bank/external.json`                                                 | build, heal, skills/register, skills/unregister | —     |
-| `heal.ts`      | 303 | Content hashing + the hash & runtime sidecars + missing-entry heal actions                                                         | build, manifest, sync, skill-lock, probe        | ✓     |
-| `labels.ts`    | 584 | Category/tag taxonomy + rules, `deriveLabels` (on-demand since v1.19), pure `applySkillLabel`/`clearSkillLabel`, `effectiveLabels` | manifest / renderer via `/labels`, desktop main | ✓     |
-| `frontmatter.ts` | 271 | The frontmatter parser (`parseSkillFrontmatter`) + `validateSkillMeta` vs the inlined `SKILL_FRONTMATTER_SCHEMA`                | build, walk / scripts (`bank update`)           | ✓     |
-| `source.ts`    | 182 | `.skills-bank.json` sidecar: source axis + origin pointer read/write, legacy tolerant-read window                                  | build, manifest, sync, skill-lock               | ✓     |
-| `sync.ts`      | 575 | Canonical tarball pull, decomposed: `classifySyncDisposition`/`mountSkillFromSource`/`detectSyncOrphans` + `syncTarballToRegistry` | disk-import / desktop main                      | ✓     |
+| File             | LOC | Purpose                                                                                                                            | Consumed by                                     | Tests |
+| ---------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ----- |
+| `walk.ts`        | 203 | RegistryIndex find helpers, `walkSkills`, entry-path resolution, `readSkillMeta`                                                   | build, discovery, manifest, skills/\_, sync     | —     |
+| `build.ts`       | 464 | Walk `skills/<bucket>/<name>/SKILL.md` → RegistryIndex (lenient/`strict`); folds sidecars + external + canon + hidden              | ~10 modules / desktop main, scripts             | ✓     |
+| `canon.ts`       | 161 | Canon (upstream-owned) name set: machine-written cache with TTL read; + the user-mutable hidden-canon set (Dismiss)                | build, sync, disk-import, manifest/import       | ✓     |
+| `discovery.ts`   | 174 | File-convention skill discovery in an arbitrary tree; collision + nested-skill reporting                                           | sync / —                                        | ✓     |
+| `external.ts`    | 77  | Persistence for non-adopted (symlink-mode) entries in `.skills-bank/external.json`                                                 | build, heal, skills/register, skills/unregister | —     |
+| `heal.ts`        | 303 | Content hashing + the hash & runtime sidecars + missing-entry heal actions                                                         | build, manifest, sync, skill-lock, probe        | ✓     |
+| `labels.ts`      | 584 | Category/tag taxonomy + rules, `deriveLabels` (on-demand since v1.19), pure `applySkillLabel`/`clearSkillLabel`, `effectiveLabels` | manifest / renderer via `/labels`, desktop main | ✓     |
+| `frontmatter.ts` | 271 | The frontmatter parser (`parseSkillFrontmatter`) + `validateSkillMeta` vs the inlined `SKILL_FRONTMATTER_SCHEMA`                   | build, walk / scripts (`bank update`)           | ✓     |
+| `source.ts`      | 182 | `.skills-bank.json` sidecar: source axis + origin pointer read/write, legacy tolerant-read window                                  | build, manifest, sync, skill-lock               | ✓     |
+| `sync.ts`        | 575 | Canonical tarball pull, decomposed: `classifySyncDisposition`/`mountSkillFromSource`/`detectSyncOrphans` + `syncTarballToRegistry` | disk-import / desktop main                      | ✓     |
 
 ## `skills/` — operations on individual skills (lifecycle)
 
