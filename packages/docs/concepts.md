@@ -53,14 +53,12 @@ flowchart LR
     Registered -->|"Hide (canon only)"| Hidden
     Hidden -->|"Unhide"| Registered
 
-    Registered -->|"local edit to canon files"| CanonDrift
-    CanonDrift -->|"Accept local / Take canonical"| Registered
     Registered -->|"registry folder deleted"| FolderMissing
     FolderMissing -->|"Forget entry"| Done
     Registered -->|"external path deleted"| TargetMissing
     TargetMissing -->|"Forget entry"| Done
 
-    class CanonDrift,FolderMissing,TargetMissing heal
+    class FolderMissing,TargetMissing heal
 
     linkStyle default stroke:#94a3b8,stroke-width:1.5px,fill:none
 ```
@@ -128,7 +126,7 @@ Provenance is a three-value axis on each registry skill, stored as `source` in a
 
 Every skill carries two label axes, both user-assigned and editable per-skill from the detail drawer or in bulk from the **Manage Labels** modal.
 
-- **Category** — at most one per skill. Skills in the Browse tab are grouped under collapsible category section headers (Frontend, Backend, Infrastructure, …); skills with no category assigned appear under **Uncategorized**. Change a skill's category from the **Labels** section of its detail drawer; the new grouping takes effect immediately.
+- **Category** — at most one per skill. Skills in the Registry tab are grouped under collapsible category section headers (Frontend, Backend, Infrastructure, …); skills with no category assigned appear under **Uncategorized**. Change a skill's category from the **Labels** section of its detail drawer; the new grouping takes effect immediately.
 - **Tags** — zero or more per skill. Tags power the tag filter bar and are matched during free-text search. You can add or remove tags on any skill — including curated ones — and they persist across registry syncs.
 
 Both axes are stored in `labels.json` under the app's data directory. The **Auto-Generate** tool (in Manage Labels) can suggest category and tag values from a skill's name and description on demand; suggestions are always reviewed before saving.

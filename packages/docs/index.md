@@ -26,5 +26,5 @@ features:
   - title: Push your registry anywhere
     details: Export a manifest of your registry's origin pointers and push it directly to your linked GitHub repo — or pull it on another machine. One click, no file management.
   - title: Heal, don't delete
-    details: Explicit recovery flows for every bad state — conflicts, broken links, missing files, and canon drift — with your choice at each step.
+    details: Explicit recovery flows for every bad state — install collisions, broken links, and missing files — with your choice at each step.
 ---
