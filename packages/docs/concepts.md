@@ -154,7 +154,7 @@ Each installed skill is classified by what's at its agent-dir path:
 - **`real-directory`** — A regular folder of files (e.g. installed by another tool's CLI).
 - **`foreign-symlink`** — A symlink to somewhere outside the registry.
 
-The Installed tab uses these to decide which section a skill goes in (Registered vs Not registered) and which actions to offer (Uninstall, Register, Resolve conflicts).
+The Installed tab uses these to decide which section a skill goes in (Registered vs Unregistered) and which actions to offer (Uninstall, Register, Resolve conflicts).
 
 ## Conflict
 
@@ -166,7 +166,7 @@ A one-click pull of upstream registry updates. Sync is **upsert**: curated skill
 
 ## Register
 
-The act of adding an "installed but unmanaged" skill to the registry. What happens to the files depends on the **Adopted** axis, controlled by the `Move files into Skills Bank on Register` setting:
+The act of adding an "installed but unmanaged" skill to the registry. What happens to the files depends on the **Adopted** axis, controlled by the `Move skill files into Skills Bank when registering` setting:
 
 - **Adopted (default)** — files relocate to `skills/personal/<name>/` under your registry root, the original agent-dir entry becomes a symlink pointing at the new registry location.
 - **Not adopted** — the registry records the external path and leaves files where they are. Useful when a skill is actively maintained in its own git repo.
@@ -175,7 +175,7 @@ Either way the skill picks up registry metadata (tags, description, source marke
 
 ## Adopt
 
-A taxonomy axis on each registry entry. True when the skill's files physically live under `skills/{personal,vendored}/<name>/` in the registry root; false when the entry tracks an external path. Set at register time from the global `Move files into Skills Bank on Register` setting. Unregister behavior diverges based on this flag — adopted skills get moved out to the shared agents dir; non-adopted skills leave their origin files alone.
+A taxonomy axis on each registry entry. True when the skill's files physically live under `skills/{personal,vendored}/<name>/` in the registry root; false when the entry tracks an external path. Set at register time from the global `Move skill files into Skills Bank when registering` setting. Unregister behavior diverges based on this flag — adopted skills get moved out to the shared agents dir; non-adopted skills leave their origin files alone.
 
 ## Finalize
 

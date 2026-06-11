@@ -1,11 +1,11 @@
 # Unregister a skill
 
-You registered a skill into Skills Bank but want to back it out without nuking the files. Unregister is the mid-tier destructive action: it removes the registry entry and (for adopted skills) moves files out to your shared agents directory. Distinct from **Manage agent links** (which only adds or removes symlinks) and **Delete from Skills Bank** (which deletes files).
+You registered a skill into Skills Bank but want to back it out without nuking the files. Unregister is the mid-tier destructive action: it removes the registry entry and (for adopted skills) moves files out to your shared agents directory. Distinct from **Manage agent links** (which only adds or removes symlinks) and **Delete from this machine** (which deletes files).
 
 ## Steps
 
 1. Open the skill's detail dialog from any tab.
-2. Click **Unregister** (between Reveal in Finder and Delete from Skills Bank).
+2. Click **Unregister** (below **Reveal in Finder** in the dialog). Deleting files is a separate step — **Delete from this machine** — available in the **Installed → Unregistered** section after you unregister.
 3. What happens next depends on the **Adopted** axis:
    - **Adopted skill** — files move from `skills/personal/<name>/` in your registry root to `~/.agents/skills/<name>/` by default. Agent-dir symlinks that pointed at the old bank location are rewritten to point at the new location, so installed agents keep working.
    - **Non-adopted (symlink-mode) skill** — just the registry index entry is removed. Origin files stay where they were; any symlinks to origin keep working.
@@ -13,7 +13,7 @@ You registered a skill into Skills Bank but want to back it out without nuking t
 
 ## Changing where files move
 
-Settings → **Unregister destination**. Defaults to **Agents (shared)** which maps to `~/.agents/skills/`. You can pick any of the per-tool agent directories instead; Skills Bank moves files there on the next unregister. Non-adopted skills ignore this setting (their files don't move).
+Settings → **Unregister sends files to**. Defaults to **Agents (shared)** which maps to `~/.agents/skills/`. You can pick any of the per-tool agent directories instead; Skills Bank moves files there on the next unregister. Non-adopted skills ignore this setting (their files don't move).
 
 ## Why unregister vs. delete?
 

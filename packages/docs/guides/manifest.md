@@ -2,14 +2,7 @@
 
 A **manifest** is a lightweight JSON snapshot of your registry's origin pointers — not the skill files themselves. Each entry carries the skill name, source axis, GitHub origin (repo + path), and any user-set labels (category and tags). Skills with no labels assigned export with a null category and empty tags. On import, each skill is re-fetched from its origin, so the transfer payload is tiny. Origins must still be reachable.
 
-Two shapes in the **Move my registry** section of the Account modal:
-
-| Shape        | What moves                    | Network on import                |
-| ------------ | ----------------------------- | -------------------------------- |
-| **Content**  | The full skills tree as files | None — files are copied directly |
-| **Manifest** | Origin pointers only (JSON)   | Yes — each skill is re-fetched   |
-
-Use Content when you want a self-contained backup or a direct folder-to-folder restore. Use Manifest when moving between machines that both have internet access, or to keep your registry state in your linked GitHub repo.
+The manifest moves through the **Manage your registry** section of the Account modal — **Export manifest** and **Import manifest**. When a linked GitHub repo is configured, the transfer reads from / writes to that repo directly; with no linked repo it falls back to a file on disk. Either way the payload is just origin pointers, so it's tiny — the origins must be reachable on import.
 
 ## Manifest via your linked repo
 
@@ -48,13 +41,6 @@ When no linked repo is configured, or when you click **Use a file** in the modal
 - **Import** — opens a file picker; select a previously exported manifest file.
 
 The disk path is the same underlying flow; it just skips the diff preview and repo read/write steps.
-
-## Content transport (disk only)
-
-Content transfers always use a file dialog. In **Account → Move my registry → Content**:
-
-- **Import from disk (replace)** — swap the active registry root for a different folder. Use when restoring from a `git clone` or switching to a completely different upstream.
-- **Merge from disk** — additive import. Non-colliding skills are added; name collisions surface the same resolver as Pull (default: keep yours). Merged skills are marked `source: user`.
 
 ## Rate limits
 

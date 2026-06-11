@@ -18,9 +18,9 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 
 ## Choosing which agents get the link
 
-Open the account menu → **Settings…** → scroll to **Default install agents** and tick the agents you want. From then on, the Install button targets only those directories. Leave all unchecked to keep the default "broadcast to all existing dirs" behavior.
+Open the account menu → **Settings…** → scroll to **Default install targets** and tick the agents you want. From then on, the Install button targets only those directories. Leave all unchecked to keep the default "broadcast to all existing dirs" behavior.
 
-![Settings modal — Default install agents section with per-agent checkboxes](/images/settings.png)
+![Settings modal — Default install targets section with per-agent checkboxes](/images/settings.png)
 
 You can override per-skill from the dialog's **Manage agent links…** action — pick exactly which agents this one skill goes into.
 
@@ -50,7 +50,7 @@ Two formats are accepted:
   https://github.com/owner/repo/tree/main/skills/skill-name
   ```
 
-Press **Install** (or Enter). The app fetches the skill's folder straight into your agent skills directory (`~/.agents/skills/<name>`) and shows an inline confirmation banner — exactly what a terminal `npx skills add` outside the app would produce. No registry entry is created at this point: the skill appears under **Not registered** in the **Installed** tab, where you can **Register** it into your bank to get syncing, labels, and per-agent link management.
+Press **Install** (or Enter). The app fetches the skill's folder straight into your agent skills directory (`~/.agents/skills/<name>`) and shows an inline confirmation banner — exactly what a terminal `npx skills add` outside the app would produce. No registry entry is created at this point: the skill appears under **Unregistered** in the **Installed** tab, where you can **Register** it into your bank to get syncing, labels, and per-agent link management.
 
 ## Install multiple skills at once
 
@@ -61,7 +61,7 @@ Click **Install Skills** in the Registry tab toolbar to open the bulk install mo
 3. Click **Install N selected**. The modal shows per-row progress — pending, installing, done, or failed. Click **Cancel remaining** at any time to stop the queue after the current skill finishes.
 4. When the run completes, a summary shows how many installed successfully and lists any failures.
 
-Install targets respect your **Default install agents** setting (Account menu → Settings…).
+Install targets respect your **Default install targets** setting (Account menu → Settings…).
 
 ## Uninstall
 

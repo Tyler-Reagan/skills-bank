@@ -18,7 +18,7 @@ A registered skill can be linked into any subset of your agent directories. Use 
 
 ## Default agents
 
-If you find yourself ticking the same agents over and over, set them as defaults: account menu → **Settings…** → **Default install agents**. The Install button on the Registry tab uses those defaults instead of broadcasting to every existing dir.
+If you find yourself ticking the same agents over and over, set them as defaults: account menu → **Settings…** → **Default install targets**. The Install button on the Registry tab uses those defaults instead of broadcasting to every existing dir.
 
 ## Why the install-collision rows?
 
