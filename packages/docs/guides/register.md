@@ -1,23 +1,23 @@
 # Register a skill
 
-You installed a skill from somewhere else (e.g. `npx skills add` or a manual copy). It shows up in the **Installed** tab under **Not registered**. You want Skills Bank to manage it from now on.
+You installed a skill from somewhere else (e.g. `npx skills add` or a manual copy). It shows up in the **Installed** tab under **Unregistered**. You want Skills Bank to manage it from now on.
 
 ## Steps
 
-1. Open the **Installed** tab. Skills you didn't install through this app appear under **Not registered**, with a chip showing the agent dir they live in.
+1. Open the **Installed** tab. Skills you didn't install through this app appear under **Unregistered**, with a chip showing the agent dir they live in.
 2. Click the card to open the detail dialog.
-3. Click **Register**. What happens next depends on the **Move files into Skills Bank on Register** setting (Settings → Registration):
+3. Click **Register**. What happens next depends on the **Move skill files into Skills Bank when registering** setting (Settings → Behavior):
    - **On (default)** — files move into `skills/personal/<name>/` under your registry root, the original agent-dir entry becomes a symlink pointing at the new registry location, and the entry is recorded with `adopted: true`. This is the standard flow.
    - **Off** — files stay where they are. The registry just records the external location; the skill is `adopted: false`. Use this when you actively edit the skill in its own git repo and don't want Skills Bank to move it.
 4. Either way, registry metadata is generated (source = `user`). The skill appears in the Registry tab under **Uncategorized** until you assign a category — use **Manage Labels** in the toolbar or the skill's detail drawer.
 5. The card moves to the **Registered** section. From now on it behaves like any other registry skill — installable into other agents, taggable, categorized, etc.
 
 > [!NOTE]
-> The **Default install agents** setting in Settings applies during register too — if you've configured specific agents, the registered skill fans out symlinks into only those directories. Override per-skill any time from **Manage agent links…** in the detail dialog.
+> The **Default install targets** setting in Settings applies during register too — if you've configured specific agents, the registered skill fans out symlinks into only those directories. Override per-skill any time from **Manage agent links…** in the detail dialog.
 
 ## Bulk register
 
-Use **Register all** in the section header to make individual selections for every "Not registered" skill in one pass. Each skill is processed sequentially with a progress toast. The dropdown offers **Register** (uses your current setting) and **Skip** (and **Remove** for broken symlinks).
+Use **Register all** in the section header to make individual selections for every "Unregistered" skill in one pass. Each skill is processed sequentially with a progress toast. The dropdown offers **Register** (uses your current setting) and **Skip** (and **Remove** for broken symlinks).
 
 ## Adopt vs. symlink-mode
 
@@ -26,9 +26,9 @@ Skills Bank tracks an **Adopted** axis per registry entry:
 - **Adopted** — files live under `skills/personal/<name>/` in your registry root. The bank owns the files. Unregistering moves them to your shared agents directory.
 - **Not adopted** — files live wherever you registered from. The bank just tracks the external path. Unregistering removes the index entry but leaves origin files untouched.
 
-The choice is controlled globally by the `Move files into Skills Bank on Register` setting.
+The choice is controlled globally by the `Move skill files into Skills Bank when registering` setting.
 
-The reverse direction — backing a skill out of the registry — is the [Unregister flow](/guides/unregister). It's distinct from **Delete from Skills Bank**, which destroys files outright.
+The reverse direction — backing a skill out of the registry — is the [Unregister flow](/guides/unregister). It's distinct from **Delete from this machine**, which destroys files outright.
 
 ## What if the same name is already registered?
 

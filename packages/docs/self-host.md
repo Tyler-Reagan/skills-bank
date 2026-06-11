@@ -46,7 +46,7 @@ Self-hosting transfers maintenance of **both the app binary and the registry** t
 
 6. **Cut a release.** Tag with `v*` (e.g. `git tag v0.3.0 && git push origin v0.3.0`); the release workflow will produce DMGs and create a draft release in your fork. Publish the draft when ready.
 
-7. **Maintain the registry.** Add or remove skills under `skills/<name>/` in your fork. Users who installed your build and chose **Continue without** on the login screen will pull updates from your fork via Sync. You're now responsible for both the skills and any future app releases.
+7. **Maintain the registry.** Add or remove skills under `skills/<bucket>/<name>/` (e.g. `skills/personal/<name>/`) in your fork. Users who installed your build and chose **Continue without** on the login screen will pull updates from your fork via Sync. You're now responsible for both the skills and any future app releases.
 
 ## Things you don't get for free
 

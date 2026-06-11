@@ -63,11 +63,11 @@ After that initial link, edits flow as: edit in a git clone of your repo → com
 
 ### What this is _not_
 
-**Pull from `<repo>` is read-only.** The header Pull action fetches and applies upstream changes; it never pushes local edits back. Skills you author in-app via Register live in your local app-managed registry. To move them into the repo, push the manifest from **Account → Move my registry** — the only write path that commits to your repo (see [Move your registry](/guides/manifest)).
+**Pull from `<repo>` is read-only.** The header Pull action fetches and applies upstream changes; it never pushes local edits back. Skills you author in-app via Register live in your local app-managed registry. To move them into the repo, push the manifest from **Account → Manage your registry** — the only write path that commits to your repo (see [Move your registry](/guides/manifest)).
 
 ## Account panel surfaces
 
-![Account modal — Registry source, Identity, and Move my registry sections](/images/account.png)
+![Account modal — Registry source, Identity, and Manage your registry sections](/images/account.png)
 
 The Account panel shows the same surfaces for every user:
 
@@ -75,9 +75,7 @@ The Account panel shows the same surfaces for every user:
 - **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — current registry source, last-fetched time, and short commit SHA. This is a status display, not a button — use the **Pull from `<repo>`** button in the app header to refresh.
 - **Change linked repo** / **Choose a different repo** — opens the repo picker (requires sign-in; label varies by current state).
 - **Identity row** — `@<login>` chip + **Sign out of GitHub** when signed in; **Sign in with GitHub** + rate-limit hint when not.
-- **Move my registry** — two sections:
-  - **Content** (the full skills tree): Import from disk (replace), Merge from disk, Export as folder.
-  - **Manifest** (origin-pointer JSON): Import manifest, Export manifest. See [Move your registry](/guides/manifest) for the full flow including repo transport.
+- **Manage your registry** — move your registry state via a **manifest** (origin-pointer JSON): **Import manifest** / **Export manifest**. See [Move your registry](/guides/manifest) for the full flow including repo transport.
 
 ## Self-host
 

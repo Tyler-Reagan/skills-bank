@@ -30,18 +30,18 @@ Want to fork the entire app and ship your own build? See [Self-hosting](/self-ho
 3. Click **Install**. Skills Bank symlinks the skill into every agent directory you have set up — `~/.claude/skills/`, `~/.cursor/skills/`, etc.
 4. Restart Claude Code (or Cursor, Gemini, …). The new skill is available next session.
 
-Want to install only into specific agent directories instead of all of them? Open the account menu → **Settings…** → set **Default install agents**.
+Want to install only into specific agent directories instead of all of them? Open the account menu → **Settings…** → set **Default install targets**.
 
 ## See everything that's installed
 
 Open the **Installed** tab. You'll see two sections:
 
-![The Installed tab with Registered and Not registered sections](/images/installed.png)
+![The Installed tab with Registered and Unregistered sections](/images/installed.png)
 
 - **Registered** — skills installed via Skills Bank (or otherwise linked to the registry)
-- **Not registered** — skills installed by other tools (e.g. `npx skills add` from [skills.sh](https://skills.sh/))
+- **Unregistered** — skills installed by other tools (e.g. `npx skills add` from [skills.sh](https://skills.sh/))
 
-Click any "Not registered" card to manage it: register it into Skills Bank, link it into other agents, or fix broken links.
+Click any "Unregistered" card to manage it: register it into Skills Bank, link it into other agents, or fix broken links.
 
 ## Organize with labels
 
