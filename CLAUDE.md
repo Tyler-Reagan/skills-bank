@@ -92,23 +92,3 @@ The packaged install reads `~/.claude/skills/`, `~/.cursor/skills/`, and `~/Libr
 Consequence: skills "installed" via dev are not visible to your real Claude Code / Cursor clients. End-to-end installation testing requires the packaged app pointed at a deployed registry.
 
 `rm -rf ~/.skills-bank-dev/` is the one-line full dev-state reset.
-
-### Heal local maintainer state
-
-After breaking changes to the `skills/` layout (e.g. the v0.11.3 directory split), the maintainer's host accumulates two kinds of local drift. Both are safe to heal without touching `src/`.
-
-**Broken symlinks in `~/.claude/skills/` and `~/.cursor/skills/`** — links that targeted the pre-split flat path. Sweep + repoint:
-
-```sh
-for link in $(find ~/.claude/skills/ ~/.cursor/skills/ -maxdepth 1 -type l ! -exec test -e {} \; -print); do
-  name=$(basename "$link")
-  for bucket in personal vendored; do
-    target="$(pwd)/skills/$bucket/$name"
-    [ -d "$target" ] && ln -sfn "$target" "$link" && break
-  done
-done
-```
-
-Run from the repo root. Symlinks whose name no longer exists in either bucket are uninstalled skills — list them and leave them alone.
-
-**Unstaged churn in `skills/**/.skills-bank.json`after running the app.** Diff vs`HEAD`: if `skillFolderHash`(or the`origin`pointer's`repo`/`skillPath`) changed, that's a legitimate baseline shift — commit. If only `fetchedAt`changed, that's runtime probe noise — the v0.11.7 probe-path fix moved`fetchedAt`to the runtime sidecar; a re-appearance means a regression worth investigating. (`meta.json`no longer exists as of v1.20 —`pnpm validate` checks SKILL.md frontmatter only.)
