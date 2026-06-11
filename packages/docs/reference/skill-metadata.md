@@ -37,4 +37,4 @@ See [Skill labels](/reference/labels) for the full list of categories and tags t
 
 Run `pnpm validate` from the repo root to validate every skill's `SKILL.md` frontmatter against the schema. It fails a skill that is missing frontmatter or whose frontmatter violates the schema. CI runs this on every push.
 
-The full JSON schema is at [`docs/meta-schema.json`](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/meta-schema.json) on GitHub — it now describes the frontmatter fields above.
+The full JSON schema is at [`docs/skill-frontmatter-schema.json`](https://github.com/Tyler-Reagan/skills-bank/blob/main/docs/skill-frontmatter-schema.json) on GitHub — it describes the frontmatter fields above.

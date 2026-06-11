@@ -18,8 +18,6 @@ interface Props {
   onClose: () => void;
   onChangeRegistry: () => void | Promise<void>;
   onRefreshRegistry: () => void | Promise<void>;
-  onImportRegistry: () => void | Promise<void>;
-  onMergeRegistry: () => void | Promise<void>;
   /**
    * Manifest-shaped moves. Open the ManifestModal for the appropriate
    * mode — the modal owns the full transport flow (repo or disk).
@@ -41,8 +39,6 @@ export function AccountModal({
   onClose,
   onChangeRegistry,
   onRefreshRegistry,
-  onImportRegistry,
-  onMergeRegistry,
   onOpenImportManifest,
   onOpenExportManifest,
   onSignOut,

@@ -12,7 +12,7 @@ One registry. Every AI agent on your machine.
 
 </div>
 
-![The Registry tab — browse, search, and install curated skills](docs/images/registry.png)
+![The Registry tab — browse, search, and install curated skills](packages/docs/public/images/registry.png)
 
 A **skill** is a folder with a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI coding agent reads at runtime to gain a specialized capability. Skills Bank keeps your collection in sync across Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, and Codex — using symlinks, so there are no copies and no drift. Skills are automatically organized by category (frontend, backend, AI tooling, and more) and tagged based on their name and description; both are editable per-skill from the detail drawer.
 
@@ -58,7 +58,7 @@ pnpm docs:dev   # run the docs site locally
 
 ## Adding a registry skill
 
-Drop a folder at `skills/<name>/` with a `SKILL.md` whose YAML frontmatter matches [`docs/meta-schema.json`](docs/meta-schema.json), then:
+Drop a folder at `skills/<name>/` with a `SKILL.md` whose YAML frontmatter matches [`docs/skill-frontmatter-schema.json`](docs/skill-frontmatter-schema.json), then:
 
 ```bash
 pnpm validate && pnpm build:index

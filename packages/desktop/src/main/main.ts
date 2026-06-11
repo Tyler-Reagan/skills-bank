@@ -51,7 +51,6 @@ import {
   type RegistryManifest,
   findSkillFolder,
   readSkillMeta,
-  pushSkillFolder,
   hashSkillFolder,
   healFalselyCuratedMarkers,
   readSkillSource,
@@ -71,7 +70,6 @@ import {
   getDefaultInstallAgents,
   invalidateCanonCache,
   makeAppError,
-  mergeImportRegistry,
   listInstalled,
   readLastSyncReport,
   readPendingConflicts,
@@ -2658,151 +2656,6 @@ mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
 
   return { ok: true, name: finalName } as const;
 });
-
-ipcMain.handle(IPC.importRegistry, async () => {
-  const win = BrowserWindow.getFocusedWindow();
-  const result = await dialog.showOpenDialog(win ?? undefined!, {
-    title: "Import a registry",
-    message: "Pick a folder containing a skills/ subdirectory.",
-    properties: ["openDirectory"],
-    defaultPath: app.getPath("home"),
-  });
-  if (result.canceled || result.filePaths.length === 0) {
-    return { ok: false, message: "cancelled", registryRoot };
-  }
-  const candidate = result.filePaths[0]!;
-  const validation = isValidRegistryRoot(candidate);
-  if (!validation.ok) {
-    return {
-      ok: false,
-      message: validation.reason ?? "invalid folder",
-      registryRoot,
-    };
-  }
-  const skillsDir = path.join(candidate, "skills");
-  if (!fs.existsSync(skillsDir)) {
-    return {
-      ok: false,
-      message: `No skills/ directory found in the selected folder. Make sure you're pointing at a valid registry.`,
-      registryRoot,
-    };
-  }
-  const skillCount = fs
-    .readdirSync(skillsDir)
-    .filter((e) => fs.statSync(path.join(skillsDir, e)).isDirectory()).length;
-  registryRoot = candidate;
-  // M2: same reason as setRegistryRoot — flush canon cache so the new
-  // root's index build doesn't see the prior root's snapshot.
-  invalidateCanonCache();
-  persistConfig();
-  return {
-    ok: true,
-    message: `Registry imported — ${skillCount} skill${skillCount === 1 ? "" : "s"} found`,
-    registryRoot: candidate,
-    skillCount,
-  };
-});
-
-// M8: merge mode — additive import that keeps the active registry
-// and adds skills from a picked folder. Collisions return as
-// ConflictEntry[] for the renderer to resolve via the existing
-// sync-conflict modal; the renderer calls importRegistryMergeApply
-// with the user's decisions to finalize.
-ipcMain.handle(IPC.importRegistryMerge, async () => {
-  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  const win = BrowserWindow.getFocusedWindow();
-  const result = await dialog.showOpenDialog(win ?? undefined!, {
-    title: "Merge a registry into yours",
-    message:
-      "Pick a folder containing a skills/ subdirectory. Non-colliding entries are added directly; collisions will prompt for keep/use-theirs/rename.",
-    properties: ["openDirectory"],
-    defaultPath: app.getPath("home"),
-  });
-  if (result.canceled || result.filePaths.length === 0) {
-    return { ok: false, message: "cancelled" };
-  }
-  const sourcePath = result.filePaths[0]!;
-  if (!fs.existsSync(path.join(sourcePath, "skills"))) {
-    return {
-      ok: false,
-      message: `No skills/ directory found in ${sourcePath}.`,
-    };
-  }
-  try {
-    const report = mergeImportRegistry(registryRoot, sourcePath);
-    return {
-      ok: true,
-      message: summarizeMerge(report),
-      sourcePath,
-      report,
-    };
-  } catch (err) {
-    return (() => {
-      const error = fromCaught("ipc.unknown", err);
-      return { ok: false, message: error.message, error };
-    })();
-  }
-});
-
-ipcMain.handle(
-  IPC.importRegistryMergeApply,
-  (_e, sourcePath: string, decisions: SyncDecisions) => {
-    if (!registryRoot)
-      return {
-        ok: false,
-        message: NO_ROOT_MSG,
-        report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
-      };
-    // Re-validate the renderer-supplied path. The picker IPC normally
-    // guarantees a real directory with a skills/ child, but a
-    // misbehaving renderer could call this handler with arbitrary
-    // input; the merge implementation walks the path with fs ops, so
-    // we refuse non-existent or skills-less paths up front.
-    if (
-      typeof sourcePath !== "string" ||
-      !path.isAbsolute(sourcePath) ||
-      !fs.existsSync(sourcePath) ||
-      !fs.statSync(sourcePath).isDirectory() ||
-      !fs.existsSync(path.join(sourcePath, "skills"))
-    ) {
-      return {
-        ok: false,
-        message: `Invalid merge source path: ${String(sourcePath)}`,
-        report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
-      };
-    }
-    try {
-      const report = mergeImportRegistry(registryRoot, sourcePath, decisions);
-      return {
-        ok: true,
-        message: summarizeMerge(report),
-        report,
-      };
-    } catch (err) {
-      const error = fromCaught("merge-import.unknown", err);
-      return {
-        ok: false,
-        message: error.message,
-        error,
-        report: { imported: [], conflicts: [], keptMine: [], renamed: [] },
-      };
-    }
-  },
-);
-
-function summarizeMerge(
-  report: import("@skills-bank/core").MergeImportReport,
-): string {
-  const parts: string[] = [];
-  if (report.imported.length > 0)
-    parts.push(`${report.imported.length} imported`);
-  if (report.keptMine.length > 0)
-    parts.push(`${report.keptMine.length} kept yours`);
-  if (report.renamed.length > 0) parts.push(`${report.renamed.length} renamed`);
-  if (report.conflicts.length > 0)
-    parts.push(`${report.conflicts.length} need attention`);
-  return parts.join(", ") || "no changes";
-}
 
 // Read up to 8 KB of SKILL.md text, with a "(truncated)" marker when
 // the file is bigger. Pulled out so the readSkillMd IPC can reuse it

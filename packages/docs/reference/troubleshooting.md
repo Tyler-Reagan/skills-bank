@@ -74,7 +74,7 @@ Prefer to do it by hand? Quit the app, drag **Skills Bank** from `/Applications`
 
 ## "A skill keeps showing EDITED after I run it"
 
-A skill that installs dependencies or writes output into its own folder at runtime (e.g. a `node_modules/` it populates on first use) used to drift to `EDITED` because those generated files changed the folder's content hash. As of **v1.15.0**, drift detection honors the skill's own `.gitignore`, so anything the skill ignores no longer counts as an edit. If you're on v1.15.0+ and still see this, confirm the generated paths are actually listed in the skill's `.gitignore`; only ignored paths are excluded. (On older versions, "Revert to canon" / "Reset to origin" clears it until the next run.)
+A skill that installs dependencies or writes output into its own folder at runtime (e.g. a `node_modules/` it populates on first use) used to drift to `EDITED` because those generated files changed the folder's content hash. As of **v1.15.0**, drift detection honors the skill's own `.gitignore`, so anything the skill ignores no longer counts as an edit. If you're on v1.15.0+ and still see this, confirm the generated paths are actually listed in the skill's `.gitignore`; only ignored paths are excluded.
 
 ## "Sync conflict modal keeps appearing for the same skill"
 

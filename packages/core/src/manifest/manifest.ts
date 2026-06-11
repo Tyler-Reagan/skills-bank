@@ -257,7 +257,7 @@ function canonicalOrigin(o: ManifestOrigin): Record<string, unknown> {
  *
  * `entryPath` is the skill folder's registry-relative path (e.g.
  * `skills/personal/foo`); the self-origin's `skillPath` appends
- * `/SKILL.md` — matching where `pushSkillFolder` places authored content.
+ * `/SKILL.md` — the canonical authored-content location within a skill folder.
  */
 function resolveExportOrigin(
   entryPath: string,

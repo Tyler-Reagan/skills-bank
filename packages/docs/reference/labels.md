@@ -1,6 +1,6 @@
 # Skill labels
 
-Skills Bank organizes your registry by **category** and **tags**. Labels are user-assigned — nothing is set automatically. Skills with no labels appear under **Uncategorized** in the Browse tab until you assign them.
+Skills Bank organizes your registry by **category** and **tags**. Labels are user-assigned — nothing is set automatically. Skills with no labels appear under **Uncategorized** in the Registry tab until you assign them.
 
 The **Auto-Generate** tool (inside Manage Labels) can suggest a category and tags for any skill based on its name and description, but suggestions are always reviewed and confirmed before anything is saved.
 
@@ -12,7 +12,7 @@ Skills are grouped into collapsible category sections when categories have been 
 
 ## Categories
 
-Each skill has at most one category. Skills with no category assigned appear under **Uncategorized** in the Browse tab.
+Each skill has at most one category. Skills with no category assigned appear under **Uncategorized** in the Registry tab.
 
 | Category         | Description                                                                            |
 | ---------------- | -------------------------------------------------------------------------------------- |

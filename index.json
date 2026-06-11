@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-05T16:23:19.809Z",
+  "generatedAt": "2026-06-11T17:29:11.535Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -21,9 +21,9 @@
       },
       "adopted": true,
       "lastCommit": {
-        "sha": "96dfaf445211ff02ea6c09a17d4fc79fb6b45950",
-        "date": "2026-06-05 09:01:45 -0700",
-        "message": "pnpm format and style cleanup"
+        "sha": "34d123dbe5c536f7d50206f084cff6afec070a62",
+        "date": "2026-06-05 14:16:28 -0700",
+        "message": "refactor: source-axis enforcement, install primitive overhaul, meta.json/CLI/publish cull (#112)"
       },
       "bucket": "vendored",
       "canon": false

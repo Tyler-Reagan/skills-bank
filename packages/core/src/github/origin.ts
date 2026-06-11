@@ -478,7 +478,7 @@ export async function applyOriginUpdate(
   // Validate the mirrored SKILL.md frontmatter. If the upstream ships
   // a SKILL.md with missing required fields, reject and roll back rather
   // than freezing bad state as the new baseline.
-  const { validateSkillMeta } = await import("../registry/meta.js");
+  const { validateSkillMeta } = await import("../registry/frontmatter.js");
   const metaCheck = validateSkillMeta(registrySkillDir);
   if (!metaCheck.ok) {
     // Roll back: discard the mirrored content, restore from stash.

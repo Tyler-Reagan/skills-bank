@@ -47,7 +47,7 @@ export default defineConfig({
         items: [
           { text: 'Keyboard shortcuts', link: '/reference/keyboard' },
           { text: 'Skill labels', link: '/reference/labels' },
-          { text: 'Skill metadata', link: '/reference/meta-schema' },
+          { text: 'Skill metadata', link: '/reference/skill-metadata' },
           { text: 'Troubleshooting', link: '/reference/troubleshooting' },
         ],
       },

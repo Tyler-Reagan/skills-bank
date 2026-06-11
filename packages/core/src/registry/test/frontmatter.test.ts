@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import {
   parseSkillFrontmatter,
   validateSkillMeta,
-  SKILL_META_SCHEMA,
-} from "../meta.js";
+  SKILL_FRONTMATTER_SCHEMA,
+} from "../frontmatter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,15 +24,19 @@ afterEach(() => {
   if (scratch) fs.rmSync(scratch, { recursive: true, force: true });
 });
 
-describe("SKILL_META_SCHEMA parity with docs/meta-schema.json", () => {
-  // The TS constant in skill-meta.ts and the JSON file in docs/ are
+describe("SKILL_FRONTMATTER_SCHEMA parity with docs/skill-frontmatter-schema.json", () => {
+  // The TS constant in frontmatter.ts and the JSON file in docs/ are
   // two physical copies of the same schema by design. This test
   // catches drift so the canonical published version (docs/) and the
   // runtime-bundled version (TS const) stay in lockstep.
-  test("structurally matches the canonical docs/meta-schema.json", () => {
-    const docsSchemaPath = path.join(repoRoot, "docs", "meta-schema.json");
+  test("structurally matches the canonical docs/skill-frontmatter-schema.json", () => {
+    const docsSchemaPath = path.join(
+      repoRoot,
+      "docs",
+      "skill-frontmatter-schema.json",
+    );
     const docsSchema = JSON.parse(fs.readFileSync(docsSchemaPath, "utf8"));
-    expect(SKILL_META_SCHEMA).toEqual(docsSchema);
+    expect(SKILL_FRONTMATTER_SCHEMA).toEqual(docsSchema);
   });
 });
 

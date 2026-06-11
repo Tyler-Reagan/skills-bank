@@ -39,7 +39,7 @@ your-skill-bank-repo/
     └── ...
 ```
 
-The `skills/` directory at the repo root is the contract. Each subdirectory is one skill; each skill needs a `SKILL.md` whose YAML frontmatter carries its `name`, `description`, and optional `tags`/`version`/`author`. The app validates this on link and refuses with a clear message if the structure is missing. See [Skill metadata](/reference/meta-schema).
+The `skills/` directory at the repo root is the contract. Each subdirectory is one skill; each skill needs a `SKILL.md` whose YAML frontmatter carries its `name`, `description`, and optional `tags`/`version`/`author`. The app validates this on link and refuses with a clear message if the structure is missing. See [Skill metadata](/reference/skill-metadata).
 
 Optional extras the app will pick up:
 

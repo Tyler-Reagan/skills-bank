@@ -9,7 +9,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Climb from src/registry/test/ up to the repo root, then into docs/.
 const repoRoot = path.resolve(__dirname, "..", "..", "..", "..", "..");
-const realSchemaPath = path.join(repoRoot, "docs", "meta-schema.json");
+const realSchemaPath = path.join(
+  repoRoot,
+  "docs",
+  "skill-frontmatter-schema.json",
+);
 
 let scratch: string;
 let registryRoot: string;
@@ -23,12 +27,12 @@ beforeEach(() => {
   fs.mkdirSync(path.join(registryRoot, "skills", "vendored"), {
     recursive: true,
   });
-  // Mirror the real meta-schema into the scratch registry so AJV
+  // Mirror the real frontmatter schema into the scratch registry so AJV
   // validation kicks in the same way it does in production.
   fs.mkdirSync(path.join(registryRoot, "docs"), { recursive: true });
   fs.copyFileSync(
     realSchemaPath,
-    path.join(registryRoot, "docs", "meta-schema.json"),
+    path.join(registryRoot, "docs", "skill-frontmatter-schema.json"),
   );
 });
 

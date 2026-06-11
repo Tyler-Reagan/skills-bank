@@ -9,7 +9,7 @@ You installed a skill from somewhere else (e.g. `npx skills add` or a manual cop
 3. Click **Register**. What happens next depends on the **Move files into Skills Bank on Register** setting (Settings → Registration):
    - **On (default)** — files move into `skills/personal/<name>/` under your registry root, the original agent-dir entry becomes a symlink pointing at the new registry location, and the entry is recorded with `adopted: true`. This is the standard flow.
    - **Off** — files stay where they are. The registry just records the external location; the skill is `adopted: false`. Use this when you actively edit the skill in its own git repo and don't want Skills Bank to move it.
-4. Either way, registry metadata is generated (source = `user`, computes publish state). The skill appears in the Browse tab under **Uncategorized** until you assign a category — use **Manage Labels** in the toolbar or the skill's detail drawer.
+4. Either way, registry metadata is generated (source = `user`). The skill appears in the Registry tab under **Uncategorized** until you assign a category — use **Manage Labels** in the toolbar or the skill's detail drawer.
 5. The card moves to the **Registered** section. From now on it behaves like any other registry skill — installable into other agents, taggable, categorized, etc.
 
 > [!NOTE]

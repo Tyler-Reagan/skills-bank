@@ -2,9 +2,6 @@
 
 The vocabulary the app uses, defined in one place. Skim this once and the rest of the docs (and the UI itself) become a lot more obvious.
 
-> [!NOTE]
-> This document is the user-facing concept guide. The engineering glossary — including precise "aliases to avoid" lists, the canonical operation verbs, and flagged ambiguities the codebase has worked through — lives in [`UBIQUITOUS_LANGUAGE.md`](https://github.com/Tyler-Reagan/skills-bank/blob/main/UBIQUITOUS_LANGUAGE.md) on GitHub. When the two documents disagree, UL is canonical.
-
 ## Taxonomy
 
 Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
@@ -56,14 +53,12 @@ flowchart LR
     Registered -->|"Hide (canon only)"| Hidden
     Hidden -->|"Unhide"| Registered
 
-    Registered -->|"local edit to canon files"| CanonDrift
-    CanonDrift -->|"Accept local / Take canonical"| Registered
     Registered -->|"registry folder deleted"| FolderMissing
     FolderMissing -->|"Forget entry"| Done
     Registered -->|"external path deleted"| TargetMissing
     TargetMissing -->|"Forget entry"| Done
 
-    class CanonDrift,FolderMissing,TargetMissing heal
+    class FolderMissing,TargetMissing heal
 
     linkStyle default stroke:#94a3b8,stroke-width:1.5px,fill:none
 ```
@@ -86,7 +81,7 @@ Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **
 
 ## Skill
 
-A folder containing a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist. (As of v1.15.0 the frontmatter is the sole metadata source; a `meta.json` may still appear as an app-synthesized artifact for agents that read one — see [Skill metadata](/reference/meta-schema).)
+A folder containing a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist. (As of v1.15.0 the frontmatter is the sole metadata source; a `meta.json` may still appear as an app-synthesized artifact for agents that read one — see [Skill metadata](/reference/skill-metadata).)
 
 ## Agent directory
 
@@ -131,7 +126,7 @@ Provenance is a three-value axis on each registry skill, stored as `source` in a
 
 Every skill carries two label axes, both user-assigned and editable per-skill from the detail drawer or in bulk from the **Manage Labels** modal.
 
-- **Category** — at most one per skill. Skills in the Browse tab are grouped under collapsible category section headers (Frontend, Backend, Infrastructure, …); skills with no category assigned appear under **Uncategorized**. Change a skill's category from the **Labels** section of its detail drawer; the new grouping takes effect immediately.
+- **Category** — at most one per skill. Skills in the Registry tab are grouped under collapsible category section headers (Frontend, Backend, Infrastructure, …); skills with no category assigned appear under **Uncategorized**. Change a skill's category from the **Labels** section of its detail drawer; the new grouping takes effect immediately.
 - **Tags** — zero or more per skill. Tags power the tag filter bar and are matched during free-text search. You can add or remove tags on any skill — including curated ones — and they persist across registry syncs.
 
 Both axes are stored in `labels.json` under the app's data directory. The **Auto-Generate** tool (in Manage Labels) can suggest category and tag values from a skill's name and description on demand; suggestions are always reviewed before saving.

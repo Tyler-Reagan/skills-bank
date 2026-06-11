@@ -85,14 +85,6 @@ export type ActiveModal =
       target: { name: string; installations: InstalledSkill[] };
     }
   | {
-      kind: "mergeConflict";
-      target: {
-        sourcePath: string;
-        conflicts: import("@skills-bank/core").ConflictEntry[];
-        priorReport: import("@skills-bank/core").MergeImportReport;
-      };
-    }
-  | {
       kind: "manifestConflict";
       target: {
         conflicts: import("@skills-bank/core").ManifestConflict[];
@@ -251,39 +243,6 @@ export function ModalHost({
   const changeRegistry = useCallback(() => {
     openModal({ kind: "repoPicker" });
   }, [openModal]);
-
-  const importRegistryFromDisk = useCallback(async () => {
-    const r = await window.skillsBank.importRegistry();
-    if (r.ok && r.registryRoot) {
-      flash(r.message);
-      await refresh();
-    } else if (r.message !== "cancelled") {
-      flash(`Couldn't import registry: ${r.message}`);
-    }
-  }, [refresh, flash]);
-
-  const mergeRegistry = useCallback(async () => {
-    const r = await window.skillsBank.importRegistryMerge();
-    if (!r.ok) {
-      if (r.message !== "cancelled") {
-        flash(`Couldn't merge: ${r.message}`);
-      }
-      return;
-    }
-    if (r.report.conflicts.length === 0) {
-      flash(r.message);
-      await refresh();
-      return;
-    }
-    openModal({
-      kind: "mergeConflict",
-      target: {
-        sourcePath: r.sourcePath,
-        conflicts: r.report.conflicts,
-        priorReport: r.report,
-      },
-    });
-  }, [flash, refresh, openModal]);
 
   const signOut = useCallback(async () => {
     const s = await window.skillsBank.authLogout();
@@ -512,37 +471,6 @@ export function ModalHost({
         />
       )}
 
-      {modal?.kind === "mergeConflict" && (
-        <SyncConflictModal
-          conflicts={modal.target.conflicts}
-          onClose={() => {
-            const prior = modal.target.priorReport;
-            closeModal();
-            const parts: string[] = [];
-            if (prior.imported.length > 0)
-              parts.push(`${prior.imported.length} imported`);
-            if (prior.renamed.length > 0)
-              parts.push(`${prior.renamed.length} renamed`);
-            if (prior.keptMine.length > 0)
-              parts.push(`${prior.keptMine.length} kept yours`);
-            flash(
-              `Merge cancelled${parts.length > 0 ? ` (${parts.join(", ")})` : ""}.`,
-            );
-            void refresh();
-          }}
-          onResolve={async (decisions) => {
-            const target = modal.target;
-            closeModal();
-            const r = await window.skillsBank.importRegistryMergeApply(
-              target.sourcePath,
-              decisions,
-            );
-            flash(r.message);
-            await refresh();
-          }}
-        />
-      )}
-
       {modal?.kind === "manifestConflict" && (
         <ManifestConflictModal
           conflicts={modal.target.conflicts}
@@ -605,14 +533,6 @@ export function ModalHost({
           onRefreshRegistry={async () => {
             closeModal();
             await refreshLinkedRepo();
-          }}
-          onImportRegistry={async () => {
-            closeModal();
-            await importRegistryFromDisk();
-          }}
-          onMergeRegistry={async () => {
-            closeModal();
-            await mergeRegistry();
           }}
           onOpenImportManifest={() =>
             openModal({ kind: "manifest", mode: "import" })

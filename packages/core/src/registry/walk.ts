@@ -5,7 +5,7 @@ import type {
   RegistryIndex,
   SkillMeta,
 } from "../shared/types.js";
-import { parseSkillFrontmatter } from "./meta.js";
+import { parseSkillFrontmatter } from "./frontmatter.js";
 
 export function findEntry(
   index: RegistryIndex,

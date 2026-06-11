@@ -212,7 +212,7 @@ export function classifyDrawerState(
   // baseline. The states are still classified (origin-pointer skills →
   // `edited-with-origin`, others → `edited-without-origin`) but the
   // heal actions that used to hang off them (Keep my edits /
-  // Re-baseline / Reset to origin) were removed in v1.20 (ADR-0010)
+  // Re-baseline / Reset to origin) were removed in v1.20
   // pending a redesign with proper source-axis semantics — both arms
   // expose only the baseline capabilities. Drift still gates one-click
   // updates: a drifted skill classifies here before the

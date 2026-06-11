@@ -1,6 +1,6 @@
 # Getting started
 
-Skills Bank is a desktop app and CLI for managing [Claude Code](https://claude.ai/code) skills across every AI agent you use. This page gets you from "I downloaded the app" to "I'm using a skill in Claude Code" in five minutes.
+Skills Bank is a desktop app for managing [Claude Code](https://claude.ai/code) skills across every AI agent you use. This page gets you from "I downloaded the app" to "I'm using a skill in Claude Code" in five minutes.
 
 ## Install
 
@@ -45,7 +45,7 @@ Click any "Not registered" card to manage it: register it into Skills Bank, link
 
 ## Organize with labels
 
-The Browse tab groups skills into collapsible category sections — Frontend, Backend, AI Tooling, and [more](/reference/labels). Skills with no category assigned appear together under **Uncategorized** until you label them.
+The Registry tab groups skills into collapsible category sections — Frontend, Backend, AI Tooling, and [more](/reference/labels). Skills with no category assigned appear together under **Uncategorized** until you label them.
 
 Click **Manage Labels** in the Registry toolbar to assign or bulk-edit labels across your registry. The **Auto-Generate Labels** flow inside that modal suggests a category and tags for each skill based on its name and description — you review and confirm before anything is saved. You can also edit any skill's category and tags directly from its detail drawer.
 
