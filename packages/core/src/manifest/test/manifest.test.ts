@@ -16,6 +16,7 @@ import { importRegistryManifest, computeManifestRemovals } from "../import.js";
 import { readSkillSource, writeSkillSource } from "../../registry/source.js";
 import { hashSkillFolder, writeSyncedHash } from "../../registry/heal.js";
 import { buildRegistryIndex } from "../../registry/build.js";
+import { writeExternalRegistry } from "../../registry/external.js";
 
 /**
  * Phase 1 manifest contract:
@@ -213,6 +214,35 @@ describe("exportRegistryManifest", () => {
     const skill = m.skills.find((s) => s.name === "local-only")!;
     expect(skill.origin).toEqual({ kind: "none" });
     expect(skill.bucket).toBe("personal");
+  });
+
+  test("excludes in-place (adopted:false) entries from the pushed manifest", () => {
+    // An adopted (in-bank) skill — must travel.
+    writeSkill("personal", "in-bank", { description: "lives in the bank" });
+
+    // An in-place skill registered from a custom dir: real files outside
+    // the registry, recorded via external.json (adopted:false). These are
+    // local-only — a non-egressable work repo must not leak into a pushed
+    // manifest.
+    const externalSrc = path.join(scratch, "work-repo", "keep-me");
+    fs.mkdirSync(externalSrc, { recursive: true });
+    fs.writeFileSync(
+      path.join(externalSrc, "SKILL.md"),
+      "---\nname: keep-me\ndescription: non-egressable\n---\n# keep-me\n",
+    );
+    writeExternalRegistry(registryRoot, "keep-me", externalSrc);
+
+    // Sanity: the index DOES surface the in-place entry as adopted:false,
+    // so the manifest filter (not a missing entry) is what excludes it.
+    const indexed = buildRegistryIndex(registryRoot).entries.find(
+      (e) => e.name === "keep-me",
+    );
+    expect(indexed?.adopted).toBe(false);
+
+    const m = exportRegistryManifest(registryRoot, {
+      sourceBankVersion: "1.1.0",
+    });
+    expect(m.skills.map((s) => s.name)).toEqual(["in-bank"]);
   });
 
   test("lastInstalledOn picks up symlinks under the fake agent dirs", () => {

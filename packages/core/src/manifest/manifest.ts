@@ -154,33 +154,40 @@ export function exportRegistryManifest(
   const index = buildRegistryIndex(registryRoot);
   const installedByName = readInstalledAgentMap();
 
-  const skills: ManifestSkill[] = index.entries.map((entry) => {
-    const origin = resolveExportOrigin(
-      entry.path,
-      entry.source.origin,
-      opts.linkedRepo,
-    );
-    // Bucket is derived, not read from disk: external GitHub origin →
-    // `vendored`; self-origin or no origin → `personal`.
-    const bucket: "personal" | "vendored" =
-      origin.kind === "github" && !isSelfOrigin(origin, opts.linkedRepo)
-        ? "vendored"
-        : "personal";
-    const { category, tags } = effectiveLabels(
-      { category: null, tags: [] },
-      opts.labels?.[entry.name],
-    );
-    return {
-      name: entry.name,
-      ...(entry.description ? { description: entry.description } : {}),
-      source: entry.source.source,
-      bucket,
-      origin,
-      category,
-      tags,
-      lastInstalledOn: installedByName.get(entry.name) ?? [],
-    };
-  });
+  const skills: ManifestSkill[] = index.entries
+    // In-place (non-adopted) registrations are local-only: their files
+    // live outside the bank at a machine-specific absolute path, so they
+    // can't travel via push/pull. Excluding them keeps the synced
+    // manifest free of entries that would surface as missing on any
+    // other machine.
+    .filter((entry) => entry.adopted !== false)
+    .map((entry) => {
+      const origin = resolveExportOrigin(
+        entry.path,
+        entry.source.origin,
+        opts.linkedRepo,
+      );
+      // Bucket is derived, not read from disk: external GitHub origin →
+      // `vendored`; self-origin or no origin → `personal`.
+      const bucket: "personal" | "vendored" =
+        origin.kind === "github" && !isSelfOrigin(origin, opts.linkedRepo)
+          ? "vendored"
+          : "personal";
+      const { category, tags } = effectiveLabels(
+        { category: null, tags: [] },
+        opts.labels?.[entry.name],
+      );
+      return {
+        name: entry.name,
+        ...(entry.description ? { description: entry.description } : {}),
+        source: entry.source.source,
+        bucket,
+        origin,
+        category,
+        tags,
+        lastInstalledOn: installedByName.get(entry.name) ?? [],
+      };
+    });
 
   const out: RegistryManifest = {
     schemaVersion: MANIFEST_SCHEMA_VERSION,

@@ -136,13 +136,29 @@ export function listInstalled(
           ...(ourEntry ? { registryEntry: ourEntry } : {}),
         });
       } else if (stat.isDirectory()) {
+        // A real directory that IS a registered entry's recorded source
+        // (in-place/non-adopted registration records the absolute source
+        // path in the index) or lives under the registry tree is the
+        // canonical copy, not a stray duplicate — classify it `ours`.
+        // This is what flips a custom-dir skill from `unregistered-real`
+        // to registered once it's been recorded, instead of leaving the
+        // source dir reading as a conflict against its own agent links.
+        let realPath = linkPath;
+        try {
+          realPath = fs.realpathSync(linkPath);
+        } catch {
+          // Unreadable — fall back to the literal path for the lookup.
+        }
+        const ourEntry = entriesByPath.get(realPath);
+        const isUnderRegistry = (realPath + path.sep).startsWith(ownedRoot);
         out.push({
           name,
           agent: origin.agent,
           ...(origin.customDir ? { customDir: origin.customDir } : {}),
           linkPath,
           target: null,
-          kind: "real-directory",
+          kind: ourEntry || isUnderRegistry ? "ours" : "real-directory",
+          ...(ourEntry ? { registryEntry: ourEntry } : {}),
         });
       }
     }

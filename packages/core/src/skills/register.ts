@@ -37,7 +37,10 @@ export function listTopLevelSymlinks(): TopLevelSymlinkInfo[] {
   return out;
 }
 
-export function scanExistingInstalls(registryRoot: string): ScanReport {
+export function scanExistingInstalls(
+  registryRoot: string,
+  opts: { customDirs?: string[] } = {},
+): ScanReport {
   // Build the index once and reuse for the installed-list classification
   // so a stale on-disk index.json can't mislead either side.
   const index = buildRegistryIndex(registryRoot);
@@ -53,7 +56,10 @@ export function scanExistingInstalls(registryRoot: string): ScanReport {
     agentDirs,
     claudeSkillsDir: getAgentSkillsDir("claude"),
     registryRoot,
-    entries: listInstalled(registryRoot, { index }),
+    entries: listInstalled(registryRoot, {
+      index,
+      ...(opts.customDirs ? { customDirs: opts.customDirs } : {}),
+    }),
     topLevelSymlinks,
   };
 }
@@ -114,14 +120,31 @@ export function applyRegistration(
       }
 
       case "register": {
-        const result = registerSkill(entry, { ...opts, adopt: action.adopt });
-        if (!result.ok || !action.adopt || !action.agents) return result;
-        // Post-adoption fan-out: synthesize an InstalledSkill rooted at
-        // the new registry copy so setAgentLinks can converge the
-        // requested agent set. Without this, Register adopts the files
-        // but only repoints whichever agent dir originally held the
-        // stray install — which is why Install and Register surfaced
-        // different link sets prior to v1.12.
+        // Record-only: register the entry in place (Adopted=false). Files
+        // are never moved here — that's the separate move-into-bank action.
+        const result = registerSkill(entry, opts);
+        if (!result.ok || !action.agents) return result;
+        // Optional post-record fan-out: link the in-place source into the
+        // requested agent set. The source lives at the entry's realpath
+        // (resolved by setAgentLinks), not in the bank.
+        const fanout = setAgentLinks(entry, action.agents);
+        return {
+          action,
+          ok: result.ok && fanout.ok,
+          message: fanout.ok
+            ? `${result.message}; ${fanout.message}`
+            : `${result.message}; fan-out failed: ${fanout.message}`,
+        };
+      }
+
+      case "move-into-bank": {
+        const result = moveIntoBank(entry, opts);
+        if (!result.ok || !action.agents) return result;
+        // Post-move fan-out: synthesize an InstalledSkill rooted at the
+        // new registry copy so setAgentLinks can converge the requested
+        // agent set. Without this, the move repoints only whichever agent
+        // dir originally held the stray install — which is why Install and
+        // the move primitive surfaced different link sets prior to v1.12.
         const found = findSkillFolder(opts.registryRoot, entry.name);
         const actualDir =
           found?.dir ??
@@ -154,30 +177,6 @@ export function applyRegistration(
       message: String(err instanceof Error ? err.message : err),
     };
   }
-}
-
-/**
- * Unified register entry point (M3). Routes to the adopt path (move
- * files into the bank) or the symlink path (record the external
- * location, leave files in place) based on `opts.adopt`.
- *
- * Replaces the prior split between `adoptIntoRegistry` and
- * `registerExternal` — symlink-mode now works for any source kind, not
- * just foreign-symlinks. The future in-app editing of adopted skills
- * is the main consumer of symlink-mode; today's UI exposes it via
- * the global `settings.registerAdopts` toggle.
- */
-export interface RegisterSkillOptions extends RegisterOptions {
-  /** False ⇒ symlink-mode (entry.adopted=false). True ⇒ move files. */
-  adopt: boolean;
-}
-
-export function registerSkill(
-  entry: InstalledSkill,
-  opts: RegisterSkillOptions,
-): RegistrationResult {
-  if (opts.adopt) return adoptIntoRegistry(entry, opts);
-  return registerWithoutAdopting(entry, opts);
 }
 
 /**
@@ -275,14 +274,13 @@ function setAgentLinks(
   };
 }
 
-function adoptIntoRegistry(
+function moveIntoBank(
   entry: InstalledSkill,
   opts: RegisterOptions,
 ): RegistrationResult {
   const action: RegistrationAction = {
-    type: "register",
+    type: "move-into-bank",
     name: entry.name,
-    adopt: true,
   };
 
   // Always resolve the actual on-disk source via realpath so we move
@@ -403,28 +401,28 @@ function adoptIntoRegistry(
 }
 
 /**
- * Symlink-mode register: record the source location in external.json
- * without moving files. Used when `settings.registerAdopts` is off, or
- * when the user opts out of adoption for a specific register call.
+ * Record-only register primitive: record the source location in
+ * external.json without moving files (`entry.adopted = false`). Moving
+ * files into the bank is the separate `moveIntoBank` primitive; the
+ * renderer chains the two when the user opts to adopt.
  *
- * Refuses for broken-symlink entries (no usable source) and for
- * `ours` entries (already registered). Foreign-symlink, real-directory
- * both work — the recorded target is the realpath of the source.
+ * Refuses for broken-symlink entries (no usable source) and for `ours`
+ * entries (already registered). Foreign-symlink and real-directory both
+ * work — the recorded target is the realpath of the source.
  */
-function registerWithoutAdopting(
+export function registerSkill(
   entry: InstalledSkill,
-  opts: RegisterSkillOptions,
+  opts: RegisterOptions,
 ): RegistrationResult {
   const action: RegistrationAction = {
     type: "register",
     name: entry.name,
-    adopt: false,
   };
   if (entry.kind === "broken-symlink") {
     return {
       action,
       ok: false,
-      message: `cannot register without adopting: ${entry.name} has no usable source (broken symlink)`,
+      message: `cannot register ${entry.name}: no usable source (broken symlink)`,
     };
   }
   if (entry.kind === "ours") {
