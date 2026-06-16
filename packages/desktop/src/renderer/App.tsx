@@ -47,6 +47,7 @@ import {
 } from "./ModalRegistryContext.js";
 import { SettingsProvider, useSettings } from "./SettingsContext.js";
 import { RegistryProvider, useRegistry } from "./RegistryContext.js";
+import { useRegisterSkill } from "./useRegisterSkill.js";
 import { LabelsProvider, useLabels } from "./LabelsContext.js";
 import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
 
@@ -131,6 +132,7 @@ function AppContent(): React.ReactElement {
     refresh,
     rebuild,
   } = useRegistry();
+  const { registerSkill } = useRegisterSkill();
   const { reload: reloadLabels } = useLabels();
 
   const [tab, setTab] = useState<TabId>(
@@ -852,6 +854,13 @@ function AppContent(): React.ReactElement {
               onAddCustomSkillsDir={addCustomSkillsDir}
               onRemoveCustomSkillsDir={removeCustomSkillsDir}
               onSwitchToBrowse={() => setTabPersisted("browse")}
+              // Bulk registration always flows through the
+              // RegistrationPlanModal — the per-row review-then-apply surface
+              // whose own scan walks every agent dir plus custom dirs. Shown
+              // from both the empty state and the Unregistered header; with
+              // nothing on disk the modal renders an empty list and points at
+              // the header's Scan Local. The inline per-card Register button
+              // (onInlineRegister) stays the one-off path.
               onRegisterAll={() => openModal({ kind: "register" })}
               onRegisterOne={(s) => {
                 // Open the unified detail drawer with a synthetic registry
@@ -949,27 +958,23 @@ function AppContent(): React.ReactElement {
                 });
               }}
               onInlineRegister={(group) => {
-                // Unregistered-section shortcut. Registers the only
+                // Unregistered-section shortcut. Records the only
                 // installation into the registry — same operation the
                 // drawer's onRegister performs. Single-installation is
                 // guaranteed by the partition (multi-install lives in
                 // Needs attention), so there is no "which copy" ambiguity.
-                // adopt-vs-symlink mode follows the global setting.
-                void (async () => {
-                  const results = await window.skillsBank.register([
-                    {
-                      name: group.name,
-                      action: {
-                        type: "register",
-                        name: group.name,
-                        adopt: settings.registerAdopts,
-                      },
-                    },
-                  ]);
-                  const r = results[0]!;
-                  flash(r.message);
-                  await refresh();
-                })();
+                // Record-vs-move follows the shared hook: a custom-dir
+                // skill stays in place; everything else honors the global
+                // auto-move toggle.
+                const rep = group.representative;
+                void registerSkill({
+                  name: group.name,
+                  target: {
+                    agent: rep.agent,
+                    ...(rep.customDir ? { customDir: rep.customDir } : {}),
+                  },
+                  isInPlace: !!rep.customDir,
+                });
               }}
               onRepairBroken={(g) => {
                 void (async () => {

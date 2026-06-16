@@ -28,7 +28,7 @@ const api = {
     ipcRenderer.invoke(IPC.repointExternal, name),
   listTopLevelSymlinks: () => ipcRenderer.invoke(IPC.listTopLevelSymlinks),
   clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),
-  scan: () => ipcRenderer.invoke(IPC.scan),
+  scan: (customDirs?: string[]) => ipcRenderer.invoke(IPC.scan, customDirs),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),
   getRoot: () => ipcRenderer.invoke(IPC.getRoot),
   rebuildIndex: () => ipcRenderer.invoke(IPC.rebuildIndex),

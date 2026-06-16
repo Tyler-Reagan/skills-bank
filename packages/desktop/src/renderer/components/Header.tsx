@@ -25,7 +25,7 @@ export type RescanState =
   | { phase: "done"; updates: number };
 
 /**
- * Three-phase state of the "Scan local" affordance. Mirrors the
+ * Three-phase state of the "Scan Local" affordance. Mirrors the
  * Check-for-updates state machine but for the local-disk diagnostics
  * pass (unregistered installs, broken symlinks, missing-files heal
  * states). Local-only — no network.
@@ -94,17 +94,17 @@ interface Props {
    */
   onCancelImport: () => void;
   /**
-   * Three-phase state for the `Scan local` button. Click target runs
+   * Three-phase state for the `Scan Local` button. Click target runs
    * the local-diagnostics IPC; on done with N>0 the user clicks
    * Review to bounce to the Installed-tab "Needs attention" section.
    */
   localScanState: LocalScanState;
   onLocalScan: () => void;
   /**
-   * Invoked when the user clicks "Review" on the Scan-local done-state.
+   * Invoked when the user clicks "Review" on the Scan Local done-state.
    * Host bounces to Installed tab and scrolls to the diagnostics
    * section. Button stays in done-state until this fires (or the user
-   * clicks Scan local again) — no auto-fade.
+   * clicks Scan Local again) — no auto-fade.
    */
   onViewLocalScan: () => void;
   /**
@@ -370,7 +370,7 @@ export function Header({
               )
             ) : (
               <>
-                <Icon name="search" size="md" /> Scan local
+                <Icon name="search" size="md" /> Scan Local
               </>
             )}
           </button>

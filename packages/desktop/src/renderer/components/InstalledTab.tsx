@@ -20,9 +20,11 @@ const INSTALLED_TOOLTIP =
 
 const REGISTER_TOOLTIP =
   "Registering lets the app manage the skill — cross-agent linking, labels, " +
-  "and sync. By default it moves the files into your registry (portable; " +
-  'travels via sync). Turn off "Move skill files" in Settings (or use the ' +
-  "drawer) to instead track a skill where it already lives, e.g. a work repo.";
+  "and sync — while leaving its files where they live. Skills in a custom " +
+  "directory always stay in place (and don't travel via sync), so a " +
+  "non-egressable work repo can be managed without moving it. To make a " +
+  'skill portable, turn on "Move skill files into Skills Bank" in Settings ' +
+  '(or use "Move into bank" in the drawer) to relocate it into your registry.';
 
 export interface InstalledGroup {
   name: string;
@@ -105,6 +107,15 @@ interface Props {
   /** Remove a custom dir from the persisted list. */
   onRemoveCustomSkillsDir: (path: string) => void;
   onSwitchToBrowse: () => void;
+  /**
+   * "Register All": opens the RegistrationPlanModal — the per-row
+   * disambiguation/preview surface whose own scan walks every agent dir
+   * plus custom dirs. Shown in both the empty state and the Unregistered
+   * section header; when nothing is on disk the modal renders an empty list
+   * and points the user at the header's Scan Local. Bulk registration always
+   * flows through the modal (review-then-apply); the inline per-card Register
+   * button stays the one-off path.
+   */
   onRegisterAll: () => void;
   onRegisterOne: (entry: InstalledSkill) => void;
   onSelectIntegrated: (entry: RegistryEntry) => void;
@@ -208,7 +219,7 @@ export function InstalledTab({
               Browse registry
             </button>
             <button className="btn" onClick={onRegisterAll}>
-              Scan for existing skills
+              Register All
             </button>
             <button className="btn" onClick={onAddCustomSkillsDir}>
               Add a skills directory
@@ -491,7 +502,7 @@ export function InstalledTab({
                         <button
                           className="btn primary flex-1 inline-center-6 fw-600"
                           onClick={() => onInlineRegister(g)}
-                          title="Adopt this skill into Skills Bank. To register as external (foreign symlinks only), open the card and use the drawer."
+                          title="Register this skill so the app can manage it (cross-agent links, labels, sync), leaving its files in place. A custom-directory skill always stays put; others move into the bank only when the Settings auto-move toggle is on. Relocate later via Move into bank in the drawer."
                         >
                           Register
                         </button>

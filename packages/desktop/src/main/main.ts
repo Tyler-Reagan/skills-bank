@@ -1719,7 +1719,7 @@ mutatingHandle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
   }
 });
 
-ipcMain.handle(IPC.scan, () => {
+ipcMain.handle(IPC.scan, (_e, customDirs?: string[]) => {
   if (!registryRoot) {
     return {
       claudeSkillsDir: "",
@@ -1728,7 +1728,9 @@ ipcMain.handle(IPC.scan, () => {
       topLevelSymlink: null,
     };
   }
-  return scanExistingInstalls(registryRoot);
+  return scanExistingInstalls(registryRoot, {
+    ...(customDirs && customDirs.length > 0 ? { customDirs } : {}),
+  });
 });
 
 mutatingHandle(
@@ -1741,7 +1743,22 @@ mutatingHandle(
         message: NO_ROOT_MSG,
       }));
     }
-    const report = scanExistingInstalls(registryRoot);
+    // Custom-dir entries live outside the known agent dirs, so the scan
+    // must be told which custom directories to walk. Derive them from the
+    // batch's action targets — every custom-dir action carries its
+    // originating `customDir` — so `findEntry` can locate those entries.
+    const batchCustomDirs = [
+      ...new Set(
+        items
+          .map((it) =>
+            it.action.type === "setAgents" ? undefined : it.action.customDir,
+          )
+          .filter((d): d is string => typeof d === "string"),
+      ),
+    ];
+    const report = scanExistingInstalls(registryRoot, {
+      ...(batchCustomDirs.length > 0 ? { customDirs: batchCustomDirs } : {}),
+    });
     // When the same skill name appears in multiple agent dirs, the
     // renderer (post-fix) sends a per-entry action with `agent` (and
     // `customDir` for non-agent custom scans) attached so we can route

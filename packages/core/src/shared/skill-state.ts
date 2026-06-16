@@ -114,6 +114,13 @@ export interface DrawerCapabilities {
    */
   canResolveRegistrationConflicts: boolean;
   canRepairBroken: boolean;
+  /**
+   * Explicit opt-in adopt for a skill registered in place
+   * (`adopted === false`): move its files into the bank so they become
+   * portable and travel via sync. Only granted for healthy in-place
+   * registrations; an already-adopted skill has nowhere to move to.
+   */
+  canMoveIntoBank: boolean;
   primary: PrimaryAction;
 }
 
@@ -154,6 +161,7 @@ const NEVER: DrawerCapabilities = {
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
   canRepairBroken: false,
+  canMoveIntoBank: false,
   primary: "install",
 };
 
@@ -465,6 +473,9 @@ export function classifyDrawerState(
         canRevealInFinder: true,
         canDeleteFromBank: true,
         canUnregister: true,
+        // In-place registrations can opt into moving their files into
+        // the bank; already-adopted skills have nowhere to move to.
+        canMoveIntoBank: entry.adopted === false,
         primary: "manage-links",
       },
     });

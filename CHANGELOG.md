@@ -3,6 +3,21 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.22.0
+
+Keep-in-place registration. Custom directories become the home for non-egressable "keep in place" skills (issue #125): a skill discovered in a user custom directory — e.g. a work-org repo that can't be moved into the bank and has no GitHub origin — now registers **in place** by default, getting app-managed agent symlinks and labels without relocating its files, and is kept out of the synced manifest. Under the hood this splits the overloaded register primitive into two coherent ones. See [ADR-0011](docs/adr/ADR-0011-register-vs-move-into-bank-primitive-split.md).
+
+### Changed
+
+- **`register` is now record-only; `move-into-bank` is a separate primitive.** The old `RegistrationAction.register.adopt` boolean conflated "record in the registry" with "move files into `skills/<bucket>/`". `register` now only records (`adopted: false`, files stay put); the new `move-into-bank` action relocates + sweeps agent links. The renderer chains the two in one gesture when the **Settings** auto-move toggle (`registerAdopts`) is on **and** the skill isn't a custom-dir source — custom-dir provenance always keeps files in place. The chain predicate lives in one shared `useRegisterSkill` hook backing both inline call sites (per-card Register, drawer Register); bulk "Register All" routes through the row-based plan modal instead.
+- **Custom-directory registration now works end-to-end.** `scanExistingInstalls` takes `{ customDirs }` and the `IPC.register`/`IPC.scan` handlers thread custom directories through, so a custom-dir skill's register action can actually locate its entry (previously it failed with "entry not found in scan"). A real directory whose realpath matches a registry entry is classified `ours`, so a registered in-place skill's own source no longer reads as a self-conflict.
+- **In-place skills are excluded from the pushed manifest.** `exportRegistryManifest` filters out `adopted: false` entries — a non-egressable repo's skills are local-only and never travel via push/pull.
+- **"Adopt" is now the explicit "Move into bank" drawer action.** Surfaced via a new `canMoveIntoBank` capability on a registered, in-place skill. The per-row plan modal (renamed `RegisterModal` → `RegistrationPlanModal`, scan fixed to include custom dirs) is now the single bulk-registration surface: **"Register All"** opens it from both the empty state and the Unregistered section header, and the inline per-card Register button stays the one-off path. (The empty state no longer has a separate "Scan for existing skills" button — it duplicated the header's Scan Local.)
+
+### Removed
+
+- **The `adopt` boolean — hard cut, no deprecation cycle.** `{adopt}` is an internal renderer↔main wire shape with no external SDK consumer, so it's deleted outright rather than carried for a minor cycle. On-disk `external.json` / `.skills-bank.json` shapes are unchanged.
+
 ## v1.21.0
 
 Consolidation + cleanup release. The post-reorg core/desktop consolidation lands; `meta.json` is finally eliminated end-to-end; several orphaned code paths and stale decision records are culled; and the documentation surface — internal docs and the published site — is pruned and trued-up against the live app.

@@ -189,22 +189,27 @@ export type RegistrationAction =
       type: "register";
       name: string;
       /**
-       * True ⇒ move files into `<registryRoot>/skills/<name>` (the
-       * Adopted=true axis). False ⇒ record the external path and leave
-       * files in place (Adopted=false). The renderer derives this from
-       * `settings.registerAdopts`; M3 collapsed the prior `adopt` and
-       * `register-external` action variants into this single shape.
+       * Record-only primitive: register the entry in place (Adopted=false,
+       * files stay where they live). Moving files into the bank is the
+       * separate `move-into-bank` action — the renderer chains the two
+       * when `settings.registerAdopts` is on and the skill isn't tracked
+       * in a custom directory.
+       *
+       * Optional post-record fan-out. When provided, applyRegistration
+       * reconciles agent links after recording so the skill ends up linked
+       * into exactly this agent set. Undefined preserves the legacy
+       * behavior of only repointing pre-existing links.
        */
-      adopt: boolean;
+      agents?: import("./agents.js").AgentId[];
+    } & ActionTarget)
+  | ({
+      type: "move-into-bank";
+      name: string;
       /**
-       * Optional post-adoption fan-out. When provided AND `adopt` is
-       * true, applyRegistration reconciles agent links after the adopt
-       * sweep so the registered skill ends up linked into exactly this
-       * agent set. The same shape consumed by `installSkill` — this is
-       * what makes Register the inverse of Install (install creates
-       * links from a registry entry; register adopts a stray install
-       * then mirrors the same link set). Undefined preserves the
-       * legacy behavior of only repointing pre-existing links.
+       * Relocate primitive: move an already-recorded (or stray) skill's
+       * files into `<registryRoot>/skills/<name>` and flip Adopted=true,
+       * sweeping agent links to point at the new in-bank location. Same
+       * post-move fan-out semantics as `register.agents`.
        */
       agents?: import("./agents.js").AgentId[];
     } & ActionTarget)
