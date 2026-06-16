@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-11T17:29:11.535Z",
+  "generatedAt": "2026-06-13T21:54:04.798Z",
   "registry": "skills-bank",
   "entries": [
     {
@@ -26,7 +26,7 @@
         "message": "refactor: source-axis enforcement, install primitive overhaul, meta.json/CLI/publish cull (#112)"
       },
       "bucket": "vendored",
-      "canon": false
+      "canon": true
     }
   ]
 }

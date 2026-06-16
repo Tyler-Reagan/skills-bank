@@ -5,7 +5,7 @@ import type {
   InstalledSkill,
   RegistryEntry,
 } from "@skills-bank/core";
-import { RegisterModal } from "./RegisterModal.js";
+import { RegistrationPlanModal } from "./RegistrationPlanModal.js";
 import { ManageLinksModal } from "./ManageLinksModal.js";
 import { InstallCollisionModal } from "./InstallCollisionModal.js";
 import { InstallConflictModal } from "./InstallConflictModal.js";
@@ -33,6 +33,7 @@ import { SkillDetailDrawer, type ReviewContext } from "./SkillDetailDrawer.js";
 import { classifyDrawerState } from "./skillState.js";
 import type { InstalledGroup } from "./InstalledTab.js";
 import { useRegistry } from "../RegistryContext.js";
+import { useRegisterSkill } from "../useRegisterSkill.js";
 import { useSettings } from "../SettingsContext.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
 import type {
@@ -280,13 +281,14 @@ export function ModalHost({
   return (
     <>
       {modal?.kind === "register" && (
-        <RegisterModal
+        <RegistrationPlanModal
           onClose={async () => {
             closeModal();
             await refresh();
           }}
           onFlash={flash}
           registerAdopts={settings.registerAdopts}
+          customSkillsDirs={settings.customSkillsDirs}
           defaultInstallAgents={
             settings.defaultInstallAgents.length > 0
               ? settings.defaultInstallAgents
@@ -907,9 +909,23 @@ function DrawerHost({
   const { flash, pushAppError } = useRegistryHost();
   const { registryByName, installed, registryRoot, refresh } = useRegistry();
   const { settings } = useSettings();
+  const { registerSkill, moveIntoBank } = useRegisterSkill();
   if (!selected) return null;
   const isRegistered = registryByName.has(selected.name);
   const installations = installed.filter((i) => i.name === selected.name);
+  // Representative install for action targeting: prefer a custom-dir
+  // install so `customDir` rides onto the action (the main-process scan
+  // can't otherwise locate it). `isInPlace` suppresses the auto-move
+  // chain for an already-in-place skill or a custom-dir source.
+  const drawerRep =
+    installations.find((i) => i.customDir) ?? installations[0] ?? null;
+  const drawerTarget = drawerRep
+    ? {
+        agent: drawerRep.agent,
+        ...(drawerRep.customDir ? { customDir: drawerRep.customDir } : {}),
+      }
+    : undefined;
+  const drawerIsInPlace = !!drawerRep?.customDir || selected.adopted === false;
   // Classifier is non-trivial (full installation partition + capability
   // fan-out). Compute once per render rather than 10× inline per drawer-
   // prop callback.
@@ -970,25 +986,23 @@ function DrawerHost({
       onRegister={
         caps.canRegister
           ? async () => {
-              const fanoutAgents =
-                settings.defaultInstallAgents.length > 0
-                  ? settings.defaultInstallAgents
-                  : undefined;
-              const results = await window.skillsBank.register([
-                {
-                  name: selected.name,
-                  action: {
-                    type: "register",
-                    name: selected.name,
-                    adopt: settings.registerAdopts,
-                    agents: fanoutAgents,
-                  },
-                },
-              ]);
-              const r = results[0]!;
-              flash(r.message);
+              const r = await registerSkill({
+                name: selected.name,
+                ...(drawerTarget ? { target: drawerTarget } : {}),
+                isInPlace: drawerIsInPlace,
+              });
               if (r.ok) onClose();
-              await refresh();
+            }
+          : undefined
+      }
+      onMoveIntoBank={
+        caps.canMoveIntoBank
+          ? async () => {
+              const r = await moveIntoBank({
+                name: selected.name,
+                ...(drawerTarget ? { target: drawerTarget } : {}),
+              });
+              if (r.ok) onClose();
             }
           : undefined
       }

@@ -13,6 +13,7 @@ type ActionState =
   | "installing"
   | "exporting"
   | "registering"
+  | "moving-into-bank"
   | "unregistering"
   | "hiding"
   | "unhiding"
@@ -37,6 +38,7 @@ interface Props {
   onManageLinks?: () => void;
   onResolveConflicts?: () => void;
   onRegister?: () => Promise<void> | void;
+  onMoveIntoBank?: () => Promise<void> | void;
   onUnregister?: () => Promise<void> | void;
   onHide?: () => Promise<void> | void;
   onUnhide?: () => Promise<void> | void;
@@ -64,6 +66,7 @@ export function DrawerActions({
   onManageLinks,
   onResolveConflicts,
   onRegister,
+  onMoveIntoBank,
   onUnregister,
   onHide,
   onUnhide,
@@ -201,10 +204,42 @@ export function DrawerActions({
               )}
             </button>
             <p className="drawer-action-hint">
-              Files move into your registry's skills/ directory unless you turn
-              off adoption in Settings. Preserved through Refresh via
-              diff-before-apply; cross-agent linkable. If your registry mirrors
-              a GitHub repo, commit to persist across machines.
+              Records this skill in your registry while leaving its files where
+              they live. Cross-agent linkable. Files move into the bank only if
+              you turn on auto-adopt in Settings — or later, explicitly, via
+              Move into bank.
+            </p>
+          </>
+        )}
+
+        {/* Move into bank — explicit opt-in adopt for a skill that was
+        registered in place (e.g. from a custom directory). Relocates its
+        files into the registry's skills/ tree. */}
+        {caps.canMoveIntoBank && onMoveIntoBank && (
+          <>
+            <button
+              className="btn"
+              disabled={action !== null}
+              onClick={() => {
+                setAction("moving-into-bank");
+                void Promise.resolve(onMoveIntoBank()).finally(() =>
+                  setAction(null),
+                );
+              }}
+            >
+              {action === "moving-into-bank" ? (
+                <>
+                  <span className="spinner inline" /> Moving into bank
+                </>
+              ) : (
+                "Move into bank"
+              )}
+            </button>
+            <p className="drawer-action-hint">
+              Relocates this skill's files into your registry's skills/
+              directory and links the agents to the in-bank copy. Do this only
+              if the source can be moved — leave keep-in-place skills (like a
+              non-egressable work repo) registered where they are.
             </p>
           </>
         )}

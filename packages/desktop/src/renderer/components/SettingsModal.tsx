@@ -204,7 +204,7 @@ export function SettingsModal({
             <span className="prefs-row-control">
               <InfoTooltip
                 label="About moving files on register"
-                text="On (default): registering copies a skill's files into your registry, so it's portable and travels via sync. Off: the registry tracks the skill where it already lives — for skills you can't or shouldn't move (e.g. a work repo). Folders like that can be scanned via Custom directories on the Installed tab."
+                text="Registering always records a skill in place first (files stay put). On (default): it then moves the files into your registry so the skill is portable and travels via sync. Off: the skill is left where it already lives. Skills scanned from Custom directories on the Installed tab always stay in place regardless of this setting — for a work repo you can't or shouldn't move. You can relocate any in-place skill later via Move into bank in its drawer."
               />
             </span>
           </div>

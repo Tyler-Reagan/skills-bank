@@ -613,7 +613,7 @@ interface SkillsBankAPI {
     message: string;
     error?: AppError;
   }>;
-  scan(): Promise<ScanReport>;
+  scan(customDirs?: string[]): Promise<ScanReport>;
   register(
     items: Array<{ name: string; action: RegistrationAction }>,
   ): Promise<RegistrationResult[]>;

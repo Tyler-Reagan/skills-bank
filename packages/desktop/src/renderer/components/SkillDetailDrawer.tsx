@@ -58,12 +58,19 @@ interface Props {
   isRegistered: boolean;
   /**
    * Trigger registration into the registry for a not-yet-registered
-   * entry. Required when isRegistered is false; ignored otherwise.
-   * Whether files move into the bank or stay at their origin is
-   * controlled by `settings.registerAdopts` (M3 collapsed the prior
-   * adopt vs. register-as-external split into one action).
+   * entry. Records the skill in place (files stay at their origin); the
+   * host's shared hook chains a move-into-bank afterward only when the
+   * global auto-move toggle is on and the skill isn't a keep-in-place
+   * custom-dir source.
    */
   onRegister?: () => Promise<void> | void;
+  /**
+   * Relocate an already-registered in-place skill into the bank. Only
+   * surfaced when `caps.canMoveIntoBank` is set (a registered,
+   * non-adopted entry) — the explicit opt-in adopt for a skill that was
+   * recorded in place.
+   */
+  onMoveIntoBank?: () => Promise<void> | void;
   /**
    * Optional override of which agent dirs to install into. When omitted,
    * install broadcasts to every existing agent dir (legacy behavior).
@@ -136,6 +143,7 @@ export function SkillDetailDrawer({
   onInstallConflict,
   isRegistered,
   onRegister,
+  onMoveIntoBank,
   defaultInstallAgents,
   onUnregister,
   onHide,
@@ -407,6 +415,7 @@ export function SkillDetailDrawer({
             onManageLinks={onManageLinks}
             onResolveConflicts={onResolveConflicts}
             onRegister={onRegister}
+            onMoveIntoBank={onMoveIntoBank}
             onUnregister={onUnregister}
             onHide={onHide}
             onUnhide={onUnhide}

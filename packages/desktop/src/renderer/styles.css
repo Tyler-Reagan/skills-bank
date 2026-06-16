@@ -3149,6 +3149,176 @@ button:disabled {
   color: var(--text);
 }
 
+/* ── RegistrationPlanModal ─────────────────────────────────
+   Restored + modernized after the v1.21 sweep deleted the
+   original block while the component still referenced it. The
+   plan phase composes inside `.modal-body--flex-col`: header →
+   hint → toolbar → `.register-modal-plan-scroll` (the only
+   scroll region) → pinned `.modal-footer`. */
+.register-modal-hint {
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: var(--s3);
+}
+.register-modal-registry-hint {
+  color: var(--text-3);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+.register-modal-error-msg {
+  color: var(--danger);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Toolbar: count + bulk "Set all" control above the plan list. */
+.register-modal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s2) 0 var(--s3);
+  border-bottom: 1px solid var(--border);
+}
+.register-modal-count {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--surface-hi);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.register-modal-bulk {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* The single scroll region in the flex-col plan body. Grows to
+   fill remaining height; footer stays pinned beneath it. */
+.register-modal-plan-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0 calc(-1 * var(--s2));
+  padding: 0 var(--s2);
+}
+
+/* Empty state ("Nothing to register"). */
+.register-modal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--s2);
+  padding: var(--s6) 0;
+  color: var(--text-2);
+}
+.register-modal-empty-icon {
+  color: var(--text-3);
+}
+
+/* Spinner phases. */
+.register-modal-spinner-center {
+  display: flex;
+  justify-content: center;
+  padding: var(--s6) 0;
+}
+.register-modal-spinner-center--tall {
+  display: flex;
+  justify-content: center;
+  padding: var(--s8) 0;
+}
+
+/* Results phase: summary chips + per-row outcome list. */
+.register-modal-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: var(--s3) 0;
+}
+.register-modal-summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+}
+.register-modal-summary-chip--ok {
+  background: var(--success-dim);
+  color: var(--success);
+}
+.register-modal-summary-chip--err {
+  background: var(--danger-dim);
+  color: var(--danger);
+}
+.register-modal-rebuilding {
+  color: var(--text-2);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.register-modal-rebuild-ok {
+  color: var(--success);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+}
+.register-modal-result-scroll {
+  max-height: 320px;
+  overflow: auto;
+  margin: var(--s3) 0 var(--s4);
+}
+.register-modal-result-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.register-modal-result-row:last-child {
+  border-bottom: none;
+}
+.register-modal-result-icon--ok {
+  color: var(--success);
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.register-modal-result-icon--err {
+  color: var(--danger);
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.register-modal-result-main {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.register-modal-result-msg--ok {
+  color: var(--text-2);
+}
+.register-modal-result-msg--err {
+  color: var(--danger);
+}
+
 /* ── LocalScan section ─────────────────────────────────── */
 .local-scan-category {
   margin-bottom: 12px;
