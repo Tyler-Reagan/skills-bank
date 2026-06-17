@@ -3,6 +3,18 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.22.1
+
+Bug-fix patch: drifted skills can now be installed and managed.
+
+### Fixed
+
+- **Install and manage-links restored in drift states.** The `edited-with-origin` and `edited-without-origin` drawer states were left without `canInstall` or `canManageLinks` after v1.20 removed the drift-resolution heal actions. The only affordances visible were Export, Reveal in Finder, and Remove from registry — with no way to link the skill into agent dirs while drifted. Both states now follow the same pattern as `origin-unreachable` and `origin-update-available`: `canInstall: !hasAnyInstallation` / `canManageLinks: hasAnyInstallation`, and a dynamic primary (`"install"` when uninstalled, `"manage-links"` when installed). The static `primary: "manage-links"` that was left vestigial in both arms is replaced by the conditional. Six affected test cases updated; two new "with-installation" test cases added for parity with the `origin-unreachable` test pair.
+
+### Notes
+
+- Drift _resolution_ (rebaseline, keep-local/detach, reset-to-origin) remains absent — that is tracked separately in [#126](https://github.com/Tyler-Reagan/skills-bank/issues/126). This fix restores the install/manage-links affordances _while the skill is drifted_, orthogonal to the resolution redesign.
+
 ## v1.22.0
 
 Keep-in-place registration. Custom directories become the home for non-egressable "keep in place" skills (issue #125): a skill discovered in a user custom directory — e.g. a work-org repo that can't be moved into the bank and has no GitHub origin — now registers **in place** by default, getting app-managed agent symlinks and labels without relocating its files, and is kept out of the synced manifest. Under the hood this splits the overloaded register primitive into two coherent ones. See [ADR-0011](docs/adr/ADR-0011-register-vs-move-into-bank-primitive-split.md).

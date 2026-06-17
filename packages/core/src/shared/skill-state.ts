@@ -234,9 +234,11 @@ export function classifyDrawerState(
         capabilities: {
           ...NEVER,
           canRevealInFinder: true,
+          canInstall: !hasAnyInstallation,
+          canManageLinks: hasAnyInstallation,
           canExport: true,
           canUnregister: true,
-          primary: "manage-links",
+          primary: hasAnyInstallation ? "manage-links" : "install",
         },
       });
     }
@@ -247,9 +249,11 @@ export function classifyDrawerState(
       capabilities: {
         ...NEVER,
         canRevealInFinder: true,
+        canInstall: !hasAnyInstallation,
+        canManageLinks: hasAnyInstallation,
         canExport: true,
         canUnregister: true,
-        primary: "manage-links",
+        primary: hasAnyInstallation ? "manage-links" : "install",
       },
     });
   }

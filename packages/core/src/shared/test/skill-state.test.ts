@@ -103,8 +103,36 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-with-origin",
+    expectedPrimary: "install",
+    expectedCaps: {
+      canInstall: true,
+      canManageLinks: false,
+      canUnregister: true,
+      canExport: true,
+    },
+  },
+  {
+    label:
+      "drift + upstream-github + installed → edited-with-origin, manage-links primary",
+    entry: entry({
+      drift: true,
+      source: {
+        source: "user",
+        origin: {
+          kind: "github",
+          repo: "u/r",
+          sourceUrl: "https://github.com/u/r",
+          skillPath: "skills/test/SKILL.md",
+        },
+      },
+    }),
+    installed: [inst()],
+    isRegistered: true,
+    expectedState: "edited-with-origin",
     expectedPrimary: "manage-links",
     expectedCaps: {
+      canInstall: false,
+      canManageLinks: true,
       canUnregister: true,
       canExport: true,
     },
@@ -115,8 +143,25 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-without-origin",
+    expectedPrimary: "install",
+    expectedCaps: {
+      canInstall: true,
+      canManageLinks: false,
+      canUnregister: true,
+      canExport: true,
+    },
+  },
+  {
+    label:
+      "drift + bundled-no-upstream + installed → edited-without-origin, manage-links primary",
+    entry: entry({ drift: true, source: { source: "curated" } }),
+    installed: [inst()],
+    isRegistered: true,
+    expectedState: "edited-without-origin",
     expectedPrimary: "manage-links",
     expectedCaps: {
+      canInstall: false,
+      canManageLinks: true,
       canUnregister: true,
       canExport: true,
     },
@@ -139,8 +184,12 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-with-origin",
-    expectedPrimary: "manage-links",
-    expectedCaps: { canUnregister: true },
+    expectedPrimary: "install",
+    expectedCaps: {
+      canInstall: true,
+      canManageLinks: false,
+      canUnregister: true,
+    },
   },
   {
     label:
@@ -181,8 +230,8 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-with-origin",
-    expectedPrimary: "manage-links",
-    expectedCaps: { canUpdate: false },
+    expectedPrimary: "install",
+    expectedCaps: { canUpdate: false, canInstall: true, canManageLinks: false },
   },
   // v1.4: origin-unreachable.
   {
@@ -265,8 +314,8 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "edited-with-origin",
-    expectedPrimary: "manage-links",
-    expectedCaps: { canUpdate: false },
+    expectedPrimary: "install",
+    expectedCaps: { canUpdate: false, canInstall: true, canManageLinks: false },
   },
   {
     label:
