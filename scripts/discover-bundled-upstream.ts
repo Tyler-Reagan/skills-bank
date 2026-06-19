@@ -111,13 +111,12 @@ interface FindResult {
 async function npxFind(name: string): Promise<FindResult[]> {
   let stdout: string;
   try {
+    // The CLI emits ANSI; we strip below. `FORCE_COLOR=0` would also
+    // work but is brittler across versions. (Default encoding is utf8,
+    // so `stdout` is a string.)
     const r = await execFileAsync("npx", ["-y", "skills", "find", name], {
-      // Empty stdin so the CLI's interactive prompt short-circuits.
-      input: "",
       timeout: 30_000,
-      // The CLI emits ANSI; we strip below. `FORCE_COLOR=0` would also
-      // work but is brittler across versions.
-    } as Parameters<typeof execFileAsync>[2]);
+    });
     stdout = r.stdout;
   } catch (err) {
     // Some `find` invocations exit non-zero when there are no matches.
