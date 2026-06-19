@@ -172,10 +172,10 @@ async function resolveSkillPath(
   skillId: string,
   token: string | null,
 ): Promise<string | null> {
-  const { probeOriginTree, findFolderHash } =
+  const { fetchOriginTree, findFolderHash } =
     await import("../packages/core/src/index.js");
   void findFolderHash; // silence unused-import in this scope; mirror handles it
-  const probe = await probeOriginTree(repo, token);
+  const probe = await fetchOriginTree(repo, token);
   if (!probe.ok || probe.truncated) return null;
   const skillMd = probe.tree.filter(
     (e) =>

@@ -41,7 +41,7 @@ import {
   folderPathFromSkillPath,
   installSkillFiles,
   ORIGIN_KIND_GITHUB,
-  probeOriginTree,
+  fetchOriginTree,
   readSkillSource,
   writeSkillSource,
   writeSyncedHash,
@@ -159,22 +159,22 @@ function loadCandidates(only: Set<string> | null): {
       manualSkips.push(name);
       continue;
     }
-    const upstream = src.upstream;
-    if (!upstream || upstream.kind !== ORIGIN_KIND_GITHUB) {
-      skipped.push({ name, reason: "no github upstream pointer" });
+    const origin = src.origin;
+    if (!origin || origin.kind !== ORIGIN_KIND_GITHUB) {
+      skipped.push({ name, reason: "no github origin pointer" });
       continue;
     }
-    if (!upstream.repo || !upstream.skillPath) {
-      skipped.push({ name, reason: "incomplete upstream pointer" });
+    if (!origin.repo || !origin.skillPath) {
+      skipped.push({ name, reason: "incomplete origin pointer" });
       continue;
     }
     candidates.push({
       name,
       skillDir,
       source: src,
-      repo: upstream.repo,
-      skillPath: upstream.skillPath,
-      storedHash: upstream.skillFolderHash ?? null,
+      repo: origin.repo,
+      skillPath: origin.skillPath,
+      storedHash: origin.skillFolderHash ?? null,
     });
   }
   return { candidates, manualSkips, skipped };
@@ -211,7 +211,7 @@ async function refresh(): Promise<void> {
   }
   const byRepo = groupByRepo(candidates);
   for (const [repo, group] of byRepo) {
-    const probe = await probeOriginTree(repo, token);
+    const probe = await fetchOriginTree(repo, token);
     if (!probe.ok) {
       const detail = `probe failed (${probe.status}): ${probe.message}`;
       for (const c of group) {
@@ -284,14 +284,14 @@ async function refresh(): Promise<void> {
         });
         continue;
       }
-      // Re-stamp the upstream pointer + drift baseline so the desktop
+      // Re-stamp the origin pointer + drift baseline so the desktop
       // app's probe loop sees a clean state after the refresh commit
       // lands. installedAt is preserved (first-install timestamp is
       // immutable); only the hash baseline moves.
       const nextSource: SkillSource = {
         ...c.source,
-        upstream: {
-          ...c.source.upstream!,
+        origin: {
+          ...c.source.origin!,
           skillFolderHash: mirror.folderHash,
         },
       };
