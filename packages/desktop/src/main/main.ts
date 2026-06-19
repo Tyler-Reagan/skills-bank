@@ -42,6 +42,9 @@ import {
   resolveRenameTarget,
   type ManifestDecisions,
   fetchRemoteManifest,
+  buildSkillFolderMap,
+  reconcileResidentOrigins,
+  type RateLimitInfo,
   fetchUserRepos,
   fetchRepoDefaultBranch,
   MANIFEST_SCHEMA_VERSION,
@@ -495,6 +498,7 @@ const PROBE_BOOT_DELAY_MS = 5 * 1000;
 const probeRunner = createOriginProbeRunner({
   registryRoot: () => registryRoot,
   token: () => getStoredToken(),
+  linkedRepo: () => linkedRepo?.fullName ?? null,
   onComplete: (event) => {
     const wins = BrowserWindow.getAllWindows();
     for (const win of wins) {
@@ -2096,6 +2100,39 @@ ipcMain.handle(IPC.importManifestCancel, () => {
   return { ok: true };
 });
 
+/**
+ * Reconcile resident skills' origins against the linked repo's actual
+ * layout before a manifest is exported, so the committed manifest records
+ * truthful, re-fetchable pointers and stale third-party probes stop. Both
+ * the push and its preview run this first, so the previewed diff matches
+ * what a push would write. A tree-fetch failure / truncation must not
+ * silently degrade origins to `none`, so it is surfaced rather than
+ * swallowed; the push blocks on it, the preview falls back to current state.
+ */
+async function reconcileOriginsBeforeExport(
+  root: string,
+  repo: string,
+  branch: string,
+  token: string,
+): Promise<
+  { ok: true } | { ok: false; message: string; rateLimit?: RateLimitInfo }
+> {
+  const tree = await fetchOriginTree(repo, token, { ref: branch });
+  if (!tree.ok) {
+    return tree.rateLimit
+      ? { ok: false, message: tree.message, rateLimit: tree.rateLimit }
+      : { ok: false, message: tree.message };
+  }
+  if (tree.truncated) {
+    return {
+      ok: false,
+      message: `${repo}'s tree is too large to read reliably — origins not reconciled`,
+    };
+  }
+  reconcileResidentOrigins(root, buildSkillFolderMap(tree.tree), repo);
+  return { ok: true };
+}
+
 ipcMain.handle(
   IPC.previewManifestPush,
   async (): Promise<PreviewManifestPushResult> => {
@@ -2104,8 +2141,19 @@ ipcMain.handle(
     const token = getStoredToken();
     if (!token) return { ok: false, message: "not authenticated" };
     const branch = linkedRepo.defaultBranch ?? "main";
+    const root = registryRoot;
+    // Best-effort: align origins to the linked repo before diffing so the
+    // preview matches what a push would write. A tree-fetch failure isn't
+    // fatal here — fall back to the current state (the remote-manifest
+    // fetch below surfaces any rate-limit error anyway).
+    await reconcileOriginsBeforeExport(
+      root,
+      linkedRepo.fullName,
+      branch,
+      token,
+    );
     const sourceBankVersion = app.getVersion();
-    const localManifest = exportRegistryManifest(registryRoot, {
+    const localManifest = exportRegistryManifest(root, {
       sourceBankVersion,
       ...manifestExportContext(),
     });
@@ -2147,8 +2195,29 @@ ipcMain.handle(
         message: "not authenticated",
       };
     const branch = linkedRepo.defaultBranch ?? "main";
+    const root = registryRoot;
+    // Align resident skills' origins to the linked repo's real layout
+    // before exporting, so the committed manifest is truthful. Block the
+    // push if we can't read the tree — never push origins reconciled from
+    // partial data.
+    const reconciled = await reconcileOriginsBeforeExport(
+      root,
+      linkedRepo.fullName,
+      branch,
+      token,
+    );
+    if (!reconciled.ok) {
+      return reconciled.rateLimit
+        ? {
+            ok: false,
+            reason: "rate-limit",
+            message: reconciled.message,
+            rateLimit: reconciled.rateLimit,
+          }
+        : { ok: false, reason: "write-failed", message: reconciled.message };
+    }
     const sourceBankVersion = app.getVersion();
-    const manifest = exportRegistryManifest(registryRoot, {
+    const manifest = exportRegistryManifest(root, {
       sourceBankVersion,
       ...manifestExportContext(),
     });
@@ -3128,6 +3197,7 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
   error?: ReturnType<typeof fromCaught>;
 }> {
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const root = registryRoot;
   const token = getStoredToken();
   if (!token) return { ok: false, message: "not authenticated" };
   const slash = fullName.indexOf("/");
@@ -3193,6 +3263,16 @@ async function replaceRegistryWithRepo(fullName: string): Promise<{
       syncedFromCommit: report.commitSha,
       defaultBranch: fetchedDefaultBranch,
     });
+    // Align resident skills' origins to the just-synced repo layout so the
+    // probe stops treating them as third-party upstreams and the next push
+    // records truthful pointers. Best-effort: a tree-fetch hiccup here just
+    // defers reconciliation to the next push/sync.
+    await reconcileOriginsBeforeExport(
+      root,
+      fullName,
+      fetchedDefaultBranch ?? "HEAD",
+      token,
+    );
     const message =
       report.conflicts.length > 0
         ? `synced ${report.upserted.length} from ${fullName}, ${report.conflicts.length} conflict(s) need review`

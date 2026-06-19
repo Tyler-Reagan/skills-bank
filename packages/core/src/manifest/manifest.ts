@@ -162,11 +162,12 @@ export function exportRegistryManifest(
     // other machine.
     .filter((entry) => entry.adopted !== false)
     .map((entry) => {
-      const origin = resolveExportOrigin(
-        entry.path,
-        entry.source.origin,
-        opts.linkedRepo,
-      );
+      // Origin is carried verbatim from the skill's marker. A resident
+      // skill already holds a real self-origin (reconcileResidentOrigins
+      // runs before export wherever we have the linked tree); a `none`/
+      // missing marker stays untracked rather than being synthesized into
+      // a fictional path the linked repo doesn't actually contain.
+      const origin = originFromPointer(entry.source.origin);
       // Bucket is derived, not read from disk: external GitHub origin →
       // `vendored`; self-origin or no origin → `personal`.
       const bucket: "personal" | "vendored" =
@@ -252,35 +253,6 @@ function canonicalOrigin(o: ManifestOrigin): Record<string, unknown> {
   if (o.skillPath) out.skillPath = o.skillPath;
   if (o.skillFolderHash) out.skillFolderHash = o.skillFolderHash;
   return out;
-}
-
-/**
- * Resolve the origin to write into a manifest entry. A GitHub marker is
- * carried verbatim. A `none`/missing marker is upgraded to a self-origin
- * (`kind: "github"`, `repo` = `linkedRepo`, `skillPath` = the skill's
- * in-registry path) when a repo is linked, so an authored-here skill is
- * re-fetchable on pull from the same repo its content commits to. With no
- * linked repo it stays `none` (untracked until a repo is linked + pushed).
- *
- * `entryPath` is the skill folder's registry-relative path (e.g.
- * `skills/personal/foo`); the self-origin's `skillPath` appends
- * `/SKILL.md` — the canonical authored-content location within a skill folder.
- */
-function resolveExportOrigin(
-  entryPath: string,
-  marker: OriginPointer | undefined,
-  linkedRepo: string | undefined,
-): ManifestOrigin {
-  const fromMarker = originFromPointer(marker);
-  if (fromMarker.kind === "github") return fromMarker;
-  if (linkedRepo) {
-    return {
-      kind: "github",
-      repo: linkedRepo,
-      skillPath: `${entryPath.replace(/\/+$/, "")}/SKILL.md`,
-    };
-  }
-  return fromMarker;
 }
 
 export function originFromPointer(

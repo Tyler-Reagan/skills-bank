@@ -175,6 +175,38 @@ export function folderPathFromSkillPath(skillPath: string): string {
   return skillPath.slice(0, i);
 }
 
+/**
+ * Build a `folder-leaf-name → SKILL.md-path` map from a repo's recursive
+ * tree. Each skill folder is keyed by its containing-folder leaf — e.g.
+ * `skills/keyboard/qmk/qmk-keymap/SKILL.md` → `qmk-keymap` →
+ * `skills/keyboard/qmk/qmk-keymap/SKILL.md`. This lets a caller resolve
+ * where a skill (identified by its registry `name`, which equals the
+ * folder leaf) actually lives in a repo whose layout it doesn't otherwise
+ * know — the linked repo's category folders are decoupled from the local
+ * bucket layout.
+ *
+ * A leaf that appears for two distinct folders is ambiguous and dropped:
+ * callers must treat an absent key as "not resolvable" rather than guess.
+ */
+export function buildSkillFolderMap(tree: GitTreeEntry[]): Map<string, string> {
+  const map = new Map<string, string>();
+  const ambiguous = new Set<string>();
+  for (const entry of tree) {
+    if (entry.type !== "blob" || !entry.path.endsWith("/SKILL.md")) continue;
+    const folder = folderPathFromSkillPath(entry.path);
+    const leaf = folder.slice(folder.lastIndexOf("/") + 1);
+    if (!leaf) continue;
+    const existing = map.get(leaf);
+    if (existing !== undefined && existing !== entry.path) {
+      ambiguous.add(leaf);
+      continue;
+    }
+    map.set(leaf, entry.path);
+  }
+  for (const leaf of ambiguous) map.delete(leaf);
+  return map;
+}
+
 export interface MirrorResultOk {
   ok: true;
   /** SHA-1 git tree hash of the upstream folder — write this into the

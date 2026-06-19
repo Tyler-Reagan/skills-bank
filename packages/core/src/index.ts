@@ -30,6 +30,7 @@ export * from "./shared/conflict.js";
 export * from "./skills/delete.js";
 export * from "./registry/external.js";
 export * from "./registry/heal.js";
+export * from "./registry/reconcile.js";
 export * from "./registry/frontmatter.js";
 export * from "./shared/skill-state.js";
 export * from "./skills/classify.js";

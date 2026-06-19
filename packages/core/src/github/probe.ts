@@ -8,6 +8,7 @@ import {
 } from "./origin.js";
 import { buildRegistryIndex } from "../registry/build.js";
 import { readRuntimeState, writeRuntimeState } from "../registry/heal.js";
+import { isSelfOrigin } from "../registry/source.js";
 import { getStateDir } from "../shared/paths.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 
@@ -54,6 +55,13 @@ export interface OriginProbeRunnerOpts {
   registryRoot: () => string | null;
   /** Resolve the OAuth token at call time. Null = unauthenticated. */
   token: () => string | null;
+  /**
+   * Resolve the active linked repo `owner/name` at call time. Null when
+   * no repo is linked. Skills whose origin points at the linked repo are
+   * owned by manifest sync, not the third-party update probe, so they are
+   * excluded from probing — see the candidate filter in `runOnce`.
+   */
+  linkedRepo?: () => string | null;
   /** Fire after every probe (including refresh nudges). */
   onComplete: (event: ProbeCompleteEvent) => void;
   /** Per-repo cache TTL. Default 5 minutes — the upstream tree
@@ -284,12 +292,16 @@ export function createOriginProbeRunner(
       opts.onComplete({});
       return { probed: 0, updates: 0, probedAt };
     }
+    const linked = opts.linkedRepo?.() ?? undefined;
     const candidates = index.entries.filter(
       (e) =>
         e.source.origin?.kind === "github" &&
         typeof e.source.origin.repo === "string" &&
         typeof e.source.origin.skillPath === "string" &&
-        typeof e.source.origin.skillFolderHash === "string",
+        typeof e.source.origin.skillFolderHash === "string" &&
+        // Self-origin skills (content lives in the linked repo) are kept
+        // truthful by manifest sync, not probed as third-party upstreams.
+        !isSelfOrigin(e.source.origin, linked),
     );
     if (candidates.length === 0) {
       // Most-common early-return: registries with no baselined origin
