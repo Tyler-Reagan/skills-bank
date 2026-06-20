@@ -187,7 +187,7 @@ describe("exportRegistryManifest", () => {
     });
   });
 
-  test("synthesizes a self-origin from the in-registry path when a repo is linked", () => {
+  test("does NOT synthesize an origin from the local bucket path", () => {
     writeSkill("personal", "mine", { description: "my own skill" });
 
     const m = exportRegistryManifest(registryRoot, {
@@ -196,12 +196,36 @@ describe("exportRegistryManifest", () => {
       linkedRepo: "Tyler-Reagan/skills",
     });
     const mine = m.skills.find((s) => s.name === "mine")!;
+    // A none/missing marker stays untracked even with a repo linked: the
+    // local bucket path is not a valid coordinate in the linked repo's
+    // (category-folder) layout, so reconcileResidentOrigins — not export —
+    // assigns self-origins at their real path.
+    expect(mine.origin).toEqual({ kind: "none" });
+    expect(mine.bucket).toBe("personal");
+  });
+
+  test("carries a real self-origin marker through verbatim", () => {
+    // A skill whose sidecar already holds a correct self-origin (as written
+    // by reconcileResidentOrigins) exports that pointer unchanged.
+    writeSkill("personal", "mine", {
+      description: "my own skill",
+      origin: {
+        repo: "Tyler-Reagan/skills",
+        skillPath: "skills/tools/mine/SKILL.md",
+      },
+    });
+
+    const m = exportRegistryManifest(registryRoot, {
+      sourceBankVersion: "1.1.0",
+      linkedRepo: "Tyler-Reagan/skills",
+    });
+    const mine = m.skills.find((s) => s.name === "mine")!;
     expect(mine.origin).toEqual({
       kind: "github",
       repo: "Tyler-Reagan/skills",
-      skillPath: "skills/personal/mine/SKILL.md",
+      skillPath: "skills/tools/mine/SKILL.md",
     });
-    // A self-origin is NOT external → personal bucket.
+    // self-origin (repo === linkedRepo) → personal bucket.
     expect(mine.bucket).toBe("personal");
   });
 

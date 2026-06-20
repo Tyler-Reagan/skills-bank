@@ -6,7 +6,7 @@
 //
 // Run once per round of bundled-set curation (when new skills are
 // added to skills/ that have GitHub upstreams the maintainer wants to
-// surface). Idempotent: skills with an existing `upstream` field are
+// surface). Idempotent: skills with an existing `origin` field are
 // skipped untouched. Skills with no mapping entry are reported but
 // left alone — the runtime origin-capture scanner can stamp them
 // later from end-user lock files, or they stay un-classified if no
@@ -74,7 +74,7 @@ function main(): void {
     const skillDir = ref.dir;
     const base = readSkillSource(skillDir);
 
-    if (base.upstream !== undefined) {
+    if (base.origin !== undefined) {
       alreadyStamped.push(name);
       continue;
     }
@@ -85,17 +85,17 @@ function main(): void {
       continue;
     }
 
-    const upstream: OriginPointer = {
+    const origin: OriginPointer = {
       kind: ORIGIN_KIND_GITHUB,
       repo: entry.repo,
       skillPath: entry.skillPath,
     };
-    if (entry.sourceUrl) upstream.sourceUrl = entry.sourceUrl;
+    if (entry.sourceUrl) origin.sourceUrl = entry.sourceUrl;
 
     stamped.push(name);
     if (dry) continue;
 
-    writeSkillSource(skillDir, { ...base, upstream });
+    writeSkillSource(skillDir, { ...base, origin });
     const baseline = hashSkillFolder(skillDir);
     if (baseline) writeSyncedHash(skillDir, baseline);
   }

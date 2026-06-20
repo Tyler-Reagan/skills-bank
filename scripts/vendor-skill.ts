@@ -172,10 +172,10 @@ async function resolveSkillPath(
   skillId: string,
   token: string | null,
 ): Promise<string | null> {
-  const { probeOriginTree, findFolderHash } =
+  const { fetchOriginTree, findFolderHash } =
     await import("../packages/core/src/index.js");
   void findFolderHash; // silence unused-import in this scope; mirror handles it
-  const probe = await probeOriginTree(repo, token);
+  const probe = await fetchOriginTree(repo, token);
   if (!probe.ok || probe.truncated) return null;
   const skillMd = probe.tree.filter(
     (e) =>
@@ -292,13 +292,12 @@ async function main(): Promise<void> {
     fetchedAt: now,
   };
   const existing = readSkillSource(destDir);
-  // Bundled-repo vendoring writes `source: "bundled"` by default so the
-  // marker matches its siblings; the readSkillSource default of "yours"
-  // would otherwise leave a fresh vendor in the wrong provenance axis.
+  // Source axis follows the bucket: a third-party vendor → `vendored`; a
+  // fork the maintainer is taking ownership of (`--personal`) → `user`.
   writeSkillSource(destDir, {
     ...existing,
-    source: existing.source ?? "bundled",
-    upstream: pointer,
+    source: args.bucket === "personal" ? "user" : "vendored",
+    origin: pointer,
   });
   const baseline = hashSkillFolder(destDir);
   if (baseline) writeSyncedHash(destDir, baseline);

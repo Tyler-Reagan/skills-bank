@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 //
 // Maintainer-internal: discover the authoritative upstream for each
-// bundled skill that doesn't yet have an `upstream` field in its
+// bundled skill that doesn't yet have an `origin` field in its
 // `.skills-bank.json`. Uses `npx skills find <name>` (non-interactive,
 // unauthenticated, parses skills.sh's catalog) to resolve owner/repo +
 // skill-id, then probes the resolved repo's recursive tree to locate
@@ -12,16 +12,16 @@
 //   pnpm bank discover                            # write candidate JSON to stdout
 //   pnpm bank discover --out CAND.json            # write to file
 //   pnpm bank discover --apply CAND.json          # apply markers from JSON
-//   pnpm bank discover --apply CAND.json --source yours
+//   pnpm bank discover --apply CAND.json --source user
 //                                                 # override default source axis
 //
 // The two-phase split is deliberate: discovery emits a candidate
 // mapping the maintainer can review (and hand-correct for skills
 // where the top match is wrong) before any markers get written.
 //
-// Apply-phase markers default to `source: "bundled"` — this tool is
-// for skills the maintainer is intentionally adding to the bundled
-// set. Pass `--source yours` for the rare personal-skill case.
+// Apply-phase markers default to `source: "curated"` — this tool is
+// for skills the maintainer is intentionally adding to the committed
+// set. Pass `--source user` for the rare personal-skill case.
 //
 // Authentication: probes use the GITHUB_TOKEN env var if present,
 // else fall back to the unauthenticated 60/hr ceiling. For a 39-skill
@@ -38,7 +38,7 @@ import {
   findFolderHash,
   folderPathFromSkillPath,
   hashSkillFolder,
-  probeOriginTree,
+  fetchOriginTree,
   readSkillSource,
   ORIGIN_KIND_GITHUB,
   walkSkills,
@@ -111,13 +111,12 @@ interface FindResult {
 async function npxFind(name: string): Promise<FindResult[]> {
   let stdout: string;
   try {
+    // The CLI emits ANSI; we strip below. `FORCE_COLOR=0` would also
+    // work but is brittler across versions. (Default encoding is utf8,
+    // so `stdout` is a string.)
     const r = await execFileAsync("npx", ["-y", "skills", "find", name], {
-      // Empty stdin so the CLI's interactive prompt short-circuits.
-      input: "",
       timeout: 30_000,
-      // The CLI emits ANSI; we strip below. `FORCE_COLOR=0` would also
-      // work but is brittler across versions.
-    } as Parameters<typeof execFileAsync>[2]);
+    });
     stdout = r.stdout;
   } catch (err) {
     // Some `find` invocations exit non-zero when there are no matches.
@@ -162,7 +161,7 @@ function pickMatch(
 }
 
 type ProbeTree =
-  ReturnType<typeof probeOriginTree> extends Promise<infer R>
+  ReturnType<typeof fetchOriginTree> extends Promise<infer R>
     ? R extends { ok: true; tree: infer T }
       ? T
       : never
@@ -236,12 +235,12 @@ async function discoverPhase(): Promise<CandidateMap> {
   const token = process.env["GITHUB_TOKEN"] ?? null;
   const treeCache = new Map<
     string,
-    Awaited<ReturnType<typeof probeOriginTree>>
+    Awaited<ReturnType<typeof fetchOriginTree>>
   >();
 
   async function probeCached(repo: string) {
     if (treeCache.has(repo)) return treeCache.get(repo)!;
-    const r = await probeOriginTree(repo, token);
+    const r = await fetchOriginTree(repo, token);
     treeCache.set(repo, r);
     return r;
   }
@@ -252,7 +251,7 @@ async function discoverPhase(): Promise<CandidateMap> {
   for (const ref of walkSkills(repoRoot)) {
     const name = ref.name;
     const base = readSkillSource(ref.dir);
-    if (base.upstream !== undefined) continue;
+    if (base.origin !== undefined) continue;
 
     process.stderr.write(`  ${name} ... `);
     const matches = await npxFind(name);
@@ -310,11 +309,13 @@ async function discoverPhase(): Promise<CandidateMap> {
 
 function parseSourceFlag(): SkillOrigin {
   const idx = process.argv.indexOf("--source");
-  if (idx < 0) return "bundled";
+  if (idx < 0) return "curated";
   const v = process.argv[idx + 1];
-  if (v === "bundled" || v === "yours") return v;
+  // Tolerate the pre-v1.3 vocabulary so muscle memory still works.
+  if (v === "curated" || v === "bundled") return "curated";
+  if (v === "user" || v === "yours") return "user";
   console.error(
-    `--source must be "bundled" or "yours" (got: ${v ?? "<missing>"})`,
+    `--source must be "curated" or "user" (got: ${v ?? "<missing>"})`,
   );
   process.exit(1);
 }
@@ -333,7 +334,7 @@ function applyPhase(cand: CandidateMap, sourceDefault: SkillOrigin): void {
     }
     const skillDir = ref.dir;
     const base = readSkillSource(skillDir);
-    if (base.upstream !== undefined) {
+    if (base.origin !== undefined) {
       console.warn(`skip ${name}: already stamped`);
       continue;
     }
@@ -346,16 +347,16 @@ function applyPhase(cand: CandidateMap, sourceDefault: SkillOrigin): void {
       installedAt: now,
       fetchedAt: now,
     };
-    // Default new markers to `source: "bundled"` — this tool stamps
-    // skills the maintainer is intentionally adding to the bundled
-    // set. `readSkillSource` returns `source: "yours"` both when the
+    // Default new markers to `source: "curated"` — this tool stamps
+    // skills the maintainer is intentionally adding to the committed
+    // set. `readSkillSource` returns `source: "user"` both when the
     // marker file is missing AND when it exists with that value, so
     // we can't distinguish; just write the desired default directly.
-    // `--source yours` overrides for the rare personal-skill case.
+    // `--source user` overrides for the rare personal-skill case.
     writeSkillSource(skillDir, {
       ...base,
       source: sourceDefault,
-      upstream: pointer,
+      origin: pointer,
     });
     const baseline = hashSkillFolder(skillDir);
     if (baseline) writeSyncedHash(skillDir, baseline);

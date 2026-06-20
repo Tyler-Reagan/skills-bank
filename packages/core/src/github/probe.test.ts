@@ -122,4 +122,44 @@ describe("runOnce — completion-event invariants", () => {
     expect(result.probed).toBe(0);
     expect(result.updates).toBe(0);
   });
+
+  test("excludes self-origin skills from probe candidates", async () => {
+    // A skill whose origin points at the linked repo is kept truthful by
+    // manifest sync, not the third-party update probe. Even with a full
+    // github marker it must not become a candidate — so the only skill
+    // here drops out and the loop takes the zero-candidate early return
+    // (empty completion, no network probe attempted).
+    const dir = path.join(scratch, "skills", "personal", "mine");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, "SKILL.md"),
+      `---\nname: mine\ndescription: my own skill\n---\n`,
+    );
+    fs.writeFileSync(
+      path.join(dir, ".skills-bank.json"),
+      JSON.stringify({
+        source: "user",
+        origin: {
+          kind: "github",
+          repo: "owner/repo",
+          skillPath: "skills/tools/mine/SKILL.md",
+          skillFolderHash: "h1",
+        },
+      }),
+    );
+
+    const events: ProbeCompleteEvent[] = [];
+    const runner = createOriginProbeRunner({
+      registryRoot: () => scratch,
+      token: () => null,
+      linkedRepo: () => "owner/repo",
+      onComplete: (event) => {
+        events.push(event);
+      },
+    });
+
+    const result = await runner.run();
+    expect(result.probed).toBe(0);
+    expect(events).toEqual([{}]);
+  });
 });
