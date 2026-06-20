@@ -3,6 +3,21 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.22.2
+
+Bug-fix patch: a skill's `origin` is now kept truthful against the linked repo, clearing false `UNREACHABLE` badges and un-pullable personal skills.
+
+### Fixed
+
+- **`origin` now means exactly one thing — where the content currently lives and is re-fetched from.** It was overloaded as both ancestral provenance and the re-probe coordinate, and nothing re-pointed it when a skill's home changed. Two breakages followed: (1) a skill living in the linked repo but still pointing at the third-party repo it was first vendored from earned a **false `UNREACHABLE`** badge once that stale upstream removed/renamed the folder; (2) `resolveExportOrigin` synthesized self-origins as `skills/<bucket>/<name>/SKILL.md`, assuming the linked repo mirrors the local bucket layout — it doesn't, so ~20 personal skills carried fictional paths that 404 on a fresh clone.
+- **`reconcileResidentOrigins` (`registry/reconcile.ts`) keeps it correct via one long-lived primitive, not a one-time migration.** For each skill whose folder leaf is present in the linked repo's tree, it rewrites the origin to a self-origin at the *real* path and clears any stale probe-failure counter. Idempotent; genuinely vendored skills are untouched. Runs wherever the linked tree is available — on push (preview + push **block** on a tree-fetch failure rather than reconcile from partial data) and after a link/sync.
+- **Probe skips self-origin skills** (owned by manifest sync, not the third-party probe) via a new `linkedRepo` resolver; **`buildSkillFolderMap` (`github/origin.ts`)** builds a basename→real-path map from a repo tree, dropping ambiguous leaves; **`vendor-skill.ts`** emits the live `origin`/`vendored` vocabulary instead of the dead `upstream`/`bundled` keys.
+
+### Notes
+
+- No schema bump (manifest stays v5), no tolerant-read window, no migration branch. The field name/shape are unchanged — only the *values* written into `repo`/`skillPath` change. Existing bad data heals as a side effect of the reconcile primitive on the next push/sync.
+- `zoom-out` is correctly left `UNREACHABLE` — it's genuinely vendored and upstream really did remove it (that signal feeds the separate drift/restore work in [#126](https://github.com/Tyler-Reagan/skills-bank/issues/126)).
+
 ## v1.22.1
 
 Bug-fix patch: drifted skills can now be installed and managed.
