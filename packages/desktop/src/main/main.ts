@@ -64,6 +64,9 @@ import {
   listTopLevelSymlinks,
   forgetMissingEntry,
   repointExternalEntry,
+  detachOrigin,
+  repointOrigin as coreRepointOrigin,
+  adoptIntoLinkedRepo as coreAdoptIntoLinkedRepo,
   fromCaught,
   getExportInfo,
   hideCanonSkill,
@@ -1572,6 +1575,98 @@ mutatingHandle(IPC.repointExternal, async (_e, name: string) => {
     return { ok: false, message: error.message, error };
   }
 });
+
+// ADR-0012 restore arm — repoint an unreachable origin at a new GitHub
+// URL the user pasted. Parses URL → repo + skillPath, re-fetches, and
+// rewrites the marker (rolling back on failure).
+mutatingHandle(IPC.repointOrigin, async (_e, name: string, url: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  const parsed = parseGithubSkillUrl(url);
+  if ("kind" in parsed) {
+    return { ok: false, message: parsed.message };
+  }
+  try {
+    const r = await coreRepointOrigin(
+      registryRoot,
+      name,
+      { repo: parsed.repo, skillPath: parsed.skillPath },
+      getStoredToken(),
+    );
+    if (r.ok) {
+      probedUpdates.delete(name);
+      notifyProbeComplete();
+      buildRegistryIndex(registryRoot, {
+        includeGitInfo: true,
+        writeFile: true,
+      });
+    }
+    return r;
+  } catch (err) {
+    const error = fromCaught("ipc.unknown", err);
+    return { ok: false, message: error.message, error };
+  }
+});
+
+// ADR-0012 restore arm — sever an origin and rehome the skill locally.
+mutatingHandle(IPC.detachLocal, (_e, name: string) => {
+  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+  try {
+    const r = detachOrigin(registryRoot, name);
+    if (r.ok) {
+      probedUpdates.delete(name);
+      notifyProbeComplete();
+      buildRegistryIndex(registryRoot, {
+        includeGitInfo: true,
+        writeFile: true,
+      });
+    }
+    return { ok: r.ok, message: r.message };
+  } catch (err) {
+    const error = fromCaught("ipc.unknown", err);
+    return { ok: false, message: error.message, error };
+  }
+});
+
+// ADR-0012 restore arm — detach locally, then adopt the skill into the
+// linked repo as a PR so it stays installable cross-machine.
+mutatingHandle(
+  IPC.adoptIntoLinkedRepo,
+  async (_e, name: string, destPath: string) => {
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    if (!linkedRepo) return { ok: false, message: "no linked repo" };
+    const token = getStoredToken();
+    if (!token) return { ok: false, message: "not authenticated" };
+    try {
+      // Detach first so the skill is local-only (excluded from sync)
+      // until the PR merges and reconcile flips it to a self-origin.
+      const detached = detachOrigin(registryRoot, name);
+      if (!detached.ok) return { ok: false, message: detached.message };
+      const r = await coreAdoptIntoLinkedRepo({
+        registryRoot,
+        name,
+        linkedRepo: linkedRepo.fullName,
+        baseBranch: linkedRepo.defaultBranch ?? "main",
+        destPath,
+        token,
+      });
+      buildRegistryIndex(registryRoot, {
+        includeGitInfo: true,
+        writeFile: true,
+      });
+      return r.ok
+        ? {
+            ok: true,
+            message: `Opened PR #${r.prNumber}`,
+            prNumber: r.prNumber,
+            htmlUrl: r.htmlUrl,
+          }
+        : { ok: false, message: r.message, rateLimit: r.rateLimit };
+    } catch (err) {
+      const error = fromCaught("ipc.unknown", err);
+      return { ok: false, message: error.message, error };
+    }
+  },
+);
 
 // M9b: bottom-of-the-ladder destructive action for unregistered
 // skills. Refuses if the skill is registered — caller must

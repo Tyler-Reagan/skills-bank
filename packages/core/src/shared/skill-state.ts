@@ -55,7 +55,8 @@ export type PrimaryAction =
   | "unhide"
   | "update"
   | "forget-missing"
-  | "repoint";
+  | "repoint"
+  | "restore-origin";
 
 export interface DrawerCapabilities {
   canInstall: boolean;
@@ -106,6 +107,20 @@ export interface DrawerCapabilities {
    * adopted entries have no external row to repoint).
    */
   canRepoint: boolean;
+  /**
+   * Restore an unreachable origin (ADR-0012). Opens the restore modal
+   * offering two human-driven paths — repoint to a new GitHub URL, or
+   * adopt the skill into the linked repo via a PR. Granted only in
+   * `origin-unreachable`.
+   */
+  canRestoreOrigin: boolean;
+  /**
+   * Sever an origin and rehome the skill locally (`detachOrigin`). The
+   * drift "keep my edits" action on `edited-with-origin`; also reachable
+   * from the restore modal as the "upstream is gone, keep it local"
+   * escape.
+   */
+  canDetachLocal: boolean;
   canResolveConflicts: boolean;
   /**
    * Same skill name has multiple non-ours installations across agent
@@ -158,6 +173,8 @@ const NEVER: DrawerCapabilities = {
   canUpdate: false,
   canForgetMissing: false,
   canRepoint: false,
+  canRestoreOrigin: false,
+  canDetachLocal: false,
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
   canRepairBroken: false,
@@ -236,6 +253,8 @@ export function classifyDrawerState(
           canRevealInFinder: true,
           canInstall: !hasAnyInstallation,
           canManageLinks: hasAnyInstallation,
+          // Drift "keep my edits": sever the origin and rehome local.
+          canDetachLocal: true,
           canExport: true,
           canUnregister: true,
           primary: hasAnyInstallation ? "manage-links" : "install",
@@ -278,9 +297,14 @@ export function classifyDrawerState(
         canRevealInFinder: true,
         canInstall: !hasAnyInstallation,
         canManageLinks: hasAnyInstallation,
+        // Restore is the headline action: opens the modal offering
+        // repoint (new URL) or adopt-into-linked-repo (PR), with
+        // detach-to-local as the escape (ADR-0012).
+        canRestoreOrigin: true,
+        canDetachLocal: true,
         canExport: true,
         canUnregister: true,
-        primary: hasAnyInstallation ? "manage-links" : "install",
+        primary: "restore-origin",
       },
     });
   }

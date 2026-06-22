@@ -1548,6 +1548,19 @@ select {
   width: 100%;
 }
 
+/* ── Restore-origin modal (ADR-0012) ─────────────────── */
+.restore-origin-section {
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+}
+.restore-origin-label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: var(--s1);
+}
+
 /* ── Text inputs ─────────────────────────────────────── */
 .input {
   width: 100%;

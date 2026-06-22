@@ -7,8 +7,14 @@ import {
   readExternalRegistry,
   removeExternalRegistryEntry,
 } from "./external.js";
-import { readSkillSource, writeSkillSource } from "./source.js";
-import { walkSkills } from "./walk.js";
+import {
+  readSkillSource,
+  writeSkillSource,
+  ORIGIN_KIND_GITHUB,
+  type OriginPointer,
+} from "./source.js";
+import { findSkillFolder, walkSkills } from "./walk.js";
+import { moveSkillBucket } from "./rehome.js";
 
 /**
  * Heal helpers. Three bad states the classifier surfaces:
@@ -300,4 +306,109 @@ export function forgetMissingEntry(
     ok: true,
     message: `forgot ${name}`,
   };
+}
+
+export interface DetachOriginResult {
+  ok: boolean;
+  message: string;
+  /** Ids of agent dirs whose symlink was repointed by the rehome. */
+  relinked: string[];
+}
+
+/**
+ * Restore action (ADR-0012) — sever a skill's origin and rehome it as a
+ * local skill. Used when an origin is unreachable and the user keeps the
+ * skill, and as the drift "keep my edits" action on `edited-with-origin`.
+ *
+ * Origin → `{ kind: "none" }`; **provenance (`source`) is untouched** — a
+ * detached vendored skill stays `vendored` (sticky provenance). Probe-
+ * failure counters are cleared and the content hash re-baselined so the
+ * now-local copy starts clean (the drift case). Finally the folder is
+ * moved `vendored/ → personal/` via `moveSkillBucket`, because `bucket`
+ * derives from origin (`none → personal`) — keeping disk, runtime, and
+ * the manifest in agreement. A detached (`origin: none`) skill is
+ * excluded from the pushed manifest (see `exportRegistryManifest`), so it
+ * is local-only until adopted into the linked repo.
+ */
+export function detachOrigin(
+  registryRoot: string,
+  name: string,
+): DetachOriginResult {
+  const ref = findSkillFolder(registryRoot, name);
+  if (!ref) {
+    return {
+      ok: false,
+      message: `${name} not found in any bucket`,
+      relinked: [],
+    };
+  }
+
+  const existing = readSkillSource(ref.dir);
+  writeSkillSource(ref.dir, { ...existing, origin: { kind: "none" } });
+
+  const rt = readRuntimeState(ref.dir);
+  writeRuntimeState(ref.dir, {
+    ...(rt.fetchedAt ? { fetchedAt: rt.fetchedAt } : {}),
+  });
+
+  const baseline = hashSkillFolder(ref.dir);
+  if (baseline) writeSyncedHash(ref.dir, baseline);
+
+  const moved = moveSkillBucket(registryRoot, name, "personal");
+  return {
+    ok: true,
+    message: `detached ${name} — now a local skill in personal`,
+    relinked: moved.relinked,
+  };
+}
+
+export interface RepointOriginTarget {
+  repo: string;
+  skillPath: string;
+  sourceUrl?: string;
+}
+
+/**
+ * Restore action (ADR-0012) — repoint a skill's origin at a new GitHub
+ * location the user supplied (the upstream was renamed/moved or the skill
+ * folder relocated). Writes the new origin pointer, then delegates to
+ * `applyOriginUpdate` to re-fetch / validate frontmatter / rebaseline /
+ * roll back content on failure. On failure the prior marker is restored
+ * so a bad target leaves no broken pointer behind. Stays in `vendored/`.
+ *
+ * `applyOriginUpdate` is lazy-imported to keep heal.ts (and its many
+ * consumers) clear of the heavy build/sync graph that origin.ts pulls in.
+ */
+export async function repointOrigin(
+  registryRoot: string,
+  name: string,
+  target: RepointOriginTarget,
+  token: string | null,
+): Promise<import("../github/origin.js").OriginUpdateResult> {
+  const ref = findSkillFolder(registryRoot, name);
+  if (!ref) {
+    return { ok: false, message: `${name} not found in any bucket` };
+  }
+
+  const existing = readSkillSource(ref.dir);
+  const newOrigin: OriginPointer = {
+    kind: ORIGIN_KIND_GITHUB,
+    repo: target.repo,
+    skillPath: target.skillPath,
+    ...(target.sourceUrl ? { sourceUrl: target.sourceUrl } : {}),
+    // Carry the immutable first-install timestamp through the repoint.
+    ...(existing.origin?.installedAt
+      ? { installedAt: existing.origin.installedAt }
+      : {}),
+  };
+  writeSkillSource(ref.dir, { ...existing, origin: newOrigin });
+
+  const { applyOriginUpdate } = await import("../github/origin.js");
+  const result = await applyOriginUpdate({ registryRoot, name, token });
+  if (!result.ok) {
+    // Re-fetch from the new origin failed; restore the prior marker so a
+    // bad repoint target doesn't strand the skill on a broken pointer.
+    writeSkillSource(ref.dir, existing);
+  }
+  return result;
 }
