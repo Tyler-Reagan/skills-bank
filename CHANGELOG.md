@@ -3,6 +3,28 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.23.0
+
+Restore unreachable origins; source-as-provenance. Closes the restore arm of [#126](https://github.com/Tyler-Reagan/skills-bank/issues/126) — vendored skills with dead or relocated upstreams now have two deterministic, human-driven recovery paths (Repoint and Adopt into linked repo), and `source` is redefined as sticky acquisition-time provenance independent of `origin`. Design rationale in [ADR-0012](docs/adr/ADR-0012-source-as-provenance-and-origin-restore.md).
+
+### Added
+
+- **Two restore paths for `UNREACHABLE` vendored skills — no auto-discovery.**
+  - **Repoint** — paste the new GitHub URL → `applyOriginUpdate` validates, re-fetches, and rewrites the pointer (rollback on failure). Skill stays vendored.
+  - **Adopt into linked repo** — `detachOrigin` rehomes the skill locally (`vendored/ → personal/` via `moveSkillBucket`), then `adoptIntoLinkedRepo` opens a PR committing the folder via the Contents API. After merge + sync, `reconcileResidentOrigins` flips it to a self-origin and the skill is installable again. Auto-discovery was rejected: skill folder names are not unique across repos, so cross-repo auto-repoint could silently swap in a different skill — supply-chain footgun.
+- **`source` as sticky acquisition-time provenance (`stampOriginMarker`).** The field is stamped once at acquisition and never re-derived from the current `linkedRepo`. This fixes a root cause where a `user`-source skill carrying a third-party `origin` was reported as `vendored` on the next reload, and heals the 69-skill bucket drift.
+- **`detachOrigin`** — severs `origin` (`origin: none`), rehomes `vendored/ → personal/` via `moveSkillBucket` (folder move + agent-symlink repoint). Detached skills are excluded from the pushed manifest.
+- **New core primitives:** `registry/rehome.ts` (`moveSkillBucket`), `registry/heal.ts` (`detachOrigin`, `repointOrigin`), `github/adopt.ts` (`adoptIntoLinkedRepo`).
+- **Classifier caps:** `canRestoreOrigin` / `canDetachLocal`; `restore-origin` as the primary action on `origin-unreachable` skills.
+- **Desktop:** 3 IPC channels + preload + handlers; `RestoreOriginModal.tsx`; `DrawerActions.tsx` wiring.
+- **+18 unit tests** covering rehome, detach/repoint, adopt, provenance stamp, sync-exclusion, and classifier (281 total).
+
+### Notes
+
+- `source ⊥ bucket` is intentional — acquisition provenance is independent of current folder placement.
+- `origin: none` skills are excluded from `exportRegistryManifest` and never travel via push/pull.
+- Auto-discovery (rejected by design), the Git Data API single-commit adopt variant, and drift `rebaseline` / `reset-to-origin` remain out of scope — still tracked in [#126](https://github.com/Tyler-Reagan/skills-bank/issues/126).
+
 ## v1.22.2
 
 Bug-fix patch: a skill's `origin` is now kept truthful against the linked repo, clearing false `UNREACHABLE` badges and un-pullable personal skills.
