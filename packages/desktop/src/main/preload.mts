@@ -26,6 +26,11 @@ const api = {
   forgetMissing: (name: string) => ipcRenderer.invoke(IPC.forgetMissing, name),
   repointExternal: (name: string) =>
     ipcRenderer.invoke(IPC.repointExternal, name),
+  repointOrigin: (name: string, url: string) =>
+    ipcRenderer.invoke(IPC.repointOrigin, name, url),
+  detachLocal: (name: string) => ipcRenderer.invoke(IPC.detachLocal, name),
+  adoptIntoLinkedRepo: (name: string, destPath: string) =>
+    ipcRenderer.invoke(IPC.adoptIntoLinkedRepo, name, destPath),
   listTopLevelSymlinks: () => ipcRenderer.invoke(IPC.listTopLevelSymlinks),
   clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),
   scan: (customDirs?: string[]) => ipcRenderer.invoke(IPC.scan, customDirs),

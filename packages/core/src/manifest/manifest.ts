@@ -155,18 +155,24 @@ export function exportRegistryManifest(
   const installedByName = readInstalledAgentMap();
 
   const skills: ManifestSkill[] = index.entries
-    // In-place (non-adopted) registrations are local-only: their files
-    // live outside the bank at a machine-specific absolute path, so they
-    // can't travel via push/pull. Excluding them keeps the synced
-    // manifest free of entries that would surface as missing on any
-    // other machine.
-    .filter((entry) => entry.adopted !== false)
+    // Two local-only classes are excluded from the synced manifest so a
+    // pull on another machine never sees an entry it can't restore:
+    //   1. In-place (non-adopted) registrations — files live outside the
+    //      bank at a machine-specific absolute path.
+    //   2. Detached skills carrying the explicit `{ kind: "none" }` sever
+    //      stamp (ADR-0012) — no fetchable upstream, and `import.ts`
+    //      rejects non-github origins. They travel only via an explicit
+    //      adopt-into-linked-repo, which gives them a real self-origin
+    //      first. (A *missing* origin — unknown lineage, never stamped —
+    //      is left as-is; that's pre-existing behavior, not a detach.)
+    .filter(
+      (entry) =>
+        entry.adopted !== false && entry.source.origin?.kind !== "none",
+    )
     .map((entry) => {
       // Origin is carried verbatim from the skill's marker. A resident
       // skill already holds a real self-origin (reconcileResidentOrigins
-      // runs before export wherever we have the linked tree); a `none`/
-      // missing marker stays untracked rather than being synthesized into
-      // a fictional path the linked repo doesn't actually contain.
+      // runs before export wherever we have the linked tree).
       const origin = originFromPointer(entry.source.origin);
       // Bucket is derived, not read from disk: external GitHub origin →
       // `vendored`; self-origin or no origin → `personal`.
@@ -280,6 +286,7 @@ export function stampOriginMarker(
   destDir: string,
   skill: ManifestSkill,
   folderHash: string,
+  linkedRepo?: string,
 ): void {
   // Manifest import is a runtime path; per the `source.ts` doctrine it
   // may never mint `curated`. That value is reserved for the maintainer's
@@ -288,12 +295,31 @@ export function stampOriginMarker(
   // manifest claiming `curated` is another registry's attribution and
   // does not transfer here, so downgrade it: github origin → vendored,
   // self/none origin → user.
-  const source: SkillOrigin =
+  let source: SkillOrigin =
     skill.source === "curated"
       ? skill.origin.kind === "github"
         ? "vendored"
         : "user"
       : skill.source;
+  // Provenance-D (ADR-0012): `user` provenance means "from my linked
+  // repo" — i.e. a self-origin. A `user` claim carrying a *third-party*
+  // github origin is contradictory; it's the historical linked-repo-pull
+  // bug that stamped `user` indiscriminately (the 69-skill cleanup). Heal
+  // it to `vendored` at acquisition. A `vendored` self-origin
+  // (vendored-then-adopted) is NOT contradictory and is left sticky.
+  // Only fires when the active link is known — without it we can't tell
+  // self from third-party, so we leave the claim untouched.
+  if (
+    source === "user" &&
+    linkedRepo &&
+    skill.origin.kind === "github" &&
+    !isSelfOrigin(
+      { kind: skill.origin.kind, repo: skill.origin.repo },
+      linkedRepo,
+    )
+  ) {
+    source = "vendored";
+  }
   if (skill.origin.kind !== "github") {
     writeSkillSource(destDir, {
       source,

@@ -109,6 +109,8 @@ const ROWS: Row[] = [
       canManageLinks: false,
       canUnregister: true,
       canExport: true,
+      // Drift "keep my edits" (ADR-0012).
+      canDetachLocal: true,
     },
   },
   {
@@ -250,17 +252,20 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "origin-unreachable",
-    // Uninstalled → Install is the primary; manage-links requires an
-    // installation to manage.
-    expectedPrimary: "install",
+    // Restore is the headline action (ADR-0012); install/manage-links
+    // remain as secondary affordances.
+    expectedPrimary: "restore-origin",
     expectedCaps: {
       canManageLinks: false,
       canInstall: true,
       canUnregister: true,
+      canRestoreOrigin: true,
+      canDetachLocal: true,
     },
   },
   {
-    label: "originUnreachable + installed → manage-links primary preserved",
+    label:
+      "originUnreachable + installed → restore-origin primary, manage-links secondary",
     entry: entry({
       originUnreachable: true,
       source: {
@@ -275,11 +280,13 @@ const ROWS: Row[] = [
     installed: [inst()],
     isRegistered: true,
     expectedState: "origin-unreachable",
-    expectedPrimary: "manage-links",
+    expectedPrimary: "restore-origin",
     expectedCaps: {
       canManageLinks: true,
       canInstall: false,
       canUnregister: true,
+      canRestoreOrigin: true,
+      canDetachLocal: true,
     },
   },
   {
@@ -335,8 +342,12 @@ const ROWS: Row[] = [
     installed: [],
     isRegistered: true,
     expectedState: "origin-unreachable",
-    expectedPrimary: "install",
-    expectedCaps: { canManageLinks: false, canUpdate: false },
+    expectedPrimary: "restore-origin",
+    expectedCaps: {
+      canManageLinks: false,
+      canUpdate: false,
+      canRestoreOrigin: true,
+    },
   },
 
   // ── Unregistered branch ─────────────────────────────────

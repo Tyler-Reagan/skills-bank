@@ -147,6 +147,37 @@ describe("exportRegistryManifest", () => {
     expect(typeof m.exportedAt).toBe("string");
   });
 
+  test("excludes detached skills (explicit origin none) from the synced manifest", () => {
+    // A normal github-origin skill is kept; a detached one (severed via
+    // detachOrigin → `{ kind: "none" }`) is dropped — it's local-only
+    // until adopted into the linked repo (ADR-0012).
+    writeSkill("vendored", "kept", {
+      origin: { repo: "owner/repo", skillPath: "skills/kept/SKILL.md" },
+    });
+    const detachedDir = path.join(
+      registryRoot,
+      "skills",
+      "personal",
+      "detached",
+    );
+    fs.mkdirSync(detachedDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(detachedDir, "SKILL.md"),
+      `---\nname: detached\ndescription: a detached local skill\n---\n`,
+    );
+    writeSkillSource(detachedDir, {
+      source: "vendored",
+      origin: { kind: "none" },
+    });
+
+    const m = exportRegistryManifest(registryRoot, {
+      sourceBankVersion: "1.1.0",
+    });
+    const names = m.skills.map((s) => s.name);
+    expect(names).toContain("kept");
+    expect(names).not.toContain("detached");
+  });
+
   test("records source, origin, derived bucket, and effective labels", () => {
     writeSkill("personal", "alpha", { description: "a react component skill" });
     writeSkill("vendored", "beta", {
@@ -1118,6 +1149,7 @@ describe("stampOriginMarker — runtime import never mints curated", () => {
   function stamp(
     source: ManifestSkill["source"],
     originKind: "github" | "none",
+    opts: { repo?: string; linkedRepo?: string } = {},
   ): ReturnType<typeof readSkillSource> {
     const dir = path.join(registryRoot, "skills", "vendored", "stamped");
     fs.mkdirSync(dir, { recursive: true });
@@ -1129,7 +1161,7 @@ describe("stampOriginMarker — runtime import never mints curated", () => {
         originKind === "github"
           ? {
               kind: "github",
-              repo: "owner/repo",
+              repo: opts.repo ?? "owner/repo",
               skillPath: "skills/stamped/SKILL.md",
             }
           : { kind: "none" },
@@ -1137,7 +1169,7 @@ describe("stampOriginMarker — runtime import never mints curated", () => {
       tags: [],
       lastInstalledOn: [],
     };
-    stampOriginMarker(dir, skill, "hash123");
+    stampOriginMarker(dir, skill, "hash123", opts.linkedRepo);
     return readSkillSource(dir);
   }
 
@@ -1152,9 +1184,47 @@ describe("stampOriginMarker — runtime import never mints curated", () => {
     expect(stamp("curated", "none").source).toBe("user");
   });
 
-  test("non-curated sources pass through unchanged", () => {
+  test("non-curated sources pass through unchanged (no linked repo)", () => {
     expect(stamp("vendored", "github").source).toBe("vendored");
+    // Without a known link we can't tell self from third-party, so a
+    // `user` claim is left as-is.
     expect(stamp("user", "github").source).toBe("user");
+  });
+});
+
+describe("stampOriginMarker — provenance-D acquisition-time heal (ADR-0012)", () => {
+  function stamp(
+    source: ManifestSkill["source"],
+    repo: string,
+    linkedRepo: string,
+  ): ReturnType<typeof readSkillSource> {
+    const dir = path.join(registryRoot, "skills", "vendored", "stamped");
+    fs.mkdirSync(dir, { recursive: true });
+    const skill: ManifestSkill = {
+      name: "stamped",
+      source,
+      bucket: "vendored",
+      origin: { kind: "github", repo, skillPath: "skills/stamped/SKILL.md" },
+      category: null,
+      tags: [],
+      lastInstalledOn: [],
+    };
+    stampOriginMarker(dir, skill, "hash123", linkedRepo);
+    return readSkillSource(dir);
+  }
+
+  test("user + third-party origin heals to vendored (the 69-skill class)", () => {
+    expect(stamp("user", "mattpocock/skills", "Me/skills").source).toBe(
+      "vendored",
+    );
+  });
+
+  test("user + self origin stays user", () => {
+    expect(stamp("user", "Me/skills", "Me/skills").source).toBe("user");
+  });
+
+  test("vendored + self origin stays vendored (vendored-then-adopted is sticky)", () => {
+    expect(stamp("vendored", "Me/skills", "Me/skills").source).toBe("vendored");
   });
 });
 

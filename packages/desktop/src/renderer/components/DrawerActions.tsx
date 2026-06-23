@@ -7,6 +7,7 @@ import type {
 } from "@skills-bank/core";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { Icon } from "./Icon.js";
+import { RestoreOriginModal } from "./RestoreOriginModal.js";
 
 type ActionState =
   | null
@@ -19,7 +20,8 @@ type ActionState =
   | "unhiding"
   | "updating"
   | "forgetting"
-  | "repointing";
+  | "repointing"
+  | "detaching";
 
 interface Props {
   entry: RegistryEntry;
@@ -85,10 +87,14 @@ export function DrawerActions({
       }
   >({ kind: "idle" });
   const confirmDeleteRef = useRef<HTMLDivElement | null>(null);
+  const [restoreOpen, setRestoreOpen] = useState(false);
 
-  // Suspend the drawer trap while the confirm-delete sub-dialog is
-  // open — focus belongs to the inner dialog until dismissed.
-  useFocusTrap(drawerRef, repairState.kind !== "confirm-delete");
+  // Suspend the drawer trap while a sub-dialog is open — focus belongs to
+  // the inner dialog (confirm-delete or restore-origin) until dismissed.
+  useFocusTrap(
+    drawerRef,
+    repairState.kind !== "confirm-delete" && !restoreOpen,
+  );
   useFocusTrap(confirmDeleteRef, repairState.kind === "confirm-delete");
 
   const caps = classification.capabilities;
@@ -292,6 +298,59 @@ export function DrawerActions({
               "Pick new location"
             )}
           </button>
+        )}
+
+        {/* Restore unreachable origin (ADR-0012) — opens the modal
+        offering repoint / adopt / detach. */}
+        {caps.canRestoreOrigin && (
+          <>
+            <button
+              className="btn primary"
+              disabled={action !== null}
+              onClick={() => setRestoreOpen(true)}
+              title="The upstream is unreachable. Repoint it at a new location, or keep the skill by moving it into your linked repo."
+            >
+              Restore source
+            </button>
+            <p className="drawer-action-hint">
+              The source <code>{entry.source.origin?.repo ?? "origin"}</code>{" "}
+              can't be reached. Point it at the new location, or re-home the
+              skill.
+            </p>
+          </>
+        )}
+
+        {/* Drift "keep my edits" — detach is offered directly only when
+        the restore modal (which also offers detach) isn't present. */}
+        {caps.canDetachLocal && !caps.canRestoreOrigin && (
+          <>
+            <button
+              className="btn"
+              disabled={action !== null}
+              onClick={() => {
+                setAction("detaching");
+                void window.skillsBank
+                  .detachLocal(entry.name)
+                  .then((r) => {
+                    if (r.ok) return onChanged(r.message);
+                  })
+                  .finally(() => setAction(null));
+              }}
+              title="Stop tracking the origin and keep your local edits. The skill becomes a local skill in personal."
+            >
+              {action === "detaching" ? (
+                <>
+                  <span className="spinner inline" /> Detaching{" "}
+                </>
+              ) : (
+                "Keep my edits (detach)"
+              )}
+            </button>
+            <p className="drawer-action-hint">
+              Severs the origin and keeps your local copy. It stops receiving
+              updates and won't sync until you adopt it into your linked repo.
+            </p>
+          </>
         )}
 
         {caps.canForgetMissing && onForgetMissing && (
@@ -582,6 +641,17 @@ export function DrawerActions({
           </button>
         )}
       </div>
+
+      {restoreOpen && (
+        <RestoreOriginModal
+          entry={entry}
+          onClose={() => setRestoreOpen(false)}
+          onDone={async (msg) => {
+            setRestoreOpen(false);
+            await onChanged(msg);
+          }}
+        />
+      )}
 
       {repairState.kind === "confirm-delete" && (
         <div role="dialog" aria-modal="true" className="modal-overlay">

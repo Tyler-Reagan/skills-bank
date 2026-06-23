@@ -144,6 +144,14 @@ export interface ImportRegistryManifestOptions {
    * removal set, opts in.
    */
   removeNames?: string[];
+  /**
+   * Active linked repo `owner/name`. Lets `stampOriginMarker` heal a
+   * contradictory `user` provenance carrying a third-party origin (the
+   * historical linked-repo-pull mis-stamp) to `vendored` at acquisition.
+   * Absent → provenance claims are stamped verbatim (no self/third-party
+   * discrimination possible).
+   */
+  linkedRepo?: string;
 }
 
 /**
@@ -255,7 +263,7 @@ export async function importRegistryManifest(
         lastError = `${skill.name}: ${mirror.message}`;
         continue;
       }
-      stampOriginMarker(destDir, skill, mirror.folderHash);
+      stampOriginMarker(destDir, skill, mirror.folderHash, opts.linkedRepo);
       // Re-hash AFTER stamping the marker so the drift baseline matches
       // what the next index build computes. Uses SHA-256 (hashSkillFolder),
       // not the GitHub tree SHA-1 (mirror.folderHash) — the SHA-256 is

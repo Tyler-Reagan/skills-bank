@@ -114,6 +114,9 @@ export const IPC = {
   unhide: "skills:unhide",
   forgetMissing: "skills:forgetMissing",
   repointExternal: "skills:repointExternal",
+  repointOrigin: "skills:repointOrigin",
+  detachLocal: "skills:detachLocal",
+  adoptIntoLinkedRepo: "skills:adoptIntoLinkedRepo",
   clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
@@ -171,6 +174,22 @@ export interface OriginUpdateResult {
   /** Populated only on failure when not a rate-limit. Free-form
    *  diagnostic payload the user can copy into an external agent. */
   diagnostic?: string;
+  error?: unknown;
+}
+
+/** Result of adopting a skill into the linked repo via a PR (ADR-0012). */
+interface AdoptIntoLinkedRepoIPCResult {
+  ok: boolean;
+  message: string;
+  /** Populated on success. */
+  prNumber?: number;
+  htmlUrl?: string;
+  rateLimit?: {
+    limit: number;
+    remaining: number;
+    resetAt: string;
+    unauthenticated: boolean;
+  };
   error?: unknown;
 }
 
@@ -608,6 +627,30 @@ interface SkillsBankAPI {
   repointExternal(
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  /**
+   * Restore an unreachable origin by repointing it at a new GitHub URL
+   * (ADR-0012). Parses the URL → repo + skillPath, re-fetches content,
+   * and rewrites the origin pointer (rolling back to the prior marker on
+   * failure). Shares `OriginUpdateResult` with `originUpdate`.
+   */
+  repointOrigin(name: string, url: string): Promise<OriginUpdateResult>;
+  /**
+   * Sever a skill's origin and rehome it as a local skill in `personal/`
+   * (ADR-0012). The restore "keep it local" escape and the drift
+   * "keep my edits" action.
+   */
+  detachLocal(
+    name: string,
+  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  /**
+   * Adopt an unreachable skill into the linked repo as a PR (ADR-0012):
+   * detaches locally, then commits the skill's files under `destPath` and
+   * opens (or reuses) a PR. On success returns the PR number + URL.
+   */
+  adoptIntoLinkedRepo(
+    name: string,
+    destPath: string,
+  ): Promise<AdoptIntoLinkedRepoIPCResult>;
   clearPendingConflicts(): Promise<{
     ok: boolean;
     message: string;
