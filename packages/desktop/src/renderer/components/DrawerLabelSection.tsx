@@ -2,11 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import type { RegistryEntry } from "@skills-bank/core";
 import type { SkillLabelOverride } from "@skills-bank/core/labels";
 import {
-  categoryRules,
+  categories,
   categoryDisplayName,
-  deriveLabels,
   effectiveLabels,
-  tagRules,
 } from "@skills-bank/core/labels";
 import { Icon } from "./Icon.js";
 import { useLabels } from "../LabelsContext.js";
@@ -36,14 +34,6 @@ export function DrawerLabelSection({ entry }: Props): React.ReactElement {
     setOverride(merged); // optimistic
     await window.skillsBank.updateLabel(entry.name, next);
     await reload();
-  }
-
-  async function handleAutoCategory(): Promise<void> {
-    const derived = deriveLabels({
-      name: entry.name,
-      description: entry.description,
-    });
-    await patch({ category: derived.category, tags: derived.tags });
   }
 
   async function handleCategoryChange(value: string): Promise<void> {
@@ -78,19 +68,12 @@ export function DrawerLabelSection({ entry }: Props): React.ReactElement {
             onChange={(e) => void handleCategoryChange(e.target.value)}
           >
             <option value="__none__">None</option>
-            {categoryRules.map((r) => (
-              <option key={r.category} value={r.category}>
-                {categoryDisplayName(r.category)}
+            {categories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.display}
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={() => void handleAutoCategory()}
-          >
-            Auto Categorize
-          </button>
         </div>
       </div>
 
@@ -117,7 +100,6 @@ export function DrawerLabelSection({ entry }: Props): React.ReactElement {
             <>
               <input
                 ref={tagInputRef}
-                list="label-tag-suggestions"
                 type="text"
                 className="label-tag-input"
                 value={tagInput}
@@ -136,13 +118,6 @@ export function DrawerLabelSection({ entry }: Props): React.ReactElement {
                 }}
                 onBlur={() => void confirmAddTag()}
               />
-              <datalist id="label-tag-suggestions">
-                {tagRules
-                  .filter((r) => !effective.tags.includes(r.tag))
-                  .map((r) => (
-                    <option key={r.tag} value={r.tag} />
-                  ))}
-              </datalist>
             </>
           ) : (
             <button

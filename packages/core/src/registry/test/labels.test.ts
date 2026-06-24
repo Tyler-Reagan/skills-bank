@@ -1,71 +1,48 @@
 import { describe, expect, it } from "vitest";
 import {
   applySkillLabel,
+  categories,
+  categoryDisplayName,
   clearSkillLabel,
-  deriveLabels,
   effectiveLabels,
 } from "../labels.js";
 
-describe("deriveLabels", () => {
-  it("returns expected category + tags for a react skill", () => {
-    const result = deriveLabels({
-      name: "react-best-practices",
-      description: "React component patterns and TypeScript best practices",
-    });
-    expect(result.category).toBe("frontend");
-    expect(result.tags).toContain("react");
-    expect(result.tags).toContain("typescript");
+describe("categories", () => {
+  it("has 21 entries", () => {
+    expect(categories).toHaveLength(21);
   });
 
-  it("returns expected category + tags for a git skill", () => {
-    const result = deriveLabels({
-      name: "pr-description",
-      description: "Generate pull request descriptions for GitHub PRs",
-    });
-    expect(result.category).toBe("git");
-    expect(result.tags).toContain("github");
+  it("every entry has a non-empty slug and display", () => {
+    for (const c of categories) {
+      expect(c.slug.length).toBeGreaterThan(0);
+      expect(c.display.length).toBeGreaterThan(0);
+    }
   });
 
-  it("returns review tag for a code-review skill", () => {
-    const result = deriveLabels({
-      name: "code-review",
-      description: "Automated code review and audit for pull requests",
-    });
-    expect(result.tags).toContain("review");
+  it("every slug follows the meta:function pattern", () => {
+    for (const c of categories) {
+      expect(c.slug).toMatch(/^[a-z]+:[a-z][a-z-]*$/);
+    }
+  });
+});
+
+describe("categoryDisplayName", () => {
+  it("returns the display name for a known slug", () => {
+    expect(categoryDisplayName("engineering:ci-cd-deployment")).toBe(
+      "Engineering: CI/CD & Deployment",
+    );
+    expect(categoryDisplayName("productivity:knowledge-management")).toBe(
+      "Productivity: Knowledge Management",
+    );
+    expect(categoryDisplayName("engineering:library-api-reference")).toBe(
+      "Engineering: Library & API Reference",
+    );
   });
 
-  it("returns hardware category for an embedded firmware skill", () => {
-    const result = deriveLabels({
-      name: "arduino-starter",
-      description:
-        "Arduino microcontroller firmware and embedded systems helper",
-    });
-    expect(result.category).toBe("hardware");
-  });
-
-  it("returns category: null when no rule matches", () => {
-    const result = deriveLabels({
-      name: "my-obscure-skill",
-      description: "Does something completely unique with no matching keywords",
-    });
-    expect(result.category).toBeNull();
-  });
-
-  it("returns empty tags when no tag rules match", () => {
-    const result = deriveLabels({
-      name: "my-obscure-skill",
-      description: "Does something completely unique with no matching keywords",
-    });
-    expect(result.tags).toEqual([]);
-  });
-
-  it("first-match wins for category", () => {
-    // "react" matches frontend before any later rule
-    const result = deriveLabels({
-      name: "react-testing",
-      description: "Testing React components",
-    });
-    expect(result.category).toBe("frontend");
+  it("falls back gracefully for legacy flat slugs", () => {
+    expect(categoryDisplayName("frontend")).toBe("Frontend");
+    expect(categoryDisplayName("ai-tooling")).toBe("AI Tooling");
+    expect(categoryDisplayName("dx")).toBe("DX");
   });
 });
 

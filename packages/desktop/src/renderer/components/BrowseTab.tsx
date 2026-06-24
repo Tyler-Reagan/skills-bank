@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { SearchBar, InfoTooltip, DisclosureChevron } from "./primitives.js";
 import type { ManifestSkill, RegistryEntry } from "@skills-bank/core";
 import {
-  categoryRules,
+  categories,
   categoryDisplayName,
   effectiveLabels,
 } from "@skills-bank/core/labels";
@@ -20,7 +20,7 @@ import {
 import { useRegistry } from "../RegistryContext.js";
 import { useBrowseFilters } from "../hooks/useBrowseFilters.js";
 
-const CATEGORY_ORDER = categoryRules.map((r) => r.category);
+const CATEGORY_ORDER = categories.map((c) => c.slug);
 
 const REGISTRY_TOOLTIP =
   "Skills in your registry — the curated bundled set by default, or a " +

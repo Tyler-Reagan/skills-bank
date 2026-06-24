@@ -2,71 +2,24 @@ import React, { useEffect, useRef, useMemo, useState } from "react";
 import { SearchBar } from "./primitives.js";
 import type { LabelsMap, RegistryEntry } from "@skills-bank/core";
 import {
-  categoryRules,
+  categories,
   categoryDisplayName,
-  deriveLabels,
 } from "@skills-bank/core/labels";
 import { useLabels } from "../LabelsContext.js";
 import { Modal, ModalCloseButton, modalFooter } from "./modalStyles.js";
 import { Icon } from "./Icon.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
-import { ConflictActionPicker, type PickerOption } from "./ConflictResolver.js";
 import { useRegistry } from "../RegistryContext.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type LabelScope = "both" | "categories" | "tags";
 type SortKey = "name-asc" | "name-desc" | "category" | "uncategorized-first";
-
-interface Proposal {
-  name: string;
-  currentCategory: string | null;
-  currentTags: string[];
-  proposedCategory: string | null;
-  proposedTags: string[];
-  hasChange: boolean;
-}
-
-type Phase =
-  | { kind: "browse" }
-  | { kind: "gen-scope" }
-  | { kind: "gen-skills" }
-  | {
-      kind: "gen-review";
-      proposals: Proposal[];
-      checkedNames: Set<string>;
-      noChangeExpanded: boolean;
-    }
-  | { kind: "applying" };
 
 interface Props {
   onClose: () => void;
   onOpenSkill: (entry: RegistryEntry) => void;
   drawerOpen?: boolean;
 }
-
-// ── Static option lists ───────────────────────────────────────────────────────
-
-const SCOPE_OPTIONS: PickerOption<LabelScope>[] = [
-  {
-    value: "both",
-    label: "Both categories and tags",
-    description:
-      "Suggest a category and relevant tags for each selected skill.",
-  },
-  {
-    value: "categories",
-    label: "Categories only",
-    description:
-      "Only suggest which category each selected skill belongs to. Existing tags are preserved.",
-  },
-  {
-    value: "tags",
-    label: "Tags only",
-    description:
-      "Only suggest tag keywords for each selected skill. Existing categories are preserved.",
-  },
-];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -98,38 +51,7 @@ function useOutsideClick(
   }, [open, ref, onClose]);
 }
 
-function tagsAreEqual(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false;
-  const sa = [...a].sort();
-  const sb = [...b].sort();
-  return sa.every((v, i) => v === sb[i]);
-}
-
 // ── Sub-components ────────────────────────────────────────────────────────────
-
-interface StepIndicatorProps {
-  current: 1 | 2 | 3;
-}
-
-function StepIndicator({ current }: StepIndicatorProps) {
-  return (
-    <div className="gen-step-indicator" aria-label={`Step ${current} of 3`}>
-      {([1, 2, 3] as const).map((n, i) => (
-        <React.Fragment key={n}>
-          {i > 0 && (
-            <span
-              className={`gen-step-line${current > n - 1 ? " gen-step-line--done" : ""}`}
-            />
-          )}
-          <span
-            className={`gen-step-dot${current >= n ? " gen-step-dot--done" : ""}`}
-          />
-        </React.Fragment>
-      ))}
-      <span className="gen-step-label">Step {current} of 3</span>
-    </div>
-  );
-}
 
 interface TagsDropdownProps {
   selected: string[];
@@ -350,9 +272,9 @@ function SkillLabelRow({
             autoFocus
           >
             <option value="__none__">None</option>
-            {categoryRules.map((r) => (
-              <option key={r.category} value={r.category}>
-                {categoryDisplayName(r.category)}
+            {categories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.display}
               </option>
             ))}
           </select>
@@ -458,9 +380,6 @@ export function ManageLabelsModal({
   const { registry } = useRegistry();
   const { labelsMap, reload } = useLabels();
 
-  // ── Shared state ────────────────────────────────────────────────────────────
-  const [phase, setPhase] = useState<Phase>({ kind: "browse" });
-
   // ── Browse state ────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
@@ -468,14 +387,6 @@ export function ManageLabelsModal({
   const [sort, setSort] = useState<SortKey>("name-asc");
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
   const [confirmClear, setConfirmClear] = useState(false);
-
-  // ── Gen flow state ──────────────────────────────────────────────────────────
-  const [genScope, setGenScope] = useState<LabelScope>("both");
-  const [genSkillMode, setGenSkillMode] = useState<"all" | "select">("all");
-  const [genSkillSearch, setGenSkillSearch] = useState("");
-  const [genSkillSelected, setGenSkillSelected] = useState<Set<string>>(
-    new Set(),
-  );
 
   // ── Derived: browse ─────────────────────────────────────────────────────────
   const allTags = useMemo<[string, number][]>(() => {
@@ -566,111 +477,6 @@ export function ManageLabelsModal({
     setConfirmClear(false);
   }
 
-  // ── Gen flow ─────────────────────────────────────────────────────────────────
-  function buildProposals(names: string[]): Proposal[] {
-    return names
-      .map((name) => {
-        const entry = registry.find((e) => e.name === name);
-        if (!entry) return null;
-        const currentCategory = labelsMap[name]?.category ?? null;
-        const currentTags = labelsMap[name]?.tags ?? [];
-        const derived = deriveLabels({
-          name: entry.name,
-          description: entry.description,
-        });
-        const proposedCategory =
-          genScope === "tags" ? currentCategory : derived.category;
-        const proposedTags =
-          genScope === "categories" ? currentTags : derived.tags;
-        const hasChange =
-          proposedCategory !== currentCategory ||
-          !tagsAreEqual(proposedTags, currentTags);
-        return {
-          name,
-          currentCategory,
-          currentTags,
-          proposedCategory,
-          proposedTags,
-          hasChange,
-        };
-      })
-      .filter(Boolean) as Proposal[];
-  }
-
-  function goToReview() {
-    const names =
-      genSkillMode === "all"
-        ? registry.map((e) => e.name)
-        : Array.from(genSkillSelected);
-    const proposals = buildProposals(names);
-    const changedNames = new Set(
-      proposals.filter((p) => p.hasChange).map((p) => p.name),
-    );
-    setPhase({
-      kind: "gen-review",
-      proposals,
-      checkedNames: changedNames,
-      noChangeExpanded: false,
-    });
-  }
-
-  function toggleReviewCheck(name: string) {
-    if (phase.kind !== "gen-review") return;
-    const next = new Set(phase.checkedNames);
-    if (next.has(name)) next.delete(name);
-    else next.add(name);
-    setPhase({ ...phase, checkedNames: next });
-  }
-
-  function toggleAllReviewChecks() {
-    if (phase.kind !== "gen-review") return;
-    const changed = phase.proposals.filter((p) => p.hasChange);
-    const allChecked = changed.every((p) => phase.checkedNames.has(p.name));
-    const next = allChecked
-      ? new Set<string>()
-      : new Set(changed.map((p) => p.name));
-    setPhase({ ...phase, checkedNames: next });
-  }
-
-  async function doApply() {
-    if (phase.kind !== "gen-review") return;
-    const { proposals, checkedNames } = phase;
-    setPhase({ kind: "applying" });
-    const updates: LabelsMap = {};
-    for (const p of proposals) {
-      if (!checkedNames.has(p.name)) continue;
-      updates[p.name] = {
-        ...(labelsMap[p.name] ?? {}),
-        category: p.proposedCategory,
-        tags: p.proposedTags,
-      };
-    }
-    await window.skillsBank.bulkUpdateLabels(updates);
-    await reload();
-    setPhase({ kind: "browse" });
-  }
-
-  // ── Gen skill select filtered list ──────────────────────────────────────────
-  const genSkillList = useMemo(() => {
-    const q = genSkillSearch.toLowerCase();
-    return [...registry]
-      .filter((e) => !q || e.name.toLowerCase().includes(q))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [registry, genSkillSearch]);
-
-  const genSkillOptions: PickerOption<"all" | "select">[] = [
-    {
-      value: "all",
-      label: `All skills (${registry.length})`,
-      description: "Generate suggestions for every skill in your registry.",
-    },
-    {
-      value: "select",
-      label: "Select skills",
-      description: "Choose specific skills to generate suggestions for.",
-    },
-  ];
-
   // ── In-row label patch ───────────────────────────────────────────────────────
   async function patchLabel(
     name: string,
@@ -681,494 +487,122 @@ export function ManageLabelsModal({
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
-  const isDismissable = phase.kind !== "applying";
-
-  if (phase.kind === "applying") {
-    return (
-      <Modal label="Applying labels" width={480}>
-        <div className="modal-header">
-          <h2 className="mt-0 mb-0">Applying labels…</h2>
-        </div>
-        <div className="manage-labels-applying">
-          <span className="spinner" aria-label="Working" />
-        </div>
-      </Modal>
-    );
-  }
-
   return (
     <>
       <Modal
         label="Manage Labels"
         width={720}
-        onClose={isDismissable && !drawerOpen ? onClose : undefined}
+        onClose={!drawerOpen ? onClose : undefined}
         trapFocus
       >
-        {/* ── Browse phase ───────────────────────────────────────────── */}
-        {phase.kind === "browse" && (
-          <>
-            <div className="modal-header">
-              <h2 className="mt-0 mb-0">Manage Labels</h2>
-              <ModalCloseButton onClose={onClose} />
+        <div className="modal-header">
+          <h2 className="mt-0 mb-0">Manage Labels</h2>
+          <ModalCloseButton onClose={onClose} />
+        </div>
+
+        {/* Filters row */}
+        <div className="manage-labels-filters">
+          <div className="manage-labels-search-wrap">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Filter skills…"
+            />
+          </div>
+          <label
+            className="manage-labels-filter-label"
+            htmlFor="ml-cat-filter"
+          >
+            Category
+          </label>
+          <select
+            id="ml-cat-filter"
+            className="manage-labels-select"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="__all__">All</option>
+            <option value="__none__">Uncategorized</option>
+            {categories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.display}
+              </option>
+            ))}
+          </select>
+          <TagsDropdown
+            selected={tagFilter}
+            onChange={setTagFilter}
+            allTags={allTags}
+          />
+          <label className="manage-labels-filter-label" htmlFor="ml-sort">
+            Sort
+          </label>
+          <select
+            id="ml-sort"
+            className="manage-labels-select"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+          >
+            <option value="name-asc">Name A → Z</option>
+            <option value="name-desc">Name Z → A</option>
+            <option value="category">Category</option>
+            <option value="uncategorized-first">Uncategorized first</option>
+          </select>
+        </div>
+
+        {/* Table header */}
+        <div className="manage-labels-table-header">
+          <label className="manage-labels-select-all-label">
+            <input
+              type="checkbox"
+              checked={allBrowseSelected && filteredSkills.length > 0}
+              onChange={toggleSelectAll}
+              aria-label="Select all visible skills"
+            />
+            <span>Select all</span>
+          </label>
+          <ActionsDropdown
+            disabled={selectedNames.size === 0}
+            onClearLabels={() => setConfirmClear(true)}
+          />
+          <span className="manage-labels-count text-muted text-13">
+            {filteredSkills.length} skill
+            {filteredSkills.length === 1 ? "" : "s"}
+            {selectedNames.size > 0 && ` · ${selectedNames.size} selected`}
+          </span>
+        </div>
+
+        {/* Skill list */}
+        <div className="manage-labels-list">
+          {filteredSkills.map((entry) => (
+            <SkillLabelRow
+              key={entry.name}
+              entry={entry}
+              override={labelsMap[entry.name]}
+              selected={selectedNames.has(entry.name)}
+              onToggle={() => {
+                const next = new Set(selectedNames);
+                if (next.has(entry.name)) next.delete(entry.name);
+                else next.add(entry.name);
+                setSelectedNames(next);
+              }}
+              onOpen={() => onOpenSkill(entry)}
+              onPatchLabel={(patch) => patchLabel(entry.name, patch)}
+            />
+          ))}
+          {filteredSkills.length === 0 && (
+            <div className="manage-labels-empty text-muted text-13">
+              No skills match the current filters.
             </div>
+          )}
+        </div>
 
-            {/* Filters row */}
-            <div className="manage-labels-filters">
-              <div className="manage-labels-search-wrap">
-                <SearchBar
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Filter skills…"
-                />
-              </div>
-              <label
-                className="manage-labels-filter-label"
-                htmlFor="ml-cat-filter"
-              >
-                Category
-              </label>
-              <select
-                id="ml-cat-filter"
-                className="manage-labels-select"
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="__all__">All</option>
-                <option value="__none__">Uncategorized</option>
-                {categoryRules.map((r) => (
-                  <option key={r.category} value={r.category}>
-                    {categoryDisplayName(r.category)}
-                  </option>
-                ))}
-              </select>
-              <TagsDropdown
-                selected={tagFilter}
-                onChange={setTagFilter}
-                allTags={allTags}
-              />
-              <label className="manage-labels-filter-label" htmlFor="ml-sort">
-                Sort
-              </label>
-              <select
-                id="ml-sort"
-                className="manage-labels-select"
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
-              >
-                <option value="name-asc">Name A → Z</option>
-                <option value="name-desc">Name Z → A</option>
-                <option value="category">Category</option>
-                <option value="uncategorized-first">Uncategorized first</option>
-              </select>
-            </div>
-
-            {/* Table header */}
-            <div className="manage-labels-table-header">
-              <label className="manage-labels-select-all-label">
-                <input
-                  type="checkbox"
-                  checked={allBrowseSelected && filteredSkills.length > 0}
-                  onChange={toggleSelectAll}
-                  aria-label="Select all visible skills"
-                />
-                <span>Select all</span>
-              </label>
-              <ActionsDropdown
-                disabled={selectedNames.size === 0}
-                onClearLabels={() => setConfirmClear(true)}
-              />
-              <span className="manage-labels-count text-muted text-13">
-                {filteredSkills.length} skill
-                {filteredSkills.length === 1 ? "" : "s"}
-                {selectedNames.size > 0 && ` · ${selectedNames.size} selected`}
-              </span>
-            </div>
-
-            {/* Skill list */}
-            <div className="manage-labels-list">
-              {filteredSkills.map((entry) => (
-                <SkillLabelRow
-                  key={entry.name}
-                  entry={entry}
-                  override={labelsMap[entry.name]}
-                  selected={selectedNames.has(entry.name)}
-                  onToggle={() => {
-                    const next = new Set(selectedNames);
-                    if (next.has(entry.name)) next.delete(entry.name);
-                    else next.add(entry.name);
-                    setSelectedNames(next);
-                  }}
-                  onOpen={() => onOpenSkill(entry)}
-                  onPatchLabel={(patch) => patchLabel(entry.name, patch)}
-                />
-              ))}
-              {filteredSkills.length === 0 && (
-                <div className="manage-labels-empty text-muted text-13">
-                  No skills match the current filters.
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className={modalFooter}>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setGenScope("both");
-                  setGenSkillMode("all");
-                  setGenSkillSearch("");
-                  setGenSkillSelected(new Set());
-                  setPhase({ kind: "gen-scope" });
-                }}
-              >
-                ✦ Auto-Generate Labels…
-              </button>
-              <button type="button" className="btn primary" onClick={onClose}>
-                Done
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* ── Gen: Step 1 — Scope ────────────────────────────────────── */}
-        {phase.kind === "gen-scope" && (
-          <>
-            <div className="modal-header">
-              <div className="gen-modal-header-top">
-                <button
-                  type="button"
-                  className="gen-back-link"
-                  onClick={() => setPhase({ kind: "browse" })}
-                >
-                  ← Back to Manage Labels
-                </button>
-                <StepIndicator current={1} />
-              </div>
-              <h2 className="mt-0 mb-0">What do you want to generate?</h2>
-              <ModalCloseButton onClose={onClose} />
-            </div>
-
-            <div className="manage-labels-gen-body">
-              <ConflictActionPicker
-                name="gen-scope"
-                options={SCOPE_OPTIONS}
-                value={genScope}
-                onChange={setGenScope}
-              />
-            </div>
-
-            <div className={modalFooter}>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setPhase({ kind: "browse" })}
-              >
-                ← Back
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => setPhase({ kind: "gen-skills" })}
-              >
-                Next →
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* ── Gen: Step 2 — Skills ───────────────────────────────────── */}
-        {phase.kind === "gen-skills" && (
-          <>
-            <div className="modal-header">
-              <div className="gen-modal-header-top">
-                <button
-                  type="button"
-                  className="gen-back-link"
-                  onClick={() => setPhase({ kind: "browse" })}
-                >
-                  ← Back to Manage Labels
-                </button>
-                <StepIndicator current={2} />
-              </div>
-              <h2 className="mt-0 mb-0">Which skills?</h2>
-              <ModalCloseButton onClose={onClose} />
-            </div>
-
-            <div className="manage-labels-gen-body">
-              <ConflictActionPicker
-                name="gen-skill-mode"
-                options={genSkillOptions}
-                value={genSkillMode}
-                onChange={setGenSkillMode}
-              />
-
-              {genSkillMode === "select" && (
-                <div className="gen-skill-checklist">
-                  <SearchBar
-                    value={genSkillSearch}
-                    onChange={setGenSkillSearch}
-                    placeholder="Filter skills…"
-                  />
-                  <div className="gen-skill-checklist-list">
-                    {genSkillList.map((e) => {
-                      const cat = labelsMap[e.name]?.category ?? null;
-                      const tagCount = labelsMap[e.name]?.tags?.length ?? 0;
-                      const checked = genSkillSelected.has(e.name);
-                      return (
-                        <label key={e.name} className="gen-skill-row">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => {
-                              const next = new Set(genSkillSelected);
-                              if (next.has(e.name)) next.delete(e.name);
-                              else next.add(e.name);
-                              setGenSkillSelected(next);
-                            }}
-                          />
-                          <span className="gen-skill-row-name">{e.name}</span>
-                          {cat ? (
-                            <span className="manage-labels-cat-badge">
-                              {categoryDisplayName(cat)}
-                            </span>
-                          ) : (
-                            <span className="manage-labels-row-none">—</span>
-                          )}
-                          <span className="text-muted text-13">
-                            {tagCount} tag{tagCount === 1 ? "" : "s"}
-                          </span>
-                        </label>
-                      );
-                    })}
-                    {genSkillList.length === 0 && (
-                      <div className="manage-labels-empty text-muted text-13">
-                        No skills match.
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-muted text-13 mt-4">
-                    {genSkillSelected.size} selected
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className={modalFooter}>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setPhase({ kind: "gen-scope" })}
-              >
-                ← Back
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={
-                  genSkillMode === "select" && genSkillSelected.size === 0
-                }
-                onClick={goToReview}
-              >
-                Confirm →
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* ── Gen: Step 3 — Review ──────────────────────────────────── */}
-        {phase.kind === "gen-review" &&
-          (() => {
-            const { proposals, checkedNames, noChangeExpanded } = phase;
-            const changed = proposals.filter((p) => p.hasChange);
-            const unchanged = proposals.filter((p) => !p.hasChange);
-            const allChecked =
-              changed.length > 0 &&
-              changed.every((p) => checkedNames.has(p.name));
-            const applyCount = changed.filter((p) =>
-              checkedNames.has(p.name),
-            ).length;
-
-            return (
-              <>
-                <div className="modal-header">
-                  <div className="gen-modal-header-top">
-                    <button
-                      type="button"
-                      className="gen-back-link"
-                      onClick={() => setPhase({ kind: "browse" })}
-                    >
-                      ← Back to Manage Labels
-                    </button>
-                    <StepIndicator current={3} />
-                  </div>
-                  <div className="gen-review-stats">
-                    <h2 className="mt-0 mb-0">Review suggestions</h2>
-                    <span className="text-muted text-13">
-                      {proposals.length} skill
-                      {proposals.length === 1 ? "" : "s"}
-                      {" · "}
-                      <strong>{changed.length}</strong> change
-                      {changed.length === 1 ? "" : "s"}
-                      {unchanged.length > 0 &&
-                        ` · ${unchanged.length} unchanged`}
-                    </span>
-                  </div>
-                  <ModalCloseButton onClose={onClose} />
-                </div>
-
-                <div className="manage-labels-list">
-                  {changed.length > 0 && (
-                    <div className="gen-review-select-all-row">
-                      <label className="manage-labels-select-all-label">
-                        <input
-                          type="checkbox"
-                          checked={allChecked}
-                          onChange={toggleAllReviewChecks}
-                        />
-                        <span>
-                          {allChecked ? "Deselect all" : "Select all"}
-                        </span>
-                      </label>
-                    </div>
-                  )}
-
-                  {changed.map((p) => (
-                    <div key={p.name} className="gen-review-row">
-                      <input
-                        type="checkbox"
-                        className="gen-review-check"
-                        checked={checkedNames.has(p.name)}
-                        onChange={() => toggleReviewCheck(p.name)}
-                        aria-label={`Include ${p.name} in changes`}
-                      />
-                      <div className="gen-review-row-body">
-                        <span className="gen-review-skill-name">{p.name}</span>
-                        {(genScope === "both" || genScope === "categories") &&
-                          p.currentCategory !== p.proposedCategory && (
-                            <div className="gen-review-diff">
-                              <span className="text-muted text-13">
-                                Category
-                              </span>
-                              <span className="gen-review-current">
-                                {p.currentCategory
-                                  ? categoryDisplayName(p.currentCategory)
-                                  : "—"}
-                              </span>
-                              <span className="gen-review-arrow">→</span>
-                              <span className="gen-review-proposed">
-                                {p.proposedCategory
-                                  ? categoryDisplayName(p.proposedCategory)
-                                  : "—"}
-                              </span>
-                            </div>
-                          )}
-                        {(genScope === "both" || genScope === "tags") &&
-                          !tagsAreEqual(p.currentTags, p.proposedTags) && (
-                            <div className="gen-review-diff">
-                              <span className="text-muted text-13">Tags</span>
-                              <span className="gen-review-current">
-                                {p.currentTags.length > 0
-                                  ? p.currentTags.map((t) => (
-                                      <span
-                                        key={t}
-                                        className="label-chip label-chip--added manage-labels-chip"
-                                      >
-                                        {t}
-                                      </span>
-                                    ))
-                                  : "—"}
-                              </span>
-                              <span className="gen-review-arrow">→</span>
-                              <span className="gen-review-proposed">
-                                {p.proposedTags.length > 0
-                                  ? p.proposedTags.map((t) => (
-                                      <span
-                                        key={t}
-                                        className="label-chip label-chip--added manage-labels-chip"
-                                      >
-                                        {t}
-                                      </span>
-                                    ))
-                                  : "—"}
-                              </span>
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {changed.length === 0 && (
-                    <div className="manage-labels-empty text-muted text-13">
-                      No changes would be made.
-                    </div>
-                  )}
-
-                  {unchanged.length > 0 && (
-                    <div className="gen-review-no-change">
-                      <button
-                        type="button"
-                        className="gen-review-no-change-toggle"
-                        onClick={() =>
-                          setPhase({
-                            ...phase,
-                            noChangeExpanded: !noChangeExpanded,
-                          })
-                        }
-                      >
-                        <DisclosureChevronInline open={noChangeExpanded} />
-                        {unchanged.length} skill
-                        {unchanged.length === 1 ? "" : "s"} with no changes
-                      </button>
-                      {noChangeExpanded && (
-                        <div className="gen-review-no-change-list">
-                          {unchanged.map((p) => (
-                            <span
-                              key={p.name}
-                              className="gen-review-no-change-name"
-                            >
-                              {p.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className={`${modalFooter} gen-review-footer`}>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setPhase({ kind: "gen-scope" });
-                    }}
-                  >
-                    ↺ Run again
-                  </button>
-                  <div className="row-between-8 ml-auto">
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => setPhase({ kind: "browse" })}
-                    >
-                      Discard changes
-                    </button>
-                    <button
-                      type="button"
-                      className="btn primary"
-                      disabled={applyCount === 0}
-                      onClick={() => void doApply()}
-                    >
-                      {applyCount < changed.length && applyCount > 0
-                        ? `Apply ${applyCount} of ${changed.length}`
-                        : "Apply changes"}
-                    </button>
-                  </div>
-                </div>
-              </>
-            );
-          })()}
+        {/* Footer */}
+        <div className={modalFooter}>
+          <button type="button" className="btn primary" onClick={onClose}>
+            Done
+          </button>
+        </div>
       </Modal>
 
       <ConfirmDialog
@@ -1184,31 +618,3 @@ export function ManageLabelsModal({
   );
 }
 
-// Inline disclosure chevron to avoid importing DisclosureChevron and adding
-// an extra component dep just for one use.
-function DisclosureChevronInline({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      style={{
-        transform: open ? "rotate(90deg)" : "rotate(0deg)",
-        transition: "transform 0.15s ease",
-        display: "inline-block",
-        marginRight: 4,
-        verticalAlign: "middle",
-      }}
-      aria-hidden
-    >
-      <path
-        d="M4 2l4 4-4 4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
