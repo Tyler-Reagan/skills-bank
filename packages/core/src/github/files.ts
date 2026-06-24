@@ -157,29 +157,33 @@ export async function writeRepoFileAsBranch(
     };
   }
 
+  // Always reset the branch to the current baseBranch HEAD — whether
+  // creating or updating — so the PR is never based on a stale commit
+  // that conflicts with intervening main changes.
+  const baseRefUrl = `${GH_API}/repos/${opts.repo}/git/refs/heads/${encodeURIComponent(opts.baseBranch)}`;
+  const baseRes = await ghFetch<{ object: { sha: string } }>(
+    baseRefUrl,
+    { method: "GET" },
+    opts.token,
+  );
+  if (!baseRes.ok) {
+    return {
+      ok: false,
+      status: baseRes.status,
+      message: baseRes.message,
+      rateLimit: baseRes.rateLimit,
+    };
+  }
+  const baseSha = baseRes.body.object.sha;
+
   if (!refRes.ok) {
-    // Branch absent — create it from baseBranch.
-    const baseRefUrl = `${GH_API}/repos/${opts.repo}/git/refs/heads/${encodeURIComponent(opts.baseBranch)}`;
-    const baseRes = await ghFetch<{ object: { sha: string } }>(
-      baseRefUrl,
-      { method: "GET" },
-      opts.token,
-    );
-    if (!baseRes.ok) {
-      return {
-        ok: false,
-        status: baseRes.status,
-        message: baseRes.message,
-        rateLimit: baseRes.rateLimit,
-      };
-    }
     const createRes = await ghFetch<{ ref: string }>(
       `${GH_API}/repos/${opts.repo}/git/refs`,
       {
         method: "POST",
         body: JSON.stringify({
           ref: `refs/heads/${opts.branch}`,
-          sha: baseRes.body.object.sha,
+          sha: baseSha,
         }),
         headers: { "Content-Type": "application/json" },
       },
@@ -191,6 +195,24 @@ export async function writeRepoFileAsBranch(
         status: createRes.status,
         message: createRes.message,
         rateLimit: createRes.rateLimit,
+      };
+    }
+  } else {
+    const resetRes = await ghFetch<{ ref: string }>(
+      `${GH_API}/repos/${opts.repo}/git/refs/heads/${encodeURIComponent(opts.branch)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ sha: baseSha, force: true }),
+        headers: { "Content-Type": "application/json" },
+      },
+      opts.token,
+    );
+    if (!resetRes.ok) {
+      return {
+        ok: false,
+        status: resetRes.status,
+        message: resetRes.message,
+        rateLimit: resetRes.rateLimit,
       };
     }
   }
