@@ -3,6 +3,23 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+Skill-usage metrics — an opt-in **Metrics** tab that shows which Claude Code skills you invoke most, on this machine. Strictly local: hooks on `PreToolUse(Skill)` (skills the model invokes) and `UserPromptExpansion` (skills you invoke by typing `/name`) append each invocation to `~/.skills-bank/invocations.jsonl`; the app aggregates it. No server, no telemetry egress (skills-bank has no backend).
+
+### Added
+
+- **Metrics tab** — ranked per-skill invocation counts (with a summary header and CSS usage bars), cross-referenced against the registry for skill descriptions. Three states: tracking-off CTA, off-with-history (stats stamped with the date range they cover), and on.
+- **Opt-in tracking toggle** (Settings → Skill usage) — installs/removes both hooks (`PreToolUse(Skill)` + `UserPromptExpansion`) in the real `~/.claude/settings.json` via a non-destructive, atomic, refuse-on-malformed merge. "Enabled" is derived from the settings file itself (single source of truth), so hand-edits never drift; tri-state status surfaces a "needs repair" case when the hook script goes missing.
+- **Tracking-history ledger** (`~/.skills-bank/tracking-history.json`) — records on/off periods (with an approximate-transition reconcile invariant for hand-edits) so observability gaps are explicit and a future gap-respecting timeline view is possible.
+- **New core primitives:** `metrics/invocations.ts` (tolerant JSONL reader/aggregator), `metrics/hook-config.ts` (pure settings.json merge + hook script), `metrics/coverage.ts` (period → windows/gaps deriver); 3 IPC channels + preload + handlers. **+23 unit tests** (302 total).
+
+### Notes
+
+- The hook is dependency-free POSIX sh, always `exit 0` (never blocks), `timeout: 5`. Captures **both** invocation paths — model-invoked (`PreToolUse` `tool_input.skill`) and user `/slash` (`UserPromptExpansion` `command_name`); built-in client commands like `/clear` don't fire `UserPromptExpansion`, so there's no noise. Counts all skills incl. plugins; Claude-Code-only (hooks don't fire for other agents).
+- Metrics deliberately uses **real** paths even in dev builds (the hook fires from the user's one real Claude Code) — a documented exception to dev-sink isolation; see CLAUDE.md and [#138](https://github.com/Tyler-Reagan/skills-bank/issues/138).
+- No log rotation in v1 (growth is ~MB/year); deferred along with timeline/per-project/per-session views.
+
 ## v1.23.0
 
 Restore unreachable origins; source-as-provenance. Closes the restore arm of [#126](https://github.com/Tyler-Reagan/skills-bank/issues/126) — vendored skills with dead or relocated upstreams now have two deterministic, human-driven recovery paths (Repoint and Adopt into linked repo), and `source` is redefined as sticky acquisition-time provenance independent of `origin`. Design rationale in [ADR-0012](docs/adr/ADR-0012-source-as-provenance-and-origin-restore.md).

@@ -183,6 +183,10 @@ const api = {
   resetLabel: (name: string) => ipcRenderer.invoke(IPC.resetLabel, name),
   bulkUpdateLabels: (updates: unknown) =>
     ipcRenderer.invoke(IPC.bulkUpdateLabels, updates),
+  getInvocationStats: () => ipcRenderer.invoke(IPC.getInvocationStats),
+  getSkillTrackingStatus: () => ipcRenderer.invoke(IPC.getSkillTrackingStatus),
+  setSkillTrackingEnabled: (enabled: boolean) =>
+    ipcRenderer.invoke(IPC.setSkillTrackingEnabled, enabled),
 };
 
 contextBridge.exposeInMainWorld("skillsBank", api);

@@ -30,6 +30,7 @@ import {
 import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
+import { MetricsTab } from "./components/MetricsTab.js";
 import { ErrorPanel } from "./components/ErrorPanel.js";
 import { ModalHost, type ActiveModal } from "./components/ModalHost.js";
 import { useManifestImportProgress } from "./hooks/useManifestImportProgress.js";
@@ -1015,6 +1016,12 @@ function AppContent(): React.ReactElement {
               }}
               diagnostics={diagnostics}
               onFixDiagnosticItem={(item) => void onFixDiagnosticItem(item)}
+            />
+          )}
+          {tab === "metrics" && (
+            <MetricsTab
+              registry={registry}
+              onOpenSettings={() => openModal({ kind: "settings" })}
             />
           )}
         </div>

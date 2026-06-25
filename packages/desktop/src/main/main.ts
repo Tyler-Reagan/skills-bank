@@ -28,6 +28,7 @@ import {
   exportSkill,
   exportRegistryManifest,
   importRegistryManifest,
+  readInvocationStats,
   reconcileRegistryToManifest,
   applySkillLabel,
   clearSkillLabel,
@@ -109,6 +110,11 @@ import {
   type RegistrationAction,
   type SyncDecisions,
 } from "@skills-bank/core";
+import {
+  disableTracking,
+  enableTracking,
+  getTrackingStatus,
+} from "./skill-tracking.js";
 import {
   BUNDLED_REPO,
   IPC,
@@ -3695,4 +3701,13 @@ ipcMain.handle(
     }
     writeLabelsFile(data);
   },
+);
+
+// Skill-usage metrics. The log + hook + ledger live at REAL paths
+// (~/.skills-bank, ~/.claude/settings.json) regardless of dev/packaged —
+// the hook fires from the user's one Claude Code. See skill-tracking.ts.
+ipcMain.handle(IPC.getInvocationStats, () => readInvocationStats());
+ipcMain.handle(IPC.getSkillTrackingStatus, () => getTrackingStatus());
+ipcMain.handle(IPC.setSkillTrackingEnabled, (_e, enabled: boolean) =>
+  enabled ? enableTracking() : disableTracking(),
 );

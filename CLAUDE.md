@@ -91,4 +91,6 @@ The packaged install reads `~/.claude/skills/`, `~/.cursor/skills/`, and `~/Libr
 
 Consequence: skills "installed" via dev are not visible to your real Claude Code / Cursor clients. End-to-end installation testing requires the packaged app pointed at a deployed registry.
 
+**Deliberate exception — skill-usage metrics.** The metrics feature (`skill-tracking.ts`, core `metrics/`) operates on **real** paths regardless of `app.isPackaged` — the invocation log + hook script at `~/.skills-bank/` and the hook entry in real `~/.claude/settings.json` — because the `PreToolUse` hook fires from the user's one real Claude Code. `getMetricsDir()` intentionally ignores `SKILLS_BANK_HOME_OVERRIDE`. Safe because enabled-state is file-derived, the entry is clearly marked, and it's reversible from any build. Broader dev-sink hardening (incl. this carve-out) tracked in [#138](https://github.com/Tyler-Reagan/skills-bank/issues/138).
+
 `rm -rf ~/.skills-bank-dev/` is the one-line full dev-state reset.
