@@ -54,20 +54,41 @@ export interface InvocationStats {
 
 /**
  * One line of the log, as written by the hook. The hook wraps Claude
- * Code's raw PreToolUse payload under `payload` with its own `ts` so the
- * reader never depends on the payload carrying a timestamp.
+ * Code's raw payload under `payload` with its own `ts` so the reader never
+ * depends on the payload carrying a timestamp. Two payload shapes occur:
+ *  - `PreToolUse` (model-invoked): `tool_input.skill` holds the name.
+ *  - `UserPromptExpansion` (user `/slash`): `command_name` holds the name,
+ *    with `expansion_type: "slash_command"`.
  */
 interface LogRecord {
   ts?: unknown;
   payload?: {
     tool_input?: { skill?: unknown };
     session_id?: unknown;
+    expansion_type?: unknown;
+    command_name?: unknown;
   };
 }
 
+/**
+ * Pull the skill name from either payload shape. Model-invoked skills
+ * carry it in `tool_input.skill`; user `/slash` skills carry it in
+ * `command_name` (only for `slash_command` expansions — other expansion
+ * types, if any, are ignored). Returns null when neither is present.
+ */
 function extractSkill(rec: LogRecord): string | null {
-  const skill = rec.payload?.tool_input?.skill;
-  return typeof skill === "string" && skill.length > 0 ? skill : null;
+  const p = rec.payload;
+  if (!p) return null;
+  const toolSkill = p.tool_input?.skill;
+  if (typeof toolSkill === "string" && toolSkill.length > 0) return toolSkill;
+  if (
+    p.expansion_type === "slash_command" &&
+    typeof p.command_name === "string" &&
+    p.command_name.length > 0
+  ) {
+    return p.command_name;
+  }
+  return null;
 }
 
 /**

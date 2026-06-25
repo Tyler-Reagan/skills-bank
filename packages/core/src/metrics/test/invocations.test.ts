@@ -25,6 +25,19 @@ function event(skill: string, ts: string, session = "s1"): string {
   });
 }
 
+// A user `/slash` invocation, as the UserPromptExpansion hook records it.
+function slashEvent(skill: string, ts: string, session = "s1"): string {
+  return JSON.stringify({
+    ts,
+    payload: {
+      hook_event_name: "UserPromptExpansion",
+      expansion_type: "slash_command",
+      command_name: skill,
+      session_id: session,
+    },
+  });
+}
+
 describe("readInvocationStats", () => {
   test("missing log → empty, logExists false", () => {
     const r = readInvocationStats({ dir: scratch });
@@ -87,5 +100,45 @@ describe("readInvocationStats", () => {
     const r = readInvocationStats({ dir: scratch });
     expect(r.totalEvents).toBe(2);
     expect(r.perSkill[0]!.lastInvokedAt).toBe("2026-01-05T10:00:00Z");
+  });
+
+  test("counts user /slash invocations via command_name", () => {
+    writeLog([
+      slashEvent("soultrace", "2026-01-01T10:00:00Z"),
+      slashEvent("soultrace", "2026-01-02T10:00:00Z"),
+    ]);
+    const r = readInvocationStats({ dir: scratch });
+    expect(r.totalEvents).toBe(2);
+    expect(r.perSkill[0]).toMatchObject({ skill: "soultrace", count: 2 });
+  });
+
+  test("aggregates model-invoked and /slash invocations of the same skill", () => {
+    writeLog([
+      event("diagnose", "2026-01-01T10:00:00Z"),
+      slashEvent("diagnose", "2026-01-03T10:00:00Z"),
+    ]);
+    const r = readInvocationStats({ dir: scratch });
+    expect(r.totalEvents).toBe(2);
+    expect(r.perSkill).toHaveLength(1);
+    expect(r.perSkill[0]).toMatchObject({
+      skill: "diagnose",
+      count: 2,
+      firstInvokedAt: "2026-01-01T10:00:00Z",
+      lastInvokedAt: "2026-01-03T10:00:00Z",
+    });
+  });
+
+  test("ignores expansions that aren't slash_command", () => {
+    writeLog([
+      JSON.stringify({
+        ts: "2026-01-01T10:00:00Z",
+        payload: { expansion_type: "other", command_name: "not-a-skill" },
+      }),
+      slashEvent("real", "2026-01-02T10:00:00Z"),
+    ]);
+    const r = readInvocationStats({ dir: scratch });
+    expect(r.totalEvents).toBe(1);
+    expect(r.malformedLines).toBe(1);
+    expect(r.perSkill[0]!.skill).toBe("real");
   });
 });

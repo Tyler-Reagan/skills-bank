@@ -2,15 +2,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
-  addSkillHook,
+  addTrackingHooks,
   buildHookCommand,
   buildHookScript,
   deriveCoverage,
   getInvocationLogPath,
   getMetricsDir,
-  hasSkillHook,
+  hasTrackingHooks,
   HOOK_SCRIPT_FILENAME,
-  removeSkillHook,
+  removeTrackingHooks,
   type ClaudeSettings,
   type TrackingPeriod,
 } from "@skills-bank/core";
@@ -23,8 +23,6 @@ import type { SetTrackingResult, TrackingStatus } from "../shared/ipc.js";
  * why these paths are REAL (`os.homedir()`) even in dev builds — there is
  * one Claude Code on the machine and the hook fires from it.
  */
-
-const HOOK_TIMEOUT_SECONDS = 5;
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -117,7 +115,7 @@ function buildStatus(
   settings: ClaudeSettings,
   malformed: boolean,
 ): TrackingStatus {
-  const fileEnabled = !malformed && hasSkillHook(settings);
+  const fileEnabled = !malformed && hasTrackingHooks(settings);
   const scriptPresent = fs.existsSync(hookScriptPath());
 
   // Reconcile invariant: the settings.json file is the source of truth
@@ -177,18 +175,10 @@ export function enableTracking(): SetTrackingResult {
   }
   try {
     materializeHookFiles();
-    const command = buildHookCommand(hookScriptPath());
-    const merged = addSkillHook(read.settings, command);
-    // Stamp our timeout on the entry we just added (pure helpers stay
-    // timeout-agnostic; the impure installer owns the policy value).
-    for (const entry of merged.hooks?.PreToolUse ?? []) {
-      if (entry.matcher !== "Skill") continue;
-      for (const h of entry.hooks ?? []) {
-        if (h.command === command && h.timeout === undefined) {
-          h.timeout = HOOK_TIMEOUT_SECONDS;
-        }
-      }
-    }
+    const merged = addTrackingHooks(
+      read.settings,
+      buildHookCommand(hookScriptPath()),
+    );
     writeJsonAtomic(claudeSettingsPath(), merged);
 
     const periods = readLedger();
@@ -221,7 +211,7 @@ export function disableTracking(): SetTrackingResult {
     };
   }
   try {
-    const stripped = removeSkillHook(read.settings);
+    const stripped = removeTrackingHooks(read.settings);
     writeJsonAtomic(claudeSettingsPath(), stripped);
 
     const periods = readLedger();

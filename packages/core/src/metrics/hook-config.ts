@@ -1,21 +1,42 @@
 /**
- * Pure helpers for installing/removing the skill-invocation PreToolUse
- * hook in Claude Code's `settings.json`, plus the hook script body. File
- * I/O and path resolution live in the desktop main process
- * (`skill-tracking.ts`); everything here is a pure transform on a parsed
- * settings object so it can be unit-tested without Electron or a real
- * `~/.claude`.
+ * Pure helpers for installing/removing the skill-invocation hooks in
+ * Claude Code's `settings.json`, plus the hook script body. File I/O and
+ * path resolution live in the desktop main process (`skill-tracking.ts`);
+ * everything here is a pure transform on a parsed settings object so it
+ * can be unit-tested without Electron or a real `~/.claude`.
+ *
+ * Two invocation paths, two events (verified empirically against Claude
+ * Code 2.1.x):
+ *  - **Model-invoked** skills fire `PreToolUse` with `tool_name: "Skill"`
+ *    and `tool_input.skill: "<name>"`. Matched by tool name `"Skill"`.
+ *  - **User `/slash`** skills fire `UserPromptExpansion` with
+ *    `expansion_type: "slash_command"` and `command_name: "<name>"` — and
+ *    built-in client commands (`/clear`, `/status`) don't fire it at all,
+ *    so a catch-all matcher here is skills/commands only, no noise.
+ * The same script handles both; the reader (`invocations.ts`) pulls the
+ * skill name from whichever shape each line carries.
  */
 
 /**
  * Filename of the hook script the app writes into the metrics dir. Also
- * the stable substring used to recognize our own hook entry on read
+ * the stable substring used to recognize our own hook entries on read
  * (`commandIsOurs`), regardless of how the command path is rendered.
  */
 export const HOOK_SCRIPT_FILENAME = "skill-invocation-hook.sh";
 
-/** Tool name the Skill tool reports to hooks; matched exactly. */
-export const SKILL_MATCHER = "Skill";
+/** Defensive per-hook timeout (seconds); the hook is instant. */
+export const HOOK_TIMEOUT_SECONDS = 5;
+
+/**
+ * The events we install under, and the matcher for each. `PreToolUse`
+ * matches the `Skill` tool name; `UserPromptExpansion` uses `"*"` (all
+ * slash/command expansions — built-ins don't fire this event).
+ */
+export const TRACKED_EVENTS: ReadonlyArray<{ event: string; matcher: string }> =
+  [
+    { event: "PreToolUse", matcher: "Skill" },
+    { event: "UserPromptExpansion", matcher: "*" },
+  ];
 
 /**
  * Wrap a string in POSIX-sh single quotes, escaping embedded quotes, so a
@@ -32,13 +53,14 @@ function shSingleQuote(s: string): string {
  * `node`-on-PATH assumption): it collapses the stdin payload to a single
  * line and appends it raw under a `payload` key with its own UTC
  * timestamp. All parsing/aggregation happens later in the reader
- * (`invocations.ts`). Always exits 0, so it can never block a Skill call.
+ * (`invocations.ts`). Always exits 0, so it can never block a call.
  */
 export function buildHookScript(logPath: string): string {
   const quotedLog = shSingleQuote(logPath);
   return `#!/bin/sh
 # Skills Bank — skill-invocation tracker (managed; safe to delete).
-# Appends each PreToolUse(Skill) payload as one JSONL line. Never blocks.
+# Appends each PreToolUse(Skill) / UserPromptExpansion payload as one
+# JSONL line. Never blocks.
 log=${quotedLog}
 mkdir -p "$(dirname "$log")"
 payload=$(cat | tr '\\n\\r' '  ')
@@ -63,10 +85,7 @@ interface HookMatcher {
   [k: string]: unknown;
 }
 export interface ClaudeSettings {
-  hooks?: {
-    PreToolUse?: HookMatcher[];
-    [k: string]: unknown;
-  };
+  hooks?: { [event: string]: HookMatcher[] | undefined };
   [k: string]: unknown;
 }
 
@@ -77,72 +96,85 @@ function commandIsOurs(cmd: HookCommand): boolean {
   );
 }
 
-/** True iff our skill-invocation hook is already installed. */
-export function hasSkillHook(settings: ClaudeSettings): boolean {
-  const entries = settings.hooks?.PreToolUse;
-  if (!Array.isArray(entries)) return false;
-  return entries.some(
-    (e) => Array.isArray(e.hooks) && e.hooks.some(commandIsOurs),
+function eventHasOurs(entries: HookMatcher[] | undefined): boolean {
+  return (
+    Array.isArray(entries) &&
+    entries.some((e) => Array.isArray(e.hooks) && e.hooks.some(commandIsOurs))
   );
 }
 
+/** Shallow-clone settings with a fresh `hooks` map so edits don't mutate input. */
+function cloneWithHooks(settings: ClaudeSettings): ClaudeSettings {
+  return { ...settings, hooks: { ...(settings.hooks ?? {}) } };
+}
+
 /**
- * Return a new settings object with our hook installed. Non-destructive:
- * preserves every other key, every other PreToolUse matcher, and any
- * other hooks already under a `Skill` matcher. Idempotent.
+ * True iff our tracking hooks are installed under ANY tracked event. We
+ * treat "any present" as enabled (not "all present") so a config written
+ * by an older single-event build still reads as on; `addTrackingHooks` is
+ * idempotent and fills in whichever event is missing on the next enable.
  */
-export function addSkillHook(
+export function hasTrackingHooks(settings: ClaudeSettings): boolean {
+  const h = settings.hooks;
+  if (!h) return false;
+  return TRACKED_EVENTS.some(({ event }) => eventHasOurs(h[event]));
+}
+
+/**
+ * Return a new settings object with our hook installed under every tracked
+ * event. Non-destructive: preserves every other key, event, matcher, and
+ * co-located hook. Idempotent per event.
+ */
+export function addTrackingHooks(
   settings: ClaudeSettings,
   command: string,
 ): ClaudeSettings {
-  const next: ClaudeSettings = { ...settings, hooks: { ...settings.hooks } };
-  const preToolUse: HookMatcher[] = Array.isArray(next.hooks!.PreToolUse)
-    ? next.hooks!.PreToolUse.map((e) => ({ ...e }))
-    : [];
-
-  if (hasSkillHook(settings)) {
-    next.hooks!.PreToolUse = preToolUse;
-    return next;
+  const next = cloneWithHooks(settings);
+  for (const { event, matcher } of TRACKED_EVENTS) {
+    const entries: HookMatcher[] = Array.isArray(next.hooks![event])
+      ? next.hooks![event]!.map((e) => ({ ...e }))
+      : [];
+    if (!eventHasOurs(entries)) {
+      const ours: HookCommand = {
+        type: "command",
+        command,
+        timeout: HOOK_TIMEOUT_SECONDS,
+      };
+      const existing = entries.find((e) => e.matcher === matcher);
+      if (existing) {
+        existing.hooks = [...(existing.hooks ?? []), ours];
+      } else {
+        entries.push({ matcher, hooks: [ours] });
+      }
+    }
+    next.hooks![event] = entries;
   }
-
-  const ours: HookCommand = { type: "command", command };
-  const skillEntry = preToolUse.find((e) => e.matcher === SKILL_MATCHER);
-  if (skillEntry) {
-    skillEntry.hooks = [...(skillEntry.hooks ?? []), ours];
-  } else {
-    preToolUse.push({ matcher: SKILL_MATCHER, hooks: [ours] });
-  }
-
-  next.hooks!.PreToolUse = preToolUse;
   return next;
 }
 
 /**
- * Return a new settings object with our hook removed. Strips only the
- * command(s) we own, drops any matcher entry left with no hooks, and
- * cleans up an emptied `PreToolUse`/`hooks` so we don't leave cruft.
- * Other hooks and keys are untouched.
+ * Return a new settings object with our hook removed from EVERY event.
+ * Strips only the command(s) we own, drops matcher entries left with no
+ * hooks, removes emptied events, and drops an emptied `hooks`. Other hooks
+ * and keys are untouched.
  */
-export function removeSkillHook(settings: ClaudeSettings): ClaudeSettings {
-  const entries = settings.hooks?.PreToolUse;
-  if (!Array.isArray(entries)) return settings;
-
-  const next: ClaudeSettings = { ...settings, hooks: { ...settings.hooks } };
-  const pruned = entries
-    .map((e) => ({
-      ...e,
-      hooks: Array.isArray(e.hooks)
-        ? e.hooks.filter((c) => !commandIsOurs(c))
-        : e.hooks,
-    }))
-    .filter((e) => !Array.isArray(e.hooks) || e.hooks.length > 0);
-
-  if (pruned.length > 0) {
-    next.hooks!.PreToolUse = pruned;
-  } else {
-    delete next.hooks!.PreToolUse;
+export function removeTrackingHooks(settings: ClaudeSettings): ClaudeSettings {
+  if (!settings.hooks) return settings;
+  const next = cloneWithHooks(settings);
+  for (const event of Object.keys(next.hooks!)) {
+    const entries = next.hooks![event];
+    if (!Array.isArray(entries)) continue;
+    const pruned = entries
+      .map((e) => ({
+        ...e,
+        hooks: Array.isArray(e.hooks)
+          ? e.hooks.filter((c) => !commandIsOurs(c))
+          : e.hooks,
+      }))
+      .filter((e) => !Array.isArray(e.hooks) || e.hooks.length > 0);
+    if (pruned.length > 0) next.hooks![event] = pruned;
+    else delete next.hooks![event];
   }
   if (Object.keys(next.hooks!).length === 0) delete next.hooks;
-
   return next;
 }
