@@ -3,9 +3,11 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## v1.24.0
 
-Skill-usage metrics — an opt-in **Metrics** tab that shows which Claude Code skills you invoke most, on this machine. Strictly local: hooks on `PreToolUse(Skill)` (skills the model invokes) and `UserPromptExpansion` (skills you invoke by typing `/name`) append each invocation to `~/.skills-bank/invocations.jsonl`; the app aggregates it. No server, no telemetry egress (skills-bank has no backend).
+Skill-usage **Metrics** dashboard (headline feature), plus a function-oriented label taxonomy, a combobox category picker, and a manifest-PR fix.
+
+The Metrics tab is an opt-in view of which Claude Code skills you invoke most, on this machine. Strictly local: hooks on `PreToolUse(Skill)` (skills the model invokes) and `UserPromptExpansion` (skills you invoke by typing `/name`) append each invocation to `~/.skills-bank/invocations.jsonl`; the app aggregates it. No server, no telemetry egress (skills-bank has no backend).
 
 ### Added
 
@@ -13,6 +15,12 @@ Skill-usage metrics — an opt-in **Metrics** tab that shows which Claude Code s
 - **Opt-in tracking toggle** (Settings → Skill usage) — installs/removes both hooks (`PreToolUse(Skill)` + `UserPromptExpansion`) in the real `~/.claude/settings.json` via a non-destructive, atomic, refuse-on-malformed merge. "Enabled" is derived from the settings file itself (single source of truth), so hand-edits never drift; tri-state status surfaces a "needs repair" case when the hook script goes missing.
 - **Tracking-history ledger** (`~/.skills-bank/tracking-history.json`) — records on/off periods (with an approximate-transition reconcile invariant for hand-edits) so observability gaps are explicit and a future gap-respecting timeline view is possible.
 - **New core primitives:** `metrics/invocations.ts` (tolerant JSONL reader/aggregator), `metrics/hook-config.ts` (pure settings.json merge + hook script), `metrics/coverage.ts` (period → windows/gaps deriver); 3 IPC channels + preload + handlers. **+23 unit tests** (302 total).
+- **Function-oriented label taxonomy** ([#136](https://github.com/Tyler-Reagan/skills-bank/pull/136)) — replaced the domain-category labels with a function-oriented taxonomy.
+- **Category combobox** ([#137](https://github.com/Tyler-Reagan/skills-bank/pull/137)) — replaced the `CategorySelect` native `<select>` with a combobox, and surfaced user-defined category sections.
+
+### Fixed
+
+- **Manifest PR branch** — always reset the manifest PR branch to `baseBranch` HEAD before writing, so a stale branch can't carry prior content into a new push.
 
 ### Notes
 
@@ -49,12 +57,12 @@ Bug-fix patch: a skill's `origin` is now kept truthful against the linked repo, 
 ### Fixed
 
 - **`origin` now means exactly one thing — where the content currently lives and is re-fetched from.** It was overloaded as both ancestral provenance and the re-probe coordinate, and nothing re-pointed it when a skill's home changed. Two breakages followed: (1) a skill living in the linked repo but still pointing at the third-party repo it was first vendored from earned a **false `UNREACHABLE`** badge once that stale upstream removed/renamed the folder; (2) `resolveExportOrigin` synthesized self-origins as `skills/<bucket>/<name>/SKILL.md`, assuming the linked repo mirrors the local bucket layout — it doesn't, so ~20 personal skills carried fictional paths that 404 on a fresh clone.
-- **`reconcileResidentOrigins` (`registry/reconcile.ts`) keeps it correct via one long-lived primitive, not a one-time migration.** For each skill whose folder leaf is present in the linked repo's tree, it rewrites the origin to a self-origin at the *real* path and clears any stale probe-failure counter. Idempotent; genuinely vendored skills are untouched. Runs wherever the linked tree is available — on push (preview + push **block** on a tree-fetch failure rather than reconcile from partial data) and after a link/sync.
+- **`reconcileResidentOrigins` (`registry/reconcile.ts`) keeps it correct via one long-lived primitive, not a one-time migration.** For each skill whose folder leaf is present in the linked repo's tree, it rewrites the origin to a self-origin at the _real_ path and clears any stale probe-failure counter. Idempotent; genuinely vendored skills are untouched. Runs wherever the linked tree is available — on push (preview + push **block** on a tree-fetch failure rather than reconcile from partial data) and after a link/sync.
 - **Probe skips self-origin skills** (owned by manifest sync, not the third-party probe) via a new `linkedRepo` resolver; **`buildSkillFolderMap` (`github/origin.ts`)** builds a basename→real-path map from a repo tree, dropping ambiguous leaves; **`vendor-skill.ts`** emits the live `origin`/`vendored` vocabulary instead of the dead `upstream`/`bundled` keys.
 
 ### Notes
 
-- No schema bump (manifest stays v5), no tolerant-read window, no migration branch. The field name/shape are unchanged — only the *values* written into `repo`/`skillPath` change. Existing bad data heals as a side effect of the reconcile primitive on the next push/sync.
+- No schema bump (manifest stays v5), no tolerant-read window, no migration branch. The field name/shape are unchanged — only the _values_ written into `repo`/`skillPath` change. Existing bad data heals as a side effect of the reconcile primitive on the next push/sync.
 - `zoom-out` is correctly left `UNREACHABLE` — it's genuinely vendored and upstream really did remove it (that signal feeds the separate drift/restore work in [#126](https://github.com/Tyler-Reagan/skills-bank/issues/126)).
 
 ## v1.22.1
