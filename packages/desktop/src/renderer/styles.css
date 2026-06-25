@@ -5159,7 +5159,7 @@ button:disabled {
   border-radius: var(--r-sm);
 }
 .manage-labels-cat-chevron {
-  opacity: 0;
+  opacity: 0.4;
   margin-left: 2px;
   color: var(--text-3);
   vertical-align: middle;
@@ -5169,15 +5169,20 @@ button:disabled {
   opacity: 1;
 }
 .manage-labels-cat-placeholder {
-  color: transparent;
+  color: var(--text-3);
   font-size: 11px;
   font-style: italic;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm);
+  padding: 1px 6px;
+  transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .manage-labels-cat-edit-btn--empty:hover .manage-labels-cat-placeholder {
-  color: var(--text-3);
+  color: var(--text);
+  border-color: var(--text-3);
 }
 .manage-labels-row-cat-select {
-  max-width: 120px;
+  max-width: 160px;
 }
 .manage-labels-tag-input {
   font-size: 11px;

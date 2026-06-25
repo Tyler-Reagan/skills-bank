@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useMemo, useState } from "react";
 import { SearchBar } from "./primitives.js";
 import type { LabelsMap, RegistryEntry } from "@skills-bank/core";
-import {
-  categories,
-  categoryDisplayName,
-} from "@skills-bank/core/labels";
+import { categoryDisplayName } from "@skills-bank/core/labels";
+import { CategorySelect } from "./CategorySelect.js";
 import { useLabels } from "../LabelsContext.js";
 import { Modal, ModalCloseButton, modalFooter } from "./modalStyles.js";
 import { Icon } from "./Icon.js";
@@ -229,8 +227,7 @@ function SkillLabelRow({
   const [addingTag, setAddingTag] = useState(false);
   const [tagInput, setTagInput] = useState("");
 
-  async function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const val = e.target.value;
+  async function handleCategoryChange(val: string) {
     setEditingCategory(false);
     await onPatchLabel({ category: val === "__none__" ? null : val });
   }
@@ -264,20 +261,13 @@ function SkillLabelRow({
       {/* Category — click to edit */}
       <span className="manage-labels-row-category">
         {editingCategory ? (
-          <select
+          <CategorySelect
             className="manage-labels-select manage-labels-row-cat-select"
             value={category ?? "__none__"}
-            onChange={(e) => void handleCategoryChange(e)}
+            onChange={(val) => void handleCategoryChange(val)}
             onBlur={() => setEditingCategory(false)}
-            autoFocus
-          >
-            <option value="__none__">None</option>
-            {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.display}
-              </option>
-            ))}
-          </select>
+            autoOpen
+          />
         ) : (
           <button
             type="button"
@@ -515,20 +505,13 @@ export function ManageLabelsModal({
           >
             Category
           </label>
-          <select
+          <CategorySelect
             id="ml-cat-filter"
             className="manage-labels-select"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          >
-            <option value="__all__">All</option>
-            <option value="__none__">Uncategorized</option>
-            {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.display}
-              </option>
-            ))}
-          </select>
+            onChange={setCategoryFilter}
+            filterMode
+          />
           <TagsDropdown
             selected={tagFilter}
             onChange={setTagFilter}

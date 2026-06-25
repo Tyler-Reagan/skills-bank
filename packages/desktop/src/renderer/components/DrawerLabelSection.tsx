@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import type { RegistryEntry } from "@skills-bank/core";
 import type { SkillLabelOverride } from "@skills-bank/core/labels";
 import {
-  categories,
   categoryDisplayName,
   effectiveLabels,
 } from "@skills-bank/core/labels";
+import { CategorySelect } from "./CategorySelect.js";
 import { Icon } from "./Icon.js";
 import { useLabels } from "../LabelsContext.js";
 
@@ -62,18 +62,11 @@ export function DrawerLabelSection({ entry }: Props): React.ReactElement {
       <div className="label-field">
         <label className="label-field-label">Category</label>
         <div className="label-category-row">
-          <select
+          <CategorySelect
             className="label-category-select"
             value={currentCategory}
-            onChange={(e) => void handleCategoryChange(e.target.value)}
-          >
-            <option value="__none__">None</option>
-            {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.display}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => void handleCategoryChange(val)}
+          />
         </div>
       </div>
 
