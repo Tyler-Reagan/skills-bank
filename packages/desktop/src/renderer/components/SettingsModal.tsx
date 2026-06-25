@@ -144,6 +144,32 @@ export function SettingsModal({
   );
   const curatedLastCheckedAt = syncReport?.syncedAt ?? null;
 
+  // Skill-usage tracking. This toggle is an immediate side effect (it
+  // writes/removes the PreToolUse hook in ~/.claude/settings.json), so it
+  // acts on click like "Finalize now" — not deferred to the modal's Save.
+  // State is read back from the file, the single source of truth.
+  const { data: tracking, refetch: refetchTracking } = useIpcQuery(
+    () => window.skillsBank.getSkillTrackingStatus(),
+    [],
+  );
+  const [trackingBusy, setTrackingBusy] = useState(false);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+  const onToggleTracking = async (): Promise<void> => {
+    if (!tracking) return;
+    setTrackingBusy(true);
+    setTrackingError(null);
+    try {
+      // Enable when off OR needs-repair (re-enable rewrites the script).
+      const r = await window.skillsBank.setSkillTrackingEnabled(
+        tracking.state !== "on",
+      );
+      if (!r.ok) setTrackingError(r.message);
+      refetchTracking();
+    } finally {
+      setTrackingBusy(false);
+    }
+  };
+
   const runFinalize = async () => {
     setFinalizing(true);
     setFinalizeError(null);
@@ -236,6 +262,47 @@ export function SettingsModal({
               />
             </span>
           </div>
+        </div>
+      </div>
+
+      <div className="prefs-group">
+        <p className="prefs-group-label">Skill usage</p>
+        <div className="prefs-card">
+          <div className="prefs-row">
+            <label className="prefs-checkbox">
+              <input
+                type="checkbox"
+                checked={tracking?.state === "on"}
+                disabled={trackingBusy || !tracking}
+                onChange={() => void onToggleTracking()}
+              />
+              <span>Track Claude Code skill usage</span>
+            </label>
+            <span className="prefs-row-control">
+              {trackingBusy && <span className="spinner inline" />}
+              <InfoTooltip
+                label="About skill usage tracking"
+                text="Adds a PreToolUse hook to your ~/.claude/settings.json that records which skills you invoke in Claude Code. Everything stays on this machine — nothing is sent anywhere. Turning it off removes the hook; your recorded history is kept. View the results in the Metrics tab."
+              />
+            </span>
+          </div>
+          {tracking?.state === "needs-repair" && (
+            <p className="settings-hint mt-0 mb-0">
+              The hook script is missing — toggle on to reinstall it. Usage
+              isn't being recorded until then.
+            </p>
+          )}
+          {tracking?.settingsMalformed && (
+            <p className="settings-hint text-danger mt-0 mb-0">
+              Your <code>~/.claude/settings.json</code> isn't valid JSON. Fix or
+              remove it before enabling.
+            </p>
+          )}
+          {trackingError && (
+            <pre className="mt-8 text-11 text-danger pre-wrap">
+              {trackingError}
+            </pre>
+          )}
         </div>
       </div>
 

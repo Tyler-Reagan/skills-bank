@@ -1,6 +1,6 @@
 import React from "react";
 
-export type TabId = "browse" | "installed" | "discover";
+export type TabId = "browse" | "installed" | "discover" | "metrics";
 
 interface Props {
   active: TabId;
@@ -19,6 +19,7 @@ export function Tabs({
     { id: "browse", label: "Registry", count: registryCount },
     { id: "installed", label: "Installed", count: installedCount },
     { id: "discover", label: "Discover" },
+    { id: "metrics", label: "Metrics" },
   ];
 
   const onTabKeyDown = (e: React.KeyboardEvent, currentIdx: number) => {

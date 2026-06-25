@@ -38,3 +38,6 @@ export * from "./shared/skill-state.js";
 export * from "./skills/classify.js";
 export * from "./skills/unregister.js";
 export * from "./registry/labels.js";
+export * from "./metrics/invocations.js";
+export * from "./metrics/hook-config.js";
+export * from "./metrics/coverage.js";

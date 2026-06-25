@@ -13,6 +13,7 @@ import type {
   ImportRegistryManifestResult,
   ImportSkillOutcome,
   InstalledSkill,
+  InvocationStats,
   LabelsMap,
   ManifestConflict,
   ManifestDecisions,
@@ -29,6 +30,7 @@ import type {
   SkillLabelOverride,
   SyncDecisions,
   SyncReport,
+  TrackingCoverage,
 } from "@skills-bank/core";
 
 /**
@@ -139,6 +141,9 @@ export const IPC = {
   updateLabel: "labels:update",
   resetLabel: "labels:reset",
   bulkUpdateLabels: "labels:bulkUpdate",
+  getInvocationStats: "metrics:getInvocationStats",
+  getSkillTrackingStatus: "metrics:getTrackingStatus",
+  setSkillTrackingEnabled: "metrics:setTrackingEnabled",
 } as const;
 
 /**
@@ -554,8 +559,43 @@ export type ResolveManifestConflictsResult =
     }
   | { ok: false; message: string; error?: AppError };
 
+/**
+ * Skill-usage tracking state, derived from the REAL `~/.claude/settings.json`
+ * (single source of truth for enabled-state) plus the tracking-history ledger.
+ * `state`: `on` = our hook entry + script both present; `needs-repair` = entry
+ * present but the script went missing (re-enable rewrites it); `off` = no entry.
+ */
+export interface TrackingStatus {
+  state: "off" | "on" | "needs-repair";
+  /** On/off windows + gaps, for the "tracked since / gaps" indicator. */
+  coverage: TrackingCoverage;
+  settingsPath: string;
+  scriptPath: string;
+  logPath: string;
+  /** True when settings.json exists but isn't valid JSON (toggle refuses to write). */
+  settingsMalformed: boolean;
+}
+
+export type SetTrackingResult =
+  | { ok: true; status: TrackingStatus }
+  | {
+      ok: false;
+      reason: "malformed-settings" | "write-failed";
+      message: string;
+    };
+
 interface SkillsBankAPI {
   listRegistry(): Promise<RegistryEntry[]>;
+  /** Read + aggregate the skill-invocation log (per-skill counts, sessions). */
+  getInvocationStats(): Promise<InvocationStats>;
+  /** Current tracking state + coverage, derived from settings.json + ledger. */
+  getSkillTrackingStatus(): Promise<TrackingStatus>;
+  /**
+   * Install (true) or remove (false) the PreToolUse(Skill) hook in the real
+   * `~/.claude/settings.json`. Non-destructive merge; refuses on a malformed
+   * settings.json rather than clobbering it. Returns the resulting status.
+   */
+  setSkillTrackingEnabled(enabled: boolean): Promise<SetTrackingResult>;
   /**
    * Scan agent dirs (and optionally user-defined custom dirs) for
    * installed skills. Custom dirs are absolute paths; non-existent

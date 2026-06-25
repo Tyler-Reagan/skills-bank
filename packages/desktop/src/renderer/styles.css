@@ -5362,3 +5362,91 @@ button:disabled {
 .bulk-install-done-stat--failed {
   color: var(--danger);
 }
+
+/* ── Metrics tab ───────────────────────────────────────── */
+.metrics-tab {
+  width: 100%;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: var(--s4) var(--gutter) var(--s5);
+}
+.metrics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.metrics-title {
+  margin: 0;
+  font-size: 18px;
+}
+.metrics-subtitle {
+  margin: 4px 0 var(--s3);
+  font-size: 13px;
+}
+.metrics-banner {
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: var(--s3);
+}
+.metrics-banner--warn {
+  background: var(--warn-dim);
+  border-color: var(--warn);
+}
+.metrics-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  font-size: 13px;
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s4);
+}
+.metrics-summary strong {
+  color: var(--text);
+}
+.metrics-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+.metrics-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.metrics-skill {
+  font-weight: 600;
+  font-size: 14px;
+}
+.metrics-count {
+  color: var(--text);
+  font-size: 14px;
+}
+.metrics-desc {
+  display: block;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.metrics-bar-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  margin: 6px 0 4px;
+  overflow: hidden;
+}
+.metrics-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+.metrics-last {
+  font-size: 11px;
+}
