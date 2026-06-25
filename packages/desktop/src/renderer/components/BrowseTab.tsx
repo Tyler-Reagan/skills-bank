@@ -191,6 +191,12 @@ export function BrowseTab({
         ordered.push({ category: cat, entries });
       }
     }
+    const knownSet = new Set(CATEGORY_ORDER);
+    for (const [cat, entries] of byCategory) {
+      if (cat !== null && !knownSet.has(cat) && entries.length > 0) {
+        ordered.push({ category: cat, entries });
+      }
+    }
     const uncategorized = byCategory.get(null);
     if (uncategorized && uncategorized.length > 0) {
       ordered.push({ category: "Uncategorized", entries: uncategorized });
