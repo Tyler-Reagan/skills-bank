@@ -35,3 +35,7 @@ _Avoid_: Keyword, attribute
 **Origin**:
 The upstream source a skill was installed from — a GitHub repository, a local path, or the curated set. Distinct from source (which tracks provenance axis: `curated`, `user`, `vendored`).
 _Avoid_: Source (when referring to the install location specifically)
+
+**Skill Record**:
+The app-managed metadata for a single skill: its provenance, sync baseline, and probe state. Stored across three sidecar files in the skill folder. Distinct from the skill's own content (SKILL.md and supporting files).
+_Avoid_: Sidecar data, skill metadata, skill state (which refers to the UI-facing installation classification)

@@ -1,3 +1,4 @@
+export * from "./shared/home.js";
 export * from "./shared/diff.js";
 export * from "./shared/errors.js";
 export * from "./shared/types.js";

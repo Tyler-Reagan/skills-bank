@@ -1,6 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { getRealHome } from "./home.js";
 import {
   hashSkillFolder,
   writeRuntimeState,
@@ -61,7 +61,7 @@ export interface SkillLockFile {
  * user sees in Skills Bank's Installed tab.
  */
 export function defaultSkillLockPath(): string {
-  return path.join(os.homedir(), ".agents", ".skill-lock.json");
+  return path.join(getRealHome(), ".agents", ".skill-lock.json");
 }
 
 /**
