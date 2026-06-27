@@ -15,7 +15,7 @@ runs it on the user's behalf (verify/maintenance) · **M** = maintainer-internal
 
 ---
 
-## Root `package.json` scripts (14)
+## Root `package.json` scripts (15)
 
 ### Dev loop & build (U)
 
@@ -43,10 +43,11 @@ runs it on the user's behalf (verify/maintenance) · **M** = maintainer-internal
 
 ### Quality gates (A)
 
-| Script         | Delegates to                       | Purpose                                                                      |
-| -------------- | ---------------------------------- | ---------------------------------------------------------------------------- |
-| `typecheck`    | `-r --if-present run typecheck`    | Recursive `tsc --noEmit`. CI runs this.                                      |
-| `test`         | `-r --if-present run test`         | Recursive vitest (only `core` defines a suite today). CI runs this.          |
+| Script              | Delegates to                       | Purpose                                                                                                          |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `typecheck`         | `-r --if-present run typecheck && typecheck:scripts` | Recursive `tsc --noEmit` across all packages, then `typecheck:scripts`. CI runs this. |
+| `typecheck:scripts` | `tsc -p tsconfig.scripts.json`     | Type-check `scripts/` in isolation (they run under `tsx` with no build step, so this is the only CI gate).       |
+| `test`              | `-r --if-present run test`         | Recursive vitest (only `core` defines a suite today). CI runs this.                                              |
 | `validate`     | `tsx scripts/validate-all.ts`      | Validate `skills/*/SKILL.md` frontmatter against the frontmatter schema. CI. |
 | `build:index`  | `tsx scripts/build-index.ts`       | Regenerate root `index.json` from the skills tree. CI.                       |
 | `docs:check`   | `node scripts/check-doc-links.mjs` | Walk markdown, fail on broken links/images/anchors.                          |
@@ -155,5 +156,5 @@ Other non-script assets in `scripts/`: `bundled-upstream-mapping.json` (data for
 
 ---
 
-_Last reviewed against `package.json` v1.20.3. Re-derive from the `scripts`
+_Last reviewed against `package.json` v1.24.0. Re-derive from the `scripts`
 blocks (root + `packages/*`) and `scripts/` dir listing when this drifts._

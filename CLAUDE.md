@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Agent operating instructions for the `skills-bank` repo. Auto-loaded by Claude Code each session. Cross-referenced from [`AGENTS.md`](./AGENTS.md) for other tools.
+Agent operating instructions for the `skills-bank` repo. Auto-loaded by Claude Code each session.
 
 ## Repo orientation
 
@@ -72,9 +72,36 @@ For new multi-milestone work: drop a focused plan doc directly into a feature br
 
 ## Conventions specific to this repo
 
+### Public surface
+
 - **Post-1.0; backcompat-conscious for public surfaces.** `packages/core` exports are now considered part of the SDK surface — when renaming or removing, ship a `@deprecated` re-export for one minor cycle (see the v0.11.10 aliases for the pattern) before cutting. JSON wire formats (`.skills-bank.json`) tolerate a legacy read for one minor cycle when their shape changes. Renderer-internal types and component props stay flexible. (Pre-v1.0 the convention was "cut hard"; v1.0.0 flips the public-surface treatment.)
+
+### Data model
+
 - **Source axis values are `curated` / `user` / `vendored`** (legacy `bundled` / `yours` still tolerated on read in `packages/core/src/source.ts`; writes always emit the new form). The `.skills-bank.json` field `origin` replaces `upstream` under the same tolerant-read window. Semantics: `"curated"` = committed to the repo by the maintainer (only `find-skills` by default, never set by any runtime install or sync path); `"user"` = from the user's own linked GitHub registry repo; `"vendored"` = user-chosen third-party install via Discover tab or Settings → Install from GitHub. GitHub linking moves to Settings → Account.
 - **Registry manifest is v4** (see `packages/core/src/manifest.ts`). Each `ManifestSkill` carries an explicit `bucket: "personal" | "vendored"` decoupled from the source axis. Legacy v2/v3 manifests coerce up through `coerceManifestToCurrent` — single quarantined chokepoint, no version branches downstream. v1 manifests are no longer readable. The **committed** form is written by `serializeManifest` (sorted, stable keys, trailing newline) and deliberately omits the volatile/local fields `exportedAt` and `lastInstalledOn` — those survive only in the full-fidelity disk export and rolling snapshots. Pull from a linked repo is an **in-app 3-way merge** (`mergeManifests(base, ours, theirs)` in `manifest-merge.ts`, base = `readMergeBase`), not an additive import; conflicts surface in `ManifestConflictModal`. Direct push is guarded against non-fast-forward (refuses to clobber a diverged remote — see ADR-0009).
+
+### Desktop main-process architecture
+
+`packages/desktop/src/main/` is split into 10 focused files after the v1.23.0 refactor:
+
+| File | Role |
+| ---- | ---- |
+| `main.ts` (284L) | Boot + app lifecycle only. Calls `register*Handlers()` for each domain; calls `initProbeRunner()`. |
+| `main-state.ts` (329L) | Shared mutable singleton — getter/setter exports for all runtime state, AppConfig I/O, labels helpers, `mutatingHandle()`. |
+| `ipc-auth.ts` | GitHub Device Flow handlers. |
+| `ipc-github.ts` | Origin-probe + repo-metadata handlers; module-level per-root caches. |
+| `ipc-labels.ts` | Labels CRUD (4 handlers). |
+| `ipc-manifest.ts` | Manifest sync, import, export, reconcile. Exports `runSync` (called on boot). |
+| `ipc-metrics.ts` | Metrics/tracking handlers (no shared state). |
+| `ipc-registry.ts` | 35+ skill/registry management handlers (largest domain file). |
+| `ipc-repos.ts` | Repo listing + registry-replace; exports `replaceRegistryWithRepo`. |
+| `ipc-shell.ts` | Discover WebContentsView, auto-updater, app menu, window lifecycle. |
+
+Circular-import prevention: `ipc-repos.ts` exports `replaceRegistryWithRepo`; `ipc-manifest.ts` receives it via a `setReplaceRegistryWithRepo` setter injected from `main.ts`. See [`packages/desktop/src/main/INVENTORY.md`](packages/desktop/src/main/INVENTORY.md) for the full per-handler breakdown.
+
+### Development workflow
+
 - **Capture multi-milestone designs in the PR description or as an ADR.** `docs/plans/` was retired in v1.6 (every plan had shipped and was already in the CHANGELOG). For new work, design rationale lives in the feature branch's PR description; if it warrants permanent reference, promote it to an [ADR](./docs/adr/). One PR per cohesive scope; integrate rationale + conflict-audit inline rather than in side documents.
 - **CI logs: read past the headline error.** Scan `##[warning]` lines too; the visible error may already be fixed by a prior step.
 - **Don't fabricate skill names or paths from training data.** Verify with `find` / `grep` before referring to a specific file.
@@ -91,6 +118,8 @@ The packaged install reads `~/.claude/skills/`, `~/.cursor/skills/`, and `~/Libr
 
 Consequence: skills "installed" via dev are not visible to your real Claude Code / Cursor clients. End-to-end installation testing requires the packaged app pointed at a deployed registry.
 
-**Deliberate exception — skill-usage metrics.** The metrics feature (`skill-tracking.ts`, core `metrics/`) operates on **real** paths regardless of `app.isPackaged` — the invocation log + hook script at `~/.skills-bank/` and the hook entry in real `~/.claude/settings.json` — because the `PreToolUse` hook fires from the user's one real Claude Code. `getMetricsDir()` intentionally ignores `SKILLS_BANK_HOME_OVERRIDE`. Safe because enabled-state is file-derived, the entry is clearly marked, and it's reversible from any build. Broader dev-sink hardening (incl. this carve-out) tracked in [#138](https://github.com/Tyler-Reagan/skills-bank/issues/138).
+**Deliberate exception — skill-usage metrics.** The metrics feature (`skill-tracking.ts`, core `metrics/`) operates on **real** paths regardless of `app.isPackaged` — the invocation log + hook script at `~/.skills-bank/` and the hook entry in real `~/.claude/settings.json` — because the `PreToolUse` hook fires from the user's one real Claude Code. `getMetricsDir()` intentionally ignores `SKILLS_BANK_HOME_OVERRIDE`. Safe because enabled-state is file-derived, the entry is clearly marked, and it's reversible from any build.
+
+**Isolation seam — `shared/home.ts`.** Two functions capture the isolation intent explicitly: `getIsolatedHome()` (returns `SKILLS_BANK_HOME_OVERRIDE ?? os.homedir()`, used everywhere that should redirect in dev) and `getRealHome()` (always `os.homedir()`, used only for intentional real-path carveouts: metrics, Claude settings, and the CLI lock file). Prefer these over `os.homedir()` directly so carveout intent is visible at the call site.
 
 `rm -rf ~/.skills-bank-dev/` is the one-line full dev-state reset.
