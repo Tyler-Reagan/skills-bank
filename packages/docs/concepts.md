@@ -6,7 +6,7 @@ The vocabulary the app uses, defined in one place. Skim this once and the rest o
 
 Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
 
-- **Source (provenance)** — binary user-facing axis. Either `curated` (came from the curated set the bank tracks) or `user` (you added it, however it got there). See [Source (provenance)](#source-provenance) below for full surface behavior.
+- **Source (provenance)** — three-value axis: `curated` (from the curated set the bank ships), `vendored` (a third-party skill you chose to bring in, origin preserved), or `user` (you added it, however it got there). See [Source (provenance)](#source-provenance) below for full surface behavior.
 - **Registered** — boolean. The skill has an entry in the local registry index. Mutated freely. Holds local-only metadata (tags, install paths, the Adopted flag).
 - **Adopted** — boolean on each registry entry. When `true`, the skill's files physically live under `<registryRoot>/skills/<name>/`. When `false`, the registry entry tracks an external location and the files stay where they are. Default at register time is the `registerAdopts` setting (default `true`).
 - **Installed** — derived from on-disk scan. A skill is installed if at least one agent dir contains an entry at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.

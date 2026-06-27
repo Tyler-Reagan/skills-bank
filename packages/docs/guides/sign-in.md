@@ -71,7 +71,6 @@ After that initial link, edits flow as: edit in a git clone of your repo → com
 
 The Account panel shows the same surfaces for every user:
 
-- **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — what your registry mirrors, plus last-fetched relative time and short commit SHA.
 - **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — current registry source, last-fetched time, and short commit SHA. This is a status display, not a button — use the **Pull from `<repo>`** button in the app header to refresh.
 - **Change linked repo** / **Choose a different repo** — opens the repo picker (requires sign-in; label varies by current state).
 - **Identity row** — `@<login>` chip + **Sign out of GitHub** when signed in; **Sign in with GitHub** + rate-limit hint when not.

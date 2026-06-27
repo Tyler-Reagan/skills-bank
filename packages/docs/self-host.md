@@ -31,14 +31,21 @@ Self-hosting transfers maintenance of **both the app binary and the registry** t
 
    to your fork's `owner` / `repo`.
 
-3. **Update the canonical sync source** in `packages/desktop/src/main/main.ts`:
+3. **Update the canonical sync source** in two files — both define these constants independently:
 
+   `packages/desktop/src/main/main.ts`:
    ```ts
    const CANONICAL_OWNER = "Tyler-Reagan";
    const CANONICAL_REPO = "skills-bank";
    ```
 
-   Replace with your fork.
+   `packages/desktop/src/main/ipc-manifest.ts`:
+   ```ts
+   const CANONICAL_OWNER = "Tyler-Reagan";
+   const CANONICAL_REPO = "skills-bank";
+   ```
+
+   Replace with your fork's owner and repo in both files.
 
 4. **(Optional) Register a new GitHub OAuth App** for the auth flow if you want users of your fork to authenticate against a different application identity. See `packages/desktop/src/main/auth-config.ts` for the steps. If you skip this, the Authenticate button on the LoginScreen will be disabled in your build.
 

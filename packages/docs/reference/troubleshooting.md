@@ -43,7 +43,7 @@ The app polls the GitHub Releases feed once on launch. If you've been running th
 
 ## "I want to start fresh"
 
-For packaged-app users, manually delete `~/Library/Application Support/@skills-bank/` to start fresh. (To remove the app itself too, see [Uninstalling Skills Bank](#uninstalling-skills-bank).)
+For packaged-app users, manually delete `~/Library/Application Support/Skills Bank/` to start fresh. (To remove the app itself too, see [Uninstalling Skills Bank](#uninstalling-skills-bank).)
 
 A reset script is also available if you're running from source:
 
