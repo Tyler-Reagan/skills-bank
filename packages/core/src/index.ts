@@ -15,6 +15,7 @@ export * from "./registry/discovery.js";
 export * from "./github/url.js";
 export * from "./registry/build.js";
 export * from "./registry/source.js";
+export * from "./registry/skill-record.js";
 export * from "./github/http.js";
 export * from "./github/files.js";
 export * from "./github/repos.js";

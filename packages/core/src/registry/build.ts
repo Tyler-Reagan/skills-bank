@@ -5,11 +5,11 @@ import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { readHiddenCanonNames, readUpstreamCanonNames } from "./canon.js";
 import { readExternalRegistry } from "./external.js";
-import { hashSkillFolder, readSyncedHash } from "./heal.js";
+import { hashSkillFolder, readRuntimeState } from "./heal.js";
 import { parseSkillFrontmatter } from "./frontmatter.js";
 import { readSkillMeta, walkSkills } from "./walk.js";
 import { readSkillSource } from "./source.js";
-import { readRuntimeState } from "./heal.js";
+import { readSkillRecord } from "./skill-record.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 import type {
   RegistryEntry,
@@ -136,24 +136,22 @@ export function buildRegistryIndex(
         // The classifier distinguishes which heal flow applies based
         // on the source marker (`edited-without-origin` vs the
         // upstream-aware `edited-with-origin`).
+        const skillRecord = readSkillRecord(ref.dir);
         if (
           built.source.source === "curated" ||
           built.source.origin !== undefined
         ) {
-          const recorded = readSyncedHash(ref.dir);
-          if (recorded) {
+          if (skillRecord.syncedHash) {
             const live = hashSkillFolder(ref.dir);
-            if (live && live !== recorded) built.drift = true;
+            if (live && live !== skillRecord.syncedHash) built.drift = true;
           }
         }
         // Phase 3 (v1.4): surface origin-unreachable when the per-
-        // skill probe-failure counter saturates the threshold. Pure
-        // read from the runtime sidecar; no extra disk hits since
-        // `mergeRuntimeFetchedAt` already consults it.
+        // skill probe-failure counter saturates the threshold.
         if (built.source.origin?.kind === "github") {
-          const runtime = readRuntimeState(ref.dir);
           if (
-            (runtime.probeFailureCount ?? 0) >= ORIGIN_UNREACHABLE_THRESHOLD
+            (skillRecord.runtime.probeFailureCount ?? 0) >=
+            ORIGIN_UNREACHABLE_THRESHOLD
           ) {
             built.originUnreachable = true;
           }
