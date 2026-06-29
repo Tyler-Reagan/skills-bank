@@ -15,6 +15,19 @@ import {
 } from "./source.js";
 import { findSkillFolder, walkSkills } from "./walk.js";
 import { moveSkillBucket } from "./rehome.js";
+import {
+  OP_JOURNAL_FILE,
+  writeOpJournal,
+  clearOpJournal,
+  readOpJournal,
+} from "./op-journal.js";
+export {
+  OP_JOURNAL_FILE,
+  writeOpJournal,
+  clearOpJournal,
+  readOpJournal,
+} from "./op-journal.js";
+export type { OpJournal } from "./op-journal.js";
 
 /**
  * Heal helpers. Three bad states the classifier surfaces:
@@ -88,6 +101,9 @@ export function hashSkillFolder(skillDir: string): string | null {
       // as the others: mutates per probe, would force spurious drift
       // detection on every app launch.
       if (ent.name === ".skills-bank-runtime.json") continue;
+      // Op journal — transient crash-recovery state. Never part of skill
+      // content; a leftover journal must not trigger drift.
+      if (ent.name === OP_JOURNAL_FILE) continue;
       const abs = path.join(dir, ent.name);
       const r = rel ? `${rel}/${ent.name}` : ent.name;
       // Prune ignored directories (tested with a trailing slash so
@@ -146,7 +162,10 @@ export function readSyncedHash(skillDir: string): string | null {
 
 export function writeSyncedHash(skillDir: string, hash: string): void {
   fs.mkdirSync(skillDir, { recursive: true });
-  fs.writeFileSync(path.join(skillDir, SYNCED_HASH_FILE), hash + "\n");
+  const p = path.join(skillDir, SYNCED_HASH_FILE);
+  const tmp = p + ".tmp~";
+  fs.writeFileSync(tmp, hash + "\n");
+  fs.renameSync(tmp, p);
 }
 
 /**
@@ -201,10 +220,60 @@ export function readRuntimeState(skillDir: string): RuntimeState {
 
 export function writeRuntimeState(skillDir: string, state: RuntimeState): void {
   fs.mkdirSync(skillDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(skillDir, RUNTIME_STATE_FILE),
-    JSON.stringify(state, null, 2) + "\n",
-  );
+  const p = path.join(skillDir, RUNTIME_STATE_FILE);
+  const tmp = p + ".tmp~";
+  fs.writeFileSync(tmp, JSON.stringify(state, null, 2) + "\n");
+  fs.renameSync(tmp, p);
+}
+
+/**
+ * Boot scan — walk all skill dirs and resolve any leftover op journals.
+ * Called on app boot before the first index build so stale journals from
+ * a prior crash don't produce misleading index state.
+ *
+ * Resolution strategy per op:
+ *
+ * - `move`: the folder is at `to` bucket → move completed; clear journal.
+ *   Still at `from` bucket → rename never ran; clear journal (the caller
+ *   can retry if needed — the structural state is consistent).
+ * - `detachOrigin`: origin is already `{ kind: "none" }` → completed;
+ *   clear journal. Origin still has a github pointer → the write sequence
+ *   was interrupted; clear journal (the source marker is authoritative,
+ *   partial probe-counter resets are idempotent on the next detach call).
+ *
+ * Returns the names of skills whose journals were resolved.
+ */
+export function scanAndResolveOpJournals(registryRoot: string): string[] {
+  const resolved: string[] = [];
+  for (const ref of walkSkills(registryRoot)) {
+    const journal = readOpJournal(ref.dir);
+    if (!journal) continue;
+
+    if (journal.op === "move") {
+      const toDir = journal.to
+        ? path.join(registryRoot, "skills", journal.to, journal.skill)
+        : null;
+      if (toDir && fs.existsSync(toDir)) {
+        clearOpJournal(toDir);
+      } else {
+        clearOpJournal(ref.dir);
+      }
+      resolved.push(journal.skill);
+    } else if (journal.op === "detachOrigin") {
+      const src = readSkillSource(ref.dir);
+      if (src.origin?.kind !== "github") {
+        clearOpJournal(ref.dir);
+        resolved.push(journal.skill);
+      } else {
+        clearOpJournal(ref.dir);
+        resolved.push(journal.skill);
+      }
+    } else {
+      clearOpJournal(ref.dir);
+      resolved.push(journal.skill);
+    }
+  }
+  return resolved;
 }
 
 /**
@@ -343,6 +412,12 @@ export function detachOrigin(
     };
   }
 
+  writeOpJournal(ref.dir, {
+    op: "detachOrigin",
+    skill: name,
+    startedAt: new Date().toISOString(),
+  });
+
   const existing = readSkillSource(ref.dir);
   writeSkillSource(ref.dir, { ...existing, origin: { kind: "none" } });
 
@@ -355,6 +430,7 @@ export function detachOrigin(
   if (baseline) writeSyncedHash(ref.dir, baseline);
 
   const moved = moveSkillBucket(registryRoot, name, "personal");
+  clearOpJournal(moved.newDir ?? ref.dir);
   return {
     ok: true,
     message: `detached ${name} — now a local skill in personal`,
