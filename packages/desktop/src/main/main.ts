@@ -33,6 +33,7 @@ import {
   getLinkedRepo,
 } from "./main-state.js";
 import { registerMetricsHandlers } from "./ipc-metrics.js";
+import { getTrackingStatus } from "./skill-tracking.js";
 import { registerAuthHandlers } from "./ipc-auth.js";
 import { registerGithubHandlers } from "./ipc-github.js";
 import { registerLabelsHandlers } from "./ipc-labels.js";
@@ -210,6 +211,13 @@ initProbeRunner(probeRunner);
 // ─── Register all IPC handlers ────────────────────────────────────────────────
 
 registerMetricsHandlers();
+if (!app.isPackaged && getTrackingStatus().state !== "off") {
+  console.warn(
+    "[skills-bank dev] Skill tracking is enabled. The hook script, invocation log, and enabled-state " +
+      "all live at real ~/.skills-bank/ and ~/.claude/settings.json — paths shared with the packaged " +
+      "install. Disabling or re-enabling tracking here affects your production Claude Code hook configuration.",
+  );
+}
 registerAuthHandlers();
 registerGithubHandlers();
 registerLabelsHandlers();

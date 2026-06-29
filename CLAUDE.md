@@ -76,6 +76,20 @@ For new multi-milestone work: drop a focused plan doc directly into a feature br
 
 - **Post-1.0; backcompat-conscious for public surfaces.** `packages/core` exports are now considered part of the SDK surface — when renaming or removing, ship a `@deprecated` re-export for one minor cycle (see the v0.11.10 aliases for the pattern) before cutting. JSON wire formats (`.skills-bank.json`) tolerate a legacy read for one minor cycle when their shape changes. Renderer-internal types and component props stay flexible. (Pre-v1.0 the convention was "cut hard"; v1.0.0 flips the public-surface treatment.)
 
+### Core / renderer import boundary
+
+The renderer runs in Chromium — no Node.js APIs. `@skills-bank/core`'s root barrel re-exports all five domains, many of which import `node:fs`, `node:path`, or `node:child_process`. Renderer imports from the root barrel are safe **only when they are type-only** (`import type {…}`) — TypeScript erases these before Vite bundles the renderer. Runtime values must come from named subpath exports that Vite can safely include in the browser bundle.
+
+Current renderer-safe subpaths (`packages/core/package.json`):
+
+| Subpath | Source file | What it provides |
+| ------- | ----------- | ---------------- |
+| `@skills-bank/core/skill-state` | `shared/skill-state.ts` | `classifyDrawerState`, `DrawerStateClassification` |
+| `@skills-bank/core/agents-data` | `shared/agents-data.ts` | Agent ID constants used by `agentDisplay.ts` |
+| `@skills-bank/core/labels` | `registry/labels.ts` | Label types and pure helpers |
+
+**Rule:** `import type {…} from "@skills-bank/core"` is always safe in the renderer. A runtime value import (constant, function) must go through a subpath — add or extend a `packages/core/package.json` entry rather than using the root barrel. If a module's source file has no Node.js imports it can be added as a subpath directly; otherwise extract the renderer-safe portion into a `shared/` sibling first.
+
 ### Data model
 
 - **Source axis values are `curated` / `user` / `vendored`** (legacy `bundled` / `yours` still tolerated on read in `packages/core/src/source.ts`; writes always emit the new form). The `.skills-bank.json` field `origin` replaces `upstream` under the same tolerant-read window. Semantics: `"curated"` = committed to the repo by the maintainer (only `find-skills` by default, never set by any runtime install or sync path); `"user"` = from the user's own linked GitHub registry repo; `"vendored"` = user-chosen third-party install via Discover tab or Settings → Install from GitHub. GitHub linking moves to Settings → Account.
