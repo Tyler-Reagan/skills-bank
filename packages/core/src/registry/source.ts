@@ -178,5 +178,7 @@ export function writeSkillSource(skillDir: string, src: SkillSource): void {
     void _drop;
     toWrite = { ...src, origin: originNoFetched };
   }
-  fs.writeFileSync(p, JSON.stringify(toWrite, null, 2) + "\n");
+  const tmp = p + ".tmp~";
+  fs.writeFileSync(tmp, JSON.stringify(toWrite, null, 2) + "\n");
+  fs.renameSync(tmp, p);
 }

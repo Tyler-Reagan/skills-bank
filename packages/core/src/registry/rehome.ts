@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir } from "../shared/agents.js";
 import { findSkillFolder, type SkillBucket } from "./walk.js";
+import { writeOpJournal, clearOpJournal } from "./op-journal.js";
 
 export interface MoveSkillBucketResult {
   ok: boolean;
@@ -64,7 +65,15 @@ export function moveSkillBucket(
   }
 
   fs.mkdirSync(path.dirname(newDir), { recursive: true });
+  writeOpJournal(oldDir, {
+    op: "move",
+    skill: name,
+    from: ref.bucket,
+    to: targetBucket,
+    startedAt: new Date().toISOString(),
+  });
   fs.renameSync(oldDir, newDir);
+  clearOpJournal(newDir);
 
   const relinked: string[] = [];
   for (const agent of AGENTS) {
