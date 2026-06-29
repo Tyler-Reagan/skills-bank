@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Modal } from "./modalStyles.js";
+import { ConflictModal } from "./ConflictModal.js";
+import type { ConflictAdapter } from "./ConflictModal.js";
 
 // Generic conflict-resolver modal shared by the three resolver domains:
 //   - SyncConflictModal      — file-content sync collisions (per skill)
@@ -12,6 +13,10 @@ import { Modal } from "./modalStyles.js";
 // once; domains own their picks state (controlled), row rendering, and
 // decision mapping. InstallConflictModal is NOT a resolver (it's a
 // pre-install gate with no per-row picks) and stays separate.
+//
+// ConflictResolver is now a thin adapter-builder over ConflictModal —
+// it builds a ConflictAdapter encapsulating the bulk toolbar, scrollable
+// item list, and apply logic, then delegates rendering to ConflictModal.
 
 export interface PickerOption<T extends string> {
   value: T;
@@ -108,7 +113,7 @@ function BulkSelectToolbar<T extends string>({
       <span style={leadingLabel}>Select all:</span>
       {actions.map((a) => (
         <button
-          key={a.value}
+          key={String(a.value)}
           type="button"
           onClick={() => onSelectAll(a.value)}
           disabled={disabled}
@@ -162,7 +167,7 @@ interface ConflictResolverProps<T, A extends string> {
   title: string;
   /** Muted paragraph under the heading explaining the conflict domain. */
   intro: React.ReactNode;
-  width?: React.ComponentProps<typeof Modal>["width"];
+  width?: 480 | 520 | 540 | 560 | 600 | 640 | 720;
   items: T[];
   itemKey: (item: T) => string;
   /** Per-row action options. Same set for every row. */
@@ -223,32 +228,14 @@ export function ConflictResolver<T, A extends string>({
 }: ConflictResolverProps<T, A>): React.ReactElement {
   const [submitting, setSubmitting] = useState(false);
 
-  const apply = async () => {
-    setSubmitting(true);
-    try {
-      await onApply();
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <Modal
-      label={title}
-      onClose={() => void onClose()}
-      width={width}
-      bodyClass="modal-body--no-scroll"
-    >
-      <h2 className="mt-0">{title}</h2>
-      <p className="text-muted text-13 mt-4">{intro}</p>
-
+  const sidesContent = (
+    <>
       <BulkSelectToolbar
         actions={bulkActions}
         onSelectAll={onSetAll}
         disabled={submitting}
         tally={tally}
       />
-
       <div className="conflict-res-scroll">
         {items.map((item) => {
           const key = itemKey(item);
@@ -268,21 +255,41 @@ export function ConflictResolver<T, A extends string>({
           );
         })}
       </div>
-
       {warning}
+    </>
+  );
 
-      <div className="row-end mt-12">
-        <button onClick={() => void onClose()} disabled={submitting}>
-          Cancel
-        </button>
-        <button
-          className={applyDanger ? "btn danger" : "primary"}
-          onClick={() => void apply()}
-          disabled={submitting}
-        >
-          {submitting ? "Applying…" : applyLabel}
-        </button>
-      </div>
-    </Modal>
+  const adapter: ConflictAdapter = {
+    title,
+    description: intro,
+    sides: [{ label: "conflicts", content: sidesContent }],
+    options: [
+      {
+        label: submitting ? "Applying…" : applyLabel,
+        value: "apply",
+        danger: applyDanger,
+        disabled: submitting,
+      },
+    ],
+    onResolve: (choice) => {
+      if (choice !== "apply") return;
+      setSubmitting(true);
+      void (async () => {
+        try {
+          await onApply();
+        } finally {
+          setSubmitting(false);
+        }
+      })();
+    },
+  };
+
+  return (
+    <ConflictModal
+      adapter={adapter}
+      onClose={() => void onClose()}
+      width={width}
+      closeDisabled={submitting}
+    />
   );
 }
