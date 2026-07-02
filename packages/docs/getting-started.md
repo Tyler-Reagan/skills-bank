@@ -21,9 +21,7 @@ Want to fork the entire app and ship your own build? See [Self-hosting](/self-ho
 
 ## Install a skill
 
-<!-- STALE SCREENSHOT (re-capture): current registry.png is a dev build ("Skills Bank (Dev)") showing a 1-skill registry with no category grouping. Re-shoot from a packaged build with a populated registry showing the collapsible category sections added in v1.14.0. -->
-
-![The Registry tab — the default view](/images/registry.png)
+<!-- SCREENSHOT NEEDED: The Registry tab (default view) — packaged build, populated registry, collapsible category sections visible. -->
 
 1. Open the **Registry** tab (it's the default).
 2. Click any card to open the detail dialog.
@@ -36,7 +34,7 @@ Want to install only into specific agent directories instead of all of them? Ope
 
 Open the **Installed** tab. You'll see two sections:
 
-![The Installed tab with Registered and Unregistered sections](/images/installed.png)
+<!-- SCREENSHOT NEEDED: The Installed tab with Registered and Unregistered sections. -->
 
 - **Registered** — skills installed via Skills Bank (or otherwise linked to the registry)
 - **Unregistered** — skills installed by other tools (e.g. `npx skills add` from [skills.sh](https://skills.sh/))

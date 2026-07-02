@@ -67,7 +67,7 @@ After that initial link, edits flow as: edit in a git clone of your repo → com
 
 ## Account panel surfaces
 
-![Account modal — Registry source, Identity, and Manage your registry sections](/images/account.png)
+<!-- SCREENSHOT NEEDED: Account modal — Registry source, Identity, and Manage your registry sections. -->
 
 The Account panel shows the same surfaces for every user:
 

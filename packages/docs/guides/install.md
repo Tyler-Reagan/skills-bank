@@ -2,7 +2,7 @@
 
 The everyday flow. Browse the **Registry** tab, find a skill, link it into your agents.
 
-![The Registry tab — search, tag filters, and Installed-only toggle](/images/registry.png)
+<!-- SCREENSHOT NEEDED: The Registry tab — search, tag filters, and Installed-only toggle. -->
 
 ## Steps
 
@@ -10,7 +10,7 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 2. Skills with categories assigned are grouped into collapsible sections by function — **Engineering**, **Research**, **Business**, and [more](/reference/labels); unlabeled skills appear under **Uncategorized**. Click a section header to expand or collapse it, or use **Collapse all / Expand all** in the results row to fold every section at once. Use the search bar or tag filters to narrow the list further; toggle **Installed only** to filter to skills you've already linked.
 3. Click any card to open its detail dialog. The dialog shows the full `SKILL.md` preview, tags, category, source, and any warnings.
 
-   ![Skill detail dialog with SKILL.md preview, Install, Manage agent links](/images/skill-detail.png)
+   <!-- SCREENSHOT NEEDED: Skill detail dialog with SKILL.md preview, Install, Manage agent links. -->
 
 4. Click **Install**.
 5. Skills Bank creates a symlink at `<agent-dir>/<skill-name>` for every supported agent directory you have set up. By default, every existing agent dir gets a link.
@@ -20,7 +20,7 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 
 Open the account menu → **Settings…** → scroll to **Default install targets** and tick the agents you want. From then on, the Install button targets only those directories. Leave all unchecked to keep the default "broadcast to all existing dirs" behavior.
 
-![Settings modal — Default install targets section with per-agent checkboxes](/images/settings.png)
+<!-- SCREENSHOT NEEDED: Settings modal — Default install targets section with per-agent checkboxes. -->
 
 You can override per-skill from the dialog's **Manage agent links…** action — pick exactly which agents this one skill goes into.
 
@@ -36,6 +36,8 @@ For a skill named `my-skill` and agents Claude Code + Cursor:
 Both symlinks point at the same source folder. Edits to the registry copy are immediately visible to every linked agent — no copy step, no resync.
 
 ## Install a skill from the Discover tab
+
+<!-- SCREENSHOT NEEDED: The Discover tab — embedded skills.sh browser with the install callout bar. -->
 
 The **Discover** tab embeds [skills.sh](https://skills.sh) — a browsable directory of community skills. When you find one you want, copy its install command (skills.sh shows a copy button on each skill) and paste it directly into the callout bar at the top of the tab.
 

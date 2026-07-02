@@ -31,7 +31,8 @@ When a linked repo is configured, the manifest modal defaults to the **repo tran
 5. When import completes, a confirmation modal surfaces any skills that need to be installed into agent directories (the same flow as a regular manifest import).
 6. Cancel is available during the import loop — already-mirrored skills remain on disk; remaining entries are skipped.
 
-> **Labels on import:** If a skill in the manifest has no labels (null category, empty tags), importing it does not clear that skill's existing local labels. Empty manifest label entries are a no-op for `labels.json` — only skills with labels set in the manifest update the local store.
+> [!NOTE]
+> If a skill in the manifest has no labels (null category, empty tags), importing it does not clear that skill's existing local labels. Empty manifest label entries are a no-op for `labels.json` — only skills with labels set in the manifest update the local store.
 
 ## Manifest via file (disk fallback)
 

@@ -77,7 +77,7 @@ Three actions form an escalation, with distinct file/recovery semantics. Delete 
 
 Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **Dismiss from registry view** instead.
 
-![Detail dialog for a non-canon, user-authored skill — Unregister is available as the mid-tier action](/images/skill-detail-yours.png)
+<!-- SCREENSHOT NEEDED: Detail dialog for a non-canon, user-authored skill — Unregister available as the mid-tier action. -->
 
 ## Skill
 

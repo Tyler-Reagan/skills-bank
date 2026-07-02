@@ -11,14 +11,14 @@ A registered skill can be linked into any subset of your agent directories. Use 
    - **Not linked** — the agent dir doesn't have this skill. An unchecked checkbox.
    - **Install collision** — the agent dir has something at this name that _isn't_ a Skills Bank symlink (e.g. a real folder). The row is disabled with a hint pointing at install-collision resolution.
 
-   ![Manage agent links modal — per-agent checkboxes with target paths](/images/manage-links.png)
+   <!-- SCREENSHOT NEEDED: Manage agent links modal — per-agent checkboxes with target paths. -->
 
 4. Tick or untick agents to add or remove links. Click **Apply**.
 5. Skills Bank creates the missing symlinks and removes the unticked ones. The registry copy is never touched.
 
 ## Default agents
 
-If you find yourself ticking the same agents over and over, set them as defaults: account menu → **Settings…** → **Default install targets**. The Install button on the Registry tab uses those defaults instead of broadcasting to every existing dir.
+If you find yourself ticking the same agents over and over on every skill, set them once as your **Default install targets** — see [Choosing which agents get the link](/guides/install#choosing-which-agents-get-the-link).
 
 ## Why the install-collision rows?
 

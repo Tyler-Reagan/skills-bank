@@ -26,11 +26,11 @@ Every heal flow is the user's call — Skills Bank never auto-deletes content th
 
 The dialog for an install collision replaces the usual Manage-agent-links primary action with a **Resolve install collision** button. The skill card behind the dialog carries a warning state.
 
-![Detail dialog surfacing Resolve install collision on a registered skill that has stragglers in another agent dir](/images/skill-detail-conflict.png)
+<!-- SCREENSHOT NEEDED: Detail dialog surfacing Resolve install collision on a registered skill that has stragglers in another agent dir. -->
 
 Clicking **Resolve install collision** opens a per-agent modal. Each row shows what's currently at that path (real folder, foreign symlink, broken symlink) and the choice for that row: **Replace** with a symlink to the registry copy, **Delete** the stranger, or **Keep** as-is (and skip linking that agent).
 
-![Resolve install collision modal — per-row choices: replace with our symlink, delete the stranger, or keep as-is](/images/resolve-conflict.png)
+<!-- SCREENSHOT NEEDED: Resolve install collision modal — per-row choices: replace with our symlink, delete the stranger, or keep as-is. -->
 
 ## Conflict vocabulary
 

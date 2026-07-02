@@ -12,9 +12,9 @@ One registry. Every AI agent on your machine.
 
 </div>
 
-![The Registry tab — browse, search, and install curated skills](packages/docs/public/images/registry.png)
+<!-- SCREENSHOT NEEDED: The Registry tab — browse, search, and install curated skills. -->
 
-A **skill** is a folder with a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI coding agent reads at runtime to gain a specialized capability. Skills Bank keeps your collection in sync across Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, and Codex — using symlinks, so there are no copies and no drift. Skills are automatically organized by category (frontend, backend, AI tooling, and more) and tagged based on their name and description; both are editable per-skill from the detail drawer.
+A **skill** is a folder with a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI coding agent reads at runtime to gain a specialized capability. Skills Bank keeps your collection in sync across Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, and Codex — using symlinks, so there are no copies and no drift. Skills are organized by a function-oriented category (code review, diagnostics, planning, and more) and freeform tags, both manually assigned and editable per-skill from the detail drawer.
 
 ## Get started
 

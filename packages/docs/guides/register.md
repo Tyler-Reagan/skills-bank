@@ -21,14 +21,7 @@ Use **Register all** in the section header to make individual selections for eve
 
 ## Adopt vs. symlink-mode
 
-Skills Bank tracks an **Adopted** axis per registry entry:
-
-- **Adopted** — files live under `skills/personal/<name>/` in your registry root. The bank owns the files. Unregistering moves them to your shared agents directory.
-- **Not adopted** — files live wherever you registered from. The bank just tracks the external path. Unregistering removes the index entry but leaves origin files untouched.
-
-The choice is controlled globally by the `Move skill files into Skills Bank when registering` setting.
-
-The reverse direction — backing a skill out of the registry — is the [Unregister flow](/guides/unregister). It's distinct from **Delete from this machine**, which destroys files outright.
+See [Adopt](/concepts#adopt) in Concepts for the full definition of the axis this setting controls. The reverse direction — backing a skill out of the registry — is the [Unregister flow](/guides/unregister), distinct from **Delete from this machine**, which destroys files outright.
 
 ## What if the same name is already registered?
 
