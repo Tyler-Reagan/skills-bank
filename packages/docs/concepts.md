@@ -126,10 +126,10 @@ Provenance is a three-value axis on each registry skill, stored as `source` in a
 
 Every skill carries two label axes, both user-assigned and editable per-skill from the detail drawer or in bulk from the **Manage Labels** modal.
 
-- **Category** — at most one per skill. Skills in the Registry tab are grouped under collapsible category section headers (Frontend, Backend, Infrastructure, …); skills with no category assigned appear under **Uncategorized**. Change a skill's category from the **Labels** section of its detail drawer; the new grouping takes effect immediately.
-- **Tags** — zero or more per skill. Tags power the tag filter bar and are matched during free-text search. You can add or remove tags on any skill — including curated ones — and they persist across registry syncs.
+- **Category** — at most one per skill, drawn from a fixed function-oriented taxonomy (what a skill *does* — e.g. `engineering:code-scaffolding` — not what technology it touches). Skills in the Registry tab are grouped under collapsible category section headers; skills with no category assigned appear under **Uncategorized**. Change a skill's category from the **Labels** section of its detail drawer; the new grouping takes effect immediately.
+- **Tags** — zero or more per skill, fully freeform. Tags power the tag filter bar and are matched during free-text search. You can add or remove tags on any skill — including curated ones — and they persist across registry syncs.
 
-Both axes are stored in `labels.json` under the app's data directory. The **Auto-Generate** tool (in Manage Labels) can suggest category and tag values from a skill's name and description on demand; suggestions are always reviewed before saving.
+Both axes are stored in `labels.json` under the app's data directory. Assignment is always manual — there's no auto-suggestion tool for either axis.
 
 See [Skill labels](/reference/labels) for the full list of categories, tags, and how to manage them in bulk.
 

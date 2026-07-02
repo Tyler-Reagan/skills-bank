@@ -40,6 +40,7 @@ export default defineConfig({
           { text: 'Move your registry', link: '/guides/manifest' },
           { text: 'Heal bad states', link: '/guides/heal' },
           { text: 'Unregister a skill', link: '/guides/unregister' },
+          { text: 'Track skill usage', link: '/guides/metrics' },
         ],
       },
       {

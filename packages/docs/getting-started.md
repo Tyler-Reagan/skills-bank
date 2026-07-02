@@ -21,7 +21,7 @@ Want to fork the entire app and ship your own build? See [Self-hosting](/self-ho
 
 ## Install a skill
 
-<!-- STALE SCREENSHOT (re-capture): current registry.png is a dev build ("Skills Bank (Dev)") showing a 1-skill registry with no category grouping. Re-shoot from a packaged build with a populated registry showing the collapsible category sections (Frontend, Backend, …) added in v1.14.0. -->
+<!-- STALE SCREENSHOT (re-capture): current registry.png is a dev build ("Skills Bank (Dev)") showing a 1-skill registry with no category grouping. Re-shoot from a packaged build with a populated registry showing the collapsible category sections added in v1.14.0. -->
 
 ![The Registry tab — the default view](/images/registry.png)
 
@@ -45,15 +45,16 @@ Click any "Unregistered" card to manage it: register it into Skills Bank, link i
 
 ## Organize with labels
 
-The Registry tab groups skills into collapsible category sections — Frontend, Backend, AI Tooling, and [more](/reference/labels). Skills with no category assigned appear together under **Uncategorized** until you label them.
+The Registry tab groups skills into collapsible category sections based on a fixed function-oriented taxonomy — Engineering, Research, Business, and [more](/reference/labels). Skills with no category assigned appear together under **Uncategorized** until you label them.
 
-Click **Manage Labels** in the Registry toolbar to assign or bulk-edit labels across your registry. The **Auto-Generate Labels** flow inside that modal suggests a category and tags for each skill based on its name and description — you review and confirm before anything is saved. You can also edit any skill's category and tags directly from its detail drawer.
+Click **Manage Labels** in the Registry toolbar to assign or bulk-edit labels across your registry — category and tags are always set manually. You can also edit any skill's category and tags directly from its detail drawer.
 
 ## Next steps
 
 - [Concepts](/concepts) — terms you'll see throughout the app (registry, linked repo, source, agent dir, labels).
-- [Skill labels](/reference/labels) — full reference for all 15 categories and 34 tags.
+- [Skill labels](/reference/labels) — full reference for the category taxonomy and freeform tags.
 - [Sign in with GitHub](/guides/sign-in) — link your own repo as your registry source and get 5000 requests/hr.
 - [Move your registry](/guides/manifest) — push a manifest snapshot to your GitHub repo, or pull it on another machine.
 - [Keyboard shortcuts](/reference/keyboard) — keyboard shortcuts reference.
+- [Track skill usage](/guides/metrics) — see which skills you actually invoke, on this machine.
 - [Troubleshooting](/reference/troubleshooting) — common problems and how to recover.
