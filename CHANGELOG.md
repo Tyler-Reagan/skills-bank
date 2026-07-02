@@ -3,6 +3,30 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.25.0
+
+Organization pass driven by a codebase design review: the 3,715-line `main.ts` IPC dispatcher is split into 8 domain files, skill sidecar I/O is unified behind one interface, multi-step registry writes are now crash-safe, and the five conflict-modal variants are consolidated. Docs/infra debt from the same review (ADR register gaps, stale `INVENTORY.md`/`SCRIPTS.md`, a missing renderer-boundary doc) is fully closed.
+
+### Added
+
+- **`shared/home.ts` isolation seam** — `getIsolatedHome()` / `getRealHome()` make the dev/packaged home-resolution distinction explicit at every call site, replacing inline `SKILLS_BANK_HOME_OVERRIDE` checks. Fixes a real bug: `defaultSkillLockPath()` was calling `os.homedir()` directly, bypassing dev-mode isolation. ([#140](https://github.com/Tyler-Reagan/skills-bank/issues/140), [ADR-0014](docs/adr/ADR-0014-centralize-home-resolution.md))
+- **`registry/skill-record.ts`** — `readSkillRecord`/`writeSkillRecord` compose the three per-skill sidecar files (`.skills-bank.json`, `.skills-bank-hash`, `.skills-bank-runtime.json`) behind one interface; individual readers/writers remain for single-field updates. ([#144](https://github.com/Tyler-Reagan/skills-bank/issues/144), [ADR-0015](docs/adr/ADR-0015-skill-record-unified-reader.md))
+- **Atomic sidecar writes + op journal** — all three sidecar writers use write-then-rename; `moveSkillBucket` and `detachOrigin` bracket their multi-step operations with a journal (`op-journal.ts`) that `heal.ts` resolves on next boot after a crash mid-write. ([#148](https://github.com/Tyler-Reagan/skills-bank/issues/148))
+- **`ConflictAdapter` + `ConflictModal`** — a stateless generic modal shell driven by an adapter object; `ConflictResolver` and `InstallConflictModal` build adapters and delegate rendering to it, replacing duplicated resolve/cancel UI across five modal components. ([#150](https://github.com/Tyler-Reagan/skills-bank/issues/150))
+- **Dev-mode tracking boot warning** — logs at startup when running unpackaged with skill-usage tracking enabled, flagging that the hook script, invocation log, and enabled-state are shared with the real packaged install.
+- **ADR-0014** written (home resolution, backfilled after shipping) and **ADR-0006/0007/0008** stubbed as superseded by **ADR-0010** (heal/fork/publish removal tombstone), closing the ADR register gap.
+- **`docs/reviews/2026-06-organization-audit.md`** — the review record behind this release, kept in-repo instead of left in chat history.
+
+### Changed
+
+- `main.ts`: 3,715 → 284 lines. The 67 IPC handlers move into 8 domain files (`ipc-auth`, `ipc-github`, `ipc-labels`, `ipc-manifest`, `ipc-metrics`, `ipc-registry`, `ipc-repos`, `ipc-shell`) plus `main-state.ts` for shared runtime state; `main.ts` is boot + lifecycle only. ([#141](https://github.com/Tyler-Reagan/skills-bank/issues/141))
+- CLAUDE.md gains a `### Core / renderer import boundary` section formalizing the existing pattern: `import type {…}` from the core barrel is always renderer-safe, runtime values must go through a named subpath.
+- `main/INVENTORY.md`, `SCRIPTS.md`, and `CLAUDE.md` reconciled against the post-split code and the v1.24.0 state. ([#145](https://github.com/Tyler-Reagan/skills-bank/issues/145), [#146](https://github.com/Tyler-Reagan/skills-bank/issues/146), [#147](https://github.com/Tyler-Reagan/skills-bank/issues/147))
+
+### Removed
+
+- `AGENTS.md` (dead 108-byte pointer; CLAUDE.md is the authoritative agent-facing reference) and the empty `.vscode/settings.json`. ([#142](https://github.com/Tyler-Reagan/skills-bank/issues/142), [#143](https://github.com/Tyler-Reagan/skills-bank/issues/143))
+
 ## v1.24.0
 
 Skill-usage **Metrics** dashboard (headline feature), plus a function-oriented label taxonomy, a combobox category picker, and a manifest-PR fix.
