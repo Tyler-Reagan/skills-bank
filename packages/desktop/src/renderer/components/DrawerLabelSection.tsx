@@ -1,10 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { RegistryEntry } from "@skills-bank/core";
 import type { SkillLabelOverride } from "@skills-bank/core/labels";
-import {
-  categoryDisplayName,
-  effectiveLabels,
-} from "@skills-bank/core/labels";
+import { categoryDisplayName, effectiveLabels } from "@skills-bank/core/labels";
 import { CategorySelect } from "./CategorySelect.js";
 import { Icon } from "./Icon.js";
 import { useLabels } from "../LabelsContext.js";

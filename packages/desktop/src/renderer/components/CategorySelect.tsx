@@ -117,8 +117,7 @@ export function CategorySelect({
       .filter((c) => c.slug.startsWith(`${meta}:`))
       .filter(
         (c) =>
-          !filter ||
-          functionDisplay(c.display).toLowerCase().includes(filter),
+          !filter || functionDisplay(c.display).toLowerCase().includes(filter),
       );
     if (items.length === 0) continue;
     panelItems.push({ kind: "group", label: META_LABELS[meta]! });
@@ -239,19 +238,21 @@ export function CategorySelect({
               </button>
             );
           })}
-          {panelItems.length === 0 && inputValue !== null && inputValue.trim() && (
-            <button
-              type="button"
-              className="cat-combobox-item"
-              tabIndex={-1}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                confirmSelection(inputValue.trim());
-              }}
-            >
-              Use &ldquo;{inputValue.trim()}&rdquo;
-            </button>
-          )}
+          {panelItems.length === 0 &&
+            inputValue !== null &&
+            inputValue.trim() && (
+              <button
+                type="button"
+                className="cat-combobox-item"
+                tabIndex={-1}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  confirmSelection(inputValue.trim());
+                }}
+              >
+                Use &ldquo;{inputValue.trim()}&rdquo;
+              </button>
+            )}
         </div>
       )}
     </div>

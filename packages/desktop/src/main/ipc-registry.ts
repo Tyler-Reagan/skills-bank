@@ -28,6 +28,7 @@ import {
   listInstalled,
   listTopLevelSymlinks,
   makeAppError,
+  ORIGIN_KIND_GITHUB,
   parseGithubSkillUrl,
   readSkillMeta,
   readSkillSource,
@@ -43,6 +44,7 @@ import {
   unregisterSkill,
   unlinkSkillFromAgents,
   writeSkillSource,
+  writeSyncedHash,
   adoptIntoLinkedRepo as coreAdoptIntoLinkedRepo,
   type AgentId,
   type InstalledKind,
@@ -62,7 +64,11 @@ import {
   setRegistryRoot,
   persistConfig,
 } from "./main-state.js";
-import { IPC, type SkillDiffRequest, type SkillDiffResult } from "../shared/ipc.js";
+import {
+  IPC,
+  type SkillDiffRequest,
+  type SkillDiffResult,
+} from "../shared/ipc.js";
 import { isSafeExternalUrl } from "./ipc-shell.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -145,10 +151,12 @@ export function registerRegistryHandlers(): void {
   ipcMain.handle(IPC.getRoot, () => getRegistryRoot());
 
   ipcMain.handle(IPC.dismissWeakStorageNotice, () => {
-    const { getStorageBackend } = require("./auth.js") as typeof import("./auth.js");
+    const { getStorageBackend } =
+      require("./auth.js") as typeof import("./auth.js");
     const backend = getStorageBackend();
     if (!backend) return;
-    const { readConfig, writeConfig } = require("./main-state.js") as typeof import("./main-state.js");
+    const { readConfig, writeConfig } =
+      require("./main-state.js") as typeof import("./main-state.js");
     const cfg = readConfig();
     if (!cfg.weakStorageNoticeDismissedFor.includes(backend)) {
       cfg.weakStorageNoticeDismissedFor = [
@@ -249,8 +257,7 @@ export function registerRegistryHandlers(): void {
     IPC.install,
     async (_e, name: string, force?: boolean, agents?: AgentId[]) => {
       const registryRoot = getRegistryRoot();
-      if (!registryRoot)
-        return { ok: false, message: NO_ROOT_MSG, errors: [] };
+      if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, errors: [] };
       try {
         const found = findSkillFolder(registryRoot, name);
         if (!found) throw new Error(`Skill "${name}" not found in registry.`);
@@ -811,11 +818,7 @@ export function registerRegistryHandlers(): void {
         if (fromRegistry !== null) return fromRegistry;
       }
       for (const agent of AGENTS) {
-        const candidate = path.join(
-          getAgentSkillsDir(agent),
-          name,
-          "SKILL.md",
-        );
+        const candidate = path.join(getAgentSkillsDir(agent), name, "SKILL.md");
         const text = readSkillMdText(candidate);
         if (text !== null) return text;
       }
@@ -844,22 +847,23 @@ export function registerRegistryHandlers(): void {
     if (!registryRoot)
       return {
         repaired: [],
-        unrepairable: [
-          { agent: "claude", linkPath: "", reason: NO_ROOT_MSG },
-        ],
+        unrepairable: [{ agent: "claude", linkPath: "", reason: NO_ROOT_MSG }],
       };
     return repairBrokenLinks(registryRoot, name);
   });
 
-  mutatingHandle(IPC.removeBrokenLinks, (_e, name: string, agents: AgentId[]) => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot)
-      return {
-        removed: [],
-        errors: [{ agent: "claude", message: NO_ROOT_MSG }],
-      };
-    return removeBrokenLinks(registryRoot, name, agents);
-  });
+  mutatingHandle(
+    IPC.removeBrokenLinks,
+    (_e, name: string, agents: AgentId[]) => {
+      const registryRoot = getRegistryRoot();
+      if (!registryRoot)
+        return {
+          removed: [],
+          errors: [{ agent: "claude", message: NO_ROOT_MSG }],
+        };
+      return removeBrokenLinks(registryRoot, name, agents);
+    },
+  );
 
   ipcMain.handle(IPC.localDiagnosticsScan, (_e, customDirs?: string[]) => {
     const registryRoot = getRegistryRoot();
@@ -895,6 +899,15 @@ export function registerRegistryHandlers(): void {
 
   // Discover tab: install-from-GitHub
   mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
+    const registryRoot = getRegistryRoot();
+    if (!registryRoot) {
+      return {
+        ok: false,
+        reason: "mirror-failed",
+        message: NO_ROOT_MSG,
+      } as const;
+    }
+
     const parsed = parseGithubSkillUrl(url);
     if ("kind" in parsed) {
       return {
@@ -908,7 +921,9 @@ export function registerRegistryHandlers(): void {
     const provisionalName =
       folderPath.split("/").filter(Boolean).pop() ?? "skill";
     const destDir = path.join(
-      getAgentSkillsDir(getAgent("agents")),
+      registryRoot,
+      "skills",
+      "vendored",
       provisionalName,
     );
 
@@ -949,15 +964,37 @@ export function registerRegistryHandlers(): void {
       } as const;
     }
 
+    let finalDir = destDir;
     let finalName = provisionalName;
     if (meta.name && meta.name !== provisionalName) {
       const canonDest = path.join(
-        getAgentSkillsDir(getAgent("agents")),
+        registryRoot,
+        "skills",
+        "vendored",
         meta.name,
       );
       fs.renameSync(destDir, canonDest);
+      finalDir = canonDest;
       finalName = meta.name;
     }
+
+    const now = new Date().toISOString();
+    writeSkillSource(finalDir, {
+      source: "vendored",
+      origin: {
+        kind: ORIGIN_KIND_GITHUB,
+        repo: parsed.repo,
+        sourceUrl: `https://github.com/${parsed.repo}.git`,
+        skillPath: parsed.skillPath,
+        skillFolderHash: mirror.folderHash,
+        installedAt: now,
+        fetchedAt: now,
+      },
+    });
+    const baseline = hashSkillFolder(finalDir);
+    if (baseline) writeSyncedHash(finalDir, baseline);
+
+    linkSkillToAgents(finalDir, getDefaultInstallAgents(), { force: false });
 
     return { ok: true, name: finalName } as const;
   });

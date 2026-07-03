@@ -464,8 +464,7 @@ export function registerManifestHandlers(): void {
           skills: [],
         };
         if (
-          serializeManifest(remote.manifest) !==
-          serializeManifest(baseManifest)
+          serializeManifest(remote.manifest) !== serializeManifest(baseManifest)
         ) {
           return {
             ok: false,
@@ -918,7 +917,10 @@ export function registerManifestHandlers(): void {
     }
     if (registrySource === "github" && linkedRepo) {
       if (!_replaceRegistryWithRepo) {
-        return { ok: false, message: "replaceRegistryWithRepo not initialized" };
+        return {
+          ok: false,
+          message: "replaceRegistryWithRepo not initialized",
+        };
       }
       return _replaceRegistryWithRepo(linkedRepo.fullName);
     }

@@ -34,12 +34,14 @@ Self-hosting transfers maintenance of **both the app binary and the registry** t
 3. **Update the canonical sync source** in two files — both define these constants independently:
 
    `packages/desktop/src/main/main.ts`:
+
    ```ts
    const CANONICAL_OWNER = "Tyler-Reagan";
    const CANONICAL_REPO = "skills-bank";
    ```
 
    `packages/desktop/src/main/ipc-manifest.ts`:
+
    ```ts
    const CANONICAL_OWNER = "Tyler-Reagan";
    const CANONICAL_REPO = "skills-bank";

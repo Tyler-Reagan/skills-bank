@@ -405,77 +405,70 @@ export function registerShellHandlers(): void {
     await shell.openExternal(discoverCurrentUrl);
   });
 
-  ipcMain.handle(
-    IPC.discoverOpenTerminal,
-    async (_e, terminalApp?: string) => {
-      const cwd = getRegistryRoot() ?? undefined;
-      try {
-        if (process.platform === "darwin") {
-          const appName =
-            terminalApp === "iterm2"
-              ? "iTerm"
-              : terminalApp === "warp"
-                ? "Warp"
-                : terminalApp === "hyper"
-                  ? "Hyper"
-                  : terminalApp === "alacritty"
-                    ? "Alacritty"
-                    : terminalApp === "kitty"
-                      ? "kitty"
-                      : "Terminal";
-          const args = ["-a", appName];
-          if (cwd) args.push(cwd);
-          spawn("open", args, { detached: true, stdio: "ignore" }).unref();
-        } else if (process.platform === "win32") {
-          const safeCwd = cwd ? cwd.replace(/["\r\n]/g, "") : "";
-          const command = safeCwd
-            ? `start "" wt.exe -d "${safeCwd}" || start "" cmd.exe /K cd /D "${safeCwd}"`
-            : `start "" wt.exe || start "" cmd.exe`;
-          spawn("cmd.exe", ["/c", command], {
-            detached: true,
-            stdio: "ignore",
-          }).unref();
-        } else {
-          const candidates = [
-            "x-terminal-emulator",
-            "gnome-terminal",
-            "konsole",
-            "xterm",
-          ];
-          let launched = false;
-          for (const bin of candidates) {
-            try {
-              const child = spawn(
-                bin,
-                cwd ? ["--working-directory", cwd] : [],
-                {
-                  detached: true,
-                  stdio: "ignore",
-                },
-              );
-              child.unref();
-              launched = true;
-              break;
-            } catch {
-              // try next candidate
-            }
-          }
-          if (!launched) {
-            return {
-              ok: false,
-              message: "no terminal emulator found on PATH",
-            };
+  ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
+    const cwd = getRegistryRoot() ?? undefined;
+    try {
+      if (process.platform === "darwin") {
+        const appName =
+          terminalApp === "iterm2"
+            ? "iTerm"
+            : terminalApp === "warp"
+              ? "Warp"
+              : terminalApp === "hyper"
+                ? "Hyper"
+                : terminalApp === "alacritty"
+                  ? "Alacritty"
+                  : terminalApp === "kitty"
+                    ? "kitty"
+                    : "Terminal";
+        const args = ["-a", appName];
+        if (cwd) args.push(cwd);
+        spawn("open", args, { detached: true, stdio: "ignore" }).unref();
+      } else if (process.platform === "win32") {
+        const safeCwd = cwd ? cwd.replace(/["\r\n]/g, "") : "";
+        const command = safeCwd
+          ? `start "" wt.exe -d "${safeCwd}" || start "" cmd.exe /K cd /D "${safeCwd}"`
+          : `start "" wt.exe || start "" cmd.exe`;
+        spawn("cmd.exe", ["/c", command], {
+          detached: true,
+          stdio: "ignore",
+        }).unref();
+      } else {
+        const candidates = [
+          "x-terminal-emulator",
+          "gnome-terminal",
+          "konsole",
+          "xterm",
+        ];
+        let launched = false;
+        for (const bin of candidates) {
+          try {
+            const child = spawn(bin, cwd ? ["--working-directory", cwd] : [], {
+              detached: true,
+              stdio: "ignore",
+            });
+            child.unref();
+            launched = true;
+            break;
+          } catch {
+            // try next candidate
           }
         }
-        return { ok: true };
-      } catch (err) {
-        return (() => {
-          const error = fromCaught("ipc.unknown", err);
-          return { ok: false, message: error.message, error };
-        })();
+        if (!launched) {
+          return {
+            ok: false,
+            message: "no terminal emulator found on PATH",
+          };
+        }
       }
-    },
-  );
+      return { ok: true };
+    } catch (err) {
+      return (() => {
+        const error = fromCaught("ipc.unknown", err);
+        return { ok: false, message: error.message, error };
+      })();
+    }
+  });
 
   // ─── Auto-update handlers ──────────────────────────────────────────────────
 

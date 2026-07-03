@@ -1,25 +1,49 @@
 export const categories: { slug: string; display: string }[] = [
-  { slug: "engineering:library-api-reference", display: "Engineering: Library & API Reference" },
-  { slug: "engineering:code-scaffolding",      display: "Engineering: Code Scaffolding" },
-  { slug: "engineering:code-review",           display: "Engineering: Code Review" },
-  { slug: "engineering:verification",          display: "Engineering: Verification" },
-  { slug: "engineering:diagnostics",           display: "Engineering: Diagnostics" },
-  { slug: "engineering:ci-cd-deployment",      display: "Engineering: CI/CD & Deployment" },
-  { slug: "engineering:infrastructure",        display: "Engineering: Infrastructure" },
-  { slug: "engineering:data-analysis",         display: "Engineering: Data & Analysis" },
-  { slug: "research:investigation",            display: "Research: Investigation" },
-  { slug: "research:synthesis",                display: "Research: Synthesis" },
-  { slug: "research:evaluation",               display: "Research: Evaluation" },
-  { slug: "business:planning",                 display: "Business: Planning" },
-  { slug: "business:process-automation",       display: "Business: Process Automation" },
-  { slug: "business:communication",            display: "Business: Communication" },
-  { slug: "business:reporting",                display: "Business: Reporting" },
-  { slug: "creative:writing",                  display: "Creative: Writing" },
-  { slug: "creative:design",                   display: "Creative: Design" },
-  { slug: "creative:brainstorming",            display: "Creative: Brainstorming" },
-  { slug: "productivity:focus",                display: "Productivity: Focus" },
-  { slug: "productivity:knowledge-management", display: "Productivity: Knowledge Management" },
-  { slug: "productivity:decision-support",     display: "Productivity: Decision Support" },
+  {
+    slug: "engineering:library-api-reference",
+    display: "Engineering: Library & API Reference",
+  },
+  {
+    slug: "engineering:code-scaffolding",
+    display: "Engineering: Code Scaffolding",
+  },
+  { slug: "engineering:code-review", display: "Engineering: Code Review" },
+  { slug: "engineering:verification", display: "Engineering: Verification" },
+  { slug: "engineering:diagnostics", display: "Engineering: Diagnostics" },
+  {
+    slug: "engineering:ci-cd-deployment",
+    display: "Engineering: CI/CD & Deployment",
+  },
+  {
+    slug: "engineering:infrastructure",
+    display: "Engineering: Infrastructure",
+  },
+  {
+    slug: "engineering:data-analysis",
+    display: "Engineering: Data & Analysis",
+  },
+  { slug: "research:investigation", display: "Research: Investigation" },
+  { slug: "research:synthesis", display: "Research: Synthesis" },
+  { slug: "research:evaluation", display: "Research: Evaluation" },
+  { slug: "business:planning", display: "Business: Planning" },
+  {
+    slug: "business:process-automation",
+    display: "Business: Process Automation",
+  },
+  { slug: "business:communication", display: "Business: Communication" },
+  { slug: "business:reporting", display: "Business: Reporting" },
+  { slug: "creative:writing", display: "Creative: Writing" },
+  { slug: "creative:design", display: "Creative: Design" },
+  { slug: "creative:brainstorming", display: "Creative: Brainstorming" },
+  { slug: "productivity:focus", display: "Productivity: Focus" },
+  {
+    slug: "productivity:knowledge-management",
+    display: "Productivity: Knowledge Management",
+  },
+  {
+    slug: "productivity:decision-support",
+    display: "Productivity: Decision Support",
+  },
 ];
 
 export interface SkillLabelOverride {
@@ -31,7 +55,9 @@ export interface SkillLabelOverride {
 
 export type LabelsMap = Record<string, SkillLabelOverride>;
 
-const CATEGORY_DISPLAY_MAP = new Map(categories.map((c) => [c.slug, c.display]));
+const CATEGORY_DISPLAY_MAP = new Map(
+  categories.map((c) => [c.slug, c.display]),
+);
 
 const LEGACY_DISPLAY_OVERRIDES: Record<string, string> = {
   "ai-tooling": "AI Tooling",

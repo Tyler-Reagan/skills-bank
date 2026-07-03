@@ -43,17 +43,17 @@ runs it on the user's behalf (verify/maintenance) · **M** = maintainer-internal
 
 ### Quality gates (A)
 
-| Script              | Delegates to                       | Purpose                                                                                                          |
-| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `typecheck`         | `-r --if-present run typecheck && typecheck:scripts` | Recursive `tsc --noEmit` across all packages, then `typecheck:scripts`. CI runs this. |
-| `typecheck:scripts` | `tsc -p tsconfig.scripts.json`     | Type-check `scripts/` in isolation (they run under `tsx` with no build step, so this is the only CI gate).       |
-| `test`              | `-r --if-present run test`         | Recursive vitest (only `core` defines a suite today). CI runs this.                                              |
-| `validate`     | `tsx scripts/validate-all.ts`      | Validate `skills/*/SKILL.md` frontmatter against the frontmatter schema. CI. |
-| `build:index`  | `tsx scripts/build-index.ts`       | Regenerate root `index.json` from the skills tree. CI.                       |
-| `docs:check`   | `node scripts/check-doc-links.mjs` | Walk markdown, fail on broken links/images/anchors.                          |
-| `format`       | `prettier --write … --cache`       | Format all source. (Always the final step in a change.)                      |
-| `format:check` | `prettier --check … --cache`       | Non-mutating CI-parity format check.                                         |
-| `knip`         | `knip`                             | Unused-export / dead-code scan. Config in `knip.json`.                       |
+| Script              | Delegates to                                         | Purpose                                                                                                    |
+| ------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `typecheck`         | `-r --if-present run typecheck && typecheck:scripts` | Recursive `tsc --noEmit` across all packages, then `typecheck:scripts`. CI runs this.                      |
+| `typecheck:scripts` | `tsc -p tsconfig.scripts.json`                       | Type-check `scripts/` in isolation (they run under `tsx` with no build step, so this is the only CI gate). |
+| `test`              | `-r --if-present run test`                           | Recursive vitest (only `core` defines a suite today). CI runs this.                                        |
+| `validate`          | `tsx scripts/validate-all.ts`                        | Validate `skills/*/SKILL.md` frontmatter against the frontmatter schema. CI.                               |
+| `build:index`       | `tsx scripts/build-index.ts`                         | Regenerate root `index.json` from the skills tree. CI.                                                     |
+| `docs:check`        | `node scripts/check-doc-links.mjs`                   | Walk markdown, fail on broken links/images/anchors.                                                        |
+| `format`            | `prettier --write … --cache`                         | Format all source. (Always the final step in a change.)                                                    |
+| `format:check`      | `prettier --check … --cache`                         | Non-mutating CI-parity format check.                                                                       |
+| `knip`              | `knip`                                               | Unused-export / dead-code scan. Config in `knip.json`.                                                     |
 
 ### Dev-state reset (A)
 

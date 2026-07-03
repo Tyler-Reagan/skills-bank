@@ -25,7 +25,7 @@ The top-level prefix of a category slug, grouping functions by the broad domain 
 _Avoid_: Group, namespace, parent category
 
 **Function**:
-The second segment of a category slug, describing what a skill *does* within its meta-category (e.g., `scaffolding`, `diagnostics`, `brainstorming`). Stable across registries regardless of technology domain.
+The second segment of a category slug, describing what a skill _does_ within its meta-category (e.g., `scaffolding`, `diagnostics`, `brainstorming`). Stable across registries regardless of technology domain.
 _Avoid_: Subcategory, type
 
 **Tag**:
