@@ -3,6 +3,12 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.25.1
+
+### Fixed
+
+- **Discover tab GitHub install now writes into the registry with proper origin metadata** — `installSkillFromGithub` previously mirrored files directly into an agent's resident skills folder (e.g. `~/.claude/skills/<name>`), bypassing the registry entirely, and never called `writeSkillSource`. Skills installed via the Discover tab's search bar ended up with no `.skills-bank.json` sidecar and no GitHub origin, making them invisible to registry tooling and unrecoverable on manifest export/import. It now mirrors into `skills/vendored/<name>`, stamps a GitHub origin pointer, writes a sync baseline hash, and links out to agents — matching the pattern already used by `IPC.install` and `pnpm bank vendor`.
+
 ## v1.25.0
 
 Organization pass driven by a codebase design review: the 3,715-line `main.ts` IPC dispatcher is split into 8 domain files, skill sidecar I/O is unified behind one interface, multi-step registry writes are now crash-safe, and the five conflict-modal variants are consolidated. Docs/infra debt from the same review (ADR register gaps, stale `INVENTORY.md`/`SCRIPTS.md`, a missing renderer-boundary doc) is fully closed.
