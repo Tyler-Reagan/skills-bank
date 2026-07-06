@@ -12,6 +12,14 @@ _Avoid_: Plugin, extension, tool
 The user's local collection of installed skills, sourced from one or more origins.
 _Avoid_: Library, catalog, store
 
+**Linked Repo**:
+The single GitHub repository a user has configured as both the mirror source for their entire Registry _and_ the presumed home for their own collection of skills — a repo they own, not merely a sync target. The Registry reads this repo's `skills/` contents by convention, and it's the one write destination for pushing local changes back out (manifest export, adopt-and-push). Distinct from Origin, which tracks the upstream source of an individual skill and may point at a third-party repo the user doesn't own — a skill's Origin is often, but not always, the Linked Repo. When no Linked Repo is configured, the Registry mirrors the Bundled Default instead.
+_Avoid_: Linked registry, GitHub registry, registry source (when meaning this specific repo)
+
+**Bundled Default**:
+The state of a Registry with no Linked Repo configured — it mirrors the curated set shipped with the app (`Tyler-Reagan/skills-bank`) at the unauthenticated GitHub rate limit. Distinct from the `curated` source-provenance value: Bundled Default is a whole-Registry state, `curated` is a per-skill axis reserved for skills read directly from the app's own shipped repo. A skill can only be `curated` while its Registry is in the Bundled Default state, but not every skill in that state need stay `curated` forever (e.g. after local edits).
+_Avoid_: Curated bank, curated set, bundled bank
+
 **Label**:
 The combined category and tags assigned to a skill for browsing and filtering. Stored in `labels.json`, never in the skill files themselves.
 _Avoid_: Metadata, annotation

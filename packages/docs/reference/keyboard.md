@@ -1,6 +1,6 @@
 # Keyboard shortcuts
 
-A small set of shortcuts for keyboard-heavy workflows. The same list is available in-app from the account menu → **Keyboard shortcuts…**.
+A small set of shortcuts for keyboard-heavy workflows.
 
 | Keys                | What it does                                                         |
 | ------------------- | -------------------------------------------------------------------- |

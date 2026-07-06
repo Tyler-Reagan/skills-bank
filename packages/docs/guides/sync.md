@@ -1,8 +1,8 @@
 # Pull registry updates
 
-The **Pull from `<repo>`** button in the header pulls the latest content from your linked GitHub registry into your local bank. Bundled-default users (no linked repo) refresh against the curated bank through the same diff-before-apply path; the button label changes but the underlying flow is identical.
+The **Pull from `<repo>`** button in the header pulls the latest content from your linked GitHub repo into your local bank. Bundled-default users (no linked repo) refresh against it through the same diff-before-apply path; the button label changes but the underlying flow is identical.
 
-Independent of pull, the **Check for updates** button probes each skill's authoritative GitHub **Origin** for newer content — useful for harvested skills whose upstreams live in third-party repos, not in your linked registry. Surfaces available updates as chips on individual cards; does not download anything until you click the chip.
+Independent of pull, the **Check for updates** button probes each skill's authoritative GitHub **Origin** for newer content — useful for harvested skills whose upstreams live in third-party repos, not in your linked repo. Surfaces available updates as chips on individual cards; does not download anything until you click the chip.
 
 ## Steps
 
@@ -27,7 +27,7 @@ Pull is **upsert** plus reporting:
 
 Pull is manual. Run it when:
 
-- You want updates from your linked registry.
+- You want updates from your linked repo.
 - After updating the app itself (registry contents and app binaries are independent — a new app version doesn't auto-pull).
 - Before sharing your registry with a teammate, to make sure everyone is on the same upstream baseline.
 
@@ -42,9 +42,4 @@ You can update one without the other.
 
 ## Importing from elsewhere
 
-The Account modal's **Manage your registry** section moves your registry state via a **manifest** — a tiny JSON snapshot of origin pointers, not file content:
-
-- **Export manifest** / **Import manifest** — on import each skill is re-fetched from its origin, so transfers are small and work across machines (origins must still be reachable).
-- When a linked repo is configured, the manifest modal defaults to reading from / writing to your GitHub repo directly — no file save/open dialog needed; otherwise it falls back to a file on disk.
-
-See [Move your registry](/guides/manifest) for the full manifest flow.
+Pull only refreshes skills already in your registry against their existing origin. To bring in a whole different registry's worth of skills, use the manifest flow instead — see [Move your registry](/guides/manifest).

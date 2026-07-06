@@ -55,7 +55,7 @@ The user is often running the app for manual verification. **Never blanket-pkill
 **CI-equivalent pre-PR check:**
 
 ```
-pnpm typecheck && pnpm test && pnpm validate && pnpm build:index && pnpm build
+pnpm format:check && pnpm typecheck && pnpm test && pnpm validate && pnpm build:index && pnpm build
 ```
 
 **After refactor that may leave dead code:**

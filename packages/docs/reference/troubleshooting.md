@@ -21,7 +21,7 @@ If the **Refresh** button is showing in the empty state, click it. The app re-re
 The skill's symlink resolves into the registry, but the registry copy isn't on disk. Usually means:
 
 - The registry got moved or deleted out from under the app.
-- A GitHub-linked registry switch removed the skill.
+- Switching your linked repo removed the skill.
 
 Recovery: open the dialog → **Fix broken link(s)**. The repair flow either re-links the skill to a present registry copy or removes the broken symlinks.
 
@@ -35,7 +35,7 @@ The OAuth scopes the app requests give you read access to repos you can already 
 
 - Check it's not archived.
 - Check the org allows third-party OAuth apps (some orgs disable this by default).
-- Sign out (account menu → **Sign out of GitHub**) and re-authorize.
+- Sign out (Account modal → **Sign out**) and re-authorize.
 
 ## "Auto-update never triggers"
 
@@ -84,8 +84,8 @@ Decisions are remembered per-skill. If the modal reappears, the upstream version
 
 Include:
 
-- App version (Account → About this app).
-- Registry source: bundled default vs linked custom repo (Account → Registry source).
+- App version (native app menu → About Skills Bank).
+- Registry source: bundled default vs linked custom repo (Account modal → **Repository**).
 - Steps to reproduce.
 - The contents of `~/Library/Logs/Skills Bank/main.log` if relevant.
 

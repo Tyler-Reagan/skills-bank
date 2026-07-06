@@ -18,7 +18,7 @@ The everyday flow. Browse the **Registry** tab, find a skill, link it into your 
 
 ## Choosing which agents get the link
 
-Open the account menu → **Settings…** → scroll to **Default install targets** and tick the agents you want. From then on, the Install button targets only those directories. Leave all unchecked to keep the default "broadcast to all existing dirs" behavior.
+Open **Settings…** → scroll to **Default install targets** and tick the agents you want. From then on, the Install button targets only those directories. Leave all unchecked to keep the default "broadcast to all existing dirs" behavior.
 
 <!-- SCREENSHOT NEEDED: Settings modal — Default install targets section with per-agent checkboxes. -->
 
@@ -63,7 +63,7 @@ Click **Install Skills** in the Registry tab toolbar to open the bulk install mo
 3. Click **Install N selected**. The modal shows per-row progress — pending, installing, done, or failed. Click **Cancel remaining** at any time to stop the queue after the current skill finishes.
 4. When the run completes, a summary shows how many installed successfully and lists any failures.
 
-Install targets respect your **Default install targets** setting (Account menu → Settings…).
+Install targets respect your **Default install targets** setting (open **Settings…**).
 
 ## Uninstall
 
