@@ -499,10 +499,7 @@ export function ManageLabelsModal({
               placeholder="Filter skills…"
             />
           </div>
-          <label
-            className="manage-labels-filter-label"
-            htmlFor="ml-cat-filter"
-          >
+          <label className="manage-labels-filter-label" htmlFor="ml-cat-filter">
             Category
           </label>
           <CategorySelect
@@ -600,4 +597,3 @@ export function ManageLabelsModal({
     </>
   );
 }
-

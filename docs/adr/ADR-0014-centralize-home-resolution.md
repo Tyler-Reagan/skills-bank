@@ -18,7 +18,7 @@ attribute upstream sync state to the wrong home. There was no structural
 guard against a call site getting this wrong — only code review.
 
 A handful of call sites are deliberate exceptions and must always resolve
-the *real* home regardless of dev/packaged mode: the skill-usage metrics
+the _real_ home regardless of dev/packaged mode: the skill-usage metrics
 hook and invocation log, and the real `~/.claude/settings.json` entry the
 hook installs into (the `PreToolUse` hook fires from the user's one real
 Claude Code, not a dev sandbox). Before this change, "real path on purpose"

@@ -62,7 +62,11 @@ import {
   setRegistryRoot,
   persistConfig,
 } from "./main-state.js";
-import { IPC, type SkillDiffRequest, type SkillDiffResult } from "../shared/ipc.js";
+import {
+  IPC,
+  type SkillDiffRequest,
+  type SkillDiffResult,
+} from "../shared/ipc.js";
 import { isSafeExternalUrl } from "./ipc-shell.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -145,10 +149,12 @@ export function registerRegistryHandlers(): void {
   ipcMain.handle(IPC.getRoot, () => getRegistryRoot());
 
   ipcMain.handle(IPC.dismissWeakStorageNotice, () => {
-    const { getStorageBackend } = require("./auth.js") as typeof import("./auth.js");
+    const { getStorageBackend } =
+      require("./auth.js") as typeof import("./auth.js");
     const backend = getStorageBackend();
     if (!backend) return;
-    const { readConfig, writeConfig } = require("./main-state.js") as typeof import("./main-state.js");
+    const { readConfig, writeConfig } =
+      require("./main-state.js") as typeof import("./main-state.js");
     const cfg = readConfig();
     if (!cfg.weakStorageNoticeDismissedFor.includes(backend)) {
       cfg.weakStorageNoticeDismissedFor = [
@@ -249,8 +255,7 @@ export function registerRegistryHandlers(): void {
     IPC.install,
     async (_e, name: string, force?: boolean, agents?: AgentId[]) => {
       const registryRoot = getRegistryRoot();
-      if (!registryRoot)
-        return { ok: false, message: NO_ROOT_MSG, errors: [] };
+      if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, errors: [] };
       try {
         const found = findSkillFolder(registryRoot, name);
         if (!found) throw new Error(`Skill "${name}" not found in registry.`);
@@ -811,11 +816,7 @@ export function registerRegistryHandlers(): void {
         if (fromRegistry !== null) return fromRegistry;
       }
       for (const agent of AGENTS) {
-        const candidate = path.join(
-          getAgentSkillsDir(agent),
-          name,
-          "SKILL.md",
-        );
+        const candidate = path.join(getAgentSkillsDir(agent), name, "SKILL.md");
         const text = readSkillMdText(candidate);
         if (text !== null) return text;
       }
@@ -844,22 +845,23 @@ export function registerRegistryHandlers(): void {
     if (!registryRoot)
       return {
         repaired: [],
-        unrepairable: [
-          { agent: "claude", linkPath: "", reason: NO_ROOT_MSG },
-        ],
+        unrepairable: [{ agent: "claude", linkPath: "", reason: NO_ROOT_MSG }],
       };
     return repairBrokenLinks(registryRoot, name);
   });
 
-  mutatingHandle(IPC.removeBrokenLinks, (_e, name: string, agents: AgentId[]) => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot)
-      return {
-        removed: [],
-        errors: [{ agent: "claude", message: NO_ROOT_MSG }],
-      };
-    return removeBrokenLinks(registryRoot, name, agents);
-  });
+  mutatingHandle(
+    IPC.removeBrokenLinks,
+    (_e, name: string, agents: AgentId[]) => {
+      const registryRoot = getRegistryRoot();
+      if (!registryRoot)
+        return {
+          removed: [],
+          errors: [{ agent: "claude", message: NO_ROOT_MSG }],
+        };
+      return removeBrokenLinks(registryRoot, name, agents);
+    },
+  );
 
   ipcMain.handle(IPC.localDiagnosticsScan, (_e, customDirs?: string[]) => {
     const registryRoot = getRegistryRoot();

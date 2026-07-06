@@ -1,6 +1,6 @@
 # Two-axis skill labeling with function-oriented categories
 
-Skills Bank previously categorized skills by technology domain (`frontend`, `backend`, etc.), which conflated what a skill *touches* with what it *does*. We redesigned the label system around a **function** axis drawn from Anthropic's published skill taxonomy, moving domain signal to freeform tags.
+Skills Bank previously categorized skills by technology domain (`frontend`, `backend`, etc.), which conflated what a skill _touches_ with what it _does_. We redesigned the label system around a **function** axis drawn from Anthropic's published skill taxonomy, moving domain signal to freeform tags.
 
 ## Decision
 
@@ -13,13 +13,13 @@ Category assignment is always manual. Auto-Generate is removed — keyword match
 
 ## Taxonomy
 
-| Meta-category | Functions |
-|---|---|
-| `engineering` | `library-api-reference` · `code-scaffolding` · `code-review` · `verification` · `diagnostics` · `ci-cd-deployment` · `infrastructure` · `data-analysis` |
-| `research` | `investigation` · `synthesis` · `evaluation` |
-| `business` | `planning` · `process-automation` · `communication` · `reporting` |
-| `creative` | `writing` · `design` · `brainstorming` |
-| `productivity` | `focus` · `knowledge-management` · `decision-support` |
+| Meta-category  | Functions                                                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `engineering`  | `library-api-reference` · `code-scaffolding` · `code-review` · `verification` · `diagnostics` · `ci-cd-deployment` · `infrastructure` · `data-analysis` |
+| `research`     | `investigation` · `synthesis` · `evaluation`                                                                                                            |
+| `business`     | `planning` · `process-automation` · `communication` · `reporting`                                                                                       |
+| `creative`     | `writing` · `design` · `brainstorming`                                                                                                                  |
+| `productivity` | `focus` · `knowledge-management` · `decision-support`                                                                                                   |
 
 Category slugs follow the pattern `meta:function`. Display names title-case each segment: `engineering:code-scaffolding` → **Engineering: Code Scaffolding**.
 

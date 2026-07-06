@@ -55,7 +55,7 @@ The user is often running the app for manual verification. **Never blanket-pkill
 **CI-equivalent pre-PR check:**
 
 ```
-pnpm typecheck && pnpm test && pnpm validate && pnpm build:index && pnpm build
+pnpm format:check && pnpm typecheck && pnpm test && pnpm validate && pnpm build:index && pnpm build
 ```
 
 **After refactor that may leave dead code:**
@@ -82,11 +82,11 @@ The renderer runs in Chromium — no Node.js APIs. `@skills-bank/core`'s root ba
 
 Current renderer-safe subpaths (`packages/core/package.json`):
 
-| Subpath | Source file | What it provides |
-| ------- | ----------- | ---------------- |
+| Subpath                         | Source file             | What it provides                                   |
+| ------------------------------- | ----------------------- | -------------------------------------------------- |
 | `@skills-bank/core/skill-state` | `shared/skill-state.ts` | `classifyDrawerState`, `DrawerStateClassification` |
-| `@skills-bank/core/agents-data` | `shared/agents-data.ts` | Agent ID constants used by `agentDisplay.ts` |
-| `@skills-bank/core/labels` | `registry/labels.ts` | Label types and pure helpers |
+| `@skills-bank/core/agents-data` | `shared/agents-data.ts` | Agent ID constants used by `agentDisplay.ts`       |
+| `@skills-bank/core/labels`      | `registry/labels.ts`    | Label types and pure helpers                       |
 
 **Rule:** `import type {…} from "@skills-bank/core"` is always safe in the renderer. A runtime value import (constant, function) must go through a subpath — add or extend a `packages/core/package.json` entry rather than using the root barrel. If a module's source file has no Node.js imports it can be added as a subpath directly; otherwise extract the renderer-safe portion into a `shared/` sibling first.
 
@@ -99,18 +99,18 @@ Current renderer-safe subpaths (`packages/core/package.json`):
 
 `packages/desktop/src/main/` is split into 10 focused files after the v1.23.0 refactor:
 
-| File | Role |
-| ---- | ---- |
-| `main.ts` (284L) | Boot + app lifecycle only. Calls `register*Handlers()` for each domain; calls `initProbeRunner()`. |
+| File                   | Role                                                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `main.ts` (284L)       | Boot + app lifecycle only. Calls `register*Handlers()` for each domain; calls `initProbeRunner()`.                         |
 | `main-state.ts` (329L) | Shared mutable singleton — getter/setter exports for all runtime state, AppConfig I/O, labels helpers, `mutatingHandle()`. |
-| `ipc-auth.ts` | GitHub Device Flow handlers. |
-| `ipc-github.ts` | Origin-probe + repo-metadata handlers; module-level per-root caches. |
-| `ipc-labels.ts` | Labels CRUD (4 handlers). |
-| `ipc-manifest.ts` | Manifest sync, import, export, reconcile. Exports `runSync` (called on boot). |
-| `ipc-metrics.ts` | Metrics/tracking handlers (no shared state). |
-| `ipc-registry.ts` | 35+ skill/registry management handlers (largest domain file). |
-| `ipc-repos.ts` | Repo listing + registry-replace; exports `replaceRegistryWithRepo`. |
-| `ipc-shell.ts` | Discover WebContentsView, auto-updater, app menu, window lifecycle. |
+| `ipc-auth.ts`          | GitHub Device Flow handlers.                                                                                               |
+| `ipc-github.ts`        | Origin-probe + repo-metadata handlers; module-level per-root caches.                                                       |
+| `ipc-labels.ts`        | Labels CRUD (4 handlers).                                                                                                  |
+| `ipc-manifest.ts`      | Manifest sync, import, export, reconcile. Exports `runSync` (called on boot).                                              |
+| `ipc-metrics.ts`       | Metrics/tracking handlers (no shared state).                                                                               |
+| `ipc-registry.ts`      | 35+ skill/registry management handlers (largest domain file).                                                              |
+| `ipc-repos.ts`         | Repo listing + registry-replace; exports `replaceRegistryWithRepo`.                                                        |
+| `ipc-shell.ts`         | Discover WebContentsView, auto-updater, app menu, window lifecycle.                                                        |
 
 Circular-import prevention: `ipc-repos.ts` exports `replaceRegistryWithRepo`; `ipc-manifest.ts` receives it via a `setReplaceRegistryWithRepo` setter injected from `main.ts`. See [`packages/desktop/src/main/INVENTORY.md`](packages/desktop/src/main/INVENTORY.md) for the full per-handler breakdown.
 

@@ -6,10 +6,10 @@
 
 A skill folder carries three independent sidecar files:
 
-| File | Reader | Writer |
-|---|---|---|
-| `.skills-bank.json` | `readSkillSource` | `writeSkillSource` |
-| `.skills-bank-hash` | `readSyncedHash` | `writeSyncedHash` |
+| File                        | Reader             | Writer              |
+| --------------------------- | ------------------ | ------------------- |
+| `.skills-bank.json`         | `readSkillSource`  | `writeSkillSource`  |
+| `.skills-bank-hash`         | `readSyncedHash`   | `writeSyncedHash`   |
 | `.skills-bank-runtime.json` | `readRuntimeState` | `writeRuntimeState` |
 
 `buildRegistryIndex` was calling all three separately per skill in the same loop
@@ -26,9 +26,9 @@ Introduce `SkillRecord` in `packages/core/src/registry/skill-record.ts`:
 
 ```ts
 interface SkillRecord {
-  source:     SkillSource;
+  source: SkillSource;
   syncedHash: string | null;
-  runtime:    RuntimeState;
+  runtime: RuntimeState;
 }
 ```
 

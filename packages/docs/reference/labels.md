@@ -10,15 +10,15 @@ Skills are grouped into collapsible category sections when categories have been 
 
 ## Categories
 
-Each skill has at most one category, drawn from a fixed function-oriented taxonomy: what the skill *does*, not what technology it touches (that's what tags are for — see below). The taxonomy has 21 functions grouped under 5 meta-categories; category slugs are `meta:function` (e.g. `engineering:code-scaffolding`), and the Registry tab title-cases each segment for display (**Engineering: Code Scaffolding**).
+Each skill has at most one category, drawn from a fixed function-oriented taxonomy: what the skill _does_, not what technology it touches (that's what tags are for — see below). The taxonomy has 21 functions grouped under 5 meta-categories; category slugs are `meta:function` (e.g. `engineering:code-scaffolding`), and the Registry tab title-cases each segment for display (**Engineering: Code Scaffolding**).
 
-| Meta-category  | Functions                                                                                                                                                     |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Meta-category  | Functions                                                                                                                                     |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `engineering`  | Library & API Reference · Code Scaffolding · Code Review · Verification · Diagnostics · CI/CD & Deployment · Infrastructure · Data & Analysis |
-| `research`     | Investigation · Synthesis · Evaluation                                                                                                                       |
-| `business`     | Planning · Process Automation · Communication · Reporting                                                                                                    |
-| `creative`     | Writing · Design · Brainstorming                                                                                                                             |
-| `productivity` | Focus · Knowledge Management · Decision Support                                                                                                              |
+| `research`     | Investigation · Synthesis · Evaluation                                                                                                        |
+| `business`     | Planning · Process Automation · Communication · Reporting                                                                                     |
+| `creative`     | Writing · Design · Brainstorming                                                                                                              |
+| `productivity` | Focus · Knowledge Management · Decision Support                                                                                               |
 
 Category assignment is always manual — there's no keyword-matching or suggestion tool. Figuring out what a skill's purpose is resists automation better than domain-tagging does, so this is the one place the app doesn't try to guess for you.
 
