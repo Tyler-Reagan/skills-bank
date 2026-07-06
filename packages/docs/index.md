@@ -1,7 +1,7 @@
 ---
 title: Skills Bank
 description: One registry. Every AI agent on your machine.
-sidebar: false
+layout: page
 ---
 
 <!-- Homepage theme/brand direction for issue #129 — see docs/adr/ADR-0016-docs-site-cosmetic-makeover.md. -->
@@ -69,12 +69,11 @@ const features = [
   padding: 0;
   list-style: none;
 }
-/* break out of VitePress's centered .vp-doc container for full-bleed sections */
+/* `layout: page` in frontmatter drops VitePress's .vp-doc/.container prose
+   wrapper entirely, so this is already full-width against whatever the nav
+   (and now sidebar) leave available — no viewport-relative breakout needed. */
 .proto-page {
-  position: relative;
-  left: 50%;
-  width: 100vw;
-  margin-left: -50vw;
+  width: 100%;
 }
 
 /* ── Palette — reads entirely off the shared vars in

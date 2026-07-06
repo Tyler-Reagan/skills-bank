@@ -8,7 +8,7 @@
 code-verified. #129 was filed as the deliberately separate presentation-only
 follow-on: the site is stock VitePress with zero theme customization,
 despite the app having a clear brand identity (green accent `#22c55e`,
-`icon.svg`). It scopes to four independent prongs:
+`icon.svg`). It scopes to five independent prongs:
 
 1. **Theme/brand** — VitePress theme override (accent, hero gradient, font,
    spacing).
@@ -18,6 +18,14 @@ despite the app having a clear brand identity (green accent `#22c55e`,
 4. **Screenshots** — several are stale (e.g. `registry.png` is a dev-build
    artifact); re-shooting requires the packaged app against a populated
    registry, which is a maintainer-only capture task.
+5. **Content consistency** — copy/terminology drift and redundant phrasing
+   across guide pages (e.g. "linked repo" vs. "linked registry", the
+   "Self-hosting" group/page/item text each phrasing the same idea
+   differently, guide pages splitting between narrative and declarative
+   opening voice). Surfaced by a phase-2 (IA/navigation) cleanup audit.
+   Distinct from #156's already-closed content-accuracy work: #156 fixed
+   claims that were factually wrong; this prong is about claims that are
+   correct but inconsistently or redundantly phrased.
 
 Each prong is independent enough to land as its own PR. This ADR exists to
 pin the cross-cutting decisions made _before_ any implementation, so they
@@ -38,6 +46,11 @@ don't get re-litigated once work is split across separate PRs and sessions.
   (re-shooting against a UI that's about to change is wasted capture) and
   require the maintainer to drive the packaged app — an agent can produce
   the shot list but not the capture.
+- **Content consistency has no fixed slot.** It doesn't depend on
+  theme/IA/homepage settling first, and it doesn't need the packaged app —
+  it's pure prose editing an agent can do end to end. It can land before,
+  after, or interleaved with screenshots; sequence it whenever convenient
+  rather than treating it as blocked on anything else in this ADR.
 - **Internal review artifacts use Mermaid.** Before/after sidebar-structure
   diagrams and similar aids used to discuss a change before touching any
   file are disposable and never ship. Mermaid's speed (text in, diagram
