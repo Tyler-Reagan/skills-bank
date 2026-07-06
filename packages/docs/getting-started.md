@@ -15,7 +15,7 @@ The app auto-updates by polling the GitHub Releases feed on launch — when a ne
 
 ## First launch
 
-The app boots straight into the **Registry** tab backed by the curated `Tyler-Reagan/skills-bank` repo — no account needed. You can sign in with GitHub any time from the Account panel to get 5000 requests/hr and link your own registry repo.
+The app boots straight into the **Registry** tab backed by the curated `Tyler-Reagan/skills-bank` repo — no account needed. You can sign in with GitHub any time from the Account modal to get 5000 requests/hr and link your own registry repo.
 
 Want to fork the entire app and ship your own build? See [Self-hosting](/self-host).
 
@@ -28,7 +28,7 @@ Want to fork the entire app and ship your own build? See [Self-hosting](/self-ho
 3. Click **Install**. Skills Bank symlinks the skill into every agent directory you have set up — `~/.claude/skills/`, `~/.cursor/skills/`, etc.
 4. Restart Claude Code (or Cursor, Gemini, …). The new skill is available next session.
 
-Want to install only into specific agent directories instead of all of them? Open the account menu → **Settings…** → set **Default install targets**.
+Want to install only into specific agent directories instead of all of them? Open **Settings…** and set **Default install targets**.
 
 ## See everything that's installed
 

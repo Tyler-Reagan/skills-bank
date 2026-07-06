@@ -63,7 +63,7 @@ export default defineConfig({
       {
         text: "Self-hosting",
         collapsed: true,
-        items: [{ text: "Fork & self-host", link: "/self-host" }],
+        items: [{ text: "Fork & build your own", link: "/self-host" }],
       },
     ],
 

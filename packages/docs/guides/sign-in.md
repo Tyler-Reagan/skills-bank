@@ -56,7 +56,7 @@ There is **no `index.json` to maintain** — the app generates one locally from 
    - Copy a skill folder out of the [`Tyler-Reagan/skills-bank`](https://github.com/Tyler-Reagan/skills-bank) repo's `skills/` directory.
    - Hand-author a skill: create `skills/my-skill/SKILL.md` with standard frontmatter and prose.
 4. **Commit and push.**
-5. **In Skills Bank**: open the Account panel → **Change linked repo** (or **Choose a different repo** if you already have one linked) → pick your repo (sign in first if you haven't).
+5. **In Skills Bank**: open the Account modal → click **Change** next to **Repository** → pick your repo (sign in first if you haven't).
 6. The app fetches a tarball of your repo's current commit, replaces the local registry, and you're done.
 
 After that initial link, edits flow as: edit in a git clone of your repo → commit → push → **Pull from `<repo>`** (header button) pulls the new state.
@@ -65,17 +65,17 @@ After that initial link, edits flow as: edit in a git clone of your repo → com
 
 **Pull from `<repo>` is read-only.** The header Pull action fetches and applies upstream changes; it never pushes local edits back. Skills you author in-app via Register live in your local app-managed registry. To move them into the repo, push the manifest from **Account → Manage your registry** — the only write path that commits to your repo (see [Move your registry](/guides/manifest)).
 
-## Account panel surfaces
+## Account modal surfaces
 
-<!-- SCREENSHOT NEEDED: Account modal — Registry source, Identity, and Manage your registry sections. -->
+<!-- SCREENSHOT NEEDED: Account modal — Repository, Account (identity), and Manage your registry sections. -->
 
-The Account panel shows the same surfaces for every user:
+The Account modal shows the same surfaces for every user:
 
-- **Linked: `<bundled>` or `github.com/<owner>/<repo>`** — current registry source, last-fetched time, and short commit SHA. This is a status display, not a button — use the **Pull from `<repo>`** button in the app header to refresh.
-- **Change linked repo** / **Choose a different repo** — opens the repo picker (requires sign-in; label varies by current state).
-- **Identity row** — `@<login>` chip + **Sign out of GitHub** when signed in; **Sign in with GitHub** + rate-limit hint when not.
+- **Repository** — current registry source (chip), last-fetched time, and short commit SHA. This is a status display, not a button — use the **Pull from `<repo>`** button in the app header to refresh.
+- **Change** — opens the repo picker (requires sign-in).
+- **Account row** — `@<login>` chip + **Sign out** when signed in; **Sign in with GitHub** when not.
 - **Manage your registry** — move your registry state via a **manifest** (origin-pointer JSON): **Import manifest** / **Export manifest**. See [Move your registry](/guides/manifest) for the full flow including repo transport.
 
-## Self-host
+## Self-hosting
 
 Self-hosting is a developer path: fork the app, ship your own build. See [Self-hosting](/self-host). Not a runtime option from the UI.

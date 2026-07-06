@@ -11,7 +11,7 @@ Self-hosting transfers maintenance of **both the app binary and the registry** t
 - You opt out of receiving upstream updates from `Tyler-Reagan/skills-bank`.
 
 > [!NOTE]
-> If you only want a different registry (not a different app), you don't need self-host — sign in with GitHub from Account and link your own repo as the registry source. See [Sign in with GitHub](/guides/sign-in).
+> If you only want a different registry (not a different app), you don't need to self-host — sign in with GitHub from Account and link your own repo as the registry source. See [Sign in with GitHub](/guides/sign-in).
 
 ## Steps
 

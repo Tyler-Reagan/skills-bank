@@ -1,6 +1,6 @@
 # Register a skill
 
-You installed a skill from somewhere else (e.g. `npx skills add` or a manual copy). It shows up in the **Installed** tab under **Unregistered**. You want Skills Bank to manage it from now on.
+Brings a skill installed from somewhere else (e.g. `npx skills add` or a manual copy) under Skills Bank's management. Skills installed outside the app show up in the **Installed** tab under **Unregistered** until registered.
 
 ## Steps
 
