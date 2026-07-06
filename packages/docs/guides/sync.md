@@ -1,6 +1,6 @@
 # Pull registry updates
 
-The **Pull from `<repo>`** button in the header pulls the latest content from your linked GitHub repo into your local bank. Bundled-default users (no linked repo) refresh against the curated bank through the same diff-before-apply path; the button label changes but the underlying flow is identical.
+The **Pull from `<repo>`** button in the header pulls the latest content from your linked GitHub repo into your local bank. Bundled-default users (no linked repo) refresh against it through the same diff-before-apply path; the button label changes but the underlying flow is identical.
 
 Independent of pull, the **Check for updates** button probes each skill's authoritative GitHub **Origin** for newer content — useful for harvested skills whose upstreams live in third-party repos, not in your linked repo. Surfaces available updates as chips on individual cards; does not download anything until you click the chip.
 

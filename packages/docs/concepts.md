@@ -6,14 +6,14 @@ The vocabulary the app uses, defined in one place. Skim this once and the rest o
 
 Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
 
-- **Source (provenance)** — three-value axis: `curated` (from the curated set the bank ships), `vendored` (a third-party skill you chose to bring in, origin preserved), or `user` (you added it, however it got there). See [Source (provenance)](#source-provenance) below for full surface behavior.
+- **Source (provenance)** — three-value axis: `curated` (from the bundled default the bank ships), `vendored` (a third-party skill you chose to bring in, origin preserved), or `user` (you added it, however it got there). See [Source (provenance)](#source-provenance) below for full surface behavior.
 - **Registered** — boolean. The skill has an entry in the local registry index. Mutated freely. Holds local-only metadata (tags, install paths, the Adopted flag).
 - **Adopted** — boolean on each registry entry. When `true`, the skill's files physically live under `<registryRoot>/skills/<name>/`. When `false`, the registry entry tracks an external location and the files stay where they are. Default at register time is the `registerAdopts` setting (default `true`).
 - **Installed** — derived from on-disk scan. A skill is installed if at least one agent dir contains an entry at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.
 
 ### Derived rules
 
-- Curated skills are registered by default. Unregister and delete of curated skills are prohibited; the user-visible escape is **Dismiss from registry view**, scoped per linked-registry.
+- Curated skills are registered by default. Unregister and delete of curated skills are prohibited; the user-visible escape is **Dismiss from registry view**, scoped per linked repo.
 - A registered but uninstalled `user` skill is valid. Re-install requires the original source (no upstream to pull from).
 - Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
 - Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
@@ -108,9 +108,9 @@ The registry is **not** the only source of skills you can use. Skills installed 
 
 ## Linked repo vs bundled default
 
-Every install starts on the **bundled default** — the app reads the canonical curated set from `Tyler-Reagan/skills-bank` at the unauthenticated GitHub rate limit (60/hr). Refresh pulls the latest. No GitHub account needed.
+Every install starts on the **bundled default** — the app reads `Tyler-Reagan/skills-bank` at the unauthenticated GitHub rate limit (60/hr). Refresh pulls the latest. No GitHub account needed.
 
-Sign in via **Account** to either keep the curated set at a higher rate limit (5000/hr authenticated, plus access to private repos) or **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with a `SKILL.md` — its YAML frontmatter carries the metadata) — its layout doesn't have to match anything specific.
+Sign in via **Account** to either keep the bundled default at a higher rate limit (5000/hr authenticated, plus access to private repos) or **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with a `SKILL.md` — its YAML frontmatter carries the metadata) — its layout doesn't have to match anything specific.
 
 Self-hosting (forking the entire app) remains a separate developer path; see [Self-hosting](/self-host).
 
@@ -118,7 +118,7 @@ Self-hosting (forking the entire app) remains a separate developer path; see [Se
 
 Provenance is a three-value axis on each registry skill, stored as `source` in a sibling `.skills-bank.json` per skill so the marker doesn't pollute upstream.
 
-- **`curated`** — Part of the committed curated set the app ships. Reserved for `.skills-bank.json` files committed to the app's registry repo — no install or sync path ever mints a new one. Sync keeps these current.
+- **`curated`** — Committed to the app's own repository as one of its curated skills. Reserved for `.skills-bank.json` files committed to the app's registry repo — no install or sync path ever mints a new one. Sync keeps these current.
 - **`vendored`** — A third-party skill you chose to bring in, with its origin pointer preserved so updates from the original author still surface.
 - **`user`** — Yours — authored locally, merged in from another bank's export, or pulled from your own linked repo. Sync never touches it.
 
@@ -142,7 +142,7 @@ Priority order, highest first:
 - **`MISSING`** _(danger)_ — files are gone. Open the dialog to **Forget this entry**.
 - **`UNREACHABLE`** _(danger)_ — the skill's origin hasn't answered the last few update probes. Your local copy is intact.
 - **`UPDATE`** _(info)_ — an update is available from the skill's origin. Skills you've edited locally are held out of one-click updates (files the skill ignores via its own `.gitignore`, e.g. a runtime-installed `node_modules/`, don't count as edits).
-- **`CURATED`** _(calm)_ — part of the curated set. Destructive verbs are gated; **Dismiss from registry view** is the curated-only escape hatch.
+- **`CURATED`** _(calm)_ — one of the app's curated skills. Destructive verbs are gated; **Dismiss from registry view** is the curated-only escape hatch.
 
 User-source skills render no provenance chip. The **Personal** filter chip on the Registry tab shows only user-source skills.
 

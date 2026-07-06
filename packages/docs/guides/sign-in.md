@@ -1,6 +1,6 @@
 # Sign in with GitHub
 
-Skills Bank reads its skills from a GitHub repo. By default that's the curated bank shipped with the app — `Tyler-Reagan/skills-bank` — but you can swap in any GitHub repo you own as the source of truth for your registry.
+Skills Bank reads its skills from a GitHub repo. By default that's the bundled default — `Tyler-Reagan/skills-bank` — but you can swap in any GitHub repo you own as the source of truth for your registry.
 
 There's no separate "local mode" and "GitHub mode" — every registry mirrors a repo. What changes is **which repo** and **whether you're signed in**.
 
@@ -10,7 +10,7 @@ On first launch you pick a starting point:
 
 ### Use the public skills bank
 
-The default, low-friction path. The app boots into the Registry tab on top of the bundled curated set — no GitHub account needed.
+The default, low-friction path. The app boots into the Registry tab on top of the bundled default — no GitHub account needed.
 
 - Refresh re-fetches from `Tyler-Reagan/skills-bank` at the unauthenticated GitHub rate limit (60 requests/hour).
 - All registry operations (install, register, export, merge) work normally.
@@ -20,7 +20,7 @@ The default, low-friction path. The app boots into the Registry tab on top of th
 
 Authenticate via GitHub Device Flow. After signing in you pick a repo:
 
-- **Recommended row**: `Tyler-Reagan/skills-bank` — the same curated bank, now fetched at 5000/hr.
+- **Recommended row**: `Tyler-Reagan/skills-bank` — the same bundled default, now fetched at 5000/hr.
 - **Your repos**: any repo you own with a `skills/` directory at its root becomes your registry source of truth.
 
 ## Linking your own repo
