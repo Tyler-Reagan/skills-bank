@@ -2,15 +2,28 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { AGENTS, getAgentSkillsDir, type AgentId } from "../shared/agents.js";
-import { invalidateCanonCache } from "../registry/canon.js";
 import { type AppError, fromCaught, makeAppError } from "../shared/errors.js";
 import {
   readExternalRegistry,
   removeExternalRegistryEntry,
 } from "../registry/external.js";
+import { readLiveManifest, writeLiveManifest } from "../manifest/manifest.js";
+import { removeRuntimeEntry } from "../registry/runtime-map.js";
 import type { RegistryEntry } from "../shared/types.js";
 import type { UnlinkTargetResult } from "./install.js";
 import { buildRegistryIndex } from "../registry/build.js";
+
+/** Drop a skill's manifest row + runtime entry — the reciprocal of
+ *  `reconcileFoldersToManifest`'s add, called whenever a skill's
+ *  registry entry is removed for good. */
+function removeManifestRow(registryRoot: string, name: string): void {
+  const manifest = readLiveManifest(registryRoot);
+  const next = manifest.skills.filter((s) => s.name !== name);
+  if (next.length !== manifest.skills.length) {
+    writeLiveManifest(registryRoot, { ...manifest, skills: next });
+  }
+  removeRuntimeEntry(registryRoot, name);
+}
 
 export interface UnregisterOptions {
   registryRoot: string;
@@ -128,7 +141,7 @@ function unregisterAdopted(
         writeFile: true,
       });
     }
-    invalidateCanonCache(opts.registryRoot);
+    removeManifestRow(opts.registryRoot, name);
     return {
       ok: true,
       name,
@@ -310,12 +323,12 @@ function unregisterAdopted(
     }
   }
 
+  removeManifestRow(opts.registryRoot, name);
   // Rebuild the index so the now-unregistered skill drops out.
   buildRegistryIndex(opts.registryRoot, {
     includeGitInfo: true,
     writeFile: true,
   });
-  invalidateCanonCache(opts.registryRoot);
 
   return {
     ok: true,
@@ -350,11 +363,11 @@ function unregisterExternal(
     };
   }
   removeExternalRegistryEntry(opts.registryRoot, name);
+  removeManifestRow(opts.registryRoot, name);
   buildRegistryIndex(opts.registryRoot, {
     includeGitInfo: true,
     writeFile: true,
   });
-  invalidateCanonCache(opts.registryRoot);
   return {
     ok: true,
     name,

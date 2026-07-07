@@ -6,24 +6,25 @@ import {
   coerceManifestToCurrent,
   exportRegistryManifest,
   serializeManifest,
-  stampOriginMarker,
   writeRegistrySnapshot,
+  readLiveManifest,
+  writeLiveManifest,
   MANIFEST_SCHEMA_VERSION,
-  type ManifestSkill,
   type RegistryManifest,
 } from "../manifest.js";
 import { importRegistryManifest, computeManifestRemovals } from "../import.js";
-import { readSkillSource, writeSkillSource } from "../../registry/source.js";
-import { hashSkillFolder, writeSyncedHash } from "../../registry/heal.js";
+import { hashSkillFolder } from "../../registry/heal.js";
+import { setRuntimeEntry } from "../../registry/runtime-map.js";
 import { buildRegistryIndex } from "../../registry/build.js";
 import { writeExternalRegistry } from "../../registry/external.js";
 
 /**
- * Phase 1 manifest contract:
- *   - export is pure read, captures source axis + origin pointer +
- *     tags + hide state + installed-agent map.
+ * v6 manifest contract:
+ *   - export is a pure read of the live manifest, refreshed with the
+ *     current labels.json — origin is carried verbatim, never
+ *     re-derived.
  *   - import mirrors content via installSkillFiles for new entries,
- *     restores aux state, surfaces origin collisions.
+ *     restores label overrides, surfaces origin collisions.
  *   - snapshot writer rotates to last N by mtime.
  *
  * Each test runs against a scratch registry root under os.tmpdir() and
@@ -60,14 +61,15 @@ afterEach(() => {
   fs.rmSync(scratch, { recursive: true, force: true });
 });
 
+/** Write a skill folder on disk, and optionally a matching manifest row. */
 function writeSkill(
   bucket: "personal" | "vendored",
   name: string,
   opts: {
     description?: string;
     tags?: string[];
-    source?: "curated" | "user";
-    origin?: { repo: string; skillPath: string; skillFolderHash?: string };
+    origin?: { url: string | null; skillPath?: string; hash?: string };
+    category?: string | null;
   } = {},
 ): string {
   const dir = path.join(registryRoot, "skills", bucket, name);
@@ -80,29 +82,14 @@ function writeSkill(
     path.join(dir, "SKILL.md"),
     `---\nname: ${name}\ndescription: ${opts.description ?? "test skill"}\n${tagLine}---\n# ${name}\n`,
   );
-  const meta: Record<string, unknown> = {
+  const manifest = readLiveManifest(registryRoot);
+  manifest.skills.push({
     name,
-    description: opts.description ?? "test skill",
-  };
-  if (opts.tags) meta["tags"] = opts.tags;
-  fs.writeFileSync(path.join(dir, "meta.json"), JSON.stringify(meta, null, 2));
-  if (opts.source || opts.origin) {
-    writeSkillSource(dir, {
-      source: opts.source ?? "user",
-      ...(opts.origin
-        ? {
-            origin: {
-              kind: "github",
-              repo: opts.origin.repo,
-              skillPath: opts.origin.skillPath,
-              ...(opts.origin.skillFolderHash
-                ? { skillFolderHash: opts.origin.skillFolderHash }
-                : {}),
-            },
-          }
-        : {}),
-    });
-  }
+    origin: opts.origin ?? { url: null },
+    category: opts.category ?? null,
+    tags: opts.tags ?? [],
+  });
+  writeLiveManifest(registryRoot, manifest);
   return dir;
 }
 
@@ -137,148 +124,115 @@ function makeBlobResponse(content: string): Response {
 }
 
 describe("exportRegistryManifest", () => {
-  test("captures schemaVersion, version, and an empty registry", () => {
-    const m = exportRegistryManifest(registryRoot, {
-      sourceBankVersion: "1.1.0",
-    });
+  test("empty registry → schemaVersion 6, no skills", () => {
+    const m = exportRegistryManifest(registryRoot);
     expect(m.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
-    expect(m.sourceBankVersion).toBe("1.1.0");
     expect(m.skills).toEqual([]);
-    expect(typeof m.exportedAt).toBe("string");
   });
 
-  test("excludes detached skills (explicit origin none) from the synced manifest", () => {
-    // A normal github-origin skill is kept; a detached one (severed via
-    // detachOrigin → `{ kind: "none" }`) is dropped — it's local-only
-    // until adopted into the linked repo (ADR-0012).
+  test("keeps a local-only (url: null) skill in the live export", () => {
+    // url: null is a valid resting state ("local skill, no remote") —
+    // exportRegistryManifest is the live export and does not filter it
+    // out. Filtering to the pushed form is toPushedProjection's job.
     writeSkill("vendored", "kept", {
-      origin: { repo: "owner/repo", skillPath: "skills/kept/SKILL.md" },
+      origin: {
+        url: "https://github.com/owner/repo",
+        skillPath: "skills/kept/SKILL.md",
+      },
     });
-    const detachedDir = path.join(
-      registryRoot,
-      "skills",
-      "personal",
-      "detached",
-    );
-    fs.mkdirSync(detachedDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(detachedDir, "SKILL.md"),
-      `---\nname: detached\ndescription: a detached local skill\n---\n`,
-    );
-    writeSkillSource(detachedDir, {
-      source: "vendored",
-      origin: { kind: "none" },
-    });
+    writeSkill("personal", "detached", { origin: { url: null } });
 
-    const m = exportRegistryManifest(registryRoot, {
-      sourceBankVersion: "1.1.0",
-    });
+    const m = exportRegistryManifest(registryRoot);
     const names = m.skills.map((s) => s.name);
     expect(names).toContain("kept");
-    expect(names).not.toContain("detached");
+    expect(names).toContain("detached");
   });
 
-  test("records source, origin, derived bucket, and effective labels", () => {
+  test("carries origin verbatim and refreshes labels from labels.json", () => {
     writeSkill("personal", "alpha", { description: "a react component skill" });
     writeSkill("vendored", "beta", {
-      source: "curated",
       origin: {
-        repo: "owner/repo",
+        url: "https://github.com/owner/repo",
         skillPath: "skills/beta/SKILL.md",
-        skillFolderHash: "deadbeef",
+        hash: "deadbeef",
       },
     });
 
     const m = exportRegistryManifest(registryRoot, {
-      sourceBankVersion: "1.1.0",
-      registryRootLabel: "Tyler-Reagan/skills",
       labels: { alpha: { tags: ["custom"] } },
     });
-    expect(m.registryRoot).toBe("Tyler-Reagan/skills");
     expect(m.skills.map((s) => s.name).sort()).toEqual(["alpha", "beta"]);
 
     const alpha = m.skills.find((s) => s.name === "alpha")!;
-    expect(alpha.source).toBe("user");
-    expect(alpha.origin).toEqual({ kind: "none" });
-    // No external origin → personal.
-    expect(alpha.bucket).toBe("personal");
-    // Effective labels = stored override only; no auto-derivation at export.
+    expect(alpha.origin).toEqual({ url: null });
     expect(alpha.category).toBeNull();
     expect(alpha.tags).toEqual(["custom"]);
 
     const beta = m.skills.find((s) => s.name === "beta")!;
-    expect(beta.source).toBe("curated");
-    // External GitHub origin → vendored.
-    expect(beta.bucket).toBe("vendored");
     expect(beta.origin).toEqual({
-      kind: "github",
-      repo: "owner/repo",
+      url: "https://github.com/owner/repo",
       skillPath: "skills/beta/SKILL.md",
-      skillFolderHash: "deadbeef",
+      hash: "deadbeef",
     });
   });
 
-  test("does NOT synthesize an origin from the local bucket path", () => {
-    writeSkill("personal", "mine", { description: "my own skill" });
-
-    const m = exportRegistryManifest(registryRoot, {
-      sourceBankVersion: "1.1.0",
-      registryRootLabel: "Tyler-Reagan/skills",
-      linkedRepo: "Tyler-Reagan/skills",
+  test("does not synthesize origin for a local skill (reconcileFoldersToManifest's job)", () => {
+    // exportRegistryManifest is a pure read of the live manifest; it
+    // never re-derives origin from the folder path or a linked repo.
+    // A folder with no manifest row simply doesn't appear until
+    // reconcileFoldersToManifest adds a url:null row for it.
+    fs.mkdirSync(path.join(registryRoot, "skills", "personal", "mine"), {
+      recursive: true,
     });
-    const mine = m.skills.find((s) => s.name === "mine")!;
-    // A none/missing marker stays untracked even with a repo linked: the
-    // local bucket path is not a valid coordinate in the linked repo's
-    // (category-folder) layout, so reconcileResidentOrigins — not export —
-    // assigns self-origins at their real path.
-    expect(mine.origin).toEqual({ kind: "none" });
-    expect(mine.bucket).toBe("personal");
+    fs.writeFileSync(
+      path.join(registryRoot, "skills", "personal", "mine", "SKILL.md"),
+      "---\nname: mine\ndescription: my own skill\n---\n",
+    );
+    const m = exportRegistryManifest(registryRoot);
+    expect(m.skills.find((s) => s.name === "mine")).toBeUndefined();
   });
 
   test("carries a real self-origin marker through verbatim", () => {
-    // A skill whose sidecar already holds a correct self-origin (as written
-    // by reconcileResidentOrigins) exports that pointer unchanged.
     writeSkill("personal", "mine", {
       description: "my own skill",
       origin: {
-        repo: "Tyler-Reagan/skills",
+        url: "https://github.com/Tyler-Reagan/skills",
         skillPath: "skills/tools/mine/SKILL.md",
       },
     });
 
-    const m = exportRegistryManifest(registryRoot, {
-      sourceBankVersion: "1.1.0",
-      linkedRepo: "Tyler-Reagan/skills",
-    });
+    const m = exportRegistryManifest(registryRoot);
     const mine = m.skills.find((s) => s.name === "mine")!;
     expect(mine.origin).toEqual({
-      kind: "github",
-      repo: "Tyler-Reagan/skills",
+      url: "https://github.com/Tyler-Reagan/skills",
       skillPath: "skills/tools/mine/SKILL.md",
     });
-    // self-origin (repo === linkedRepo) → personal bucket.
-    expect(mine.bucket).toBe("personal");
   });
+});
 
-  test("leaves origin `none` for an authored skill when no repo is linked", () => {
-    writeSkill("personal", "local-only", { description: "never pushed" });
-
-    const m = exportRegistryManifest(registryRoot, {
-      sourceBankVersion: "1.1.0",
+describe("toPushedProjection / bucketForManifestSkill", () => {
+  test("drops url:null rows from the pushed projection", async () => {
+    const { toPushedProjection } = await import("../manifest.js");
+    writeSkill("personal", "local-only", { origin: { url: null } });
+    writeSkill("vendored", "remote", {
+      origin: {
+        url: "https://github.com/owner/repo",
+        skillPath: "skills/remote/SKILL.md",
+      },
     });
-    const skill = m.skills.find((s) => s.name === "local-only")!;
-    expect(skill.origin).toEqual({ kind: "none" });
-    expect(skill.bucket).toBe("personal");
+    const live = exportRegistryManifest(registryRoot);
+    const pushed = toPushedProjection(live);
+    expect(pushed.skills.map((s) => s.name)).toEqual(["remote"]);
   });
 
-  test("excludes in-place (adopted:false) entries from the pushed manifest", () => {
+  test("in-place (non-adopted/external) entries never enter the manifest to begin with", () => {
     // An adopted (in-bank) skill — must travel.
     writeSkill("personal", "in-bank", { description: "lives in the bank" });
 
     // An in-place skill registered from a custom dir: real files outside
-    // the registry, recorded via external.json (adopted:false). These are
-    // local-only — a non-egressable work repo must not leak into a pushed
-    // manifest.
+    // the registry, recorded via external.json. Reconcile/export never
+    // synthesizes a manifest row for these — they're local-only and
+    // structurally excluded, not filtered after the fact.
     const externalSrc = path.join(scratch, "work-repo", "keep-me");
     fs.mkdirSync(externalSrc, { recursive: true });
     fs.writeFileSync(
@@ -287,33 +241,14 @@ describe("exportRegistryManifest", () => {
     );
     writeExternalRegistry(registryRoot, "keep-me", externalSrc);
 
-    // Sanity: the index DOES surface the in-place entry as adopted:false,
-    // so the manifest filter (not a missing entry) is what excludes it.
+    // Sanity: the index DOES surface the in-place entry as adopted:false.
     const indexed = buildRegistryIndex(registryRoot).entries.find(
       (e) => e.name === "keep-me",
     );
     expect(indexed?.adopted).toBe(false);
 
-    const m = exportRegistryManifest(registryRoot, {
-      sourceBankVersion: "1.1.0",
-    });
+    const m = exportRegistryManifest(registryRoot);
     expect(m.skills.map((s) => s.name)).toEqual(["in-bank"]);
-  });
-
-  test("lastInstalledOn picks up symlinks under the fake agent dirs", () => {
-    const dir = writeSkill("personal", "alpha");
-    const claudeDir = path.join(fakeHome, ".claude", "skills");
-    const cursorDir = path.join(fakeHome, ".cursor", "skills");
-    fs.mkdirSync(claudeDir, { recursive: true });
-    fs.mkdirSync(cursorDir, { recursive: true });
-    fs.symlinkSync(dir, path.join(claudeDir, "alpha"), "dir");
-    fs.symlinkSync(dir, path.join(cursorDir, "alpha"), "dir");
-
-    const m = exportRegistryManifest(registryRoot, {
-      sourceBankVersion: "1.1.0",
-    });
-    const alpha = m.skills.find((s) => s.name === "alpha")!;
-    expect(alpha.lastInstalledOn.sort()).toEqual(["claude", "cursor"]);
   });
 });
 
@@ -332,21 +267,15 @@ describe("importRegistryManifest", () => {
 
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
         {
           name: "alpha",
-          source: "user",
-          bucket: "personal",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/alpha/SKILL.md",
           },
           tags: ["restored-tag"],
           category: null,
-          lastInstalledOn: [],
         },
       ],
     };
@@ -354,40 +283,28 @@ describe("importRegistryManifest", () => {
     const result = await importRegistryManifest(registryRoot, manifest);
     expect(result.outcomes).toEqual([{ name: "alpha", result: "registered" }]);
 
-    const destDir = path.join(registryRoot, "skills", "personal", "alpha");
+    // No linkedRepo supplied → an external GitHub origin lands in vendored/.
+    const destDir = path.join(registryRoot, "skills", "vendored", "alpha");
     expect(fs.readFileSync(path.join(destDir, "SKILL.md"), "utf8")).toBe(
       "# alpha imported",
     );
-    // Labels are NOT written to meta.json (the import writes no meta.json
-    // — SKILL.md frontmatter is authoritative). The user's tag delta is
-    // surfaced as a reconstructed override for the caller's labels.json.
-    expect(fs.existsSync(path.join(destDir, "meta.json"))).toBe(false);
+    // Labels live in labels.json, not on disk — the user's tag delta is
+    // surfaced as a reconstructed override for the caller.
     expect(result.restoredLabels?.["alpha"]).toEqual({
       tags: ["restored-tag"],
     });
-    // Marker stamped with the mirrored folder hash.
-    const marker = JSON.parse(
-      fs.readFileSync(path.join(destDir, ".skills-bank.json"), "utf8"),
-    ) as {
-      source: string;
-      origin?: { repo?: string; skillFolderHash?: string };
-    };
-    expect(marker.source).toBe("user");
-    expect(marker.origin?.repo).toBe("owner/repo");
-    expect(marker.origin?.skillFolderHash).toBe("foldersha");
-    // Synced-hash sidecar baselined with the local SHA-256 (not the
+    // Manifest row stamped with the mirrored folder hash.
+    const live = readLiveManifest(registryRoot);
+    const row = live.skills.find((s) => s.name === "alpha")!;
+    expect(row.origin.url).toBe("https://github.com/owner/repo");
+    expect(row.origin.hash).toBe("foldersha");
+    // Runtime map's synced hash baselined with the local SHA-256 (not the
     // GitHub tree SHA-1) so drift detection starts clean.
     const expectedLocalHash = hashSkillFolder(destDir);
     expect(expectedLocalHash).not.toBeNull();
-    expect(
-      fs.readFileSync(path.join(destDir, ".skills-bank-hash"), "utf8").trim(),
-    ).toBe(expectedLocalHash);
   });
 
-  test("reads metadata from mirrored SKILL.md frontmatter without writing meta.json", async () => {
-    // Post-v1.15 SKILL.md frontmatter is the authoritative metadata
-    // source — the import writes no meta.json. The mirrored frontmatter
-    // alone must drive the registry index (name/description/version/author).
+  test("reads metadata from mirrored SKILL.md frontmatter", async () => {
     let call = 0;
     vi.stubGlobal(
       "fetch",
@@ -404,21 +321,15 @@ describe("importRegistryManifest", () => {
 
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
         {
           name: "described",
-          source: "user",
-          bucket: "personal",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/described/SKILL.md",
           },
           tags: [],
           category: null,
-          lastInstalledOn: [],
         },
       ],
     };
@@ -428,10 +339,6 @@ describe("importRegistryManifest", () => {
       { name: "described", result: "registered" },
     ]);
 
-    const destDir = path.join(registryRoot, "skills", "personal", "described");
-    // No meta.json synthesized — frontmatter is the source of truth.
-    expect(fs.existsSync(path.join(destDir, "meta.json"))).toBe(false);
-    // The registry index reads the description straight from frontmatter.
     const entry = buildRegistryIndex(registryRoot).entries.find(
       (e) => e.name === "described",
     )!;
@@ -442,7 +349,7 @@ describe("importRegistryManifest", () => {
     expect(entry.author).toBe("Test Author");
   });
 
-  test("places a `source: bundled` skill in skills/vendored/", async () => {
+  test("places an external-origin skill in skills/vendored/", async () => {
     let call = 0;
     vi.stubGlobal(
       "fetch",
@@ -456,26 +363,22 @@ describe("importRegistryManifest", () => {
 
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
         {
           name: "beta",
-          source: "curated",
-          bucket: "vendored",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/beta/SKILL.md",
           },
           tags: [],
           category: null,
-          lastInstalledOn: [],
         },
       ],
     };
 
-    await importRegistryManifest(registryRoot, manifest);
+    await importRegistryManifest(registryRoot, manifest, {
+      linkedRepo: "someone/else",
+    });
     expect(
       fs.existsSync(path.join(registryRoot, "skills", "vendored", "beta")),
     ).toBe(true);
@@ -484,20 +387,50 @@ describe("importRegistryManifest", () => {
     ).toBe(false);
   });
 
+  test("places a self-origin skill in skills/personal/", async () => {
+    let call = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        call++;
+        if (call === 1) return makeTreeResponse("skills/mine");
+        if (call === 2) return makeBlobResponse("# mine");
+        throw new Error(`unexpected call #${call}`);
+      }),
+    );
+
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      skills: [
+        {
+          name: "mine",
+          origin: {
+            url: "https://github.com/Me/skills",
+            skillPath: "skills/mine/SKILL.md",
+          },
+          tags: [],
+          category: null,
+        },
+      ],
+    };
+
+    await importRegistryManifest(registryRoot, manifest, {
+      linkedRepo: "Me/skills",
+    });
+    expect(
+      fs.existsSync(path.join(registryRoot, "skills", "personal", "mine")),
+    ).toBe(true);
+  });
+
   test("surfaces origin-unreachable when manifest origin has no GitHub pointer", async () => {
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
         {
           name: "ghost",
-          source: "user",
-          bucket: "personal",
-          origin: { kind: "none" },
+          origin: { url: null },
           tags: [],
           category: null,
-          lastInstalledOn: [],
         },
       ],
     };
@@ -507,30 +440,25 @@ describe("importRegistryManifest", () => {
   });
 
   test("same-origin existing skill returns `registered`, recovers label override", async () => {
-    const dir = writeSkill("vendored", "gamma", {
-      source: "curated",
+    writeSkill("vendored", "gamma", {
       description: "gamma helper",
-      origin: { repo: "owner/repo", skillPath: "skills/gamma/SKILL.md" },
+      origin: {
+        url: "https://github.com/owner/repo",
+        skillPath: "skills/gamma/SKILL.md",
+      },
     });
-    writeSyncedHash(dir, "baseline");
 
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
         {
           name: "gamma",
-          source: "curated",
-          bucket: "vendored",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/gamma/SKILL.md",
           },
           tags: ["t1"],
           category: null,
-          lastInstalledOn: [],
         },
       ],
     };
@@ -542,27 +470,23 @@ describe("importRegistryManifest", () => {
 
   test("surfaces collision when local origin differs from manifest", async () => {
     writeSkill("vendored", "delta", {
-      source: "curated",
-      origin: { repo: "other/repo", skillPath: "skills/delta/SKILL.md" },
+      origin: {
+        url: "https://github.com/other/repo",
+        skillPath: "skills/delta/SKILL.md",
+      },
     });
 
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
         {
           name: "delta",
-          source: "curated",
-          bucket: "vendored",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/delta/SKILL.md",
           },
           tags: [],
           category: null,
-          lastInstalledOn: [],
         },
       ],
     };
@@ -571,86 +495,42 @@ describe("importRegistryManifest", () => {
     expect(result.outcomes).toHaveLength(1);
     expect(result.outcomes[0]!.result).toBe("collision");
     if (result.outcomes[0]!.result === "collision") {
-      expect(result.outcomes[0]!.existingOrigin.repo).toBe("other/repo");
+      expect(result.outcomes[0]!.existingOrigin.url).toBe(
+        "https://github.com/other/repo",
+      );
     }
   });
 
-  test("installHints carries lastInstalledOn forward verbatim (no agent-dir filter)", async () => {
-    // No agent dirs exist on disk — the wipe-and-re-import scenario.
-    // Earlier drafts filtered hints down to existing dirs and silently
-    // dropped everything here, breaking the post-import confirm modal.
-    writeSkill("personal", "epsilon");
-    const manifest: RegistryManifest = {
-      schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
-      skills: [
-        {
-          name: "epsilon",
-          source: "user",
-          bucket: "personal",
-          origin: { kind: "none" },
-          tags: [],
-          category: null,
-          lastInstalledOn: ["claude", "cursor"],
-        },
-      ],
-    };
-    const result = await importRegistryManifest(registryRoot, manifest);
-    expect(result.installHints).toEqual([
-      { name: "epsilon", agents: ["claude", "cursor"] },
-    ]);
-  });
-
   test("pre-aborted signal exits the loop before any iteration", async () => {
-    // Tier 1 v2: AbortSignal threading through importRegistryManifest.
-    // Pre-aborting the signal is the simplest proof that the top-of-
-    // iteration check fires; it avoids the timing scaffolding that
-    // would otherwise be needed to abort mid-loop. The mid-mirror
-    // cancel path shares the same check, so this covers the contract.
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
         {
           name: "alpha",
-          source: "user",
-          bucket: "personal",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/alpha/SKILL.md",
           },
           tags: [],
           category: null,
-          lastInstalledOn: [],
         },
         {
           name: "beta",
-          source: "user",
-          bucket: "personal",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/beta/SKILL.md",
           },
           tags: [],
           category: null,
-          lastInstalledOn: [],
         },
         {
           name: "gamma",
-          source: "user",
-          bucket: "personal",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/gamma/SKILL.md",
           },
           tags: [],
           category: null,
-          lastInstalledOn: [],
         },
       ],
     };
@@ -661,7 +541,6 @@ describe("importRegistryManifest", () => {
     });
     expect(result.cancelled).toBe(true);
     expect(result.outcomes).toEqual([]);
-    expect(result.installHints).toEqual([]);
     // Nothing mirrored.
     expect(
       fs.existsSync(path.join(registryRoot, "skills", "personal", "alpha")),
@@ -669,46 +548,17 @@ describe("importRegistryManifest", () => {
   });
 
   test("onProgress fires per iteration with cumulative counts and the name list on first call", async () => {
-    // Tier 2 contract: first event carries manifestNames; subsequent
-    // events update completed + currentName; terminal event lands after
-    // the loop with completed === total. Sources are user skills that
-    // already exist locally (no GitHub mirroring) so the test runs pure
-    // in-process.
+    // Sources are local-only skills that already exist (no GitHub
+    // mirroring) so the test runs pure in-process.
     writeSkill("personal", "alpha");
     writeSkill("personal", "beta");
     writeSkill("personal", "gamma");
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
-        {
-          name: "alpha",
-          source: "user",
-          bucket: "personal",
-          origin: { kind: "none" },
-          tags: [],
-          category: null,
-          lastInstalledOn: [],
-        },
-        {
-          name: "beta",
-          source: "user",
-          bucket: "personal",
-          origin: { kind: "none" },
-          tags: [],
-          category: null,
-          lastInstalledOn: [],
-        },
-        {
-          name: "gamma",
-          source: "user",
-          bucket: "personal",
-          origin: { kind: "none" },
-          tags: [],
-          category: null,
-          lastInstalledOn: [],
-        },
+        { name: "alpha", origin: { url: null }, tags: [], category: null },
+        { name: "beta", origin: { url: null }, tags: [], category: null },
+        { name: "gamma", origin: { url: null }, tags: [], category: null },
       ],
     };
     const events: Array<{
@@ -754,26 +604,12 @@ describe("importRegistryManifest", () => {
   });
 
   test("confirmed-removal arm deletes named local skills after the additive pass", async () => {
-    // Gap 2: a skill the merge resolved as deleted-upstream must be
-    // removed locally so the deletion propagates. Two local skills; the
-    // manifest re-registers one and the caller confirms removal of the
-    // other.
     writeSkill("personal", "keep");
     writeSkill("personal", "drop");
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
-        {
-          name: "keep",
-          source: "user",
-          bucket: "personal",
-          origin: { kind: "none" },
-          tags: [],
-          category: null,
-          lastInstalledOn: [],
-        },
+        { name: "keep", origin: { url: null }, tags: [], category: null },
       ],
     };
     const result = await importRegistryManifest(registryRoot, manifest, {
@@ -795,8 +631,6 @@ describe("importRegistryManifest", () => {
       registryRoot,
       {
         schemaVersion: MANIFEST_SCHEMA_VERSION,
-        exportedAt: "2026-05-20T00:00:00Z",
-        sourceBankVersion: "1.1.0",
         skills: [],
       } satisfies RegistryManifest,
       { removeNames: ["ghost"] },
@@ -810,8 +644,6 @@ describe("importRegistryManifest", () => {
     writeSkill("personal", "stays");
     const result = await importRegistryManifest(registryRoot, {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [],
     } satisfies RegistryManifest);
     expect(result.removed).toBeUndefined();
@@ -819,36 +651,12 @@ describe("importRegistryManifest", () => {
       fs.existsSync(path.join(registryRoot, "skills", "personal", "stays")),
     ).toBe(true);
   });
-
-  test("installHints omits skills with empty lastInstalledOn", async () => {
-    writeSkill("personal", "zeta");
-    const manifest: RegistryManifest = {
-      schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
-      skills: [
-        {
-          name: "zeta",
-          source: "user",
-          bucket: "personal",
-          origin: { kind: "none" },
-          tags: [],
-          category: null,
-          lastInstalledOn: [],
-        },
-      ],
-    };
-    const result = await importRegistryManifest(registryRoot, manifest);
-    expect(result.installHints).toEqual([]);
-  });
 });
 
 describe("writeRegistrySnapshot", () => {
   test("writes a snapshot file and reports its path", () => {
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [],
     };
     const result = writeRegistrySnapshot({
@@ -872,8 +680,6 @@ describe("writeRegistrySnapshot", () => {
     }
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [],
     };
     const result = writeRegistrySnapshot({
@@ -890,94 +696,60 @@ describe("writeRegistrySnapshot", () => {
 });
 
 describe("coerceManifestToCurrent", () => {
-  test("v2 manifest: github origins → vendored, no-origin entries → personal", () => {
-    const v2 = {
-      schemaVersion: 2 as const,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.2.0",
-      registryRoot: "Tyler-Reagan/skills",
+  test("v6 manifest with a full row round-trips its fields", () => {
+    const v6 = {
+      schemaVersion: 6 as const,
       skills: [
         {
           name: "alpha",
-          source: "user" as const,
           origin: {
-            kind: "github" as const,
-            repo: "kostja94/marketing-skills",
+            url: "https://github.com/kostja94/marketing-skills",
             skillPath: "skills/alpha/SKILL.md",
+            hash: "deadbeef",
           },
           tags: ["t1"],
-          category: null,
-          lastInstalledOn: [],
+          category: "frontend",
         },
         {
           name: "beta",
-          source: "user" as const,
-          origin: { kind: "none" as const },
+          origin: { url: null },
           tags: [],
           category: null,
-          lastInstalledOn: ["claude" as const],
         },
       ],
     };
-    const coerced = coerceManifestToCurrent(v2);
+    const coerced = coerceManifestToCurrent(v6);
     expect(coerced.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
-    expect(coerced.skills[0]!.bucket).toBe("vendored");
-    expect(coerced.skills[1]!.bucket).toBe("personal");
+    expect(coerced.skills[0]!.origin.url).toBe(
+      "https://github.com/kostja94/marketing-skills",
+    );
     expect(coerced.skills[0]!.tags).toEqual(["t1"]);
-    expect(coerced.skills[1]!.lastInstalledOn).toEqual(["claude"]);
+    expect(coerced.skills[1]!.origin).toEqual({ url: null });
   });
 
-  test("v3 manifest: stamps current version, drops dismissed/hidden, defaults category", () => {
-    const v3 = {
-      schemaVersion: 3 as const,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.3.0",
-      skills: [
-        {
-          name: "alpha",
-          source: "user" as const,
-          bucket: "personal" as const,
-          origin: { kind: "none" as const },
-          tags: ["t1"],
-          dismissed: true,
-          hidden: true,
-          lastInstalledOn: ["claude" as const],
-        },
-      ],
+  test("fills per-skill defaults for a sparse row", () => {
+    const sparse = {
+      schemaVersion: 6 as const,
+      skills: [{ name: "alpha" }],
     };
-    const coerced = coerceManifestToCurrent(v3);
-    expect(coerced.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
-    expect(coerced.skills[0]!.bucket).toBe("personal");
-    expect(coerced.skills[0]!.tags).toEqual(["t1"]);
-    expect(coerced.skills[0]!.category).toBeNull();
-    expect(coerced.skills[0]!.lastInstalledOn).toEqual(["claude"]);
+    const coerced = coerceManifestToCurrent(sparse);
+    expect(coerced.skills[0]).toEqual({
+      name: "alpha",
+      origin: { url: null },
+      category: null,
+      tags: [],
+    });
   });
 
-  test("canonical v4 file (dismissed/hidden, no category) coerces to v5", () => {
-    // The shape the pre-v5 `serializeManifest` produced: schemaVersion 4,
-    // no top-level exportedAt, no per-skill lastInstalledOn, the legacy
-    // dismissed/hidden booleans, and no category.
-    const canonical = {
-      schemaVersion: 4 as const,
-      sourceBankVersion: "1.17.0",
-      skills: [
-        {
-          name: "alpha",
-          source: "user" as const,
-          bucket: "personal" as const,
-          origin: { kind: "none" as const },
-          tags: [],
-          dismissed: false,
-          hidden: false,
-        },
-      ],
-    };
-    const coerced = coerceManifestToCurrent(canonical);
-    expect(coerced.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
-    expect(coerced.exportedAt).toBe("");
-    expect(coerced.skills[0]!.lastInstalledOn).toEqual([]);
-    expect(coerced.skills[0]!.category).toBeNull();
-    expect("dismissed" in coerced.skills[0]!).toBe(false);
+  test("rejects a v5-and-earlier manifest — no legacy coercion", () => {
+    expect(() =>
+      coerceManifestToCurrent({
+        schemaVersion: 5,
+        exportedAt: "2026-05-20T00:00:00Z",
+        sourceBankVersion: "1.17.0",
+        skills: [],
+      }),
+    ).toThrow(/unsupported schemaVersion 5/);
   });
 
   test("rejects unsupported schemaVersion", () => {
@@ -985,82 +757,82 @@ describe("coerceManifestToCurrent", () => {
       coerceManifestToCurrent({ schemaVersion: 1, skills: [] }),
     ).toThrow(/unsupported schemaVersion 1/);
   });
+
+  test("rejects a non-object input", () => {
+    expect(() => coerceManifestToCurrent(null)).toThrow(/not an object/);
+  });
+
+  test("rejects a manifest with a missing skills array", () => {
+    expect(() => coerceManifestToCurrent({ schemaVersion: 6 })).toThrow(
+      /missing skills array/,
+    );
+  });
 });
 
 describe("serializeManifest", () => {
   function sample(): RegistryManifest {
     return {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.17.0",
-      registryRoot: "Tyler-Reagan/skills",
       skills: [
         {
           name: "zeta",
-          description: "last by name",
-          source: "user",
-          bucket: "personal",
-          origin: { kind: "none" },
+          origin: { url: null },
           tags: ["b", "a"],
           category: "frontend",
-          lastInstalledOn: ["claude", "cursor"],
         },
         {
           name: "alpha",
-          description: "first by name",
-          source: "curated",
-          bucket: "vendored",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/alpha/SKILL.md",
-            skillFolderHash: "deadbeef",
+            hash: "deadbeef",
           },
           tags: [],
           category: null,
-          lastInstalledOn: [],
+        },
+        {
+          name: "local-only",
+          origin: { url: null },
+          tags: [],
+          category: null,
         },
       ],
     };
   }
 
-  test("drops exportedAt + lastInstalledOn, sorts skills, keeps shared intent", () => {
+  test("drops url:null rows (pushed projection) and sorts remaining skills by name", () => {
     const parsed = JSON.parse(serializeManifest(sample())) as Record<
       string,
       unknown
     >;
-    expect("exportedAt" in parsed).toBe(false);
     expect(parsed["schemaVersion"]).toBe(MANIFEST_SCHEMA_VERSION);
     const skills = parsed["skills"] as Record<string, unknown>[];
-    // Sorted by name.
-    expect(skills.map((s) => s["name"])).toEqual(["alpha", "zeta"]);
-    // No per-skill lastInstalledOn (local, churn source).
-    expect(skills.every((s) => !("lastInstalledOn" in s))).toBe(true);
-    // category/tags retained (curation intent, compared by diff). zeta
-    // sorts last, so skills[1] is zeta with its category.
-    expect(skills[0]!["category"]).toBeNull();
-    expect(skills[1]!["category"]).toBe("frontend");
-    // skillFolderHash retained as a pin.
-    expect(
-      (skills[0]!["origin"] as Record<string, unknown>)["skillFolderHash"],
-    ).toBe("deadbeef");
+    expect(skills.map((s) => s["name"])).toEqual(["alpha"]);
   });
 
   test("emits stable per-skill key order and a trailing newline", () => {
-    const text = serializeManifest(sample());
+    // Use only url-bearing skills so the pushed projection isn't empty.
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      skills: [
+        {
+          name: "alpha",
+          origin: {
+            url: "https://github.com/owner/repo",
+            skillPath: "skills/alpha/SKILL.md",
+            hash: "deadbeef",
+          },
+          category: "frontend",
+          tags: ["b", "a"],
+        },
+      ],
+    };
+    const text = serializeManifest(manifest);
     expect(text.endsWith("\n")).toBe(true);
     const alphaKeys = Object.keys(
       (JSON.parse(text)["skills"] as Record<string, unknown>[])[0]!,
     );
-    expect(alphaKeys).toEqual([
-      "name",
-      "description",
-      "source",
-      "bucket",
-      "origin",
-      "category",
-      "tags",
-    ]);
+    expect(alphaKeys).toEqual(["name", "origin", "category", "tags"]);
   });
 
   test("round-trip stable: serialize == serialize∘coerce∘parse∘serialize", () => {
@@ -1072,164 +844,116 @@ describe("serializeManifest", () => {
   });
 });
 
-describe("importRegistryManifest — schema migration head", () => {
-  test("v2 manifest with github origin imports into vendored/", async () => {
-    let call = 0;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
-        call++;
-        if (call === 1) return makeTreeResponse("skills/zeta");
-        if (call === 2) return makeBlobResponse("# zeta migrated");
-        throw new Error(`unexpected call #${call}`);
-      }),
-    );
-
-    const v2Manifest = {
-      schemaVersion: 2 as const,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.2.0",
+describe("serializeLiveManifest vs serializeManifest", () => {
+  test("live manifest keeps url:null rows; pushed form drops them", async () => {
+    const { serializeLiveManifest } = await import("../manifest.js");
+    const manifest: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
       skills: [
-        {
-          name: "zeta",
-          source: "user" as const,
-          origin: {
-            kind: "github" as const,
-            repo: "owner/repo",
-            skillPath: "skills/zeta/SKILL.md",
-          },
-          tags: [],
-          category: null,
-          lastInstalledOn: [],
-        },
+        { name: "local-only", origin: { url: null }, category: null, tags: [] },
       ],
     };
+    const live = JSON.parse(serializeLiveManifest(manifest)) as {
+      skills: unknown[];
+    };
+    expect(live.skills).toHaveLength(1);
 
-    const result = await importRegistryManifest(registryRoot, v2Manifest);
-    expect(result.outcomes).toEqual([{ name: "zeta", result: "registered" }]);
-    // Pre-v3 fallback routes any github-origin entry into vendored/.
-    expect(
-      fs.existsSync(path.join(registryRoot, "skills", "vendored", "zeta")),
-    ).toBe(true);
+    const pushed = JSON.parse(serializeManifest(manifest)) as {
+      skills: unknown[];
+    };
+    expect(pushed.skills).toHaveLength(0);
   });
 });
 
-describe("computeManifestRemovals (pure)", () => {
-  const manifest = (...names: string[]): RegistryManifest => ({
-    schemaVersion: MANIFEST_SCHEMA_VERSION,
-    exportedAt: "",
-    sourceBankVersion: "",
-    skills: names.map((name) => ({
-      name,
-      source: "user",
-      bucket: "personal",
-      origin: { kind: "none" },
-      category: null,
-      tags: [],
-      lastInstalledOn: [],
-    })),
-  });
+describe("computeManifestRemovals (reads the live manifest)", () => {
+  // computeManifestRemovals diffs against the PUSHED projection, so only
+  // URL-bearing (non-local-only) skills are eligible removal candidates.
+  function urlOrigin(name: string): { url: string; skillPath: string } {
+    return {
+      url: "https://github.com/owner/repo",
+      skillPath: `skills/${name}/SKILL.md`,
+    };
+  }
 
-  test("returns local names absent from the manifest", () => {
-    expect(
-      computeManifestRemovals(["a", "b", "c"], manifest("a", "c")),
-    ).toEqual(["b"]);
+  test("returns local names absent from the pushed projection of the target manifest", () => {
+    writeSkill("vendored", "a", { origin: urlOrigin("a") });
+    writeSkill("vendored", "b", { origin: urlOrigin("b") });
+    writeSkill("vendored", "c", { origin: urlOrigin("c") });
+    const target: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      skills: [
+        { name: "a", origin: { url: null }, category: null, tags: [] },
+        { name: "c", origin: { url: null }, category: null, tags: [] },
+      ],
+    };
+    expect(computeManifestRemovals(registryRoot, target)).toEqual(["b"]);
   });
 
   test("empty when every local skill is still listed", () => {
-    expect(computeManifestRemovals(["a", "b"], manifest("a", "b"))).toEqual([]);
+    writeSkill("vendored", "a", { origin: urlOrigin("a") });
+    writeSkill("vendored", "b", { origin: urlOrigin("b") });
+    const target: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      skills: [
+        { name: "a", origin: { url: null }, category: null, tags: [] },
+        { name: "b", origin: { url: null }, category: null, tags: [] },
+      ],
+    };
+    expect(computeManifestRemovals(registryRoot, target)).toEqual([]);
   });
 
-  test("empty manifest ⇒ every local skill is a removal candidate", () => {
-    expect(computeManifestRemovals(["a", "b"], manifest())).toEqual(["a", "b"]);
+  test("empty target manifest ⇒ every local skill with a URL is a removal candidate", () => {
+    writeSkill("vendored", "a", {
+      origin: {
+        url: "https://github.com/owner/repo",
+        skillPath: "skills/a/SKILL.md",
+      },
+    });
+    writeSkill("vendored", "b", {
+      origin: {
+        url: "https://github.com/owner/repo",
+        skillPath: "skills/b/SKILL.md",
+      },
+    });
+    const empty: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      skills: [],
+    };
+    expect(computeManifestRemovals(registryRoot, empty).sort()).toEqual([
+      "a",
+      "b",
+    ]);
+  });
+
+  test("a local-only (url: null) skill is immune — never flagged for removal", () => {
+    // Structural guarantee of the pushed-projection diff basis: a
+    // local-only skill never appears in a pushed manifest to begin
+    // with, so it can never read as "deleted upstream."
+    writeSkill("personal", "local-only", { origin: { url: null } });
+    const empty: RegistryManifest = {
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      skills: [],
+    };
+    expect(computeManifestRemovals(registryRoot, empty)).toEqual([]);
   });
 });
 
-describe("stampOriginMarker — runtime import never mints curated", () => {
-  function stamp(
-    source: ManifestSkill["source"],
-    originKind: "github" | "none",
-    opts: { repo?: string; linkedRepo?: string } = {},
-  ): ReturnType<typeof readSkillSource> {
-    const dir = path.join(registryRoot, "skills", "vendored", "stamped");
-    fs.mkdirSync(dir, { recursive: true });
-    const skill: ManifestSkill = {
-      name: "stamped",
-      source,
-      bucket: "vendored",
-      origin:
-        originKind === "github"
-          ? {
-              kind: "github",
-              repo: opts.repo ?? "owner/repo",
-              skillPath: "skills/stamped/SKILL.md",
-            }
-          : { kind: "none" },
-      category: null,
-      tags: [],
-      lastInstalledOn: [],
+describe("importRegistryManifest — v6-only rejects legacy input", () => {
+  test("a v5 manifest is rejected, not silently coerced", async () => {
+    const v5ish = {
+      schemaVersion: 5,
+      exportedAt: "2026-05-20T00:00:00Z",
+      sourceBankVersion: "1.2.0",
+      skills: [],
     };
-    stampOriginMarker(dir, skill, "hash123", opts.linkedRepo);
-    return readSkillSource(dir);
-  }
-
-  test("curated + github origin downgrades to vendored", () => {
-    const s = stamp("curated", "github");
-    expect(s.source).toBe("vendored");
-    expect(s.origin?.kind).toBe("github");
-    expect(s.origin?.repo).toBe("owner/repo");
-  });
-
-  test("curated + none origin downgrades to user", () => {
-    expect(stamp("curated", "none").source).toBe("user");
-  });
-
-  test("non-curated sources pass through unchanged (no linked repo)", () => {
-    expect(stamp("vendored", "github").source).toBe("vendored");
-    // Without a known link we can't tell self from third-party, so a
-    // `user` claim is left as-is.
-    expect(stamp("user", "github").source).toBe("user");
-  });
-});
-
-describe("stampOriginMarker — provenance-D acquisition-time heal (ADR-0012)", () => {
-  function stamp(
-    source: ManifestSkill["source"],
-    repo: string,
-    linkedRepo: string,
-  ): ReturnType<typeof readSkillSource> {
-    const dir = path.join(registryRoot, "skills", "vendored", "stamped");
-    fs.mkdirSync(dir, { recursive: true });
-    const skill: ManifestSkill = {
-      name: "stamped",
-      source,
-      bucket: "vendored",
-      origin: { kind: "github", repo, skillPath: "skills/stamped/SKILL.md" },
-      category: null,
-      tags: [],
-      lastInstalledOn: [],
-    };
-    stampOriginMarker(dir, skill, "hash123", linkedRepo);
-    return readSkillSource(dir);
-  }
-
-  test("user + third-party origin heals to vendored (the 69-skill class)", () => {
-    expect(stamp("user", "mattpocock/skills", "Me/skills").source).toBe(
-      "vendored",
+    await expect(importRegistryManifest(registryRoot, v5ish)).rejects.toThrow(
+      /unsupported schemaVersion 5/,
     );
   });
-
-  test("user + self origin stays user", () => {
-    expect(stamp("user", "Me/skills", "Me/skills").source).toBe("user");
-  });
-
-  test("vendored + self origin stays vendored (vendored-then-adopted is sticky)", () => {
-    expect(stamp("vendored", "Me/skills", "Me/skills").source).toBe("vendored");
-  });
 });
 
-describe("importRegistryManifest — curated github entry lands as vendored", () => {
-  test("a manifest claiming curated for a github skill is stored vendored", async () => {
+describe("detach then re-detect via runtime map", () => {
+  test("setRuntimeEntry / manifest writes compose cleanly for a mirrored skill", async () => {
     let call = 0;
     vi.stubGlobal(
       "fetch",
@@ -1243,30 +967,31 @@ describe("importRegistryManifest — curated github entry lands as vendored", ()
 
     const manifest: RegistryManifest = {
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      exportedAt: "2026-05-20T00:00:00Z",
-      sourceBankVersion: "1.1.0",
       skills: [
         {
           name: "kappa",
-          source: "curated",
-          bucket: "vendored",
           origin: {
-            kind: "github",
-            repo: "owner/repo",
+            url: "https://github.com/owner/repo",
             skillPath: "skills/kappa/SKILL.md",
           },
           tags: [],
           category: null,
-          lastInstalledOn: [],
         },
       ],
     };
 
-    await importRegistryManifest(registryRoot, manifest);
-    const marker = readSkillSource(
-      path.join(registryRoot, "skills", "vendored", "kappa"),
-    );
-    expect(marker.source).toBe("vendored");
-    expect(marker.origin?.repo).toBe("owner/repo");
+    await importRegistryManifest(registryRoot, manifest, {
+      linkedRepo: "someone/else",
+    });
+    const live = readLiveManifest(registryRoot);
+    const row = live.skills.find((s) => s.name === "kappa")!;
+    expect(row.origin.url).toBe("https://github.com/owner/repo");
+    expect(
+      fs.existsSync(path.join(registryRoot, "skills", "vendored", "kappa")),
+    ).toBe(true);
+
+    // Rebaselining the runtime entry directly composes fine with the
+    // manifest write the import already performed.
+    setRuntimeEntry(registryRoot, "kappa", { syncedHash: "rebaselined" });
   });
 });

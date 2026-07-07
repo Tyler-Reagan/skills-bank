@@ -121,7 +121,9 @@ export function bucketForManifestSkill(
  * live-vs-pushed distinction — diff, three-way merge, the merge base, and
  * the removal basis all run against this.
  */
-export function toPushedProjection(manifest: RegistryManifest): RegistryManifest {
+export function toPushedProjection(
+  manifest: RegistryManifest,
+): RegistryManifest {
   return {
     schemaVersion: manifest.schemaVersion,
     skills: manifest.skills.filter((s) => s.origin.url !== null),
@@ -138,7 +140,10 @@ export function serializeLiveManifest(manifest: RegistryManifest): string {
   const skills = [...manifest.skills]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(canonicalSkill);
-  return JSON.stringify({ schemaVersion: manifest.schemaVersion, skills }, null, 2) + "\n";
+  return (
+    JSON.stringify({ schemaVersion: manifest.schemaVersion, skills }, null, 2) +
+    "\n"
+  );
 }
 
 /**
@@ -168,7 +173,10 @@ function canonicalOrigin(o: ManifestOrigin): Record<string, unknown> {
 
 /** Two origins agree when their re-fetch URL and skill path match. */
 export function originsEqual(a: ManifestOrigin, b: ManifestOrigin): boolean {
-  return (a.url ?? null) === (b.url ?? null) && (a.skillPath ?? "") === (b.skillPath ?? "");
+  return (
+    (a.url ?? null) === (b.url ?? null) &&
+    (a.skillPath ?? "") === (b.skillPath ?? "")
+  );
 }
 
 /**
@@ -199,16 +207,21 @@ export function coerceManifestToCurrent(input: unknown): RegistryManifest {
 function normalizeManifestSkill(s: Record<string, unknown>): ManifestSkill {
   const rawOrigin = (s["origin"] ?? {}) as Record<string, unknown>;
   const origin: ManifestOrigin = {
-    url: typeof rawOrigin["url"] === "string" ? (rawOrigin["url"] as string) : null,
+    url:
+      typeof rawOrigin["url"] === "string"
+        ? (rawOrigin["url"] as string)
+        : null,
   };
   if (typeof rawOrigin["skillPath"] === "string") {
     origin.skillPath = rawOrigin["skillPath"] as string;
   }
-  if (typeof rawOrigin["hash"] === "string") origin.hash = rawOrigin["hash"] as string;
+  if (typeof rawOrigin["hash"] === "string")
+    origin.hash = rawOrigin["hash"] as string;
   return {
     name: s["name"] as string,
     origin,
-    category: typeof s["category"] === "string" ? (s["category"] as string) : null,
+    category:
+      typeof s["category"] === "string" ? (s["category"] as string) : null,
     tags: Array.isArray(s["tags"]) ? (s["tags"] as string[]) : [],
   };
 }
@@ -216,7 +229,8 @@ function normalizeManifestSkill(s: Record<string, unknown>): ManifestSkill {
 /** Read the live manifest at the registry root, or an empty one if absent/corrupt. */
 export function readLiveManifest(registryRoot: string): RegistryManifest {
   const p = path.join(registryRoot, MANIFEST_FILENAME);
-  if (!fs.existsSync(p)) return { schemaVersion: MANIFEST_SCHEMA_VERSION, skills: [] };
+  if (!fs.existsSync(p))
+    return { schemaVersion: MANIFEST_SCHEMA_VERSION, skills: [] };
   try {
     return coerceManifestToCurrent(JSON.parse(fs.readFileSync(p, "utf8")));
   } catch {
@@ -371,7 +385,10 @@ export async function fetchRemoteManifest(
       : { ok: false, reason: "read-failed", message: res.message };
   }
   try {
-    return { ok: true, manifest: coerceManifestToCurrent(JSON.parse(res.content)) };
+    return {
+      ok: true,
+      manifest: coerceManifestToCurrent(JSON.parse(res.content)),
+    };
   } catch {
     return { ok: true, manifest: empty };
   }

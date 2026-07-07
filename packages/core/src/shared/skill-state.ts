@@ -3,18 +3,19 @@
 // barrel would transitively load `node:child_process` (build.ts) and
 // blow up the browser-target vite build.
 import type { InstalledSkill, RegistryEntry } from "./types.js";
+import { isGithubUrl } from "../github/url.js";
 
 /**
- * Discrete states a skill can be in. Derived from the four taxonomy
- * axes (Canon, Registered, Adopted, Installed) plus the on-disk
- * installation kinds. Drives which actions are valid, which are
- * no-ops, and which would make the state worse — for both renderer
- * UI gating and IPC-level enforcement.
+ * Discrete states a skill can be in. Derived from the taxonomy axes
+ * (Registered, Adopted, Installed) plus the on-disk installation
+ * kinds. Drives which actions are valid, which are no-ops, and which
+ * would make the state worse — for both renderer UI gating and
+ * IPC-level enforcement.
  *
  * State names align with user-facing copy where the state is surfaced
  * in the drawer (e.g. `edited-without-origin` matches the "You've
- * edited this bundled skill" heading). Internal-only states keep
- * their composite shape.
+ * edited this skill" heading). Internal-only states keep their
+ * composite shape.
  */
 export type DrawerState =
   | "registered-healthy"
@@ -26,7 +27,6 @@ export type DrawerState =
   | "unregistered-foreign"
   | "unregistered-conflicts"
   | "unregistered-broken"
-  | "bundled-skill-dismissed"
   // Heal states:
   | "edited-without-origin"
   | "edited-with-origin"
@@ -52,7 +52,6 @@ export type PrimaryAction =
   | "resolve-conflicts"
   | "resolve-registration-conflicts"
   | "repair-broken"
-  | "unhide"
   | "update"
   | "forget-missing"
   | "repoint"
@@ -77,15 +76,6 @@ export interface DrawerCapabilities {
    */
   canUnregister: boolean;
   canRegister: boolean;
-  /**
-   * Dismiss the bundled skill from default views without unregistering
-   * it. Only granted for bundled skills (canon) the user hasn't
-   * already dismissed. Replaces canUnregister/canDeleteFromBank for
-   * bundled skills (those are prohibited by IPC).
-   */
-  canHide: boolean;
-  /** Undo Dismiss. Granted only in the bundled-skill-dismissed state. */
-  canUnhide: boolean;
   /**
    * `origin-update-available` heal — apply the upstream change in
    * place. Runs `npx skills update <name>`; the new content replaces
@@ -148,18 +138,6 @@ export interface DrawerStateClassification {
   conflictCount: number;
 }
 
-/**
- * Classifier inputs beyond the original three. `canon` is the
- * internal protection-rule axis — never surfaced to the user.
- */
-export interface ClassifyOptions {
-  /**
-   * Whether the skill is currently in the linked registry's upstream
-   * bundled snapshot. Drives destructive-action protection only.
-   */
-  canon?: boolean;
-}
-
 const NEVER: DrawerCapabilities = {
   canInstall: false,
   canManageLinks: false,
@@ -168,8 +146,6 @@ const NEVER: DrawerCapabilities = {
   canDeleteFromBank: false,
   canUnregister: false,
   canRegister: false,
-  canHide: false,
-  canUnhide: false,
   canUpdate: false,
   canForgetMissing: false,
   canRepoint: false,
@@ -186,31 +162,12 @@ export function classifyDrawerState(
   entry: RegistryEntry,
   installed: InstalledSkill[],
   isRegistered: boolean,
-  _options: ClassifyOptions = {},
 ): DrawerStateClassification {
   // Manage-links is only meaningful when the skill has at least one
   // installation to manage — a registered-but-uninstalled skill offers
   // Install instead. Computed up front because the origin-* arms below
   // fire before the per-installation partition (`mine`).
   const hasAnyInstallation = installed.some((i) => i.name === entry.name);
-
-  // Bundled + dismissed short-circuits to a dedicated state. Dismiss
-  // is purely a UI dormancy flag — installations and metadata are
-  // preserved — so this state still allows install/remove/etc. but
-  // the primary action is Unhide and Delete/Unregister are gone.
-  if (isRegistered && entry.canon === true && entry.hidden === true) {
-    return applyCanonGate(entry, {
-      state: "bundled-skill-dismissed",
-      brokenCount: 0,
-      conflictCount: 0,
-      capabilities: {
-        ...NEVER,
-        canRevealInFinder: true,
-        canUnhide: true,
-        primary: "unhide",
-      },
-    });
-  }
 
   // Missing files. Adopted vs. external split is just the user-facing
   // copy; today's heal flow is the same single-option "Forget this
@@ -243,8 +200,8 @@ export function classifyDrawerState(
   // updates: a drifted skill classifies here before the
   // origin-update-available arm below can grant `canUpdate`.
   if (isRegistered && entry.drift === true) {
-    if (entry.source.origin?.kind === "github") {
-      return applyCanonGate(entry, {
+    if (isGithubUrl(entry.origin.url)) {
+      return {
         state: "edited-with-origin",
         brokenCount: 0,
         conflictCount: 0,
@@ -259,9 +216,9 @@ export function classifyDrawerState(
           canUnregister: true,
           primary: hasAnyInstallation ? "manage-links" : "install",
         },
-      });
+      };
     }
-    return applyCanonGate(entry, {
+    return {
       state: "edited-without-origin",
       brokenCount: 0,
       conflictCount: 0,
@@ -274,7 +231,7 @@ export function classifyDrawerState(
         canUnregister: true,
         primary: hasAnyInstallation ? "manage-links" : "install",
       },
-    });
+    };
   }
 
   // Origin probe persistently failing. Lower priority than drift —
@@ -286,9 +243,9 @@ export function classifyDrawerState(
   if (
     isRegistered &&
     entry.originUnreachable === true &&
-    entry.source.origin?.kind === "github"
+    isGithubUrl(entry.origin.url)
   ) {
-    return applyCanonGate(entry, {
+    return {
       state: "origin-unreachable",
       brokenCount: 0,
       conflictCount: 0,
@@ -306,14 +263,14 @@ export function classifyDrawerState(
         canUnregister: true,
         primary: "restore-origin",
       },
-    });
+    };
   }
 
   // Upstream update available with no local drift. The user can
   // apply the change in place. Drift takes priority above so this
   // arm only fires for clean local state.
   if (isRegistered && entry.originUpdateAvailable === true) {
-    return applyCanonGate(entry, {
+    return {
       state: "origin-update-available",
       brokenCount: 0,
       conflictCount: 0,
@@ -327,7 +284,7 @@ export function classifyDrawerState(
         canUnregister: true,
         primary: "update",
       },
-    });
+    };
   }
   // Only consider installations for THIS skill — the caller may pass
   // the full installed list, the registry view's full list, etc.
@@ -434,7 +391,7 @@ export function classifyDrawerState(
   // because the resolve flow itself may eliminate the broken state.
 
   if (hasConflicts) {
-    return applyCanonGate(entry, {
+    return {
       state: "registered-conflicts",
       brokenCount: broken.length,
       conflictCount: conflicts.length,
@@ -450,11 +407,11 @@ export function classifyDrawerState(
         canRepairBroken: hasBroken,
         primary: "resolve-conflicts",
       },
-    });
+    };
   }
 
   if (hasBroken && hasOurs) {
-    return applyCanonGate(entry, {
+    return {
       state: "registered-mixed-broken",
       brokenCount: broken.length,
       conflictCount: 0,
@@ -468,11 +425,11 @@ export function classifyDrawerState(
         canRepairBroken: true,
         primary: "repair-broken",
       },
-    });
+    };
   }
 
   if (hasBroken) {
-    return applyCanonGate(entry, {
+    return {
       state: "registered-broken",
       brokenCount: broken.length,
       conflictCount: 0,
@@ -486,11 +443,11 @@ export function classifyDrawerState(
         canRepairBroken: true,
         primary: "repair-broken",
       },
-    });
+    };
   }
 
   if (hasOurs) {
-    return applyCanonGate(entry, {
+    return {
       state: "registered-healthy",
       brokenCount: 0,
       conflictCount: 0,
@@ -506,11 +463,11 @@ export function classifyDrawerState(
         canMoveIntoBank: entry.adopted === false,
         primary: "manage-links",
       },
-    });
+    };
   }
 
   // Registered but no installations of any kind.
-  return applyCanonGate(entry, {
+  return {
     state: "registered-available",
     brokenCount: 0,
     conflictCount: 0,
@@ -526,37 +483,6 @@ export function classifyDrawerState(
       canUnregister: true,
       canRepairBroken: false,
       primary: "install",
-    },
-  });
-}
-
-/**
- * Apply canon protection rules to a classification. Canon skills are
- * upstream-owned: locally unregistering or deleting one is
- * irrecoverable from the UI, so we strip those capabilities and grant
- * Hide instead. Mirrored on the IPC side in main.ts so the renderer
- * can't bypass via direct invoke.
- *
- * Non-canon classifications pass through unchanged. The canon-hidden
- * state takes its own dedicated short-circuit at the top of
- * classifyDrawerState — it never reaches this wrapper.
- */
-function applyCanonGate(
-  entry: RegistryEntry,
-  c: DrawerStateClassification,
-): DrawerStateClassification {
-  if (entry.canon !== true) return c;
-  // For registered + canon skills, swap delete/unregister for hide.
-  // Other capabilities (install, remove-from-agents, manage links,
-  // export, reveal) keep working — canon doesn't restrict day-to-day
-  // use, only locally irrecoverable mutations.
-  return {
-    ...c,
-    capabilities: {
-      ...c.capabilities,
-      canDeleteFromBank: false,
-      canUnregister: false,
-      canHide: true,
     },
   };
 }

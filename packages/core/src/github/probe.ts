@@ -7,8 +7,9 @@ import {
   type GitTreeEntry,
 } from "./origin.js";
 import { buildRegistryIndex } from "../registry/build.js";
-import { readRuntimeState, writeRuntimeState } from "../registry/heal.js";
+import { getRuntimeEntry, setRuntimeEntry } from "../registry/runtime-map.js";
 import { isSelfOrigin } from "../registry/source.js";
+import { isGithubUrl, parseOwnerRepo } from "./url.js";
 import { getStateDir } from "../shared/paths.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 
@@ -185,23 +186,18 @@ function persistCache(
  * Exported for the dedicated test suite (`origin-probe.test.ts`);
  * production callers are inside this module's probe loop.
  */
-export function recordProbeFailure(
-  registryRoot: string,
-  skill: { path: string },
-): void {
+export function recordProbeFailure(registryRoot: string, name: string): void {
   try {
-    const skillDir = path.resolve(registryRoot, skill.path);
-    const runtime = readRuntimeState(skillDir);
+    const runtime = getRuntimeEntry(registryRoot, name);
     const current = runtime.probeFailureCount ?? 0;
     if (current >= ORIGIN_UNREACHABLE_THRESHOLD) return;
-    writeRuntimeState(skillDir, {
-      ...runtime,
+    setRuntimeEntry(registryRoot, name, {
       probeFailureCount: current + 1,
       lastProbeFailureAt: new Date().toISOString(),
     });
   } catch {
     // Counter is purely an indicator — don't surface failures from
-    // the runtime sidecar back into the probe loop.
+    // the runtime map back into the probe loop.
   }
 }
 
@@ -212,22 +208,14 @@ export function recordProbeFailure(
  *
  * Exported for the dedicated test suite (`origin-probe.test.ts`).
  */
-export function recordProbeSuccess(
-  registryRoot: string,
-  skill: { path: string },
-): void {
+export function recordProbeSuccess(registryRoot: string, name: string): void {
   try {
-    const skillDir = path.resolve(registryRoot, skill.path);
-    const runtime = readRuntimeState(skillDir);
+    const runtime = getRuntimeEntry(registryRoot, name);
     if (!runtime.probeFailureCount) return;
-    const {
-      probeFailureCount: _drop,
-      lastProbeFailureAt: _drop2,
-      ...rest
-    } = runtime;
-    void _drop;
-    void _drop2;
-    writeRuntimeState(skillDir, rest);
+    setRuntimeEntry(registryRoot, name, {
+      probeFailureCount: undefined,
+      lastProbeFailureAt: undefined,
+    });
   } catch {
     // See recordProbeFailure.
   }
@@ -295,13 +283,12 @@ export function createOriginProbeRunner(
     const linked = opts.linkedRepo?.() ?? undefined;
     const candidates = index.entries.filter(
       (e) =>
-        e.source.origin?.kind === "github" &&
-        typeof e.source.origin.repo === "string" &&
-        typeof e.source.origin.skillPath === "string" &&
-        typeof e.source.origin.skillFolderHash === "string" &&
+        isGithubUrl(e.origin.url) &&
+        typeof e.origin.skillPath === "string" &&
+        typeof e.origin.hash === "string" &&
         // Self-origin skills (content lives in the linked repo) are kept
         // truthful by manifest sync, not probed as third-party upstreams.
-        !isSelfOrigin(e.source.origin, linked),
+        !isSelfOrigin(e.origin.url, linked),
     );
     if (candidates.length === 0) {
       // Most-common early-return: registries with no baselined origin
@@ -312,7 +299,7 @@ export function createOriginProbeRunner(
     }
     const byRepo = new Map<string, typeof candidates>();
     for (const e of candidates) {
-      const repo = e.source.origin!.repo!;
+      const repo = parseOwnerRepo(e.origin.url)!;
       const bucket = byRepo.get(repo);
       if (bucket) bucket.push(e);
       else byRepo.set(repo, [e]);
@@ -342,7 +329,7 @@ export function createOriginProbeRunner(
             // fetch counts as a probe failure for every skill in
             // that repo.
             for (const skill of skills) {
-              recordProbeFailure(root, skill);
+              recordProbeFailure(root, skill.name);
             }
           }
           continue;
@@ -352,15 +339,15 @@ export function createOriginProbeRunner(
         repoProbeCache.set(repo, cache);
       }
       for (const skill of skills) {
-        const origin = skill.source.origin!;
+        const origin = skill.origin;
         const folderPath = folderPathFromSkillPath(origin.skillPath!);
         const currentHash = cache.folderHashes.get(folderPath);
         if (currentHash) {
           // Probe surfaced a folder hash — origin is reachable. Reset
           // any pre-existing failure counter even when the hashes
           // match (no update). v1.4.
-          recordProbeSuccess(root, skill);
-          if (currentHash !== origin.skillFolderHash) {
+          recordProbeSuccess(root, skill.name);
+          if (currentHash !== origin.hash) {
             probedUpdates.set(skill.name, {
               latestHash: currentHash,
               probedAt: now,
@@ -374,7 +361,7 @@ export function createOriginProbeRunner(
           // — moved, renamed, or removed upstream. Per-skill probe
           // failure. v1.4.
           probedUpdates.delete(skill.name);
-          recordProbeFailure(root, skill);
+          recordProbeFailure(root, skill.name);
         }
       }
     }

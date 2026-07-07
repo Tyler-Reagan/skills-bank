@@ -1,20 +1,21 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { ConflictDecision } from "../registry/sync.js";
 
 /**
- * v0.11.9 M5: shared conflict-resolution primitive. Sync and Merge
- * previously each carried byte-identical copies of:
+ * v0.11.9 M5: shared conflict-resolution primitive, now used solely by
+ * the manifest-merge `keep-both` fork path:
  *   - `resolveRenameTarget` — picks `<name>-local`, `-local-2`, … for
  *     the user's renamed copy when the user opts for `rename-mine`.
  *   - The three-arm decision switch (`keep-mine` / `use-canonical` /
  *     `rename-mine`) that operates on the local path.
- *
- * They still differ on the post-action stamp: Sync writes
- * `source: "curated"` with `syncedFromCommit`; Merge writes
- * `source: "user"` with `syncedAt`. That post-stamp stays in the
- * callers — this helper only resolves the on-disk preparation step.
  */
+
+export type ConflictAction = "keep-mine" | "use-canonical" | "rename-mine";
+
+export interface ConflictDecision {
+  action: ConflictAction;
+  decidedAt: string;
+}
 
 export function resolveRenameTarget(skillsDir: string, name: string): string {
   const base = `${name}-local`;

@@ -24,7 +24,7 @@ const baseEntry: RegistryEntry = {
   name: "test",
   description: "test skill",
   path: "skills/test",
-  source: { source: "user" },
+  origin: { url: null },
 };
 
 function entry(over: Partial<RegistryEntry> = {}): RegistryEntry {
@@ -55,20 +55,6 @@ interface Row {
 const ROWS: Row[] = [
   // ── Heal states ─────────────────────────────────────────
   {
-    label: "bundled + hidden → bundled-skill-dismissed (Unhide)",
-    entry: entry({ canon: true, hidden: true }),
-    installed: [],
-    isRegistered: true,
-    expectedState: "bundled-skill-dismissed",
-    expectedPrimary: "unhide",
-    // applyCanonGate sets canHide:true on every canon classification —
-    // this state inherits it. The UI gates on canUnhide for the
-    // primary CTA, so the redundant canHide is harmless. Pin it here
-    // so a future tightening of canon-gate semantics has to confront
-    // the choice instead of silently changing.
-    expectedCaps: { canUnhide: true, canHide: true },
-  },
-  {
     label: "adopted + missing → registry-folder-missing (Forget)",
     entry: entry({ missing: true, adopted: true }),
     installed: [],
@@ -87,17 +73,12 @@ const ROWS: Row[] = [
     expectedCaps: { canForgetMissing: true, canRepoint: true },
   },
   {
-    label: "drift + upstream-github → edited-with-origin",
+    label: "drift + github origin → edited-with-origin",
     entry: entry({
       drift: true,
-      source: {
-        source: "user",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          sourceUrl: "https://github.com/u/r",
-          skillPath: "skills/test/SKILL.md",
-        },
+      origin: {
+        url: "https://github.com/u/r",
+        skillPath: "skills/test/SKILL.md",
       },
     }),
     installed: [],
@@ -115,17 +96,12 @@ const ROWS: Row[] = [
   },
   {
     label:
-      "drift + upstream-github + installed → edited-with-origin, manage-links primary",
+      "drift + github origin + installed → edited-with-origin, manage-links primary",
     entry: entry({
       drift: true,
-      source: {
-        source: "user",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          sourceUrl: "https://github.com/u/r",
-          skillPath: "skills/test/SKILL.md",
-        },
+      origin: {
+        url: "https://github.com/u/r",
+        skillPath: "skills/test/SKILL.md",
       },
     }),
     installed: [inst()],
@@ -140,8 +116,8 @@ const ROWS: Row[] = [
     },
   },
   {
-    label: "drift + bundled-no-upstream → edited-without-origin",
-    entry: entry({ drift: true, source: { source: "curated" } }),
+    label: "drift + no origin (local skill) → edited-without-origin",
+    entry: entry({ drift: true, origin: { url: null } }),
     installed: [],
     isRegistered: true,
     expectedState: "edited-without-origin",
@@ -155,8 +131,8 @@ const ROWS: Row[] = [
   },
   {
     label:
-      "drift + bundled-no-upstream + installed → edited-without-origin, manage-links primary",
-    entry: entry({ drift: true, source: { source: "curated" } }),
+      "drift + no origin + installed → edited-without-origin, manage-links primary",
+    entry: entry({ drift: true, origin: { url: null } }),
     installed: [inst()],
     isRegistered: true,
     expectedState: "edited-without-origin",
@@ -166,31 +142,6 @@ const ROWS: Row[] = [
       canManageLinks: true,
       canUnregister: true,
       canExport: true,
-    },
-  },
-  {
-    label:
-      "drift + bundled + upstream → upstream branch (upstream is more specific)",
-    entry: entry({
-      drift: true,
-      source: {
-        source: "curated",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          sourceUrl: "https://github.com/u/r",
-          skillPath: "skills/test/SKILL.md",
-        },
-      },
-    }),
-    installed: [],
-    isRegistered: true,
-    expectedState: "edited-with-origin",
-    expectedPrimary: "install",
-    expectedCaps: {
-      canInstall: true,
-      canManageLinks: false,
-      canUnregister: true,
     },
   },
   {
@@ -219,14 +170,9 @@ const ROWS: Row[] = [
     entry: entry({
       drift: true,
       originUpdateAvailable: true,
-      source: {
-        source: "user",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          sourceUrl: "https://github.com/u/r",
-          skillPath: "skills/test/SKILL.md",
-        },
+      origin: {
+        url: "https://github.com/u/r",
+        skillPath: "skills/test/SKILL.md",
       },
     }),
     installed: [],
@@ -240,13 +186,9 @@ const ROWS: Row[] = [
     label: "originUnreachable + github origin → origin-unreachable",
     entry: entry({
       originUnreachable: true,
-      source: {
-        source: "user",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          skillPath: "skills/test/SKILL.md",
-        },
+      origin: {
+        url: "https://github.com/u/r",
+        skillPath: "skills/test/SKILL.md",
       },
     }),
     installed: [],
@@ -268,13 +210,9 @@ const ROWS: Row[] = [
       "originUnreachable + installed → restore-origin primary, manage-links secondary",
     entry: entry({
       originUnreachable: true,
-      source: {
-        source: "user",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          skillPath: "skills/test/SKILL.md",
-        },
+      origin: {
+        url: "https://github.com/u/r",
+        skillPath: "skills/test/SKILL.md",
       },
     }),
     installed: [inst()],
@@ -291,10 +229,10 @@ const ROWS: Row[] = [
   },
   {
     label:
-      "originUnreachable + origin.kind === none → NOT origin-unreachable (state requires github)",
+      "originUnreachable + url: null → NOT origin-unreachable (state requires a github origin)",
     entry: entry({
       originUnreachable: true,
-      source: { source: "user", origin: { kind: "none" } },
+      origin: { url: null },
     }),
     installed: [],
     isRegistered: true,
@@ -309,13 +247,9 @@ const ROWS: Row[] = [
     entry: entry({
       drift: true,
       originUnreachable: true,
-      source: {
-        source: "user",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          skillPath: "skills/test/SKILL.md",
-        },
+      origin: {
+        url: "https://github.com/u/r",
+        skillPath: "skills/test/SKILL.md",
       },
     }),
     installed: [],
@@ -330,13 +264,9 @@ const ROWS: Row[] = [
     entry: entry({
       originUnreachable: true,
       originUpdateAvailable: true,
-      source: {
-        source: "user",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          skillPath: "skills/test/SKILL.md",
-        },
+      origin: {
+        url: "https://github.com/u/r",
+        skillPath: "skills/test/SKILL.md",
       },
     }),
     installed: [],
@@ -495,34 +425,6 @@ const ROWS: Row[] = [
     expectedState: "registered-mixed-broken",
     expectedPrimary: "repair-broken",
     expectedCaps: { canRepairBroken: true, canInstall: false },
-  },
-
-  // ── Canon protection (applyCanonGate) ──────────────────
-  {
-    label: "registered + healthy + canon → Unregister/Delete swapped for Hide",
-    entry: entry({ canon: true }),
-    installed: [inst()],
-    isRegistered: true,
-    expectedState: "registered-healthy",
-    expectedPrimary: "manage-links",
-    expectedCaps: {
-      canHide: true,
-      canUnregister: false,
-      canDeleteFromBank: false,
-    },
-  },
-  {
-    label: "registered + conflicts + canon → Hide instead of Delete",
-    entry: entry({ canon: true }),
-    installed: [inst({ kind: "real-directory", target: null })],
-    isRegistered: true,
-    expectedState: "registered-conflicts",
-    expectedPrimary: "resolve-conflicts",
-    expectedCaps: {
-      canHide: true,
-      canDeleteFromBank: false,
-      canResolveConflicts: true,
-    },
   },
 ];
 

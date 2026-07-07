@@ -11,10 +11,11 @@ export interface RegistryEntry extends SkillMeta {
   path: string;
   lastCommit?: { sha: string; date: string; message: string };
   /**
-   * Origin marker for this skill. Read from a sibling .skills-bank.json
-   * inside the skill folder; absent means user-authored.
+   * Provenance — the single nullable-URL origin (ADR-0018/0020),
+   * carried verbatim from the manifest row. `url: null` is a valid
+   * resting state ("local skill, no remote").
    */
-  source: import("../registry/source.js").SkillSource;
+  origin: import("../manifest/manifest.js").ManifestOrigin;
   /**
    * Taxonomy axis: true when the skill's files physically live under
    * `<registryRoot>/skills/<bucket>/<name>/`. False when the registry
@@ -35,23 +36,6 @@ export interface RegistryEntry extends SkillMeta {
    */
   bucket?: import("../registry/walk.js").SkillBucket;
   /**
-   * Internal-only taxonomy axis: true when this skill's name appears
-   * in the active linked registry's upstream bundled snapshot — local
-   * mode reads from a persisted bundled-name set, GitHub-linked mode
-   * derives from publishState === "pushed". Used purely to gate
-   * destructive-action protection (no UI surface). The user-facing
-   * provenance signal is `source` (`bundled` / `yours`).
-   */
-  canon?: boolean;
-  /**
-   * User has dismissed this bundled skill from default views. Only
-   * meaningful when `canon === true` — dismissing non-bundled skills
-   * is nonsensical (just unregister them). Dismissed skills retain
-   * installations and metadata; this is a UI dormancy flag, not an
-   * uninstall.
-   */
-  hidden?: boolean;
-  /**
    * Heal axis: the skill is registered but its files are missing on
    * disk. Set when the prior persisted index had this name but
    * `<registryRoot>/skills/<name>/` is gone (adopted case) or when
@@ -62,11 +46,9 @@ export interface RegistryEntry extends SkillMeta {
   missing?: boolean;
   /**
    * Heal axis: the local content has drifted from the recorded
-   * baseline hash. Set when `source: "curated"` (existing bundled-
-   * sync drift) or when the skill carries an `upstream` pointer
-   * (post-scanner drift). The classifier emits
-   * `edited-without-origin` for the bundled case and
-   * `edited-with-origin` for the upstream case.
+   * baseline hash (the runtime map's `syncedHash`). The classifier
+   * emits `edited-with-origin` when `origin.url` is set and
+   * `edited-without-origin` otherwise.
    */
   drift?: boolean;
   /**

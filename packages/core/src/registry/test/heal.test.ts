@@ -4,20 +4,28 @@ import os from "node:os";
 import path from "node:path";
 import {
   hashSkillFolder,
-  healFalselyCuratedMarkers,
-  readRuntimeState,
-  writeRuntimeState,
+  detachOrigin,
+  scanAndResolveOpJournals,
 } from "../heal.js";
-import { readSkillSource, writeSkillSource } from "../source.js";
+import {
+  readLiveManifest,
+  writeLiveManifest,
+} from "../../manifest/manifest.js";
+import { getRuntimeEntry, setRuntimeEntry } from "../runtime-map.js";
+import { writeOpJournal, readOpJournal } from "../op-journal.js";
 
 /**
- * Contracts pinned by these suites (from ADR-0001):
+ * Contracts pinned by these suites (ADR-0020/0021 v6 model):
  *
  *   - byte-equal hashing (identical content → identical hash)
  *   - content sensitivity (one byte different → different hash)
  *   - HASH_BYTE_BUDGET = 8 MB → returns null on overrun
  *   - symlinks hashed by link content (not realpath)
- *   - sidecar exclusions: `.skills-bank.json`, `.skills-bank-hash`
+ *   - the runtime map + op journal are excluded from the hash
+ *   - `detachOrigin` clears the manifest row's origin, resets probe
+ *     counters, rebaselines the synced hash, and moves the folder
+ *     vendored → personal
+ *   - `scanAndResolveOpJournals` clears leftover crash-recovery journals
  *
  * Each test isolates its scratch space under os.tmpdir(); cleanup
  * happens in afterEach. Sequential pool (vitest.config.ts) keeps
@@ -71,19 +79,14 @@ describe("hashSkillFolder", () => {
     expect(ha).not.toBe(hb);
   });
 
-  test("excludes .skills-bank.json (sidecar)", () => {
+  test("excludes the op journal file", () => {
     writeFile("a/SKILL.md", "# x");
     writeFile("b/SKILL.md", "# x");
-    writeFile("b/.skills-bank.json", JSON.stringify({ source: "curated" }));
-    const ha = hashSkillFolder(path.join(scratch, "a"));
-    const hb = hashSkillFolder(path.join(scratch, "b"));
-    expect(ha).toBe(hb);
-  });
-
-  test("excludes .skills-bank-hash (sidecar)", () => {
-    writeFile("a/SKILL.md", "# x");
-    writeFile("b/SKILL.md", "# x");
-    writeFile("b/.skills-bank-hash", "deadbeef");
+    writeOpJournal(path.join(scratch, "b"), {
+      op: "move",
+      skill: "b",
+      startedAt: new Date().toISOString(),
+    });
     const ha = hashSkillFolder(path.join(scratch, "a"));
     const hb = hashSkillFolder(path.join(scratch, "b"));
     expect(ha).toBe(hb);
@@ -245,169 +248,139 @@ describe("hashSkillFolder — honors skill .gitignore", () => {
   });
 });
 
-describe("runtime state sidecar (.skills-bank-runtime.json)", () => {
-  test("read returns empty object when sidecar is missing", () => {
-    fs.mkdirSync(path.join(scratch, "a"), { recursive: true });
-    expect(readRuntimeState(path.join(scratch, "a"))).toEqual({});
+function seedSkill(
+  bucket: "personal" | "vendored",
+  name: string,
+  origin: { url: string | null; skillPath?: string; hash?: string },
+): string {
+  const dir = path.join(scratch, "skills", bucket, name);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "SKILL.md"), `# ${name}\n`);
+  const manifest = readLiveManifest(scratch);
+  manifest.skills.push({ name, origin, category: null, tags: [] });
+  writeLiveManifest(scratch, manifest);
+  return dir;
+}
+
+describe("detachOrigin", () => {
+  test("returns not-ok when the skill isn't in any bucket", () => {
+    const result = detachOrigin(scratch, "missing");
+    expect(result.ok).toBe(false);
+    expect(result.relinked).toEqual([]);
   });
 
-  test("write + read round-trips fetchedAt", () => {
-    fs.mkdirSync(path.join(scratch, "a"), { recursive: true });
-    writeRuntimeState(path.join(scratch, "a"), {
-      fetchedAt: "2026-05-18T12:00:00Z",
+  test("clears the manifest row's origin url to null", () => {
+    seedSkill("vendored", "alpha", {
+      url: "https://github.com/third/party",
+      skillPath: "skills/alpha/SKILL.md",
+      hash: "abc123",
     });
-    expect(readRuntimeState(path.join(scratch, "a"))).toEqual({
-      fetchedAt: "2026-05-18T12:00:00Z",
-    });
+    const result = detachOrigin(scratch, "alpha");
+    expect(result.ok).toBe(true);
+    const manifest = readLiveManifest(scratch);
+    const row = manifest.skills.find((s) => s.name === "alpha");
+    expect(row?.origin.url).toBeNull();
   });
 
-  test("malformed sidecar JSON degrades to empty object", () => {
-    const dir = path.join(scratch, "a");
+  test("adds a local-only row when the manifest had none", () => {
+    const dir = path.join(scratch, "skills", "vendored", "bare");
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, ".skills-bank-runtime.json"), "{ not json");
-    expect(readRuntimeState(dir)).toEqual({});
+    fs.writeFileSync(path.join(dir, "SKILL.md"), "# bare\n");
+    const result = detachOrigin(scratch, "bare");
+    expect(result.ok).toBe(true);
+    const manifest = readLiveManifest(scratch);
+    const row = manifest.skills.find((s) => s.name === "bare");
+    expect(row?.origin).toEqual({ url: null });
   });
 
-  test("hashSkillFolder excludes the runtime sidecar", () => {
-    // Same content in two folders; one carries a runtime sidecar.
-    // If the sidecar were included, the hash would shift.
-    writeFile("a/SKILL.md", "# x");
-    writeFile("b/SKILL.md", "# x");
-    writeRuntimeState(path.join(scratch, "b"), { fetchedAt: "2026-05-18Z" });
-    expect(hashSkillFolder(path.join(scratch, "a"))).toBe(
-      hashSkillFolder(path.join(scratch, "b")),
-    );
+  test("clears probe-failure counters and rebaselines the synced hash", () => {
+    seedSkill("vendored", "alpha", {
+      url: "https://github.com/third/party",
+      skillPath: "skills/alpha/SKILL.md",
+      hash: "abc123",
+    });
+    setRuntimeEntry(scratch, "alpha", {
+      probeFailureCount: 3,
+      lastProbeFailureAt: "2026-06-01T00:00:00Z",
+    });
+    detachOrigin(scratch, "alpha");
+    const runtime = getRuntimeEntry(scratch, "alpha");
+    expect(runtime.probeFailureCount).toBeUndefined();
+    expect(runtime.lastProbeFailureAt).toBeUndefined();
+    expect(typeof runtime.syncedHash).toBe("string");
+  });
+
+  test("moves the folder from vendored to personal", () => {
+    seedSkill("vendored", "alpha", {
+      url: "https://github.com/third/party",
+      skillPath: "skills/alpha/SKILL.md",
+    });
+    const result = detachOrigin(scratch, "alpha");
+    expect(result.ok).toBe(true);
+    expect(
+      fs.existsSync(path.join(scratch, "skills", "personal", "alpha")),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(scratch, "skills", "vendored", "alpha")),
+    ).toBe(false);
+  });
+
+  test("clears the op journal after completing", () => {
+    seedSkill("vendored", "alpha", { url: "https://github.com/third/party" });
+    detachOrigin(scratch, "alpha");
+    const newDir = path.join(scratch, "skills", "personal", "alpha");
+    expect(readOpJournal(newDir)).toBeNull();
   });
 });
 
-describe("writeSkillSource — fetchedAt-stripping (M8)", () => {
-  test("strips upstream.fetchedAt before writing to .skills-bank.json", () => {
-    const dir = path.join(scratch, "a");
+describe("scanAndResolveOpJournals", () => {
+  test("no journals present → empty result", () => {
+    fs.mkdirSync(path.join(scratch, "skills", "personal", "clean"), {
+      recursive: true,
+    });
+    expect(scanAndResolveOpJournals(scratch)).toEqual([]);
+  });
+
+  test("clears a leftover 'move' journal when the folder is at the 'to' bucket", () => {
+    const toDir = path.join(scratch, "skills", "personal", "alpha");
+    fs.mkdirSync(toDir, { recursive: true });
+    writeOpJournal(toDir, {
+      op: "move",
+      skill: "alpha",
+      from: "vendored",
+      to: "personal",
+      startedAt: new Date().toISOString(),
+    });
+    const resolved = scanAndResolveOpJournals(scratch);
+    expect(resolved).toEqual(["alpha"]);
+    expect(readOpJournal(toDir)).toBeNull();
+  });
+
+  test("clears a leftover 'move' journal when still at the 'from' bucket", () => {
+    const fromDir = path.join(scratch, "skills", "vendored", "alpha");
+    fs.mkdirSync(fromDir, { recursive: true });
+    writeOpJournal(fromDir, {
+      op: "move",
+      skill: "alpha",
+      from: "vendored",
+      to: "personal",
+      startedAt: new Date().toISOString(),
+    });
+    const resolved = scanAndResolveOpJournals(scratch);
+    expect(resolved).toEqual(["alpha"]);
+    expect(readOpJournal(fromDir)).toBeNull();
+  });
+
+  test("clears a leftover 'detachOrigin' journal regardless of manifest state", () => {
+    const dir = path.join(scratch, "skills", "personal", "alpha");
     fs.mkdirSync(dir, { recursive: true });
-    writeSkillSource(dir, {
-      source: "curated",
-      origin: {
-        kind: "github",
-        repo: "u/r",
-        skillFolderHash: "deadbeef",
-        fetchedAt: "2026-05-18T12:00:00Z", // must NOT land on disk
-      },
+    writeOpJournal(dir, {
+      op: "detachOrigin",
+      skill: "alpha",
+      startedAt: new Date().toISOString(),
     });
-    const raw = JSON.parse(
-      fs.readFileSync(path.join(dir, ".skills-bank.json"), "utf8"),
-    ) as {
-      origin?: { fetchedAt?: string; repo?: string; skillFolderHash?: string };
-    };
-    expect(raw.origin?.fetchedAt).toBeUndefined();
-    expect(raw.origin?.repo).toBe("u/r");
-    expect(raw.origin?.skillFolderHash).toBe("deadbeef");
-  });
-
-  test("idempotent committed marker — repeated writes produce identical files even when fetchedAt shifts", () => {
-    // This is the literal bug from docs/bug-reports/2026-05-18-fetchedAt-churn.md:
-    // after each app launch the committed marker changed only because
-    // fetchedAt got re-stamped. Pin that writeSkillSource is now stable
-    // across timestamp shifts.
-    const dir = path.join(scratch, "a");
-    fs.mkdirSync(dir, { recursive: true });
-    writeSkillSource(dir, {
-      source: "curated",
-      origin: {
-        kind: "github",
-        repo: "u/r",
-        skillFolderHash: "hash1",
-        fetchedAt: "2026-05-18T12:00:00Z",
-      },
-    });
-    const first = fs.readFileSync(path.join(dir, ".skills-bank.json"), "utf8");
-    writeSkillSource(dir, {
-      source: "curated",
-      origin: {
-        kind: "github",
-        repo: "u/r",
-        skillFolderHash: "hash1",
-        fetchedAt: "2026-05-18T22:33:44Z", // fresh wall-clock
-      },
-    });
-    const second = fs.readFileSync(path.join(dir, ".skills-bank.json"), "utf8");
-    expect(first).toBe(second);
-  });
-
-  test("readSkillSource tolerates legacy markers that still carry fetchedAt inline", () => {
-    // Defensive: a marker committed before v0.11.7 may have fetchedAt
-    // baked in. readSkillSource still surfaces it (build.ts merges the
-    // runtime sidecar's value over this if both are present).
-    const dir = path.join(scratch, "a");
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(
-      path.join(dir, ".skills-bank.json"),
-      JSON.stringify({
-        source: "curated",
-        origin: {
-          kind: "github",
-          repo: "u/r",
-          fetchedAt: "2026-05-18T12:00:00Z",
-        },
-      }),
-    );
-    const src = readSkillSource(dir);
-    expect(src.origin?.fetchedAt).toBe("2026-05-18T12:00:00Z");
-  });
-});
-
-describe("healFalselyCuratedMarkers", () => {
-  function seedSkill(
-    bucket: "personal" | "vendored",
-    name: string,
-    marker: Parameters<typeof writeSkillSource>[1],
-  ): string {
-    const dir = path.join(scratch, "skills", bucket, name);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, "SKILL.md"), `# ${name}\n`);
-    writeSkillSource(dir, marker);
-    return dir;
-  }
-
-  const githubOrigin = {
-    kind: "github" as const,
-    repo: "third/party",
-    skillPath: "skills/x/SKILL.md",
-  };
-
-  test("downgrades curated + github origin with no sync provenance", () => {
-    const dir = seedSkill("vendored", "bad", {
-      source: "curated",
-      origin: githubOrigin,
-    });
-    expect(healFalselyCuratedMarkers(scratch)).toEqual(["bad"]);
-    expect(readSkillSource(dir).source).toBe("vendored");
-    // origin pointer is preserved — only the source axis changes.
-    expect(readSkillSource(dir).origin?.repo).toBe("third/party");
-  });
-
-  test("leaves curated + github + syncedFromCommit untouched (find-skills shape)", () => {
-    const dir = seedSkill("vendored", "find-skills", {
-      source: "curated",
-      syncedFromCommit: "abc123",
-      syncedAt: "2026-06-05T00:00:00Z",
-      origin: { kind: "github", repo: "vercel-labs/skills" },
-    });
-    expect(healFalselyCuratedMarkers(scratch)).toEqual([]);
-    expect(readSkillSource(dir).source).toBe("curated");
-  });
-
-  test("leaves seeded curated (syncedAt, no origin) untouched", () => {
-    const dir = seedSkill("vendored", "seeded", {
-      source: "curated",
-      syncedAt: "2026-06-05T00:00:00Z",
-    });
-    expect(healFalselyCuratedMarkers(scratch)).toEqual([]);
-    expect(readSkillSource(dir).source).toBe("curated");
-  });
-
-  test("is idempotent — a healed registry yields no further changes", () => {
-    seedSkill("vendored", "bad", { source: "curated", origin: githubOrigin });
-    expect(healFalselyCuratedMarkers(scratch)).toEqual(["bad"]);
-    expect(healFalselyCuratedMarkers(scratch)).toEqual([]);
+    const resolved = scanAndResolveOpJournals(scratch);
+    expect(resolved).toEqual(["alpha"]);
+    expect(readOpJournal(dir)).toBeNull();
   });
 });
