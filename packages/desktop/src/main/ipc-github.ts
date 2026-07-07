@@ -6,15 +6,13 @@ import {
   folderPathFromSkillPath,
   fromCaught,
   hashSkillFolder,
+  readLiveManifest,
+  setRuntimeEntry,
   walkSkills,
-  writeRuntimeState,
-  writeSkillSource,
-  writeSyncedHash,
-  readSkillSource,
+  writeLiveManifest,
 } from "@skills-bank/core";
 import { getStoredToken } from "./auth.js";
 import {
-  getLinkedRepo,
   getRegistryRoot,
   NO_ROOT_MSG,
   notifyProbeComplete,
@@ -191,48 +189,59 @@ async function setManualUpstream(
     return { ok: false, message: `${name} is not adopted into the registry` };
   }
   const skillDir = ref.dir;
-  const existing = readSkillSource(skillDir);
-  if (choice.kind === "none") {
-    writeSkillSource(skillDir, { ...existing, origin: { kind: "none" } });
+
+  function upsertOrigin(origin: {
+    url: string | null;
+    skillPath?: string;
+    hash?: string;
+  }): void {
+    const manifest = readLiveManifest(registryRoot!);
+    const idx = manifest.skills.findIndex((s) => s.name === name);
+    if (idx >= 0) {
+      manifest.skills[idx] = { ...manifest.skills[idx]!, origin };
+    } else {
+      manifest.skills.push({ name, origin, category: null, tags: [] });
+    }
+    writeLiveManifest(registryRoot!, manifest);
+  }
+
+  if (choice.url === null) {
+    upsertOrigin({ url: null });
     return { ok: true, message: `Marked ${name} as not from any upstream.` };
   }
-  if (!choice.repo || !choice.skillPath) {
+  const { repo, skillPath } = choice;
+  if (!repo || !skillPath) {
     return { ok: false, message: "repo and skillPath are required" };
   }
-  if (!/^[\w.-]+\/[\w.-]+$/.test(choice.repo)) {
-    return { ok: false, message: `"${choice.repo}" isn't a valid owner/repo` };
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) {
+    return { ok: false, message: `"${repo}" isn't a valid owner/repo` };
   }
-  const folder = folderPathFromSkillPath(choice.skillPath);
-  const probe = await fetchOriginTree(choice.repo, getStoredToken());
+  const folder = folderPathFromSkillPath(skillPath);
+  const probe = await fetchOriginTree(repo, getStoredToken());
   if (!probe.ok) {
     return {
       ok: false,
-      message: `Couldn't probe ${choice.repo}: ${probe.message}`,
+      message: `Couldn't probe ${repo}: ${probe.message}`,
     };
   }
   const folderHash = findFolderHash(probe.tree, folder);
   if (!folderHash) {
     return {
       ok: false,
-      message: `${choice.repo} has no folder at ${folder}`,
+      message: `${repo} has no folder at ${folder}`,
     };
   }
-  const now = new Date().toISOString();
-  writeSkillSource(skillDir, {
-    ...existing,
-    origin: {
-      kind: "github",
-      repo: choice.repo,
-      skillPath: choice.skillPath,
-      skillFolderHash: folderHash,
-      installedAt: existing.origin?.installedAt ?? now,
-    },
+  upsertOrigin({
+    url: `https://github.com/${repo}`,
+    skillPath,
+    hash: folderHash,
   });
-  writeRuntimeState(skillDir, { fetchedAt: now });
+  const now = new Date().toISOString();
+  setRuntimeEntry(registryRoot, name, { fetchedAt: now });
   const baseline = hashSkillFolder(skillDir);
-  if (baseline) writeSyncedHash(skillDir, baseline);
+  if (baseline) setRuntimeEntry(registryRoot, name, { syncedHash: baseline });
   void runUpstreamProbe();
-  return { ok: true, message: `Stamped ${name} as from ${choice.repo}.` };
+  return { ok: true, message: `Stamped ${name} as from ${repo}.` };
 }
 
 export function registerGithubHandlers(): void {

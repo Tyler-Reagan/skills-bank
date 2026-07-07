@@ -6,7 +6,6 @@ import {
   applyRegistration,
   buildRegistryIndex,
   classifySkillByName,
-  clearPendingConflicts,
   computeFolderDiff,
   deleteUnregisteredSkill,
   detachOrigin,
@@ -21,33 +20,31 @@ import {
   getDefaultInstallAgents,
   getExportInfo,
   hashSkillFolder,
-  hideCanonSkill,
   installSkillFiles,
-  invalidateCanonCache,
+  isGithubUrl,
   linkSkillToAgents,
   listInstalled,
   listTopLevelSymlinks,
   makeAppError,
-  ORIGIN_KIND_GITHUB,
   parseGithubSkillUrl,
+  parseOwnerRepo,
+  readLiveManifest,
   readSkillMeta,
-  readSkillSource,
   removeBrokenLinks,
   repairBrokenLinks,
   repointExternalEntry,
   repointOrigin as coreRepointOrigin,
   resolveSkillConflicts,
-  scanAndStampUpstreamFromLock,
   scanExistingInstalls,
   scanLocalDiagnostics,
-  unhideCanonSkill,
+  setRuntimeEntry,
   unregisterSkill,
   unlinkSkillFromAgents,
-  writeSkillSource,
-  writeSyncedHash,
+  writeLiveManifest,
   adoptIntoLinkedRepo as coreAdoptIntoLinkedRepo,
   type AgentId,
   type InstalledKind,
+  type ManifestSkill,
   type RegistrationAction,
 } from "@skills-bank/core";
 
@@ -190,7 +187,6 @@ export function registerRegistryHandlers(): void {
       };
     }
     setRegistryRoot(candidate);
-    invalidateCanonCache();
     persistConfig();
     const warning = suspiciousPathWarning(candidate);
     return {
@@ -262,16 +258,15 @@ export function registerRegistryHandlers(): void {
         const found = findSkillFolder(registryRoot, name);
         if (!found) throw new Error(`Skill "${name}" not found in registry.`);
         const skillPath = found.dir;
-        const source = readSkillSource(skillPath);
+        const manifest = readLiveManifest(registryRoot);
+        const row = manifest.skills.find((s) => s.name === name);
+        const origin = row?.origin;
+        const repo = origin ? parseOwnerRepo(origin.url) : null;
 
-        if (
-          source.origin?.kind === "github" &&
-          source.origin.repo &&
-          source.origin.skillPath
-        ) {
+        if (origin && isGithubUrl(origin.url) && repo && origin.skillPath) {
           await installSkillFiles(
-            source.origin.repo,
-            folderPathFromSkillPath(source.origin.skillPath),
+            repo,
+            folderPathFromSkillPath(origin.skillPath),
             skillPath,
             getStoredToken(),
           );
@@ -312,45 +307,6 @@ export function registerRegistryHandlers(): void {
       }
     },
   );
-
-  mutatingHandle(IPC.hide, (_e, name: string) => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    const index = buildRegistryIndex(registryRoot);
-    const entry = index.entries.find((e) => e.name === name);
-    if (!entry) {
-      return { ok: false, message: `${name} is not in the registry` };
-    }
-    if (entry.canon !== true) {
-      return {
-        ok: false,
-        message: `${name} isn't canon — unregister or delete it instead`,
-      };
-    }
-    try {
-      hideCanonSkill(registryRoot, name);
-      return { ok: true, message: `Hid ${name} from the default views.` };
-    } catch (err) {
-      return (() => {
-        const error = fromCaught("ipc.unknown", err);
-        return { ok: false, message: error.message, error };
-      })();
-    }
-  });
-
-  mutatingHandle(IPC.unhide, (_e, name: string) => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    try {
-      unhideCanonSkill(registryRoot, name);
-      return { ok: true, message: `Unhid ${name}.` };
-    } catch (err) {
-      return (() => {
-        const error = fromCaught("ipc.unknown", err);
-        return { ok: false, message: error.message, error };
-      })();
-    }
-  });
 
   mutatingHandle(IPC.forgetMissing, (_e, name: string) => {
     const registryRoot = getRegistryRoot();
@@ -574,25 +530,6 @@ export function registerRegistryHandlers(): void {
     },
   );
 
-  ipcMain.handle(IPC.clearPendingConflicts, () => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    try {
-      const r = clearPendingConflicts(registryRoot);
-      return {
-        ok: true,
-        message: r.removed
-          ? "Cleared pending sync state."
-          : "No pending sync state to clear.",
-      };
-    } catch (err) {
-      return (() => {
-        const error = fromCaught("ipc.unknown", err);
-        return { ok: false, message: error.message, error };
-      })();
-    }
-  });
-
   mutatingHandle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
     try {
       const r = unlinkSkillFromAgents(
@@ -710,7 +647,6 @@ export function registerRegistryHandlers(): void {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG, entries: 0 };
     try {
-      scanAndStampUpstreamFromLock(registryRoot);
       const index = buildRegistryIndex(registryRoot, {
         includeGitInfo: true,
         writeFile: true,
@@ -978,21 +914,27 @@ export function registerRegistryHandlers(): void {
       finalName = meta.name;
     }
 
-    const now = new Date().toISOString();
-    writeSkillSource(finalDir, {
-      source: "vendored",
+    // Stamp the manifest row with the mirrored origin + hash, and
+    // baseline the runtime map's synced hash (ADR-0020/0021 — no more
+    // per-skill sidecars).
+    const manifest = readLiveManifest(registryRoot);
+    const row: ManifestSkill = {
+      name: finalName,
       origin: {
-        kind: ORIGIN_KIND_GITHUB,
-        repo: parsed.repo,
-        sourceUrl: `https://github.com/${parsed.repo}.git`,
+        url: `https://github.com/${parsed.repo}`,
         skillPath: parsed.skillPath,
-        skillFolderHash: mirror.folderHash,
-        installedAt: now,
-        fetchedAt: now,
+        hash: mirror.folderHash,
       },
-    });
+      category: null,
+      tags: [],
+    };
+    const idx = manifest.skills.findIndex((s) => s.name === finalName);
+    if (idx >= 0) manifest.skills[idx] = row;
+    else manifest.skills.push(row);
+    writeLiveManifest(registryRoot, manifest);
     const baseline = hashSkillFolder(finalDir);
-    if (baseline) writeSyncedHash(finalDir, baseline);
+    if (baseline)
+      setRuntimeEntry(registryRoot, finalName, { syncedHash: baseline });
 
     linkSkillToAgents(finalDir, getDefaultInstallAgents(), { force: false });
 

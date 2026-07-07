@@ -6,15 +6,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createOriginProbeRunner,
-  healFalselyCuratedMarkers,
+  reconcileFoldersToManifest,
   resolveRegistryRoot,
-  scanAndStampUpstreamFromLock,
-  writeSkillSource,
-  writeUpstreamCanonNames,
 } from "@skills-bank/core";
 import {
   IPC,
-  BUNDLED_REPO,
   type LinkedRepoMetadata,
   type OriginProbeCompleteEvent,
   type RegistrySource,
@@ -58,9 +54,6 @@ if (!app.isPackaged) {
   process.env.SKILLS_BANK_HOME_OVERRIDE = devHome;
 }
 
-const CANONICAL_OWNER = "Tyler-Reagan";
-const CANONICAL_REPO = "skills-bank";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -83,85 +76,7 @@ function isValidRegistryRoot(candidate: string): {
 function defaultManagedRegistryRoot(): string {
   const root = path.join(app.getPath("userData"), "registry");
   fs.mkdirSync(path.join(root, "skills"), { recursive: true });
-  seedManagedRegistryIfEmpty(root);
-  ensureManagedCanonAttribution(root);
-  try {
-    const healed = healFalselyCuratedMarkers(root);
-    if (healed.length > 0) {
-      console.error(`healed falsely-curated markers: ${healed.join(", ")}`);
-    }
-  } catch (err) {
-    console.error("healFalselyCuratedMarkers failed:", err);
-  }
   return root;
-}
-
-function seedManagedRegistryIfEmpty(root: string): void {
-  const indexPath = path.join(root, "index.json");
-  if (fs.existsSync(indexPath)) return;
-
-  const seedDir = path.join(process.resourcesPath, "seed");
-  const seedSkills = path.join(seedDir, "skills");
-  const seedIndex = path.join(seedDir, "index.json");
-  if (!fs.existsSync(seedSkills) || !fs.existsSync(seedIndex)) return;
-
-  try {
-    fs.cpSync(seedSkills, path.join(root, "skills"), {
-      recursive: true,
-      force: false,
-      errorOnExist: false,
-    });
-    fs.copyFileSync(seedIndex, indexPath);
-    fs.writeFileSync(
-      path.join(root, ".seeded"),
-      JSON.stringify(
-        { version: app.getVersion(), seededAt: new Date().toISOString() },
-        null,
-        2,
-      ),
-    );
-    try {
-      const seedIdx = JSON.parse(fs.readFileSync(seedIndex, "utf8")) as {
-        entries?: Array<{ name?: unknown }>;
-      };
-      const seededAt = new Date().toISOString();
-      for (const e of seedIdx.entries ?? []) {
-        if (typeof e.name !== "string") continue;
-        const skillDir = path.join(root, "skills", e.name);
-        if (!fs.existsSync(skillDir)) continue;
-        writeSkillSource(skillDir, {
-          source: "curated",
-          syncedAt: seededAt,
-        });
-      }
-    } catch (err) {
-      console.error("seed source-marker pass failed:", err);
-    }
-  } catch (err) {
-    console.error("seedManagedRegistryIfEmpty failed:", err);
-  }
-}
-
-function ensureManagedCanonAttribution(root: string): void {
-  const stateDir = path.join(root, ".skills-bank");
-  const snapshotPath = path.join(stateDir, "upstream-canon.json");
-  if (fs.existsSync(snapshotPath)) return;
-
-  const seedDir = path.join(process.resourcesPath, "seed");
-  const seedIndex = path.join(seedDir, "index.json");
-  if (!fs.existsSync(seedIndex)) return;
-
-  try {
-    const seedIdx = JSON.parse(fs.readFileSync(seedIndex, "utf8")) as {
-      entries?: Array<{ name?: unknown }>;
-    };
-    const names = (seedIdx.entries ?? [])
-      .map((e) => e.name)
-      .filter((n): n is string => typeof n === "string");
-    writeUpstreamCanonNames(root, names, "bundled");
-  } catch (err) {
-    console.error("ensureManagedCanonAttribution failed:", err);
-  }
 }
 
 function resolveBootRegistryRoot(): string {
@@ -186,8 +101,11 @@ setRegistrySource(resolveBootRegistrySource());
 setLinkedRepo(readConfig().linkedRepo);
 setDismissedUpdateVersion(readConfig().dismissedUpdateVersion);
 
-// Fallback origin-capture scanner.
-scanAndStampUpstreamFromLock(bootRegistryRoot);
+// True up the manifest against the folders on disk before the first
+// index build — the single manifest-write seam (ADR-0020/0021).
+reconcileFoldersToManifest(bootRegistryRoot, {
+  linkedRepo: getLinkedRepo()?.fullName,
+});
 
 // ─── Probe runner ─────────────────────────────────────────────────────────────
 
@@ -276,12 +194,6 @@ void app.whenReady().then(() => {
   setInterval(() => {
     void probeRunner.run();
   }, PROBE_CADENCE_MS);
-  // Curated auto-refresh on boot.
-  setTimeout(() => {
-    void import("./ipc-manifest.js").then(({ runSync }) =>
-      runSync().catch(() => {}),
-    );
-  }, PROBE_BOOT_DELAY_MS + 2_000);
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

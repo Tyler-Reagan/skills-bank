@@ -3,7 +3,6 @@ import type {
   AppError,
   BrokenLinkRemoveReport,
   BrokenLinkRepairReport,
-  ConflictEntry,
   ConflictResolveDecision,
   ConflictResolveReport,
   DiagnosticReport,
@@ -28,8 +27,6 @@ import type {
   RegistryManifest,
   ScanReport,
   SkillLabelOverride,
-  SyncDecisions,
-  SyncReport,
   TrackingCoverage,
 } from "@skills-bank/core";
 
@@ -74,11 +71,6 @@ export const IPC = {
   updateStatus: "app:updateStatus",
   setDismissedUpdateVersion: "app:setDismissedUpdateVersion",
   dismissWeakStorageNotice: "app:dismissWeakStorageNotice",
-  syncCanonical: "registry:syncCanonical",
-  getSyncReport: "registry:getSyncReport",
-  syncStatus: "registry:syncStatus",
-  getPendingConflicts: "registry:getPendingConflicts",
-  resolveConflicts: "registry:resolveConflicts",
   authStatus: "auth:status",
   authIsConfigured: "auth:isConfigured",
   authSetRegistrySourceLocal: "auth:setRegistrySourceLocal",
@@ -112,14 +104,11 @@ export const IPC = {
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   unregister: "skills:unregister",
   deleteUnregistered: "skills:deleteUnregistered",
-  hide: "skills:hide",
-  unhide: "skills:unhide",
   forgetMissing: "skills:forgetMissing",
   repointExternal: "skills:repointExternal",
   repointOrigin: "skills:repointOrigin",
   detachLocal: "skills:detachLocal",
   adoptIntoLinkedRepo: "skills:adoptIntoLinkedRepo",
-  clearPendingConflicts: "registry:clearPendingConflicts",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
   discoverHideSync: "discover:hideSync",
@@ -148,15 +137,15 @@ export const IPC = {
 
 /**
  * Renderer → main payload for `upstream:setManual`. Either:
- * - Stamp a GitHub upstream (`kind: "github"` + repo + skillPath).
- *   Validated against `GET /repos/{repo}/contents/{folder}` before
- *   writing — invalid combos return an error and don't mutate.
- * - Mark explicitly user-owned (`kind: "none"`). Suppresses the
- *   scanner from trying to classify on future walks.
+ * - Stamp a GitHub upstream (`url` + `repo` + `skillPath`). Validated
+ *   against `GET /repos/{repo}/contents/{folder}` before writing —
+ *   invalid combos return an error and don't mutate.
+ * - Mark explicitly user-owned (`url: null`) — the manifest row's
+ *   `origin.url` is set to `null` (ADR-0018 no-vacuum; ADR-0020).
  */
 export type OriginManualChoice =
-  | { kind: "github"; repo: string; skillPath: string }
-  | { kind: "none" };
+  | { url: string; repo: string; skillPath: string }
+  | { url: null };
 
 /**
  * Response for `upstream:update`. Carries structured rate-limit info
@@ -273,7 +262,7 @@ export interface OriginLastCommit {
   message: string | null;
 }
 
-export interface SkillDiffFile {
+interface SkillDiffFile {
   /** Relative path within the skill folder, e.g. "SKILL.md". */
   path: string;
   /** Lines present in right but not in left. */
@@ -395,19 +384,6 @@ export interface UserRepo {
   defaultBranch: string;
   description: string | null;
 }
-
-export type SyncStatus =
-  | { kind: "idle" }
-  | { kind: "fetching" }
-  | { kind: "applying" }
-  | {
-      kind: "done";
-      upserted: string[];
-      conflicts: number;
-      orphaned: string[];
-      commitSha: string;
-    }
-  | { kind: "error"; message: string };
 
 export interface Bounds {
   x: number;
@@ -649,12 +625,6 @@ interface SkillsBankAPI {
     removedDirs: string[];
     removedSymlinks: string[];
   }>;
-  hide(
-    name: string,
-  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  unhide(
-    name: string,
-  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   forgetMissing(
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: AppError }>;
@@ -691,11 +661,6 @@ interface SkillsBankAPI {
     name: string,
     destPath: string,
   ): Promise<AdoptIntoLinkedRepoIPCResult>;
-  clearPendingConflicts(): Promise<{
-    ok: boolean;
-    message: string;
-    error?: AppError;
-  }>;
   scan(customDirs?: string[]): Promise<ScanReport>;
   register(
     items: Array<{ name: string; action: RegistrationAction }>,
@@ -762,17 +727,6 @@ interface SkillsBankAPI {
   quitAndInstallUpdate(): Promise<void>;
   setDismissedUpdateVersion(version: string | null): Promise<void>;
   onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
-  syncCanonical(): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  getSyncReport(): Promise<SyncReport | null>;
-  onSyncStatus(cb: (status: SyncStatus) => void): () => void;
-  getPendingConflicts(): Promise<{
-    syncedAt: string;
-    commitSha: string;
-    conflicts: ConflictEntry[];
-  } | null>;
-  resolveConflicts(
-    decisions: SyncDecisions,
-  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   authStatus(): Promise<AuthStatus>;
   authSetRegistrySourceLocal(): Promise<AuthStatus>;
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
