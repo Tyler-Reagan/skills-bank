@@ -34,6 +34,46 @@ export interface UrlParseError {
   message: string;
 }
 
+/**
+ * Is this origin URL one the app's GitHub machinery (probe / mirror /
+ * adopt-PR) can drive? A capability check on the URL's host, not a stored
+ * taxonomy value (ADR-0020). `null` (local skill, no remote) is never
+ * GitHub-operable. A non-github host (GitLab, self-hosted) is a valid
+ * external origin the app simply can't re-fetch yet — this returns false
+ * for it honestly.
+ */
+export function isGithubUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname;
+    return host === "github.com" || host === "www.github.com";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extract `owner/repo` from a GitHub URL, or null if it isn't a GitHub URL
+ * with at least owner + repo segments. Used at display/probe call sites
+ * that previously read `origin.repo` directly. Tolerates the full spread
+ * of GitHub URL shapes (repo root, `/tree/`, `/blob/`, `.git` suffix).
+ */
+export function parseOwnerRepo(url: string | null | undefined): string | null {
+  if (!isGithubUrl(url)) return null;
+  try {
+    const segs = new URL(url as string).pathname
+      .split("/")
+      .filter((s) => s.length > 0);
+    if (segs.length < 2) return null;
+    const owner = segs[0]!;
+    const repo = segs[1]!.replace(/\.git$/, "");
+    if (!owner || !repo) return null;
+    return `${owner}/${repo}`;
+  } catch {
+    return null;
+  }
+}
+
 export function parseGithubSkillUrl(
   url: string,
 ): ParsedSkillUrl | UrlParseError {

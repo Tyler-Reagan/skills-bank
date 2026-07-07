@@ -18,13 +18,11 @@ export interface ManifestDiff {
  * `skillSignature` rather than re-deriving the field set, keeping the
  * two engines from drifting apart.
  *
- * Deliberately EXCLUDES `description` (informational, re-derivable from
- * SKILL.md), `bucket` (a path concept, now derived from origin), and
- * `lastInstalledOn` (per-machine local). Includes `category`/`tags`
- * (curation intent).
+ * Every committed per-skill field participates: `origin` (identity +
+ * re-fetch), `category`, `tags` (curation intent). `name` keys the maps
+ * and isn't compared as a field.
  */
 export const COMPARED_FIELDS: (keyof ManifestSkill)[] = [
-  "source",
   "origin",
   "category",
   "tags",
