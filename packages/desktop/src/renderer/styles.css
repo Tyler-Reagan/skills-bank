@@ -2730,59 +2730,6 @@ button:disabled {
   justify-content: center;
 }
 
-/* ── Custom skills directories (Installed tab) ────────── */
-.custom-skills-dirs {
-  margin-bottom: var(--s4);
-  padding: var(--s3) var(--s4);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-}
-.custom-skills-dirs-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s3);
-}
-.custom-skills-dirs-title {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s2);
-  font-size: 13px;
-  color: var(--text-2);
-}
-.custom-skills-dirs-title strong {
-  color: var(--text);
-  font-weight: 600;
-}
-.custom-skills-dirs-list {
-  list-style: none;
-  margin: var(--s3) 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s2);
-}
-.custom-skills-dir-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s2);
-  padding: 2px 4px 2px var(--s2);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm, 4px);
-  font-size: 12px;
-  max-width: 100%;
-}
-.custom-skills-dir-chip code {
-  font-family: var(--font-mono);
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 360px;
-}
-
 /* ── Rendered markdown (release notes modal, skill detail drawer) ─────── */
 /* marked + dompurify output lands inside .markdown-body. Without these
    rules headings, lists, code, and links render unstyled. Scoped to the

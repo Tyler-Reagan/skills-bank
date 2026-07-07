@@ -75,7 +75,7 @@ interface ProviderProps {
  * the rest of the renderer via context. The Toast UI itself is rendered
  * here so children don't need to thread `toast` state down. AppError
  * panel UI stays in AppContent (its handlers reach AppContent-owned
- * state like settings/customSkillsDirs).
+ * state like settings).
  *
  * `refresh` is intentionally NOT part of this context yet — it depends
  * on registry/installed state that's still owned by AppContent. The
