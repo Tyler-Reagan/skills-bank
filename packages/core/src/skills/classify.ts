@@ -2,7 +2,6 @@ import { buildRegistryIndex } from "../registry/build.js";
 import { listInstalled } from "./installed.js";
 import {
   classifyDrawerState,
-  type ClassifyOptions,
   type DrawerStateClassification,
 } from "../shared/skill-state.js";
 import type { RegistryEntry } from "../shared/types.js";
@@ -23,7 +22,6 @@ import type { RegistryEntry } from "../shared/types.js";
 export function classifySkillByName(
   registryRoot: string,
   name: string,
-  options: ClassifyOptions = {},
 ): DrawerStateClassification | null {
   const index = buildRegistryIndex(registryRoot);
   const installed = listInstalled(registryRoot, { index });
@@ -37,8 +35,8 @@ export function classifySkillByName(
       name,
       description: "",
       path: mine[0]?.linkPath ?? name,
-      source: { source: "user" },
+      origin: { url: null },
     } as RegistryEntry);
 
-  return classifyDrawerState(classifyEntry, installed, !!entry, options);
+  return classifyDrawerState(classifyEntry, installed, !!entry);
 }

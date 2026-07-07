@@ -15,6 +15,7 @@ import {
   exportRegistryManifest,
   writeRegistrySnapshot,
   createOriginProbeRunner,
+  reconcileFoldersToManifest,
 } from "@skills-bank/core";
 import {
   IPC,
@@ -168,14 +169,19 @@ export function persistConfig(): void {
 
 /**
  * Best-effort registry snapshot writer. Invoked from every IPC handler
- * that mutates registry membership or per-skill metadata.
+ * that mutates registry membership or per-skill metadata. True up the
+ * manifest against folders on disk first (the single manifest-write
+ * seam — ADR-0020/0021), then snapshot the resulting live record.
  */
 export function snapshotAfterMutation(): void {
   if (!_registryRoot) return;
   try {
+    reconcileFoldersToManifest(_registryRoot, {
+      labels: readLabelsFile(),
+      linkedRepo: _linkedRepo?.fullName,
+    });
     const manifest = exportRegistryManifest(_registryRoot, {
-      sourceBankVersion: app.getVersion(),
-      ...manifestExportContext(),
+      labels: readLabelsFile(),
     });
     writeRegistrySnapshot({
       userDataDir: app.getPath("userData"),
@@ -209,18 +215,12 @@ export function mutatingHandle<P extends unknown[], R>(
 
 /**
  * Shared `exportRegistryManifest` inputs sourced from app state: the
- * active linked repo and the local curation labels.
+ * local curation labels.
  */
 export function manifestExportContext(): {
-  registryRootLabel?: string;
-  linkedRepo?: string;
   labels: import("@skills-bank/core").LabelsMap;
 } {
-  const full = _linkedRepo?.fullName ?? undefined;
-  return {
-    ...(full ? { registryRootLabel: full, linkedRepo: full } : {}),
-    labels: readLabelsFile(),
-  };
+  return { labels: readLabelsFile() };
 }
 
 // ─── Labels file helpers ─────────────────────────────────────────────────────

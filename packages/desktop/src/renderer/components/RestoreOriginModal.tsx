@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import type { RegistryEntry } from "@skills-bank/core";
+import { parseOwnerRepo } from "@skills-bank/core/origin-url";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 
@@ -34,8 +35,7 @@ export function RestoreOriginModal({
   const [url, setUrl] = useState("");
   const [destPath, setDestPath] = useState(`skills/${entry.name}`);
 
-  const origin = entry.source.origin;
-  const wasRepo = origin?.kind === "github" ? origin.repo : undefined;
+  const wasRepo = parseOwnerRepo(entry.origin.url) ?? undefined;
 
   const run = async (
     kind: Busy,

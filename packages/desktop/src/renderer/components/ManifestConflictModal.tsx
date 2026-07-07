@@ -5,6 +5,7 @@ import type {
   ManifestResolution,
   ManifestSkill,
 } from "@skills-bank/core";
+import { parseOwnerRepo } from "@skills-bank/core/origin-url";
 import {
   ConflictResolver,
   type BulkAction,
@@ -61,13 +62,12 @@ const KIND_LABEL: Record<ManifestConflict["kind"], string> = {
 /** One-line summary of a manifest entry's shared-intent fields. */
 function summarize(skill: ManifestSkill | null): string {
   if (!skill) return "(deleted)";
-  const parts: string[] = [skill.source];
+  const parts: string[] = [];
   if (skill.category) parts.push(`category: ${skill.category}`);
   if (skill.tags.length > 0) parts.push(`tags: ${skill.tags.join(", ")}`);
-  if (skill.origin.kind === "github" && skill.origin.repo) {
-    parts.push(`origin: ${skill.origin.repo}`);
-  }
-  return parts.join(" · ");
+  const repo = parseOwnerRepo(skill.origin.url);
+  if (repo) parts.push(`origin: ${repo}`);
+  return parts.join(" · ") || "(local)";
 }
 
 /**

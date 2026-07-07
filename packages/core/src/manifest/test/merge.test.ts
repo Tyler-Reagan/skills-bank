@@ -18,23 +18,20 @@ import type { ManifestSkill, RegistryManifest } from "../manifest.js";
 /**
  * Three-way merge truth table. Each case fixes (base, ours, theirs) for
  * a single skill and asserts the merged entry + conflict shape. The
- * significant axis exercised is `tags` (a `COMPARED_FIELDS` member);
- * `description` is exercised separately to prove non-significant fields
- * never trigger a conflict.
+ * significant axis exercised is `tags` — every `ManifestSkill` field
+ * (`origin`, `category`, `tags`) is a `COMPARED_FIELDS` member in v6,
+ * so there is no longer a non-significant field to vary independently
+ * (the pre-v6 `description` field is gone from the type entirely).
  *
  * Cell legend: `-` = absent, `A`/`B`/`C` = distinct significant values.
  */
 
-function sk(name: string, tags: string[], description?: string): ManifestSkill {
+function sk(name: string, tags: string[]): ManifestSkill {
   return {
     name,
-    ...(description ? { description } : {}),
-    source: "user",
-    bucket: "personal",
-    origin: { kind: "none" },
+    origin: { url: null },
     tags,
     category: null,
-    lastInstalledOn: [],
   };
 }
 
@@ -44,8 +41,6 @@ function mf(
 ): RegistryManifest {
   return {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
-    exportedAt: "2026-06-01T00:00:00Z",
-    sourceBankVersion: "1.17.0",
     skills,
     ...extra,
   };
@@ -170,30 +165,13 @@ describe("mergeManifests — three-way cells", () => {
   });
 });
 
-describe("mergeManifests — non-significant fields", () => {
-  test("description-only divergence is not a change → no conflict, keeps local", () => {
-    const base = sk("x", ["a"], "base desc");
-    const ours = sk("x", ["a"], "local desc");
-    const theirs = sk("x", ["a"], "remote desc");
-    const r = mergeManifests(mf([base]), mf([ours]), mf([theirs]));
-    expect(r.conflicts).toEqual([]);
-    // Neither side "changed" by signature, so ours (local truth) is kept.
-    expect(r.merged.skills[0]!.description).toBe("local desc");
-  });
-});
-
 describe("mergeManifests — manifest-level", () => {
-  test("merged carries ours metadata and sorts skills by name", () => {
+  test("merged carries the schema version and sorts skills by name", () => {
     const base = mf([]);
-    const ours = mf([sk("zeta", ["z"]), sk("alpha", ["a"])], {
-      sourceBankVersion: "9.9.9",
-      registryRoot: "Tyler-Reagan/skills",
-    });
+    const ours = mf([sk("zeta", ["z"]), sk("alpha", ["a"])]);
     const theirs = mf([]);
     const r = mergeManifests(base, ours, theirs);
     expect(r.merged.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION);
-    expect(r.merged.sourceBankVersion).toBe("9.9.9");
-    expect(r.merged.registryRoot).toBe("Tyler-Reagan/skills");
     expect(r.merged.skills.map((s) => s.name)).toEqual(["alpha", "zeta"]);
   });
 
@@ -306,21 +284,36 @@ describe("merge base", () => {
     expect(readMergeBase(root)).toBeNull();
   });
 
+  // writeMergeBase stores the PUSHED projection (serializeManifest), so
+  // url:null skills never round-trip — only URL-bearing rows travel.
+  function withUrl(name: string, tags: string[]): ManifestSkill {
+    return {
+      name,
+      origin: { url: `https://github.com/owner/${name}` },
+      tags,
+      category: null,
+    };
+  }
+
   test("write → read round-trips the manifest skills", () => {
-    writeMergeBase(root, mf([A("alpha"), B("zeta")]));
+    writeMergeBase(root, mf([withUrl("alpha", ["a"]), withUrl("zeta", ["b"])]));
     const back = readMergeBase(root);
     expect(back?.skills.map((s) => s.name)).toEqual(["alpha", "zeta"]);
   });
 
-  test("stored canonically (no exportedAt churn) and coerced on read", () => {
-    writeMergeBase(root, mf([A("alpha")], { exportedAt: "2026-06-01T00:00Z" }));
+  test("stored canonically via serializeManifest (stable key order, no churn)", () => {
+    writeMergeBase(root, mf([withUrl("alpha", ["a"])]));
     const raw = fs.readFileSync(
       path.join(getStateDir(root), "merge-base.json"),
       "utf8",
     );
-    expect(raw.includes("exportedAt")).toBe(false);
-    // Coerced back to a whole manifest with the empty exportedAt default.
-    expect(readMergeBase(root)?.exportedAt).toBe("");
+    const parsed = JSON.parse(raw) as { skills: Record<string, unknown>[] };
+    expect(Object.keys(parsed.skills[0]!)).toEqual([
+      "name",
+      "origin",
+      "category",
+      "tags",
+    ]);
   });
 });
 

@@ -11,27 +11,10 @@ __pycache__/
 .env
 .env.local
 .skills-bank/
-# Per-skill app-state sidecars.
-#
-# `.skills-bank.json` carries the per-skill upstream pointer + source
-# axis. Under the origin-paradigm-reframe plan, the bundled repo
-# commits these so end users inherit the correct upstream values via
-# the .dmg — they are NOT gitignored here. Other registries (user's
-# linkedRepo with their own skills) may choose to either commit or
-# ignore based on whether they want their .skills-bank-as-curation
-# behavior. The bundled-repo convention is: commit.
-#
-# `.skills-bank-hash` stays gitignored. It's pure drift-detection
-# state — the hash of local content at last known-clean state, which
-# the desktop app regenerates on demand. Shipping it with .dmg would
-# bake in a baseline that's computed at build time and might not
-# match the user's installed bytes exactly (line endings, file modes).
-.skills-bank-hash
-# `.skills-bank-runtime.json` is the v0.11.7 runtime sidecar for
-# `fetchedAt` (and any future per-skill runtime field — ADR-0002).
-# Same reasoning: probe-time state that mutates on every app launch
-# and has no business in the committed marker set.
-.skills-bank-runtime.json
+# Per-skill provenance sidecars are gone (ADR-0020/0021) — origin lives
+# solely in the registry manifest, volatile state solely in
+# `.skills-bank/runtime.json` (already covered by the `.skills-bank/`
+# ignore above). Nothing per-skill needs ignoring anymore.
 .claude/settings.local.json
 skills/personal/
 esbuild

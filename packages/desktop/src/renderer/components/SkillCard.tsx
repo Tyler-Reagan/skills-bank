@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import { isGithubUrl, parseOwnerRepo } from "@skills-bank/core/origin-url";
 import { AGENT_LABELS, AGENT_PATHS } from "../agentDisplay.js";
 import { Icon } from "./Icon.js";
 
@@ -290,12 +291,12 @@ export function agentsForSkill(
  *                    local copy is intact.
  *   3. UPDATE      — entry.originUpdateAvailable: upstream changed,
  *                    local content is clean. Open drawer to apply.
- *   4. CURATED     — source: curated (part of the committed curated
- *                    set). Sync owns this; destructive verbs are gated.
  *
- * The EDITED drift badge was removed in v1.20 along with
- * the heal arms it pointed at; user/vendored skills render without a
- * provenance chip.
+ * The CURATED badge (source: curated) and the EDITED drift badge were
+ * both removed — v6 (#159) dropped the `source` axis (and with it the
+ * curated/canon concept) entirely; provenance is a single nullable
+ * `origin.url`. Local (`url: null`) and remote skills render without a
+ * provenance chip; only the actionable heal states above get a badge.
  */
 function StateBadge({
   entry,
@@ -312,11 +313,11 @@ function StateBadge({
       </span>
     );
   }
-  if (entry.originUnreachable && entry.source.origin?.kind === "github") {
+  if (entry.originUnreachable && isGithubUrl(entry.origin.url)) {
     return (
       <span
         className="skill-state-badge missing"
-        title={`Origin ${entry.source.origin.repo ?? ""} hasn't been reachable for the last few probes. Your local copy is intact. Open to keep this skill or retry the probe.`}
+        title={`Origin ${parseOwnerRepo(entry.origin.url) ?? ""} hasn't been reachable for the last few probes. Your local copy is intact. Open to keep this skill or retry the probe.`}
       >
         UNREACHABLE
       </span>
@@ -327,29 +328,13 @@ function StateBadge({
       <span
         className="skill-state-badge update"
         title={`An update is available from ${
-          entry.source.origin?.repo ?? "Origin"
+          parseOwnerRepo(entry.origin.url) ?? "Origin"
         }. Open to apply.`}
       >
         UPDATE
       </span>
     );
   }
-  if (entry.source.source === "curated") {
-    return (
-      <span
-        className="skill-origin-badge curated"
-        title="Part of the curated set this app ships with. Sync keeps it current."
-      >
-        CURATED
-      </span>
-    );
-  }
-  // Phase 2: dropped the YOURS badge (and the unregistered-fallback
-  // YOURS chip). The "Mine" filter on the Registry tab is the
-  // single surface for "show me only my skills." User-source and
-  // unregistered skills render without a provenance chip — other
-  // state badges (MISSING / UNREACHABLE / UPDATE) still take
-  // priority when applicable.
   return null;
 }
 

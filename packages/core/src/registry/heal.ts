@@ -7,14 +7,10 @@ import {
   readExternalRegistry,
   removeExternalRegistryEntry,
 } from "./external.js";
-import {
-  readSkillSource,
-  writeSkillSource,
-  ORIGIN_KIND_GITHUB,
-  type OriginPointer,
-} from "./source.js";
 import { findSkillFolder, walkSkills } from "./walk.js";
 import { moveSkillBucket } from "./rehome.js";
+import { readLiveManifest, writeLiveManifest } from "../manifest/manifest.js";
+import { setRuntimeEntry } from "./runtime-map.js";
 import {
   OP_JOURNAL_FILE,
   writeOpJournal,
@@ -32,7 +28,7 @@ export type { OpJournal } from "./op-journal.js";
 /**
  * Heal helpers. Three bad states the classifier surfaces:
  *
- *   - edited-without-origin     — local copy diverged from synced commit
+ *   - edited-without-origin     — local copy diverged, no remote origin
  *   - registry-folder-missing  — name in prior index but skills/<name>/ gone
  *   - external-target-missing  — external entry whose target path is gone
  *
@@ -88,19 +84,6 @@ export function hashSkillFolder(skillDir: string): string | null {
     }
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const ent of entries) {
-      // Skip the app-state sidecars — `.skills-bank.json` (source +
-      // syncedAt timestamps) and `.skills-bank-hash` (the recorded
-      // post-sync hash itself). Including either makes drift fire
-      // spuriously: `.skills-bank.json` because syncedAt changes per
-      // pull; `.skills-bank-hash` because sync writes it AFTER
-      // computing the hash, so the next build's walk sees the hash
-      // file in-tree and the comparison never matches.
-      if (ent.name === ".skills-bank.json") continue;
-      if (ent.name === ".skills-bank-hash") continue;
-      // Runtime sidecar — fetchedAt etc. Excluded for the same reason
-      // as the others: mutates per probe, would force spurious drift
-      // detection on every app launch.
-      if (ent.name === ".skills-bank-runtime.json") continue;
       // Op journal — transient crash-recovery state. Never part of skill
       // content; a leftover journal must not trigger drift.
       if (ent.name === OP_JOURNAL_FILE) continue;
@@ -143,90 +126,6 @@ export function hashSkillFolder(skillDir: string): string | null {
 }
 
 /**
- * Snapshot of the synced-commit hash recorded with the bundled sync.
- * Stored alongside the `.skills-bank.json` source marker so sync
- * writes can persist the post-sync hash that subsequent builds
- * compare against.
- */
-const SYNCED_HASH_FILE = ".skills-bank-hash";
-
-export function readSyncedHash(skillDir: string): string | null {
-  const p = path.join(skillDir, SYNCED_HASH_FILE);
-  if (!fs.existsSync(p)) return null;
-  try {
-    return fs.readFileSync(p, "utf8").trim() || null;
-  } catch {
-    return null;
-  }
-}
-
-export function writeSyncedHash(skillDir: string, hash: string): void {
-  fs.mkdirSync(skillDir, { recursive: true });
-  const p = path.join(skillDir, SYNCED_HASH_FILE);
-  const tmp = p + ".tmp~";
-  fs.writeFileSync(tmp, hash + "\n");
-  fs.renameSync(tmp, p);
-}
-
-/**
- * Runtime state sidecar. `.skills-bank.json` is the committed Skill
- * record (bundled-repo convention); fields that mutate on every probe
- * — like `fetchedAt` — caused unstaged churn after each app launch
- * (`docs/bug-reports/2026-05-18-fetchedAt-churn.md`). They live here
- * instead, alongside `.skills-bank-hash` in the gitignored set
- * (ADR-0002).
- *
- * Shape is intentionally a JSON object so future runtime fields can
- * extend it without a new sidecar.
- */
-const RUNTIME_STATE_FILE = ".skills-bank-runtime.json";
-
-export interface RuntimeState {
-  /** ISO-8601 timestamp of the last successful upstream fetch. */
-  fetchedAt?: string;
-  /**
-   * Consecutive failed origin probes for this skill. Reset to 0 on
-   * the next successful probe; rate-limit (429) failures are not
-   * counted (they don't reflect origin reachability). Drives the
-   * `origin-unreachable` drawer state at threshold (see
-   * `ORIGIN_UNREACHABLE_THRESHOLD` in `skill-state.ts`). v1.4.
-   */
-  probeFailureCount?: number;
-  /** ISO-8601 timestamp of the most recent probe failure. Diagnostic. */
-  lastProbeFailureAt?: string;
-}
-
-export function readRuntimeState(skillDir: string): RuntimeState {
-  const p = path.join(skillDir, RUNTIME_STATE_FILE);
-  if (!fs.existsSync(p)) return {};
-  try {
-    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<RuntimeState>;
-    const out: RuntimeState = {};
-    if (typeof raw.fetchedAt === "string") out.fetchedAt = raw.fetchedAt;
-    if (
-      typeof raw.probeFailureCount === "number" &&
-      raw.probeFailureCount > 0
-    ) {
-      out.probeFailureCount = raw.probeFailureCount;
-    }
-    if (typeof raw.lastProbeFailureAt === "string") {
-      out.lastProbeFailureAt = raw.lastProbeFailureAt;
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-export function writeRuntimeState(skillDir: string, state: RuntimeState): void {
-  fs.mkdirSync(skillDir, { recursive: true });
-  const p = path.join(skillDir, RUNTIME_STATE_FILE);
-  const tmp = p + ".tmp~";
-  fs.writeFileSync(tmp, JSON.stringify(state, null, 2) + "\n");
-  fs.renameSync(tmp, p);
-}
-
-/**
  * Boot scan — walk all skill dirs and resolve any leftover op journals.
  * Called on app boot before the first index build so stale journals from
  * a prior crash don't produce misleading index state.
@@ -236,15 +135,17 @@ export function writeRuntimeState(skillDir: string, state: RuntimeState): void {
  * - `move`: the folder is at `to` bucket → move completed; clear journal.
  *   Still at `from` bucket → rename never ran; clear journal (the caller
  *   can retry if needed — the structural state is consistent).
- * - `detachOrigin`: origin is already `{ kind: "none" }` → completed;
- *   clear journal. Origin still has a github pointer → the write sequence
- *   was interrupted; clear journal (the source marker is authoritative,
- *   partial probe-counter resets are idempotent on the next detach call).
+ * - `detachOrigin`: the manifest row's origin is already `url: null` →
+ *   completed; clear journal. Row still carries a URL → the write
+ *   sequence was interrupted; clear journal anyway (the manifest row is
+ *   authoritative — partial runtime-counter resets are idempotent on the
+ *   next detach call).
  *
  * Returns the names of skills whose journals were resolved.
  */
 export function scanAndResolveOpJournals(registryRoot: string): string[] {
   const resolved: string[] = [];
+  const manifest = readLiveManifest(registryRoot);
   for (const ref of walkSkills(registryRoot)) {
     const journal = readOpJournal(ref.dir);
     if (!journal) continue;
@@ -260,14 +161,9 @@ export function scanAndResolveOpJournals(registryRoot: string): string[] {
       }
       resolved.push(journal.skill);
     } else if (journal.op === "detachOrigin") {
-      const src = readSkillSource(ref.dir);
-      if (src.origin?.kind !== "github") {
-        clearOpJournal(ref.dir);
-        resolved.push(journal.skill);
-      } else {
-        clearOpJournal(ref.dir);
-        resolved.push(journal.skill);
-      }
+      clearOpJournal(ref.dir);
+      resolved.push(journal.skill);
+      void manifest;
     } else {
       clearOpJournal(ref.dir);
       resolved.push(journal.skill);
@@ -318,39 +214,6 @@ export function repointExternalEntry(
 }
 
 /**
- * One-shot marker migration — downgrade falsely-`curated` markers.
- *
- * An older manifest-import path stamped `source: "curated"` verbatim from
- * the imported manifest, so third-party github installs whose manifest
- * claimed `curated` landed with a CURATED badge they shouldn't have (see
- * `stampOriginMarker`, now fixed). The fingerprint of such a marker is
- * `curated` + a github origin + NO curated-channel sync provenance
- * (`syncedFromCommit`/`syncedAt`).
- *
- * Legitimately-curated skills never match: the first-launch seed stamps
- * `syncedAt` and no github origin, and curated sync stamps both
- * `syncedFromCommit` and `syncedAt`. `find-skills` (curated + github +
- * `syncedFromCommit`) is therefore untouched. Returns the names healed;
- * idempotent on a clean registry.
- */
-export function healFalselyCuratedMarkers(registryRoot: string): string[] {
-  const healed: string[] = [];
-  for (const ref of walkSkills(registryRoot)) {
-    const src = readSkillSource(ref.dir);
-    if (
-      src.source === "curated" &&
-      src.origin?.kind === "github" &&
-      !src.syncedFromCommit &&
-      !src.syncedAt
-    ) {
-      writeSkillSource(ref.dir, { ...src, source: "vendored" });
-      healed.push(ref.name);
-    }
-  }
-  return healed;
-}
-
-/**
  * Heal action — forget a missing or broken entry. Removes the entry
  * from external.json (non-adopted) and any persisted index reference;
  * the next buildRegistryIndex omits it naturally.
@@ -389,15 +252,14 @@ export interface DetachOriginResult {
  * local skill. Used when an origin is unreachable and the user keeps the
  * skill, and as the drift "keep my edits" action on `edited-with-origin`.
  *
- * Origin → `{ kind: "none" }`; **provenance (`source`) is untouched** — a
- * detached vendored skill stays `vendored` (sticky provenance). Probe-
- * failure counters are cleared and the content hash re-baselined so the
- * now-local copy starts clean (the drift case). Finally the folder is
- * moved `vendored/ → personal/` via `moveSkillBucket`, because `bucket`
- * derives from origin (`none → personal`) — keeping disk, runtime, and
- * the manifest in agreement. A detached (`origin: none`) skill is
- * excluded from the pushed manifest (see `exportRegistryManifest`), so it
- * is local-only until adopted into the linked repo.
+ * Sets the manifest row's `origin.url` to `null` — provenance now reads
+ * as a local skill, no remote. Runtime probe counters are cleared and the
+ * content hash re-baselined (`syncedHash`) so the now-local copy starts
+ * clean (the drift case). Finally the folder is moved
+ * `vendored/ → personal/` via `moveSkillBucket`, keeping disk and the
+ * manifest in agreement. A detached (`url: null`) skill is excluded from
+ * the pushed manifest projection (`toPushedProjection`), so it is
+ * local-only until adopted into the linked repo.
  */
 export function detachOrigin(
   registryRoot: string,
@@ -418,16 +280,30 @@ export function detachOrigin(
     startedAt: new Date().toISOString(),
   });
 
-  const existing = readSkillSource(ref.dir);
-  writeSkillSource(ref.dir, { ...existing, origin: { kind: "none" } });
+  const manifest = readLiveManifest(registryRoot);
+  const idx = manifest.skills.findIndex((s) => s.name === name);
+  if (idx >= 0) {
+    manifest.skills[idx] = {
+      ...manifest.skills[idx]!,
+      origin: { url: null },
+    };
+  } else {
+    manifest.skills.push({
+      name,
+      origin: { url: null },
+      category: null,
+      tags: [],
+    });
+  }
+  writeLiveManifest(registryRoot, manifest);
 
-  const rt = readRuntimeState(ref.dir);
-  writeRuntimeState(ref.dir, {
-    ...(rt.fetchedAt ? { fetchedAt: rt.fetchedAt } : {}),
+  setRuntimeEntry(registryRoot, name, {
+    probeFailureCount: undefined,
+    lastProbeFailureAt: undefined,
   });
 
   const baseline = hashSkillFolder(ref.dir);
-  if (baseline) writeSyncedHash(ref.dir, baseline);
+  if (baseline) setRuntimeEntry(registryRoot, name, { syncedHash: baseline });
 
   const moved = moveSkillBucket(registryRoot, name, "personal");
   clearOpJournal(moved.newDir ?? ref.dir);
@@ -447,10 +323,11 @@ export interface RepointOriginTarget {
 /**
  * Restore action (ADR-0012) — repoint a skill's origin at a new GitHub
  * location the user supplied (the upstream was renamed/moved or the skill
- * folder relocated). Writes the new origin pointer, then delegates to
- * `applyOriginUpdate` to re-fetch / validate frontmatter / rebaseline /
- * roll back content on failure. On failure the prior marker is restored
- * so a bad target leaves no broken pointer behind. Stays in `vendored/`.
+ * folder relocated). Writes the new origin URL into the manifest row,
+ * then delegates to `applyOriginUpdate` to re-fetch / validate
+ * frontmatter / rebaseline / roll back content on failure. On failure
+ * the prior row is restored so a bad target leaves no broken pointer
+ * behind. Stays in `vendored/`.
  *
  * `applyOriginUpdate` is lazy-imported to keep heal.ts (and its many
  * consumers) clear of the heavy build/sync graph that origin.ts pulls in.
@@ -466,25 +343,34 @@ export async function repointOrigin(
     return { ok: false, message: `${name} not found in any bucket` };
   }
 
-  const existing = readSkillSource(ref.dir);
-  const newOrigin: OriginPointer = {
-    kind: ORIGIN_KIND_GITHUB,
-    repo: target.repo,
-    skillPath: target.skillPath,
-    ...(target.sourceUrl ? { sourceUrl: target.sourceUrl } : {}),
-    // Carry the immutable first-install timestamp through the repoint.
-    ...(existing.origin?.installedAt
-      ? { installedAt: existing.origin.installedAt }
-      : {}),
+  const manifest = readLiveManifest(registryRoot);
+  const idx = manifest.skills.findIndex((s) => s.name === name);
+  const existing = idx >= 0 ? manifest.skills[idx]! : undefined;
+  const url = target.sourceUrl ?? `https://github.com/${target.repo}`;
+  const nextRow = {
+    name,
+    origin: { url, skillPath: target.skillPath },
+    category: existing?.category ?? null,
+    tags: existing?.tags ?? [],
   };
-  writeSkillSource(ref.dir, { ...existing, origin: newOrigin });
+  if (idx >= 0) manifest.skills[idx] = nextRow;
+  else manifest.skills.push(nextRow);
+  writeLiveManifest(registryRoot, manifest);
 
   const { applyOriginUpdate } = await import("../github/origin.js");
   const result = await applyOriginUpdate({ registryRoot, name, token });
   if (!result.ok) {
-    // Re-fetch from the new origin failed; restore the prior marker so a
+    // Re-fetch from the new origin failed; restore the prior row so a
     // bad repoint target doesn't strand the skill on a broken pointer.
-    writeSkillSource(ref.dir, existing);
+    const restored = readLiveManifest(registryRoot);
+    const i = restored.skills.findIndex((s) => s.name === name);
+    if (existing) {
+      if (i >= 0) restored.skills[i] = existing;
+      else restored.skills.push(existing);
+    } else if (i >= 0) {
+      restored.skills.splice(i, 1);
+    }
+    writeLiveManifest(registryRoot, restored);
   }
   return result;
 }

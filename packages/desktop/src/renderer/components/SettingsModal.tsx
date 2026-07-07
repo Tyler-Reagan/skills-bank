@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import type { AgentId } from "@skills-bank/core";
 import { useSettings } from "../SettingsContext.js";
 import {
@@ -76,14 +76,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 interface Props {
   onClose: () => void;
   /**
-   * M5: list of canon skill names currently hidden from default
-   * views. The modal renders an Unhide row per name. Empty array
-   * suppresses the section.
-   */
-  hiddenCanon: string[];
-  /** Unhide a name; host refreshes the registry list. */
-  onUnhide: (name: string) => Promise<void> | void;
-  /**
    * Whether the user is signed in with GitHub. Gates the
    * "Show upstream activity" toggle — when not authed, the toggle
    * disables and surfaces a sign-in hint rather than letting the
@@ -101,8 +93,6 @@ interface Props {
  */
 export function SettingsModal({
   onClose,
-  hiddenCanon,
-  onUnhide,
   isAuthed,
   appVersion,
   onCheckForUpdates,
@@ -122,27 +112,6 @@ export function SettingsModal({
     { initialData: [] },
   );
   const topLevelSymlinks = symlinkData ?? [];
-
-  // Curated skills snapshot. Read-only display; curated is an
-  // app-managed dependency post-v1.3 — content refresh runs silently
-  // on app launch via runSync.
-  const { data: registryEntries } = useIpcQuery(
-    () => window.skillsBank.listRegistry(),
-    [],
-    { initialData: [] },
-  );
-  const curatedSkills = useMemo(
-    () =>
-      (registryEntries ?? [])
-        .filter((e) => e.source.source === "curated")
-        .map((e) => ({ name: e.name, description: e.description })),
-    [registryEntries],
-  );
-  const { data: syncReport } = useIpcQuery(
-    () => window.skillsBank.getSyncReport(),
-    [],
-  );
-  const curatedLastCheckedAt = syncReport?.syncedAt ?? null;
 
   // Skill-usage tracking. This toggle is an immediate side effect (it
   // writes/removes the PreToolUse hook in ~/.claude/settings.json), so it
@@ -358,36 +327,6 @@ export function SettingsModal({
       </div>
 
       <div className="prefs-group">
-        <p className="prefs-group-label">Curated skills</p>
-        <div className="prefs-card">
-          <div className="prefs-row prefs-row--stack">
-            {curatedSkills.length === 0 ? (
-              <p className="settings-hint italic mt-0 mb-0">
-                None present in this registry.
-              </p>
-            ) : (
-              <ul className="settings-list">
-                {curatedSkills.map((s) => (
-                  <li key={s.name} className="mb-4">
-                    <code>{s.name}</code>
-                    {s.description ? (
-                      <span className="text-subtle"> — {s.description}</span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="settings-hint text-11 mt-0 mb-0">
-              Last checked:{" "}
-              {curatedLastCheckedAt
-                ? new Date(curatedLastCheckedAt).toLocaleString()
-                : "never"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="prefs-group">
         <p className="prefs-group-label">Interface</p>
         <div className="prefs-card">
           <div className="prefs-row">
@@ -516,29 +455,6 @@ export function SettingsModal({
           )}
         </div>
       </div>
-
-      {hiddenCanon.length > 0 && (
-        <div className="prefs-group">
-          <p className="prefs-group-label">Dismissed bundled skills</p>
-          <div className="prefs-card">
-            <div className="prefs-row prefs-row--stack">
-              <ul className="settings-unhide-list mt-0">
-                {hiddenCanon.map((name) => (
-                  <li key={name} className="settings-unhide-item">
-                    <code className="text-13">{name}</code>
-                    <button
-                      className="link-btn"
-                      onClick={() => void onUnhide(name)}
-                    >
-                      Unhide
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="prefs-footer">
         <span className="settings-hint">

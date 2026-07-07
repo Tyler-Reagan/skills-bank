@@ -1,16 +1,18 @@
 #!/usr/bin/env tsx
 //
-// Maintainer-internal: single entrypoint for the skill provenance &
-// vendoring tools. Replaces the former one-script-per-command surface
-// (`backfill:bundled` / `discover:bundled` / `vendor:skill` /
-// `vendor:refresh` / `update:skill`) with `pnpm bank <command>`.
+// Maintainer-internal: single entrypoint for the skill provenance
+// tools. `pnpm bank <command>`.
 //
 // Usage:
-//   pnpm bank vendor   <owner/repo>@<id> [--path …] [--as …] [--force]
-//   pnpm bank refresh  [--apply] [--only a,b] [--json]
-//   pnpm bank backfill [--dry]
-//   pnpm bank discover [--out FILE] [--apply FILE] [--source …]
-//   pnpm bank update   <name> [--from …] [--bucket personal|vendored] [--dry]
+//   pnpm bank update <name> [--from …] [--bucket personal|vendored] [--dry]
+//
+// `vendor` / `refresh` / `backfill` / `discover` were retired with the
+// origin-only provenance model (ADR-0020/0021, issue #159) — they wrote
+// per-skill `.skills-bank.json`/`.skills-bank-hash` sidecars for the
+// curated `skills/vendored/` bucket, which no manifest write-seam
+// survives them and which the model deliberately leaves empty going
+// forward (the maintainer's own skills live in the separate
+// `Tyler-Reagan/skills` repo, not this bucket).
 //
 // Each command delegates to its implementation module. We reshape
 // process.argv to drop the leading command token so each module's
@@ -23,10 +25,6 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const COMMANDS: Record<string, string> = {
-  vendor: "vendor-skill.ts",
-  refresh: "vendor-refresh.ts",
-  backfill: "backfill-bundled-upstream.ts",
-  discover: "discover-bundled-upstream.ts",
   update: "update-skill.ts",
 };
 
@@ -38,10 +36,6 @@ function usage(): void {
       "Usage: pnpm bank <command> [args]",
       "",
       "Commands:",
-      "  vendor    <owner/repo>@<id> [--path …] [--as …] [--force]        vendor a skill from a GitHub repo",
-      "  refresh   [--apply] [--only a,b] [--json]                        bulk-refresh vendored skills vs upstream",
-      "  backfill  [--dry]                                                stamp upstreams from bundled-upstream-mapping.json",
-      "  discover  [--out FILE] [--apply FILE] [--source …]               auto-discover upstreams for unstamped skills",
       "  update    <name> [--from …] [--bucket personal|vendored] [--dry] pull a locally-edited skill back into the bank",
     ].join("\n"),
   );

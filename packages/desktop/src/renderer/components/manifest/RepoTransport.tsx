@@ -337,12 +337,6 @@ function ImportView({
   // preview
   return (
     <div>
-      <div className="repo-transport-import-meta">
-        Exported:{" "}
-        {data.manifest.exportedAt
-          ? new Date(data.manifest.exportedAt).toLocaleString()
-          : "—"}
-      </div>
       <div className="repo-transport-skill-count">
         {data.manifest.skills.length} skill
         {data.manifest.skills.length === 1 ? "" : "s"} in remote manifest

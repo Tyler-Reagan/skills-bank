@@ -57,11 +57,8 @@ export interface ManifestConflict {
 }
 
 export interface ManifestMergeResult {
-  /**
-   * The unambiguously-merged manifest. Skills sorted by name; conflicted
-   * skills excluded. `sourceBankVersion`/`registryRoot`/`exportedAt`
-   * carry from `ours` — the local bank is authoring the merge.
-   */
+  /** The unambiguously-merged manifest. Skills sorted by name; conflicted
+   *  skills excluded. */
   merged: RegistryManifest;
   conflicts: ManifestConflict[];
 }
@@ -128,9 +125,6 @@ export function mergeManifests(
 
   const merged: RegistryManifest = {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
-    exportedAt: ours.exportedAt,
-    sourceBankVersion: ours.sourceBankVersion,
-    ...(ours.registryRoot ? { registryRoot: ours.registryRoot } : {}),
     skills: mergedSkills,
   };
   return { merged, conflicts };

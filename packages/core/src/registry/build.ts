@@ -3,13 +3,13 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
-import { readHiddenCanonNames, readUpstreamCanonNames } from "./canon.js";
 import { readExternalRegistry } from "./external.js";
-import { hashSkillFolder, readRuntimeState } from "./heal.js";
+import { hashSkillFolder } from "./heal.js";
+import { readRuntimeMap } from "./runtime-map.js";
 import { parseSkillFrontmatter } from "./frontmatter.js";
 import { readSkillMeta, walkSkills } from "./walk.js";
-import { readSkillSource } from "./source.js";
-import { readSkillRecord } from "./skill-record.js";
+import { readLiveManifest, type ManifestOrigin } from "../manifest/manifest.js";
+import { isGithubUrl } from "../github/url.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 import type {
   RegistryEntry,
@@ -80,11 +80,20 @@ function loadValidator(registryRoot: string): SchemaValidator | null {
   }
 }
 
+const NULL_ORIGIN: ManifestOrigin = { url: null };
+
 /**
  * Walk `<registryRoot>/skills/<bucket>/<name>/SKILL.md` frontmatter and
  * produce a RegistryIndex in memory. Synchronous and dependency-free at
  * runtime so it can be called from the Electron main process without a
  * subprocess.
+ *
+ * PURE READ (ADR-0020/0021): joins folder existence + bucket (`walkSkills`)
+ * with the live manifest row (identity, origin, labels) and the runtime map
+ * (volatile drift/unreachable flags). Never writes the manifest — orphan
+ * folders (no manifest row) are synthesized in-memory as `origin: {url:
+ * null}` so the index is whole without persisting. `reconcileFoldersToManifest`
+ * is the only manifest-write seam.
  *
  * Lenient by default: a folder whose frontmatter is incomplete or
  * fails schema validation still becomes an entry (with warnings). This
@@ -103,9 +112,9 @@ export function buildRegistryIndex(
   // folder entries (registered names that don't exist on disk anymore).
   // Read happens BEFORE we potentially overwrite below.
   const priorNames = readPriorIndexNames(registryRoot);
-  // Canon is computed against the upstream-canon snapshot only here.
-  const upstreamCanon = readUpstreamCanonNames(registryRoot);
-  const hiddenCanon = readHiddenCanonNames(registryRoot);
+  const manifest = readLiveManifest(registryRoot);
+  const manifestByName = new Map(manifest.skills.map((s) => [s.name, s]));
+  const runtimeMap = readRuntimeMap(registryRoot);
 
   if (fs.existsSync(skillsDir)) {
     const allRefs = walkSkills(registryRoot);
@@ -113,49 +122,18 @@ export function buildRegistryIndex(
       ? allRefs.filter((r) => (opts.buckets as string[]).includes(r.bucket))
       : allRefs;
     for (const ref of skillRefs) {
+      const row = manifestByName.get(ref.name);
       const built = buildOneEntry(
         registryRoot,
         ref.dir,
         ref.name,
         validate,
         opts,
+        row?.origin ?? NULL_ORIGIN,
       );
       if (built) {
         built.bucket = ref.bucket;
-        // Canon is set from the upstream-canon snapshot.
-        built.canon = upstreamCanon.has(ref.name);
-        // Hide flag is only meaningful for canon entries (non-canon
-        // skills are just unregisterable). Stale entries in the
-        // hidden list for skills that lost canon status get ignored.
-        if (built.canon && hiddenCanon.has(ref.name)) built.hidden = true;
-        // Drift detection for skills with a recorded baseline hash.
-        // Two paths populate `.skills-bank-hash` today: the bundled
-        // sync flow (snapshot at sync time) and the upstream-scanner
-        // stamp (snapshot at scan time). Either way: live folder hash
-        // != stored hash ⇒ the user has edited the skill locally.
-        // The classifier distinguishes which heal flow applies based
-        // on the source marker (`edited-without-origin` vs the
-        // upstream-aware `edited-with-origin`).
-        const skillRecord = readSkillRecord(ref.dir);
-        if (
-          built.source.source === "curated" ||
-          built.source.origin !== undefined
-        ) {
-          if (skillRecord.syncedHash) {
-            const live = hashSkillFolder(ref.dir);
-            if (live && live !== skillRecord.syncedHash) built.drift = true;
-          }
-        }
-        // Phase 3 (v1.4): surface origin-unreachable when the per-
-        // skill probe-failure counter saturates the threshold.
-        if (built.source.origin?.kind === "github") {
-          if (
-            (skillRecord.runtime.probeFailureCount ?? 0) >=
-            ORIGIN_UNREACHABLE_THRESHOLD
-          ) {
-            built.originUnreachable = true;
-          }
-        }
+        applyRuntimeState(built, ref.dir, runtimeMap[ref.name]);
         entries.push(built);
       }
     }
@@ -169,10 +147,7 @@ export function buildRegistryIndex(
   for (const ext of readExternalRegistry(registryRoot)) {
     if (adoptedNames.has(ext.name)) continue; // adopted wins on name collision
     const built = buildExternalEntry(ext, opts);
-    if (built) {
-      built.canon = upstreamCanon.has(ext.name);
-      entries.push(built);
-    }
+    if (built) entries.push(built);
   }
 
   // M6: surface missing adopted entries — names that the prior
@@ -186,11 +161,10 @@ export function buildRegistryIndex(
       name: prior.name,
       description: "(files missing)",
       path: prior.path,
-      source: { source: "user" },
+      origin: manifestByName.get(prior.name)?.origin ?? NULL_ORIGIN,
       adopted: true,
       missing: true,
       ...(prior.bucket ? { bucket: prior.bucket } : {}),
-      ...(upstreamCanon.has(prior.name) ? { canon: true } : {}),
     });
   }
 
@@ -211,27 +185,30 @@ export function buildRegistryIndex(
 }
 
 /**
- * `fetchedAt` lives in `.skills-bank-runtime.json` (the gitignored
- * runtime sidecar — ADR-0002). The in-memory view stitches it back
- * into `source.origin.fetchedAt` so consumers (drawer display,
- * Settings, etc.) keep reading from the familiar path.
+ * Fold the runtime map's volatile state into a built entry: drift
+ * (live hash vs the recorded `syncedHash` baseline) and
+ * origin-unreachable (probe-failure counter saturated for a
+ * GitHub-capable origin). Drift only fires once a baseline is
+ * recorded — an acquired skill (`origin.url` set) or a detached one
+ * (rebaselined at detach time) always has one; a from-scratch local
+ * skill with no baseline yet is never flagged.
  */
-function mergeRuntimeFetchedAt(
-  source: import("./source.js").SkillSource,
+function applyRuntimeState(
+  entry: RegistryEntry,
   skillDir: string,
-): import("./source.js").SkillSource {
-  if (!source.origin) return source;
-  const runtime = readRuntimeState(skillDir);
-  // Runtime value is authoritative when present. Fall back to whatever
-  // the legacy committed marker carried — old `.skills-bank.json` files
-  // that still have `fetchedAt` inline keep working until the next
-  // writeSkillSource strips it.
-  const fetchedAt = runtime.fetchedAt ?? source.origin.fetchedAt;
-  if (fetchedAt === undefined) return source;
-  return {
-    ...source,
-    origin: { ...source.origin, fetchedAt },
-  };
+  runtime: import("./runtime-map.js").RuntimeEntry | undefined,
+): void {
+  if (!runtime) return;
+  if (runtime.syncedHash) {
+    const live = hashSkillFolder(skillDir);
+    if (live && live !== runtime.syncedHash) entry.drift = true;
+  }
+  if (
+    isGithubUrl(entry.origin.url) &&
+    (runtime.probeFailureCount ?? 0) >= ORIGIN_UNREACHABLE_THRESHOLD
+  ) {
+    entry.originUnreachable = true;
+  }
 }
 
 function buildOneEntry(
@@ -240,6 +217,7 @@ function buildOneEntry(
   folderName: string,
   validate: SchemaValidator | null,
   opts: BuildIndexOptions,
+  origin: ManifestOrigin,
 ): RegistryEntry | null {
   const skillMdPath = path.join(skillDir, "SKILL.md");
   const hasSkillMd = fs.existsSync(skillMdPath);
@@ -313,7 +291,7 @@ function buildOneEntry(
     ...(meta.version ? { version: meta.version } : {}),
     ...(meta.author ? { author: meta.author } : {}),
     path: path.relative(registryRoot, skillDir),
-    source: mergeRuntimeFetchedAt(readSkillSource(skillDir), skillDir),
+    origin,
     // Folders walked from <registryRoot>/skills/ are adopted by
     // definition — the files live in the bank. M3 introduces the
     // non-adopted (external) case alongside this.
@@ -351,7 +329,7 @@ function buildExternalEntry(
       name: ext.name,
       description: `(external target missing: ${ext.target})`,
       path: ext.target,
-      source: { source: "user" },
+      origin: NULL_ORIGIN,
       adopted: false,
       missing: true,
     };
@@ -379,7 +357,7 @@ function buildExternalEntry(
     // Absolute path for external entries — renderer falls back to
     // this when composing the reveal-in-finder path.
     path: ext.target,
-    source: { source: "user" },
+    origin: NULL_ORIGIN,
     adopted: false,
     ...(warnings.length > 0 ? { warnings } : {}),
   };

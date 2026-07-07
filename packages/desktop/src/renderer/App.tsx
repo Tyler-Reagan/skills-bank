@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SplashScreen } from "./components/primitives.js";
 import type {
   AgentId,
-  ConflictEntry,
   DiagnosticItem,
   DiagnosticReport,
   InstalledSkill,
@@ -27,7 +26,6 @@ import {
   DEFAULT_SETTINGS,
   type AppSettings,
 } from "./components/SettingsModal.js";
-import { SyncBanner } from "./components/SyncBanner.js";
 import { Tabs, type TabId } from "./components/Tabs.js";
 import { DiscoverTab } from "./components/DiscoverTab.js";
 import { MetricsTab } from "./components/MetricsTab.js";
@@ -36,7 +34,6 @@ import { ModalHost, type ActiveModal } from "./components/ModalHost.js";
 import { useManifestImportProgress } from "./hooks/useManifestImportProgress.js";
 import { useModalRouter } from "./hooks/useModalRouter.js";
 import { useRescanController } from "./hooks/useRescanController.js";
-import { useSyncFeed } from "./hooks/useSyncFeed.js";
 import { useUpdateFeed } from "./hooks/useUpdateFeed.js";
 import {
   RegistryHostProvider,
@@ -50,7 +47,7 @@ import { SettingsProvider, useSettings } from "./SettingsContext.js";
 import { RegistryProvider, useRegistry } from "./RegistryContext.js";
 import { useRegisterSkill } from "./useRegisterSkill.js";
 import { LabelsProvider, useLabels } from "./LabelsContext.js";
-import type { AuthStatus, SyncStatus, UpdateStatus } from "../shared/ipc.js";
+import type { AuthStatus, UpdateStatus } from "../shared/ipc.js";
 
 // Persistence keys still managed directly by App.tsx (tab + unregister hint).
 // Search/filter/sort state moved into useBrowseFilters.
@@ -243,25 +240,6 @@ function AppContent(): React.ReactElement {
     Set<import("./components/RegistryFilters.js").RegistryFilterTag>
   >(() => new Set());
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
-  const {
-    syncStatus,
-    setSyncStatus,
-    pendingConflicts,
-    setPendingConflicts,
-    conflictModalEntries,
-    setConflictModalEntries,
-  } = useSyncFeed();
-
-  // Rate-limit sync errors are already surfaced by the origin-probe toast
-  // (useRescanController → flashError). Showing both the banner AND the toast
-  // for the same root cause is redundant. Suppress the banner by resetting to
-  // idle; the toast carries the "Sign in" CTA and cleaner copy.
-  useEffect(() => {
-    if (syncStatus.kind !== "error") return;
-    if (/rate.?limit|403/i.test(syncStatus.message)) {
-      setSyncStatus({ kind: "idle" });
-    }
-  }, [syncStatus, setSyncStatus]);
 
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
 
@@ -419,7 +397,7 @@ function AppContent(): React.ReactElement {
           name: item.name,
           description: item.detail,
           path: item.name,
-          source: { source: "user" },
+          origin: { url: null },
         };
         setSelected(synthetic);
         return;
@@ -526,18 +504,6 @@ function AppContent(): React.ReactElement {
     },
     [reloadLabels],
   );
-
-  const sync = useCallback(async () => {
-    const r = await window.skillsBank.syncCanonical();
-    flash(r.message);
-    await refresh();
-  }, [refresh, flash]);
-
-  const openConflictModal = useCallback(async () => {
-    const pending = await window.skillsBank.getPendingConflicts();
-    if (!pending || pending.conflicts.length === 0) return;
-    setConflictModalEntries(pending.conflicts);
-  }, []);
 
   // Re-fetch from the currently linked GitHub repo, no picker.
   const refreshLinkedRepo = useCallback(async () => {
@@ -655,20 +621,18 @@ function AppContent(): React.ReactElement {
         case "refresh":
           void rescan.onRefreshClick();
           break;
-        case "sync":
-          void sync();
-          break;
         case "checkForUpdates":
           checkForUpdates();
           break;
-        // Other actions (changeRegistry, mergeRegistry, signOut) are no
-        // longer dispatched from any surface — the in-app dropdown that
-        // fired them is gone and the menubar doesn't include them. Kept
-        // in the union for back-compat with the IPC shape; the cases
-        // are unreachable.
+        // Other actions (changeRegistry, mergeRegistry, signOut, sync) are
+        // no longer dispatched from any surface — the in-app dropdown that
+        // fired them is gone, the menubar doesn't include them, and "sync"
+        // was the curated-tarball-sync subsystem removed in v6 (#159). Kept
+        // in the union for back-compat with the IPC shape; the cases are
+        // unreachable.
       }
     });
-  }, [rescan, sync, checkForUpdates]);
+  }, [rescan, checkForUpdates]);
 
   // Keep the drawer's entry up-to-date if the registry refreshes. Don't
   // close the drawer when no registry entry is found — the selection may
@@ -761,9 +725,7 @@ function AppContent(): React.ReactElement {
         onToggleTheme={toggleTheme}
         density={density}
         onToggleDensity={toggleDensity}
-        syncing={
-          syncStatus.kind === "fetching" || syncStatus.kind === "applying"
-        }
+        syncing={false}
         onSync={() => void refreshLinkedRepo()}
         authStatus={authStatus}
         onOpenAccount={() => openModal({ kind: "account" })}
@@ -801,20 +763,6 @@ function AppContent(): React.ReactElement {
           ))}
         </div>
       )}
-      <SyncBanner
-        status={syncStatus}
-        pendingConflicts={pendingConflicts}
-        onDismiss={() => setSyncStatus({ kind: "idle" })}
-        onResolveConflicts={() => void openConflictModal()}
-        onResetPending={() => {
-          void (async () => {
-            const r = await window.skillsBank.clearPendingConflicts();
-            flash(r.message);
-            setPendingConflicts(0);
-            await refresh();
-          })();
-        }}
-      />
       <Tabs
         active={tab}
         onChange={setTabPersisted}
@@ -872,7 +820,7 @@ function AppContent(): React.ReactElement {
                   name: s.name,
                   description: s.target ?? s.linkPath,
                   path: s.linkPath,
-                  source: { source: "user" },
+                  origin: { url: null },
                 };
                 setSelected(synthetic);
               }}
@@ -1033,8 +981,6 @@ function AppContent(): React.ReactElement {
         closeModal={closeModal}
         authStatus={authStatus}
         setAuthStatus={setAuthStatus}
-        conflictModalEntries={conflictModalEntries}
-        setConflictModalEntries={setConflictModalEntries}
         selected={selected}
         setSelected={setSelected}
         importingManifest={importingManifest}

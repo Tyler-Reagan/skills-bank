@@ -25,6 +25,11 @@
       "types": "./dist/registry/labels.d.ts",
       "import": "./dist/registry/labels.js",
       "default": "./dist/registry/labels.js"
+    },
+    "./origin-url": {
+      "types": "./dist/github/url.d.ts",
+      "import": "./dist/github/url.js",
+      "default": "./dist/github/url.js"
     }
   },
   "scripts": {
@@ -38,8 +43,7 @@
     "ajv-formats": "^3.0.1",
     "archiver": "^7.0.1",
     "diff": "^9.0.0",
-    "ignore": "^7.0.5",
-    "tar": "^7.5.14"
+    "ignore": "^7.0.5"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.3",

@@ -1,22 +1,15 @@
 import React, { useCallback, useState } from "react";
-import type {
-  AgentId,
-  ConflictEntry,
-  InstalledSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { RegistrationPlanModal } from "./RegistrationPlanModal.js";
 import { ManageLinksModal } from "./ManageLinksModal.js";
 import { InstallCollisionModal } from "./InstallCollisionModal.js";
 import { InstallConflictModal } from "./InstallConflictModal.js";
 import type { InstallConflictError } from "./InstallConflictModal.js";
-import { SyncConflictModal } from "./SyncConflictModal.js";
 import { ManifestConflictModal } from "./ManifestConflictModal.js";
 import { DeleteUnregisteredDialog } from "./DeleteUnregisteredDialog.js";
 import { SettingsModal } from "./SettingsModal.js";
 import { KeyboardShortcutsOverlay } from "./KeyboardShortcutsOverlay.js";
 import { AccountModal } from "./AccountModal.js";
-import { ManifestImportConfirmModal } from "./manifest/ManifestImportConfirmModal.js";
 import { ManifestModal } from "./manifest/ManifestModal.js";
 import { ConnectGithubModal } from "./ConnectGithubModal.js";
 import { UpdatesModal } from "./UpdatesModal.js";
@@ -45,8 +38,7 @@ import type {
 
 /**
  * Every mutually-exclusive modal AppContent can show. One at a time —
- * see useModalRouter. The drawer (`selected`), the sync-triggered
- * conflict resolver (`conflictModalEntries`), and the bulk resolve-all
+ * see useModalRouter. The drawer (`selected`) and the bulk resolve-all
  * flow keep their own state because they can overlay a modal or carry
  * multi-step state.
  */
@@ -118,8 +110,6 @@ interface Props {
   closeModal: () => void;
   authStatus: AuthStatus | null;
   setAuthStatus: (s: AuthStatus | null) => void;
-  conflictModalEntries: ConflictEntry[] | null;
-  setConflictModalEntries: (v: ConflictEntry[] | null) => void;
   selected: RegistryEntry | null;
   setSelected: (e: RegistryEntry | null) => void;
   importingManifest: boolean;
@@ -147,8 +137,6 @@ export function ModalHost({
   closeModal,
   authStatus,
   setAuthStatus,
-  conflictModalEntries,
-  setConflictModalEntries,
   selected,
   setSelected,
   importingManifest,
@@ -173,9 +161,6 @@ export function ModalHost({
     string,
     string[]
   > | null>(null);
-  const [manifestImportHints, setManifestImportHints] = useState<
-    import("@skills-bank/core").ImportRegistryManifestResult | null
-  >(null);
 
   const pickDestinationTarget =
     modal?.kind === "pickDestination" ? modal.target : null;
@@ -266,16 +251,6 @@ export function ModalHost({
       }
     },
     [refresh, flash, closeModal, setAuthStatus],
-  );
-
-  const resolveConflicts = useCallback(
-    async (decisions: import("@skills-bank/core").SyncDecisions) => {
-      const r = await window.skillsBank.resolveConflicts(decisions);
-      flash(r.message);
-      setConflictModalEntries(null);
-      await refresh();
-    },
-    [flash, refresh, setConflictModalEntries],
   );
 
   return (
@@ -508,12 +483,6 @@ export function ModalHost({
       {modal?.kind === "settings" && (
         <SettingsModal
           onClose={() => closeModal()}
-          hiddenCanon={registry.filter((e) => e.hidden).map((e) => e.name)}
-          onUnhide={async (name) => {
-            const r = await window.skillsBank.unhide(name);
-            flash(r.message);
-            await refresh();
-          }}
           isAuthed={Boolean(authStatus?.user)}
           appVersion="dev"
           onCheckForUpdates={checkForUpdates}
@@ -551,17 +520,6 @@ export function ModalHost({
         />
       )}
 
-      {manifestImportHints !== null && (
-        <ManifestImportConfirmModal
-          result={manifestImportHints}
-          onClose={() => setManifestImportHints(null)}
-          onDone={(msg) => {
-            setManifestImportHints(null);
-            if (msg) flash(msg);
-          }}
-        />
-      )}
-
       {modal?.kind === "manifest" && (
         <ManifestModal
           mode={modal.mode}
@@ -585,9 +543,6 @@ export function ModalHost({
               );
             }
             void refresh();
-            if (result.installHints.length > 0) {
-              setManifestImportHints(result);
-            }
           }}
           onExportComplete={(msg) => {
             closeModal();
@@ -799,14 +754,6 @@ export function ModalHost({
             }}
           />
         )}
-
-      {conflictModalEntries && (
-        <SyncConflictModal
-          conflicts={conflictModalEntries}
-          onClose={() => setConflictModalEntries(null)}
-          onResolve={resolveConflicts}
-        />
-      )}
 
       {modal?.kind === "repoPicker" && (
         <RepoPickerModal
@@ -1031,26 +978,6 @@ function DrawerHost({
               const r = await window.skillsBank.repointExternal(selected.name);
               if (r.message !== "cancelled") flash(r.message);
               if (r.ok) await refresh();
-            }
-          : undefined
-      }
-      onHide={
-        caps.canHide
-          ? async () => {
-              const r = await window.skillsBank.hide(selected.name);
-              flash(r.message);
-              if (r.ok) onClose();
-              await refresh();
-            }
-          : undefined
-      }
-      onUnhide={
-        caps.canUnhide
-          ? async () => {
-              const r = await window.skillsBank.unhide(selected.name);
-              flash(r.message);
-              if (r.ok) onClose();
-              await refresh();
             }
           : undefined
       }

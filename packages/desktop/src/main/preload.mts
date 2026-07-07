@@ -3,7 +3,6 @@ import {
   IPC,
   type Bounds,
   type DiscoverStatus,
-  type SyncStatus,
   type UpdateStatus,
 } from "../shared/ipc.js";
 
@@ -21,8 +20,6 @@ const api = {
     ipcRenderer.invoke(IPC.unregister, name, destination, force),
   deleteUnregistered: (name: string) =>
     ipcRenderer.invoke(IPC.deleteUnregistered, name),
-  hide: (name: string) => ipcRenderer.invoke(IPC.hide, name),
-  unhide: (name: string) => ipcRenderer.invoke(IPC.unhide, name),
   forgetMissing: (name: string) => ipcRenderer.invoke(IPC.forgetMissing, name),
   repointExternal: (name: string) =>
     ipcRenderer.invoke(IPC.repointExternal, name),
@@ -32,7 +29,6 @@ const api = {
   adoptIntoLinkedRepo: (name: string, destPath: string) =>
     ipcRenderer.invoke(IPC.adoptIntoLinkedRepo, name, destPath),
   listTopLevelSymlinks: () => ipcRenderer.invoke(IPC.listTopLevelSymlinks),
-  clearPendingConflicts: () => ipcRenderer.invoke(IPC.clearPendingConflicts),
   scan: (customDirs?: string[]) => ipcRenderer.invoke(IPC.scan, customDirs),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),
   getRoot: () => ipcRenderer.invoke(IPC.getRoot),
@@ -57,16 +53,6 @@ const api = {
     ipcRenderer.on(IPC.updateStatus, listener);
     return () => ipcRenderer.removeListener(IPC.updateStatus, listener);
   },
-  syncCanonical: () => ipcRenderer.invoke(IPC.syncCanonical),
-  getSyncReport: () => ipcRenderer.invoke(IPC.getSyncReport),
-  onSyncStatus: (cb: (status: SyncStatus) => void) => {
-    const listener = (_e: unknown, status: SyncStatus) => cb(status);
-    ipcRenderer.on(IPC.syncStatus, listener);
-    return () => ipcRenderer.removeListener(IPC.syncStatus, listener);
-  },
-  getPendingConflicts: () => ipcRenderer.invoke(IPC.getPendingConflicts),
-  resolveConflicts: (decisions: unknown) =>
-    ipcRenderer.invoke(IPC.resolveConflicts, decisions),
   authStatus: () => ipcRenderer.invoke(IPC.authStatus),
   authSetRegistrySourceLocal: () =>
     ipcRenderer.invoke(IPC.authSetRegistrySourceLocal),

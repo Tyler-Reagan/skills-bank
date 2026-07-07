@@ -1,32 +1,27 @@
 import fs from "node:fs";
 import path from "node:path";
-import { type AgentId } from "../shared/agents.js";
 import { buildRegistryIndex } from "../registry/build.js";
-import { invalidateCanonCache } from "../registry/canon.js";
-import { hashSkillFolder, writeSyncedHash } from "../registry/heal.js";
-import { findSkillFolder, walkSkills } from "../registry/walk.js";
-import {
-  readSkillSource,
-  writeSkillSource,
-  isSelfOrigin,
-  type OriginPointer,
-  type SkillOrigin,
-} from "../registry/source.js";
+import { hashSkillFolder } from "../registry/heal.js";
+import { setRuntimeEntry } from "../registry/runtime-map.js";
+import { findSkillFolder } from "../registry/walk.js";
+import { isGithubUrl, parseOwnerRepo } from "../github/url.js";
 import {
   folderPathFromSkillPath,
   installSkillFiles,
 } from "../github/origin.js";
 import { deleteFromBankSkill } from "../skills/install.js";
-import { type LabelsMap, type SkillLabelOverride } from "../registry/labels.js";
+import { type LabelsMap } from "../registry/labels.js";
 import {
   type RegistryManifest,
   type ManifestSkill,
   type ManifestOrigin,
   coerceManifestToCurrent,
-  originFromPointer,
   originsEqual,
-  stampOriginMarker,
+  toPushedProjection,
+  bucketForManifestSkill,
   recordLabelOverride,
+  readLiveManifest,
+  writeLiveManifest,
 } from "./manifest.js";
 
 export type ImportSkillOutcome =
@@ -43,7 +38,6 @@ export interface ManifestRemovalResult {
 
 export interface ImportRegistryManifestResult {
   outcomes: ImportSkillOutcome[];
-  installHints: { name: string; agents: AgentId[] }[];
   /**
    * Per-skill results of the confirmed-removal arm (Gap 2). Present
    * only when `opts.removeNames` was supplied. A name absent from the
@@ -145,32 +139,21 @@ export interface ImportRegistryManifestOptions {
    */
   removeNames?: string[];
   /**
-   * Active linked repo `owner/name`. Lets `stampOriginMarker` heal a
-   * contradictory `user` provenance carrying a third-party origin (the
-   * historical linked-repo-pull mis-stamp) to `vendored` at acquisition.
-   * Absent → provenance claims are stamped verbatim (no self/third-party
-   * discrimination possible).
+   * Active linked repo `owner/name`. Determines the bucket a newly
+   * mirrored skill lands in (`bucketForManifestSkill`).
    */
   linkedRepo?: string;
 }
 
 /**
  * Apply a manifest to `registryRoot`. For each manifest entry with
- * no local record, mirror content from its Origin via
- * `installSkillFiles` and stamp the resulting marker. Existing
- * entries are inspected for origin collisions; same-origin matches
- * have their auxiliary state (tags + hide) restored, divergent
+ * no local record, mirror content from its origin URL via
+ * `installSkillFiles` and stamp the resulting manifest row + runtime
+ * baseline. Existing entries are inspected for origin collisions:
+ * same-origin matches have their label override restored, divergent
  * origins surface as `collision` outcomes.
  *
- * Never installs into agent dirs. Returns `installHints` —
- * the per-skill `lastInstalledOn` carried forward verbatim from
- * the manifest. Earlier drafts intersected this against agent
- * dirs that existed on disk, but the legit wipe-and-re-import
- * workflow leaves no agent dirs present momentarily, which
- * silently dropped every hint. The cross-machine "agent not
- * present on destination" case is now handled at the install
- * step (where dirs are created on demand and a stray symlink
- * for an unused agent is harmless).
+ * Never installs into agent dirs.
  */
 export async function importRegistryManifest(
   registryRoot: string,
@@ -180,12 +163,14 @@ export async function importRegistryManifest(
   const m = coerceManifestToCurrent(manifest);
 
   const outcomes: ImportSkillOutcome[] = [];
-  const installHints: { name: string; agents: AgentId[] }[] = [];
   const restoredLabels: LabelsMap = {};
   let cancelled = false;
   const total = m.skills.length;
   const manifestNames = m.skills.map((s) => s.name);
   let lastError: string | undefined;
+
+  const liveManifest = readLiveManifest(registryRoot);
+  const liveByName = new Map(liveManifest.skills.map((s) => [s.name, s]));
 
   for (let i = 0; i < m.skills.length; i++) {
     const skill = m.skills[i]!;
@@ -208,9 +193,7 @@ export async function importRegistryManifest(
     lastError = undefined;
     const existing = findSkillFolder(registryRoot, skill.name);
     if (existing) {
-      const localOrigin = originFromPointer(
-        readSkillSource(existing.dir).origin,
-      );
+      const localOrigin = liveByName.get(skill.name)?.origin ?? { url: null };
       if (originsEqual(localOrigin, skill.origin)) {
         // Same-origin re-import: content already on disk and untouched
         // (labels live in labels.json, not the folder), so no re-hash is
@@ -226,12 +209,9 @@ export async function importRegistryManifest(
         continue;
       }
     } else {
-      if (
-        skill.origin.kind !== "github" ||
-        !skill.origin.repo ||
-        !skill.origin.skillPath
-      ) {
-        const reason = "manifest entry has no GitHub origin pointer";
+      const repo = parseOwnerRepo(skill.origin.url);
+      if (!isGithubUrl(skill.origin.url) || !repo || !skill.origin.skillPath) {
+        const reason = "manifest entry has no GitHub origin";
         outcomes.push({
           name: skill.name,
           result: "origin-unreachable",
@@ -240,16 +220,12 @@ export async function importRegistryManifest(
         lastError = `${skill.name}: ${reason}`;
         continue;
       }
-      const destDir = path.join(
-        registryRoot,
-        "skills",
-        skill.bucket,
-        skill.name,
-      );
+      const bucket = bucketForManifestSkill(skill, opts.linkedRepo);
+      const destDir = path.join(registryRoot, "skills", bucket, skill.name);
       fs.mkdirSync(path.dirname(destDir), { recursive: true });
       const folderPath = folderPathFromSkillPath(skill.origin.skillPath);
       const mirror = await installSkillFiles(
-        skill.origin.repo,
+        repo,
         folderPath,
         destDir,
         opts.token ?? null,
@@ -263,26 +239,31 @@ export async function importRegistryManifest(
         lastError = `${skill.name}: ${mirror.message}`;
         continue;
       }
-      stampOriginMarker(destDir, skill, mirror.folderHash, opts.linkedRepo);
-      // Re-hash AFTER stamping the marker so the drift baseline matches
-      // what the next index build computes. Uses SHA-256 (hashSkillFolder),
-      // not the GitHub tree SHA-1 (mirror.folderHash) — the SHA-256 is
-      // what drift detection compares. Metadata comes from the mirrored
-      // SKILL.md frontmatter (authoritative post-v1.15); no meta.json is
-      // written. Labels live in labels.json, recovered for the caller below.
+      // Stamp the manifest row with the mirrored hash, and baseline the
+      // runtime map's synced hash to the just-mirrored SHA-256 content
+      // hash (not the GitHub tree SHA-1 in `mirror.folderHash` — that's
+      // what drift detection compares). Metadata comes from the mirrored
+      // SKILL.md frontmatter; labels live in labels.json, recovered for
+      // the caller below.
+      const idx = liveManifest.skills.findIndex((s) => s.name === skill.name);
+      const row: ManifestSkill = {
+        name: skill.name,
+        origin: { ...skill.origin, hash: mirror.folderHash },
+        category: skill.category,
+        tags: skill.tags,
+      };
+      if (idx >= 0) liveManifest.skills[idx] = row;
+      else liveManifest.skills.push(row);
+      liveByName.set(skill.name, row);
       const localHash = hashSkillFolder(destDir);
-      if (localHash) writeSyncedHash(destDir, localHash);
+      if (localHash)
+        setRuntimeEntry(registryRoot, skill.name, { syncedHash: localHash });
       recordLabelOverride(restoredLabels, skill);
       outcomes.push({ name: skill.name, result: "registered" });
     }
-
-    if (skill.lastInstalledOn.length > 0) {
-      installHints.push({
-        name: skill.name,
-        agents: [...skill.lastInstalledOn],
-      });
-    }
   }
+
+  writeLiveManifest(registryRoot, liveManifest);
 
   // Final terminal progress event so consumers can flip to a
   // "done" UI state without polling the result promise.
@@ -300,7 +281,7 @@ export async function importRegistryManifest(
     Object.keys(restoredLabels).length > 0 ? { restoredLabels } : {};
 
   if (cancelled) {
-    return { outcomes, installHints, ...labelsOut, cancelled: true };
+    return { outcomes, ...labelsOut, cancelled: true };
   }
 
   // Confirmed-removal arm. Runs only on a clean (non-cancelled)
@@ -318,21 +299,26 @@ export async function importRegistryManifest(
   }
 
   return removed
-    ? { outcomes, installHints, ...labelsOut, removed }
-    : { outcomes, installHints, ...labelsOut };
+    ? { outcomes, ...labelsOut, removed }
+    : { outcomes, ...labelsOut };
 }
 
 /**
- * Local skills absent from `manifest` — the deletion candidates for a
- * reconcile. Pure set diff; the caller decides whether to act on them
- * (the confirmed-removal arm) or surface them for confirmation.
+ * Local skills absent from the manifest's PUSHED projection — the
+ * deletion candidates for a reconcile. Diffing against
+ * `toPushedProjection` (not a raw disk walk) means `url: null`
+ * (local-only) skills are structurally immune: they never appear in a
+ * pushed manifest to begin with, so they can never read as "deleted
+ * upstream." Pure set diff; the caller decides whether to act on the
+ * result (the confirmed-removal arm) or surface it for confirmation.
  */
 export function computeManifestRemovals(
-  localNames: string[],
+  registryRoot: string,
   manifest: RegistryManifest,
 ): string[] {
+  const local = toPushedProjection(readLiveManifest(registryRoot));
   const keep = new Set(manifest.skills.map((s) => s.name));
-  return localNames.filter((n) => !keep.has(n));
+  return local.skills.map((s) => s.name).filter((n) => !keep.has(n));
 }
 
 export interface ReconcileResult {
@@ -349,31 +335,32 @@ export interface ReconcileResult {
 
 /**
  * Make the local registry match `manifest`: import adds/updates, delete
- * the skills the manifest no longer lists (`localNames − manifestNames`,
- * which captures both confirmed and auto-resolved deletions), then
- * rebuild the index and invalidate the canon cache. The complete
- * "reconcile local to this manifest" op. The caller owns the merge-base
- * advance and persisting `restoredLabels`.
+ * the skills the pushed manifest no longer lists (via
+ * `computeManifestRemovals`, immune to `url: null` local-only skills),
+ * then reconcile folders to the manifest and rebuild the index. The
+ * complete "reconcile local to this manifest" op. The caller owns the
+ * merge-base advance and persisting `restoredLabels`.
  */
 export async function reconcileRegistryToManifest(
   registryRoot: string,
   manifest: RegistryManifest,
   opts: {
     token?: string | null;
+    linkedRepo?: string;
     onProgress?: (event: ManifestImportProgressEvent) => void;
   } = {},
 ): Promise<ReconcileResult> {
-  const removeNames = computeManifestRemovals(
-    walkSkills(registryRoot).map((r) => r.name),
-    manifest,
-  );
+  const removeNames = computeManifestRemovals(registryRoot, manifest);
   const result = await importRegistryManifest(registryRoot, manifest, {
     ...(opts.token !== undefined ? { token: opts.token } : {}),
+    ...(opts.linkedRepo ? { linkedRepo: opts.linkedRepo } : {}),
     ...(removeNames.length > 0 ? { removeNames } : {}),
     ...(opts.onProgress ? { onProgress: opts.onProgress } : {}),
   });
+  const { reconcileFoldersToManifest } =
+    await import("../registry/reconcile-folders.js");
+  reconcileFoldersToManifest(registryRoot, { linkedRepo: opts.linkedRepo });
   buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
-  invalidateCanonCache(registryRoot);
   return {
     removed: (result.removed ?? []).filter((r) => r.ok).map((r) => r.name),
     ...(result.restoredLabels ? { restoredLabels: result.restoredLabels } : {}),

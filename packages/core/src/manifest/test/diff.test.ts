@@ -6,16 +6,11 @@ import type { RegistryManifest, ManifestSkill } from "../manifest.js";
 function makeManifest(skills: Partial<ManifestSkill>[]): RegistryManifest {
   return {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
-    exportedAt: new Date().toISOString(),
-    sourceBankVersion: "1.0.0",
     skills: skills.map((s) => ({
       name: "unnamed",
-      source: "user",
-      bucket: "personal",
-      origin: { kind: "none" },
+      origin: { url: null },
       tags: [],
       category: null,
-      lastInstalledOn: [],
       ...s,
     })) as ManifestSkill[],
   };

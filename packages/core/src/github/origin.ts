@@ -418,10 +418,11 @@ export async function applyOriginUpdate(
   // skill-state subpath consumers — none of them want the build/sync
   // dependency graph that buildRegistryIndex pulls in.
   const { buildRegistryIndex } = await import("../registry/build.js");
-  const { readSkillSource, writeSkillSource } =
-    await import("../registry/source.js");
-  const { hashSkillFolder, writeRuntimeState, writeSyncedHash } =
-    await import("../registry/heal.js");
+  const { readLiveManifest, writeLiveManifest } =
+    await import("../manifest/manifest.js");
+  const { setRuntimeEntry } = await import("../registry/runtime-map.js");
+  const { hashSkillFolder } = await import("../registry/heal.js");
+  const { isGithubUrl, parseOwnerRepo } = await import("./url.js");
   const path = await import("node:path");
 
   const index = buildRegistryIndex(ctx.registryRoot);
@@ -429,8 +430,15 @@ export async function applyOriginUpdate(
   if (!entry) {
     return { ok: false, message: `${ctx.name} is not in the registry` };
   }
-  const origin = entry.source.origin;
-  if (origin?.kind !== "github" || !origin.repo || !origin.skillPath) {
+  const origin = entry.origin;
+  if (!isGithubUrl(origin.url) || !origin.skillPath) {
+    return {
+      ok: false,
+      message: `${ctx.name} has no GitHub origin — nothing to update`,
+    };
+  }
+  const repo = parseOwnerRepo(origin.url);
+  if (!repo) {
     return {
       ok: false,
       message: `${ctx.name} has no GitHub origin — nothing to update`,
@@ -442,7 +450,6 @@ export async function applyOriginUpdate(
     ctx.registryRoot,
     entry.path || `skills/${ctx.name}`,
   );
-  const existingSource = readSkillSource(registrySkillDir);
 
   const fs = await import("node:fs");
 
@@ -474,7 +481,7 @@ export async function applyOriginUpdate(
   };
 
   const mirror = await installSkillFiles(
-    origin.repo,
+    repo,
     folderPath,
     registrySkillDir,
     ctx.token,
@@ -500,7 +507,7 @@ export async function applyOriginUpdate(
       message: `Update failed: ${mirror.message}.${recoveryHint}`,
       diagnostic:
         `name=${ctx.name}\n` +
-        `repo=${origin.repo}\n` +
+        `repo=${repo}\n` +
         `skillPath=${origin.skillPath}\n` +
         `status=${mirror.status}\n` +
         `message=${mirror.message}`,
@@ -524,11 +531,11 @@ export async function applyOriginUpdate(
     return {
       ok: false,
       message:
-        `Update from ${origin.repo} fetched cleanly but failed frontmatter validation; ` +
+        `Update from ${repo} fetched cleanly but failed frontmatter validation; ` +
         `local content restored. Cause: ${detail}.`,
       diagnostic:
         `name=${ctx.name}\n` +
-        `repo=${origin.repo}\n` +
+        `repo=${repo}\n` +
         `skillPath=${origin.skillPath}\n` +
         `reason=${metaCheck.reason}\n` +
         `detail=${detail}`,
@@ -536,22 +543,23 @@ export async function applyOriginUpdate(
   }
   cleanupScratch();
 
-  // Refresh marker with the new probed folder hash. `fetchedAt` lives
-  // in the gitignored runtime sidecar (ADR-0002) so this write doesn't
-  // churn the committed `.skills-bank.json` when only the timestamp
-  // shifts.
+  // Refresh the manifest row with the new probed folder hash, and the
+  // runtime map with the fetch timestamp + rebaselined content hash.
   const now = new Date().toISOString();
-  writeSkillSource(registrySkillDir, {
-    ...existingSource,
-    origin: {
-      ...origin,
-      skillFolderHash: mirror.folderHash,
-    },
-  });
-  writeRuntimeState(registrySkillDir, { fetchedAt: now });
-  // Re-hash so the baseline reflects the final on-disk state.
+  const manifest = readLiveManifest(ctx.registryRoot);
+  const idx = manifest.skills.findIndex((s) => s.name === ctx.name);
+  if (idx >= 0) {
+    manifest.skills[idx] = {
+      ...manifest.skills[idx]!,
+      origin: { ...origin, hash: mirror.folderHash },
+    };
+    writeLiveManifest(ctx.registryRoot, manifest);
+  }
   const newBaseline = hashSkillFolder(registrySkillDir);
-  if (newBaseline) writeSyncedHash(registrySkillDir, newBaseline);
+  setRuntimeEntry(ctx.registryRoot, ctx.name, {
+    fetchedAt: now,
+    ...(newBaseline ? { syncedHash: newBaseline } : {}),
+  });
 
-  return { ok: true, message: `Updated ${ctx.name} from ${origin.repo}.` };
+  return { ok: true, message: `Updated ${ctx.name} from ${repo}.` };
 }

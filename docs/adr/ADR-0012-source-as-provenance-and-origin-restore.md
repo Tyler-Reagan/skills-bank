@@ -1,6 +1,15 @@
 # ADR-0012 — `source` is sticky provenance; restore unreachable origins via two human-driven paths
 
-**Status:** Proposed
+**Status:** Accepted, but its central decision — "`source` is sticky provenance" — is superseded
+by [ADR-0019](./ADR-0019-source-removed-origin-is-sole-authority.md), which removes `source`
+entirely. Its curated-specific content (the "curated can have no origin" carve-out, the
+never-mint-at-runtime rule, and the preserve-curated-across-sync-mount special case) is separately
+superseded by [ADR-0017](./ADR-0017-curated-and-bundled-default-removed.md). Its references to
+`origin: { kind: "none" }` (the detach stamp and the manifest-export exclusion) are superseded by
+[ADR-0018](./ADR-0018-origin-kind-narrowed-no-undefined-state.md), which renames that value to
+`"local"`. What remains in force: `isSelfOrigin` as the self-vs-third-party decider, and the
+two-path origin-restore design (repoint / adopt into linked repo) — both already operate on
+`origin`, not `source`.
 
 ## Context
 

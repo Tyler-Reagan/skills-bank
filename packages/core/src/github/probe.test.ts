@@ -8,7 +8,7 @@ import {
   recordProbeSuccess,
   type ProbeCompleteEvent,
 } from "./probe.js";
-import { readRuntimeState } from "../registry/heal.js";
+import { getRuntimeEntry } from "../registry/runtime-map.js";
 import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
 
 /**
@@ -27,73 +27,74 @@ import { ORIGIN_UNREACHABLE_THRESHOLD } from "../shared/skill-state.js";
  */
 
 let scratch: string;
-let skillPath: string;
+const SKILL_NAME = "alpha";
 
 beforeEach(() => {
   scratch = fs.mkdtempSync(path.join(os.tmpdir(), "skills-bank-probe-"));
   // Match the layout buildRegistryIndex emits: skills/<bucket>/<name>/.
-  fs.mkdirSync(path.join(scratch, "skills", "vendored", "alpha"), {
+  fs.mkdirSync(path.join(scratch, "skills", "vendored", SKILL_NAME), {
     recursive: true,
   });
-  skillPath = "skills/vendored/alpha";
 });
 
 afterEach(() => {
   fs.rmSync(scratch, { recursive: true, force: true });
 });
 
-function read(): ReturnType<typeof readRuntimeState> {
-  return readRuntimeState(path.join(scratch, skillPath));
+function read() {
+  return getRuntimeEntry(scratch, SKILL_NAME);
 }
 
 describe("recordProbeFailure / recordProbeSuccess", () => {
   test("first failure increments to 1 and stamps lastProbeFailureAt", () => {
-    recordProbeFailure(scratch, { path: skillPath });
+    recordProbeFailure(scratch, SKILL_NAME);
     const r = read();
     expect(r.probeFailureCount).toBe(1);
     expect(typeof r.lastProbeFailureAt).toBe("string");
   });
 
   test("each subsequent failure increments by 1", () => {
-    recordProbeFailure(scratch, { path: skillPath });
-    recordProbeFailure(scratch, { path: skillPath });
+    recordProbeFailure(scratch, SKILL_NAME);
+    recordProbeFailure(scratch, SKILL_NAME);
     expect(read().probeFailureCount).toBe(2);
   });
 
   test("counter saturates at ORIGIN_UNREACHABLE_THRESHOLD", () => {
     for (let i = 0; i < ORIGIN_UNREACHABLE_THRESHOLD + 5; i++) {
-      recordProbeFailure(scratch, { path: skillPath });
+      recordProbeFailure(scratch, SKILL_NAME);
     }
     expect(read().probeFailureCount).toBe(ORIGIN_UNREACHABLE_THRESHOLD);
   });
 
   test("success after failures resets counter + clears timestamp", () => {
-    recordProbeFailure(scratch, { path: skillPath });
-    recordProbeFailure(scratch, { path: skillPath });
+    recordProbeFailure(scratch, SKILL_NAME);
+    recordProbeFailure(scratch, SKILL_NAME);
     expect(read().probeFailureCount).toBe(2);
 
-    recordProbeSuccess(scratch, { path: skillPath });
+    recordProbeSuccess(scratch, SKILL_NAME);
     const r = read();
     expect(r.probeFailureCount).toBeUndefined();
     expect(r.lastProbeFailureAt).toBeUndefined();
   });
 
   test("success on a zero counter does not write to disk", () => {
-    // No prior failures — no sidecar should exist.
-    const sidecar = path.join(scratch, skillPath, ".skills-bank-runtime.json");
-    expect(fs.existsSync(sidecar)).toBe(false);
+    // No prior failures — no runtime map file should exist.
+    const runtimeFile = path.join(scratch, ".skills-bank", "runtime.json");
+    expect(fs.existsSync(runtimeFile)).toBe(false);
 
-    recordProbeSuccess(scratch, { path: skillPath });
-    expect(fs.existsSync(sidecar)).toBe(false);
+    recordProbeSuccess(scratch, SKILL_NAME);
+    expect(fs.existsSync(runtimeFile)).toBe(false);
   });
 
   test("fetchedAt preserved across failure increments", () => {
     // Pre-stamp a fetchedAt as the probe-success path would have.
+    const runtimeDir = path.join(scratch, ".skills-bank");
+    fs.mkdirSync(runtimeDir, { recursive: true });
     fs.writeFileSync(
-      path.join(scratch, skillPath, ".skills-bank-runtime.json"),
-      JSON.stringify({ fetchedAt: "2026-05-20T00:00:00Z" }),
+      path.join(runtimeDir, "runtime.json"),
+      JSON.stringify({ [SKILL_NAME]: { fetchedAt: "2026-05-20T00:00:00Z" } }),
     );
-    recordProbeFailure(scratch, { path: skillPath });
+    recordProbeFailure(scratch, SKILL_NAME);
     const r = read();
     expect(r.fetchedAt).toBe("2026-05-20T00:00:00Z");
     expect(r.probeFailureCount).toBe(1);
@@ -126,7 +127,7 @@ describe("runOnce — completion-event invariants", () => {
   test("excludes self-origin skills from probe candidates", async () => {
     // A skill whose origin points at the linked repo is kept truthful by
     // manifest sync, not the third-party update probe. Even with a full
-    // github marker it must not become a candidate — so the only skill
+    // github origin it must not become a candidate — so the only skill
     // here drops out and the loop takes the zero-candidate early return
     // (empty completion, no network probe attempted).
     const dir = path.join(scratch, "skills", "personal", "mine");
@@ -136,15 +137,21 @@ describe("runOnce — completion-event invariants", () => {
       `---\nname: mine\ndescription: my own skill\n---\n`,
     );
     fs.writeFileSync(
-      path.join(dir, ".skills-bank.json"),
+      path.join(scratch, "registry-manifest.json"),
       JSON.stringify({
-        source: "user",
-        origin: {
-          kind: "github",
-          repo: "owner/repo",
-          skillPath: "skills/tools/mine/SKILL.md",
-          skillFolderHash: "h1",
-        },
+        schemaVersion: 6,
+        skills: [
+          {
+            name: "mine",
+            origin: {
+              url: "https://github.com/owner/repo",
+              skillPath: "skills/tools/mine/SKILL.md",
+              hash: "h1",
+            },
+            category: null,
+            tags: [],
+          },
+        ],
       }),
     );
 

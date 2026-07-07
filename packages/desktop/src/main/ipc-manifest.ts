@@ -7,7 +7,6 @@ import {
   clearPendingManifestConflicts,
   diffManifests,
   exportRegistryManifest,
-  fetchOriginTree,
   fetchRemoteManifest,
   findSkillFolder,
   fromCaught,
@@ -17,26 +16,19 @@ import {
   MANIFEST_SCHEMA_VERSION,
   mergeManifests,
   reconcileRegistryToManifest,
-  reconcileResidentOrigins,
-  buildSkillFolderMap,
   readMergeBase,
   readPendingManifestConflicts,
   resolveRenameTarget,
   serializeManifest,
-  syncTarballToRegistry,
+  toPushedProjection,
   writeMergeBase,
   writePendingManifestConflicts,
-  writeSyncDecisions,
   getAgent,
   getDefaultInstallAgents,
   linkSkillToAgents,
-  readLastSyncReport,
-  readPendingConflicts,
   type ManifestDecisions,
   type ManifestSkill,
-  type RateLimitInfo,
   type RegistryManifest,
-  type SyncDecisions,
 } from "@skills-bank/core";
 import { getStoredToken } from "./auth.js";
 import {
@@ -44,9 +36,7 @@ import {
   getInFlightImportAbort,
   getLinkedRepo,
   getRegistryRoot,
-  getRegistrySource,
   manifestExportContext,
-  mutatingHandle,
   NO_ROOT_MSG,
   setInFlightImportAbort,
   snapshotAfterMutation,
@@ -58,42 +48,8 @@ import {
   type ReadManifestFromRepoResult,
   type ResolveManifestConflictsResult,
   type RunManifestMergeResult,
-  type SyncStatus,
 } from "../shared/ipc.js";
 import type { AgentId } from "@skills-bank/core";
-
-// Import replaceRegistryWithRepo lazily to avoid circular deps — it's
-// defined in ipc-repos.ts and only needed by resolveConflicts.
-// We use a dynamic getter so the module is resolved at call time.
-let _replaceRegistryWithRepo:
-  | ((fullName: string) => Promise<{
-      ok: boolean;
-      message: string;
-      importedCount?: number;
-      conflictCount?: number;
-      error?: ReturnType<typeof fromCaught>;
-    }>)
-  | null = null;
-
-export function setReplaceRegistryWithRepo(
-  fn: (fullName: string) => Promise<{
-    ok: boolean;
-    message: string;
-    importedCount?: number;
-    conflictCount?: number;
-    error?: ReturnType<typeof fromCaught>;
-  }>,
-): void {
-  _replaceRegistryWithRepo = fn;
-}
-
-// ─── Sync status broadcast ────────────────────────────────────────────────────
-
-function broadcastSyncStatus(status: SyncStatus): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send(IPC.syncStatus, status);
-  }
-}
 
 /**
  * Fan a manifest-import progress event out to every renderer window.
@@ -108,35 +64,6 @@ function broadcastManifestImportProgress(
 }
 
 // ─── Reconcile helpers ────────────────────────────────────────────────────────
-
-/**
- * Reconcile resident skills' origins against the linked repo's actual
- * layout before a manifest is exported, so the committed manifest records
- * truthful, re-fetchable pointers and stale third-party probes stop.
- */
-async function reconcileOriginsBeforeExport(
-  root: string,
-  repo: string,
-  branch: string,
-  token: string,
-): Promise<
-  { ok: true } | { ok: false; message: string; rateLimit?: RateLimitInfo }
-> {
-  const tree = await fetchOriginTree(repo, token, { ref: branch });
-  if (!tree.ok) {
-    return tree.rateLimit
-      ? { ok: false, message: tree.message, rateLimit: tree.rateLimit }
-      : { ok: false, message: tree.message };
-  }
-  if (tree.truncated) {
-    return {
-      ok: false,
-      message: `${repo}'s tree is too large to read reliably — origins not reconciled`,
-    };
-  }
-  reconcileResidentOrigins(root, buildSkillFolderMap(tree.tree), repo);
-  return { ok: true };
-}
 
 /**
  * Reconcile the local registry to `manifest` via the core primitive,
@@ -168,10 +95,10 @@ async function runManifestImportCore(manifest: RegistryManifest): Promise<
   const registryRoot = getRegistryRoot();
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const sv = (manifest as unknown as { schemaVersion: unknown }).schemaVersion;
-  if (sv !== 2 && sv !== 3 && sv !== 4) {
+  if (sv !== MANIFEST_SCHEMA_VERSION) {
     return {
       ok: false,
-      message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v2, v3, and v4.`,
+      message: `Unsupported manifest schemaVersion ${String(sv)} — this build understands v${MANIFEST_SCHEMA_VERSION}.`,
     };
   }
   const controller = new AbortController();
@@ -231,10 +158,10 @@ async function writeManifestToDisk(): Promise<{
     if (result.canceled || !result.filePath) {
       return { ok: false, message: "export cancelled" };
     }
-    const manifest = exportRegistryManifest(registryRoot, {
-      sourceBankVersion,
-      ...manifestExportContext(),
-    });
+    const manifest = exportRegistryManifest(
+      registryRoot,
+      manifestExportContext(),
+    );
     fs.writeFileSync(result.filePath, JSON.stringify(manifest, null, 2) + "\n");
     return {
       ok: true,
@@ -289,56 +216,6 @@ async function readManifestFromDisk(): Promise<
   }
 }
 
-// ─── Canonical sync ───────────────────────────────────────────────────────────
-
-const CANONICAL_OWNER = "Tyler-Reagan";
-const CANONICAL_REPO = "skills-bank";
-
-async function runSync(): Promise<{
-  ok: boolean;
-  message: string;
-  error?: import("@skills-bank/core").AppError;
-}> {
-  const registryRoot = getRegistryRoot();
-  if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  try {
-    const token = getStoredToken();
-    const report = await syncTarballToRegistry({
-      registryRoot,
-      owner: CANONICAL_OWNER,
-      repo: CANONICAL_REPO,
-      ...(token ? { token } : {}),
-      mountTo: "vendored",
-      onStatus: (phase) => broadcastSyncStatus({ kind: phase }),
-    });
-    broadcastSyncStatus({
-      kind: "done",
-      upserted: report.upserted,
-      conflicts: report.conflicts.length,
-      orphaned: report.orphaned,
-      commitSha: report.commitSha,
-    });
-    return {
-      ok: true,
-      message: `synced ${report.upserted.length} skill(s)${
-        report.conflicts.length > 0
-          ? `, ${report.conflicts.length} conflict(s) pending`
-          : ""
-      }${
-        report.resolved.length > 0
-          ? `, ${report.resolved.length} auto-resolved`
-          : ""
-      }`,
-    };
-  } catch (err) {
-    const error = fromCaught("sync.run-failed", err);
-    broadcastSyncStatus({ kind: "error", message: error.message });
-    return { ok: false, message: error.message, error };
-  }
-}
-
-export { runSync, broadcastSyncStatus };
-
 // ─── Register handlers ────────────────────────────────────────────────────────
 
 export function registerManifestHandlers(): void {
@@ -361,17 +238,9 @@ export function registerManifestHandlers(): void {
       if (!token) return { ok: false, message: "not authenticated" };
       const branch = linkedRepo.defaultBranch ?? "main";
       const root = registryRoot;
-      await reconcileOriginsBeforeExport(
-        root,
-        linkedRepo.fullName,
-        branch,
-        token,
+      const localManifest = toPushedProjection(
+        exportRegistryManifest(root, manifestExportContext()),
       );
-      const sourceBankVersion = app.getVersion();
-      const localManifest = exportRegistryManifest(root, {
-        sourceBankVersion,
-        ...manifestExportContext(),
-      });
       const remote = await fetchRemoteManifest(
         linkedRepo.fullName,
         branch,
@@ -417,27 +286,7 @@ export function registerManifestHandlers(): void {
         };
       const branch = linkedRepo.defaultBranch ?? "main";
       const root = registryRoot;
-      const reconciled = await reconcileOriginsBeforeExport(
-        root,
-        linkedRepo.fullName,
-        branch,
-        token,
-      );
-      if (!reconciled.ok) {
-        return reconciled.rateLimit
-          ? {
-              ok: false,
-              reason: "rate-limit",
-              message: reconciled.message,
-              rateLimit: reconciled.rateLimit,
-            }
-          : { ok: false, reason: "write-failed", message: reconciled.message };
-      }
-      const sourceBankVersion = app.getVersion();
-      const manifest = exportRegistryManifest(root, {
-        sourceBankVersion,
-        ...manifestExportContext(),
-      });
+      const manifest = exportRegistryManifest(root, manifestExportContext());
       const content = serializeManifest(manifest);
       const commitMessage = "chore: update registry manifest";
 
@@ -459,8 +308,6 @@ export function registerManifestHandlers(): void {
         }
         const baseManifest = readMergeBase(registryRoot) ?? {
           schemaVersion: MANIFEST_SCHEMA_VERSION,
-          exportedAt: "",
-          sourceBankVersion: "",
           skills: [],
         };
         if (
@@ -558,8 +405,6 @@ export function registerManifestHandlers(): void {
 
       const diff = diffManifests(manifest, {
         schemaVersion: MANIFEST_SCHEMA_VERSION,
-        exportedAt: "",
-        sourceBankVersion: "",
         skills: [],
       });
       const prBody = `+${diff.added.length} added, ${diff.removed.length} removed, ${diff.changed.length} changed`;
@@ -638,11 +483,9 @@ export function registerManifestHandlers(): void {
       } catch (e) {
         return { ok: false, reason: "parse-failed", message: String(e) };
       }
-      const sourceBankVersion = app.getVersion();
-      const localManifest = exportRegistryManifest(registryRoot, {
-        sourceBankVersion,
-        ...manifestExportContext(),
-      });
+      const localManifest = toPushedProjection(
+        exportRegistryManifest(registryRoot, manifestExportContext()),
+      );
       const diff = diffManifests(remoteManifest, localManifest);
       return { ok: true, manifest: remoteManifest, diff };
     },
@@ -755,14 +598,11 @@ export function registerManifestHandlers(): void {
           : { ok: false, reason: "read-failed", message: remote.message };
       }
 
-      const ours = exportRegistryManifest(root, {
-        sourceBankVersion: app.getVersion(),
-        ...manifestExportContext(),
-      });
+      const ours = toPushedProjection(
+        exportRegistryManifest(root, manifestExportContext()),
+      );
       const base = readMergeBase(root) ?? {
         schemaVersion: MANIFEST_SCHEMA_VERSION,
-        exportedAt: "",
-        sourceBankVersion: "",
         skills: [],
       };
 
@@ -813,8 +653,6 @@ export function registerManifestHandlers(): void {
       }
       const singleManifest: RegistryManifest = {
         schemaVersion: MANIFEST_SCHEMA_VERSION,
-        exportedAt: new Date().toISOString(),
-        sourceBankVersion: app.getVersion(),
         skills: [skill],
       };
       try {
@@ -885,45 +723,4 @@ export function registerManifestHandlers(): void {
       };
     },
   );
-
-  // ─── Canonical sync handlers ────────────────────────────────────────────────
-
-  mutatingHandle(IPC.syncCanonical, () => runSync());
-
-  ipcMain.handle(IPC.getSyncReport, () => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot) return null;
-    return readLastSyncReport(registryRoot);
-  });
-
-  ipcMain.handle(IPC.getPendingConflicts, () => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot) return null;
-    return readPendingConflicts(registryRoot);
-  });
-
-  mutatingHandle(IPC.resolveConflicts, async (_e, decisions: SyncDecisions) => {
-    const registryRoot = getRegistryRoot();
-    const linkedRepo = getLinkedRepo();
-    const registrySource = getRegistrySource();
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    try {
-      writeSyncDecisions(registryRoot, decisions);
-    } catch (err) {
-      return (() => {
-        const error = fromCaught("ipc.unknown", err);
-        return { ok: false, message: error.message, error };
-      })();
-    }
-    if (registrySource === "github" && linkedRepo) {
-      if (!_replaceRegistryWithRepo) {
-        return {
-          ok: false,
-          message: "replaceRegistryWithRepo not initialized",
-        };
-      }
-      return _replaceRegistryWithRepo(linkedRepo.fullName);
-    }
-    return runSync();
-  });
 }
