@@ -5,6 +5,7 @@ import type {
   InstalledSkill,
   RegistryEntry,
 } from "@skills-bank/core";
+import { parseOwnerRepo } from "@skills-bank/core/origin-url";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
 import { Icon } from "./Icon.js";
 import { RestoreOriginModal } from "./RestoreOriginModal.js";
@@ -16,8 +17,6 @@ type ActionState =
   | "registering"
   | "moving-into-bank"
   | "unregistering"
-  | "hiding"
-  | "unhiding"
   | "updating"
   | "forgetting"
   | "repointing"
@@ -42,8 +41,6 @@ interface Props {
   onRegister?: () => Promise<void> | void;
   onMoveIntoBank?: () => Promise<void> | void;
   onUnregister?: () => Promise<void> | void;
-  onHide?: () => Promise<void> | void;
-  onUnhide?: () => Promise<void> | void;
   onUpdate?: () => Promise<void> | void;
   onForgetMissing?: () => Promise<void> | void;
   onRepoint?: () => Promise<void> | void;
@@ -70,8 +67,6 @@ export function DrawerActions({
   onRegister,
   onMoveIntoBank,
   onUnregister,
-  onHide,
-  onUnhide,
   onUpdate,
   onForgetMissing,
   onRepoint,
@@ -98,6 +93,7 @@ export function DrawerActions({
   useFocusTrap(confirmDeleteRef, repairState.kind === "confirm-delete");
 
   const caps = classification.capabilities;
+  const originRepo = parseOwnerRepo(entry.origin.url);
 
   const install = async () => {
     setAction("installing");
@@ -260,7 +256,7 @@ export function DrawerActions({
                 void Promise.resolve(onUpdate()).finally(() => setAction(null));
               }}
               title={`Fetch the latest content from ${
-                entry.source.origin?.repo ?? "the Origin"
+                originRepo ?? "the Origin"
               } and mirror it into this skill.`}
             >
               {action === "updating" ? (
@@ -273,9 +269,8 @@ export function DrawerActions({
             </button>
             <p className="drawer-action-hint">
               A newer version is available from{" "}
-              <code>{entry.source.origin?.repo ?? "Origin"}</code>. Local
-              content is unchanged since the last fetch, so the update applies
-              cleanly.
+              <code>{originRepo ?? "Origin"}</code>. Local content is unchanged
+              since the last fetch, so the update applies cleanly.
             </p>
           </>
         )}
@@ -313,9 +308,8 @@ export function DrawerActions({
               Restore source
             </button>
             <p className="drawer-action-hint">
-              The source <code>{entry.source.origin?.repo ?? "origin"}</code>{" "}
-              can't be reached. Point it at the new location, or re-home the
-              skill.
+              The source <code>{originRepo ?? "origin"}</code> can't be reached.
+              Point it at the new location, or re-home the skill.
             </p>
           </>
         )}
@@ -600,45 +594,6 @@ export function DrawerActions({
                 : "Files move to your shared agents directory. You can then choose Delete from this machine in the Unregistered section to remove them."}
             </p>
           </>
-        )}
-
-        {caps.canHide && onHide && (
-          <button
-            className="btn"
-            disabled={action !== null}
-            onClick={() => {
-              setAction("hiding");
-              void Promise.resolve(onHide()).finally(() => setAction(null));
-            }}
-            title="Tuck this canon skill out of the default views. Installations and metadata are kept; you can unhide from Settings."
-          >
-            {action === "hiding" ? (
-              <>
-                <span className="spinner inline" /> Hiding{" "}
-              </>
-            ) : (
-              "Dismiss from registry view"
-            )}
-          </button>
-        )}
-
-        {caps.canUnhide && onUnhide && (
-          <button
-            className="btn primary"
-            disabled={action !== null}
-            onClick={() => {
-              setAction("unhiding");
-              void Promise.resolve(onUnhide()).finally(() => setAction(null));
-            }}
-          >
-            {action === "unhiding" ? (
-              <>
-                <span className="spinner inline" /> Unhiding{" "}
-              </>
-            ) : (
-              "Unhide"
-            )}
-          </button>
         )}
       </div>
 

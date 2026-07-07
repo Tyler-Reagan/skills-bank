@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
+import type { OriginManualChoice } from "../../shared/ipc.js";
 import { useFocusReturn, useInitialFocus } from "../hooks/useFocusReturn.js";
 import { useEscapeToClose } from "../hooks/useEscapeToClose.js";
 import { useIpcQuery } from "../hooks/useIpcQuery.js";
@@ -84,14 +85,6 @@ interface Props {
    * severs symlinks).
    */
   onUnregister?: () => Promise<void> | void;
-  /**
-   * M5: canon-only. Tuck the skill out of the default views. Replaces
-   * Unregister/Delete on canon skills (those are prohibited since
-   * canon is upstream-owned).
-   */
-  onHide?: () => Promise<void> | void;
-  /** M5: undo Hide. Only meaningful in the canon-hidden state. */
-  onUnhide?: () => Promise<void> | void;
   /** Apply an available upstream update in place. */
   onUpdate?: () => Promise<void> | void;
   /**
@@ -110,9 +103,7 @@ interface Props {
    * Renderer refreshes after the call resolves.
    */
   onSetManualUpstream?: (
-    choice:
-      | { kind: "github"; repo: string; skillPath: string }
-      | { kind: "none" },
+    choice: OriginManualChoice,
   ) => Promise<{ ok: boolean; message: string }>;
   /**
    * M6: missing-entry heal. Forget the registry/external record.
@@ -146,8 +137,6 @@ export function SkillDetailDrawer({
   onMoveIntoBank,
   defaultInstallAgents,
   onUnregister,
-  onHide,
-  onUnhide,
   onUpdate,
   onForgetMissing,
   onRepoint,
@@ -417,8 +406,6 @@ export function SkillDetailDrawer({
             onRegister={onRegister}
             onMoveIntoBank={onMoveIntoBank}
             onUnregister={onUnregister}
-            onHide={onHide}
-            onUnhide={onUnhide}
             onUpdate={onUpdate}
             onForgetMissing={onForgetMissing}
             onRepoint={onRepoint}

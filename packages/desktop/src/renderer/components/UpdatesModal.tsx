@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { RegistryEntry } from "@skills-bank/core";
+import { parseOwnerRepo } from "@skills-bank/core/origin-url";
 import { Icon } from "./Icon.js";
 import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
@@ -91,15 +92,12 @@ export function UpdatesModal({
         )}
         {entries.map((e) => {
           const state = states[e.name] ?? "idle";
+          const repo = parseOwnerRepo(e.origin.url);
           return (
             <div key={e.name} className="updates-modal-row">
               <div className="updates-modal-row-main">
                 <strong className="updates-modal-row-name">{e.name}</strong>
-                {e.source.origin?.repo && (
-                  <span className="updates-modal-row-repo">
-                    {e.source.origin.repo}
-                  </span>
-                )}
+                {repo && <span className="updates-modal-row-repo">{repo}</span>}
               </div>
               <div className="updates-modal-row-actions">
                 <button

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { RegistryEntry } from "@skills-bank/core";
+import { parseOwnerRepo } from "@skills-bank/core/origin-url";
 import { useIpcQuery } from "../hooks/useIpcQuery.js";
+import type { OriginManualChoice } from "../../shared/ipc.js";
 
 function formatStarCount(stars: number): string {
   if (stars >= 1000)
@@ -13,9 +15,7 @@ interface Props {
   isRegistered: boolean;
   showOriginActivity?: boolean;
   onSetManualUpstream?: (
-    choice:
-      | { kind: "github"; repo: string; skillPath: string }
-      | { kind: "none" },
+    choice: OriginManualChoice,
   ) => Promise<{ ok: boolean; message: string }>;
 }
 
@@ -42,8 +42,8 @@ export function DrawerOriginSection({
     if (pickerOpen) pickerRepoRef.current?.focus();
   }, [pickerOpen]);
 
-  const upstreamRepo = entry.source.origin?.repo;
-  const upstreamSkillPath = entry.source.origin?.skillPath;
+  const upstreamRepo = parseOwnerRepo(entry.origin.url) ?? undefined;
+  const upstreamSkillPath = entry.origin.skillPath;
 
   const { data: repoMeta } = useIpcQuery(
     () => window.skillsBank.originRepoMetadata(upstreamRepo!),
@@ -62,11 +62,10 @@ export function DrawerOriginSection({
   const showLinkPicker =
     isRegistered &&
     entry.adopted !== false &&
-    !entry.source.origin &&
+    entry.origin.url === null &&
     onSetManualUpstream;
 
-  const showOriginDisplay =
-    entry.source.origin?.kind === "github" && entry.source.origin.repo;
+  const showOriginDisplay = upstreamRepo !== undefined;
 
   if (!showLinkPicker && !showOriginDisplay) return null;
 
@@ -94,7 +93,7 @@ export function DrawerOriginSection({
                 disabled={pickerBusy}
                 onClick={async () => {
                   setPickerBusy(true);
-                  await onSetManualUpstream!({ kind: "none" });
+                  await onSetManualUpstream!({ url: null });
                   setPickerBusy(false);
                 }}
               >
@@ -147,10 +146,12 @@ export function DrawerOriginSection({
                   onClick={async () => {
                     setPickerBusy(true);
                     setPickerError(null);
+                    const repo = pickerRepo.trim();
+                    const skillPath = pickerPath.trim();
                     const r = await onSetManualUpstream!({
-                      kind: "github",
-                      repo: pickerRepo.trim(),
-                      skillPath: pickerPath.trim(),
+                      url: `https://github.com/${repo}`,
+                      repo,
+                      skillPath,
                     });
                     if (!r.ok) {
                       setPickerError(r.message);
@@ -187,7 +188,7 @@ export function DrawerOriginSection({
         </div>
       )}
 
-      {showOriginDisplay && entry.source.origin?.repo && (
+      {showOriginDisplay && upstreamRepo && (
         <div className="drawer-section">
           <h3>Origin</h3>
           <div className="drawer-meta-row">
@@ -198,12 +199,12 @@ export function DrawerOriginSection({
                 className="link-btn"
                 onClick={() =>
                   void window.skillsBank.openExternal(
-                    `https://github.com/${entry.source.origin!.repo!}`,
+                    `https://github.com/${upstreamRepo}`,
                   )
                 }
                 title="Open the source repo on GitHub"
               >
-                github.com/{entry.source.origin.repo}
+                github.com/{upstreamRepo}
               </button>
               {repoMeta?.stars !== null && repoMeta?.stars !== undefined && (
                 <span
@@ -223,7 +224,7 @@ export function DrawerOriginSection({
               </span>
             </div>
           )}
-          {entry.source.origin.skillPath && (
+          {entry.origin.skillPath && (
             <div className="drawer-meta-row">
               <span className="drawer-meta-key">path in repo</span>
               <span className="drawer-meta-value">
@@ -231,33 +232,24 @@ export function DrawerOriginSection({
                   type="button"
                   className="link-btn"
                   onClick={() => {
-                    const repo = entry.source.origin!.repo!;
-                    const skillPath = entry.source.origin!.skillPath!;
+                    const skillPath = entry.origin.skillPath!;
                     const folder = skillPath.replace(/\/SKILL\.md$/, "");
                     void window.skillsBank.openExternal(
-                      `https://github.com/${repo}/tree/HEAD/${folder}`,
+                      `https://github.com/${upstreamRepo}/tree/HEAD/${folder}`,
                     );
                   }}
                   title="Open the skill's folder on GitHub"
                 >
-                  {entry.source.origin.skillPath.replace(/\/SKILL\.md$/, "/")}
+                  {entry.origin.skillPath.replace(/\/SKILL\.md$/, "/")}
                 </button>
               </span>
             </div>
           )}
-          {entry.source.origin.skillFolderHash && (
+          {entry.origin.hash && (
             <div className="drawer-meta-row">
               <span className="drawer-meta-key">fetched hash</span>
               <span className="drawer-meta-value">
-                <code>{entry.source.origin.skillFolderHash.slice(0, 7)}</code>
-              </span>
-            </div>
-          )}
-          {entry.source.origin.fetchedAt && (
-            <div className="drawer-meta-row">
-              <span className="drawer-meta-key">last fetched</span>
-              <span className="drawer-meta-value">
-                {new Date(entry.source.origin.fetchedAt).toLocaleDateString()}
+                <code>{entry.origin.hash.slice(0, 7)}</code>
               </span>
             </div>
           )}

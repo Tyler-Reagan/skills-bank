@@ -156,12 +156,11 @@ export function RegistryProvider({
     [registry],
   );
 
-  // Hidden canon skills stay in `registry` for lookups/installs/Settings
-  // but are filtered out of the default Browse view.
-  const visibleRegistry = useMemo(
-    () => registry.filter((e) => !e.hidden),
-    [registry],
-  );
+  // v6: the canon/hidden concept is gone — every registry entry is
+  // visible in the default Browse view. Kept as a distinct value (not
+  // an alias of `registry`) so call sites don't need to change if a
+  // future visibility filter reappears.
+  const visibleRegistry = registry;
 
   const uniqueInstalledCount = installedNames.size;
 

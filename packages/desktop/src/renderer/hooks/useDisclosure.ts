@@ -1,20 +1,5 @@
 import { useCallback, useState } from "react";
 
-interface Disclosure {
-  open: boolean;
-  toggle: () => void;
-  close: () => void;
-  setOpen: (open: boolean) => void;
-}
-
-/** Single boolean expand/collapse state with a stable toggle. */
-export function useDisclosure(initial = false): Disclosure {
-  const [open, setOpen] = useState(initial);
-  const toggle = useCallback(() => setOpen((v) => !v), []);
-  const close = useCallback(() => setOpen(false), []);
-  return { open, toggle, close, setOpen };
-}
-
 interface DisclosureSet {
   isOpen: (key: string) => boolean;
   toggle: (key: string) => void;
