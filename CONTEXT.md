@@ -13,12 +13,8 @@ The user's local collection of installed skills, sourced from one or more origin
 _Avoid_: Library, catalog, store
 
 **Linked Repo**:
-The single GitHub repository a user has configured as both the mirror source for their entire Registry _and_ the presumed home for their own collection of skills — a repo they own, not merely a sync target. The Registry reads this repo's `skills/` contents by convention, and it's the one write destination for pushing local changes back out (manifest export, adopt-and-push). Distinct from Origin, which tracks the upstream source of an individual skill and may point at a third-party repo the user doesn't own — a skill's Origin is often, but not always, the Linked Repo. When no Linked Repo is configured, the Registry mirrors the Bundled Default instead.
+The single GitHub repository a user has configured as both the mirror source for their entire Registry _and_ the presumed home for their own collection of skills — a repo they own, not merely a sync target. The Registry reads this repo's `skills/` contents by convention, and it's the one write destination for pushing local changes back out (manifest export, adopt-and-push). Distinct from Origin, which tracks the upstream source of an individual skill and may point at a third-party repo the user doesn't own — a skill's Origin is often, but not always, the Linked Repo. When no Linked Repo is configured, the Registry is simply empty until the user links one or installs from Discover — there is no curated/bundled fallback set (retired in the origin-only provenance model, ADR-0020/0021, issue #159).
 _Avoid_: Linked registry, GitHub registry, registry source (when meaning this specific repo)
-
-**Bundled Default**:
-The state of a Registry with no Linked Repo configured — it mirrors the curated set shipped with the app (`Tyler-Reagan/skills-bank`) at the unauthenticated GitHub rate limit. Distinct from the `curated` source-provenance value: Bundled Default is a whole-Registry state, `curated` is a per-skill axis reserved for skills read directly from the app's own shipped repo. A skill can only be `curated` while its Registry is in the Bundled Default state, but not every skill in that state need stay `curated` forever (e.g. after local edits).
-_Avoid_: Curated bank, curated set, bundled bank
 
 **Label**:
 The combined category and tags assigned to a skill for browsing and filtering. Stored in `labels.json`, never in the skill files themselves.
@@ -41,9 +37,9 @@ A freeform domain or technology signal applied to a skill by the user. No predef
 _Avoid_: Keyword, attribute
 
 **Origin**:
-The upstream source a skill was installed from — a GitHub repository, a local path, or the curated set. Distinct from source (which tracks provenance axis: `curated`, `user`, `vendored`).
-_Avoid_: Source (when referring to the install location specifically)
+A skill's single nullable-URL provenance: the GitHub URL it was mirrored from, or `null` for a local skill with no remote (ADR-0018/0020). Lives entirely in the skill's registry-manifest row — there is no separate provenance axis. A URL matching the active Linked Repo is a self-origin (authored here); any other URL is an external upstream; `null` is an explicit "local, no remote" stamp, not an error state.
+_Avoid_: Source (the old provenance-axis term, retired), upstream (kept only as a description of what an Origin URL points at)
 
-**Skill Record**:
-The app-managed metadata for a single skill: its provenance, sync baseline, and probe state. Stored across three sidecar files in the skill folder. Distinct from the skill's own content (SKILL.md and supporting files).
-_Avoid_: Sidecar data, skill metadata, skill state (which refers to the UI-facing installation classification)
+**Runtime Map**:
+The one gitignored file per Registry (`.skills-bank/runtime.json`) holding every skill's volatile probe/drift state — content hash baseline, last successful fetch, consecutive probe failures — keyed by skill name. Replaces what used to be three per-skill sidecar files. Distinct from the registry manifest, which holds the durable/committed half of a skill's record (identity, Origin, labels).
+_Avoid_: Sidecar data, skill record, skill state (which refers to the UI-facing installation classification)

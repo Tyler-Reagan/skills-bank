@@ -1,5 +1,0 @@
-{
-  "_doc": "Maintainer-curated mapping from bundled-skill folder name to its GitHub upstream. Consumed by scripts/backfill-bundled-upstream.ts to stamp upstream pointers into this repo's checked-in skills/<name>/.skills-bank.json markers. Entries are deliberate curation, not derived state — populate manually as part of the bundled-set curation workflow. Skill names not present in this mapping are left unstamped by the backfill (they'll fall through to the runtime origin-capture scanner when end users have a matching CLI lock entry, or stay un-classified otherwise).",
-  "version": 1,
-  "skills": {}
-}
