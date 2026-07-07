@@ -9,7 +9,7 @@ const HOME = "https://skills.sh";
  *
  *   npx skills add https://github.com/owner/repo --skill skill-name
  *
- * Returns the GitHub URL to pass to installSkillFromGithub, or null if
+ * Returns the GitHub URL to pass to addFromGithub, or null if
  * the input doesn't match either recognised format.
  */
 function parseInstallInput(raw: string): string | null {
@@ -74,10 +74,10 @@ export function DiscoverTab({
     setInstallError(null);
     setInstallBanner(null);
     try {
-      const r = await window.skillsBank.installSkillFromGithub(resolved);
+      const r = await window.skillsBank.addFromGithub(resolved);
       if (r.ok) {
         setInstallUrl("");
-        setInstallBanner(`${r.name} installed`);
+        setInstallBanner(`${r.name} added`);
         onInstalled();
         return;
       }
@@ -89,7 +89,7 @@ export function DiscoverTab({
       setInstallError(
         err instanceof Error
           ? err.message
-          : "Install failed — check your network and try again.",
+          : "Add failed — check your network and try again.",
       );
     } finally {
       setInstallBusy(false);
@@ -194,7 +194,7 @@ export function DiscoverTab({
     <div className="discover-tab">
       <div
         className="discover-callout"
-        aria-label="Install a skill from GitHub"
+        aria-label="Add a skill from GitHub"
       >
         <span className="discover-callout-label">See a skill you want?</span>
         <div className="discover-callout-form">
@@ -222,10 +222,10 @@ export function DiscoverTab({
           >
             {installBusy ? (
               <>
-                <span className="spinner inline" /> Installing
+                <span className="spinner inline" /> Adding
               </>
             ) : (
-              "Install"
+              "Add"
             )}
           </button>
         </div>
@@ -287,7 +287,7 @@ export function DiscoverTab({
           type="button"
           className="btn ghost"
           onClick={onOpenTerminal}
-          title="Run raw npx commands (advanced). Most users prefer Settings → Install a skill from GitHub."
+          title="Run raw npx commands (advanced). Most users prefer Settings → Add a skill from GitHub."
         >
           Open Terminal ↗
         </button>

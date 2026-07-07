@@ -8,7 +8,7 @@ import {
   removeExternalRegistryEntry,
 } from "./external.js";
 import { findSkillFolder, walkSkills } from "./walk.js";
-import { moveSkillBucket } from "./rehome.js";
+import { moveSkillBucket } from "./bucket-move.js";
 import { readLiveManifest, writeLiveManifest } from "../manifest/manifest.js";
 import { setRuntimeEntry } from "./runtime-map.js";
 import {

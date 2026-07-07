@@ -97,7 +97,7 @@ export const IPC = {
   clearPendingManifestConflicts: "bank:clearPendingManifestConflicts",
   resolveManifestConflicts: "bank:resolveManifestConflicts",
   installFromManifestHint: "bank:installFromManifestHint",
-  installSkillFromGithub: "bank:installSkillFromGithub",
+  addFromGithub: "bank:addFromGithub",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   localDiagnosticsScan: "diagnostics:scan",
@@ -108,7 +108,7 @@ export const IPC = {
   repointExternal: "skills:repointExternal",
   repointOrigin: "skills:repointOrigin",
   detachLocal: "skills:detachLocal",
-  adoptIntoLinkedRepo: "skills:adoptIntoLinkedRepo",
+  rehomeIntoLinkedRepo: "skills:rehomeIntoLinkedRepo",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
   discoverHideSync: "discover:hideSync",
@@ -665,7 +665,7 @@ interface SkillsBankAPI {
    * detaches locally, then commits the skill's files under `destPath` and
    * opens (or reuses) a PR. On success returns the PR number + URL.
    */
-  adoptIntoLinkedRepo(
+  rehomeIntoLinkedRepo(
     name: string,
     destPath: string,
   ): Promise<AdoptIntoLinkedRepoIPCResult>;
@@ -843,7 +843,7 @@ interface SkillsBankAPI {
    * ~/.agents/skills/ directory. No bank entry created; skill appears
    * as "unregistered" in the Installed tab.
    */
-  installSkillFromGithub(url: string): Promise<
+  addFromGithub(url: string): Promise<
     | { ok: true; name: string }
     | { ok: false; reason: "url-parse-error"; message: string }
     | {

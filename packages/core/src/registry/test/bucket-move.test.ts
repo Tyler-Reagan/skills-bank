@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { moveSkillBucket } from "../rehome.js";
+import { moveSkillBucket } from "../bucket-move.js";
 
 let scratch: string;
 let registryRoot: string;

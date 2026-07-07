@@ -41,7 +41,7 @@ import {
   unregisterSkill,
   unlinkSkillFromAgents,
   writeLiveManifest,
-  adoptIntoLinkedRepo as coreAdoptIntoLinkedRepo,
+  rehomeIntoLinkedRepo as coreRehomeIntoLinkedRepo,
   type AgentId,
   type InstalledKind,
   type ManifestSkill,
@@ -403,7 +403,7 @@ export function registerRegistryHandlers(): void {
   });
 
   mutatingHandle(
-    IPC.adoptIntoLinkedRepo,
+    IPC.rehomeIntoLinkedRepo,
     async (_e, name: string, destPath: string) => {
       const registryRoot = getRegistryRoot();
       const linkedRepo = getLinkedRepo();
@@ -414,7 +414,7 @@ export function registerRegistryHandlers(): void {
       try {
         const detached = detachOrigin(registryRoot, name);
         if (!detached.ok) return { ok: false, message: detached.message };
-        const r = await coreAdoptIntoLinkedRepo({
+        const r = await coreRehomeIntoLinkedRepo({
           registryRoot,
           name,
           linkedRepo: linkedRepo.fullName,
@@ -834,7 +834,7 @@ export function registerRegistryHandlers(): void {
   );
 
   // Discover tab: install-from-GitHub
-  mutatingHandle(IPC.installSkillFromGithub, async (_e, url: string) => {
+  mutatingHandle(IPC.addFromGithub, async (_e, url: string) => {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) {
       return {

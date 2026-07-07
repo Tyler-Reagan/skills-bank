@@ -305,7 +305,7 @@ export function DrawerActions({
               onClick={() => setRestoreOpen(true)}
               title="The upstream is unreachable. Repoint it at a new location, or keep the skill by moving it into your linked repo."
             >
-              Restore source
+              Restore origin
             </button>
             <p className="drawer-action-hint">
               The source <code>{originRepo ?? "origin"}</code> can't be reached.
@@ -582,10 +582,10 @@ export function DrawerActions({
             >
               {action === "unregistering" ? (
                 <>
-                  <span className="spinner inline" /> Removing{" "}
+                  <span className="spinner inline" /> Unregistering{" "}
                 </>
               ) : (
-                "Remove from registry"
+                "Unregister"
               )}
             </button>
             <p className="drawer-action-hint">
