@@ -1,6 +1,9 @@
 # ADR-0002 — Sidecar files are the Skill record
 
-**Status:** Accepted (v0.11.7)
+**Status:** Superseded by
+[ADR-0021](./ADR-0021-manifest-is-the-live-skill-record.md), which removes per-skill sidecars in
+favor of the manifest as the live skill record. This ADR's lifecycle rationale — volatile state
+must never share a file with committed state — survives in ADR-0021's runtime-map split.
 
 ## Context
 
