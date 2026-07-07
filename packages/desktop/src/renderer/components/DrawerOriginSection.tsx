@@ -60,10 +60,7 @@ export function DrawerOriginSection({
   );
 
   const showLinkPicker =
-    isRegistered &&
-    entry.adopted !== false &&
-    entry.origin.url === null &&
-    onSetManualUpstream;
+    isRegistered && entry.origin.url === null && onSetManualUpstream;
 
   const showOriginDisplay = upstreamRepo !== undefined;
 

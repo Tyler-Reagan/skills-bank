@@ -192,10 +192,7 @@ export function DiscoverTab({
 
   return (
     <div className="discover-tab">
-      <div
-        className="discover-callout"
-        aria-label="Add a skill from GitHub"
-      >
+      <div className="discover-callout" aria-label="Add a skill from GitHub">
         <span className="discover-callout-label">See a skill you want?</span>
         <div className="discover-callout-form">
           <input

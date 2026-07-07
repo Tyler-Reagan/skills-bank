@@ -3,7 +3,6 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
-import { readExternalRegistry } from "./external.js";
 import { hashSkillFolder } from "./heal.js";
 import { readRuntimeMap } from "./runtime-map.js";
 import { parseSkillFrontmatter } from "./frontmatter.js";
@@ -139,21 +138,10 @@ export function buildRegistryIndex(
     }
   }
 
-  // M3: merge in non-adopted (symlink-mode) entries from external.json
-  // so the renderer sees them in the registry view, not just Installed.
-  // Adopted=false means files live at `target`, not under skills/.
-  // Local content (publishState, last-commit) doesn't apply.
-  const adoptedNames = new Set(entries.map((e) => e.name));
-  for (const ext of readExternalRegistry(registryRoot)) {
-    if (adoptedNames.has(ext.name)) continue; // adopted wins on name collision
-    const built = buildExternalEntry(ext, opts);
-    if (built) entries.push(built);
-  }
-
-  // M6: surface missing adopted entries — names that the prior
-  // persisted index knew about but whose folders are gone now. The
-  // user gets a Heal flow on these instead of having them silently
-  // disappear.
+  // Surface missing entries — names that the prior persisted index knew
+  // about but whose folders under skills/ are gone now. The user gets a
+  // Heal flow (registry-folder-missing) on these instead of having them
+  // silently disappear.
   const live = new Set(entries.map((e) => e.name));
   for (const prior of priorNames) {
     if (live.has(prior.name)) continue;
@@ -162,7 +150,6 @@ export function buildRegistryIndex(
       description: "(files missing)",
       path: prior.path,
       origin: manifestByName.get(prior.name)?.origin ?? NULL_ORIGIN,
-      adopted: true,
       missing: true,
       ...(prior.bucket ? { bucket: prior.bucket } : {}),
     });
@@ -292,10 +279,6 @@ function buildOneEntry(
     ...(meta.author ? { author: meta.author } : {}),
     path: path.relative(registryRoot, skillDir),
     origin,
-    // Folders walked from <registryRoot>/skills/ are adopted by
-    // definition — the files live in the bank. M3 introduces the
-    // non-adopted (external) case alongside this.
-    adopted: true,
     ...(warnings.length > 0 ? { warnings } : {}),
   };
 
@@ -304,64 +287,6 @@ function buildOneEntry(
     if (lastCommit) entry.lastCommit = lastCommit;
   }
 
-  return entry;
-}
-
-/**
- * Build a RegistryEntry for a non-adopted (external) registration.
- * The skill's files live at `ext.target`; we read meta from there so
- * the renderer sees the same description/version/tags as if the
- * skill had been adopted. `adopted: false` and `path` = absolute
- * external path so reveal/open-in-finder work without registryRoot
- * resolution gymnastics.
- *
- * M6: if the external target is gone, return a synthetic entry with
- * `missing: true` so the classifier surfaces an
- * `external-target-missing` heal state instead of silently dropping
- * the entry.
- */
-function buildExternalEntry(
-  ext: import("./external.js").ExternalEntry,
-  opts: BuildIndexOptions,
-): RegistryEntry | null {
-  if (!fs.existsSync(ext.target)) {
-    return {
-      name: ext.name,
-      description: `(external target missing: ${ext.target})`,
-      path: ext.target,
-      origin: NULL_ORIGIN,
-      adopted: false,
-      missing: true,
-    };
-  }
-  const warnings: string[] = [];
-  let meta: Partial<SkillMeta> = {};
-  const fm = readSkillMeta(ext.target);
-  if (fm) {
-    meta = { ...fm };
-  }
-  if (!meta.name) {
-    warnings.push("missing name (using registered name)");
-    meta.name = ext.name;
-  }
-  if (!meta.description) {
-    warnings.push("missing description");
-    meta.description = "";
-  }
-  const entry: RegistryEntry = {
-    name: meta.name,
-    description: meta.description,
-    ...(meta.tags ? { tags: meta.tags } : {}),
-    ...(meta.version ? { version: meta.version } : {}),
-    ...(meta.author ? { author: meta.author } : {}),
-    // Absolute path for external entries — renderer falls back to
-    // this when composing the reveal-in-finder path.
-    path: ext.target,
-    origin: NULL_ORIGIN,
-    adopted: false,
-    ...(warnings.length > 0 ? { warnings } : {}),
-  };
-  if (opts.strict && warnings.length > 0) return null;
   return entry;
 }
 

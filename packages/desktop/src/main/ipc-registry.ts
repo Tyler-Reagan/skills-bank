@@ -32,7 +32,6 @@ import {
   readSkillMeta,
   removeBrokenLinks,
   repairBrokenLinks,
-  repointExternalEntry,
   repointOrigin as coreRepointOrigin,
   resolveSkillConflicts,
   scanExistingInstalls,
@@ -203,38 +202,14 @@ export function registerRegistryHandlers(): void {
     return augmentWithProbedUpdates(buildRegistryIndex(registryRoot).entries);
   });
 
-  ipcMain.handle(IPC.listInstalled, (_e, customDirs?: string[]) => {
+  ipcMain.handle(IPC.listInstalled, () => {
     const registryRoot = getRegistryRoot();
-    const dirs = Array.isArray(customDirs)
-      ? customDirs.filter((s): s is string => typeof s === "string")
-      : undefined;
     if (!registryRoot)
       return listInstalled("", {
         index: { generatedAt: "", entries: [] },
-        customDirs: dirs,
       });
     const index = buildRegistryIndex(registryRoot);
-    return listInstalled(registryRoot, { index, customDirs: dirs });
-  });
-
-  ipcMain.handle(IPC.pickCustomSkillsDir, async () => {
-    const win = BrowserWindow.getFocusedWindow();
-    const result = await dialog.showOpenDialog(win ?? undefined!, {
-      title: "Add a skills directory to the Installed tab",
-      properties: ["openDirectory"],
-      defaultPath: app.getPath("home"),
-    });
-    if (result.canceled || result.filePaths.length === 0) {
-      return { ok: false, message: "canceled" };
-    }
-    const chosen = result.filePaths[0]!;
-    const warning = suspiciousPathWarning(chosen);
-    return {
-      ok: true,
-      path: chosen,
-      message: "ok",
-      ...(warning ? { warning } : {}),
-    };
+    return listInstalled(registryRoot, { index });
   });
 
   ipcMain.handle(
@@ -323,33 +298,6 @@ export function registerRegistryHandlers(): void {
         const error = fromCaught("ipc.unknown", err);
         return { ok: false, message: error.message, error };
       })();
-    }
-  });
-
-  mutatingHandle(IPC.repointExternal, async (_e, name: string) => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    const win = BrowserWindow.getFocusedWindow();
-    const picker = await dialog.showOpenDialog(win ?? undefined!, {
-      title: `Pick the new location for "${name}"`,
-      message: "Choose the folder that contains the skill's SKILL.md.",
-      properties: ["openDirectory"],
-    });
-    if (picker.canceled || picker.filePaths.length === 0) {
-      return { ok: false, message: "cancelled" };
-    }
-    try {
-      const r = repointExternalEntry(registryRoot, name, picker.filePaths[0]!);
-      if (r.ok) {
-        buildRegistryIndex(registryRoot, {
-          includeGitInfo: true,
-          writeFile: true,
-        });
-      }
-      return r;
-    } catch (err) {
-      const error = fromCaught("ipc.unknown", err);
-      return { ok: false, message: error.message, error };
     }
   });
 
@@ -483,7 +431,6 @@ export function registerRegistryHandlers(): void {
         return {
           ok: false,
           message: NO_ROOT_MSG,
-          wasAdopted: false,
           errors: [error],
           error,
         };
@@ -498,7 +445,6 @@ export function registerRegistryHandlers(): void {
         return {
           ok: false,
           message: error.message,
-          wasAdopted: false,
           errors: [error],
           error,
         };
@@ -513,7 +459,6 @@ export function registerRegistryHandlers(): void {
           ok: r.ok,
           message: r.message,
           destinationPath: r.destinationPath,
-          wasAdopted: r.wasAdopted,
           errors: r.errors,
           error: r.error,
         };
@@ -522,7 +467,6 @@ export function registerRegistryHandlers(): void {
         return {
           ok: false,
           message: error.message,
-          wasAdopted: false,
           errors: [error],
           error,
         };
@@ -559,7 +503,7 @@ export function registerRegistryHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC.scan, (_e, customDirs?: string[]) => {
+  ipcMain.handle(IPC.scan, () => {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) {
       return {
@@ -569,9 +513,7 @@ export function registerRegistryHandlers(): void {
         topLevelSymlink: null,
       };
     }
-    return scanExistingInstalls(registryRoot, {
-      ...(customDirs && customDirs.length > 0 ? { customDirs } : {}),
-    });
+    return scanExistingInstalls(registryRoot);
   });
 
   mutatingHandle(
@@ -585,18 +527,7 @@ export function registerRegistryHandlers(): void {
           message: NO_ROOT_MSG,
         }));
       }
-      const batchCustomDirs = [
-        ...new Set(
-          items
-            .map((it) =>
-              it.action.type === "setAgents" ? undefined : it.action.customDir,
-            )
-            .filter((d): d is string => typeof d === "string"),
-        ),
-      ];
-      const report = scanExistingInstalls(registryRoot, {
-        ...(batchCustomDirs.length > 0 ? { customDirs: batchCustomDirs } : {}),
-      });
+      const report = scanExistingInstalls(registryRoot);
       const kindRank: Record<InstalledKind, number> = {
         "real-directory": 4,
         ours: 3,
@@ -612,21 +543,16 @@ export function registerRegistryHandlers(): void {
       }
       const findEntry = (
         name: string,
-        target: { agent?: string; customDir?: string },
+        target: { agent?: string },
       ): (typeof report.entries)[number] | undefined => {
         if (target.agent === undefined) return byName.get(name);
         return report.entries.find(
-          (e) =>
-            e.name === name &&
-            e.agent === target.agent &&
-            (e.customDir ?? undefined) === (target.customDir ?? undefined),
+          (e) => e.name === name && e.agent === target.agent,
         );
       };
       return items.map(({ name, action }) => {
         const target =
-          action.type === "setAgents"
-            ? {}
-            : { agent: action.agent, customDir: action.customDir };
+          action.type === "setAgents" ? {} : { agent: action.agent };
         const entry = findEntry(name, target);
         if (!entry) {
           return {
@@ -801,14 +727,12 @@ export function registerRegistryHandlers(): void {
     },
   );
 
-  ipcMain.handle(IPC.localDiagnosticsScan, (_e, customDirs?: string[]) => {
+  ipcMain.handle(IPC.localDiagnosticsScan, () => {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) {
       return { items: [], scannedAt: new Date().toISOString() };
     }
-    return scanLocalDiagnostics(registryRoot, {
-      ...(customDirs ? { customSkillsDirs: customDirs } : {}),
-    });
+    return scanLocalDiagnostics(registryRoot);
   });
 
   mutatingHandle(

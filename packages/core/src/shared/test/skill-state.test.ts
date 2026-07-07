@@ -55,22 +55,13 @@ interface Row {
 const ROWS: Row[] = [
   // ── Heal states ─────────────────────────────────────────
   {
-    label: "adopted + missing → registry-folder-missing (Forget)",
-    entry: entry({ missing: true, adopted: true }),
+    label: "missing → registry-folder-missing (Forget)",
+    entry: entry({ missing: true }),
     installed: [],
     isRegistered: true,
     expectedState: "registry-folder-missing",
     expectedPrimary: "forget-missing",
-    expectedCaps: { canForgetMissing: true, canRepoint: false },
-  },
-  {
-    label: "external + missing → external-target-missing (Repoint)",
-    entry: entry({ missing: true, adopted: false }),
-    installed: [],
-    isRegistered: true,
-    expectedState: "external-target-missing",
-    expectedPrimary: "repoint",
-    expectedCaps: { canForgetMissing: true, canRepoint: true },
+    expectedCaps: { canForgetMissing: true },
   },
   {
     label: "drift + github origin → edited-with-origin",
@@ -282,20 +273,20 @@ const ROWS: Row[] = [
 
   // ── Unregistered branch ─────────────────────────────────
   {
-    label: "unregistered + 1 real-dir → unregistered-real (Register)",
+    label: "unregistered + 1 real-dir → unregistered (Register)",
     entry: entry(),
     installed: [inst({ kind: "real-directory", target: null })],
     isRegistered: false,
-    expectedState: "unregistered-real",
+    expectedState: "unregistered",
     expectedPrimary: "register",
     expectedCaps: { canRegister: true },
   },
   {
-    label: "unregistered + 1 foreign-symlink → unregistered-foreign (Register)",
+    label: "unregistered + 1 foreign-symlink → unregistered (Register)",
     entry: entry(),
     installed: [inst({ kind: "foreign-symlink", target: "/elsewhere/test" })],
     isRegistered: false,
-    expectedState: "unregistered-foreign",
+    expectedState: "unregistered",
     expectedPrimary: "register",
     expectedCaps: { canRegister: true },
   },
@@ -318,7 +309,7 @@ const ROWS: Row[] = [
   },
   {
     label:
-      "unregistered + foreign collapses onto sibling real-dir → unregistered-real (one install)",
+      "unregistered + foreign collapses onto sibling real-dir → unregistered (one install)",
     entry: entry(),
     installed: [
       inst({
@@ -334,7 +325,7 @@ const ROWS: Row[] = [
       }),
     ],
     isRegistered: false,
-    expectedState: "unregistered-real",
+    expectedState: "unregistered",
     expectedPrimary: "register",
     expectedCaps: { canRegister: true },
   },
@@ -353,13 +344,12 @@ const ROWS: Row[] = [
     // resolved inside the registry → installed classified `ours`,
     // but `isRegistered` was false → fell into `unregistered-broken`
     // with brokenCount=0 ("Fix broken link (0)"). Branch added above
-    // routes this to `unregistered-foreign` so Register is offered.
-    label:
-      "unregistered + ours (no index entry) → unregistered-foreign (Register)",
+    // routes this to `unregistered` so Register is offered.
+    label: "unregistered + ours (no index entry) → unregistered (Register)",
     entry: entry(),
     installed: [inst()],
     isRegistered: false,
-    expectedState: "unregistered-foreign",
+    expectedState: "unregistered",
     expectedPrimary: "register",
     expectedCaps: { canRegister: true },
   },

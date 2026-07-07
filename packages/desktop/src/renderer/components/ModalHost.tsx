@@ -262,8 +262,6 @@ export function ModalHost({
             await refresh();
           }}
           onFlash={flash}
-          registerAdopts={settings.registerAdopts}
-          customSkillsDirs={settings.customSkillsDirs}
           defaultInstallAgents={
             settings.defaultInstallAgents.length > 0
               ? settings.defaultInstallAgents
@@ -856,23 +854,14 @@ function DrawerHost({
   const { flash, pushAppError } = useRegistryHost();
   const { registryByName, installed, registryRoot, refresh } = useRegistry();
   const { settings } = useSettings();
-  const { registerSkill, moveIntoBank } = useRegisterSkill();
+  const { registerSkill } = useRegisterSkill();
   if (!selected) return null;
   const isRegistered = registryByName.has(selected.name);
   const installations = installed.filter((i) => i.name === selected.name);
-  // Representative install for action targeting: prefer a custom-dir
-  // install so `customDir` rides onto the action (the main-process scan
-  // can't otherwise locate it). `isInPlace` suppresses the auto-move
-  // chain for an already-in-place skill or a custom-dir source.
-  const drawerRep =
-    installations.find((i) => i.customDir) ?? installations[0] ?? null;
-  const drawerTarget = drawerRep
-    ? {
-        agent: drawerRep.agent,
-        ...(drawerRep.customDir ? { customDir: drawerRep.customDir } : {}),
-      }
-    : undefined;
-  const drawerIsInPlace = !!drawerRep?.customDir || selected.adopted === false;
+  // Representative install for action targeting: disambiguates when the
+  // same name exists in multiple agent dirs.
+  const drawerRep = installations[0] ?? null;
+  const drawerTarget = drawerRep ? { agent: drawerRep.agent } : undefined;
   // Classifier is non-trivial (full installation partition + capability
   // fan-out). Compute once per render rather than 10× inline per drawer-
   // prop callback.
@@ -936,18 +925,6 @@ function DrawerHost({
               const r = await registerSkill({
                 name: selected.name,
                 ...(drawerTarget ? { target: drawerTarget } : {}),
-                isInPlace: drawerIsInPlace,
-              });
-              if (r.ok) onClose();
-            }
-          : undefined
-      }
-      onMoveIntoBank={
-        caps.canMoveIntoBank
-          ? async () => {
-              const r = await moveIntoBank({
-                name: selected.name,
-                ...(drawerTarget ? { target: drawerTarget } : {}),
               });
               if (r.ok) onClose();
             }
@@ -972,15 +949,6 @@ function DrawerHost({
             }
           : undefined
       }
-      onRepoint={
-        caps.canRepoint
-          ? async () => {
-              const r = await window.skillsBank.repointExternal(selected.name);
-              if (r.message !== "cancelled") flash(r.message);
-              if (r.ok) await refresh();
-            }
-          : undefined
-      }
       onUnregister={
         caps.canUnregister
           ? async () => {
@@ -994,7 +962,7 @@ function DrawerHost({
                 name,
                 settings.unregisterDestinationAgent as AgentId,
               );
-              if (r.ok && r.wasAdopted) {
+              if (r.ok) {
                 // First-run hint about the destination setting. Surface
                 // once per machine — subsequent unregistrations just
                 // toast the move.

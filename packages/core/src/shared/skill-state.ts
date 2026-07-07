@@ -23,8 +23,7 @@ export type DrawerState =
   | "registered-conflicts"
   | "registered-broken"
   | "registered-mixed-broken"
-  | "unregistered-real"
-  | "unregistered-foreign"
+  | "unregistered"
   | "unregistered-conflicts"
   | "unregistered-broken"
   // Heal states:
@@ -32,8 +31,7 @@ export type DrawerState =
   | "edited-with-origin"
   | "origin-update-available"
   | "origin-unreachable"
-  | "registry-folder-missing"
-  | "external-target-missing";
+  | "registry-folder-missing";
 
 /**
  * Consecutive probe-failure threshold at which a GitHub-origin
@@ -54,7 +52,6 @@ export type PrimaryAction =
   | "repair-broken"
   | "update"
   | "forget-missing"
-  | "repoint"
   | "restore-origin";
 
 export interface DrawerCapabilities {
@@ -70,9 +67,9 @@ export interface DrawerCapabilities {
    */
   canDeleteFromBank: boolean;
   /**
-   * Mid-tier destructive action. Move adopted files to the configured
-   * agents dir (or drop the entry, for non-adopted), then remove the
-   * registry entry. Co-varies with canDeleteFromBank.
+   * Mid-tier destructive action. Move the skill's files to the
+   * configured agents dir, then drop the manifest row. Co-varies with
+   * canDeleteFromBank.
    */
   canUnregister: boolean;
   canRegister: boolean;
@@ -83,24 +80,15 @@ export interface DrawerCapabilities {
    */
   canUpdate: boolean;
   /**
-   * Forget a missing entry — drop the registry/external record. For
-   * adopted missing: the entry naturally drops on next index build
-   * (folder was gone), so the action is mostly UI cleanup. For
-   * non-adopted missing: removes the external.json row.
+   * Forget a missing entry (`registry-folder-missing`) — the folder
+   * under skills/ is gone; drop the lingering manifest row so the entry
+   * stops being surfaced.
    */
   canForgetMissing: boolean;
   /**
-   * Repoint a non-adopted missing entry — open a directory picker, let
-   * the user pick the new location of a skill they moved on disk, and
-   * rewrite the external.json target so the missing flag clears.
-   * Only granted for `external-target-missing` (not adopted-missing —
-   * adopted entries have no external row to repoint).
-   */
-  canRepoint: boolean;
-  /**
    * Restore an unreachable origin (ADR-0012). Opens the restore modal
    * offering two human-driven paths — repoint to a new GitHub URL, or
-   * adopt the skill into the linked repo via a PR. Granted only in
+   * re-home the skill into the linked repo via a PR. Granted only in
    * `origin-unreachable`.
    */
   canRestoreOrigin: boolean;
@@ -119,13 +107,6 @@ export interface DrawerCapabilities {
    */
   canResolveRegistrationConflicts: boolean;
   canRepairBroken: boolean;
-  /**
-   * Explicit opt-in adopt for a skill registered in place
-   * (`adopted === false`): move its files into the bank so they become
-   * portable and travel via sync. Only granted for healthy in-place
-   * registrations; an already-adopted skill has nowhere to move to.
-   */
-  canMoveIntoBank: boolean;
   primary: PrimaryAction;
 }
 
@@ -148,13 +129,11 @@ const NEVER: DrawerCapabilities = {
   canRegister: false,
   canUpdate: false,
   canForgetMissing: false,
-  canRepoint: false,
   canRestoreOrigin: false,
   canDetachLocal: false,
   canResolveConflicts: false,
   canResolveRegistrationConflicts: false,
   canRepairBroken: false,
-  canMoveIntoBank: false,
   primary: "install",
 };
 
@@ -169,23 +148,18 @@ export function classifyDrawerState(
   // fire before the per-installation partition (`mine`).
   const hasAnyInstallation = installed.some((i) => i.name === entry.name);
 
-  // Missing files. Adopted vs. external split is just the user-facing
-  // copy; today's heal flow is the same single-option "Forget this
-  // entry" for both (repoint/refetch are future work).
+  // Missing files: the skill's folder under skills/ is gone. Single
+  // heal option — Forget this entry (drops the lingering manifest row).
   if (isRegistered && entry.missing === true) {
-    const isExternal = entry.adopted === false;
     return {
-      state: isExternal ? "external-target-missing" : "registry-folder-missing",
+      state: "registry-folder-missing",
       brokenCount: 0,
       conflictCount: 0,
       capabilities: {
         ...NEVER,
         canRevealInFinder: true,
         canForgetMissing: true,
-        // Repoint only applies to external entries; adopted-missing has
-        // no external.json row to rewrite.
-        canRepoint: isExternal,
-        primary: isExternal ? "repoint" : "forget-missing",
+        primary: "forget-missing",
       },
     };
   }
@@ -310,10 +284,9 @@ export function classifyDrawerState(
 
   if (!isRegistered) {
     // Unregistered branch: the only Bank-relevant action is Register
-    // (adopt into the registry). Skills with no usable source on disk
-    // can't be registered — they're a dead symlink, repair-or-delete.
+    // (move the skill's files into the bank). Skills with no usable
+    // source on disk can't be registered — dead symlink, repair-or-delete.
     if (hasConflicts) {
-      const hasRealDir = conflicts.some((c) => c.kind === "real-directory");
       // Multi-installation across ANY kinds (real-dir + foreign,
       // real-dir + broken, two foreign, etc.) is a registration
       // conflict: the user has more than one on-disk copy of this
@@ -333,11 +306,10 @@ export function classifyDrawerState(
           },
         };
       }
-      // Single-installation unregistered. Register is the single
-      // primary; adopt vs. symlink-mode is controlled by the global
-      // `registerAdopts` setting.
+      // Single-installation unregistered. Register moves the skill's
+      // files into the bank (ADR-0022).
       return {
-        state: hasRealDir ? "unregistered-real" : "unregistered-foreign",
+        state: "unregistered",
         brokenCount: broken.length,
         conflictCount: conflicts.length,
         capabilities: {
@@ -352,14 +324,13 @@ export function classifyDrawerState(
     // matched the symlink target to the registry tree but `walkSkills`
     // didn't surface a matching folder. Typically a stale pre-v0.11.3
     // layout (`skills/<name>/` directly, missed by the bucket walker)
-    // or an index that hasn't been rebuilt. Treat like a foreign
-    // symlink: offer Register, which the bucket-aware adopt path
-    // relocates into `skills/personal/<name>/`. Skipping this branch
+    // or an index that hasn't been rebuilt. Offer Register, which
+    // relocates it into `skills/personal/<name>/`. Skipping this branch
     // would fall into the broken-symlink catch-all below — that
     // rendered as "Fix broken link (0)" with no actionable repair.
     if (hasOurs && !hasBroken) {
       return {
-        state: "unregistered-foreign",
+        state: "unregistered",
         brokenCount: 0,
         conflictCount: 0,
         capabilities: {
@@ -458,9 +429,6 @@ export function classifyDrawerState(
         canRevealInFinder: true,
         canDeleteFromBank: true,
         canUnregister: true,
-        // In-place registrations can opt into moving their files into
-        // the bank; already-adopted skills have nowhere to move to.
-        canMoveIntoBank: entry.adopted === false,
         primary: "manage-links",
       },
     };

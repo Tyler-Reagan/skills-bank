@@ -17,31 +17,18 @@ export interface RegistryEntry extends SkillMeta {
    */
   origin: import("../manifest/manifest.js").ManifestOrigin;
   /**
-   * Taxonomy axis: true when the skill's files physically live under
-   * `<registryRoot>/skills/<bucket>/<name>/`. False when the registry
-   * entry tracks an external location (the symlink-mode register path).
-   * Defaults to true for entries built from the bucket subtree —
-   * those are de facto adopted. M3 generalizes the non-adopted case.
-   */
-  adopted?: boolean;
-  /**
    * Spatial categorization. `personal` for skills authored in this
    * repo (self-referential upstream or `kind: "none"`); `vendored`
    * for harvested skills with external upstream. Derived from the
    * folder's location under `<registryRoot>/skills/{personal,vendored}/`
    * — purely a path-level concept, never stored in markers.
-   *
-   * Absent on external (non-adopted) entries, since those don't live
-   * under the bucket subtree.
    */
   bucket?: import("../registry/walk.js").SkillBucket;
   /**
    * Heal axis: the skill is registered but its files are missing on
    * disk. Set when the prior persisted index had this name but
-   * `<registryRoot>/skills/<name>/` is gone (adopted case) or when
-   * the external entry's target path is gone. The classifier emits
-   * `registry-folder-missing` / `external-target-missing` based on
-   * the entry's `adopted` flag.
+   * `<registryRoot>/skills/<name>/` is gone. The classifier emits
+   * `registry-folder-missing`.
    */
   missing?: boolean;
   /**
@@ -95,19 +82,9 @@ export type InstalledKind =
 export interface InstalledSkill {
   name: string;
   /**
-   * Stable id of the agent dir this entry was discovered in. For
-   * scans that landed in a user-defined custom directory rather than a
-   * known agent dir, this falls back to `"agents"` and `customDir` is
-   * set; consumers that distinguish the two should check `customDir`
-   * first.
+   * Stable id of the agent dir this entry was discovered in.
    */
   agent: import("./agents.js").AgentId;
-  /**
-   * When set, the entry was discovered inside this user-defined custom
-   * skills directory rather than one of the known agent dirs.
-   * Absolute path to the parent directory (not to the skill itself).
-   */
-  customDir?: string;
   /** Absolute path of `<agent-dir>/<name>` itself. */
   linkPath: string;
   /** Absolute resolved target if it's a symlink, else null. */
@@ -161,7 +138,6 @@ export interface FinalizeResult {
  */
 export interface ActionTarget {
   agent?: import("./agents.js").AgentId;
-  customDir?: string;
 }
 
 export type RegistrationAction =
@@ -171,27 +147,12 @@ export type RegistrationAction =
       type: "register";
       name: string;
       /**
-       * Record-only primitive: register the entry in place (Adopted=false,
-       * files stay where they live). Moving files into the bank is the
-       * separate `move-into-bank` action — the renderer chains the two
-       * when `settings.registerAdopts` is on and the skill isn't tracked
-       * in a custom directory.
-       *
-       * Optional post-record fan-out. When provided, applyRegistration
-       * reconciles agent links after recording so the skill ends up linked
-       * into exactly this agent set. Undefined preserves the legacy
-       * behavior of only repointing pre-existing links.
-       */
-      agents?: import("./agents.js").AgentId[];
-    } & ActionTarget)
-  | ({
-      type: "move-into-bank";
-      name: string;
-      /**
-       * Relocate primitive: move an already-recorded (or stray) skill's
-       * files into `<registryRoot>/skills/<name>` and flip Adopted=true,
-       * sweeping agent links to point at the new in-bank location. Same
-       * post-move fan-out semantics as `register.agents`.
+       * Register moves the skill's files into `<registryRoot>/skills/`
+       * and records a manifest row (ADR-0022 — Registered ⇔ files live
+       * under the bank). Optional post-move fan-out: when provided,
+       * applyRegistration reconciles agent links so the skill ends up
+       * linked into exactly this agent set; undefined only repoints
+       * pre-existing links.
        */
       agents?: import("./agents.js").AgentId[];
     } & ActionTarget)

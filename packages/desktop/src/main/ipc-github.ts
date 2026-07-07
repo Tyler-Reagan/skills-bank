@@ -186,7 +186,7 @@ async function setManualUpstream(
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
   const ref = walkSkills(registryRoot).find((r) => r.name === name);
   if (!ref) {
-    return { ok: false, message: `${name} is not adopted into the registry` };
+    return { ok: false, message: `${name} is not in the registry` };
   }
   const skillDir = ref.dir;
 

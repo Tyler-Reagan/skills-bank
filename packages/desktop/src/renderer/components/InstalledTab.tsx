@@ -102,19 +102,15 @@ function kindRank(k: InstalledSkill["kind"]): number {
 }
 
 interface Props {
-  /** Open the directory picker; on confirm, append to customSkillsDirs. */
-  onAddCustomSkillsDir: () => void;
-  /** Remove a custom dir from the persisted list. */
-  onRemoveCustomSkillsDir: (path: string) => void;
   onSwitchToBrowse: () => void;
   /**
    * "Register All": opens the RegistrationPlanModal — the per-row
-   * disambiguation/preview surface whose own scan walks every agent dir
-   * plus custom dirs. Shown in both the empty state and the Unregistered
-   * section header; when nothing is on disk the modal renders an empty list
-   * and points the user at the header's Scan Local. Bulk registration always
-   * flows through the modal (review-then-apply); the inline per-card Register
-   * button stays the one-off path.
+   * disambiguation/preview surface whose own scan walks every agent dir.
+   * Shown in both the empty state and the Unregistered section header;
+   * when nothing is on disk the modal renders an empty list and points the
+   * user at the header's Scan Local. Bulk registration always flows through
+   * the modal (review-then-apply); the inline per-card Register button stays
+   * the one-off path.
    */
   onRegisterAll: () => void;
   onRegisterOne: (entry: InstalledSkill) => void;
@@ -181,8 +177,6 @@ interface Props {
 }
 
 export function InstalledTab({
-  onAddCustomSkillsDir,
-  onRemoveCustomSkillsDir,
   onSwitchToBrowse,
   onRegisterAll,
   onRegisterOne,
@@ -197,17 +191,10 @@ export function InstalledTab({
   onFixDiagnosticItem,
 }: Props): React.ReactElement {
   const { installed, registry } = useRegistry();
-  const { settings } = useSettings();
-  const customSkillsDirs = settings.customSkillsDirs;
   const registerTooltip = REGISTER_TOOLTIP;
   if (installed.length === 0) {
     return (
       <div>
-        <CustomSkillsDirs
-          dirs={customSkillsDirs}
-          onAdd={onAddCustomSkillsDir}
-          onRemove={onRemoveCustomSkillsDir}
-        />
         <div className="empty-state">
           <strong>Nothing installed yet.</strong>
           <p>
@@ -220,9 +207,6 @@ export function InstalledTab({
             </button>
             <button className="btn" onClick={onRegisterAll}>
               Register All
-            </button>
-            <button className="btn" onClick={onAddCustomSkillsDir}>
-              Add a skills directory
             </button>
           </div>
         </div>
@@ -276,11 +260,6 @@ export function InstalledTab({
 
   return (
     <div>
-      <CustomSkillsDirs
-        dirs={customSkillsDirs}
-        onAdd={onAddCustomSkillsDir}
-        onRemove={onRemoveCustomSkillsDir}
-      />
       <div className="tab-intro">
         <span className="tab-intro-heading">
           <strong>Installed</strong>
@@ -565,70 +544,21 @@ export function InstalledTab({
   );
 }
 
-interface CustomSkillsDirsProps {
-  dirs: string[];
-  onAdd: () => void;
-  onRemove: (path: string) => void;
-}
-
-function CustomSkillsDirs({
-  dirs,
-  onAdd,
-  onRemove,
-}: CustomSkillsDirsProps): React.ReactElement {
-  return (
-    <section className="custom-skills-dirs">
-      <header className="custom-skills-dirs-header">
-        <span className="custom-skills-dirs-title">
-          <strong>Custom directories</strong>
-          <InfoTooltip
-            text="Scan any folder of skill subfolders alongside the known agent dirs — including skills that must stay where they are, like a work repo you can't move into the bank."
-            label="What are custom directories?"
-          />
-        </span>
-        <button className="btn" onClick={onAdd}>
-          Add a skills directory
-        </button>
-      </header>
-      {dirs.length > 0 && (
-        <ul className="custom-skills-dirs-list">
-          {dirs.map((dir) => (
-            <li key={dir} className="custom-skills-dir-chip">
-              <code title={dir}>{dir}</code>
-              <button
-                className="btn-icon"
-                aria-label={`Remove ${dir}`}
-                title={`Remove ${dir} from the scan list`}
-                onClick={() => onRemove(dir)}
-              >
-                <Icon name="x" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 const CATEGORY_LABELS: Record<DiagnosticCategory, string> = {
   "unregistered-installs": "Unregistered installs",
   "broken-symlinks": "Broken symlinks",
-  "external-target-missing": "External target missing",
   "registry-folder-missing": "Registry folder missing",
 };
 
 const CATEGORY_FIX_LABELS: Record<DiagnosticCategory, string> = {
   "unregistered-installs": "Register",
   "broken-symlinks": "Remove broken link",
-  "external-target-missing": "Forget",
   "registry-folder-missing": "Forget",
 };
 
 const CATEGORY_ORDER: DiagnosticCategory[] = [
   "unregistered-installs",
   "broken-symlinks",
-  "external-target-missing",
   "registry-folder-missing",
 ];
 

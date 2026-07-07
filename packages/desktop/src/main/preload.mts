@@ -8,9 +8,7 @@ import {
 
 const api = {
   listRegistry: () => ipcRenderer.invoke(IPC.listRegistry),
-  listInstalled: (customDirs?: string[]) =>
-    ipcRenderer.invoke(IPC.listInstalled, customDirs),
-  pickCustomSkillsDir: () => ipcRenderer.invoke(IPC.pickCustomSkillsDir),
+  listInstalled: () => ipcRenderer.invoke(IPC.listInstalled),
   getSkillDiff: (req: unknown) => ipcRenderer.invoke(IPC.getSkillDiff, req),
   install: (name: string, force?: boolean, agents?: unknown) =>
     ipcRenderer.invoke(IPC.install, name, force, agents),
@@ -21,15 +19,13 @@ const api = {
   deleteUnregistered: (name: string) =>
     ipcRenderer.invoke(IPC.deleteUnregistered, name),
   forgetMissing: (name: string) => ipcRenderer.invoke(IPC.forgetMissing, name),
-  repointExternal: (name: string) =>
-    ipcRenderer.invoke(IPC.repointExternal, name),
   repointOrigin: (name: string, url: string) =>
     ipcRenderer.invoke(IPC.repointOrigin, name, url),
   detachLocal: (name: string) => ipcRenderer.invoke(IPC.detachLocal, name),
   rehomeIntoLinkedRepo: (name: string, destPath: string) =>
     ipcRenderer.invoke(IPC.rehomeIntoLinkedRepo, name, destPath),
   listTopLevelSymlinks: () => ipcRenderer.invoke(IPC.listTopLevelSymlinks),
-  scan: (customDirs?: string[]) => ipcRenderer.invoke(IPC.scan, customDirs),
+  scan: () => ipcRenderer.invoke(IPC.scan),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),
   getRoot: () => ipcRenderer.invoke(IPC.getRoot),
   rebuildIndex: () => ipcRenderer.invoke(IPC.rebuildIndex),
@@ -91,8 +87,7 @@ const api = {
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>
     ipcRenderer.invoke(IPC.removeBrokenLinks, name, agents),
-  localDiagnosticsScan: (customDirs?: string[]) =>
-    ipcRenderer.invoke(IPC.localDiagnosticsScan, customDirs),
+  localDiagnosticsScan: () => ipcRenderer.invoke(IPC.localDiagnosticsScan),
   resolveSkillConflicts: (name: string, decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveSkillConflicts, name, decisions),
   discoverShow: (bounds: Bounds) =>

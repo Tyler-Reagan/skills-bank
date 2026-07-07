@@ -103,7 +103,7 @@ typecheck` across all packages + `scripts/` is the safety net.
 
 - **Keep in-place registration, move it to a robust `customSkillsDirs` home** (the prior plan,
   ADR-0011's deferred direction). Rejected: it preserves the parallel record system and the
-  `adopted` fork this decision exists to delete, and builds *more* around a need the maintainer
+  `adopted` fork this decision exists to delete, and builds _more_ around a need the maintainer
   no longer wants to serve.
 - **Keep `adopted` as a derived UI-only hint.** Nothing left to derive once in-place entries are
   gone — every registered skill is in the bank by construction.
