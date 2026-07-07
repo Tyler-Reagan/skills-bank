@@ -14,7 +14,7 @@ vanishes — there's nothing left to disagree. Accidental complexity, not essent
 
 [ADR-0002](./ADR-0002-sidecars-are-the-skill-record.md) decided the opposite ("sidecars are the
 skill record") in v0.11.7, when the manifest didn't exist yet and the committed-vs-volatile churn
-bug was the live problem. Its *reason* for splitting files by lifecycle survives this decision;
+bug was the live problem. Its _reason_ for splitting files by lifecycle survives this decision;
 its sidecar-as-record architecture does not.
 
 ## Decision
@@ -27,7 +27,7 @@ Content lives in folders. Metadata lives in the manifest. Volatile state lives i
 - **`registry-manifest.json` at the registry root is the live record** (v6 shape, ADR-0020),
   updated as part of every mutating operation — the same cadence the rolling snapshot already
   writes on. Local-only skills sit in it with `url: null`.
-- **One document, two projections.** The live record contains everything; the *pushed* form is a
+- **One document, two projections.** The live record contains everything; the _pushed_ form is a
   projection — volatile fields dropped, `url: null` rows filtered — produced by
   `serializeManifest`, the single seam where the filter lives. Diff, three-way merge, and the
   merge-base all operate on the pushed projection, never the live record; otherwise a machine
@@ -55,7 +55,7 @@ Content lives in folders. Metadata lives in the manifest. Volatile state lives i
 
 - Metadata-only wire manifest; content re-mirrored on import.
 - Deterministic committed serialization — strengthened: volatile state now lives in a file that is
-  never committed, killing the `fetchedAt`-churn bug *class*, not just the instance.
+  never committed, killing the `fetchedAt`-churn bug _class_, not just the instance.
 - No-vacuum (ADR-0018): every folder the walk sees gets a manifest row with a definite `url` in
   the same pass.
 - Additive-by-default import; confirmed removals only.

@@ -10,13 +10,13 @@ unchanged (`url: null` is the explicit stamp).
 
 `OriginKind` today is `"github" | "none"`, but `"none"` conflates two different things. A skill's
 `.skills-bank.json` can carry an explicit `{ kind: "none" }` stamp — a deliberate "this is mine,
-stop scanning" marker set by `detach` or the manual origin picker. Or it can carry *no origin field
-at all*, which `source.ts` documents as "unknown lineage, scanner may try to classify on next
+stop scanning" marker set by `detach` or the manual origin picker. Or it can carry _no origin field
+at all_, which `source.ts` documents as "unknown lineage, scanner may try to classify on next
 walk" — a promise to maybe resolve it later, not a guarantee. That second flavor can persist
 indefinitely: if the boot-time lock scanner (`scanAndStampUpstreamFromLock`) finds no matching CLI
 lock entry for a skill, today's code just leaves it unmarked and moves on.
 
-Issue #159's domain-modeling review named the actual defect: a skill's origin has to be *something*
+Issue #159's domain-modeling review named the actual defect: a skill's origin has to be _something_
 — either a remote GitHub location or a local one — and treating "no evidence yet" as a state that
 can legally persist across app launches is the problem, not just the `"none"` name.
 
@@ -34,7 +34,7 @@ indexed, its `origin.kind` is decided as part of that same pass — not deferred
 - `detach` and the manual "this is mine" origin picker both stamp `"local"` (previously
   `{ kind: "none" }`) — same mechanics, renamed value.
 - `"local"` is a flat value with no sub-reason. Nothing downstream (drift detection, sync,
-  manifest export) needs to distinguish *why* a skill is local, only that it is — adding a
+  manifest export) needs to distinguish _why_ a skill is local, only that it is — adding a
   discriminant would recreate exactly the taxonomy weight ADR-0017 removed.
 - **This invariant is about definedness, not correctness.** A skill can be stamped `"local"` when
   no GitHub evidence survives — e.g. a manually copied folder whose lock file was lost — even
@@ -43,7 +43,7 @@ indexed, its `origin.kind` is decided as part of that same pass — not deferred
   Separately, a skill stamped `"github"` can still turn out to be wrong, or become unreachable
   later (404, repo moved) — that's the existing origin-unreachable state and probe-runner
   machinery, entirely unaffected by this decision. This ADR removes the possibility of
-  *undefined*; it does not, and is not meant to, remove the possibility of *incorrect*.
+  _undefined_; it does not, and is not meant to, remove the possibility of _incorrect_.
 
 ## Alternatives rejected
 

@@ -9,12 +9,12 @@
 skill adopted into the bank from a non-GitHub remote (private GitLab, self-hosted) fit neither
 value — `local` would erase the true fact that it came from somewhere external, falsely bucketing
 it `personal`. A proposed third value (`"remote"`) fixed that but exposed the underlying problem:
-*host variety is a property of the URL, not an independent axis*. "Is this GitHub?" is
+_host variety is a property of the URL, not an independent axis_. "Is this GitHub?" is
 `new URL(url).host === "github.com"` — a derivation, and storing derivable facts as taxonomy is the
 same mistake ADR-0019 removed with `source`.
 
-Second, the enum was storing a fact about the *app's capabilities* (which hosts the fetch/probe
-machinery can drive) as if it were a fact about the *skill*. If fetch support widens beyond GitHub
+Second, the enum was storing a fact about the _app's capabilities_ (which hosts the fetch/probe
+machinery can drive) as if it were a fact about the _skill_. If fetch support widens beyond GitHub
 later, an enum forces a schema migration; a URL upgrades to fetchable with no data change at all.
 
 ## Decision
@@ -35,7 +35,7 @@ origin = { url: string | null, skillPath?, hash?, timestamps… }
 `OriginKind` is deleted. Call sites that do GitHub API work (probe, mirror, adopt-PR) guard on "is
 this a URL I can drive?" at the call site — a capability check, which is what the enum always was
 in disguise. A GitLab-hosted skill is not an error; it's a valid external origin the app can't
-re-fetch *yet*, surfaced honestly as such.
+re-fetch _yet_, surfaced honestly as such.
 
 `isSelfOrigin` survives as the URL-vs-linkedRepo comparison — still the single self-vs-external
 decider (ADR-0012's surviving remnant).
@@ -43,7 +43,7 @@ decider (ADR-0012's surviving remnant).
 ### Bucket derivation runs once, at acquisition
 
 The derivation (`url` null-or-self → `personal`, external → `vendored`) chooses where the folder
-*lands*; thereafter the folder location itself is the record, exactly as `walkSkills` already
+_lands_; thereafter the folder location itself is the record, exactly as `walkSkills` already
 treats it. Nothing re-derives bucket live against the mutable `linkedRepo`, so re-linking to a
 fork or rename moves no folders and relabels nothing — ADR-0012's re-link hazard, resolved by
 storing the one bit of acquisition-time memory as the thing itself (placement) rather than as a

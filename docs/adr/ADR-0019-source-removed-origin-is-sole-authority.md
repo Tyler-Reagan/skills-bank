@@ -19,7 +19,7 @@ escape hatch, a shortcut for what would otherwise be a manual fork-and-maintain-
 workflow, not a formal transaction the app is obligated to audit. A user can detach a skill and
 leave it local forever, never pushing it anywhere, and that's an ordinary, acceptable end state —
 not a limbo requiring a permanent provenance footnote. The only thing that must stay unambiguous
-is what `detach` *does*: flip the skill's origin from `github` to `local`. No parallel record is
+is what `detach` _does_: flip the skill's origin from `github` to `local`. No parallel record is
 needed to know that.
 
 ## Decision

@@ -43,10 +43,11 @@ start with zero skills — a blank slate. Concretely, this removes:
 ## Alternatives rejected
 
 **Keep `curated` as a derived UI-only label** (computed from "external + no Linked Repo configured
-+ unedited" rather than stored). Considered during the domain-modeling discussion, rejected once
-the underlying feature was itself cut: there's no shipped-defaults state left to derive a label
-about, so a vestigial derived-curated concept would preserve conceptual weight this decision is
-meant to discard, not reduce it.
+
+- unedited" rather than stored). Considered during the domain-modeling discussion, rejected once
+  the underlying feature was itself cut: there's no shipped-defaults state left to derive a label
+  about, so a vestigial derived-curated concept would preserve conceptual weight this decision is
+  meant to discard, not reduce it.
 
 ## Consequences
 
@@ -67,7 +68,7 @@ meant to discard, not reduce it.
 ## Follow-ups (not decided by this ADR)
 
 1. Redefine `OriginKind` to close the `"none"`/vacuum gap — proposal on the table: `"github" |
-   "local"`, with no state where a registered skill's origin is genuinely unresolved for more than
+"local"`, with no state where a registered skill's origin is genuinely unresolved for more than
    one build pass.
 2. Decide how far `source` shrinks now that `curated` is gone: to a single owned-vs-external bit,
    or away entirely in favor of deriving everything from `origin` (self vs. external GitHub repo,
