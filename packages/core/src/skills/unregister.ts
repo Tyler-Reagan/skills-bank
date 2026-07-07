@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { AGENTS, getAgentSkillsDir, type AgentId } from "../shared/agents.js";
+import { getAgentSkillsDir, type AgentId } from "../shared/agents.js";
+import { repointAgentLinks } from "../shared/agent-links.js";
 import { type AppError, fromCaught, makeAppError } from "../shared/errors.js";
 import { readLiveManifest, writeLiveManifest } from "../manifest/manifest.js";
 import { removeRuntimeEntry } from "../registry/runtime-map.js";
@@ -263,48 +264,31 @@ function moveOutOfBank(
     }
   }
 
-  // Sweep agent dirs and repoint symlinks that pointed at the old
-  // sourceDir to the new destDir. Real-directory entries are left
-  // alone (they may be unrelated content).
-  const rewrites: UnlinkTargetResult[] = [];
-  for (const agent of AGENTS) {
-    const linkPath = path.join(getAgentSkillsDir(agent), name);
-    let stat: fs.Stats | null = null;
-    try {
-      stat = fs.lstatSync(linkPath);
-    } catch {
-      continue; // doesn't exist
-    }
-    if (!stat.isSymbolicLink()) continue;
-    // Resolve the symlink's raw target ourselves rather than via
-    // fs.realpathSync: the move above already deleted sourceDir, so
-    // realpathSync would throw for any link still pointing at it and
-    // we'd never detect (or repoint) exactly the links we're here to fix.
-    let target: string;
-    try {
-      target = path.resolve(path.dirname(linkPath), fs.readlinkSync(linkPath));
-    } catch {
-      continue; // link vanished or unreadable between lstat and readlink — skip
-    }
-    if (target === sourceDir || target === destDir) {
-      try {
-        fs.unlinkSync(linkPath);
-        // Don't recreate a symlink if destDir === linkPath (the dest
-        // is the same agent dir — would create a self-loop).
-        if (path.resolve(destDir) !== path.resolve(linkPath)) {
-          fs.symlinkSync(destDir, linkPath, "dir");
-        }
-        rewrites.push({ agent: agent.id, linkPath, removed: true });
-      } catch (err) {
-        errors.push(
-          makeAppError({
-            code: "unregister.rewrite-failed",
-            message: `${agent.id}: ${(err as Error).message}`,
-            copyableDetails: { agent: agent.id, linkPath },
-          }),
-        );
-      }
-    }
+  // Repoint every agent-dir symlink that pointed at the old bank copy
+  // to the new destination. Shared with moveSkillBucket — see
+  // shared/agent-links.ts for why this reads the raw target rather than
+  // realpath (sourceDir is already gone by now).
+  const { relinked, errors: repointErrors } = repointAgentLinks(
+    name,
+    sourceDir,
+    destDir,
+  );
+  const rewrites: UnlinkTargetResult[] = relinked.map((r) => ({
+    agent: r.agent,
+    linkPath: r.linkPath,
+    removed: true,
+  }));
+  for (const e of repointErrors) {
+    errors.push(
+      makeAppError({
+        code: "unregister.rewrite-failed",
+        message: `${e.agent}: ${e.message}`,
+        copyableDetails: {
+          agent: e.agent,
+          linkPath: path.join(getAgentSkillsDir(e.agent), name),
+        },
+      }),
+    );
   }
 
   removeManifestRow(opts.registryRoot, name);

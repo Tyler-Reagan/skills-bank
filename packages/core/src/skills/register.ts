@@ -329,6 +329,13 @@ function registerSkill(
   //   - real directory at the same name in another agent → leave alone (could be intentional unrelated content)
   // This is what makes register converge a duplicate-source state to a
   // clean single-source-in-registry state, which the prior copyDir flow couldn't.
+  //
+  // Deliberately NOT the shared repointAgentLinks primitive (used by
+  // unregister + moveSkillBucket): that one relocates only links that
+  // resolved to a specific oldDir. Register's job is broader — converge
+  // ANY <name> link to destDir (via realpathSync, so a dangling link
+  // still gets repointed) AND recreate a link at the now-vacated source.
+  // Convergence ≠ relocation, so the two don't share an implementation.
   const swept: string[] = [];
   for (const agent of AGENTS) {
     const linkPath = path.join(getAgentSkillsDir(agent), entry.name);
