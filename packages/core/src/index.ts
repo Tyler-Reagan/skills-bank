@@ -23,7 +23,6 @@ export * from "./github/origin.js";
 export * from "./github/probe.js";
 export * from "./skills/diagnostics.js";
 export * from "./shared/agents.js";
-export * from "./shared/conflict.js";
 export * from "./skills/delete.js";
 export * from "./registry/external.js";
 export * from "./registry/heal.js";

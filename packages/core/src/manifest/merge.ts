@@ -176,9 +176,26 @@ export interface ResolvedMerge {
    * `keep-both` forks: the local skill at `from` must be renamed to
    * `to` (`<name>-local`) on disk before reconcile, and both entries
    * appear in `manifest`. The on-disk rename uses `resolveRenameTarget`
-   * / `applyConflictDecision` at the caller (it owns the filesystem).
+   * at the caller (it owns the filesystem).
    */
   renamed: { from: string; to: string }[];
+}
+
+/**
+ * Pick a non-colliding `<name>-local[-N]` folder name for a `keep-both`
+ * fork. Used by the manifest-merge caller (which owns the filesystem)
+ * before it renames the local copy so the incoming skill can land at the
+ * original name. Reads only (`existsSync`) to find a free name; the
+ * caller performs the rename.
+ */
+export function resolveRenameTarget(skillsDir: string, name: string): string {
+  const base = `${name}-local`;
+  if (!fs.existsSync(path.join(skillsDir, base))) return base;
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${base}-${i}`;
+    if (!fs.existsSync(path.join(skillsDir, candidate))) return candidate;
+  }
+  throw new Error(`no available rename target for ${name}`);
 }
 
 /**
