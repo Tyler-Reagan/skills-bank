@@ -842,18 +842,6 @@ select {
   text-transform: uppercase;
   flex-shrink: 0;
 }
-.skill-origin-badge.curated {
-  /* Calm default — CURATED is the majority case and rendering it as
-     the loudest badge would create visual noise. Muted text + subtle
-     border reads as "in good standing." Phase 2 dropped the YOURS
-     badge entirely; user-source skills render without a provenance
-     chip, and the "Mine" filter is the single surface for "show me
-     only my skills." */
-  color: var(--text-3);
-  background: var(--surface-hi);
-  border: 1px solid var(--border);
-}
-
 /* Bad-state badges. Loud — they demand a heal action. Same outer
    shape as origin badges so the slot is unified; coloring escalates. */
 .skill-state-badge {
@@ -4237,6 +4225,12 @@ button:disabled {
 .repo-transport-done-meta {
   color: var(--text-3);
   font-size: 13px;
+  margin-bottom: 12px;
+}
+.repo-transport-warning {
+  color: var(--warn);
+  font-size: 13px;
+  line-height: 1.4;
   margin-bottom: 12px;
 }
 .diff-table {

@@ -727,6 +727,30 @@ describe("coerceManifestToCurrent", () => {
     expect(coerced.skills[1]!.origin).toEqual({ url: null });
   });
 
+  test("strips a trailing .git from origin.url so groups collapse", () => {
+    const coerced = coerceManifestToCurrent({
+      schemaVersion: 6 as const,
+      skills: [
+        {
+          name: "alpha",
+          origin: { url: "https://github.com/Tyler-Reagan/skills.git" },
+          tags: [],
+          category: null,
+        },
+        {
+          name: "beta",
+          origin: { url: "https://github.com/Tyler-Reagan/skills" },
+          tags: [],
+          category: null,
+        },
+      ],
+    });
+    expect(coerced.skills[0]!.origin.url).toBe(
+      "https://github.com/Tyler-Reagan/skills",
+    );
+    expect(coerced.skills[0]!.origin.url).toBe(coerced.skills[1]!.origin.url);
+  });
+
   test("fills per-skill defaults for a sparse row", () => {
     const sparse = {
       schemaVersion: 6 as const,

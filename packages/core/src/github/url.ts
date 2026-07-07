@@ -53,6 +53,20 @@ export function isGithubUrl(url: string | null | undefined): boolean {
 }
 
 /**
+ * Normalize a repo origin URL for storage and comparison: strip a
+ * trailing `.git` suffix and any trailing slashes so `…/owner/repo` and
+ * `…/owner/repo.git` collapse to one origin group (they otherwise split
+ * self-origin skills across two groups). Host-agnostic — a plain string
+ * transform, not a GitHub check. Non-string input becomes `null`.
+ */
+export function normalizeOriginUrl(
+  url: string | null | undefined,
+): string | null {
+  if (typeof url !== "string") return null;
+  return url.replace(/\/+$/, "").replace(/\.git$/, "");
+}
+
+/**
  * Extract `owner/repo` from a GitHub URL, or null if it isn't a GitHub URL
  * with at least owner + repo segments. Used at display/probe call sites
  * that previously read `origin.repo` directly. Tolerates the full spread

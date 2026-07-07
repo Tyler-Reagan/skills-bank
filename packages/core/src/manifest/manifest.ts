@@ -3,6 +3,7 @@ import path from "node:path";
 import { bucketForOrigin } from "../registry/source.js";
 import { walkSkills } from "../registry/walk.js";
 import { readRepoFile } from "../github/files.js";
+import { normalizeOriginUrl } from "../github/url.js";
 import type { RateLimitInfo } from "../github/http.js";
 import {
   effectiveLabels,
@@ -209,7 +210,7 @@ function normalizeManifestSkill(s: Record<string, unknown>): ManifestSkill {
   const origin: ManifestOrigin = {
     url:
       typeof rawOrigin["url"] === "string"
-        ? (rawOrigin["url"] as string)
+        ? normalizeOriginUrl(rawOrigin["url"] as string)
         : null,
   };
   if (typeof rawOrigin["skillPath"] === "string") {

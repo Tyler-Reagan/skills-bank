@@ -481,6 +481,14 @@ export type PushManifestToRepoResult =
       htmlUrl: string;
       prNumber?: number;
       skillCount: number;
+      /**
+       * Non-blocking advisory. Set on the PR path when the remote has
+       * diverged from the merge base (finding F4): the PR still opens —
+       * human review is the backstop — but the caller should warn that the
+       * PR may not reflect the latest remote. Direct push hard-refuses on
+       * divergence instead (reason: "diverged").
+       */
+      warning?: string;
     }
   | {
       ok: false;

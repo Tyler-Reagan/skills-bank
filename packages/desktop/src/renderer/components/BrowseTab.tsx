@@ -23,11 +23,10 @@ import { useBrowseFilters } from "../hooks/useBrowseFilters.js";
 const CATEGORY_ORDER = categories.map((c) => c.slug);
 
 const REGISTRY_TOOLTIP =
-  "Skills in your registry — the curated bundled set by default, or a " +
-  "GitHub repo you've linked. When linked, click Pull from <repo> in the " +
-  "header to pull the latest; your local edits and added skills are preserved " +
-  "through the diff-before-apply flow. Skills you install elsewhere appear " +
-  "in the Installed tab.";
+  "Skills in your registry — a GitHub repo you've linked, plus any local " +
+  "skills you've added. When linked, click Pull from <repo> in the header " +
+  "to resync with the repo's published set. Skills you install elsewhere " +
+  "appear in the Installed tab.";
 
 interface Props {
   onSelect: (entry: RegistryEntry) => void;

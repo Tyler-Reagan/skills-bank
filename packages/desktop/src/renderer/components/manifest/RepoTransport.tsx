@@ -27,7 +27,13 @@ interface Props {
 type ExportAction =
   | { kind: "idle" }
   | { kind: "pushing" }
-  | { kind: "done"; commitSha: string; htmlUrl: string; prNumber?: number }
+  | {
+      kind: "done";
+      commitSha: string;
+      htmlUrl: string;
+      prNumber?: number;
+      warning?: string;
+    }
   | { kind: "error"; message: string; resetAt?: string };
 
 type ImportAction =
@@ -164,6 +170,7 @@ function ExportView({
         commitSha: r.commitSha,
         htmlUrl: r.htmlUrl,
         prNumber: r.prNumber,
+        warning: r.warning,
       });
       const label = r.prNumber
         ? `Manifest pushed as PR #${r.prNumber}`
@@ -187,6 +194,9 @@ function ExportView({
           Committed <code>{action.commitSha.slice(0, 7)}</code>
           {action.prNumber && ` · PR #${action.prNumber}`}
         </div>
+        {action.warning && (
+          <div className="repo-transport-warning">⚠ {action.warning}</div>
+        )}
         <button
           className="btn"
           type="button"

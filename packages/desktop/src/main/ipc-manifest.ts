@@ -348,7 +348,35 @@ export function registerManifestHandlers(): void {
         };
       }
 
-      // PR path
+      // PR path — soft divergence check (finding F4). The direct-push
+      // branch hard-refuses when the remote moved; here we don't block
+      // (PR review is the backstop) but attach a non-blocking warning so
+      // the caller can flag that the PR may not reflect the latest remote.
+      // NOTE: the pushed projection drops url:null rows — whether those
+      // rows belong in the committed repo manifest is deferred to the
+      // registration-rework PR, not resolved here.
+      let warning: string | undefined;
+      {
+        const remote = await fetchRemoteManifest(
+          linkedRepo.fullName,
+          branch,
+          token,
+        );
+        if (remote.ok) {
+          const baseManifest = readMergeBase(registryRoot) ?? {
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            skills: [],
+          };
+          if (
+            serializeManifest(remote.manifest) !==
+            serializeManifest(baseManifest)
+          ) {
+            warning =
+              "The linked repo changed since your last sync — the PR may not reflect the latest remote. Review it carefully or pull & merge first.";
+          }
+        }
+      }
+
       const prBranch = "manifest/registry-manifest";
       const ownerSegment = linkedRepo.fullName.split("/")[0];
       const prsRes = await coreGhFetch<{ number: number; html_url: string }[]>(
@@ -400,6 +428,7 @@ export function registerManifestHandlers(): void {
           htmlUrl: existingPr.html_url,
           prNumber: existingPr.number,
           skillCount: manifest.skills.length,
+          warning,
         };
       }
 
@@ -438,6 +467,7 @@ export function registerManifestHandlers(): void {
         htmlUrl: prRes.body.html_url,
         prNumber: prRes.body.number,
         skillCount: manifest.skills.length,
+        warning,
       };
     },
   );
