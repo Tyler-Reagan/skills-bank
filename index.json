@@ -1,32 +1,5 @@
 {
-  "generatedAt": "2026-07-03T01:05:10.041Z",
+  "generatedAt": "2026-07-07T02:38:28.214Z",
   "registry": "skills-bank",
-  "entries": [
-    {
-      "name": "find-skills",
-      "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
-      "path": "skills/vendored/find-skills",
-      "source": {
-        "source": "curated",
-        "syncedFromCommit": "ad2ae97ce4c5227d415296a0d9a2728c56a300a0",
-        "syncedAt": "2026-06-05T15:58:57.714Z",
-        "origin": {
-          "kind": "github",
-          "repo": "vercel-labs/skills",
-          "sourceUrl": "https://github.com/vercel-labs/skills.git",
-          "skillPath": "skills/find-skills/SKILL.md",
-          "skillFolderHash": "3013fdeb8a11b10b1eb795ec3ae8bfca38f7c26d",
-          "installedAt": "2026-04-30T18:44:26.088Z"
-        }
-      },
-      "adopted": true,
-      "lastCommit": {
-        "sha": "34d123dbe5c536f7d50206f084cff6afec070a62",
-        "date": "2026-06-05 14:16:28 -0700",
-        "message": "refactor: source-axis enforcement, install primitive overhaul, meta.json/CLI/publish cull (#112)"
-      },
-      "bucket": "vendored",
-      "canon": true
-    }
-  ]
+  "entries": []
 }
