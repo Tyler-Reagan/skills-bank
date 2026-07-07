@@ -77,6 +77,50 @@ describe("diffManifests", () => {
     expect(diff.changed).toEqual(["epsilon"]);
   });
 
+  test("origins differing only in hash → unchanged (F2: hash excluded)", () => {
+    const diff = diffManifests(
+      makeManifest([
+        {
+          name: "zeta",
+          origin: {
+            url: "https://github.com/o/r",
+            skillPath: "skills/zeta/SKILL.md",
+            hash: "aaaa",
+          },
+        },
+      ]),
+      makeManifest([
+        {
+          name: "zeta",
+          origin: {
+            url: "https://github.com/o/r",
+            skillPath: "skills/zeta/SKILL.md",
+          },
+        },
+      ]),
+    );
+    expect(diff.unchanged).toEqual(["zeta"]);
+    expect(diff.changed).toEqual([]);
+  });
+
+  test("same url but different skillPath → changed (identity still compared)", () => {
+    const diff = diffManifests(
+      makeManifest([
+        {
+          name: "eta",
+          origin: { url: "https://github.com/o/r", skillPath: "a/SKILL.md" },
+        },
+      ]),
+      makeManifest([
+        {
+          name: "eta",
+          origin: { url: "https://github.com/o/r", skillPath: "b/SKILL.md" },
+        },
+      ]),
+    );
+    expect(diff.changed).toEqual(["eta"]);
+  });
+
   test("mixed: added + removed + changed + unchanged", () => {
     const source = makeManifest([
       { name: "keep" },

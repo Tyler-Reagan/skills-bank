@@ -21,6 +21,12 @@ export interface ManifestDiff {
  * Every committed per-skill field participates: `origin` (identity +
  * re-fetch), `category`, `tags` (curation intent). `name` keys the maps
  * and isn't compared as a field.
+ *
+ * `origin.hash` is deliberately excluded: it's a local re-fetch
+ * optimization (the folder hash at mirror time), not shared intent. Lean
+ * self-authored remotes carry no `hash`, so including it made every
+ * co-present self-origin skill diff forever against its own upstream.
+ * Identity is `origin.url` + `skillPath`.
  */
 export const COMPARED_FIELDS: (keyof ManifestSkill)[] = [
   "origin",
@@ -28,8 +34,16 @@ export const COMPARED_FIELDS: (keyof ManifestSkill)[] = [
   "tags",
 ];
 
+function comparableField(s: ManifestSkill, f: keyof ManifestSkill): unknown {
+  if (f === "origin") {
+    const { url, skillPath } = s.origin;
+    return { url, skillPath };
+  }
+  return s[f];
+}
+
 export function skillSignature(s: ManifestSkill): string {
-  return JSON.stringify(COMPARED_FIELDS.map((f) => s[f]));
+  return JSON.stringify(COMPARED_FIELDS.map((f) => comparableField(s, f)));
 }
 
 /**

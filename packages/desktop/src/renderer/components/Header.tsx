@@ -232,7 +232,7 @@ export function Header({
             <button
               className="refresh-btn"
               disabled={syncing}
-              title={`Pull the latest content from ${linkedRepo!.fullName} into your local bank. Local edits, added skills, and provenance markers are preserved via the diff-before-apply flow.`}
+              title={`Resync your local bank with ${linkedRepo!.fullName}: re-fetch its manifest and mirror the current published set. This is a replace, not a merge — for a 3-way merge that preserves local edits, use Account → Import manifest.`}
               aria-label={
                 syncing
                   ? `Pulling from ${linkedRepo!.fullName}`

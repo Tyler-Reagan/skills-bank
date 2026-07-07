@@ -1,5 +1,27 @@
 import { describe, expect, test } from "vitest";
-import { parseGithubSkillUrl } from "./url.js";
+import { parseGithubSkillUrl, normalizeOriginUrl } from "./url.js";
+
+describe("normalizeOriginUrl", () => {
+  test("strips a trailing .git", () => {
+    expect(normalizeOriginUrl("https://github.com/o/r.git")).toBe(
+      "https://github.com/o/r",
+    );
+  });
+  test("strips trailing slashes then .git", () => {
+    expect(normalizeOriginUrl("https://github.com/o/r.git/")).toBe(
+      "https://github.com/o/r",
+    );
+  });
+  test("leaves a clean url untouched", () => {
+    expect(normalizeOriginUrl("https://github.com/o/r")).toBe(
+      "https://github.com/o/r",
+    );
+  });
+  test("null / undefined → null", () => {
+    expect(normalizeOriginUrl(null)).toBeNull();
+    expect(normalizeOriginUrl(undefined)).toBeNull();
+  });
+});
 
 describe("parseGithubSkillUrl", () => {
   test("folder URL canonicalizes skillPath to <path>/SKILL.md", () => {
