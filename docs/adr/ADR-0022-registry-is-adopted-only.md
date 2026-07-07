@@ -67,9 +67,10 @@ a narrow workflow does not justify a parallel subsystem threaded through the reg
   as an `external.json` row (no manifest row, no folder under `skills/`). Once `build.ts` stops
   reading `external.json`, those entries stop being registered; their files are untouched (never
   in the bank) and reappear in the Installed tab as unregistered installs — the correct
-  representation post-decision. `external.json` is deleted opportunistically on next boot. No
-  first-boot notice, no migration step (ADR-0021's "long-lived correctness invariant, not
-  standing migration machinery").
+  representation post-decision. `external.json` itself is inert dead weight, not cleaned up:
+  no code reads or deletes it post-cut, so a pre-existing file is left on disk, silently
+  ignored forever. No first-boot notice, no migration step (ADR-0021's "long-lived correctness
+  invariant, not standing migration machinery").
 - **Heal states shrink to one missing-files case.** `registry-folder-missing` survives (the bank
   folder deleted out from under an entry); `external-target-missing` and its repoint action go.
 - **`repoint` now means exactly one thing** — rewrite an Origin URL. This resolves the

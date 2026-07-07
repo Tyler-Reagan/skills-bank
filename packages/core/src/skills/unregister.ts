@@ -276,13 +276,17 @@ function moveOutOfBank(
       continue; // doesn't exist
     }
     if (!stat.isSymbolicLink()) continue;
-    let realTarget = "";
+    // Resolve the symlink's raw target ourselves rather than via
+    // fs.realpathSync: the move above already deleted sourceDir, so
+    // realpathSync would throw for any link still pointing at it and
+    // we'd never detect (or repoint) exactly the links we're here to fix.
+    let target: string;
     try {
-      realTarget = fs.realpathSync(linkPath);
+      target = path.resolve(path.dirname(linkPath), fs.readlinkSync(linkPath));
     } catch {
-      // Broken link — repointing won't help if dest doesn't exist either.
+      continue; // link vanished or unreadable between lstat and readlink — skip
     }
-    if (realTarget === sourceDir || realTarget === destDir) {
+    if (target === sourceDir || target === destDir) {
       try {
         fs.unlinkSync(linkPath);
         // Don't recreate a symlink if destDir === linkPath (the dest
