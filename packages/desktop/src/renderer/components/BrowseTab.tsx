@@ -90,35 +90,6 @@ export function BrowseTab({
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     () => new Set(),
   );
-  if (registry.length === 0) {
-    return (
-      <div className="empty-state">
-        <strong>The registry is empty.</strong>
-        <p>
-          Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
-          <code>meta.json</code> or a <code>SKILL.md</code> with YAML
-          frontmatter, or click <strong>Pull from &lt;repo&gt;</strong> in the
-          header to pull from your linked registry.
-        </p>
-        <div className="mt-16">
-          <button
-            className="btn primary"
-            disabled={rebuilding}
-            onClick={() => void onRebuild()}
-          >
-            {rebuilding ? (
-              <>
-                <span className="spinner inline" /> Rescanning…
-              </>
-            ) : (
-              "Rescan"
-            )}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const installedNames = useMemo(
     () =>
       new Set(installed.filter((i) => i.kind === "ours").map((i) => i.name)),
@@ -248,6 +219,39 @@ export function BrowseTab({
         !registryNamesSet.has(s.name) &&
         !manifestImportProgress.dismissed.has(s.name),
     ) ?? [];
+
+  // Empty-state return lives here, after every hook call above — moving it
+  // earlier would skip those hooks while the registry is empty and then run
+  // them the instant a first-link import populates it within the same mount,
+  // changing the hook count between renders (React error #310, fatal).
+  if (registry.length === 0) {
+    return (
+      <div className="empty-state">
+        <strong>The registry is empty.</strong>
+        <p>
+          Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
+          <code>meta.json</code> or a <code>SKILL.md</code> with YAML
+          frontmatter, or click <strong>Pull from &lt;repo&gt;</strong> in the
+          header to pull from your linked registry.
+        </p>
+        <div className="mt-16">
+          <button
+            className="btn primary"
+            disabled={rebuilding}
+            onClick={() => void onRebuild()}
+          >
+            {rebuilding ? (
+              <>
+                <span className="spinner inline" /> Rescanning…
+              </>
+            ) : (
+              "Rescan"
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
