@@ -787,6 +787,20 @@ export function registerRegistryHandlers(): void {
       provisionalName,
     );
 
+    // Refuse before writing anything if this name already lives in the
+    // OTHER bucket — walkSkills enforces global name uniqueness across
+    // buckets, and mirroring into vendored/ on top of an existing
+    // personal/ folder of the same name corrupts the registry (the
+    // next reconcile/boot can no longer walk skills/ at all).
+    const preExisting = findSkillFolder(registryRoot, provisionalName);
+    if (preExisting && preExisting.bucket !== "vendored") {
+      return {
+        ok: false,
+        reason: "name-collision",
+        message: `A skill named "${provisionalName}" already exists in your ${preExisting.bucket} skills. Remove or rename it before adding this one from GitHub.`,
+      } as const;
+    }
+
     let mirror: Awaited<ReturnType<typeof installSkillFiles>>;
     try {
       mirror = await installSkillFiles(
@@ -827,6 +841,18 @@ export function registerRegistryHandlers(): void {
     let finalDir = destDir;
     let finalName = provisionalName;
     if (meta.name && meta.name !== provisionalName) {
+      // The frontmatter name differs from the folder name we mirrored
+      // under — re-check the collision guard against the TRUE final
+      // name before renaming onto it.
+      const renameCollision = findSkillFolder(registryRoot, meta.name);
+      if (renameCollision && renameCollision.bucket !== "vendored") {
+        fs.rmSync(destDir, { recursive: true, force: true });
+        return {
+          ok: false,
+          reason: "name-collision",
+          message: `A skill named "${meta.name}" already exists in your ${renameCollision.bucket} skills. Remove or rename it before adding this one from GitHub.`,
+        } as const;
+      }
       const canonDest = path.join(
         registryRoot,
         "skills",

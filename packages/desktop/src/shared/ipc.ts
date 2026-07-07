@@ -824,6 +824,7 @@ interface SkillsBankAPI {
         rateLimit?: RateLimitInfo;
       }
     | { ok: false; reason: "no-skill-md"; message: string }
+    | { ok: false; reason: "name-collision"; message: string }
   >;
   repairBrokenLinks(name: string): Promise<BrokenLinkRepairReport>;
   removeBrokenLinks(

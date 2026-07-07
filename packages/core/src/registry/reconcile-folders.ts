@@ -5,7 +5,7 @@ import {
 } from "../manifest/manifest.js";
 import { effectiveLabels, type LabelsMap } from "./labels.js";
 import { readLegacyOrigin } from "./legacy-origin.js";
-import { walkSkills } from "./walk.js";
+import { SkillNameCollisionError, walkSkills } from "./walk.js";
 
 export interface ReconcileFoldersOptions {
   /** Label overrides keyed by skill name (the app's `labels.json`). */
@@ -79,4 +79,30 @@ export function reconcileFoldersToManifest(
 
   writeLiveManifest(registryRoot, manifest);
   return manifest;
+}
+
+/**
+ * `reconcileFoldersToManifest`, but a cross-bucket name collision on
+ * disk doesn't propagate. Callers here are boot and the post-mutation
+ * snapshot seam — a `SkillNameCollisionError` (someone's `skills/`
+ * folder has the same name in both `personal/` and `vendored/`, an
+ * invariant `walkSkills` is right to enforce for CI) must not crash the
+ * running app or brick startup. Logged, not silent: only this specific,
+ * already-modeled error is caught here; anything else still throws.
+ * The manifest keeps its last-known-good state for the cycle — no
+ * partial write, no data loss, nothing to clean up later.
+ */
+export function reconcileFoldersToManifestSafe(
+  registryRoot: string,
+  opts: ReconcileFoldersOptions = {},
+): void {
+  try {
+    reconcileFoldersToManifest(registryRoot, opts);
+  } catch (err) {
+    if (err instanceof SkillNameCollisionError) {
+      console.error(`[skills-bank] registry reconcile skipped: ${err.message}`);
+      return;
+    }
+    throw err;
+  }
 }
