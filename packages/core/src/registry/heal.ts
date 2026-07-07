@@ -2,15 +2,10 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import ignore, { type Ignore } from "ignore";
-import {
-  externalRegistryPath,
-  readExternalRegistry,
-  removeExternalRegistryEntry,
-} from "./external.js";
 import { findSkillFolder, walkSkills } from "./walk.js";
-import { moveSkillBucket } from "./rehome.js";
+import { moveSkillBucket } from "./bucket-move.js";
 import { readLiveManifest, writeLiveManifest } from "../manifest/manifest.js";
-import { setRuntimeEntry } from "./runtime-map.js";
+import { setRuntimeEntry, removeRuntimeEntry } from "./runtime-map.js";
 import {
   OP_JOURNAL_FILE,
   writeOpJournal,
@@ -173,71 +168,22 @@ export function scanAndResolveOpJournals(registryRoot: string): string[] {
 }
 
 /**
- * Heal action — repoint a non-adopted external entry whose target has
- * moved. Validates the new target exists and contains a SKILL.md, then
- * rewrites the external.json row in place (preserving `registeredAt`).
- * No-op for adopted entries — those have no external.json row to
- * repoint; the user should re-register them instead.
- */
-export function repointExternalEntry(
-  registryRoot: string,
-  name: string,
-  newTarget: string,
-): { ok: boolean; message: string } {
-  if (!fs.existsSync(newTarget)) {
-    return { ok: false, message: `path does not exist: ${newTarget}` };
-  }
-  if (!fs.statSync(newTarget).isDirectory()) {
-    return { ok: false, message: `not a directory: ${newTarget}` };
-  }
-  if (!fs.existsSync(path.join(newTarget, "SKILL.md"))) {
-    return {
-      ok: false,
-      message: `no SKILL.md found at: ${newTarget}`,
-    };
-  }
-  const list = readExternalRegistry(registryRoot);
-  const entry = list.find((e) => e.name === name);
-  if (!entry) {
-    return {
-      ok: false,
-      message: `no external entry for ${name} — adopted entries can't be repointed`,
-    };
-  }
-  const next = list.map((e) =>
-    e.name === name ? { ...e, target: newTarget } : e,
-  );
-  const p = externalRegistryPath(registryRoot);
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(next, null, 2) + "\n");
-  return { ok: true, message: `repointed ${name} → ${newTarget}` };
-}
-
-/**
- * Heal action — forget a missing or broken entry. Removes the entry
- * from external.json (non-adopted) and any persisted index reference;
- * the next buildRegistryIndex omits it naturally.
+ * Heal action — forget a `registry-folder-missing` entry: the skill's
+ * manifest row survives but its folder under `skills/` is gone. Drop the
+ * manifest row + runtime state so the entry stops being surfaced; the
+ * next index build omits it naturally.
  */
 export function forgetMissingEntry(
   registryRoot: string,
   name: string,
 ): { ok: boolean; message: string } {
-  // Non-adopted entries live in external.json.
-  const ext = readExternalRegistry(registryRoot);
-  if (ext.find((e) => e.name === name)) {
-    removeExternalRegistryEntry(registryRoot, name);
-    return {
-      ok: true,
-      message: `forgot ${name} (external entry removed)`,
-    };
+  const manifest = readLiveManifest(registryRoot);
+  const next = manifest.skills.filter((s) => s.name !== name);
+  if (next.length !== manifest.skills.length) {
+    writeLiveManifest(registryRoot, { ...manifest, skills: next });
   }
-  // Adopted entries with missing folders aren't tracked in external;
-  // they live in the prior index.json. The next index build won't
-  // include them because the folder is gone — nothing to do here.
-  return {
-    ok: true,
-    message: `forgot ${name}`,
-  };
+  removeRuntimeEntry(registryRoot, name);
+  return { ok: true, message: `forgot ${name}` };
 }
 
 export interface DetachOriginResult {

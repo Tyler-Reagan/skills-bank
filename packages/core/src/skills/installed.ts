@@ -21,17 +21,6 @@ export interface ListInstalledOptions {
    * AGENTS whose skills dir exists on disk.
    */
   agents?: AgentDef[];
-  /**
-   * Additional absolute directories to scan, beyond the known agent
-   * dirs. Used when the user has pointed the app at a personal skills
-   * folder (e.g. `~/dev/my-skills/`). Entries found here get
-   * `customDir` set to the originating path; `agent` falls back to
-   * `"agents"` as a generic AgentId placeholder.
-   *
-   * Non-existent paths and paths that duplicate a known agent dir are
-   * silently skipped to keep the renderer call site simple.
-   */
-  customDirs?: string[];
 }
 
 export function listInstalled(
@@ -51,40 +40,19 @@ export function listInstalled(
   const agents = opts.agents ?? AGENTS;
   const out: InstalledSkill[] = [];
 
-  // Build the list of scan locations. Custom dirs are normalized,
-  // de-duplicated, and stripped of any path that already matches a
-  // known agent dir — the agent-dir scan owns those.
-  const knownAgentDirs = new Set(
-    AGENTS.map((a) => path.resolve(getAgentSkillsDir(a))),
-  );
-  const customScans = new Map<string, string>(); // resolved → original
-  for (const raw of opts.customDirs ?? []) {
-    if (!raw) continue;
-    const resolved = path.resolve(raw);
-    if (knownAgentDirs.has(resolved)) continue;
-    if (!customScans.has(resolved)) customScans.set(resolved, raw);
-  }
-
   for (const agent of agents) {
     const skillsDir = getAgentSkillsDir(agent);
     scanDir(skillsDir, { agent: agent.id });
   }
-  for (const [resolved, original] of customScans) {
-    scanDir(resolved, { agent: "agents", customDir: original });
-  }
 
-  // Sort by name then agent, with custom-dir entries grouped after
-  // their agent peers via a secondary key on customDir.
+  // Sort by name then agent.
   return out.sort(
-    (a, b) =>
-      a.name.localeCompare(b.name) ||
-      a.agent.localeCompare(b.agent) ||
-      (a.customDir ?? "").localeCompare(b.customDir ?? ""),
+    (a, b) => a.name.localeCompare(b.name) || a.agent.localeCompare(b.agent),
   );
 
   function scanDir(
     skillsDir: string,
-    origin: { agent: InstalledSkill["agent"]; customDir?: string },
+    origin: { agent: InstalledSkill["agent"] },
   ): void {
     if (!fs.existsSync(skillsDir)) return;
     let names: string[];
@@ -106,7 +74,7 @@ export function listInstalled(
         const raw = fs.readlinkSync(linkPath);
         const literal = path.resolve(skillsDir, raw);
         // Classify on the FINAL endpoint of the symlink chain, not the
-        // first hop. After Adopt turns a real-directory into a symlink
+        // first hop. After Register turns a real-directory into a symlink
         // pointing at the registry, propagated symlinks become
         // symlink-of-symlink-to-registry; classifying on `literal` would
         // miss the registry, leaving the entry stuck in "Not registered."
@@ -126,7 +94,6 @@ export function listInstalled(
         out.push({
           name,
           agent: origin.agent,
-          ...(origin.customDir ? { customDir: origin.customDir } : {}),
           linkPath,
           // `target` is the literal one-hop link target — useful for
           // showing the user what their symlink actually points at, even
@@ -136,13 +103,8 @@ export function listInstalled(
           ...(ourEntry ? { registryEntry: ourEntry } : {}),
         });
       } else if (stat.isDirectory()) {
-        // A real directory that IS a registered entry's recorded source
-        // (in-place/non-adopted registration records the absolute source
-        // path in the index) or lives under the registry tree is the
+        // A real directory that lives under the registry tree is the
         // canonical copy, not a stray duplicate — classify it `ours`.
-        // This is what flips a custom-dir skill from `unregistered-real`
-        // to registered once it's been recorded, instead of leaving the
-        // source dir reading as a conflict against its own agent links.
         let realPath = linkPath;
         try {
           realPath = fs.realpathSync(linkPath);
@@ -154,7 +116,6 @@ export function listInstalled(
         out.push({
           name,
           agent: origin.agent,
-          ...(origin.customDir ? { customDir: origin.customDir } : {}),
           linkPath,
           target: null,
           kind: ourEntry || isUnderRegistry ? "ours" : "real-directory",

@@ -1,12 +1,9 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { AGENTS, getAgentSkillsDir, type AgentId } from "../shared/agents.js";
+import { getAgentSkillsDir, type AgentId } from "../shared/agents.js";
+import { repointAgentLinks } from "../shared/agent-links.js";
 import { type AppError, fromCaught, makeAppError } from "../shared/errors.js";
-import {
-  readExternalRegistry,
-  removeExternalRegistryEntry,
-} from "../registry/external.js";
 import { readLiveManifest, writeLiveManifest } from "../manifest/manifest.js";
 import { removeRuntimeEntry } from "../registry/runtime-map.js";
 import type { RegistryEntry } from "../shared/types.js";
@@ -28,10 +25,9 @@ function removeManifestRow(registryRoot: string, name: string): void {
 export interface UnregisterOptions {
   registryRoot: string;
   /**
-   * Where to move an adopted skill's files. The user-facing setting
-   * is `settings.unregisterDestinationAgent` (default `"agents"` →
-   * `~/.agents/skills/<name>`). Non-adopted skills ignore this — their
-   * origin files are untouched.
+   * Where to move the skill's files. The user-facing setting is
+   * `settings.unregisterDestinationAgent` (default `"agents"` →
+   * `~/.agents/skills/<name>`).
    */
   destination: AgentId;
 }
@@ -50,11 +46,9 @@ export interface UnregisterResult {
   ok: boolean;
   name: string;
   message: string;
-  /** Where the files ended up (adopted skills only). */
+  /** Where the files ended up. */
   destinationPath?: string;
-  /** Whether the entry was adopted before unregister. */
-  wasAdopted: boolean;
-  /** Symlinks rewritten to point at the new location (adopted). */
+  /** Symlinks rewritten to point at the new location. */
   rewrites: UnlinkTargetResult[];
   /** Per-row failures, structured. */
   errors: AppError[];
@@ -63,19 +57,16 @@ export interface UnregisterResult {
 }
 
 /**
- * Mid-tier destructive action (M4). For adopted skills: moves
- * `<registryRoot>/skills/<name>` → `<destination>/<name>` (e.g. the
- * shared `~/.agents/skills/`), updates every agent-dir symlink that
- * pointed at the bank copy to point at the new location instead, and
- * removes the registry index entry. For non-adopted skills: removes
- * the registry index entry only — origin files are untouched and any
- * symlinks pointing at origin keep working.
+ * Mid-tier destructive action: move a registered skill's files out of
+ * the bank. Moves `<registryRoot>/skills/<name>` → `<destination>/<name>`
+ * (e.g. the shared `~/.agents/skills/`), repoints every agent-dir symlink
+ * that pointed at the bank copy to the new location, and drops the
+ * manifest row. Register's inverse (ADR-0022).
  *
  * Distinct from:
  *   - uninstallSkill (Remove from agents): files untouched, symlinks
  *     removed. Reinstall puts symlinks back.
- *   - deleteFromBankSkill (Delete from Skills Bank): files deleted,
- *     symlinks removed. Canon: re-pull. Non-canon: gone.
+ *   - deleteUnregisteredSkill (Delete from this machine): files deleted.
  */
 export function unregisterSkill(
   name: string,
@@ -93,19 +84,15 @@ export function unregisterSkill(
       ok: false,
       name,
       message: error.message,
-      wasAdopted: false,
       rewrites: [],
       errors: [error],
       error,
     };
   }
-  const wasAdopted = entry.adopted !== false;
-  return wasAdopted
-    ? unregisterAdopted(entry, name, opts)
-    : unregisterExternal(name, opts);
+  return moveOutOfBank(entry, name, opts);
 }
 
-function unregisterAdopted(
+function moveOutOfBank(
   entry: RegistryEntry,
   name: string,
   opts: UnregisterOpOptions,
@@ -124,16 +111,15 @@ function unregisterAdopted(
       ok: false,
       name,
       message: error.message,
-      wasAdopted: true,
       rewrites: [],
       errors: [error],
       error,
     };
   }
   if (!fs.existsSync(sourceDir)) {
-    // Files already gone — registry-folder-missing heal state (M6).
-    // For M4 we still drop the index entry so the user can re-register
-    // from another location if needed.
+    // Files already gone — registry-folder-missing heal state. Drop the
+    // manifest row anyway so the user can re-register from another
+    // location if needed.
     const idxPath = path.join(opts.registryRoot, "index.json");
     if (fs.existsSync(idxPath)) {
       buildRegistryIndex(opts.registryRoot, {
@@ -146,7 +132,6 @@ function unregisterAdopted(
       ok: true,
       name,
       message: `removed ${name} from the registry (files were already missing)`,
-      wasAdopted: true,
       rewrites: [],
       errors: [],
     };
@@ -168,7 +153,6 @@ function unregisterAdopted(
       ok: false,
       name,
       message: error.message,
-      wasAdopted: true,
       rewrites: [],
       errors: [error],
       error,
@@ -177,7 +161,7 @@ function unregisterAdopted(
 
   // If `destDir` is itself a symlink that points at the source we're
   // about to move (typical install→register→unregister: the file
-  // originated in agent dir, got adopted into the bank, and the agent
+  // originated in agent dir, got registered into the bank, and the agent
   // dir kept a symlink to the bank copy), unlink it now. The move
   // would otherwise see "destination exists" and refuse, surfacing a
   // spurious collision on the happy path.
@@ -224,7 +208,6 @@ function unregisterAdopted(
           ok: false,
           name,
           message: error.message,
-          wasAdopted: true,
           rewrites: [],
           errors: [error],
           error,
@@ -252,7 +235,6 @@ function unregisterAdopted(
         ok: false,
         name,
         message: error.message,
-        wasAdopted: true,
         rewrites: [],
         errors: [error],
         error,
@@ -275,7 +257,6 @@ function unregisterAdopted(
         ok: false,
         name,
         message: `move failed: ${error.message}`,
-        wasAdopted: true,
         rewrites: [],
         errors: [error],
         error,
@@ -283,44 +264,31 @@ function unregisterAdopted(
     }
   }
 
-  // Sweep agent dirs and repoint symlinks that pointed at the old
-  // sourceDir to the new destDir. Real-directory entries are left
-  // alone (they may be unrelated content).
-  const rewrites: UnlinkTargetResult[] = [];
-  for (const agent of AGENTS) {
-    const linkPath = path.join(getAgentSkillsDir(agent), name);
-    let stat: fs.Stats | null = null;
-    try {
-      stat = fs.lstatSync(linkPath);
-    } catch {
-      continue; // doesn't exist
-    }
-    if (!stat.isSymbolicLink()) continue;
-    let realTarget = "";
-    try {
-      realTarget = fs.realpathSync(linkPath);
-    } catch {
-      // Broken link — repointing won't help if dest doesn't exist either.
-    }
-    if (realTarget === sourceDir || realTarget === destDir) {
-      try {
-        fs.unlinkSync(linkPath);
-        // Don't recreate a symlink if destDir === linkPath (the dest
-        // is the same agent dir — would create a self-loop).
-        if (path.resolve(destDir) !== path.resolve(linkPath)) {
-          fs.symlinkSync(destDir, linkPath, "dir");
-        }
-        rewrites.push({ agent: agent.id, linkPath, removed: true });
-      } catch (err) {
-        errors.push(
-          makeAppError({
-            code: "unregister.rewrite-failed",
-            message: `${agent.id}: ${(err as Error).message}`,
-            copyableDetails: { agent: agent.id, linkPath },
-          }),
-        );
-      }
-    }
+  // Repoint every agent-dir symlink that pointed at the old bank copy
+  // to the new destination. Shared with moveSkillBucket — see
+  // shared/agent-links.ts for why this reads the raw target rather than
+  // realpath (sourceDir is already gone by now).
+  const { relinked, errors: repointErrors } = repointAgentLinks(
+    name,
+    sourceDir,
+    destDir,
+  );
+  const rewrites: UnlinkTargetResult[] = relinked.map((r) => ({
+    agent: r.agent,
+    linkPath: r.linkPath,
+    removed: true,
+  }));
+  for (const e of repointErrors) {
+    errors.push(
+      makeAppError({
+        code: "unregister.rewrite-failed",
+        message: `${e.agent}: ${e.message}`,
+        copyableDetails: {
+          agent: e.agent,
+          linkPath: path.join(getAgentSkillsDir(e.agent), name),
+        },
+      }),
+    );
   }
 
   removeManifestRow(opts.registryRoot, name);
@@ -335,46 +303,8 @@ function unregisterAdopted(
     name,
     message: `unregistered ${name}; files moved to ${tildeify(destDir)}`,
     destinationPath: destDir,
-    wasAdopted: true,
     rewrites,
     errors,
-  };
-}
-
-function unregisterExternal(
-  name: string,
-  opts: UnregisterOpOptions,
-): UnregisterResult {
-  const entries = readExternalRegistry(opts.registryRoot);
-  if (!entries.find((e) => e.name === name)) {
-    const error = makeAppError({
-      code: "unregister.no-external-entry",
-      message: `no external entry for ${name}`,
-      copyableDetails: { name },
-    });
-    return {
-      ok: false,
-      name,
-      message: error.message,
-      wasAdopted: false,
-      rewrites: [],
-      errors: [error],
-      error,
-    };
-  }
-  removeExternalRegistryEntry(opts.registryRoot, name);
-  removeManifestRow(opts.registryRoot, name);
-  buildRegistryIndex(opts.registryRoot, {
-    includeGitInfo: true,
-    writeFile: true,
-  });
-  return {
-    ok: true,
-    name,
-    message: `unregistered ${name} (symlink-mode entry removed; origin files untouched)`,
-    wasAdopted: false,
-    rewrites: [],
-    errors: [],
   };
 }
 

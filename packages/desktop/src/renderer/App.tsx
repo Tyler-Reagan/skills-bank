@@ -73,11 +73,9 @@ function writeLS(key: string, value: string): void {
 }
 
 export function App(): React.ReactElement {
-  // Provider nesting matters: SettingsProvider wraps RegistryProvider
-  // because refresh() reads settings.customSkillsDirs. The host +
-  // modal-registry providers stay outermost — both contexts above
-  // call useRegistryHost (flash on rebuild) and need to mount before
-  // any consumer can register.
+  // Provider nesting matters: the host + modal-registry providers stay
+  // outermost — both contexts above call useRegistryHost (flash on
+  // rebuild) and need to mount before any consumer can register.
   return (
     <ModalRegistryProvider>
       <RegistryHostProvider>
@@ -344,7 +342,7 @@ function AppContent(): React.ReactElement {
       // rehydration onto the same wait. Goes through the registry
       // context's refresh() now that it owns the installed snapshot.
       const [report] = await Promise.all([
-        window.skillsBank.localDiagnosticsScan(settings.customSkillsDirs),
+        window.skillsBank.localDiagnosticsScan(),
         refresh(),
       ]);
       setDiagnostics(report);
@@ -360,19 +358,17 @@ function AppContent(): React.ReactElement {
     } catch {
       setLocalScanState({ phase: "idle" });
     }
-  }, [settings.customSkillsDirs, refresh]);
+  }, [refresh]);
 
   const refreshDiagnostics = useCallback(async () => {
     try {
-      const report = await window.skillsBank.localDiagnosticsScan(
-        settings.customSkillsDirs,
-      );
+      const report = await window.skillsBank.localDiagnosticsScan();
       setDiagnostics(report);
     } catch {
       // Failure leaves the prior report visible; user can rescan
       // manually via Button C.
     }
-  }, [settings.customSkillsDirs]);
+  }, []);
 
   const onViewLocalScan = useCallback(() => {
     if (localScanDoneTimerRef.current)
@@ -425,36 +421,6 @@ function AppContent(): React.ReactElement {
       await refreshDiagnostics();
     },
     [registryByName, flash, flashError, refresh, refreshDiagnostics],
-  );
-
-  const addCustomSkillsDir = useCallback(async () => {
-    const r = await window.skillsBank.pickCustomSkillsDir();
-    if (!r.ok || !r.path) return; // user canceled
-    const chosen = r.path;
-    if (settings.customSkillsDirs.includes(chosen)) {
-      flash("That directory is already in the scan list.");
-      return;
-    }
-    saveSettings({
-      ...settings,
-      customSkillsDirs: [...settings.customSkillsDirs, chosen],
-    });
-    // v0.11.8 M5: surface the soft-validator warning if the path
-    // shape is suspicious. The dir is added regardless — the
-    // warning is a hint, not a rejection.
-    if (r.warning) flashError(r.warning);
-    void refresh();
-  }, [settings, saveSettings, refresh, flash, flashError]);
-
-  const removeCustomSkillsDir = useCallback(
-    (path: string) => {
-      saveSettings({
-        ...settings,
-        customSkillsDirs: settings.customSkillsDirs.filter((p) => p !== path),
-      });
-      void refresh();
-    },
-    [settings, saveSettings, refresh],
   );
 
   // Boot read for the ADR-0004 weak-storage notice: surfaced when the
@@ -800,8 +766,6 @@ function AppContent(): React.ReactElement {
           )}
           {tab === "installed" && (
             <InstalledTab
-              onAddCustomSkillsDir={addCustomSkillsDir}
-              onRemoveCustomSkillsDir={removeCustomSkillsDir}
               onSwitchToBrowse={() => setTabPersisted("browse")}
               // Bulk registration always flows through the
               // RegistrationPlanModal — the per-row review-then-apply surface
@@ -907,22 +871,15 @@ function AppContent(): React.ReactElement {
                 });
               }}
               onInlineRegister={(group) => {
-                // Unregistered-section shortcut. Records the only
-                // installation into the registry — same operation the
-                // drawer's onRegister performs. Single-installation is
-                // guaranteed by the partition (multi-install lives in
-                // Needs attention), so there is no "which copy" ambiguity.
-                // Record-vs-move follows the shared hook: a custom-dir
-                // skill stays in place; everything else honors the global
-                // auto-move toggle.
+                // Unregistered-section shortcut. Registers the only
+                // installation into the bank — same operation the drawer's
+                // onRegister performs. Single-installation is guaranteed by
+                // the partition (multi-install lives in Needs attention), so
+                // there is no "which copy" ambiguity.
                 const rep = group.representative;
                 void registerSkill({
                   name: group.name,
-                  target: {
-                    agent: rep.agent,
-                    ...(rep.customDir ? { customDir: rep.customDir } : {}),
-                  },
-                  isInPlace: !!rep.customDir,
+                  target: { agent: rep.agent },
                 });
               }}
               onRepairBroken={(g) => {

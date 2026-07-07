@@ -11,11 +11,11 @@ interface Props {
   onDone: (msg: string) => void | Promise<void>;
 }
 
-type Busy = null | "repoint" | "adopt" | "detach";
+type Busy = null | "repoint" | "rehome" | "detach";
 
 /**
  * Restore an unreachable origin (ADR-0012). Two deterministic,
- * human-driven paths — repoint to a new GitHub URL, or adopt the skill
+ * human-driven paths — repoint to a new GitHub URL, or re-home the skill
  * into the linked repo via a PR — plus a "keep local" detach escape for
  * when the upstream is genuinely gone. No auto-discovery (rejected by
  * design: folder names aren't unique, so a guess could repoint to a
@@ -60,7 +60,7 @@ export function RestoreOriginModal({
   return (
     <div role="dialog" aria-modal="true" className="modal-overlay">
       <div ref={ref} tabIndex={-1} className="modal-body">
-        <h3 className="mt-0">Restore source for {entry.name}</h3>
+        <h3 className="mt-0">Restore origin for {entry.name}</h3>
         <p className="text-muted text-13">
           The upstream {wasRepo ? <code>{wasRepo}</code> : "origin"} is
           unreachable — it was deleted, renamed, or reorganized. Point it at the
@@ -131,20 +131,20 @@ export function RestoreOriginModal({
             className="btn mt-8"
             disabled={busy !== null || destPath.trim() === ""}
             onClick={() =>
-              void run("adopt", () =>
-                window.skillsBank.adoptIntoLinkedRepo(
+              void run("rehome", () =>
+                window.skillsBank.rehomeIntoLinkedRepo(
                   entry.name,
                   destPath.trim(),
                 ),
               )
             }
           >
-            {busy === "adopt" ? (
+            {busy === "rehome" ? (
               <>
                 <span className="spinner inline" /> Opening PR
               </>
             ) : (
-              "Open adoption PR"
+              "Open re-home PR"
             )}
           </button>
         </div>

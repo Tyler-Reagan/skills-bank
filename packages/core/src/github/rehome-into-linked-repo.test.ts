@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { adoptIntoLinkedRepo } from "./adopt.js";
+import { rehomeIntoLinkedRepo } from "./rehome-into-linked-repo.js";
 import { writeRepoFileAsBranch } from "./files.js";
 
 vi.mock("./files.js");
@@ -53,7 +53,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-describe("adoptIntoLinkedRepo", () => {
+describe("rehomeIntoLinkedRepo", () => {
   test("commits content files (skipping sidecars) and opens a PR", async () => {
     writeSkillWithExtras("electron");
 
@@ -68,7 +68,7 @@ describe("adoptIntoLinkedRepo", () => {
         ), // POST pulls
     );
 
-    const res = await adoptIntoLinkedRepo({
+    const res = await rehomeIntoLinkedRepo({
       registryRoot,
       name: "electron",
       linkedRepo: "Me/skills",
@@ -108,7 +108,7 @@ describe("adoptIntoLinkedRepo", () => {
         ),
     );
 
-    const res = await adoptIntoLinkedRepo({
+    const res = await rehomeIntoLinkedRepo({
       registryRoot,
       name: "electron",
       linkedRepo: "Me/skills",
@@ -130,7 +130,7 @@ describe("adoptIntoLinkedRepo", () => {
       message: "boom",
     });
 
-    const res = await adoptIntoLinkedRepo({
+    const res = await rehomeIntoLinkedRepo({
       registryRoot,
       name: "electron",
       linkedRepo: "Me/skills",
@@ -145,7 +145,7 @@ describe("adoptIntoLinkedRepo", () => {
   });
 
   test("reports not-found for an unknown skill", async () => {
-    const res = await adoptIntoLinkedRepo({
+    const res = await rehomeIntoLinkedRepo({
       registryRoot,
       name: "ghost",
       linkedRepo: "Me/skills",

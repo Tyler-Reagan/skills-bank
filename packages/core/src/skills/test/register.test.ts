@@ -3,18 +3,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { applyRegistration, scanExistingInstalls } from "../register.js";
-import { readExternalRegistry } from "../../registry/external.js";
 import { buildRegistryIndex } from "../../registry/build.js";
 import type { InstalledSkill } from "../../shared/types.js";
 
 /**
- * Contract for the split register primitives (issue #125):
- *   - `register` is RECORD-ONLY — it writes an external.json row
- *     (adopted:false) and never moves files.
- *   - `move-into-bank` RELOCATES files into the registry's skills/ tree
- *     and sweeps agent symlinks onto the in-bank copy.
- *   - `scanExistingInstalls({ customDirs })` walks user custom dirs so
- *     keep-in-place skills are discoverable.
+ * Contract for register (ADR-0022 — the registry is adopted-only):
+ *   - `register` moves a stray on-disk skill's files into the registry's
+ *     skills/ tree and sweeps agent symlinks onto the in-bank copy. There
+ *     is no record-only / in-place mode.
+ *   - broken-symlink sources have no usable content and are refused.
  *
  * SKILLS_BANK_HOME_OVERRIDE redirects every agent-dir scan/sweep into
  * the scratch tree instead of the dev's real ~/.claude/skills.
@@ -64,72 +61,8 @@ function writeRealSkill(dir: string, name: string): string {
   return skillDir;
 }
 
-describe("register (record-only)", () => {
-  test("records an external.json row and leaves files in place", () => {
-    const customRoot = path.join(scratch, "work-repo");
-    const src = writeRealSkill(customRoot, "keep-me");
-
-    const report = scanExistingInstalls(registryRoot, {
-      customDirs: [customRoot],
-    });
-    const entry = report.entries.find((e) => e.name === "keep-me")!;
-    expect(entry.kind).toBe("real-directory");
-    expect(entry.customDir).toBe(customRoot);
-
-    const result = applyRegistration(
-      entry,
-      {
-        type: "register",
-        name: "keep-me",
-        agent: entry.agent,
-        customDir: customRoot,
-      },
-      { registryRoot },
-    );
-    expect(result.ok).toBe(true);
-
-    // Files stay at the source — nothing moved into the bank.
-    expect(fs.existsSync(path.join(src, "SKILL.md"))).toBe(true);
-    expect(
-      fs.existsSync(path.join(registryRoot, "skills", "personal", "keep-me")),
-    ).toBe(false);
-
-    // external.json row written, pointing at the in-place source.
-    const external = readExternalRegistry(registryRoot);
-    expect(external.map((e) => e.name)).toContain("keep-me");
-    // Recorded target is the realpath of the source (resolves macOS's
-    // /var → /private/var symlink), so compare against realpath.
-    expect(external.find((e) => e.name === "keep-me")?.target).toBe(
-      fs.realpathSync(src),
-    );
-
-    // The index surfaces it as a non-adopted entry.
-    const indexed = buildRegistryIndex(registryRoot).entries.find(
-      (e) => e.name === "keep-me",
-    );
-    expect(indexed?.adopted).toBe(false);
-  });
-
-  test("refuses a broken-symlink source", () => {
-    const entry: InstalledSkill = {
-      name: "ghost",
-      agent: "claude",
-      linkPath: path.join(agentDir("claude"), "ghost"),
-      target: path.join(scratch, "missing"),
-      kind: "broken-symlink",
-    };
-    const result = applyRegistration(
-      entry,
-      { type: "register", name: "ghost" },
-      { registryRoot },
-    );
-    expect(result.ok).toBe(false);
-    expect(result.message).toMatch(/broken symlink/);
-  });
-});
-
-describe("move-into-bank", () => {
-  test("relocates files into the bank and sweeps the agent link", () => {
+describe("register", () => {
+  test("moves files into the bank and sweeps the agent link", () => {
     // A real-directory install in the generic agents dir.
     const src = writeRealSkill(agentDir("agents"), "mover");
 
@@ -140,7 +73,7 @@ describe("move-into-bank", () => {
     const result = applyRegistration(
       entry,
       {
-        type: "move-into-bank",
+        type: "register",
         name: "mover",
         agent: entry.agent,
         agents: ["claude"],
@@ -158,26 +91,26 @@ describe("move-into-bank", () => {
     const claudeLink = path.join(agentDir("claude"), "mover");
     expect(fs.realpathSync(claudeLink)).toBe(fs.realpathSync(dest));
 
-    // It now reads as adopted in the index.
+    // It reads as a registered entry in the index.
     const indexed = buildRegistryIndex(registryRoot).entries.find(
       (e) => e.name === "mover",
     );
-    expect(indexed?.adopted).not.toBe(false);
+    expect(indexed).toBeDefined();
   });
-});
 
-describe("scanExistingInstalls({ customDirs })", () => {
-  test("surfaces custom-dir entries that the agent-dir scan misses", () => {
-    const customRoot = path.join(scratch, "external-skills");
-    writeRealSkill(customRoot, "from-custom");
-
-    const without = scanExistingInstalls(registryRoot);
-    expect(without.entries.map((e) => e.name)).not.toContain("from-custom");
-
-    const withCustom = scanExistingInstalls(registryRoot, {
-      customDirs: [customRoot],
-    });
-    const hit = withCustom.entries.find((e) => e.name === "from-custom");
-    expect(hit?.customDir).toBe(customRoot);
+  test("refuses a broken-symlink source", () => {
+    const entry: InstalledSkill = {
+      name: "ghost",
+      agent: "claude",
+      linkPath: path.join(agentDir("claude"), "ghost"),
+      target: path.join(scratch, "missing"),
+      kind: "broken-symlink",
+    };
+    const result = applyRegistration(
+      entry,
+      { type: "register", name: "ghost" },
+      { registryRoot },
+    );
+    expect(result.ok).toBe(false);
   });
 });

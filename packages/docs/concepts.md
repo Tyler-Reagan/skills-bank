@@ -2,25 +2,34 @@
 
 The vocabulary the app uses, defined in one place. Skim this once and the rest of the docs (and the UI itself) become a lot more obvious.
 
+## The three verbs
+
+A skill moves through the app along a short pipeline. Three orthogonal verbs move it, distinguished by _where the content comes from_ and _where it goes_:
+
+- **Add** brings a skill in from a remote (a GitHub repo) into your registry.
+- **Register** brings a skill that's already on local disk into your registry.
+- **Install** symlinks a skill that's in your registry out into your agent directories.
+
+Everything else — Unregister, Uninstall, Update, Detach — is an inverse or a variation of these. The Discover-tab "Add from GitHub" flow is Add with Register and Install composed as its mechanics.
+
 ## Taxonomy
 
-Every skill the app knows about sits on four orthogonal axes. Operations and UI gating derive from these axes, not from ad-hoc per-component checks.
+Every skill the app knows about sits on a few orthogonal facts. Operations and UI gating derive from these, not from ad-hoc per-component checks.
 
-- **Source (provenance)** — three-value axis: `curated` (from the bundled default the bank ships), `vendored` (a third-party skill you chose to bring in, origin preserved), or `user` (you added it, however it got there). See [Source (provenance)](#source-provenance) below for full surface behavior.
-- **Registered** — boolean. The skill has an entry in the local registry index. Mutated freely. Holds local-only metadata (tags, install paths, the Adopted flag).
-- **Adopted** — boolean on each registry entry. When `true`, the skill's files physically live under `<registryRoot>/skills/<name>/`. When `false`, the registry entry tracks an external location and the files stay where they are. Default at register time is the `registerAdopts` setting (default `true`).
-- **Installed** — derived from on-disk scan. A skill is installed if at least one agent dir contains an entry at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.
+- **Registered** — boolean, and the load-bearing one: **a skill is Registered if and only if its files live under `<registryRoot>/skills/`.** There's no "track it where it already lives" mode — Register moves files into the bank, Unregister moves them out.
+- **Origin** — a single nullable URL: the GitHub URL the skill was mirrored from, or `null` for a local skill with no remote. See [Origin (provenance)](#origin-provenance).
+- **Bucket** — which subtree the skill's folder lives in, `personal` or `vendored`, derived once from Origin at acquisition. See [Bucket](#bucket).
+- **Installed** — derived from an on-disk scan. A skill is installed if at least one agent dir has an entry at `<agentDir>/<name>`. Per-agent kinds: `ours`, `foreign-symlink`, `real-directory`, `broken-symlink`.
 
 ### Derived rules
 
-- Curated skills are registered by default. Unregister and delete of curated skills are prohibited; the user-visible escape is **Dismiss from registry view**, scoped per linked repo.
-- A registered but uninstalled `user` skill is valid. Re-install requires the original source (no upstream to pull from).
-- Registered + broken/conflicting installations ⇒ heal flow with explicit choices.
-- Unregister of an adopted skill expels its files to the `unregisterDestinationAgent` setting (default `~/.agents/skills/`). Unregister of a non-adopted skill removes the index entry; origin files are untouched.
+- A registered but uninstalled skill is valid — it's in the bank, just not symlinked into any agent yet. Install links it out.
+- Registered + broken or conflicting installations ⇒ a heal flow with explicit choices.
+- Unregister always moves the skill's files out to the `unregisterDestinationAgent` directory (default `~/.agents/skills/`) and repoints any agent symlinks at the new location.
 
 ### Lifecycle
 
-The four axes are orthogonal, but a skill's lifecycle reduces to a small ladder: **Unmanaged → Registered → Unregistered → Deleted**. Provenance (curated/user), Adopted, External, and Dismissed are _attributes_ of the Registered position, not separate lifecycle states.
+A skill's lifecycle is a short ladder: **Unmanaged → Registered → Unregistered → Deleted**. Origin and Bucket are _attributes_ of a registered skill, not separate lifecycle positions.
 
 ```mermaid
 ---
@@ -41,24 +50,18 @@ flowchart LR
     Unmanaged:::state
     Registered:::state
     Unregistered:::state
-    Hidden:::state
 
     Start -->|"discovered on agent disk"| Unmanaged
-    Start -->|"shipped canon or Sync pull"| Registered
-    Unmanaged -->|"Register"| Registered
-    Registered -->|"Unregister"| Unregistered
+    Start -->|"Add from GitHub / Sync pull"| Registered
+    Unmanaged -->|"Register (moves files in)"| Registered
+    Registered -->|"Unregister (moves files out)"| Unregistered
     Unregistered -->|"Re-register"| Registered
     Unregistered -->|"Delete"| Done
 
-    Registered -->|"Hide (canon only)"| Hidden
-    Hidden -->|"Unhide"| Registered
-
     Registered -->|"registry folder deleted"| FolderMissing
     FolderMissing -->|"Forget entry"| Done
-    Registered -->|"external path deleted"| TargetMissing
-    TargetMissing -->|"Forget entry"| Done
 
-    class FolderMissing,TargetMissing heal
+    class FolderMissing heal
 
     linkStyle default stroke:#94a3b8,stroke-width:1.5px,fill:none
 ```
@@ -69,19 +72,15 @@ Labels match the in-app vocabulary: nodes are lifecycle positions, transitions a
 
 Three actions form an escalation, with distinct file/recovery semantics. Delete is only reachable on **unregistered** skills, so the user must Unregister first.
 
-| Action                           | Where                                | Files                                                               | Agent symlinks                                                      | Recovery                      |
-| -------------------------------- | ------------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------- |
-| Manage agent links               | Dialog                               | untouched                                                           | added/removed per-agent via checkboxes                              | re-add via the same modal     |
-| [Unregister](/guides/unregister) | Dialog                               | adopted: moved to the configured agents dir; non-adopted: untouched | adopted: rewritten to point at new location; non-adopted: untouched | re-register from new location |
-| Delete                           | Installed tab → Unregistered section | real-directory copies removed; symlink targets preserved            | symlinks unlinked                                                   | curated: re-pull; user: gone  |
-
-Curated skills are exempt: Unregister and Delete are prohibited entirely. Use **Dismiss from registry view** instead.
-
-<!-- SCREENSHOT NEEDED: Detail dialog for a non-canon, user-authored skill — Unregister available as the mid-tier action. -->
+| Action                           | Where                                | Files                                                    | Agent symlinks                         | Recovery                      |
+| -------------------------------- | ------------------------------------ | -------------------------------------------------------- | -------------------------------------- | ----------------------------- |
+| Manage agent links               | Dialog                               | untouched                                                | added/removed per-agent via checkboxes | re-add via the same modal     |
+| [Unregister](/guides/unregister) | Dialog                               | moved out to the configured agents dir                   | rewritten to point at the new location | re-register from new location |
+| Delete                           | Installed tab → Unregistered section | real-directory copies removed; symlink targets preserved | symlinks unlinked                      | re-Add from origin, or gone   |
 
 ## Skill
 
-A folder containing a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist. (As of v1.15.0 the frontmatter is the sole metadata source; the app neither writes nor reads any `meta.json` — see [Skill metadata](/reference/skill-metadata).)
+A folder containing a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI agent — Claude Code, Cursor, Gemini, etc. — picks up at runtime to gain a specialized capability. A skill is just files on disk; nothing about it requires this app to exist. (The frontmatter is the sole metadata source; the app neither writes nor reads any `meta.json` — see [Skill metadata](/reference/skill-metadata).)
 
 ## Agent directory
 
@@ -102,7 +101,7 @@ Skills Bank scans every one of these. If a directory doesn't exist on your machi
 
 ## Registry
 
-The **persisted, metadata-tagged collection of skills this app manages.** It's a folder of skill subfolders (`<repo>/skills/<name>/`) plus a generated index. Installing a skill from the registry creates a symlink in each of your agent directories pointing back at the registry's copy — no copies, no drift.
+The **persisted, metadata-tagged collection of skills this app manages.** It's a folder of skill subfolders (`<repo>/skills/<bucket>/<name>/`) plus a generated index. Installing a skill from the registry creates a symlink in each of your agent directories pointing back at the registry's copy — no copies, no drift.
 
 The registry is **not** the only source of skills you can use. Skills installed from elsewhere (e.g. via [skills.sh](https://skills.sh/)) appear alongside in the **Installed** tab and can be registered into Skills Bank if you want this app to manage them.
 
@@ -114,20 +113,24 @@ Sign in via **Account** to either keep the bundled default at a higher rate limi
 
 Self-hosting (forking the entire app) remains a separate developer path; see [Self-hosting](/self-host).
 
-## Source (provenance)
+## Origin (provenance)
 
-Provenance is a three-value axis on each registry skill, stored as `source` in a sibling `.skills-bank.json` per skill so the marker doesn't pollute upstream.
+A skill's provenance is a **single nullable URL** — the GitHub URL it was mirrored from, or `null` for a local skill with no remote. It lives in one place: the skill's row in the registry manifest. There's no separate "source" classification and no per-skill sidecar file.
 
-- **`curated`** — Committed to the app's own repository as one of its curated skills. Reserved for `.skills-bank.json` files committed to the app's registry repo — no install or sync path ever mints a new one. Sync keeps these current.
-- **`vendored`** — A third-party skill you chose to bring in, with its origin pointer preserved so updates from the original author still surface.
-- **`user`** — Yours — authored locally, merged in from another bank's export, or pulled from your own linked repo. Sync never touches it.
+- A URL that matches your active **Linked repo** is a _self-origin_ — a skill authored here.
+- Any other URL is an _external upstream_ — a third-party skill you Added; the app can surface updates from it via the origin probe.
+- `null` is an explicit "local, no remote" stamp — a valid resting state, not an error. It's what a from-scratch skill or a [Detached](#detach) skill carries.
+
+## Bucket
+
+Which subtree a skill's folder lives in under `<registryRoot>/skills/`: `personal` (self-originated — Origin is `null` or matches the Linked repo) or `vendored` (external Origin). The bucket is derived **once, at acquisition**, from Origin; thereafter the folder's location is the record. Re-linking to a fork or a renamed repo moves no folders and relabels nothing. The **Personal** and **Vendored** filter chips on the Registry tab key off the bucket.
 
 ## Labels
 
 Every skill carries two label axes, both user-assigned and editable per-skill from the detail drawer or in bulk from the **Manage Labels** modal.
 
 - **Category** — at most one per skill, drawn from a fixed function-oriented taxonomy (what a skill _does_ — e.g. `engineering:code-scaffolding` — not what technology it touches). Skills in the Registry tab are grouped under collapsible category section headers; skills with no category assigned appear under **Uncategorized**. Change a skill's category from the **Labels** section of its detail drawer; the new grouping takes effect immediately.
-- **Tags** — zero or more per skill, fully freeform. Tags power the tag filter bar and are matched during free-text search. You can add or remove tags on any skill — including curated ones — and they persist across registry syncs.
+- **Tags** — zero or more per skill, fully freeform. Tags power the tag filter bar and are matched during free-text search. You can add or remove tags on any skill, and they persist across registry syncs.
 
 Both axes are stored in `labels.json` under the app's data directory. Assignment is always manual — there's no auto-suggestion tool for either axis.
 
@@ -135,60 +138,57 @@ See [Skill labels](/reference/labels) for the full list of categories, tags, and
 
 ### Card badges
 
-Each card surfaces a single badge. Actionable state badges take priority; provenance is shown only for curated skills.
-
-Priority order, highest first:
+Each card surfaces a single badge, drawn from the skill's actionable state. Priority order, highest first:
 
 - **`MISSING`** _(danger)_ — files are gone. Open the dialog to **Forget this entry**.
 - **`UNREACHABLE`** _(danger)_ — the skill's origin hasn't answered the last few update probes. Your local copy is intact.
 - **`UPDATE`** _(info)_ — an update is available from the skill's origin. Skills you've edited locally are held out of one-click updates (files the skill ignores via its own `.gitignore`, e.g. a runtime-installed `node_modules/`, don't count as edits).
-- **`CURATED`** _(calm)_ — one of the app's curated skills. Destructive verbs are gated; **Dismiss from registry view** is the curated-only escape hatch.
 
-User-source skills render no provenance chip. The **Personal** filter chip on the Registry tab shows only user-source skills.
+## Add
+
+Acquire a skill from a remote source (today, a GitHub repo) into your registry. Add mirrors the skill's content into the Bucket tree (an external Origin lands in `vendored`), records its Origin URL and a baseline content hash, and installs it into your default agent directories. Surfaced as **"Add from GitHub"** on the Discover tab. "Install" deliberately names only the agent-symlink step that Add finishes with — not the whole operation.
+
+## Register
+
+Bring a skill that's already on local disk into the registry — for example a skill another tool's CLI dropped into an agent dir. Register **moves the skill's files** into `<registryRoot>/skills/personal/<name>/`, records a manifest row, and repoints the agent-dir entry as a symlink to the in-bank copy. One verb, one effect. Since Registered means "files live under `skills/`," there is no separate "adopt" or "move into bank" step — registering _is_ moving into the bank.
+
+Register differs from Add only in where the content starts: Register's source is already on your disk; Add's arrives from a remote.
+
+## Install / Uninstall
+
+**Install** symlinks a registered skill's folder into one or more agent directories — multi-agent by default, into every agent dir that exists. **Uninstall** removes an agent-dir symlink (Install's inverse); it's reached through **Manage agent links** (unchecking an agent), never as a standalone destructive button, and happens automatically as a side effect of Unregister and Delete.
 
 ## Installation kind
 
-Each installed skill is classified by what's at its agent-dir path:
+Each installed skill is classified by what's at its agent-dir path, resolving symlink chains to their final target:
 
 - **`ours`** — A symlink that resolves into the app's registry. Owned by Skills Bank.
 - **`real-directory`** — A regular folder of files (e.g. installed by another tool's CLI).
 - **`foreign-symlink`** — A symlink to somewhere outside the registry.
+- **`broken-symlink`** — A symlink whose target no longer exists.
 
-The Installed tab uses these to decide which section a skill goes in (Registered vs Unregistered) and which actions to offer (Uninstall, Register, Resolve conflicts).
+The Installed tab uses these to decide which section a skill goes in (Registered vs Unregistered) and which actions to offer (Register, Manage agent links, Resolve conflicts, repair broken links).
 
 ## Conflict
 
-A skill is in conflict when it's registered in Skills Bank **and** has stragglers — a real directory or foreign symlink with the same name in another agent dir. The detail dialog offers **Resolve conflicts** to clean them up: replace each duplicate with a symlink to the registry copy, keep it separate, or delete it.
+A skill is in conflict when the same name has more than one non-`ours` installation across agent dirs — a real directory or foreign symlink alongside the registry copy, or multiple candidate copies with no registry entry yet. The detail dialog offers **Resolve conflicts**: replace each straggler with a symlink to the registry copy, keep it separate, or delete it. This is the only thing called a "conflict" in the app; the unrelated name-collision handling inside a Sync pull is a separate mechanism.
+
+## Detach
+
+Sever a skill's Origin while keeping its local content: sets Origin to `null`, re-baselines the drift hash so the now-local copy reads as clean, and moves the folder from `vendored` to `personal`. Surfaced as **"Keep my edits (detach)"** (from a drift state) or **"Keep local (detach)"** (from the Restore-origin modal when an upstream has gone unreachable). A detached skill is local-only until it's re-homed into your Linked repo via a pull request, which gives it a self-Origin again.
 
 ## Sync
 
-A one-click pull of upstream registry updates. Sync is **upsert**: curated skills refresh, skills with `source: user` are never touched. Name collisions surface a modal — keep mine, use curated, or rename mine.
-
-## Register
-
-The act of adding an "installed but unmanaged" skill to the registry. What happens to the files depends on the **Adopted** axis, controlled by the `Move skill files into Skills Bank when registering` setting:
-
-- **Adopted (default)** — files relocate to `skills/personal/<name>/` under your registry root, the original agent-dir entry becomes a symlink pointing at the new registry location.
-- **Not adopted** — the registry records the external path and leaves files where they are. Useful when a skill is actively maintained in its own git repo.
-
-Either way the skill picks up registry metadata (tags, description, source marker).
-
-## Adopt
-
-A taxonomy axis on each registry entry. True when the skill's files physically live under `skills/{personal,vendored}/<name>/` in the registry root; false when the entry tracks an external path. Set at register time from the global `Move skill files into Skills Bank when registering` setting. Unregister behavior diverges based on this flag — adopted skills get moved out to the shared agents dir; non-adopted skills leave their origin files alone.
+A one-click pull of updates from your Linked repo. Sync is a **three-way merge** (base, yours, theirs), not a blind overwrite — local-only skills are never read as "deleted upstream," and genuine divergences surface in a conflict modal where you choose keep-mine, use-theirs, or keep-both. Direct push is guarded against clobbering a diverged remote.
 
 ## Finalize
 
 Collapse a symlinked top-level agent dir (e.g. `~/.claude/skills` → `~/.agents/skills`) back into a real directory of its own. Used when you want each agent to own its skills independently after previously sharing.
 
-## Vendor
-
-Pulling a third-party skill from its origin GitHub repo into the bank, preserving the origin pointer so future updates from the original author still surface via the update probe. Vendored skills live under `skills/vendored/<name>/`. The CLI counterpart is `pnpm bank vendor`; the bulk-refresh counterpart is `pnpm bank refresh`. Vendoring does NOT take ownership — the user is mirroring, not forking.
-
 ## Manifest
 
-A lightweight JSON snapshot of a registry's **origin pointers** — not the skill content itself. Each entry carries the skill's name, source axis, bucket, origin pointer (repo + path), and curation labels (category + tags). On import, each skill is re-fetched from its origin, so transfers are tiny but require the origins to still be reachable.
+A lightweight JSON snapshot of a registry's **origin pointers** — not the skill content itself. Each entry carries the skill's name, its Origin (URL + skill path + hash), and its curation labels (category + tags). On import, each skill is re-fetched from its origin, so transfers are tiny but require the origins to still be reachable.
 
-Manifests are the transport layer for moving a registry's _metadata_ between machines or pushing it to a linked repo. Content transfers (the full skills tree as files) use the disk import flow instead.
+The manifest is the live record of what the registry manages — updated on every mutating operation — and also the transport layer for moving a registry's _metadata_ between machines or pushing it to a linked repo. Content transfers (the full skills tree as files) use the disk import flow instead.
 
-The current schema is v5. A manifest exported from one machine can be pushed directly to your linked GitHub repo and pulled on another, closing the loop without manual file handling. See [Move your registry](/guides/manifest).
+The current schema is v6. A manifest exported from one machine can be pushed directly to your linked GitHub repo and pulled on another, closing the loop without manual file handling. See [Move your registry](/guides/manifest).

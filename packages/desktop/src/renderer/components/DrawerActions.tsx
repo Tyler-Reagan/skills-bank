@@ -15,11 +15,9 @@ type ActionState =
   | "installing"
   | "exporting"
   | "registering"
-  | "moving-into-bank"
   | "unregistering"
   | "updating"
   | "forgetting"
-  | "repointing"
   | "detaching";
 
 interface Props {
@@ -39,11 +37,9 @@ interface Props {
   onManageLinks?: () => void;
   onResolveConflicts?: () => void;
   onRegister?: () => Promise<void> | void;
-  onMoveIntoBank?: () => Promise<void> | void;
   onUnregister?: () => Promise<void> | void;
   onUpdate?: () => Promise<void> | void;
   onForgetMissing?: () => Promise<void> | void;
-  onRepoint?: () => Promise<void> | void;
 }
 
 /**
@@ -65,11 +61,9 @@ export function DrawerActions({
   onManageLinks,
   onResolveConflicts,
   onRegister,
-  onMoveIntoBank,
   onUnregister,
   onUpdate,
   onForgetMissing,
-  onRepoint,
 }: Props): React.ReactElement {
   const [action, setAction] = useState<ActionState>(null);
   const [repairState, setRepairState] = useState<
@@ -214,38 +208,6 @@ export function DrawerActions({
           </>
         )}
 
-        {/* Move into bank — explicit opt-in adopt for a skill that was
-        registered in place (e.g. from a custom directory). Relocates its
-        files into the registry's skills/ tree. */}
-        {caps.canMoveIntoBank && onMoveIntoBank && (
-          <>
-            <button
-              className="btn"
-              disabled={action !== null}
-              onClick={() => {
-                setAction("moving-into-bank");
-                void Promise.resolve(onMoveIntoBank()).finally(() =>
-                  setAction(null),
-                );
-              }}
-            >
-              {action === "moving-into-bank" ? (
-                <>
-                  <span className="spinner inline" /> Moving into bank
-                </>
-              ) : (
-                "Move into bank"
-              )}
-            </button>
-            <p className="drawer-action-hint">
-              Relocates this skill's files into your registry's skills/
-              directory and links the agents to the in-bank copy. Do this only
-              if the source can be moved — leave keep-in-place skills (like a
-              non-egressable work repo) registered where they are.
-            </p>
-          </>
-        )}
-
         {caps.canUpdate && onUpdate && (
           <>
             <button
@@ -275,26 +237,6 @@ export function DrawerActions({
           </>
         )}
 
-        {caps.canRepoint && onRepoint && (
-          <button
-            className="btn primary"
-            disabled={action !== null}
-            onClick={() => {
-              setAction("repointing");
-              void Promise.resolve(onRepoint()).finally(() => setAction(null));
-            }}
-            title="Pick the folder the skill moved to. Updates the registry entry's target path."
-          >
-            {action === "repointing" ? (
-              <>
-                <span className="spinner inline" /> Picking{" "}
-              </>
-            ) : (
-              "Pick new location"
-            )}
-          </button>
-        )}
-
         {/* Restore unreachable origin (ADR-0012) — opens the modal
         offering repoint / adopt / detach. */}
         {caps.canRestoreOrigin && (
@@ -305,7 +247,7 @@ export function DrawerActions({
               onClick={() => setRestoreOpen(true)}
               title="The upstream is unreachable. Repoint it at a new location, or keep the skill by moving it into your linked repo."
             >
-              Restore source
+              Restore origin
             </button>
             <p className="drawer-action-hint">
               The source <code>{originRepo ?? "origin"}</code> can't be reached.
@@ -350,7 +292,7 @@ export function DrawerActions({
         {caps.canForgetMissing && onForgetMissing && (
           <>
             <button
-              className={caps.canRepoint ? "btn" : "btn primary"}
+              className="btn primary"
               disabled={action !== null}
               onClick={() => {
                 setAction("forgetting");
@@ -369,9 +311,8 @@ export function DrawerActions({
               )}
             </button>
             <p className="drawer-action-hint">
-              {caps.canRepoint
-                ? "If the skill just moved on disk, pick its new location. Otherwise forget it to stop tracking."
-                : "The files for this skill are gone. Forgetting drops the registry record so the skill stops appearing."}
+              The files for this skill are gone. Forgetting drops the registry
+              record so the skill stops appearing.
             </p>
           </>
         )}
@@ -578,20 +519,20 @@ export function DrawerActions({
                   setAction(null),
                 );
               }}
-              title="Drop the registry entry. Adopted files move to your shared agents directory; non-adopted entries just drop the index entry. Use Delete from this machine to destroy files."
+              title="Move this skill's files out of the bank to your shared agents directory and drop the registry entry. Use Delete from this machine to destroy files."
             >
               {action === "unregistering" ? (
                 <>
-                  <span className="spinner inline" /> Removing{" "}
+                  <span className="spinner inline" /> Unregistering{" "}
                 </>
               ) : (
-                "Remove from registry"
+                "Unregister"
               )}
             </button>
             <p className="drawer-action-hint">
-              {entry.adopted === false
-                ? "Drops the registry entry. Your external files stay where they are."
-                : "Files move to your shared agents directory. You can then choose Delete from this machine in the Unregistered section to remove them."}
+              Files move to your shared agents directory. You can then choose
+              Delete from this machine in the Unregistered section to remove
+              them.
             </p>
           </>
         )}

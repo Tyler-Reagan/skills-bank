@@ -66,23 +66,15 @@ interface Props {
    */
   onRegister?: () => Promise<void> | void;
   /**
-   * Relocate an already-registered in-place skill into the bank. Only
-   * surfaced when `caps.canMoveIntoBank` is set (a registered,
-   * non-adopted entry) — the explicit opt-in adopt for a skill that was
-   * recorded in place.
-   */
-  onMoveIntoBank?: () => Promise<void> | void;
-  /**
    * Optional override of which agent dirs to install into. When omitted,
    * install broadcasts to every existing agent dir (legacy behavior).
    */
   defaultInstallAgents?: import("@skills-bank/core").AgentId[];
   /**
-   * M4: mid-tier destructive action. For adopted skills, moves files
-   * to the configured agents dir. For non-adopted, drops the entry
-   * with origin files untouched. Distinct from Delete from Skills
-   * Bank (which destroys files) and Remove from agents (which only
-   * severs symlinks).
+   * Mid-tier destructive action: move the skill's files out of the bank
+   * to the configured agents dir, then drop the registry entry. Distinct
+   * from Delete from this machine (which destroys files) and Remove from
+   * agents (which only severs symlinks).
    */
   onUnregister?: () => Promise<void> | void;
   /** Apply an available upstream update in place. */
@@ -106,17 +98,10 @@ interface Props {
     choice: OriginManualChoice,
   ) => Promise<{ ok: boolean; message: string }>;
   /**
-   * M6: missing-entry heal. Forget the registry/external record.
-   * Only meaningful in registry-folder-missing and
-   * external-target-missing.
+   * Missing-entry heal. Forget the registry record (drops the lingering
+   * manifest row). Only meaningful in registry-folder-missing.
    */
   onForgetMissing?: () => Promise<void> | void;
-  /**
-   * Repoint a non-adopted entry whose target moved on disk. Opens a
-   * directory picker in main, validates SKILL.md, rewrites the
-   * external.json target. Only granted in external-target-missing.
-   */
-  onRepoint?: () => Promise<void> | void;
   /** When set, the drawer shows review navigation (prev/next/exit). */
   reviewContext?: ReviewContext | null;
   /** Elevates the overlay above an open modal (z-index: 1200). */
@@ -134,12 +119,10 @@ export function SkillDetailDrawer({
   onInstallConflict,
   isRegistered,
   onRegister,
-  onMoveIntoBank,
   defaultInstallAgents,
   onUnregister,
   onUpdate,
   onForgetMissing,
-  onRepoint,
   showOriginActivity,
   onSetManualUpstream,
   reviewContext,
@@ -404,11 +387,9 @@ export function SkillDetailDrawer({
             onManageLinks={onManageLinks}
             onResolveConflicts={onResolveConflicts}
             onRegister={onRegister}
-            onMoveIntoBank={onMoveIntoBank}
             onUnregister={onUnregister}
             onUpdate={onUpdate}
             onForgetMissing={onForgetMissing}
-            onRepoint={onRepoint}
           />
         </div>
       </aside>

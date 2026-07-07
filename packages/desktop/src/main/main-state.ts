@@ -15,7 +15,7 @@ import {
   exportRegistryManifest,
   writeRegistrySnapshot,
   createOriginProbeRunner,
-  reconcileFoldersToManifest,
+  reconcileFoldersToManifestSafe,
 } from "@skills-bank/core";
 import {
   IPC,
@@ -176,7 +176,7 @@ export function persistConfig(): void {
 export function snapshotAfterMutation(): void {
   if (!_registryRoot) return;
   try {
-    reconcileFoldersToManifest(_registryRoot, {
+    reconcileFoldersToManifestSafe(_registryRoot, {
       labels: readLabelsFile(),
       linkedRepo: _linkedRepo?.fullName,
     });

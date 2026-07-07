@@ -8,7 +8,6 @@ import {
   type AgentId,
 } from "../shared/agents.js";
 import { getStateDir } from "../shared/paths.js";
-import { writeExternalRegistry } from "../registry/external.js";
 import { listInstalled } from "./installed.js";
 import { findSkillFolder } from "../registry/walk.js";
 import { buildRegistryIndex } from "../registry/build.js";
@@ -37,10 +36,7 @@ export function listTopLevelSymlinks(): TopLevelSymlinkInfo[] {
   return out;
 }
 
-export function scanExistingInstalls(
-  registryRoot: string,
-  opts: { customDirs?: string[] } = {},
-): ScanReport {
+export function scanExistingInstalls(registryRoot: string): ScanReport {
   // Build the index once and reuse for the installed-list classification
   // so a stale on-disk index.json can't mislead either side.
   const index = buildRegistryIndex(registryRoot);
@@ -56,10 +52,7 @@ export function scanExistingInstalls(
     agentDirs,
     claudeSkillsDir: getAgentSkillsDir("claude"),
     registryRoot,
-    entries: listInstalled(registryRoot, {
-      index,
-      ...(opts.customDirs ? { customDirs: opts.customDirs } : {}),
-    }),
+    entries: listInstalled(registryRoot, { index }),
     topLevelSymlinks,
   };
 }
@@ -120,31 +113,15 @@ export function applyRegistration(
       }
 
       case "register": {
-        // Record-only: register the entry in place (Adopted=false). Files
-        // are never moved here — that's the separate move-into-bank action.
+        // Register moves the skill's files into the bank and records it
+        // (ADR-0022 — Registered ⇔ files under skills/).
         const result = registerSkill(entry, opts);
-        if (!result.ok || !action.agents) return result;
-        // Optional post-record fan-out: link the in-place source into the
-        // requested agent set. The source lives at the entry's realpath
-        // (resolved by setAgentLinks), not in the bank.
-        const fanout = setAgentLinks(entry, action.agents);
-        return {
-          action,
-          ok: result.ok && fanout.ok,
-          message: fanout.ok
-            ? `${result.message}; ${fanout.message}`
-            : `${result.message}; fan-out failed: ${fanout.message}`,
-        };
-      }
-
-      case "move-into-bank": {
-        const result = moveIntoBank(entry, opts);
         if (!result.ok || !action.agents) return result;
         // Post-move fan-out: synthesize an InstalledSkill rooted at the
         // new registry copy so setAgentLinks can converge the requested
         // agent set. Without this, the move repoints only whichever agent
         // dir originally held the stray install — which is why Install and
-        // the move primitive surfaced different link sets prior to v1.12.
+        // register surfaced different link sets prior to v1.12.
         const found = findSkillFolder(opts.registryRoot, entry.name);
         const actualDir =
           found?.dir ??
@@ -274,18 +251,25 @@ function setAgentLinks(
   };
 }
 
-function moveIntoBank(
+/**
+ * Register a stray on-disk skill into the bank: move its real content
+ * into `<registryRoot>/skills/<bucket>/<name>/` and repoint every
+ * agent-dir symlink at the new location (ADR-0022 — Registered ⇔ files
+ * under skills/). Refuses `broken-symlink` (no usable source) and
+ * `ours` (already in the bank) via the callers/classifier.
+ */
+function registerSkill(
   entry: InstalledSkill,
   opts: RegisterOptions,
 ): RegistrationResult {
   const action: RegistrationAction = {
-    type: "move-into-bank",
+    type: "register",
     name: entry.name,
   };
 
   // Always resolve the actual on-disk source via realpath so we move
-  // the real content (not a one-hop symlink target). Without this, an
-  // adopt triggered from a foreign-symlink entry would copy contents
+  // the real content (not a one-hop symlink target). Without this, a
+  // register triggered from a foreign-symlink entry would copy contents
   // and leave the source dir behind in another agent — which is what
   // caused the "Not registered" duplicate-source bug.
   let sourcePath: string;
@@ -343,8 +327,15 @@ function moveIntoBank(
   //   - missing entry at the now-emptied source location → recreate as symlink to destDir
   //   - existing symlink whose realpath != destDir → replace (handles broken chains, stale targets, and old foreign symlinks pointing at the moved source)
   //   - real directory at the same name in another agent → leave alone (could be intentional unrelated content)
-  // This is what makes Adopt converge a duplicate-source state to a clean
-  // single-source-in-registry state, which the prior copyDir flow couldn't.
+  // This is what makes register converge a duplicate-source state to a
+  // clean single-source-in-registry state, which the prior copyDir flow couldn't.
+  //
+  // Deliberately NOT the shared repointAgentLinks primitive (used by
+  // unregister + moveSkillBucket): that one relocates only links that
+  // resolved to a specific oldDir. Register's job is broader — converge
+  // ANY <name> link to destDir (via realpathSync, so a dangling link
+  // still gets repointed) AND recreate a link at the now-vacated source.
+  // Convergence ≠ relocation, so the two don't share an implementation.
   const swept: string[] = [];
   for (const agent of AGENTS) {
     const linkPath = path.join(getAgentSkillsDir(agent), entry.name);
@@ -397,65 +388,6 @@ function moveIntoBank(
       swept.length > 0
         ? `registered ${entry.name}; updated ${swept.length} agent link(s)`
         : `registered ${entry.name}`,
-  };
-}
-
-/**
- * Record-only register primitive: record the source location in
- * external.json without moving files (`entry.adopted = false`). Moving
- * files into the bank is the separate `moveIntoBank` primitive; the
- * renderer chains the two when the user opts to adopt.
- *
- * Refuses for broken-symlink entries (no usable source) and for `ours`
- * entries (already registered). Foreign-symlink and real-directory both
- * work — the recorded target is the realpath of the source.
- */
-export function registerSkill(
-  entry: InstalledSkill,
-  opts: RegisterOptions,
-): RegistrationResult {
-  const action: RegistrationAction = {
-    type: "register",
-    name: entry.name,
-  };
-  if (entry.kind === "broken-symlink") {
-    return {
-      action,
-      ok: false,
-      message: `cannot register ${entry.name}: no usable source (broken symlink)`,
-    };
-  }
-  if (entry.kind === "ours") {
-    return {
-      action,
-      ok: false,
-      message: `${entry.name} is already registered`,
-    };
-  }
-  let target: string;
-  try {
-    // Resolve realpath so a chain of symlinks records the actual
-    // source location, not a one-hop intermediary.
-    target = fs.realpathSync(entry.linkPath);
-  } catch (err) {
-    return {
-      action,
-      ok: false,
-      message: `cannot resolve source for ${entry.name}: ${(err as Error).message}`,
-    };
-  }
-  if (!fs.existsSync(target)) {
-    return {
-      action,
-      ok: false,
-      message: `source path missing for ${entry.name}: ${target}`,
-    };
-  }
-  writeExternalRegistry(opts.registryRoot, entry.name, target);
-  return {
-    action,
-    ok: true,
-    message: `registered ${entry.name} (symlink-mode → ${target})`,
   };
 }
 

@@ -1,6 +1,9 @@
 # ADR-0011 — Split register into `register` (record-only) and `move-into-bank`
 
-**Status:** Accepted (v1.22.0)
+**Status:** Superseded by [ADR-0022](./ADR-0022-registry-is-adopted-only.md) — the
+record-only `register` / `move-into-bank` split and the whole in-place (`adopted: false`)
+registration path were removed once keep-in-place skills and custom dirs were dropped. The
+register/move split described below is historical.
 
 ## Context
 

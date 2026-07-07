@@ -4,7 +4,7 @@ import { GH_API, ghFetch, type RateLimitInfo } from "./http.js";
 import { writeRepoFileAsBranch } from "./files.js";
 import { findSkillFolder } from "../registry/walk.js";
 
-export interface AdoptIntoLinkedRepoParams {
+export interface RehomeIntoLinkedRepoParams {
   registryRoot: string;
   /** Skill name (registry key). */
   name: string;
@@ -20,7 +20,7 @@ export interface AdoptIntoLinkedRepoParams {
   token: string;
 }
 
-export type AdoptIntoLinkedRepoResult =
+export type RehomeIntoLinkedRepoResult =
   | {
       ok: true;
       prNumber: number;
@@ -58,26 +58,26 @@ function listSkillContentFiles(skillDir: string): string[] {
 }
 
 /**
- * Adopt a skill into the linked repo as a pull request (ADR-0012,
+ * Re-home a skill into the linked repo as a pull request (ADR-0012,
  * restore option 1). Commits the skill's content files onto a per-skill
- * branch (`adopt/<name>`) — one Contents-API commit per file via the
+ * branch (`rehome/<name>`) — one Contents-API commit per file via the
  * existing `writeRepoFileAsBranch`, reusing the same plumbing as the
  * manifest push, with no Git Data API — then opens (or reuses) a PR
  * against the default branch.
  *
  * It deliberately stops at the PR: the user merges it (handling any
  * repo-specific machinery — `.claude-plugin`, custom files, the exact
- * path — in review). After merge + the next sync,
- * `reconcileResidentOrigins` rewrites the skill's origin to a self-origin
- * and it becomes syncable/installable again. The caller is expected to
- * have `detachOrigin`'d the skill first so it is local-only meanwhile.
+ * path — in review). After merge + the next sync, the skill's origin
+ * resolves to a self-origin and it becomes syncable/installable again.
+ * The caller is expected to have `detachOrigin`'d the skill first so it
+ * is local-only meanwhile.
  *
  * Files are read as UTF-8 — skill content is text (SKILL.md, scripts).
  * Binary assets are out of scope for this path.
  */
-export async function adoptIntoLinkedRepo(
-  params: AdoptIntoLinkedRepoParams,
-): Promise<AdoptIntoLinkedRepoResult> {
+export async function rehomeIntoLinkedRepo(
+  params: RehomeIntoLinkedRepoParams,
+): Promise<RehomeIntoLinkedRepoResult> {
   const { registryRoot, name, linkedRepo, baseBranch, token } = params;
   const ref = findSkillFolder(registryRoot, name);
   if (!ref) {
@@ -86,12 +86,12 @@ export async function adoptIntoLinkedRepo(
 
   const files = listSkillContentFiles(ref.dir);
   if (files.length === 0) {
-    return { ok: false, message: `${name} has no content files to adopt` };
+    return { ok: false, message: `${name} has no content files to re-home` };
   }
 
   const destFolder = params.destPath.replace(/\/+$/, "");
-  const branch = `adopt/${name}`;
-  const message = `feat(${name}): adopt skill into registry`;
+  const branch = `rehome/${name}`;
+  const message = `feat(${name}): re-home skill into registry`;
 
   let commitSha = "";
   for (const rel of files) {
@@ -148,9 +148,9 @@ export async function adoptIntoLinkedRepo(
     {
       method: "POST",
       body: JSON.stringify({
-        title: `feat: adopt ${name} into registry`,
+        title: `feat: re-home ${name} into registry`,
         body:
-          `Adopts the \`${name}\` skill into the registry at \`${destFolder}\`.\n\n` +
+          `Re-homes the \`${name}\` skill into the registry at \`${destFolder}\`.\n\n` +
           `Its upstream origin was unreachable; this rehomes it into the linked ` +
           `repo so it stays installable. Review path placement and any ` +
           `repo-specific machinery before merging.`,

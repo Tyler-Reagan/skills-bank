@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createOriginProbeRunner,
-  reconcileFoldersToManifest,
+  reconcileFoldersToManifestSafe,
   resolveRegistryRoot,
 } from "@skills-bank/core";
 import {
@@ -102,8 +102,10 @@ setLinkedRepo(readConfig().linkedRepo);
 setDismissedUpdateVersion(readConfig().dismissedUpdateVersion);
 
 // True up the manifest against the folders on disk before the first
-// index build — the single manifest-write seam (ADR-0020/0021).
-reconcileFoldersToManifest(bootRegistryRoot, {
+// index build — the single manifest-write seam (ADR-0020/0021). A
+// cross-bucket name collision on disk must not crash app load — Safe
+// skips this cycle's reconcile and logs instead.
+reconcileFoldersToManifestSafe(bootRegistryRoot, {
   linkedRepo: getLinkedRepo()?.fullName,
 });
 

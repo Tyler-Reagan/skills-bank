@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { AGENTS, getAgentSkillsDir } from "../shared/agents.js";
+import { repointAgentLinks } from "../shared/agent-links.js";
 import { findSkillFolder, type SkillBucket } from "./walk.js";
 import { writeOpJournal, clearOpJournal } from "./op-journal.js";
 
@@ -75,31 +75,13 @@ export function moveSkillBucket(
   fs.renameSync(oldDir, newDir);
   clearOpJournal(newDir);
 
-  const relinked: string[] = [];
-  for (const agent of AGENTS) {
-    const linkPath = path.join(getAgentSkillsDir(agent), name);
-    let st: fs.Stats;
-    try {
-      st = fs.lstatSync(linkPath);
-    } catch {
-      continue;
-    }
-    if (!st.isSymbolicLink()) continue;
-    const resolved = path.resolve(
-      path.dirname(linkPath),
-      fs.readlinkSync(linkPath),
-    );
-    if (resolved !== oldDir) continue;
-    fs.unlinkSync(linkPath);
-    fs.symlinkSync(newDir, linkPath, "dir");
-    relinked.push(agent.id);
-  }
+  const { relinked } = repointAgentLinks(name, oldDir, newDir);
 
   return {
     ok: true,
     message: `moved ${name}: ${ref.bucket} → ${targetBucket}`,
     fromBucket: ref.bucket,
     newDir,
-    relinked,
+    relinked: relinked.map((r) => r.agent),
   };
 }

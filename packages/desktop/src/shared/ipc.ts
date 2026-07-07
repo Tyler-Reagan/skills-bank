@@ -97,7 +97,7 @@ export const IPC = {
   clearPendingManifestConflicts: "bank:clearPendingManifestConflicts",
   resolveManifestConflicts: "bank:resolveManifestConflicts",
   installFromManifestHint: "bank:installFromManifestHint",
-  installSkillFromGithub: "bank:installSkillFromGithub",
+  addFromGithub: "bank:addFromGithub",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
   localDiagnosticsScan: "diagnostics:scan",
@@ -105,10 +105,9 @@ export const IPC = {
   unregister: "skills:unregister",
   deleteUnregistered: "skills:deleteUnregistered",
   forgetMissing: "skills:forgetMissing",
-  repointExternal: "skills:repointExternal",
   repointOrigin: "skills:repointOrigin",
   detachLocal: "skills:detachLocal",
-  adoptIntoLinkedRepo: "skills:adoptIntoLinkedRepo",
+  rehomeIntoLinkedRepo: "skills:rehomeIntoLinkedRepo",
   discoverShow: "discover:show",
   discoverHide: "discover:hide",
   discoverHideSync: "discover:hideSync",
@@ -119,7 +118,6 @@ export const IPC = {
   discoverOpenTerminal: "discover:openTerminal",
   discoverStatus: "discover:status",
   headerMenuAction: "header:action",
-  pickCustomSkillsDir: "skills:pickCustomSkillsDir",
   getSkillDiff: "skills:getSkillDiff",
   originProbe: "origin:probe",
   originUpdate: "origin:update",
@@ -171,8 +169,8 @@ export interface OriginUpdateResult {
   error?: unknown;
 }
 
-/** Result of adopting a skill into the linked repo via a PR (ADR-0012). */
-interface AdoptIntoLinkedRepoIPCResult {
+/** Result of re-homing a skill into the linked repo via a PR (ADR-0012). */
+interface RehomeIntoLinkedRepoIPCResult {
   ok: boolean;
   message: string;
   /** Populated on success. */
@@ -291,21 +289,6 @@ export interface SkillDiffRequest {
   rightPath: string;
   leftLabel: string;
   rightLabel: string;
-}
-
-interface PickCustomSkillsDirResult {
-  ok: boolean;
-  /** Absolute path the user chose. Absent when ok=false. */
-  path?: string;
-  /** Human-readable reason. "canceled" when the user dismissed the picker. */
-  message: string;
-  /**
-   * Non-fatal sanity flag — the chosen path looks like a system root,
-   * the user's home dir, or otherwise unlikely to be a skills folder.
-   * `ok` stays true; renderer surfaces this as a confirm-before-add
-   * notice rather than a hard rejection. v0.11.8 M5 guardrail.
-   */
-  warning?: string;
 }
 
 /**
@@ -458,10 +441,8 @@ interface UninstallIPCResult extends IPCFailureFields {
 
 interface UnregisterIPCResult extends IPCFailureFields {
   ok: boolean;
-  /** Where adopted files were moved to. Absent for non-adopted skills. */
+  /** Where the files were moved to. */
   destinationPath?: string;
-  /** True when the unregistered skill was previously adopted. */
-  wasAdopted: boolean;
 }
 
 export type PreviewManifestPushResult =
@@ -585,7 +566,7 @@ interface SkillsBankAPI {
    * installed skills. Custom dirs are absolute paths; non-existent
    * entries and entries that duplicate a known agent dir are skipped.
    */
-  listInstalled(customDirs?: string[]): Promise<InstalledSkill[]>;
+  listInstalled(): Promise<InstalledSkill[]>;
   /**
    * Open a directory picker so the user can choose a personal skills
    * folder to add to the Installed-tab scan list. Returns
@@ -593,7 +574,6 @@ interface SkillsBankAPI {
    * picker. Persistence of the chosen path lives in the renderer's
    * AppSettings; this IPC only resolves the picker dialog.
    */
-  pickCustomSkillsDir(): Promise<PickCustomSkillsDirResult>;
   /**
    * Compute a per-file unified diff between two on-disk skill folders.
    * The two callers today are the sync-collision modal (left = local
@@ -637,15 +617,6 @@ interface SkillsBankAPI {
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: AppError }>;
   /**
-   * Open a directory picker and repoint a non-adopted external entry's
-   * target path to the user's selection. Returns `cancelled` (ok=false)
-   * if the user dismisses the picker; surfaces validation errors as
-   * `error.message` otherwise.
-   */
-  repointExternal(
-    name: string,
-  ): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  /**
    * Restore an unreachable origin by repointing it at a new GitHub URL
    * (ADR-0012). Parses the URL → repo + skillPath, re-fetches content,
    * and rewrites the origin pointer (rolling back to the prior marker on
@@ -665,11 +636,11 @@ interface SkillsBankAPI {
    * detaches locally, then commits the skill's files under `destPath` and
    * opens (or reuses) a PR. On success returns the PR number + URL.
    */
-  adoptIntoLinkedRepo(
+  rehomeIntoLinkedRepo(
     name: string,
     destPath: string,
-  ): Promise<AdoptIntoLinkedRepoIPCResult>;
-  scan(customDirs?: string[]): Promise<ScanReport>;
+  ): Promise<RehomeIntoLinkedRepoIPCResult>;
+  scan(): Promise<ScanReport>;
   register(
     items: Array<{ name: string; action: RegistrationAction }>,
   ): Promise<RegistrationResult[]>;
@@ -843,7 +814,7 @@ interface SkillsBankAPI {
    * ~/.agents/skills/ directory. No bank entry created; skill appears
    * as "unregistered" in the Installed tab.
    */
-  installSkillFromGithub(url: string): Promise<
+  addFromGithub(url: string): Promise<
     | { ok: true; name: string }
     | { ok: false; reason: "url-parse-error"; message: string }
     | {
@@ -853,6 +824,7 @@ interface SkillsBankAPI {
         rateLimit?: RateLimitInfo;
       }
     | { ok: false; reason: "no-skill-md"; message: string }
+    | { ok: false; reason: "name-collision"; message: string }
   >;
   repairBrokenLinks(name: string): Promise<BrokenLinkRepairReport>;
   removeBrokenLinks(
@@ -865,7 +837,7 @@ interface SkillsBankAPI {
    * (unregistered installs, broken symlinks, external-target-missing,
    * registry-folder-missing). Local-only — no network calls.
    */
-  localDiagnosticsScan(customDirs?: string[]): Promise<DiagnosticReport>;
+  localDiagnosticsScan(): Promise<DiagnosticReport>;
   resolveSkillConflicts(
     name: string,
     decisions: ConflictResolveDecision[],

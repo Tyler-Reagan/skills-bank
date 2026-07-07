@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { reconcileFoldersToManifest } from "../reconcile-folders.js";
+import {
+  reconcileFoldersToManifest,
+  reconcileFoldersToManifestSafe,
+} from "../reconcile-folders.js";
 import {
   readLiveManifest,
   writeLiveManifest,
@@ -101,5 +104,39 @@ describe("reconcileFoldersToManifest — F5 legacy-origin recovery", () => {
     });
     reconcileFoldersToManifest(scratch);
     expect(byName(scratch, "local-only").origin).toEqual({ url: null });
+  });
+});
+
+/**
+ * A cross-bucket name collision on disk (the same folder name under
+ * both personal/ and vendored/) is an invariant walkSkills is right to
+ * enforce for CI, but must not crash a running app. Pins the boundary:
+ * the raw function still throws (CI catches it), the Safe wrapper does
+ * not (boot/mutation seams stay resilient) and leaves the manifest
+ * exactly as it was before the call — no partial write.
+ */
+describe("reconcileFoldersToManifest / Safe — cross-bucket collision", () => {
+  test("the raw function throws SkillNameCollisionError", () => {
+    makeSkillFolder("personal", "dup-name");
+    makeSkillFolder("vendored", "dup-name");
+    expect(() => reconcileFoldersToManifest(scratch)).toThrow(
+      /appears in multiple buckets/,
+    );
+  });
+
+  test("the Safe wrapper does not throw and leaves the manifest unchanged", () => {
+    makeSkillFolder("personal", "dup-name");
+    makeSkillFolder("vendored", "dup-name");
+    const before = readLiveManifest(scratch);
+
+    expect(() => reconcileFoldersToManifestSafe(scratch)).not.toThrow();
+
+    expect(readLiveManifest(scratch)).toEqual(before);
+  });
+
+  test("the Safe wrapper still reconciles normally when there's no collision", () => {
+    makeSkillFolder("personal", "no-conflict");
+    reconcileFoldersToManifestSafe(scratch);
+    expect(byName(scratch, "no-conflict")).toBeDefined();
   });
 });

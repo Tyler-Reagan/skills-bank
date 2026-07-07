@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useRegistryHost } from "./RegistryHostContext.js";
-import { useSettings } from "./SettingsContext.js";
 
 interface RefreshResult {
   registryCount: number;
@@ -66,11 +65,6 @@ interface ProviderProps {
  * Owns the registry/installed snapshots plus the refresh + rebuild
  * lifecycle. Pulled out of App.tsx in the v1.12 housekeeping branch.
  *
- * `refresh()` depends on `settings.customSkillsDirs` — the user-defined
- * directories that listInstalled scans in addition to the known agent
- * dirs. SettingsProvider must wrap RegistryProvider so the registry
- * loader can read the configured custom dirs.
- *
  * The provider also wires the initial mount-time load (formerly an
  * inline useEffect in App.tsx) and flips `initialLoading` to false
  * once the first refresh resolves — gating the SplashScreen render in
@@ -79,7 +73,6 @@ interface ProviderProps {
 export function RegistryProvider({
   children,
 }: ProviderProps): React.ReactElement {
-  const { settings } = useSettings();
   const { flash } = useRegistryHost();
   const [registry, setRegistry] = useState<RegistryEntry[]>([]);
   const [installed, setInstalled] = useState<InstalledSkill[]>([]);
@@ -99,7 +92,7 @@ export function RegistryProvider({
     }
     const [r, i] = await Promise.all([
       window.skillsBank.listRegistry(),
-      window.skillsBank.listInstalled(settings.customSkillsDirs),
+      window.skillsBank.listInstalled(),
     ]);
     setRegistry(r);
     setInstalled(i);
@@ -107,12 +100,10 @@ export function RegistryProvider({
       registryCount: r.length,
       installedCount: new Set(i.map((x) => x.name)).size,
     };
-  }, [settings.customSkillsDirs]);
+  }, []);
 
   // Initial-load gate. Flips initialLoading to false once the first
-  // refresh resolves (success or empty), regardless of customSkillsDirs
-  // — those changes re-fire refresh() but shouldn't re-enter the
-  // splash state.
+  // refresh resolves (success or empty).
   useEffect(() => {
     void refresh().finally(() => setInitialLoading(false));
   }, [refresh]);

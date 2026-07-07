@@ -32,25 +32,10 @@ export interface AppSettings {
   /** macOS only: which terminal app the Discover tab's "Open Terminal" uses. */
   terminalApp: TerminalApp;
   /**
-   * Taxonomy axis "Adopted": when registering a skill, move its files
-   * into the bank's `skills/` directory (true, default) vs. record an
-   * external pointer and leave files where they are (false). M3 wires
-   * this into the unified register flow; M1 ships the key.
-   */
-  registerAdopts: boolean;
-  /**
-   * Where to move an adopted skill's files when it's unregistered.
-   * Default `~/.agents/skills/`. M4 consumes this in `unregisterSkill`.
+   * Where to move a skill's files when it's unregistered.
+   * Default `~/.agents/skills/`. Consumed by `unregisterSkill`.
    */
   unregisterDestinationAgent: AgentId;
-  /**
-   * User-defined custom skills directories that the Installed tab
-   * scans in addition to the known agent dirs. Absolute paths. Empty
-   * by default. Managed entirely from the Installed tab — this setting
-   * is intentionally not surfaced in the Settings modal because it's
-   * scoped to that tab's UX.
-   */
-  customSkillsDirs: string[];
   /**
    * Show per-skill upstream activity (last commit to the skill's
    * folder in its source repo) in the drawer's Origin section.
@@ -67,9 +52,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   gridColumns: "auto",
   searchDebounceMs: "off",
   terminalApp: "system",
-  registerAdopts: true,
   unregisterDestinationAgent: "agents",
-  customSkillsDirs: [],
   showOriginActivity: false,
 };
 
@@ -182,27 +165,6 @@ export function SettingsModal({
       <div className="prefs-group">
         <p className="prefs-group-label">Behavior</p>
         <div className="prefs-card">
-          <div className="prefs-row">
-            <label className="prefs-checkbox">
-              <input
-                type="checkbox"
-                checked={draft.registerAdopts}
-                onChange={() =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    registerAdopts: !prev.registerAdopts,
-                  }))
-                }
-              />
-              <span>Move skill files into Skills Bank when registering</span>
-            </label>
-            <span className="prefs-row-control">
-              <InfoTooltip
-                label="About moving files on register"
-                text="Registering always records a skill in place first (files stay put). On (default): it then moves the files into your registry so the skill is portable and travels via sync. Off: the skill is left where it already lives. Skills scanned from Custom directories on the Installed tab always stay in place regardless of this setting — for a work repo you can't or shouldn't move. You can relocate any in-place skill later via Move into bank in its drawer."
-              />
-            </span>
-          </div>
           <div className="prefs-row">
             <label
               className={`prefs-checkbox${isAuthed ? "" : " prefs-checkbox-disabled"}`}

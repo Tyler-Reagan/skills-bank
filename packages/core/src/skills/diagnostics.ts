@@ -1,13 +1,12 @@
 // Local-disk diagnostics aggregator. Walks agent dirs + the registry
-// index to surface "needs attention" items in four categories:
+// index to surface "needs attention" items in three categories:
 //   - unregistered installs in agent dirs (foreign-symlink + real-directory)
 //   - broken symlinks (symlink target gone)
-//   - external-target-missing (non-adopted entries whose target vanished)
-//   - registry-folder-missing (adopted entries whose registry folder is gone)
+//   - registry-folder-missing (registered entries whose registry folder is gone)
 //
 // Local-only — no network calls. Reuses existing primitives:
-//   - `listInstalled` walks agent dirs + custom dirs and classifies each
-//     installation by `InstalledKind`.
+//   - `listInstalled` walks agent dirs and classifies each installation
+//     by `InstalledKind`.
 //   - `buildRegistryIndex` populates the `missing: true` flag on entries
 //     whose on-disk presence is gone.
 //
@@ -22,7 +21,6 @@ import type { InstalledSkill } from "../shared/types.js";
 export type DiagnosticCategory =
   | "unregistered-installs"
   | "broken-symlinks"
-  | "external-target-missing"
   | "registry-folder-missing";
 
 export interface DiagnosticItem {
@@ -33,17 +31,15 @@ export interface DiagnosticItem {
   detail: string;
   /**
    * Stable id for React keys + dispatch routing. Composed of category,
-   * agent, name, and customDir so the same name landing in multiple
-   * agent dirs gets distinct entries.
+   * agent, and name so the same name landing in multiple agent dirs
+   * gets distinct entries.
    */
   itemId: string;
   /**
-   * Agent the item lives in (for category 1 + 2). Absent for missing-
-   * file categories where the issue is registry-side.
+   * Agent the item lives in (for category 1 + 2). Absent for the
+   * missing-files category where the issue is registry-side.
    */
   agent?: string;
-  /** Custom dir path if the entry came from one. */
-  customDir?: string;
 }
 
 export interface DiagnosticReport {
@@ -51,14 +47,7 @@ export interface DiagnosticReport {
   scannedAt: string;
 }
 
-export interface ScanLocalDiagnosticsOptions {
-  customSkillsDirs?: string[];
-}
-
-export function scanLocalDiagnostics(
-  registryRoot: string,
-  opts: ScanLocalDiagnosticsOptions = {},
-): DiagnosticReport {
+export function scanLocalDiagnostics(registryRoot: string): DiagnosticReport {
   const items: DiagnosticItem[] = [];
   const scannedAt = new Date().toISOString();
 
@@ -70,29 +59,20 @@ export function scanLocalDiagnostics(
   try {
     const index = buildRegistryIndex(registryRoot);
 
-    // Categories 3 & 4: missing-files on registered entries. `missing`
-    // is set by buildRegistryIndex when the prior persisted index had
-    // the name but `<registryRoot>/skills/<name>/` (adopted) or the
-    // external target (non-adopted) is gone.
+    // Category 3: missing-files on registered entries. `missing` is set
+    // by buildRegistryIndex when the prior persisted index had the name
+    // but `<registryRoot>/skills/<name>/` is gone.
     for (const entry of index.entries) {
       if (entry.missing !== true) continue;
-      const isExternal = entry.adopted === false;
       items.push({
-        category: isExternal
-          ? "external-target-missing"
-          : "registry-folder-missing",
+        category: "registry-folder-missing",
         name: entry.name,
-        detail: isExternal
-          ? `External target gone: ${entry.path}`
-          : `Registry folder gone: ${entry.path}`,
-        itemId: `${isExternal ? "ext" : "reg"}-missing::${entry.name}`,
+        detail: `Registry folder gone: ${entry.path}`,
+        itemId: `reg-missing::${entry.name}`,
       });
     }
 
-    installed = listInstalled(registryRoot, {
-      index,
-      ...(opts.customSkillsDirs ? { customDirs: opts.customSkillsDirs } : {}),
-    });
+    installed = listInstalled(registryRoot, { index });
   } catch {
     // Index build failure leaves diagnostics empty — the renderer
     // shows "All clean" rather than surfacing a misleading partial
@@ -108,26 +88,20 @@ export function scanLocalDiagnostics(
         name: inst.name,
         detail:
           inst.kind === "foreign-symlink"
-            ? `Symlink in ${inst.agent}${
-                inst.customDir ? ` (${inst.customDir})` : ""
-              } → ${inst.target ?? "(unresolved)"}`
-            : `Real directory in ${inst.agent}${
-                inst.customDir ? ` (${inst.customDir})` : ""
-              }`,
-        itemId: `unreg::${inst.agent}::${inst.name}::${inst.customDir ?? ""}`,
+            ? `Symlink in ${inst.agent} → ${inst.target ?? "(unresolved)"}`
+            : `Real directory in ${inst.agent}`,
+        itemId: `unreg::${inst.agent}::${inst.name}`,
         agent: inst.agent,
-        ...(inst.customDir ? { customDir: inst.customDir } : {}),
       });
     } else if (inst.kind === "broken-symlink") {
       items.push({
         category: "broken-symlinks",
         name: inst.name,
         detail: `Broken symlink in ${inst.agent}${
-          inst.customDir ? ` (${inst.customDir})` : ""
-        }${inst.target ? ` → ${inst.target}` : ""}`,
-        itemId: `broken::${inst.agent}::${inst.name}::${inst.customDir ?? ""}`,
+          inst.target ? ` → ${inst.target}` : ""
+        }`,
+        itemId: `broken::${inst.agent}::${inst.name}`,
         agent: inst.agent,
-        ...(inst.customDir ? { customDir: inst.customDir } : {}),
       });
     }
   }

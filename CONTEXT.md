@@ -43,3 +43,41 @@ _Avoid_: Source (the old provenance-axis term, retired), upstream (kept only as 
 **Runtime Map**:
 The one gitignored file per Registry (`.skills-bank/runtime.json`) holding every skill's volatile probe/drift state — content hash baseline, last successful fetch, consecutive probe failures — keyed by skill name. Replaces what used to be three per-skill sidecar files. Distinct from the registry manifest, which holds the durable/committed half of a skill's record (identity, Origin, labels).
 _Avoid_: Sidecar data, skill record, skill state (which refers to the UI-facing installation classification)
+
+**Bucket**:
+A skill folder's spatial location under `<registryRoot>/skills/`: `personal` (self-originated — Origin's `url` is `null` or matches the Linked Repo) or `vendored` (external Origin, mirrored in). Derived once at acquisition time from Origin (`bucketForOrigin`); the folder location is the durable record afterward, so re-linking to a different repo moves no files and relabels nothing. Distinct from the retired `curated` bucket (ADR-0017, issue #159) — in this repo's own tree `skills/vendored/` is kept deliberately empty by policy (the maintainer's authored skills live in the separate `Tyler-Reagan/skills` repo), but Bucket itself is a live concept for any registry.
+_Avoid_: Category (that's a Label axis), Source (retired provenance-axis term, ADR-0019)
+
+Three orthogonal verbs move a skill along the pipeline, distinguished by _where content comes from_ and _where it goes_: **Add** brings content in from a remote into the bank; **Register** brings an on-disk skill into the bank; **Install** symlinks a bank skill out to Agent Directories. The Discover-tab GitHub flow is Add composed with Register + Install as its mechanics.
+
+**Add**:
+Acquire a skill from a remote source (today, a GitHub repo) into the Registry: mirror its content into the Bucket tree (external Origin → `vendored`), write a manifest row carrying the `origin.url`, baseline the drift hash, and Install it to the default Agent Directories. User-facing button: "Add from GitHub." "Install" is deliberately _not_ used for this whole operation — Install is only the agent-symlink step Add composes at the end.
+_Avoid_: Install from GitHub (retired label — overloaded "Install"), Import (reserved for manifest/disk import flows), Vendor (retired verb, though the resulting Bucket is still `vendored`)
+
+**Register**:
+Bring an on-disk skill into the Registry: its files move into the Bucket tree under `<registryRoot>/skills/` and a manifest row is written — one verb, one effect (ADR-0022). Registering a skill discovered in an agent dir (a foreign symlink or a real directory left by another tool) relocates its real content into `skills/personal/<name>/` and repoints every agent symlink at the bank copy. **Registered ⇔ files live under `<registryRoot>/skills/`** — there is no "track in place" mode and no separate move-into-bank step (both retired with ADR-0011 when keep-in-place skills and custom directories were dropped). Distinct from Add only in source: Register's content is already on local disk, Add's arrives from a remote. User-facing button: "Register in registry."
+_Avoid_: Adopt / Move into bank (retired — registering _is_ moving into the bank now), Add (reserved for the remote-acquisition verb), Import (reserved for manifest/disk import flows), track-in-place / symlink-mode (retired concepts)
+
+**Unregister**:
+Register's inverse: move a skill's files out of the bank to the `unregisterDestinationAgent` directory (default the shared `~/.agents/skills/`) and rewrite every agent symlink that pointed at the bank copy to the new location, then drop the manifest row. User-facing button: "Unregister." Mid-tier on the destructive-action ladder — stops short of deleting files (see the Installed tab's Delete, reachable only on already-unregistered skills).
+_Avoid_: Remove (ambiguous with Uninstall — never use "Remove" in prose for either action), Deregister
+
+**Install**:
+Symlink a Registry skill's canonical folder into one or more Agent Directories. Button label: "Install" (or "Reinstall" when repairing broken links, or "Install (will prompt for conflicts)" when stragglers exist). Multi-agent by default — installs to every Agent Directory that exists on disk.
+_Avoid_: Add, Enable
+
+**Uninstall**:
+Remove an agent-dir symlink for a skill — Install's inverse. Never a standalone button; reached only via "Manage agent links" (unchecking an agent, or a "Remove from all agents" action) or as a side effect of Unregister/Delete.
+_Avoid_: Remove (reserved for nothing — never use it for this or Unregister), Disable
+
+**Installation kind**:
+Classification of what sits at `<agentDir>/<name>`, computed by resolving the entry to its _final_ symlink target (not just one hop — a symlink-to-a-symlink into the Registry still classifies `ours`): `ours` (resolves into the Registry), `foreign-symlink` (resolves outside the Registry), `real-directory` (actual files, not a symlink — e.g. installed by another tool's CLI), `broken-symlink` (target doesn't exist). Drives both the Registered/Unregistered split and Conflict detection.
+_Avoid_: Installation type, Link kind
+
+**Conflict**:
+More than one non-`ours` Installation Kind entry for the same skill name across Agent Directories. Two related classifier states: `registered-conflicts` (stragglers alongside an already-registered, installed skill) and `unregistered-conflicts` (multiple candidate copies with no Registry entry yet, so the user must pick one before Registering). Resolved by replacing each straggler with a symlink to the canonical copy, deleting it, or keeping it. This is the **sole** meaning of "conflict" in the skills domain — the manifest-merge name-collision case (keep-mine / use-theirs / rename-mine, surfaced during Sync/pull) is a separate concern that lives privately inside the merge machinery and is not called a "conflict" in shared vocabulary.
+_Avoid_: Duplicate, Collision
+
+**Detach**:
+Sever a skill's Origin pointer while keeping its local content — sets `origin.url` to `null`, re-baselines the drift hash, and moves the folder `vendored/ → personal/` via a Bucket rehome. User-facing label: "Keep my edits (detach)" (from drift) or "Keep local (detach)" (from the Restore-origin modal, when Origin has gone unreachable). The detached skill is local-only (excluded from the pushed manifest) until re-homed into the Linked Repo via a pull request (`rehomeIntoLinkedRepo`) to regain a self-Origin.
+_Avoid_: Unlink (that's Uninstall/Unregister), Orphan
