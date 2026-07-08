@@ -105,11 +105,9 @@ The **persisted, metadata-tagged collection of skills this app manages.** It's a
 
 The registry is **not** the only source of skills you can use. Skills installed from elsewhere (e.g. via [skills.sh](https://skills.sh/)) appear alongside in the **Installed** tab and can be registered into Skills Bank if you want this app to manage them.
 
-## Linked repo vs bundled default
+## Linked repo
 
-Every install starts on the **bundled default** — the app reads `Tyler-Reagan/skills-bank` at the unauthenticated GitHub rate limit (60/hr). Refresh pulls the latest. No GitHub account needed.
-
-Sign in via **Account** to either keep the bundled default at a higher rate limit (5000/hr authenticated, plus access to private repos) or **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with a `SKILL.md` — its YAML frontmatter carries the metadata) — its layout doesn't have to match anything specific.
+Every install starts empty — there's no default skill set. Add skills via the **Discover** tab, author them locally, or sign in via **Account** and **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with a `SKILL.md` — its YAML frontmatter carries the metadata) — its layout doesn't have to match anything specific.
 
 Self-hosting (forking the entire app) remains a separate developer path; see [Self-hosting](/self-host).
 

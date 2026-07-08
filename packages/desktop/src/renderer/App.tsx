@@ -19,9 +19,9 @@ import {
   type Theme,
 } from "./components/Header.js";
 // Phase 2 persona collapse: LoginScreen retired. Fresh installs land
-// directly on bundled-default; GitHub linking is reached via Settings
-// → Account → "Sign in with GitHub" (ConnectGithubModal, which owns
-// device-flow + resume).
+// on an empty registry (ADR-0017 — no bundled default); GitHub linking
+// is reached via Settings → Account → "Sign in with GitHub"
+// (ConnectGithubModal, which owns device-flow + resume).
 import {
   DEFAULT_SETTINGS,
   type AppSettings,

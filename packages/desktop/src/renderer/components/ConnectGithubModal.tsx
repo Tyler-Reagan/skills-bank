@@ -15,11 +15,11 @@ interface Props {
 
 /**
  * Mid-app entry point to GitHub Device Flow. Mirrors the LoginScreen
- * flow-active card but lives as a regular modal so a local-bundled
- * user can opt into github-linked from AccountModal without resetting
- * userData. On mount, probes for a persisted in-flight flow (Plan 02
- * recovery surface) and offers Resume / Start over if one exists;
- * otherwise starts a fresh flow.
+ * flow-active card but lives as a regular modal so an unlinked user
+ * can connect from AccountModal without resetting userData. On mount,
+ * probes for a persisted in-flight flow (Plan 02 recovery surface) and
+ * offers Resume / Start over if one exists; otherwise starts a fresh
+ * flow.
  */
 export function ConnectGithubModal({
   isAuthConfigured,
@@ -202,8 +202,7 @@ export function ConnectGithubModal({
       <h2 className="connect-github-title">Connect to GitHub</h2>
       <p className="connect-github-hint">
         Authenticate, then pick a repo to back your registry with. Your current
-        local-bundled set isn't touched until you choose a repo on the next
-        screen.
+        registry isn't touched until you choose a repo on the next screen.
       </p>
       {!flow && !error && busy && (
         <p className="connect-github-hint">

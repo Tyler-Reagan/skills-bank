@@ -297,7 +297,7 @@ export function RegistryFilters({
         </button>
         {CHIP_DEFS.map((def) => {
           // The boolean `installedOnly` chip sits between `missing`
-          // and `bundled` per the canonical chip ordering — render
+          // and `personal` per the canonical chip ordering — render
           // it inline when we hit that seam.
           const chipNode = (() => {
             const isActive = active.has(def.tag);

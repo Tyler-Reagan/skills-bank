@@ -1,5 +1,5 @@
 import React from "react";
-import { BUNDLED_REPO, type AuthStatus } from "../../shared/ipc.js";
+import type { AuthStatus } from "../../shared/ipc.js";
 import { Icon } from "./Icon.js";
 
 export type Theme = "dark" | "light";
@@ -145,8 +145,7 @@ export function Header({
   const nextDensity: Density =
     density === "comfortable" ? "compact" : "comfortable";
   const linkedRepo = authStatus?.linkedRepo ?? null;
-  const isBundledDefault = !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
-  const sourceChipText = isBundledDefault ? "Bundled" : linkedRepo!.fullName;
+  const sourceChipText = linkedRepo ? linkedRepo.fullName : "Not linked";
 
   // Brief "Imported" done-state on importingLinkedRepo→idle transition.
   // Auto-fades after 1.5s so a successful import with zero content delta
@@ -228,7 +227,7 @@ export function Header({
           >
             <Icon name={theme === "dark" ? "sun" : "moon"} size="md" />
           </button>
-          {!isBundledDefault && (
+          {linkedRepo && (
             <button
               className="refresh-btn"
               disabled={importingLinkedRepo}

@@ -279,7 +279,7 @@ interface SkillDiffFile {
 export interface SkillDiffResult {
   /** Human-readable label for the left side (e.g. "Yours"). */
   leftLabel: string;
-  /** Human-readable label for the right side (e.g. "Bundled"). */
+  /** Human-readable label for the right side (e.g. "Origin"). */
   rightLabel: string;
   files: SkillDiffFile[];
 }
@@ -290,17 +290,6 @@ export interface SkillDiffRequest {
   leftLabel: string;
   rightLabel: string;
 }
-
-/**
- * The canonical bundled-default repo. Every registry is linked to a
- * GitHub repo, and this one is the default — there is no separate
- * "local mode." A user is "on the bundled set" when `linkedRepo` is
- * either null (fresh install / migrated from the older local mode) or
- * equal to `BUNDLED_REPO`. Renderer code checks the `linkedRepo` field
- * on `AuthStatus` directly; no separate `mode()` helper, since every
- * relevant branch collapses to "do I have a non-bundled linkedRepo?"
- */
-export const BUNDLED_REPO = "Tyler-Reagan/skills-bank";
 
 /**
  * Legacy mode discriminator. Kept as a derived alias on `AuthStatus`
