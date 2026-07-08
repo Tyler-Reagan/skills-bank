@@ -40,6 +40,10 @@ _Avoid_: Keyword, attribute
 A skill's single nullable-URL provenance: the GitHub URL it was mirrored from, or `null` for a local skill with no remote (ADR-0018/0020). Lives entirely in the skill's registry-manifest row — there is no separate provenance axis. A URL matching the active Linked Repo is a self-origin (authored here); any other URL is an external upstream; `null` is an explicit "local, no remote" stamp, not an error state.
 _Avoid_: Source (the old provenance-axis term, retired), upstream (kept only as a description of what an Origin URL points at)
 
+**Manifest**:
+The registry's metadata record for every skill it manages — Origin, Category, Tags — never skill content itself, which is always re-fetched from Origin on import. Two projections exist (ADR-0021): the live manifest carries every row, including `url: null` local-only skills; the pushed manifest drops those rows before anything is committed to the Linked Repo, diffed, or merged, so a local-only skill can never be misread by a pull as "deleted upstream."
+_Avoid_: Registry (the managed collection itself; Manifest is its metadata artifact), Skill record, Sidecar (retired provenance mechanism, ADR-0021)
+
 **Runtime Map**:
 The one gitignored file per Registry (`.skills-bank/runtime.json`) holding every skill's volatile probe/drift state — content hash baseline, last successful fetch, consecutive probe failures — keyed by skill name. Replaces what used to be three per-skill sidecar files. Distinct from the registry manifest, which holds the durable/committed half of a skill's record (identity, Origin, labels).
 _Avoid_: Sidecar data, skill record, skill state (which refers to the UI-facing installation classification)
@@ -75,9 +79,27 @@ Classification of what sits at `<agentDir>/<name>`, computed by resolving the en
 _Avoid_: Installation type, Link kind
 
 **Conflict**:
-More than one non-`ours` Installation Kind entry for the same skill name across Agent Directories. Two related classifier states: `registered-conflicts` (stragglers alongside an already-registered, installed skill) and `unregistered-conflicts` (multiple candidate copies with no Registry entry yet, so the user must pick one before Registering). Resolved by replacing each straggler with a symlink to the canonical copy, deleting it, or keeping it. This is the **sole** meaning of "conflict" in the skills domain — the manifest-merge name-collision case (keep-mine / use-theirs / rename-mine, surfaced during Sync/pull) is a separate concern that lives privately inside the merge machinery and is not called a "conflict" in shared vocabulary.
+More than one non-`ours` Installation Kind entry for the same skill name across Agent Directories. Two related classifier states: `registered-conflicts` (stragglers alongside an already-registered, installed skill) and `unregistered-conflicts` (multiple candidate copies with no Registry entry yet, so the user must pick one before Registering). Resolved by replacing each straggler with a symlink to the canonical copy, deleting it, or keeping it. This is the **sole** meaning of "conflict" in the skills domain — the manifest-merge name-collision case (a manifest resolution: `keep-mine` / `use-theirs` / `keep-both`, surfaced during Import) is a separate concern that lives privately inside the merge machinery and is not called a "conflict" in shared vocabulary.
 _Avoid_: Duplicate, Collision
 
 **Detach**:
 Sever a skill's Origin pointer while keeping its local content — sets `origin.url` to `null`, re-baselines the drift hash, and moves the folder `vendored/ → personal/` via a Bucket rehome. User-facing label: "Keep my edits (detach)" (from drift) or "Keep local (detach)" (from the Restore-origin modal, when Origin has gone unreachable). The detached skill is local-only (excluded from the pushed manifest) until re-homed into the Linked Repo via a pull request (`rehomeIntoLinkedRepo`) to regain a self-Origin.
 _Avoid_: Unlink (that's Uninstall/Unregister), Orphan
+
+**Pull**:
+Fetch and apply a content update for one skill already in the Registry, from that skill's own Origin — scoped to the skill, not the Linked Repo. Surfaced as the `UPDATE` card badge and the drawer's "Update" button, but "Pull" is the precise engineering term: "Update" alone is ambiguous with app-release updates and with Import's registry-level reconciliation.
+_Avoid_: Update (ambiguous outside UI copy), Sync (retired), Refresh
+
+**Extract**:
+Write a single skill out of the Registry to a standalone file on disk — a bare `SKILL.md` or a bundled zip, depending on whether it has supporting files. Distinct from Export, which moves a Manifest's metadata, never skill content.
+_Avoid_: Export (reserved for the Manifest-level operation)
+
+Import and Export are a second, orthogonal pair — they move the Manifest (metadata), never skill content, and are unrelated to the Add/Register/Install content pipeline above.
+
+**Import**:
+Reconcile which skills the Registry has, and their manifest rows (Origin, Category, Tags), against a Manifest. Never touches an existing skill's file content — only brand-new entries get content mirrored in. Covers both the blunt reconcile (first-link, and the Header's quick-refresh) and the deliberate three-way merge (base/ours/theirs) in the Manifest modal, which surfaces divergences as a manifest resolution rather than a Conflict (see Conflict).
+_Avoid_: Sync (retired, ADR-0017/0020), Adopt (reserved for Register), Update (reserved for Pull)
+
+**Export**:
+Commit the Registry's pushed Manifest to the Linked Repo, guarded against a non-fast-forward push so a diverged remote is never silently clobbered (ADR-0009). Also available as a plain file via the Manifest modal's disk-transport tab, independent of any Linked Repo, for moving a Manifest's metadata between machines by hand.
+_Avoid_: Push (reads as Pull's inverse, but Pull is skill-content-scoped and Export never sends skill content anywhere)
