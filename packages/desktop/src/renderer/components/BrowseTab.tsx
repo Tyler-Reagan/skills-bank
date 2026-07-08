@@ -24,8 +24,8 @@ const CATEGORY_ORDER = categories.map((c) => c.slug);
 
 const REGISTRY_TOOLTIP =
   "Skills in your registry — a GitHub repo you've linked, plus any local " +
-  "skills you've added. When linked, click Pull from <repo> in the header " +
-  "to resync with the repo's published set. Skills you install elsewhere " +
+  "skills you've added. When linked, click Import from <repo> in the header " +
+  "to bring in the repo's published set. Skills you install elsewhere " +
   "appear in the Installed tab.";
 
 interface Props {
@@ -230,8 +230,8 @@ export function BrowseTab({
         <p>
           Add a skill folder under <code>skills/&lt;name&gt;/</code> with a{" "}
           <code>meta.json</code> or a <code>SKILL.md</code> with YAML
-          frontmatter, or click <strong>Pull from &lt;repo&gt;</strong> in the
-          header to pull from your linked registry.
+          frontmatter, or click <strong>Import from &lt;repo&gt;</strong> in the
+          header to bring in your linked repo's skills.
         </p>
         <div className="mt-16">
           <button
@@ -268,7 +268,7 @@ export function BrowseTab({
           <InfoTooltip text={REGISTRY_TOOLTIP} label="What is the registry?" />
         </span>{" "}
         Browse and install skills from your registry. When linked, click{" "}
-        <strong>Pull from &lt;repo&gt;</strong> in the header to pull the
+        <strong>Import from &lt;repo&gt;</strong> in the header to bring in the
         latest; your local edits and added skills are preserved. Click any card
         to view its details, then <strong>Install</strong> to link it into the
         agent directories you use (Claude Code, Cursor, etc.).
