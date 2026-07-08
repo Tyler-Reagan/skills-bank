@@ -50,8 +50,6 @@ const api = {
     return () => ipcRenderer.removeListener(IPC.updateStatus, listener);
   },
   authStatus: () => ipcRenderer.invoke(IPC.authStatus),
-  authSetRegistrySourceLocal: () =>
-    ipcRenderer.invoke(IPC.authSetRegistrySourceLocal),
   authStartDeviceFlow: () => ipcRenderer.invoke(IPC.authStartDeviceFlow),
   authPollDeviceFlow: (flowId: string) =>
     ipcRenderer.invoke(IPC.authPollDeviceFlow, flowId),

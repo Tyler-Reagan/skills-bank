@@ -613,18 +613,11 @@ function AppContent(): React.ReactElement {
     }
   }, [registryByName, selected]);
 
-  // Pre-mount splash: render this until the renderer knows which top-
-  // level view to show. Without it, the app skeleton flashes for a beat
-  // before LoginScreen mounts on first launch.
+  // Pre-mount splash: render this until the initial `authStatus` fetch
+  // resolves, so the app skeleton doesn't flash before real chrome mounts.
   if (!authStatus) {
     return <SplashScreen />;
   }
-
-  // Phase 2 persona collapse: the `registrySource === null` case is
-  // unreachable. Main-process boot normalizes it to "local" before the
-  // renderer ever sees AuthStatus, so this gate would have stayed dead
-  // code if not removed. The legacy v1.2 path that routed here on
-  // first launch is in the CHANGELOG (v1.2.0, vocabulary rename).
 
   // Plain functions (not useCallback) — this code lives below early-return
   // gates above (no authStatus, persona unresolved). A hook here would be a

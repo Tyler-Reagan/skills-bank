@@ -22,14 +22,12 @@ import {
   type LinkedRepoMetadata,
   type OriginProbeCompleteEvent,
   type OriginProbeResult,
-  type RegistrySource,
 } from "../shared/ipc.js";
 
 // ─── AppConfig (duplicated here so state.ts has no dep on main.ts) ──────────
 
 interface AppConfig {
   registryRoot: string | null;
-  registrySource: RegistrySource | null;
   dismissedUpdateVersion: string | null;
   linkedRepo: LinkedRepoMetadata | null;
   weakStorageNoticeDismissedFor: string[];
@@ -38,7 +36,6 @@ interface AppConfig {
 function emptyConfig(): AppConfig {
   return {
     registryRoot: null,
-    registrySource: null,
     dismissedUpdateVersion: null,
     linkedRepo: null,
     weakStorageNoticeDismissedFor: [],
@@ -57,10 +54,6 @@ export function readConfig(): AppConfig {
     return {
       registryRoot:
         typeof raw.registryRoot === "string" ? raw.registryRoot : null,
-      registrySource:
-        raw.registrySource === "local" || raw.registrySource === "github"
-          ? raw.registrySource
-          : null,
       dismissedUpdateVersion:
         typeof raw.dismissedUpdateVersion === "string"
           ? raw.dismissedUpdateVersion
@@ -112,14 +105,6 @@ export function setRegistryRoot(v: string): void {
   _registryRoot = v;
 }
 
-let _registrySource: RegistrySource = "local";
-export function getRegistrySource(): RegistrySource {
-  return _registrySource;
-}
-export function setRegistrySource(v: RegistrySource): void {
-  _registrySource = v;
-}
-
 let _linkedRepo: LinkedRepoMetadata | null = null;
 export function getLinkedRepo(): LinkedRepoMetadata | null {
   return _linkedRepo;
@@ -158,7 +143,6 @@ export function persistConfig(): void {
   const existing = readConfig();
   writeConfig({
     registryRoot: _registryRoot,
-    registrySource: _registrySource,
     dismissedUpdateVersion: _dismissedUpdateVersion,
     linkedRepo: _linkedRepo,
     weakStorageNoticeDismissedFor: existing.weakStorageNoticeDismissedFor,

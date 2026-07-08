@@ -16,15 +16,13 @@ import {
   NO_ROOT_MSG,
   persistConfig,
   setLinkedRepo,
-  setRegistrySource,
 } from "./main-state.js";
 import { IPC, type LinkedRepoMetadata, type UserRepo } from "../shared/ipc.js";
 
 /**
- * v0.11.9 M8: commit the github-linked-mode flip atomically.
+ * Commit a newly-linked repo atomically: update state, then persist.
  */
 function commitGithubLinkage(meta: LinkedRepoMetadata): void {
-  setRegistrySource("github");
   setLinkedRepo(meta);
   persistConfig();
 }

@@ -73,7 +73,6 @@ export const IPC = {
   dismissWeakStorageNotice: "app:dismissWeakStorageNotice",
   authStatus: "auth:status",
   authIsConfigured: "auth:isConfigured",
-  authSetRegistrySourceLocal: "auth:setRegistrySourceLocal",
   authStartDeviceFlow: "auth:startDeviceFlow",
   authPollDeviceFlow: "auth:pollDeviceFlow",
   authCancelDeviceFlow: "auth:cancelDeviceFlow",
@@ -292,18 +291,6 @@ export interface SkillDiffRequest {
 }
 
 /**
- * Legacy mode discriminator. Kept as a derived alias on `AuthStatus`
- * for one release as a migration safety net; new code should branch on
- * `linkedRepo` instead. Will be dropped in a follow-up release after
- * the migration has settled.
- *
- * Mapping today: `"github"` ⇒ `linkedRepo !== null`; `"local"` ⇒
- * `linkedRepo === null`; `null` is emitted only on fresh installs that
- * haven't completed onboarding (renderer routes to LoginScreen).
- */
-export type RegistrySource = "local" | "github";
-
-/**
  * Records which GitHub repo the user has linked, when it was last
  * fetched, and the commit SHA we synced from. Written by
  * `reposReplaceRegistry` on every successful fetch; surfaced in
@@ -319,7 +306,6 @@ export interface LinkedRepoMetadata {
 }
 
 export interface AuthStatus {
-  registrySource: RegistrySource | null;
   isAuthConfigured: boolean;
   user: {
     login: string;
@@ -655,7 +641,6 @@ interface SkillsBankAPI {
     registryRoot: string | null;
     configValid: boolean;
     isPackaged: boolean;
-    registrySource: RegistrySource | null;
     dismissedUpdateVersion: string | null;
     /**
      * Electron's currently-selected `safeStorage` backend. Possible
@@ -696,7 +681,6 @@ interface SkillsBankAPI {
   setDismissedUpdateVersion(version: string | null): Promise<void>;
   onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
   authStatus(): Promise<AuthStatus>;
-  authSetRegistrySourceLocal(): Promise<AuthStatus>;
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
   authPollDeviceFlow(flowId: string): Promise<AuthStatus>;
   authCancelDeviceFlow(flowId: string): Promise<void>;

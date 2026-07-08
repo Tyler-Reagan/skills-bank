@@ -18,7 +18,6 @@ import { getStorageBackend } from "./auth.js";
 import {
   getDismissedUpdateVersion,
   getRegistryRoot,
-  getRegistrySource,
   persistConfig,
   readConfig,
   setDismissedUpdateVersion,
@@ -555,7 +554,6 @@ export function registerShellHandlers(): void {
       registryRoot: getRegistryRoot(),
       configValid: getRegistryRoot() !== null,
       isPackaged: app.isPackaged,
-      registrySource: getRegistrySource(),
       dismissedUpdateVersion: getDismissedUpdateVersion(),
       storageBackend: backend,
       showWeakStorageNotice,
