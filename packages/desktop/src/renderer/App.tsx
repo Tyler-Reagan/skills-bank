@@ -472,7 +472,7 @@ function AppContent(): React.ReactElement {
   );
 
   // Re-fetch from the currently linked GitHub repo, no picker.
-  const refreshLinkedRepo = useCallback(async () => {
+  const importLinkedRepo = useCallback(async () => {
     const r = await window.skillsBank.reposRefreshCurrent();
     if (r.ok) {
       flash(r.message);
@@ -571,7 +571,7 @@ function AppContent(): React.ReactElement {
   }, [latestUpdateStatus, flash]);
 
   // macOS menu-bar dispatch. The native menubar still fires a small
-  // set of actions (Settings, Refresh, Sync skills) — the in-app
+  // set of actions (Settings, Refresh, Check for updates) — the in-app
   // header dropdown is gone, but the menubar stays. Filter to the
   // actions the menubar actually dispatches; ignore the rest.
   useEffect(() => {
@@ -645,8 +645,8 @@ function AppContent(): React.ReactElement {
           onToggleTheme={toggleTheme}
           density={density}
           onToggleDensity={toggleDensity}
-          syncing={false}
-          onSync={() => undefined}
+          importingLinkedRepo={false}
+          onImportLinkedRepo={() => undefined}
           authStatus={null}
           onOpenAccount={() => undefined}
           onOpenSettings={() => undefined}
@@ -691,8 +691,8 @@ function AppContent(): React.ReactElement {
         onToggleTheme={toggleTheme}
         density={density}
         onToggleDensity={toggleDensity}
-        syncing={false}
-        onSync={() => void refreshLinkedRepo()}
+        importingLinkedRepo={false}
+        onImportLinkedRepo={() => void importLinkedRepo()}
         authStatus={authStatus}
         onOpenAccount={() => openModal({ kind: "account" })}
         onOpenSettings={() => openModal({ kind: "settings" })}
@@ -942,7 +942,7 @@ function AppContent(): React.ReactElement {
         setSelected={setSelected}
         importingManifest={importingManifest}
         cancelManifestImport={cancelManifestImport}
-        refreshLinkedRepo={refreshLinkedRepo}
+        importLinkedRepo={importLinkedRepo}
         latestUpdateStatus={latestUpdateStatus}
         setDismissedUpdateVersion={setDismissedUpdateVersion}
         resolveAllTarget={resolveAllTarget}

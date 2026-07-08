@@ -139,7 +139,7 @@ describe("diffManifests", () => {
     expect(diff.unchanged).toEqual(["keep"]);
   });
 
-  test("push preview convention: diffManifests(local, remote) describes remote changes", () => {
+  test("export preview convention: diffManifests(local, remote) describes remote changes", () => {
     const local = makeManifest([{ name: "skill-a" }, { name: "skill-b" }]);
     const remote = makeManifest([{ name: "skill-a" }]);
     const diff = diffManifests(local, remote);

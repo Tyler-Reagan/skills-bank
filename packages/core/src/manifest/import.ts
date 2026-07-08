@@ -128,7 +128,7 @@ export interface ImportRegistryManifestOptions {
    * should be deleted from the local registry — typically the local
    * skills that a three-way merge resolved as "deleted upstream" (so
    * the deletion propagates rather than silently resurrecting on the
-   * next push). Each name is removed via `deleteFromBankSkill` (bank
+   * next export). Each name is removed via `deleteFromBankSkill` (bank
    * copy + agent-dir symlinks) AFTER the additive pass.
    *
    * Defaulting to additive-only when omitted is deliberate: the broad

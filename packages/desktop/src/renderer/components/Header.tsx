@@ -47,13 +47,13 @@ interface Props {
   density: Density;
   onToggleDensity: () => void;
   /**
-   * Universal upstream-refresh action. The separate "Sync skills"
-   * affordance retired — bundled-default and custom-repo users both
-   * refresh against a GitHub tarball via the same diff-before-apply
-   * path, falling back to `BUNDLED_REPO` when no repo is linked.
+   * Import from the Linked Repo: re-fetch its manifest and reconcile
+   * the local Registry to match (the blunt path — a replace, not the
+   * three-way merge behind Account → Import manifest). Hidden when on
+   * the bundled default (no repo linked).
    */
-  syncing: boolean;
-  onSync: () => void;
+  importingLinkedRepo: boolean;
+  onImportLinkedRepo: () => void;
   authStatus: AuthStatus | null;
   onOpenAccount: () => void;
   onOpenSettings: () => void;
@@ -124,8 +124,8 @@ export function Header({
   onToggleTheme,
   density,
   onToggleDensity,
-  syncing,
-  onSync,
+  importingLinkedRepo,
+  onImportLinkedRepo,
   authStatus,
   onOpenAccount,
   onOpenSettings,
@@ -148,22 +148,22 @@ export function Header({
   const isBundledDefault = !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
   const sourceChipText = isBundledDefault ? "Bundled" : linkedRepo!.fullName;
 
-  // Brief "Pulled" done-state on syncing→idle transition. Auto-fades
-  // after 1.5s so a successful pull with zero content delta still has
-  // a visible "operation completed" signal — without it, the spinner
-  // stops and the grid looks unchanged.
-  const [pullDoneAt, setPullDoneAt] = React.useState<number | null>(null);
-  const prevSyncingRef = React.useRef(syncing);
+  // Brief "Imported" done-state on importingLinkedRepo→idle transition.
+  // Auto-fades after 1.5s so a successful import with zero content delta
+  // still has a visible "operation completed" signal — without it, the
+  // spinner stops and the grid looks unchanged.
+  const [importDoneAt, setImportDoneAt] = React.useState<number | null>(null);
+  const prevImportingRef = React.useRef(importingLinkedRepo);
   React.useEffect(() => {
-    const wasSyncing = prevSyncingRef.current;
-    prevSyncingRef.current = syncing;
-    if (wasSyncing && !syncing) {
-      setPullDoneAt(Date.now());
-      const t = setTimeout(() => setPullDoneAt(null), 1500);
+    const wasImporting = prevImportingRef.current;
+    prevImportingRef.current = importingLinkedRepo;
+    if (wasImporting && !importingLinkedRepo) {
+      setImportDoneAt(Date.now());
+      const t = setTimeout(() => setImportDoneAt(null), 1500);
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [syncing]);
+  }, [importingLinkedRepo]);
   return (
     <header className="header">
       <h1 className="visually-hidden">skills-bank</h1>
@@ -231,29 +231,29 @@ export function Header({
           {!isBundledDefault && (
             <button
               className="refresh-btn"
-              disabled={syncing}
-              title={`Resync your local bank with ${linkedRepo!.fullName}: re-fetch its manifest and mirror the current published set. This is a replace, not a merge — for a 3-way merge that preserves local edits, use Account → Import manifest.`}
+              disabled={importingLinkedRepo}
+              title={`Import from ${linkedRepo!.fullName}: re-fetch its manifest and reconcile the local bank to match. This is a replace, not a merge — for a 3-way merge that preserves local edits, use Account → Import manifest.`}
               aria-label={
-                syncing
-                  ? `Pulling from ${linkedRepo!.fullName}`
-                  : pullDoneAt !== null
-                    ? `Pulled from ${linkedRepo!.fullName}`
-                    : `Pull from ${linkedRepo!.fullName}`
+                importingLinkedRepo
+                  ? `Importing from ${linkedRepo!.fullName}`
+                  : importDoneAt !== null
+                    ? `Imported from ${linkedRepo!.fullName}`
+                    : `Import from ${linkedRepo!.fullName}`
               }
-              onClick={onSync}
+              onClick={onImportLinkedRepo}
             >
-              {syncing ? (
+              {importingLinkedRepo ? (
                 <>
                   <span className="spinner inline" aria-hidden="true" />{" "}
-                  Pulling…
+                  Importing…
                 </>
-              ) : pullDoneAt !== null ? (
+              ) : importDoneAt !== null ? (
                 <>
-                  <Icon name="check" size="md" /> Pulled
+                  <Icon name="check" size="md" /> Imported
                 </>
               ) : (
                 <>
-                  <Icon name="download" size="md" /> Pull from{" "}
+                  <Icon name="download" size="md" /> Import from{" "}
                   {linkedRepo!.fullName}
                 </>
               )}

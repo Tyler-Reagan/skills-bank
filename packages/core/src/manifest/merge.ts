@@ -12,12 +12,12 @@ import { getStateDir } from "../shared/paths.js";
 
 /**
  * Three-way merge of registry manifests — the engine behind git-like
- * push/pull that preserves intentional divergence WITHOUT a git merge
- * driver and WITHOUT decomposing the manifest into per-skill files.
+ * export/import that preserves intentional divergence WITHOUT a git
+ * merge driver and WITHOUT decomposing the manifest into per-skill files.
  *
- *   - `base`   — the last-synced manifest snapshot (the merge base).
+ *   - `base`   — the last merge-base manifest snapshot.
  *   - `ours`   — the local registry's current export (pre-write).
- *   - `theirs` — the repo's current committed manifest (fetched on pull).
+ *   - `theirs` — the repo's current committed manifest (fetched on import).
  *
  * Per skill, the outcome follows the classic three-way table, where an
  * absent entry is itself a value (so deletions merge like edits):
@@ -309,9 +309,9 @@ const MERGE_BASE_FILE = "merge-base.json";
  * The merge base: this machine's best knowledge of the LINKED REPO's
  * manifest content — a per-machine remote-tracking reference, not a
  * shared file. Advanced to the remote's content after every successful
- * sync (to `theirs` after a pull-merge, to the pushed manifest after a
- * push), so the next `mergeManifests` can tell "we changed this" from
- * "they changed this". `null` before the first sync, which the caller
+ * transfer (to `theirs` after an Import, to the pushed manifest after an
+ * Export), so the next `mergeManifests` can tell "we changed this" from
+ * "they changed this". `null` before the first transfer, which the caller
  * treats as an empty base (everything reads as added).
  *
  * Stored canonically (via `serializeManifest`) so it doesn't churn, and

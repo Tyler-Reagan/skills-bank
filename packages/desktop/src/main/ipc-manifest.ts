@@ -43,8 +43,8 @@ import {
 } from "./main-state.js";
 import {
   IPC,
-  type PreviewManifestPushResult,
-  type PushManifestToRepoResult,
+  type PreviewManifestExportResult,
+  type ExportManifestToRepoResult,
   type ReadManifestFromRepoResult,
   type ResolveManifestConflictsResult,
   type RunManifestMergeResult,
@@ -228,8 +228,8 @@ export function registerManifestHandlers(): void {
   });
 
   ipcMain.handle(
-    IPC.previewManifestPush,
-    async (): Promise<PreviewManifestPushResult> => {
+    IPC.previewManifestExport,
+    async (): Promise<PreviewManifestExportResult> => {
       const registryRoot = getRegistryRoot();
       const linkedRepo = getLinkedRepo();
       if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
@@ -265,8 +265,11 @@ export function registerManifestHandlers(): void {
   );
 
   ipcMain.handle(
-    IPC.pushManifestToRepo,
-    async (_e, opts: { asPR: boolean }): Promise<PushManifestToRepoResult> => {
+    IPC.exportManifestToRepo,
+    async (
+      _e,
+      opts: { asPR: boolean },
+    ): Promise<ExportManifestToRepoResult> => {
       const registryRoot = getRegistryRoot();
       const linkedRepo = getLinkedRepo();
       if (!registryRoot)
@@ -317,7 +320,7 @@ export function registerManifestHandlers(): void {
             ok: false,
             reason: "diverged",
             message:
-              "The linked repo changed since your last sync — pull & merge before pushing.",
+              "The linked repo changed since you last imported — Import before exporting.",
           };
         }
         const { writeRepoFile } = await import("@skills-bank/core");
@@ -372,7 +375,7 @@ export function registerManifestHandlers(): void {
             serializeManifest(baseManifest)
           ) {
             warning =
-              "The linked repo changed since your last sync — the PR may not reflect the latest remote. Review it carefully or pull & merge first.";
+              "The linked repo changed since you last imported — the PR may not reflect the latest remote. Review it carefully or Import first.";
           }
         }
       }

@@ -54,7 +54,7 @@ export function ManifestModal({
             className={`manifest-transport-btn ${transport === "repo" ? "btn primary" : "btn"}`}
             onClick={() => setTransport("repo")}
           >
-            {mode === "export" ? "Push to" : "Read from"} repo
+            {mode === "export" ? "Export to" : "Read from"} repo
           </button>
           <button
             type="button"

@@ -4,21 +4,21 @@ import archiver from "archiver";
 import { findEntry, resolveEntryPath } from "../registry/walk.js";
 import { buildRegistryIndex } from "../registry/build.js";
 
-export type ExportKind = "standalone" | "bundled";
+export type ExtractKind = "standalone" | "bundled";
 
-export interface ExportInfo {
+export interface ExtractInfo {
   name: string;
-  kind: ExportKind;
+  kind: ExtractKind;
   /**
-   * Absolute path to the source. For standalone exports this is the
-   * SKILL.md file; for bundled exports it's the skill directory.
+   * Absolute path to the source. For standalone extracts this is the
+   * SKILL.md file; for bundled extracts it's the skill directory.
    */
   sourcePath: string;
   /** Default filename (with extension) to suggest in a save dialog. */
   suggestedFilename: string;
   /**
    * Files inside the skill directory. Useful for the UI to explain *why*
-   * the export will be a zip rather than a raw .md.
+   * the extract will be a zip rather than a raw .md.
    */
   contents: string[];
 }
@@ -26,11 +26,14 @@ export interface ExportInfo {
 const STANDALONE_ALLOWED = new Set(["SKILL.md"]);
 
 /**
- * Inspect a registry skill folder and decide how it should be exported.
+ * Inspect a registry skill folder and decide how it should be extracted.
  * Standalone (raw SKILL.md) when the folder contains nothing other than
  * SKILL.md; otherwise bundled (zip).
  */
-export function getExportInfo(registryRoot: string, name: string): ExportInfo {
+export function getExtractInfo(
+  registryRoot: string,
+  name: string,
+): ExtractInfo {
   const index = buildRegistryIndex(registryRoot);
   const entry = findEntry(index, name);
   if (!entry) {
@@ -44,7 +47,7 @@ export function getExportInfo(registryRoot: string, name: string): ExportInfo {
   }
   const skillMd = path.join(skillDir, "SKILL.md");
   if (!fs.existsSync(skillMd)) {
-    // No SKILL.md at all — bundled is the only sensible export.
+    // No SKILL.md at all — bundled is the only sensible extract.
     const contents = fs.readdirSync(skillDir);
     return {
       name,
@@ -74,24 +77,24 @@ export function getExportInfo(registryRoot: string, name: string): ExportInfo {
   };
 }
 
-export interface ExportResult {
+export interface ExtractResult {
   name: string;
-  kind: ExportKind;
+  kind: ExtractKind;
   destPath: string;
   bytesWritten: number;
 }
 
 /**
- * Write the export to disk. For standalone, copies SKILL.md to destPath.
+ * Write the extract to disk. For standalone, copies SKILL.md to destPath.
  * For bundled, zips the entire skill directory under a top-level folder
  * named after the skill (so unzipping yields `<name>/SKILL.md`, etc).
  */
-export async function exportSkill(
+export async function extractSkill(
   registryRoot: string,
   name: string,
   destPath: string,
-): Promise<ExportResult> {
-  const info = getExportInfo(registryRoot, name);
+): Promise<ExtractResult> {
+  const info = getExtractInfo(registryRoot, name);
   const absDest = path.resolve(destPath);
   fs.mkdirSync(path.dirname(absDest), { recursive: true });
 
@@ -106,7 +109,7 @@ export async function exportSkill(
     };
   }
 
-  return await new Promise<ExportResult>((resolve, reject) => {
+  return await new Promise<ExtractResult>((resolve, reject) => {
     const output = fs.createWriteStream(absDest);
     const archive = archiver("zip", { zlib: { level: 9 } });
     let settled = false;

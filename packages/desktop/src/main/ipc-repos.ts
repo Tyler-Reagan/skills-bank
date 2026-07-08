@@ -67,10 +67,10 @@ export async function replaceRegistryWithRepo(fullName: string): Promise<{
     );
     applyRestoredLabels(restoredLabels);
     // Establish the merge base at link time (finding F3). Without this the
-    // first pull&merge runs with readMergeBase() === null → every co-present
+    // first Import runs with readMergeBase() === null → every co-present
     // skill reads as both-added and any signature diff becomes a spurious
-    // conflict; the direct-push guard would also see universal divergence.
-    // The fetched remote manifest is exactly that base — mirrors the pull
+    // conflict; the direct-commit guard would also see universal divergence.
+    // The fetched remote manifest is exactly that base — mirrors the Import
     // path (ipc-manifest runManifestMerge). syncedFromCommit stays unset:
     // fetchRemoteManifest carries no SHA and the guard compares manifests.
     writeMergeBase(registryRoot, remote.manifest);

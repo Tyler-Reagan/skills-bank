@@ -8,7 +8,7 @@ export * from "./skills/install.js";
 export * from "./skills/installed.js";
 export * from "./skills/register.js";
 export * from "./skills/conflicts.js";
-export * from "./skills/export.js";
+export * from "./skills/extract.js";
 export * from "./manifest/manifest.js";
 export * from "./manifest/import.js";
 export * from "./github/url.js";

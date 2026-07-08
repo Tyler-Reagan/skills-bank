@@ -9,7 +9,7 @@ import {
   computeFolderDiff,
   deleteUnregisteredSkill,
   detachOrigin,
-  exportSkill,
+  extractSkill,
   finalizeSkillsDir,
   findSkillFolder,
   folderPathFromSkillPath,
@@ -18,7 +18,7 @@ import {
   getAgent,
   getAgentSkillsDir,
   getDefaultInstallAgents,
-  getExportInfo,
+  getExtractInfo,
   hashSkillFolder,
   installSkillFiles,
   isGithubUrl,
@@ -630,20 +630,20 @@ export function registerRegistryHandlers(): void {
     return listTopLevelSymlinks();
   });
 
-  ipcMain.handle(IPC.exportInfo, (_e, name: string) => {
+  ipcMain.handle(IPC.extractInfo, (_e, name: string) => {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) throw new Error(NO_ROOT_MSG);
-    return getExportInfo(registryRoot, name);
+    return getExtractInfo(registryRoot, name);
   });
 
-  ipcMain.handle(IPC.exportSkill, async (_e, name: string) => {
+  ipcMain.handle(IPC.extractSkill, async (_e, name: string) => {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
     try {
-      const info = getExportInfo(registryRoot, name);
+      const info = getExtractInfo(registryRoot, name);
       const win = BrowserWindow.getFocusedWindow();
       const result = await dialog.showSaveDialog(win ?? undefined!, {
-        title: `Export ${name}`,
+        title: `Extract ${name}`,
         defaultPath: info.suggestedFilename,
         filters:
           info.kind === "standalone"
@@ -651,12 +651,12 @@ export function registerRegistryHandlers(): void {
             : [{ name: "Zip Archive", extensions: ["zip"] }],
       });
       if (result.canceled || !result.filePath) {
-        return { ok: false, message: "export cancelled" };
+        return { ok: false, message: "extract cancelled" };
       }
-      const r = await exportSkill(registryRoot, name, result.filePath);
+      const r = await extractSkill(registryRoot, name, result.filePath);
       return {
         ok: true,
-        message: `exported ${name} (${r.kind}) → ${r.destPath}`,
+        message: `extracted ${name} (${r.kind}) → ${r.destPath}`,
         result: r,
       };
     } catch (err) {

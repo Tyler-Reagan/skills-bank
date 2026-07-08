@@ -57,7 +57,7 @@ export type PrimaryAction =
 export interface DrawerCapabilities {
   canInstall: boolean;
   canManageLinks: boolean;
-  canExport: boolean;
+  canExtract: boolean;
   canRevealInFinder: boolean;
   /**
    * Deletion of registered skills routes through Unregister first,
@@ -122,7 +122,7 @@ export interface DrawerStateClassification {
 const NEVER: DrawerCapabilities = {
   canInstall: false,
   canManageLinks: false,
-  canExport: false,
+  canExtract: false,
   canRevealInFinder: false,
   canDeleteFromBank: false,
   canUnregister: false,
@@ -186,7 +186,7 @@ export function classifyDrawerState(
           canManageLinks: hasAnyInstallation,
           // Drift "keep my edits": sever the origin and rehome local.
           canDetachLocal: true,
-          canExport: true,
+          canExtract: true,
           canUnregister: true,
           primary: hasAnyInstallation ? "manage-links" : "install",
         },
@@ -201,7 +201,7 @@ export function classifyDrawerState(
         canRevealInFinder: true,
         canInstall: !hasAnyInstallation,
         canManageLinks: hasAnyInstallation,
-        canExport: true,
+        canExtract: true,
         canUnregister: true,
         primary: hasAnyInstallation ? "manage-links" : "install",
       },
@@ -233,7 +233,7 @@ export function classifyDrawerState(
         // detach-to-local as the escape (ADR-0012).
         canRestoreOrigin: true,
         canDetachLocal: true,
-        canExport: true,
+        canExtract: true,
         canUnregister: true,
         primary: "restore-origin",
       },
@@ -253,7 +253,7 @@ export function classifyDrawerState(
         canRevealInFinder: true,
         canInstall: !hasAnyInstallation,
         canManageLinks: hasAnyInstallation,
-        canExport: true,
+        canExtract: true,
         canUpdate: true,
         canUnregister: true,
         primary: "update",
@@ -370,7 +370,7 @@ export function classifyDrawerState(
         ...NEVER,
         canInstall: true, // secondary; will route to InstallConflictModal
         canManageLinks: true,
-        canExport: true,
+        canExtract: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
         canUnregister: true,
@@ -389,7 +389,7 @@ export function classifyDrawerState(
       capabilities: {
         ...NEVER,
         canManageLinks: true,
-        canExport: true,
+        canExtract: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
         canUnregister: true,
@@ -407,7 +407,7 @@ export function classifyDrawerState(
       capabilities: {
         ...NEVER,
         canInstall: true, // reinstall replaces broken with fresh symlinks
-        canExport: true,
+        canExtract: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
         canUnregister: true,
@@ -425,7 +425,7 @@ export function classifyDrawerState(
       capabilities: {
         ...NEVER,
         canManageLinks: true,
-        canExport: true,
+        canExtract: true,
         canRevealInFinder: true,
         canDeleteFromBank: true,
         canUnregister: true,
@@ -445,7 +445,7 @@ export function classifyDrawerState(
       // No installations yet → nothing to manage; Install is the
       // entry point. Manage links appears once links exist.
       canManageLinks: false,
-      canExport: true,
+      canExtract: true,
       canRevealInFinder: true,
       canDeleteFromBank: true,
       canUnregister: true,

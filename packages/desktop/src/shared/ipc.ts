@@ -6,8 +6,8 @@ import type {
   ConflictResolveDecision,
   ConflictResolveReport,
   DiagnosticReport,
-  ExportInfo,
-  ExportResult,
+  ExtractInfo,
+  ExtractResult,
   FinalizeResult,
   ImportRegistryManifestResult,
   ImportSkillOutcome,
@@ -59,8 +59,8 @@ export const IPC = {
   rebuildIndex: "skills:rebuildIndex",
   finalize: "skills:finalize",
   listTopLevelSymlinks: "agents:listTopLevelSymlinks",
-  exportInfo: "skills:exportInfo",
-  exportSkill: "skills:export",
+  extractInfo: "skills:extractInfo",
+  extractSkill: "skills:extract",
   readSkillMd: "skills:readSkillMd",
   openInFinder: "skills:openInFinder",
   getConfig: "skills:getConfig",
@@ -88,8 +88,8 @@ export const IPC = {
   importManifest: "bank:importManifest",
   importManifestCancel: "bank:importManifestCancel",
   manifestImportProgress: "bank:manifestImportProgress",
-  previewManifestPush: "bank:previewManifestPush",
-  pushManifestToRepo: "bank:pushManifestToRepo",
+  previewManifestExport: "bank:previewManifestExport",
+  exportManifestToRepo: "bank:exportManifestToRepo",
   readManifestFromRepo: "bank:readManifestFromRepo",
   manifestImportRetrySkill: "bank:manifestImportRetrySkill",
   runManifestMerge: "bank:runManifestMerge",
@@ -445,7 +445,7 @@ interface UnregisterIPCResult extends IPCFailureFields {
   destinationPath?: string;
 }
 
-export type PreviewManifestPushResult =
+export type PreviewManifestExportResult =
   | {
       ok: true;
       diff: ManifestDiff;
@@ -455,7 +455,7 @@ export type PreviewManifestPushResult =
     }
   | { ok: false; message: string; rateLimit?: RateLimitInfo };
 
-export type PushManifestToRepoResult =
+export type ExportManifestToRepoResult =
   | {
       ok: true;
       commitSha: string;
@@ -466,8 +466,8 @@ export type PushManifestToRepoResult =
        * Non-blocking advisory. Set on the PR path when the remote has
        * diverged from the merge base (finding F4): the PR still opens —
        * human review is the backstop — but the caller should warn that the
-       * PR may not reflect the latest remote. Direct push hard-refuses on
-       * divergence instead (reason: "diverged").
+       * PR may not reflect the latest remote. A direct-commit Export
+       * hard-refuses on divergence instead (reason: "diverged").
        */
       warning?: string;
     }
@@ -656,10 +656,10 @@ interface SkillsBankAPI {
   listTopLevelSymlinks(): Promise<
     Array<{ agent: AgentId; resolvedTarget: string; exists: boolean }>
   >;
-  exportInfo(name: string): Promise<ExportInfo>;
-  exportSkill(
+  extractInfo(name: string): Promise<ExtractInfo>;
+  extractSkill(
     name: string,
-  ): Promise<{ ok: boolean; message: string; result?: ExportResult }>;
+  ): Promise<{ ok: boolean; message: string; result?: ExtractResult }>;
   readSkillMd(name: string): Promise<string | null>;
   openInFinder(absolutePath: string): Promise<void>;
   getConfig(): Promise<{
@@ -761,16 +761,16 @@ interface SkillsBankAPI {
    * skills stay on disk. No-op when no import is running.
    */
   importManifestCancel(): Promise<{ ok: boolean }>;
-  /** Preview what a push would change in the linked repo's manifest. */
-  previewManifestPush(): Promise<PreviewManifestPushResult>;
-  /** Push the local manifest to the linked repo (direct commit or PR). */
-  pushManifestToRepo(opts: {
+  /** Preview what an export would change in the linked repo's manifest. */
+  previewManifestExport(): Promise<PreviewManifestExportResult>;
+  /** Export the local manifest to the linked repo (direct commit or PR). */
+  exportManifestToRepo(opts: {
     asPR: boolean;
-  }): Promise<PushManifestToRepoResult>;
+  }): Promise<ExportManifestToRepoResult>;
   /** Read the manifest from the linked repo and diff it against local. */
   readManifestFromRepo(): Promise<ReadManifestFromRepoResult>;
   /**
-   * Pull from the linked repo as a three-way merge: fetch the remote
+   * Import from the linked repo as a three-way merge: fetch the remote
    * manifest (`theirs`), load the stored merge base, export the local
    * registry (`ours`), and merge. A clean merge reconciles locally and
    * advances the base; conflicts are persisted and surfaced through the
@@ -788,8 +788,8 @@ interface SkillsBankAPI {
    * Apply the user's resolver decisions to the queued merge: fold each
    * choice into the merged manifest, reconcile the local registry
    * (import adds/restores, delete confirmed removals, fork `keep-both`),
-   * then clear the pending file. Pushing the merged manifest upstream is
-   * a separate action.
+   * then clear the pending file. Exporting the merged manifest upstream
+   * is a separate action.
    */
   resolveManifestConflicts(
     decisions: ManifestDecisions,
