@@ -10,9 +10,9 @@ You may be on an older version where this was a bug. Update to the latest build 
 
 A few causes:
 
-- **Bundled default, first launch in progress** — the registry is being seeded. Wait a moment and click **Refresh**.
-- **Linked custom repo with no `skills/` directory** — the chosen repo must have skill folders (each with `SKILL.md`) somewhere it can be walked by convention. Switch repos via Account → **Change linked repo**.
-- **Self-host build, missing seed** — see [Self-hosting](/self-host).
+- **Fresh install, nothing added yet.** Expected — there's no default skill set. Add skills via **Discover**, author one locally (Register), or link a repo.
+- **Linked a repo with no `registry-manifest.json` committed yet.** Linking imports nothing until a manifest exists — build up your registry locally, then **Export manifest** to seed the repo. See [Sign in with GitHub](/guides/sign-in).
+- **Linked custom repo with no `skills/` directory.** The chosen repo must have skill folders (each with `SKILL.md`) somewhere it can be walked by convention. Switch repos via Account → **Repository → Change**.
 
 If the **Refresh** button is showing in the empty state, click it. The app re-reads the registry from disk.
 
@@ -68,7 +68,7 @@ Set `unset SKILLS_BANK_ROOT` in your shell first if you've been pointing the app
 It removes the app bundle, the app-managed registry + userData, logs/caches/preferences, the dev-mode redirect dir (`~/.skills-bank-dev/`), and **only** the agent-directory symlinks that point into the Skills Bank registry — your own skills (real directories, or symlinks pointing elsewhere) are left untouched.
 
 > [!WARNING]
-> A full uninstall deletes the app-managed registry — the skills in your bank and their content. If your registry isn't pushed to a linked GitHub repo, that's unrecoverable. Run `--dry-run` first, or [move your registry](/guides/manifest) somewhere safe before uninstalling. Use `--keep-data` to remove the app but preserve the registry.
+> A full uninstall deletes the app-managed registry — the skills in your bank and their content. If your registry isn't exported to a linked GitHub repo, that's unrecoverable. Run `--dry-run` first, or [move your registry](/guides/manifest) somewhere safe before uninstalling. Use `--keep-data` to remove the app but preserve the registry.
 
 Prefer to do it by hand? Quit the app, drag **Skills Bank** from `/Applications` to the Trash, then delete `~/Library/Application Support/@skills-bank/` and `~/Library/Caches/com.tyler-reagan.skills-bank*`. The leftover agent symlinks under `~/.claude/skills/`, `~/.cursor/skills/`, etc. will be broken afterward — remove the broken ones (the script does this for you).
 
@@ -76,7 +76,7 @@ Prefer to do it by hand? Quit the app, drag **Skills Bank** from `/Applications`
 
 A skill that installs dependencies or writes output into its own folder at runtime (e.g. a `node_modules/` it populates on first use) used to drift to `EDITED` because those generated files changed the folder's content hash. As of **v1.15.0**, drift detection honors the skill's own `.gitignore`, so anything the skill ignores no longer counts as an edit. If you're on v1.15.0+ and still see this, confirm the generated paths are actually listed in the skill's `.gitignore`; only ignored paths are excluded.
 
-## "Sync conflict modal keeps appearing for the same skill"
+## "Registry merge conflicts keep appearing for the same skill"
 
 Decisions are remembered per-skill. If the modal reappears, the upstream version of the skill changed again after your last decision — that's a _new_ conflict, not a stale one. Pick again; the new decision sticks until upstream changes once more.
 
@@ -85,7 +85,7 @@ Decisions are remembered per-skill. If the modal reappears, the upstream version
 Include:
 
 - App version (native app menu → About Skills Bank).
-- Registry source: bundled default vs linked custom repo (Account modal → **Repository**).
+- Registry source: which repo is linked, or "Not linked" (Account modal → **Repository**).
 - Steps to reproduce.
 - The contents of `~/Library/Logs/Skills Bank/main.log` if relevant.
 

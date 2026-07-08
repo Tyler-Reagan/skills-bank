@@ -49,10 +49,10 @@ Click **Manage Labels** in the Registry toolbar to assign or bulk-edit labels ac
 
 ## Next steps
 
-- [Concepts](/concepts) — terms you'll see throughout the app (registry, linked repo, source, agent dir, labels).
+- [Concepts](/concepts) — terms you'll see throughout the app (registry, linked repo, origin, agent dir, labels).
 - [Skill labels](/reference/labels) — full reference for the category taxonomy and freeform tags.
 - [Sign in with GitHub](/guides/sign-in) — link your own repo as your registry source and get 5000 requests/hr.
-- [Move your registry](/guides/manifest) — push a manifest snapshot to your GitHub repo, or pull it on another machine.
+- [Move your registry](/guides/manifest) — export a manifest snapshot to your GitHub repo, or import it on another machine.
 - [Keyboard shortcuts](/reference/keyboard) — keyboard shortcuts reference.
 - [Track skill usage](/guides/metrics) — see which skills you actually invoke, on this machine.
 - [Troubleshooting](/reference/troubleshooting) — common problems and how to recover.
