@@ -521,12 +521,12 @@ select {
   opacity: 0.6;
   cursor: not-allowed;
 }
-.refresh-btn.rescan-working {
+.refresh-btn.origin-probe-working {
   /* Working state keeps standard chrome but is undimmed —
      it's busy, not unavailable. */
   opacity: 1;
 }
-.refresh-btn.rescan-done {
+.refresh-btn.origin-probe-done {
   /* Brief positive confirmation. Lasts ~1.5s before reverting to
      idle. Border/color tint, not a fill — keeps the chrome quiet
      alongside the rest of the header. */
@@ -534,7 +534,7 @@ select {
   color: var(--accent);
   border-color: var(--accent-dim);
 }
-.refresh-btn.rescan-done-actionable {
+.refresh-btn.origin-probe-done-actionable {
   /* Updates>0: the button now hosts the View deep-link. Sits in
      done-state indefinitely until clicked, so give it a steady
      accent border so it reads as the active CTA in the header. */
@@ -542,7 +542,7 @@ select {
   background: var(--accent-dim);
   cursor: pointer;
 }
-.rescan-view-cta {
+.origin-probe-view-cta {
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -3267,38 +3267,6 @@ button:disabled {
   color: var(--danger);
 }
 
-/* ── LocalScan section ─────────────────────────────────── */
-.local-scan-category {
-  margin-bottom: 12px;
-}
-.local-scan-category-title {
-  margin: 8px 0 4px;
-  font-size: 13px;
-  color: var(--text-2);
-}
-.local-scan-item-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.local-scan-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  font-size: 12px;
-}
-.local-scan-item-name {
-  min-width: 0;
-  flex: 1;
-}
-
 /* ── SettingsModal section/group styles ─────────────────── */
 .settings-hint {
   font-size: 12px;
@@ -4256,7 +4224,7 @@ button:disabled {
   margin-bottom: 4px;
 }
 
-/* ── UpdateNotesModal ──────────────────────────────────── */
+/* ── AppUpdateNotesModal ───────────────────────────────── */
 .update-notes-scroll {
   flex: 1;
   overflow-y: auto;
@@ -4302,7 +4270,7 @@ button:disabled {
   text-align: right;
 }
 
-/* ── UpdatesModal ──────────────────────────────────────── */
+/* ── SkillUpdatesModal ─────────────────────────────────── */
 .updates-modal-count-badge {
   display: inline-block;
   margin-left: 6px;
@@ -4678,43 +4646,6 @@ button:disabled {
   gap: var(--s2);
   justify-content: flex-end;
   padding-top: var(--s3);
-}
-
-/* ── Labels first-run banner ──────────────────────────────────────────── */
-.labels-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s3);
-  padding: var(--s3) var(--s4);
-  margin-bottom: 10px;
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--text-2);
-}
-.labels-banner-text {
-  flex: 1;
-  margin-bottom: 10px;
-}
-.labels-banner-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  flex-shrink: 0;
-}
-.labels-banner-dismiss {
-  background: none;
-  border: none;
-  color: var(--text-3);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 4px;
-  line-height: 1;
-}
-.labels-banner-dismiss:hover {
-  color: var(--text-1);
 }
 
 /* ── ManageLabelsModal ───────────────────────────────────────────────────── */

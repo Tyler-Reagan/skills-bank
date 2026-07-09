@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type RescanState } from "../components/Header.js";
+import { type OriginProbeState } from "../components/Header.js";
 import { type RegistryFilterTag } from "../components/browseFilters.js";
 import { type TabId } from "../components/Tabs.js";
 
@@ -29,34 +29,35 @@ interface Args {
 }
 
 interface Result {
-  state: RescanState;
-  onRefreshClick: () => Promise<void>;
-  onViewUpdates: () => void;
+  state: OriginProbeState;
+  onCheckSkillUpdates: () => Promise<void>;
+  onViewSkillUpdates: () => void;
 }
 
 /**
- * Owns the Header Rescan button's state machine end-to-end:
- *   - the `rescanState` itself,
+ * Owns the Header "Check for skill updates" button's state machine
+ * end-to-end:
+ *   - the `originProbeState` itself,
  *   - the `userTriggeredProbe` gate that distinguishes header-driven
  *     probes from boot/periodic probes,
  *   - the `doneTimer` that auto-fades the done-state when there are no
  *     updates (and is held indefinitely when there are, so the "View"
  *     CTA stays put),
- *   - the `onUpstreamProbeComplete` subscription that advances the
+ *   - the `onOriginProbeComplete` subscription that advances the
  *     machine and routes rate-limit failures to a sticky-error toast.
  *
  * The hook also surfaces the rate-limit toast's "Sign in" CTA via the
  * `onRequestSignIn` callback so the caller can wire it to whatever
  * account-modal mechanism it owns.
  */
-export function useRescanController({
+export function useOriginProbe({
   refresh,
   flashError,
   setRegistryFilters,
   setTabPersisted,
   onRequestSignIn,
 }: Args): Result {
-  const [state, setState] = useState<RescanState>({ phase: "idle" });
+  const [state, setState] = useState<OriginProbeState>({ phase: "idle" });
   const userTriggeredProbeRef = useRef(false);
   const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -67,7 +68,7 @@ export function useRescanController({
     [],
   );
 
-  const onRefreshClick = useCallback(async () => {
+  const onCheckSkillUpdates = useCallback(async () => {
     // Full sweep: rebuild the index (which lock-file-scans + persists +
     // fires the probe), then re-fetch the registry. The probe runs
     // async on the main side — we flip the button into "working" and
@@ -88,10 +89,10 @@ export function useRescanController({
     }
   }, [refresh]);
 
-  // Main process completes an upstream probe → re-fetch registry so
-  // the new `upstreamUpdateAvailable` flags surface as card chips,
+  // Main process completes an origin probe → re-fetch registry so
+  // the new `skillUpdateAvailable` flags surface as card chips,
   // surface rate-limit failures as a sticky error toast, and advance
-  // the user-triggered Rescan button's state machine (working → done
+  // the user-triggered button's state machine (working → done
   // → idle, or working → idle on rate-limit).
   useEffect(() => {
     if (!window.skillsBank.onOriginProbeComplete) return;
@@ -122,9 +123,9 @@ export function useRescanController({
               : ""),
         });
       }
-      // Advance the Rescan button's state machine only when the user
-      // started the probe via the header click. Boot probes and the
-      // 6h periodic both fire this event too — letting them drive the
+      // Advance the button's state machine only when the user started
+      // the probe via the header click. Boot probes and the 6h
+      // periodic both fire this event too — letting them drive the
       // button would surprise the user with a "checking…" flash on
       // every launch.
       if (userTriggeredProbeRef.current) {
@@ -140,8 +141,8 @@ export function useRescanController({
           // Updates>0 case: the button now hosts an actionable "View"
           // CTA. Don't auto-fade — the user dismisses it by clicking
           // View (which navigates and clears the state) or by
-          // clicking Rescan again. Auto-fading here would yank the
-          // affordance out from under a slow reader.
+          // clicking "Check for skill updates" again. Auto-fading here
+          // would yank the affordance out from under a slow reader.
           if (updates === 0) {
             doneTimerRef.current = setTimeout(
               () => setState({ phase: "idle" }),
@@ -154,12 +155,12 @@ export function useRescanController({
     });
   }, [refresh, flashError, onRequestSignIn]);
 
-  // Rescan done-state "View" deep-link. Flip the Updates chip on,
-  // bounce the user into Browse, scroll the grid to the top, then
-  // clear the done badge. Owns the doneTimer too — a stale timer
-  // left over from updates=0 transitions would otherwise pull the
-  // rug while the user reads the filtered grid.
-  const onViewUpdates = useCallback(() => {
+  // Done-state "View" deep-link. Flip the Updates chip on, bounce the
+  // user into Browse, scroll the grid to the top, then clear the done
+  // badge. Owns the doneTimer too — a stale timer left over from
+  // updates=0 transitions would otherwise pull the rug while the user
+  // reads the filtered grid.
+  const onViewSkillUpdates = useCallback(() => {
     if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
     setRegistryFilters(new Set<RegistryFilterTag>(["updates"]));
     setTabPersisted("browse");
@@ -173,5 +174,5 @@ export function useRescanController({
     }, 0);
   }, [setRegistryFilters, setTabPersisted]);
 
-  return { state, onRefreshClick, onViewUpdates };
+  return { state, onCheckSkillUpdates, onViewSkillUpdates };
 }

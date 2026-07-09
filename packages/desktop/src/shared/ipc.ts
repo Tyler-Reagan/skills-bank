@@ -5,7 +5,6 @@ import type {
   BrokenLinkRepairReport,
   ConflictResolveDecision,
   ConflictResolveReport,
-  DiagnosticReport,
   ExtractInfo,
   ExtractResult,
   ImportRegistryManifestResult,
@@ -62,11 +61,11 @@ export const IPC = {
   openInFinder: "skills:openInFinder",
   getConfig: "skills:getConfig",
   setRegistryRoot: "skills:setRegistryRoot",
-  checkForUpdates: "app:checkForUpdates",
-  downloadUpdate: "app:downloadUpdate",
-  quitAndInstallUpdate: "app:quitAndInstallUpdate",
-  updateStatus: "app:updateStatus",
-  setDismissedUpdateVersion: "app:setDismissedUpdateVersion",
+  checkForAppUpdates: "app:checkForUpdates",
+  downloadAppUpdate: "app:downloadUpdate",
+  quitAndInstallAppUpdate: "app:quitAndInstallUpdate",
+  appUpdateStatus: "app:updateStatus",
+  setDismissedAppUpdateVersion: "app:setDismissedUpdateVersion",
   dismissWeakStorageNotice: "app:dismissWeakStorageNotice",
   authStatus: "auth:status",
   authIsConfigured: "auth:isConfigured",
@@ -96,7 +95,6 @@ export const IPC = {
   addFromGithub: "bank:addFromGithub",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
-  localDiagnosticsScan: "diagnostics:scan",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   unregister: "skills:unregister",
   deleteUnregistered: "skills:deleteUnregistered",
@@ -115,7 +113,7 @@ export const IPC = {
   discoverStatus: "discover:status",
   headerMenuAction: "header:action",
   originProbe: "origin:probe",
-  originUpdate: "origin:update",
+  skillUpdate: "origin:update",
   originRepoMetadata: "origin:repoMetadata",
   originLastCommit: "origin:lastCommit",
   originSetManual: "origin:setManual",
@@ -129,7 +127,7 @@ export const IPC = {
 } as const;
 
 /**
- * Renderer → main payload for `upstream:setManual`. Either:
+ * Renderer → main payload for `origin:setManual`. Either:
  * - Stamp a GitHub upstream (`url` + `repo` + `skillPath`). Validated
  *   against `GET /repos/{repo}/contents/{folder}` before writing —
  *   invalid combos return an error and don't mutate.
@@ -141,14 +139,15 @@ export type OriginManualChoice =
   | { url: null };
 
 /**
- * Response for `upstream:update`. Carries structured rate-limit info
- * on 429 so the renderer can render a tailored, sticky error toast
- * with a "Sign in" affordance, instead of a generic transient flash.
+ * Response for `origin:update` (the skill-content-update channel).
+ * Carries structured rate-limit info on 429 so the renderer can
+ * render a tailored, sticky error toast with a "Sign in" affordance,
+ * instead of a generic transient flash.
  *
  * `rateLimit` mirrors core's `RateLimitInfo` shape. Inlined here so
  * the IPC surface doesn't depend on a separately-exported name.
  */
-export interface OriginUpdateResult {
+export interface SkillUpdateResult {
   ok: boolean;
   message: string;
   /** Populated only on rate-limit failures. */
@@ -181,7 +180,7 @@ interface RehomeIntoLinkedRepoIPCResult {
 }
 
 /**
- * Payload broadcast on the `upstream:probe` channel when the probe
+ * Payload broadcast on the `origin:probe` channel when the probe
  * runner finishes a pass. Always sent — when the pass had no
  * surfaceable issues the fields are undefined and the renderer
  * treats the event as a pure "refresh the registry" nudge.
@@ -193,7 +192,7 @@ interface RehomeIntoLinkedRepoIPCResult {
  * unauthenticated hits.
  *
  * Other call sites that emit on this channel purely to nudge a
- * registry refresh (e.g. applyUpstreamUpdate success, upstreamSetManual
+ * registry refresh (e.g. applySkillUpdate success, setManualOrigin
  * success) send an empty payload.
  */
 export interface OriginProbeCompleteEvent {
@@ -208,16 +207,16 @@ export interface OriginProbeCompleteEvent {
   failedRepos?: string[];
   /** Skills whose upstream hash moved past what was recorded — i.e.
    *  how many Update Available chips this probe will produce. Used
-   *  by the Rescan button's "done" state copy. Undefined when the
-   *  event is a non-probe refresh nudge. */
+   *  by the "Check for skill updates" button's "done" state copy.
+   *  Undefined when the event is a non-probe refresh nudge. */
   updates?: number;
 }
 
 /**
- * Summary returned by `upstream:probe`. The renderer uses this to
- * surface progress in the UpdatesModal's manual-refresh control;
+ * Summary returned by `origin:probe`. The renderer uses this to
+ * surface progress in the SkillUpdatesModal's manual-refresh control;
  * per-skill update state is surfaced via the augmented
- * `RegistryEntry.upstreamUpdateAvailable` field on `listRegistry`,
+ * `RegistryEntry.skillUpdateAvailable` field on `listRegistry`,
  * not through this payload.
  */
 export interface OriginProbeResult {
@@ -337,11 +336,10 @@ export type HeaderMenuAction =
   | "openSettings"
   | "openShortcuts"
   | "signOut"
-  | "refresh"
-  | "sync"
-  | "checkForUpdates";
+  | "checkSkillUpdates"
+  | "checkForAppUpdates";
 
-export type UpdateStatus =
+export type AppUpdateStatus =
   | { kind: "idle" }
   | { kind: "checking" }
   | {
@@ -502,9 +500,7 @@ interface SkillsBankAPI {
    */
   setSkillTrackingEnabled(enabled: boolean): Promise<SetTrackingResult>;
   /**
-   * Scan agent dirs (and optionally user-defined custom dirs) for
-   * installed skills. Custom dirs are absolute paths; non-existent
-   * entries and entries that duplicate a known agent dir are skipped.
+   * Scan the fixed Agent Directories for installed skills.
    */
   listInstalled(): Promise<InstalledSkill[]>;
   install(
@@ -543,9 +539,9 @@ interface SkillsBankAPI {
    * Restore an unreachable origin by repointing it at a new GitHub URL
    * (ADR-0012). Parses the URL → repo + skillPath, re-fetches content,
    * and rewrites the origin pointer (rolling back to the prior marker on
-   * failure). Shares `OriginUpdateResult` with `originUpdate`.
+   * failure). Shares `SkillUpdateResult` with `skillUpdate`.
    */
-  repointOrigin(name: string, url: string): Promise<OriginUpdateResult>;
+  repointOrigin(name: string, url: string): Promise<SkillUpdateResult>;
   /**
    * Sever a skill's origin and rehome it as a local skill in `personal/`
    * (ADR-0012). The restore "keep it local" escape and the drift
@@ -579,7 +575,7 @@ interface SkillsBankAPI {
     registryRoot: string | null;
     configValid: boolean;
     isPackaged: boolean;
-    dismissedUpdateVersion: string | null;
+    dismissedAppUpdateVersion: string | null;
     /**
      * Electron's currently-selected `safeStorage` backend. Possible
      * values include `keychain`, `dpapi`, `gnome_libsecret`, `kwallet`,
@@ -609,15 +605,19 @@ interface SkillsBankAPI {
      */
     warning?: string;
   }>;
-  checkForUpdates(): Promise<{
+  checkForAppUpdates(): Promise<{
     ok: boolean;
     message: string;
     error?: AppError;
   }>;
-  downloadUpdate(): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  quitAndInstallUpdate(): Promise<void>;
-  setDismissedUpdateVersion(version: string | null): Promise<void>;
-  onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
+  downloadAppUpdate(): Promise<{
+    ok: boolean;
+    message: string;
+    error?: AppError;
+  }>;
+  quitAndInstallAppUpdate(): Promise<void>;
+  setDismissedAppUpdateVersion(version: string | null): Promise<void>;
+  onAppUpdateStatus(cb: (status: AppUpdateStatus) => void): () => void;
   authStatus(): Promise<AuthStatus>;
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
   authPollDeviceFlow(flowId: string): Promise<AuthStatus>;
@@ -742,13 +742,6 @@ interface SkillsBankAPI {
     name: string,
     agents: AgentId[],
   ): Promise<BrokenLinkRemoveReport>;
-  /**
-   * Local-disk diagnostics aggregator. Walks agent dirs + the registry
-   * index to surface "needs attention" items across four categories
-   * (unregistered installs, broken symlinks, external-target-missing,
-   * registry-folder-missing). Local-only — no network calls.
-   */
-  localDiagnosticsScan(): Promise<DiagnosticReport>;
   resolveSkillConflicts(
     name: string,
     decisions: ConflictResolveDecision[],
@@ -793,7 +786,7 @@ interface SkillsBankAPI {
   manifestImportRetrySkill(
     skill: ManifestSkill,
   ): Promise<{ ok: boolean; outcome?: ImportSkillOutcome; message?: string }>;
-  originUpdate(name: string): Promise<OriginUpdateResult>;
+  skillUpdate(name: string): Promise<SkillUpdateResult>;
   originRepoMetadata(repo: string): Promise<OriginRepoMetadata>;
   originLastCommit(repo: string, skillPath: string): Promise<OriginLastCommit>;
   originSetManual(

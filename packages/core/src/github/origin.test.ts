@@ -15,7 +15,7 @@ import { installSkillFiles } from "./origin.js";
  * The failure-path tests pre-seed destDir with a sentinel, which
  * would trip the idempotency guard (non-empty destDir → early
  * ok-skip), so they pass `force: true` to exercise the fetch path —
- * the same way applyOriginUpdate calls it. The guard itself is
+ * the same way applySkillUpdate calls it. The guard itself is
  * pinned by its own test at the bottom.
  */
 

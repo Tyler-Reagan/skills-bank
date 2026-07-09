@@ -10,11 +10,12 @@ interface Props {
   onUpdate: (name: string) => Promise<{ ok: boolean; message: string }>;
   onView: (entry: RegistryEntry) => void;
   /**
-   * Trigger a fresh upstream probe (e.g. after the user resolved an
-   * outdated entry externally). Refresh button invokes this; the
-   * modal then closes so the host re-renders with fresh data.
+   * Trigger a fresh origin probe (e.g. after the user resolved an
+   * outdated entry externally). "Check for updates" button invokes
+   * this; the modal then closes so the host re-renders with fresh
+   * data.
    */
-  onRefresh: () => Promise<void>;
+  onCheckSkillUpdates: () => Promise<void>;
 }
 
 type RowState = "idle" | "updating" | "ok" | "err";
@@ -26,12 +27,12 @@ type RowState = "idle" | "updating" | "ok" | "err";
  * action with a small delay between rows so a failing row doesn't
  * block the queue.
  */
-export function UpdatesModal({
+export function SkillUpdatesModal({
   entries,
   onClose,
   onUpdate,
   onView,
-  onRefresh,
+  onCheckSkillUpdates,
 }: Props): React.ReactElement {
   const [states, setStates] = useState<Record<string, RowState>>({});
   const [running, setRunning] = useState(false);
@@ -133,11 +134,11 @@ export function UpdatesModal({
         <button
           className="btn"
           type="button"
-          onClick={() => void onRefresh()}
+          onClick={() => void onCheckSkillUpdates()}
           disabled={running}
           title="Probe Origins now (resets known updates against the latest tree hashes)."
         >
-          <Icon name="refresh" size="sm" /> Refresh
+          <Icon name="refresh" size="sm" /> Check for updates
         </button>
         <div className="updates-modal-footer-spacer" />
         <button

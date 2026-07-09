@@ -65,7 +65,7 @@ export interface ProbeOptions {
   /**
    * When true, bypass the idempotency guard and always re-fetch even
    * if `destDir` already exists and is non-empty. Used by
-   * `applyOriginUpdate` which intentionally overwrites an existing
+   * `applySkillUpdate` which intentionally overwrites an existing
    * skill folder with the latest upstream content.
    */
   force?: boolean;
@@ -148,7 +148,7 @@ export async function fetchOriginTree(
  * e.g. `"skills/find-skills"`. Returns null when the folder isn't
  * present (deleted upstream — a separate state from "unchanged"
  * that callers should surface as `upstream-missing` rather than
- * `origin-update-available`).
+ * `skill-update-available`).
  */
 export function findFolderHash(
   tree: GitTreeEntry[],
@@ -265,7 +265,7 @@ export async function installSkillFiles(
 
   // Idempotency guard: if destDir already exists and has files, skip the
   // download entirely. Safe to call multiple times (e.g. Browse Install chain).
-  // Pass `options.force = true` to bypass (used by applyOriginUpdate which
+  // Pass `options.force = true` to bypass (used by applySkillUpdate which
   // intentionally overwrites an existing folder with fresh upstream content).
   if (
     !options.force &&
@@ -385,12 +385,12 @@ export async function installSkillFiles(
  * mutation of `~/.agents/.skill-lock.json` or any other CLI-owned
  * state.
  */
-export interface OriginUpdateResultOk {
+export interface SkillUpdateResultOk {
   ok: true;
   message: string;
 }
 
-export interface OriginUpdateResultErr {
+export interface SkillUpdateResultErr {
   ok: false;
   message: string;
   /** Populated only on rate-limit failures. */
@@ -400,9 +400,9 @@ export interface OriginUpdateResultErr {
   diagnostic?: string;
 }
 
-export type OriginUpdateResult = OriginUpdateResultOk | OriginUpdateResultErr;
+export type SkillUpdateResult = SkillUpdateResultOk | SkillUpdateResultErr;
 
-export interface OriginUpdateContext {
+export interface SkillUpdateContext {
   registryRoot: string;
   /** Skill name (the registry index key, not the folder name). */
   name: string;
@@ -411,9 +411,9 @@ export interface OriginUpdateContext {
   token: string | null;
 }
 
-export async function applyOriginUpdate(
-  ctx: OriginUpdateContext,
-): Promise<OriginUpdateResult> {
+export async function applySkillUpdate(
+  ctx: SkillUpdateContext,
+): Promise<SkillUpdateResult> {
   // Lazy imports keep this file tree-shake-friendly for the renderer's
   // skill-state subpath consumers — none of them want the build/sync
   // dependency graph that buildRegistryIndex pulls in.

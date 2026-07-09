@@ -90,9 +90,13 @@ _Avoid_: Duplicate, Collision
 Sever a skill's Origin pointer while keeping its local content — sets `origin.url` to `null`, re-baselines the drift hash, and moves the folder `vendored/ → personal/` via a Bucket rehome. User-facing label: "Keep my edits (detach)" (from drift) or "Keep local (detach)" (from the Restore-origin modal, when Origin has gone unreachable). The detached skill is local-only (excluded from the pushed manifest) until re-homed into the Linked Repo via a pull request (`rehomeIntoLinkedRepo`) to regain a self-Origin.
 _Avoid_: Unlink (that's Uninstall/Unregister), Orphan
 
-**Pull**:
-Fetch and apply a content update for one skill already in the Registry, from that skill's own Origin — scoped to the skill, not the Linked Repo. Surfaced as the `UPDATE` card badge and the drawer's "Update" button, but "Pull" is the precise engineering term: "Update" alone is ambiguous with app-release updates and with Import's registry-level reconciliation.
-_Avoid_: Update (ambiguous outside UI copy), Sync (retired), Refresh
+**Origin Probe**:
+A registry-wide check across every skill's Origin for available content updates, surfacing results as each skill's `skillUpdateAvailable` flag (the `UPDATE` card badge). Detects; never fetches or writes skill content — that's Origin Pull, which a probe result feeds into. Triggered by the Header's "Check for skill updates" button and the periodic 6h background pass.
+_Avoid_: Rescan, Refresh (both retired — a probe reaches out to remote Origins, it doesn't re-read anything local), Check for updates (ambiguous with the app-release check; UI copy says "Check for skill updates")
+
+**Origin Pull** (formerly Pull):
+Fetch and apply a content update for one skill already in the Registry, from that skill's own Origin — scoped to the skill, not the Linked Repo. Surfaced as the `UPDATE` card badge and the drawer's "Update" button, but "Origin Pull" is the precise engineering term. Qualified (not bare "Pull") because "pull" already carries two other senses in this file: Manifest's informal description of Import's merge-read direction, and Detach's reference to a GitHub pull request — neither is this operation.
+_Avoid_: Update (ambiguous outside UI copy; also ambiguous with app-release updates), Sync (retired), Refresh, Pull (unqualified — collides with the senses above)
 
 **Extract**:
 Write a single skill out of the Registry to a standalone file on disk — a bare `SKILL.md` or a bundled zip, depending on whether it has supporting files. Distinct from Export, which moves a Manifest's metadata, never skill content.
@@ -102,11 +106,15 @@ Import and Export are a second, orthogonal pair — they move the Manifest (meta
 
 **Import**:
 Reconcile which skills the Registry has, and their manifest rows (Origin, Category, Tags), against a Manifest. Never touches an existing skill's file content — only brand-new entries get content mirrored in. Covers both the blunt reconcile (first-link, and the Header's quick-refresh) and the deliberate three-way merge (base/ours/theirs) in the Manifest modal, which surfaces divergences as a manifest resolution rather than a Conflict (see Conflict).
-_Avoid_: Sync (retired, ADR-0017/0020), Adopt (reserved for Register), Update (reserved for Pull)
+_Avoid_: Sync (retired, ADR-0017/0020), Adopt (reserved for Register), Update (reserved for Origin Pull)
 
 **Export**:
 Commit the Registry's pushed Manifest to the Linked Repo, guarded against a non-fast-forward push so a diverged remote is never silently clobbered (ADR-0009). Also available as a plain file via the Manifest modal's disk-transport tab, independent of any Linked Repo, for moving a Manifest's metadata between machines by hand.
-_Avoid_: Push (reads as Pull's inverse, but Pull is skill-content-scoped and Export never sends skill content anywhere)
+_Avoid_: Push (reads as Origin Pull's inverse, but Origin Pull is skill-content-scoped and Export never sends skill content anywhere)
+
+**Skill Diagnostic**:
+An on-disk problem category found by rechecking the Registry and Agent Directories: unregistered install, broken symlink, or missing registry folder. Qualified as _Skill_ Diagnostic to signal it's the skill's on-disk state under scrutiny, not a remote reference (that's Origin Probe/Pull). Surfaced continuously in the Installed tab's "Needs attention" section — recomputed on every registry/installed refresh, not gated behind a dedicated scan action.
+_Avoid_: Needs attention (that's the UI section that displays them, not the findings themselves), Issue/Problem (too generic on their own)
 
 Metrics is a separate, self-contained domain — tracking how often skills fire, unrelated to the Registry/Manifest axes above.
 

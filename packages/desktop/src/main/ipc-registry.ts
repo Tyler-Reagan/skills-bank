@@ -32,7 +32,6 @@ import {
   repointOrigin as coreRepointOrigin,
   resolveSkillConflicts,
   scanExistingInstalls,
-  scanLocalDiagnostics,
   setRuntimeEntry,
   unregisterSkill,
   unlinkSkillFromAgents,
@@ -670,14 +669,6 @@ export function registerRegistryHandlers(): void {
       return removeBrokenLinks(registryRoot, name, agents);
     },
   );
-
-  ipcMain.handle(IPC.localDiagnosticsScan, () => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot) {
-      return { items: [], scannedAt: new Date().toISOString() };
-    }
-    return scanLocalDiagnostics(registryRoot);
-  });
 
   mutatingHandle(
     IPC.resolveSkillConflicts,

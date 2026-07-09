@@ -29,7 +29,7 @@ export type DrawerState =
   // Heal states:
   | "edited-without-origin"
   | "edited-with-origin"
-  | "origin-update-available"
+  | "skill-update-available"
   | "origin-unreachable"
   | "registry-folder-missing";
 
@@ -74,7 +74,7 @@ export interface DrawerCapabilities {
   canUnregister: boolean;
   canRegister: boolean;
   /**
-   * `origin-update-available` heal — apply the upstream change in
+   * `skill-update-available` heal — apply the upstream change in
    * place. Runs `npx skills update <name>`; the new content replaces
    * the on-disk skill and the baseline hash is re-snapshotted.
    */
@@ -172,7 +172,7 @@ export function classifyDrawerState(
   // pending a redesign with proper source-axis semantics — both arms
   // expose only the baseline capabilities. Drift still gates one-click
   // updates: a drifted skill classifies here before the
-  // origin-update-available arm below can grant `canUpdate`.
+  // skill-update-available arm below can grant `canUpdate`.
   if (isRegistered && entry.drift === true) {
     if (isGithubUrl(entry.origin.url)) {
       return {
@@ -212,7 +212,7 @@ export function classifyDrawerState(
   // a baseline-hash mismatch implies the origin was reachable at
   // least once recently, which is a stronger signal than "we
   // couldn't reach the origin this pass." Higher priority than
-  // `origin-update-available` — we can't surface an update we
+  // `skill-update-available` — we can't surface an update we
   // couldn't probe for. v1.4.
   if (
     isRegistered &&
@@ -243,9 +243,9 @@ export function classifyDrawerState(
   // Upstream update available with no local drift. The user can
   // apply the change in place. Drift takes priority above so this
   // arm only fires for clean local state.
-  if (isRegistered && entry.originUpdateAvailable === true) {
+  if (isRegistered && entry.skillUpdateAvailable === true) {
     return {
-      state: "origin-update-available",
+      state: "skill-update-available",
       brokenCount: 0,
       conflictCount: 0,
       capabilities: {

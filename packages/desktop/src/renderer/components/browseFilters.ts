@@ -5,7 +5,7 @@ import type { RegistryEntry } from "@skills-bank/core";
  * chip strip rendered by `RegistryFilters.tsx`. Kept in its own module
  * (not the `.tsx` component) because the consumers are non-presentational:
  * `BrowseTab.tsx` applies these to derive the visible slice, and the
- * `useBrowseFilters` / `useRescanController` hooks reference the types and
+ * `useBrowseFilters` / `useOriginProbe` hooks reference the types and
  * seed the active set. A React component should not be the source these
  * import from.
  */
@@ -38,7 +38,7 @@ export const CHIP_DEFS: readonly ChipDef[] = [
     tag: "updates",
     label: "Updates",
     title: "Skills with a newer version available from their Origin.",
-    matches: (e) => e.originUpdateAvailable === true,
+    matches: (e) => e.skillUpdateAvailable === true,
   },
   {
     tag: "edited",
@@ -127,4 +127,32 @@ export function floatToTop(
   const rest: RegistryEntry[] = [];
   for (const e of entries) (priority(e) ? top : rest).push(e);
   return [...top, ...rest];
+}
+
+/**
+ * Free-text search + legacy tag/installed-only filters, applied after
+ * the chip strip narrows the registry. `effectiveTagsMap` carries the
+ * label-plane tags (falls back to the entry's own `tags` when a skill
+ * has no label override).
+ */
+export function applyFilters(
+  registry: RegistryEntry[],
+  search: string,
+  selectedTags: string[],
+  installedOnly: boolean,
+  installedNames: Set<string>,
+  effectiveTagsMap: Map<string, string[]>,
+): RegistryEntry[] {
+  const q = search.trim().toLowerCase();
+  return registry.filter((e) => {
+    const tags = effectiveTagsMap.get(e.name) ?? e.tags ?? [];
+    if (installedOnly && !installedNames.has(e.name)) return false;
+    if (selectedTags.length > 0 && !selectedTags.some((t) => tags.includes(t)))
+      return false;
+    if (!q) return true;
+    if (e.name.toLowerCase().includes(q)) return true;
+    if (e.description.toLowerCase().includes(q)) return true;
+    if (tags.some((t) => t.toLowerCase().includes(q))) return true;
+    return false;
+  });
 }

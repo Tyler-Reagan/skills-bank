@@ -1,21 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SplashScreen } from "./components/primitives.js";
-import type {
-  AgentId,
-  DiagnosticItem,
-  DiagnosticReport,
-  InstalledSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import type { AgentId, RegistryEntry } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
 import { InstalledTab } from "./components/InstalledTab.js";
-import type { InstalledGroup } from "./components/installedGrouping.js";
 import {
-  Header,
-  type Density,
-  type LocalScanState,
-  type Theme,
-} from "./components/Header.js";
+  selectResolvableConflicts,
+  syntheticEntryFromInstall,
+  type InstalledGroup,
+} from "./components/installedGrouping.js";
+import { Header, type Density, type Theme } from "./components/Header.js";
 // Phase 2 persona collapse: LoginScreen retired. Fresh installs land
 // on an empty registry (ADR-0017 — no bundled default); GitHub linking
 // is reached via Settings → Account → "Sign in with GitHub"
@@ -31,8 +24,8 @@ import { ErrorPanel } from "./components/ErrorPanel.js";
 import { ModalHost, type ActiveModal } from "./components/ModalHost.js";
 import { useManifestImportProgress } from "./hooks/useManifestImportProgress.js";
 import { useModalRouter } from "./hooks/useModalRouter.js";
-import { useRescanController } from "./hooks/useRescanController.js";
-import { useUpdateFeed } from "./hooks/useUpdateFeed.js";
+import { useOriginProbe } from "./hooks/useOriginProbe.js";
+import { useAppUpdateFeed } from "./hooks/useAppUpdateFeed.js";
 import {
   RegistryHostProvider,
   useRegistryHost,
@@ -45,7 +38,7 @@ import { SettingsProvider, useSettings } from "./SettingsContext.js";
 import { RegistryProvider, useRegistry } from "./RegistryContext.js";
 import { useRegisterSkill } from "./useRegisterSkill.js";
 import { LabelsProvider, useLabels } from "./LabelsContext.js";
-import type { AuthStatus, UpdateStatus } from "../shared/ipc.js";
+import type { AuthStatus, AppUpdateStatus } from "../shared/ipc.js";
 
 // Persistence keys still managed directly by App.tsx (tab + unregister hint).
 // Search/filter/sort state moved into useBrowseFilters.
@@ -219,19 +212,19 @@ function AppContent(): React.ReactElement {
       }
     : null;
   // Auto-update state + wiring (live feed, boot dismissal gate, derived
-  // badge). The "updateNotes" modal reads latestUpdateStatus directly so
-  // a render during `downloading` shows the live progress bar.
+  // badge). The "updateNotes" modal reads latestAppUpdateStatus directly
+  // so a render during `downloading` shows the live progress bar.
   const {
-    latestUpdateStatus,
-    setDismissedUpdateVersion,
-    isLiveUpdate,
-    pendingUpdateVersion,
-  } = useUpdateFeed();
+    latestAppUpdateStatus,
+    setDismissedAppUpdateVersion,
+    isLiveAppUpdate,
+    pendingAppUpdateVersion,
+  } = useAppUpdateFeed();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // registryFilters stays here (not in useBrowseFilters) because the
-  // Rescan controller flips it remotely via setRegistryFilters when the
-  // user clicks "View updates" in the done-state banner.
+  // originProbe controller flips it remotely via setRegistryFilters when
+  // the user clicks "View updates" in the done-state banner.
   const [registryFilters, setRegistryFilters] = useState<
     Set<import("./components/browseFilters.js").RegistryFilterTag>
   >(() => new Set());
@@ -297,11 +290,12 @@ function AppContent(): React.ReactElement {
     writeLS(LS_KEYS.tab, t);
   };
 
-  // Header Rescan button — the whole user-triggered rebuild + upstream-
-  // probe state machine, plus the probe-complete listener that drives
-  // the rate-limit toast and the "View" deep-link. Owns rescanState,
-  // userTriggeredProbeRef, and doneTimerRef internally.
-  const rescan = useRescanController({
+  // Header "Check for skill updates" button — the whole user-triggered
+  // rebuild + origin-probe state machine, plus the probe-complete
+  // listener that drives the rate-limit toast and the "View"
+  // deep-link. Owns originProbeState, userTriggeredProbeRef, and
+  // doneTimerRef internally.
+  const originProbe = useOriginProbe({
     refresh,
     flashError,
     setRegistryFilters,
@@ -312,119 +306,28 @@ function AppContent(): React.ReactElement {
     }, [dismissToast]),
   });
 
-  // Local-disk diagnostics state. Mirrors the rescan controller's
-  // three-phase shape but stays inline since the scan is single-shot
-  // (no async probe-complete event to coordinate).
-  const [localScanState, setLocalScanState] = useState<LocalScanState>({
-    phase: "idle",
-  });
-  const [diagnostics, setDiagnostics] = useState<DiagnosticReport | null>(null);
-  const localScanDoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  useEffect(
-    () => () => {
-      if (localScanDoneTimerRef.current)
-        clearTimeout(localScanDoneTimerRef.current);
-    },
-    [],
-  );
-
-  const runLocalScan = useCallback(async () => {
-    if (localScanDoneTimerRef.current)
-      clearTimeout(localScanDoneTimerRef.current);
-    setLocalScanState({ phase: "working" });
-    try {
-      // The diagnostics scan + an installed-list refresh in parallel:
-      // the disk is already being hit, so we piggyback the installed
-      // rehydration onto the same wait. Goes through the registry
-      // context's refresh() now that it owns the installed snapshot.
-      const [report] = await Promise.all([
-        window.skillsBank.localDiagnosticsScan(),
-        refresh(),
-      ]);
-      setDiagnostics(report);
-      setLocalScanState({ phase: "done", count: report.items.length });
-      // Done-zero auto-fades after 1.5s; done-N>0 stays persistent so
-      // the user can click Review at their own pace.
-      if (report.items.length === 0) {
-        localScanDoneTimerRef.current = setTimeout(
-          () => setLocalScanState({ phase: "idle" }),
-          1500,
-        );
-      }
-    } catch {
-      setLocalScanState({ phase: "idle" });
-    }
-  }, [refresh]);
-
-  const refreshDiagnostics = useCallback(async () => {
-    try {
-      const report = await window.skillsBank.localDiagnosticsScan();
-      setDiagnostics(report);
-    } catch {
-      // Failure leaves the prior report visible; user can rescan
-      // manually via Button C.
-    }
-  }, []);
-
-  const onViewLocalScan = useCallback(() => {
-    if (localScanDoneTimerRef.current)
-      clearTimeout(localScanDoneTimerRef.current);
-    setTabPersisted("installed");
-    setLocalScanState({ phase: "idle" });
-    // Scroll content to top after React commits the tab change — the
-    // Needs-attention section lives at the top of InstalledTab.
-    setTimeout(() => {
-      const el = document.querySelector<HTMLElement>(".content");
-      if (el) el.scrollTo({ top: 0, behavior: "smooth" });
-    }, 0);
-  }, [setTabPersisted]);
-
-  const onFixDiagnosticItem = useCallback(
-    async (item: DiagnosticItem) => {
-      if (item.category === "unregistered-installs") {
-        // Open the unified detail drawer with a synthetic entry so
-        // the user picks the registration action (adopt vs external).
-        // Matches the InstalledTab card's onRegisterOne path.
-        const synthetic: RegistryEntry = registryByName.get(item.name) ?? {
-          name: item.name,
-          description: item.detail,
-          path: item.name,
-          origin: { url: null },
-        };
-        setSelected(synthetic);
-        return;
-      }
-      if (item.category === "broken-symlinks") {
-        const agent = (item.agent ?? "claude") as AgentId;
-        const r = await window.skillsBank.removeBrokenLinks(item.name, [agent]);
-        if (r.errors.length > 0) {
-          flashError(r.errors.map((e) => e.message).join("; "));
-        } else {
-          flash(`Removed broken link for ${item.name}`);
-        }
-        await refresh();
-        await refreshDiagnostics();
-        return;
-      }
-      // external-target-missing OR registry-folder-missing: same path.
-      const r = await window.skillsBank.forgetMissing(item.name);
+  // Forget a skill whose registry folder is gone — the one Skill
+  // Diagnostic category the classifier computes continuously but
+  // routes to a per-card MISSING badge rather than Needs Attention;
+  // folding it in gives NeedsAttentionSection's onForgetMissing branch
+  // a real action to call.
+  const onForgetMissing = useCallback(
+    async (group: InstalledGroup) => {
+      const r = await window.skillsBank.forgetMissing(group.name);
       if (r.ok) {
         flash(r.message);
       } else {
         flashError(r.message);
       }
       await refresh();
-      await refreshDiagnostics();
     },
-    [registryByName, flash, flashError, refresh, refreshDiagnostics],
+    [flash, flashError, refresh],
   );
 
   // Boot read for the ADR-0004 weak-storage notice: surfaced when the
   // safeStorage backend resolved to `basic_text` (Linux without a
   // keyring) and the user hasn't already dismissed it. (The "Skip this
-  // version" choice is hydrated separately by useUpdateFeed.)
+  // version" choice is hydrated separately by useAppUpdateFeed.)
   useEffect(() => {
     void window.skillsBank.getConfig().then((cfg) => {
       if (cfg.showWeakStorageNotice) {
@@ -550,23 +453,23 @@ function AppContent(): React.ReactElement {
     void window.skillsBank.importManifestCancel();
   }, []);
 
-  // Convenience: "Check for updates" routes through the same path
+  // Convenience: "Check for app updates" routes through the same path
   // regardless of trigger — re-open the existing update modal if a
   // live update is known, otherwise kick off a fresh check.
-  const checkForUpdates = useCallback(() => {
+  const checkForAppUpdates = useCallback(() => {
     if (
-      latestUpdateStatus &&
-      (latestUpdateStatus.kind === "available" ||
-        latestUpdateStatus.kind === "downloading" ||
-        latestUpdateStatus.kind === "downloaded")
+      latestAppUpdateStatus &&
+      (latestAppUpdateStatus.kind === "available" ||
+        latestAppUpdateStatus.kind === "downloading" ||
+        latestAppUpdateStatus.kind === "downloaded")
     ) {
       openModal({ kind: "updateNotes" });
     } else {
-      void window.skillsBank.checkForUpdates().then((r) => {
+      void window.skillsBank.checkForAppUpdates().then((r) => {
         flash(r.ok ? "Checking for updates" : r.message);
       });
     }
-  }, [latestUpdateStatus, flash]);
+  }, [latestAppUpdateStatus, flash]);
 
   // macOS menu-bar dispatch. The native menubar still fires a small
   // set of actions (Settings, Refresh, Check for updates) — the in-app
@@ -582,21 +485,20 @@ function AppContent(): React.ReactElement {
         case "openShortcuts":
           openModal({ kind: "shortcuts" });
           break;
-        case "refresh":
-          void rescan.onRefreshClick();
+        case "checkSkillUpdates":
+          void originProbe.onCheckSkillUpdates();
           break;
-        case "checkForUpdates":
-          checkForUpdates();
+        case "checkForAppUpdates":
+          checkForAppUpdates();
           break;
-        // Other actions (changeRegistry, mergeRegistry, signOut, sync) are
-        // no longer dispatched from any surface — the in-app dropdown that
-        // fired them is gone, the menubar doesn't include them, and "sync"
-        // was the curated-tarball-sync subsystem removed in v6 (#159). Kept
+        // Other actions (changeRegistry, mergeRegistry, signOut) are no
+        // longer dispatched from any surface — the in-app dropdown that
+        // fired them is gone and the menubar doesn't include them. Kept
         // in the union for back-compat with the IPC shape; the cases are
         // unreachable.
       }
     });
-  }, [rescan, checkForUpdates]);
+  }, [originProbe, checkForAppUpdates]);
 
   // Keep the drawer's entry up-to-date if the registry refreshes. Don't
   // close the drawer when no registry entry is found — the selection may
@@ -622,7 +524,7 @@ function AppContent(): React.ReactElement {
   // Rules-of-Hooks violation. None of the consumers memoize, so referential
   // stability isn't load-bearing.
   const openUpdateModal = () => {
-    if (isLiveUpdate) openModal({ kind: "updateNotes" });
+    if (isLiveAppUpdate) openModal({ kind: "updateNotes" });
   };
 
   // Initial loading — skeleton over real chrome.
@@ -630,8 +532,8 @@ function AppContent(): React.ReactElement {
     return (
       <div className="app" aria-busy="true">
         <Header
-          rescanState={{ phase: "working" }}
-          onRefresh={() => undefined}
+          originProbeState={{ phase: "working" }}
+          onCheckSkillUpdates={() => undefined}
           theme={theme}
           onToggleTheme={toggleTheme}
           density={density}
@@ -641,16 +543,13 @@ function AppContent(): React.ReactElement {
           authStatus={null}
           onOpenAccount={() => undefined}
           onOpenSettings={() => undefined}
-          pendingUpdateVersion={null}
-          onShowUpdate={() => undefined}
+          pendingAppUpdateVersion={null}
+          onShowAppUpdate={() => undefined}
           pendingSkillUpdates={0}
-          onShowUpdates={() => undefined}
-          onViewRescanUpdates={() => undefined}
+          onShowSkillUpdates={() => undefined}
+          onViewSkillUpdates={() => undefined}
           importingManifest={false}
           onCancelImport={() => undefined}
-          localScanState={{ phase: "idle" }}
-          onLocalScan={() => undefined}
-          onViewLocalScan={() => undefined}
           manifestImportProgress={null}
         />
         <Tabs
@@ -676,8 +575,8 @@ function AppContent(): React.ReactElement {
   return (
     <div className="app">
       <Header
-        rescanState={rescan.state}
-        onRefresh={() => void rescan.onRefreshClick()}
+        originProbeState={originProbe.state}
+        onCheckSkillUpdates={() => void originProbe.onCheckSkillUpdates()}
         theme={theme}
         onToggleTheme={toggleTheme}
         density={density}
@@ -687,16 +586,13 @@ function AppContent(): React.ReactElement {
         authStatus={authStatus}
         onOpenAccount={() => openModal({ kind: "account" })}
         onOpenSettings={() => openModal({ kind: "settings" })}
-        pendingUpdateVersion={pendingUpdateVersion}
-        onShowUpdate={openUpdateModal}
+        pendingAppUpdateVersion={pendingAppUpdateVersion}
+        onShowAppUpdate={openUpdateModal}
         pendingSkillUpdates={pendingSkillUpdates.length}
-        onShowUpdates={() => openModal({ kind: "updates" })}
-        onViewRescanUpdates={rescan.onViewUpdates}
+        onShowSkillUpdates={() => openModal({ kind: "updates" })}
+        onViewSkillUpdates={originProbe.onViewSkillUpdates}
         importingManifest={importingManifest}
         onCancelImport={cancelManifestImport}
-        localScanState={localScanState}
-        onLocalScan={() => void runLocalScan()}
-        onViewLocalScan={onViewLocalScan}
         manifestImportProgress={
           manifestImportProgress
             ? {
@@ -762,22 +658,18 @@ function AppContent(): React.ReactElement {
               // RegistrationPlanModal — the per-row review-then-apply surface
               // whose own scan walks every agent dir. Shown
               // from both the empty state and the Unregistered header; with
-              // nothing on disk the modal renders an empty list and points at
-              // the header's Scan Local. The inline per-card Register button
-              // (onInlineRegister) stays the one-off path.
+              // nothing on disk the modal renders an empty list. The inline
+              // per-card Register button (onInlineRegister) stays the
+              // one-off path.
               onRegisterAll={() => openModal({ kind: "register" })}
               onRegisterOne={(s) => {
                 // Open the unified detail drawer with a synthetic registry
                 // entry so the user gets the same Register / Manage-links /
                 // Remove action surface as a registered skill — the two
                 // operations are now distinct buttons, not a radio group.
-                const synthetic: RegistryEntry = registryByName.get(s.name) ?? {
-                  name: s.name,
-                  description: s.target ?? s.linkPath,
-                  path: s.linkPath,
-                  origin: { url: null },
-                };
-                setSelected(synthetic);
+                setSelected(
+                  syntheticEntryFromInstall(s, registryByName.get(s.name)),
+                );
               }}
               onSelectIntegrated={(e) => setSelected(e)}
               onResolveConflicts={(g) => {
@@ -789,19 +681,14 @@ function AppContent(): React.ReactElement {
                 // have a dedicated Repair flow) but included for
                 // unregistered (the user picks a canonical and removes
                 // dead siblings in the same pass).
-                const isRegistered = registryByName.has(g.name);
-                const conflicts = isRegistered
-                  ? g.conflicts.filter(
-                      (c) => c.kind !== "ours" && c.kind !== "broken-symlink",
-                    )
-                  : g.conflicts.filter((c) => c.kind !== "ours");
+                const { conflicts, allowReplaceWithSymlink } =
+                  selectResolvableConflicts(
+                    g.conflicts,
+                    registryByName.has(g.name),
+                  );
                 openModal({
                   kind: "conflict",
-                  target: {
-                    name: g.name,
-                    conflicts,
-                    allowReplaceWithSymlink: isRegistered,
-                  },
+                  target: { name: g.name, conflicts, allowReplaceWithSymlink },
                 });
               }}
               onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}
@@ -910,8 +797,7 @@ function AppContent(): React.ReactElement {
                   });
                 })();
               }}
-              diagnostics={diagnostics}
-              onFixDiagnosticItem={(item) => void onFixDiagnosticItem(item)}
+              onForgetMissing={(group) => void onForgetMissing(group)}
             />
           )}
           {tab === "metrics" && (
@@ -934,11 +820,11 @@ function AppContent(): React.ReactElement {
         importingManifest={importingManifest}
         cancelManifestImport={cancelManifestImport}
         importLinkedRepo={importLinkedRepo}
-        latestUpdateStatus={latestUpdateStatus}
-        setDismissedUpdateVersion={setDismissedUpdateVersion}
+        latestAppUpdateStatus={latestAppUpdateStatus}
+        setDismissedAppUpdateVersion={setDismissedAppUpdateVersion}
         resolveAllTarget={resolveAllTarget}
         setResolveAllTarget={setResolveAllTarget}
-        checkForUpdates={checkForUpdates}
+        checkForAppUpdates={checkForAppUpdates}
         unregisterHintShown={() =>
           localStorage.getItem(LS_KEYS.unregisterHintShown) === "1"
         }

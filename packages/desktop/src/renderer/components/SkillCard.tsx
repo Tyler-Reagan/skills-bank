@@ -110,7 +110,7 @@ export function SkillCard({
   };
   return (
     <div
-      className={`skill-card${entry.originUpdateAvailable ? " skill-card--update-available" : ""}${selectMode && selected ? " skill-card--selected" : ""}`}
+      className={`skill-card${entry.skillUpdateAvailable ? " skill-card--update-available" : ""}${selectMode && selected ? " skill-card--selected" : ""}`}
       onClick={handleCardClick}
       role="button"
       tabIndex={0}
@@ -289,7 +289,7 @@ export function agentsForSkill(
  *   1. MISSING     — entry.missing: files gone. Open drawer to forget.
  *   2. UNREACHABLE — origin hasn't answered the last few probes; the
  *                    local copy is intact.
- *   3. UPDATE      — entry.originUpdateAvailable: upstream changed,
+ *   3. UPDATE      — entry.skillUpdateAvailable: upstream changed,
  *                    local content is clean. Open drawer to apply.
  *
  * The CURATED badge (source: curated) and the EDITED drift badge were
@@ -323,7 +323,7 @@ function StateBadge({
       </span>
     );
   }
-  if (entry.originUpdateAvailable) {
+  if (entry.skillUpdateAvailable) {
     return (
       <span
         className="skill-state-badge update"

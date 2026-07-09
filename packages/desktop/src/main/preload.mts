@@ -3,7 +3,7 @@ import {
   IPC,
   type Bounds,
   type DiscoverStatus,
-  type UpdateStatus,
+  type AppUpdateStatus,
 } from "../shared/ipc.js";
 
 const api = {
@@ -34,17 +34,18 @@ const api = {
     ipcRenderer.invoke(IPC.openInFinder, absolutePath),
   getConfig: () => ipcRenderer.invoke(IPC.getConfig),
   setRegistryRoot: () => ipcRenderer.invoke(IPC.setRegistryRoot),
-  checkForUpdates: () => ipcRenderer.invoke(IPC.checkForUpdates),
-  downloadUpdate: () => ipcRenderer.invoke(IPC.downloadUpdate),
-  quitAndInstallUpdate: () => ipcRenderer.invoke(IPC.quitAndInstallUpdate),
-  setDismissedUpdateVersion: (version: string | null) =>
-    ipcRenderer.invoke(IPC.setDismissedUpdateVersion, version),
+  checkForAppUpdates: () => ipcRenderer.invoke(IPC.checkForAppUpdates),
+  downloadAppUpdate: () => ipcRenderer.invoke(IPC.downloadAppUpdate),
+  quitAndInstallAppUpdate: () =>
+    ipcRenderer.invoke(IPC.quitAndInstallAppUpdate),
+  setDismissedAppUpdateVersion: (version: string | null) =>
+    ipcRenderer.invoke(IPC.setDismissedAppUpdateVersion, version),
   dismissWeakStorageNotice: () =>
     ipcRenderer.invoke(IPC.dismissWeakStorageNotice),
-  onUpdateStatus: (cb: (status: UpdateStatus) => void) => {
-    const listener = (_e: unknown, status: UpdateStatus) => cb(status);
-    ipcRenderer.on(IPC.updateStatus, listener);
-    return () => ipcRenderer.removeListener(IPC.updateStatus, listener);
+  onAppUpdateStatus: (cb: (status: AppUpdateStatus) => void) => {
+    const listener = (_e: unknown, status: AppUpdateStatus) => cb(status);
+    ipcRenderer.on(IPC.appUpdateStatus, listener);
+    return () => ipcRenderer.removeListener(IPC.appUpdateStatus, listener);
   },
   authStatus: () => ipcRenderer.invoke(IPC.authStatus),
   authStartDeviceFlow: () => ipcRenderer.invoke(IPC.authStartDeviceFlow),
@@ -81,7 +82,6 @@ const api = {
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>
     ipcRenderer.invoke(IPC.removeBrokenLinks, name, agents),
-  localDiagnosticsScan: () => ipcRenderer.invoke(IPC.localDiagnosticsScan),
   resolveSkillConflicts: (name: string, decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveSkillConflicts, name, decisions),
   discoverShow: (bounds: Bounds) =>
@@ -145,7 +145,7 @@ const api = {
     return () =>
       ipcRenderer.removeListener(IPC.manifestImportProgress, listener);
   },
-  originUpdate: (name: string) => ipcRenderer.invoke(IPC.originUpdate, name),
+  skillUpdate: (name: string) => ipcRenderer.invoke(IPC.skillUpdate, name),
   originRepoMetadata: (repo: string) =>
     ipcRenderer.invoke(IPC.originRepoMetadata, repo),
   originLastCommit: (repo: string, skillPath: string) =>

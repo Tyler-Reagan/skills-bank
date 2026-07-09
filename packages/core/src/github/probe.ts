@@ -79,10 +79,10 @@ export interface OriginProbeRunner {
    *  last `clearUpdate` for it? */
   hasUpdate(name: string): boolean;
   /** Drop the recorded update flag for a name. Called by the
-   *  desktop's `applyUpstreamUpdate` wrapper after a successful
+   *  desktop's `applySkillUpdate` wrapper after a successful
    *  Update — the user has consumed the indicator. */
   clearUpdate(name: string): void;
-  /** Augment an entries list with `originUpdateAvailable: true` for
+  /** Augment an entries list with `skillUpdateAvailable: true` for
    *  any name the probe has flagged. Pure read; cheap. */
   augmentEntries<T extends { name: string }>(entries: T[]): T[];
   /** Fire `onComplete` with an empty payload — used by call sites
@@ -396,7 +396,7 @@ export function createOriginProbeRunner(
       if (probedUpdates.size === 0) return entries;
       return entries.map((e) =>
         probedUpdates.has(e.name)
-          ? ({ ...e, originUpdateAvailable: true } as typeof e)
+          ? ({ ...e, skillUpdateAvailable: true } as typeof e)
           : e,
       );
     },

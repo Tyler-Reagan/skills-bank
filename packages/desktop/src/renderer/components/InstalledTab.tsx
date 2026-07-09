@@ -1,18 +1,13 @@
 import React from "react";
 import { InfoTooltip } from "./primitives.js";
-import type {
-  DiagnosticCategory,
-  DiagnosticItem,
-  DiagnosticReport,
-  InstalledSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import type { InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { useRegistry } from "../RegistryContext.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
 import { Icon } from "./Icon.js";
 import { classifyDrawerState } from "./skillState.js";
 import {
   aggregateByName,
+  syntheticEntryFromInstall,
   type ClassifiedGroup,
   type InstalledGroup,
 } from "./installedGrouping.js";
@@ -34,10 +29,9 @@ interface Props {
    * "Register All": opens the RegistrationPlanModal — the per-row
    * disambiguation/preview surface whose own scan walks every agent dir.
    * Shown in both the empty state and the Unregistered section header;
-   * when nothing is on disk the modal renders an empty list and points the
-   * user at the header's Scan Local. Bulk registration always flows through
-   * the modal (review-then-apply); the inline per-card Register button stays
-   * the one-off path.
+   * when nothing is on disk the modal renders an empty list. Bulk
+   * registration always flows through the modal (review-then-apply); the
+   * inline per-card Register button stays the one-off path.
    */
   onRegisterAll: () => void;
   onRegisterOne: (entry: InstalledSkill) => void;
@@ -83,24 +77,12 @@ interface Props {
    */
   onInlineDelete?: (group: InstalledGroup) => void;
   /**
-   * v1.9 Button C: latest local-diagnostics scan report. When non-null
-   * and `items.length > 0`, renders a "From last local scan" section
-   * at the top of the tab grouping items by category with per-item
-   * fix actions. Parallel to the existing classifier-driven
-   * Needs-attention section — both stay rendered. Null suppresses
-   * the section.
+   * Forget a Needs-attention card whose registry folder is gone
+   * (the `registry-folder-missing` Skill Diagnostic) — drops the
+   * lingering manifest row. Routed through NeedsAttentionSection's
+   * own inline action button, same as repair/resolve.
    */
-  diagnostics?: import("@skills-bank/core").DiagnosticReport | null;
-  /**
-   * Dispatch a fix action for a diagnostic item. Routing per category
-   * is handled by the host (open register flow for unregistered, call
-   * removeBrokenLinks for broken-symlink, call forgetMissing for
-   * external/registry-missing). Host refreshes the diagnostic report
-   * after the action completes.
-   */
-  onFixDiagnosticItem?: (
-    item: import("@skills-bank/core").DiagnosticItem,
-  ) => void;
+  onForgetMissing?: (group: InstalledGroup) => void;
 }
 
 export function InstalledTab({
@@ -114,10 +96,9 @@ export function InstalledTab({
   onRepairAllBroken,
   onInlineRegister,
   onInlineDelete,
-  diagnostics,
-  onFixDiagnosticItem,
+  onForgetMissing,
 }: Props): React.ReactElement {
-  const { installed, registry } = useRegistry();
+  const { installed, registry, refresh } = useRegistry();
   const registerTooltip = REGISTER_TOOLTIP;
   if (installed.length === 0) {
     return (
@@ -150,20 +131,19 @@ export function InstalledTab({
   // matching inline-button case (no card can land here with a primary
   // we don't render), and the boundary between "needs attention" and
   // "not registered" matches the classifier's notion of which actions
-  // resolve the issue.
+  // resolve the issue. forget-missing (registry-folder-missing) joined
+  // this set when the dedicated local-diagnostics scan retired — it's
+  // the one Skill Diagnostic category the classifier already computes
+  // continuously but previously routed only to a per-card MISSING badge.
   const NEEDS_ATTENTION_PRIMARIES = new Set([
     "repair-broken",
     "resolve-conflicts",
     "resolve-registration-conflicts",
+    "forget-missing",
   ]);
   const classified: ClassifiedGroup[] = groups.map((g) => {
     const registryHit = registryByName.get(g.name);
-    const entry: RegistryEntry = registryHit ?? {
-      name: g.name,
-      description: g.representative.target ?? g.representative.linkPath,
-      path: g.representative.linkPath,
-      origin: { url: null },
-    };
+    const entry = syntheticEntryFromInstall(g.representative, registryHit);
     return {
       g,
       classification: classifyDrawerState(entry, installed, !!registryHit),
@@ -221,12 +201,16 @@ export function InstalledTab({
           )}
         </span>
       </div>
-      {diagnostics && diagnostics.items.length > 0 && onFixDiagnosticItem && (
-        <LocalScanResultsSection
-          diagnostics={diagnostics}
-          onFix={onFixDiagnosticItem}
-        />
-      )}
+      <div className="row-end my-8">
+        <button
+          type="button"
+          className="btn small"
+          onClick={() => void refresh()}
+          title="Re-read the agent directories and registry now — picks up changes made outside the app (hand-edited symlinks, deleted folders) between refreshes."
+        >
+          <Icon name="refresh" size="sm" /> Recheck
+        </button>
+      </div>
       {needsAttention.length > 0 && (
         <NeedsAttentionSection
           groups={needsAttention}
@@ -236,6 +220,7 @@ export function InstalledTab({
           onRepairBroken={onRepairBroken}
           onResolveAllConflicts={onResolveAllConflicts}
           onRepairAllBroken={onRepairAllBroken}
+          onForgetMissing={onForgetMissing}
         />
       )}
       {unintegrated.length > 0 && (
@@ -340,108 +325,5 @@ export function InstalledTab({
         </section>
       )}
     </div>
-  );
-}
-
-const CATEGORY_LABELS: Record<DiagnosticCategory, string> = {
-  "unregistered-installs": "Unregistered installs",
-  "broken-symlinks": "Broken symlinks",
-  "registry-folder-missing": "Registry folder missing",
-};
-
-const CATEGORY_FIX_LABELS: Record<DiagnosticCategory, string> = {
-  "unregistered-installs": "Register",
-  "broken-symlinks": "Remove broken link",
-  "registry-folder-missing": "Forget",
-};
-
-const CATEGORY_ORDER: DiagnosticCategory[] = [
-  "unregistered-installs",
-  "broken-symlinks",
-  "registry-folder-missing",
-];
-
-/**
- * v1.9 Button C: surface for the latest local-diagnostics scan result.
- * Groups items by category with per-item fix actions. Parallel to the
- * existing classifier-driven Needs-attention section — both stay
- * rendered so items can appear in both without functional impact.
- */
-function LocalScanResultsSection({
-  diagnostics,
-  onFix,
-}: {
-  diagnostics: DiagnosticReport;
-  onFix: (item: DiagnosticItem) => void;
-}): React.ReactElement {
-  const grouped = new Map<DiagnosticCategory, DiagnosticItem[]>();
-  for (const cat of CATEGORY_ORDER) grouped.set(cat, []);
-  for (const item of diagnostics.items) {
-    grouped.get(item.category)!.push(item);
-  }
-  const scannedAt = new Date(diagnostics.scannedAt).toLocaleTimeString();
-  return (
-    <section className="local-scan-results">
-      <header className="section-header">
-        <div>
-          <h2 className="row-center-8">
-            <Icon name="alert-triangle" size="sm" /> From last local scan{" "}
-            <span className="count">({diagnostics.items.length})</span>
-          </h2>
-          <p className="text-11 text-subtle mt-4 mb-0">
-            Scanned at {scannedAt}. Local-only — no network. Items grouped by
-            category. Fix one at a time; the report refreshes after each action.
-          </p>
-        </div>
-      </header>
-      {CATEGORY_ORDER.filter((cat) => grouped.get(cat)!.length > 0).map(
-        (cat) => {
-          const items = grouped.get(cat)!;
-          // Unregistered installs already get a dedicated section with
-          // per-card Register/Delete actions below. Collapse this category
-          // to a single summary line so the scan results stay informative
-          // without duplicating every name twice on the same screen.
-          if (cat === "unregistered-installs") {
-            return (
-              <div key={cat} className="local-scan-category">
-                <h3 className="local-scan-category-title">
-                  {CATEGORY_LABELS[cat]}{" "}
-                  <span className="text-subtle">({items.length})</span>
-                </h3>
-                <p className="text-12 text-subtle mt-4 mb-0">
-                  Listed individually in the Unregistered section below —
-                  register or delete each from there.
-                </p>
-              </div>
-            );
-          }
-          return (
-            <div key={cat} className="local-scan-category">
-              <h3 className="local-scan-category-title">
-                {CATEGORY_LABELS[cat]}{" "}
-                <span className="text-subtle">({items.length})</span>
-              </h3>
-              <ul className="local-scan-item-list">
-                {items.map((item) => (
-                  <li key={item.itemId} className="local-scan-item">
-                    <span className="local-scan-item-name">
-                      <strong>{item.name}</strong>{" "}
-                      <span className="text-subtle">— {item.detail}</span>
-                    </span>
-                    <button
-                      className="btn small flex-shrink-0"
-                      type="button"
-                      onClick={() => onFix(item)}
-                    >
-                      {CATEGORY_FIX_LABELS[cat]}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        },
-      )}
-    </section>
   );
 }

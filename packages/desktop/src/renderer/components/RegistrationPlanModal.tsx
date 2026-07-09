@@ -156,9 +156,9 @@ export function RegistrationPlanModal({
           </span>
           <p className="register-modal-hint">
             Scanned every agent directory (Claude, Cursor, Gemini, Copilot,
-            Continue, Cline, Codex, shared) and found nothing to register. To
-            also check for broken links and missing files, use{" "}
-            <strong>Scan Local</strong> in the header.
+            Continue, Cline, Codex, shared) and found nothing to register.
+            Broken links and missing files surface automatically in the
+            Installed tab's <strong>Needs attention</strong> section.
           </p>
         </div>
         <div className={modalFooter}>

@@ -19,29 +19,14 @@ export type Density = "comfortable" | "compact";
  * gates with a local `userTriggeredProbe` flag so background probes
  * stay silent.
  */
-export type RescanState =
+export type OriginProbeState =
   | { phase: "idle" }
   | { phase: "working" }
   | { phase: "done"; updates: number };
 
-/**
- * Three-phase state of the "Scan Local" affordance. Mirrors the
- * Check-for-updates state machine but for the local-disk diagnostics
- * pass (unregistered installs, broken symlinks, missing-files heal
- * states). Local-only — no network.
- *
- *   - `idle`     ↻ Scan local
- *   - `working`  ◐ Scanning…
- *   - `done`     ✓ All clean  /  ✓ N items · Review
- */
-export type LocalScanState =
-  | { phase: "idle" }
-  | { phase: "working" }
-  | { phase: "done"; count: number };
-
 interface Props {
-  rescanState: RescanState;
-  onRefresh: () => void;
+  originProbeState: OriginProbeState;
+  onCheckSkillUpdates: () => void;
   theme: Theme;
   onToggleTheme: () => void;
   density: Density;
@@ -59,27 +44,27 @@ interface Props {
   onOpenSettings: () => void;
   /**
    * Version string of an app update that's been detected. When non-null,
-   * the badge renders next to the brand. Click invokes `onShowUpdate`.
+   * the badge renders next to the brand. Click invokes `onShowAppUpdate`.
    * The host decides what "detected" means (typically: latest update
    * status is `available` or `downloaded`, and not in the dismissed set).
    */
-  pendingUpdateVersion: string | null;
-  onShowUpdate: () => void;
+  pendingAppUpdateVersion: string | null;
+  onShowAppUpdate: () => void;
   /**
-   * Count of skills with `originUpdateAvailable === true` from the
+   * Count of skills with `skillUpdateAvailable === true` from the
    * latest probe. When non-zero, the header renders an aggregate
-   * badge that opens the UpdatesModal. Click invokes `onShowUpdates`.
+   * badge that opens the SkillUpdatesModal. Click invokes `onShowSkillUpdates`.
    */
   pendingSkillUpdates: number;
-  onShowUpdates: () => void;
+  onShowSkillUpdates: () => void;
   /**
-   * Invoked when the user clicks "View" in the Rescan done-state
-   * after a probe surfaces N>0 updates. The host is expected to
-   * switch to the Browse tab, flip the Updates chip on, and scroll
-   * the grid to the top. The button stays in done-state until this
-   * fires (or the user clicks Rescan again) — no auto-fade.
+   * Invoked when the user clicks "View" in the done-state after a
+   * probe surfaces N>0 updates. The host is expected to switch to
+   * the Browse tab, flip the Updates chip on, and scroll the grid to
+   * the top. The button stays in done-state until this fires (or the
+   * user clicks "Check for skill updates" again) — no auto-fade.
    */
-  onViewRescanUpdates: () => void;
+  onViewSkillUpdates: () => void;
   /**
    * True while a manifest import is in flight (initiated from
    * AccountModal but tracked at App.tsx so the indicator survives
@@ -94,20 +79,6 @@ interface Props {
    */
   onCancelImport: () => void;
   /**
-   * Three-phase state for the `Scan Local` button. Click target runs
-   * the local-diagnostics IPC; on done with N>0 the user clicks
-   * Review to bounce to the Installed-tab "Needs attention" section.
-   */
-  localScanState: LocalScanState;
-  onLocalScan: () => void;
-  /**
-   * Invoked when the user clicks "Review" on the Scan Local done-state.
-   * Host bounces to Installed tab and scrolls to the diagnostics
-   * section. Button stays in done-state until this fires (or the user
-   * clicks Scan Local again) — no auto-fade.
-   */
-  onViewLocalScan: () => void;
-  /**
    * Tier-2 (v1.9): per-skill progress count for the in-flight manifest
    * import. Passes through to the `<ImportIndicator />` chip so it
    * renders `Importing N/total` instead of the generic
@@ -118,8 +89,8 @@ interface Props {
 }
 
 export function Header({
-  rescanState,
-  onRefresh,
+  originProbeState,
+  onCheckSkillUpdates,
   theme,
   onToggleTheme,
   density,
@@ -129,16 +100,13 @@ export function Header({
   authStatus,
   onOpenAccount,
   onOpenSettings,
-  pendingUpdateVersion,
-  onShowUpdate,
+  pendingAppUpdateVersion,
+  onShowAppUpdate,
   pendingSkillUpdates,
-  onShowUpdates,
-  onViewRescanUpdates,
+  onShowSkillUpdates,
+  onViewSkillUpdates,
   importingManifest,
   onCancelImport,
-  localScanState,
-  onLocalScan,
-  onViewLocalScan,
   manifestImportProgress,
 }: Props): React.ReactElement {
   const nextTheme: Theme = theme === "dark" ? "light" : "dark";
@@ -171,23 +139,23 @@ export function Header({
           <div className="header-brand" aria-hidden="true">
             skills<span>-</span>bank
           </div>
-          {pendingUpdateVersion && (
+          {pendingAppUpdateVersion && (
             <button
               type="button"
               className="update-badge"
-              onClick={onShowUpdate}
-              title={`Skills Bank ${pendingUpdateVersion} is ready. Click to review and install.`}
-              aria-label={`App update ${pendingUpdateVersion} available — open install dialog`}
+              onClick={onShowAppUpdate}
+              title={`Skills Bank ${pendingAppUpdateVersion} is ready. Click to review and install.`}
+              aria-label={`App update ${pendingAppUpdateVersion} available — open install dialog`}
             >
               <Icon name="download" size="sm" />
-              <span>Update {pendingUpdateVersion}</span>
+              <span>Update {pendingAppUpdateVersion}</span>
             </button>
           )}
           {pendingSkillUpdates > 0 && (
             <button
               type="button"
               className="updates-badge"
-              onClick={onShowUpdates}
+              onClick={onShowSkillUpdates}
               title={`${pendingSkillUpdates} skill${
                 pendingSkillUpdates === 1 ? "" : "s"
               } can be updated from Origin. Click to review.`}
@@ -259,117 +227,60 @@ export function Header({
             </button>
           )}
           <button
-            className={`refresh-btn rescan-${rescanState.phase}${
-              rescanState.phase === "done" && rescanState.updates > 0
-                ? " rescan-done-actionable"
+            className={`refresh-btn origin-probe-${originProbeState.phase}${
+              originProbeState.phase === "done" && originProbeState.updates > 0
+                ? " origin-probe-done-actionable"
                 : ""
             }`}
-            disabled={rescanState.phase === "working"}
-            aria-busy={rescanState.phase === "working" || undefined}
+            disabled={originProbeState.phase === "working"}
+            aria-busy={originProbeState.phase === "working" || undefined}
             title={
-              rescanState.phase === "working"
+              originProbeState.phase === "working"
                 ? "Checking each skill's authoritative GitHub Origin for newer content"
-                : rescanState.phase === "done" && rescanState.updates > 0
-                  ? `${rescanState.updates} update${
-                      rescanState.updates === 1 ? "" : "s"
+                : originProbeState.phase === "done" &&
+                    originProbeState.updates > 0
+                  ? `${originProbeState.updates} update${
+                      originProbeState.updates === 1 ? "" : "s"
                     } available. Click to view in the registry.`
                   : "Check each skill's authoritative GitHub Origin for newer content. Surfaces available updates as chips on the cards — does not download anything. To apply an update, click the chip on the card itself."
             }
             aria-label={
-              rescanState.phase === "working"
-                ? "Checking for updates"
-                : rescanState.phase === "done"
-                  ? rescanState.updates === 0
+              originProbeState.phase === "working"
+                ? "Checking for skill updates"
+                : originProbeState.phase === "done"
+                  ? originProbeState.updates === 0
                     ? "Up to date"
-                    : `${rescanState.updates} update${rescanState.updates === 1 ? "" : "s"} available — view in registry`
-                  : "Check for updates"
+                    : `${originProbeState.updates} update${originProbeState.updates === 1 ? "" : "s"} available — view in registry`
+                  : "Check for skill updates"
             }
             onClick={
-              rescanState.phase === "done" && rescanState.updates > 0
-                ? onViewRescanUpdates
-                : onRefresh
+              originProbeState.phase === "done" && originProbeState.updates > 0
+                ? onViewSkillUpdates
+                : onCheckSkillUpdates
             }
           >
-            {rescanState.phase === "working" ? (
+            {originProbeState.phase === "working" ? (
               <>
                 <span className="spinner inline" aria-hidden="true" /> Checking
-                for updates…
+                for skill updates…
               </>
-            ) : rescanState.phase === "done" ? (
-              rescanState.updates === 0 ? (
+            ) : originProbeState.phase === "done" ? (
+              originProbeState.updates === 0 ? (
                 <>
                   <Icon name="check" size="md" /> Up to date
                 </>
               ) : (
                 <>
                   <Icon name="check" size="md" />{" "}
-                  {rescanState.updates === 1
+                  {originProbeState.updates === 1
                     ? "1 update"
-                    : `${rescanState.updates} updates`}
-                  <span className="rescan-view-cta"> · View</span>
+                    : `${originProbeState.updates} updates`}
+                  <span className="origin-probe-view-cta"> · View</span>
                 </>
               )
             ) : (
               <>
-                <Icon name="refresh" size="md" /> Check for updates
-              </>
-            )}
-          </button>
-          <button
-            className={`refresh-btn local-scan-${localScanState.phase}${
-              localScanState.phase === "done" && localScanState.count > 0
-                ? " local-scan-done-actionable"
-                : ""
-            }`}
-            disabled={localScanState.phase === "working"}
-            aria-busy={localScanState.phase === "working" || undefined}
-            title={
-              localScanState.phase === "working"
-                ? "Scanning agent directories and registry for items needing attention"
-                : localScanState.phase === "done" && localScanState.count > 0
-                  ? `${localScanState.count} item${
-                      localScanState.count === 1 ? "" : "s"
-                    } need attention. Click to review.`
-                  : "Walk your agent directories and registry for items needing attention: unregistered installs, broken symlinks, missing files. Local-only — no network."
-            }
-            aria-label={
-              localScanState.phase === "working"
-                ? "Scanning local disk"
-                : localScanState.phase === "done"
-                  ? localScanState.count === 0
-                    ? "All clean"
-                    : `${localScanState.count} item${
-                        localScanState.count === 1 ? "" : "s"
-                      } need attention — review on Installed tab`
-                  : "Scan local disk for items needing attention"
-            }
-            onClick={
-              localScanState.phase === "done" && localScanState.count > 0
-                ? onViewLocalScan
-                : onLocalScan
-            }
-          >
-            {localScanState.phase === "working" ? (
-              <>
-                <span className="spinner inline" aria-hidden="true" /> Scanning…
-              </>
-            ) : localScanState.phase === "done" ? (
-              localScanState.count === 0 ? (
-                <>
-                  <Icon name="check" size="md" /> All clean
-                </>
-              ) : (
-                <>
-                  <Icon name="check" size="md" />{" "}
-                  {localScanState.count === 1
-                    ? "1 item"
-                    : `${localScanState.count} items`}
-                  <span className="rescan-view-cta"> · Review</span>
-                </>
-              )
-            ) : (
-              <>
-                <Icon name="search" size="md" /> Scan Local
+                <Icon name="refresh" size="md" /> Check for skill updates
               </>
             )}
           </button>

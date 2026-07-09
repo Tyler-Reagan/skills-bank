@@ -270,12 +270,12 @@ export interface RepointOriginTarget {
  * Restore action (ADR-0012) — repoint a skill's origin at a new GitHub
  * location the user supplied (the upstream was renamed/moved or the skill
  * folder relocated). Writes the new origin URL into the manifest row,
- * then delegates to `applyOriginUpdate` to re-fetch / validate
+ * then delegates to `applySkillUpdate` to re-fetch / validate
  * frontmatter / rebaseline / roll back content on failure. On failure
  * the prior row is restored so a bad target leaves no broken pointer
  * behind. Stays in `vendored/`.
  *
- * `applyOriginUpdate` is lazy-imported to keep heal.ts (and its many
+ * `applySkillUpdate` is lazy-imported to keep heal.ts (and its many
  * consumers) clear of the heavy build/sync graph that origin.ts pulls in.
  */
 export async function repointOrigin(
@@ -283,7 +283,7 @@ export async function repointOrigin(
   name: string,
   target: RepointOriginTarget,
   token: string | null,
-): Promise<import("../github/origin.js").OriginUpdateResult> {
+): Promise<import("../github/origin.js").SkillUpdateResult> {
   const ref = findSkillFolder(registryRoot, name);
   if (!ref) {
     return { ok: false, message: `${name} not found in any bucket` };
@@ -303,8 +303,8 @@ export async function repointOrigin(
   else manifest.skills.push(nextRow);
   writeLiveManifest(registryRoot, manifest);
 
-  const { applyOriginUpdate } = await import("../github/origin.js");
-  const result = await applyOriginUpdate({ registryRoot, name, token });
+  const { applySkillUpdate } = await import("../github/origin.js");
+  const result = await applySkillUpdate({ registryRoot, name, token });
   if (!result.ok) {
     // Re-fetch from the new origin failed; restore the prior row so a
     // bad repoint target doesn't strand the skill on a broken pointer.

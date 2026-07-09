@@ -1,7 +1,7 @@
 // SKILL.md frontmatter validation against the SkillFrontmatter schema.
 // Shared between the maintainer script paths (`bank vendor`,
-// `bank update`) and the in-app Origin Update path
-// (`applyOriginUpdate`) so all three converge on one contract for
+// `bank update`) and the in-app Skill Update path
+// (`applySkillUpdate`) so all three converge on one contract for
 // "post-mirror invariants." (The meta.json synthesis that used to
 // live here was removed in v1.20 along with meta.json itself.)
 //
@@ -24,7 +24,7 @@ import addFormats from "ajv-formats";
  * Loaded once and cached for the process lifetime.
  *
  * Two copies of the schema exist by design:
- *   - This TS constant — used by the runtime (`applyOriginUpdate`,
+ *   - This TS constant — used by the runtime (`applySkillUpdate`,
  *     `validate-all.ts`, `build.ts`) so packaged-app instances don't
  *     depend on a docs/ file existing inside the user's registry.
  *   - `docs/skill-frontmatter-schema.json` — the canonical published
@@ -228,7 +228,7 @@ export type ValidateSkillMetaResult =
 /**
  * Validate SKILL.md frontmatter for `skillDir` against the SkillMeta schema.
  *
- * Used by `bank update` (pre-publish gate) and `applyOriginUpdate`
+ * Used by `bank update` (pre-publish gate) and `applySkillUpdate`
  * (post-mirror gate).
  *
  * Returns a discriminated union so callers can render flow-specific

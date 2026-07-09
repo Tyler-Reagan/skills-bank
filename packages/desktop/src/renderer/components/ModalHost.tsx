@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { RegistrationPlanModal } from "./RegistrationPlanModal.js";
 import { ManageLinksModal } from "./ManageLinksModal.js";
@@ -6,14 +6,15 @@ import { InstallCollisionModal } from "./InstallCollisionModal.js";
 import { InstallConflictModal } from "./InstallConflictModal.js";
 import type { InstallConflictError } from "./InstallConflictModal.js";
 import { ManifestConflictModal } from "./ManifestConflictModal.js";
+import { ResolveAllConflictsModal } from "./ResolveAllConflictsModal.js";
 import { DeleteUnregisteredDialog } from "./DeleteUnregisteredDialog.js";
 import { SettingsModal } from "./SettingsModal.js";
 import { KeyboardShortcutsOverlay } from "./KeyboardShortcutsOverlay.js";
 import { AccountModal } from "./AccountModal.js";
 import { ManifestModal } from "./manifest/ManifestModal.js";
 import { ConnectGithubModal } from "./ConnectGithubModal.js";
-import { UpdatesModal } from "./UpdatesModal.js";
-import { UpdateNotesModal } from "./UpdateNotesModal.js";
+import { SkillUpdatesModal } from "./SkillUpdatesModal.js";
+import { AppUpdateNotesModal } from "./AppUpdateNotesModal.js";
 import { RepoPickerModal } from "./RepoPickerModal.js";
 import { DestinationPickerDialog } from "./DestinationPickerDialog.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
@@ -24,16 +25,19 @@ import { SkillDetailDrawer, type ReviewContext } from "./SkillDetailDrawer.js";
 // `build.ts` which imports `node:child_process` and blows up the
 // vite browser build. See `components/skillState.ts` for the shim.
 import { classifyDrawerState } from "./skillState.js";
-import type { InstalledGroup } from "./installedGrouping.js";
+import {
+  selectResolvableConflicts,
+  type InstalledGroup,
+} from "./installedGrouping.js";
 import { useRegistry } from "../RegistryContext.js";
 import { useRegisterSkill } from "../useRegisterSkill.js";
 import { useSettings } from "../SettingsContext.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
 import type {
+  AppUpdateStatus,
   AuthStatus,
   OriginManualChoice,
-  OriginUpdateResult,
-  UpdateStatus,
+  SkillUpdateResult,
 } from "../../shared/ipc.js";
 
 /**
@@ -115,11 +119,11 @@ interface Props {
   importingManifest: boolean;
   cancelManifestImport: () => void;
   importLinkedRepo: () => Promise<void>;
-  latestUpdateStatus: UpdateStatus | null;
-  setDismissedUpdateVersion: (v: string | null) => void;
+  latestAppUpdateStatus: AppUpdateStatus | null;
+  setDismissedAppUpdateVersion: (v: string | null) => void;
   resolveAllTarget: InstalledGroup[] | null;
   setResolveAllTarget: (v: InstalledGroup[] | null) => void;
-  checkForUpdates: () => void;
+  checkForAppUpdates: () => void;
   unregisterHintShown: () => boolean;
   markUnregisterHintShown: () => void;
   reviewContext?: ReviewContext | null;
@@ -142,11 +146,11 @@ export function ModalHost({
   importingManifest,
   cancelManifestImport,
   importLinkedRepo,
-  latestUpdateStatus,
-  setDismissedUpdateVersion,
+  latestAppUpdateStatus,
+  setDismissedAppUpdateVersion,
   resolveAllTarget,
   setResolveAllTarget,
-  checkForUpdates,
+  checkForAppUpdates,
   unregisterHintShown,
   markUnregisterHintShown,
   reviewContext,
@@ -156,19 +160,13 @@ export function ModalHost({
   const { flash, flashError, dismissToast, pushAppError, dismissAppError } =
     useRegistryHost();
 
-  const [resolveAllRunning, setResolveAllRunning] = useState(false);
-  const [resolveAllErrors, setResolveAllErrors] = useState<Record<
-    string,
-    string[]
-  > | null>(null);
-
   const pickDestinationTarget =
     modal?.kind === "pickDestination" ? modal.target : null;
   const overwriteTarget = modal?.kind === "overwrite" ? modal.target : null;
   const bulkRepairPrompt = modal?.kind === "bulkRepair" ? modal.target : null;
 
   const handleUpdateResult = useCallback(
-    (r: OriginUpdateResult) => {
+    (r: SkillUpdateResult) => {
       if (r.ok) {
         flash(r.message);
         return;
@@ -296,118 +294,12 @@ export function ModalHost({
       )}
 
       {resolveAllTarget && (
-        <div role="dialog" aria-modal="true" className="modal-overlay">
-          <div className="resolve-all-body">
-            <h3 className="mt-0">
-              Resolve all conflicts ({resolveAllTarget.length})?
-            </h3>
-            <p className="text-muted text-13">
-              For each skill below, every duplicate or stale agent-dir entry
-              will be replaced with a symlink to the Skills Bank copy. This is
-              the same as picking "Replace with symlink" for each conflict.
-            </p>
-            <ul className="resolve-all-list">
-              {resolveAllTarget.map((g) => {
-                const skillErrors = resolveAllErrors?.[g.name];
-                return (
-                  <li key={g.name} className="resolve-all-list-item">
-                    <code
-                      className={
-                        skillErrors ? "resolve-all-skill-error" : "mono"
-                      }
-                    >
-                      {g.name}
-                    </code>{" "}
-                    <span className="text-subtle">
-                      — {g.conflicts.length} conflict
-                      {g.conflicts.length === 1 ? "" : "s"}
-                    </span>
-                    {skillErrors && (
-                      <ul className="resolve-all-errors-list">
-                        {skillErrors.map((m, i) => (
-                          <li key={i}>· {m}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="row-end">
-              <button
-                className="btn"
-                onClick={() => {
-                  setResolveAllTarget(null);
-                  setResolveAllErrors(null);
-                }}
-                disabled={resolveAllRunning}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn warn"
-                disabled={resolveAllRunning}
-                onClick={() => {
-                  void (async () => {
-                    setResolveAllRunning(true);
-                    setResolveAllErrors(null);
-                    let okCount = 0;
-                    let failCount = 0;
-                    const errs: Record<string, string[]> = {};
-                    for (const g of resolveAllTarget) {
-                      const decisions = g.conflicts.map((c) => ({
-                        agent: c.agent,
-                        action: "replace-with-symlink" as const,
-                      }));
-                      try {
-                        const r = await window.skillsBank.resolveSkillConflicts(
-                          g.name,
-                          decisions,
-                        );
-                        okCount += r.applied.length;
-                        failCount += r.errors.length;
-                        if (r.errors.length > 0) {
-                          errs[g.name] = r.errors.map(
-                            (e) => `${e.agent}: ${e.message}`,
-                          );
-                        }
-                      } catch (err) {
-                        failCount += 1;
-                        errs[g.name] = [(err as Error).message];
-                      }
-                    }
-                    setResolveAllRunning(false);
-                    if (failCount === 0) {
-                      setResolveAllTarget(null);
-                      flash(
-                        `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} across ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}.`,
-                      );
-                      await refresh();
-                    } else {
-                      setResolveAllErrors(errs);
-                      flash(
-                        okCount === 0
-                          ? `Couldn't resolve ${failCount} conflict${failCount === 1 ? "" : "s"} (see details)`
-                          : `Resolved ${okCount}; ${failCount} failed (see details)`,
-                      );
-                      await refresh();
-                    }
-                  })();
-                }}
-              >
-                {resolveAllRunning ? (
-                  <>
-                    <span className="spinner inline" /> Resolving
-                  </>
-                ) : resolveAllErrors ? (
-                  "Retry"
-                ) : (
-                  `Resolve ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}`
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ResolveAllConflictsModal
+          target={resolveAllTarget}
+          onClose={() => setResolveAllTarget(null)}
+          onFlash={flash}
+          refresh={refresh}
+        />
       )}
 
       {modal?.kind === "installConflict" && (
@@ -428,18 +320,19 @@ export function ModalHost({
             await refresh();
           }}
           onResolve={() => {
-            const conflicts = installed.filter(
-              (i) =>
-                i.name === modal.target.name &&
-                i.kind !== "ours" &&
-                i.kind !== "broken-symlink",
-            );
+            // Install-conflict resolution only ever reaches an already-
+            // registered skill, so this is the always-registered variant.
+            const { conflicts, allowReplaceWithSymlink } =
+              selectResolvableConflicts(
+                installed.filter((i) => i.name === modal.target.name),
+                true,
+              );
             openModal({
               kind: "conflict",
               target: {
                 name: modal.target.name,
                 conflicts,
-                allowReplaceWithSymlink: true,
+                allowReplaceWithSymlink,
               },
             });
           }}
@@ -483,7 +376,7 @@ export function ModalHost({
           onClose={() => closeModal()}
           isAuthed={Boolean(authStatus?.user)}
           appVersion="dev"
-          onCheckForUpdates={checkForUpdates}
+          onCheckForAppUpdates={checkForAppUpdates}
         />
       )}
 
@@ -574,11 +467,11 @@ export function ModalHost({
       )}
 
       {modal?.kind === "updates" && (
-        <UpdatesModal
+        <SkillUpdatesModal
           entries={pendingSkillUpdates}
           onClose={() => closeModal()}
           onUpdate={async (name) => {
-            const r = await window.skillsBank.originUpdate(name);
+            const r = await window.skillsBank.skillUpdate(name);
             handleUpdateResult(r);
             await refresh();
             return r;
@@ -587,7 +480,7 @@ export function ModalHost({
             closeModal();
             setSelected(entry);
           }}
-          onRefresh={async () => {
+          onCheckSkillUpdates={async () => {
             await window.skillsBank.originProbe();
             await refresh();
           }}
@@ -729,26 +622,26 @@ export function ModalHost({
       />
 
       {modal?.kind === "updateNotes" &&
-        latestUpdateStatus &&
-        (latestUpdateStatus.kind === "available" ||
-          latestUpdateStatus.kind === "downloading" ||
-          latestUpdateStatus.kind === "downloaded") && (
-          <UpdateNotesModal
-            status={latestUpdateStatus}
+        latestAppUpdateStatus &&
+        (latestAppUpdateStatus.kind === "available" ||
+          latestAppUpdateStatus.kind === "downloading" ||
+          latestAppUpdateStatus.kind === "downloaded") && (
+          <AppUpdateNotesModal
+            status={latestAppUpdateStatus}
             onClose={() => closeModal()}
             onSkip={(version) => {
-              setDismissedUpdateVersion(version);
-              void window.skillsBank.setDismissedUpdateVersion(version);
+              setDismissedAppUpdateVersion(version);
+              void window.skillsBank.setDismissedAppUpdateVersion(version);
               closeModal();
             }}
             onDownload={() => {
-              void window.skillsBank.downloadUpdate().then((r) => {
+              void window.skillsBank.downloadAppUpdate().then((r) => {
                 if (!r.ok) flash(r.message);
               });
             }}
             onRestart={() => {
               closeModal();
-              void window.skillsBank.quitAndInstallUpdate();
+              void window.skillsBank.quitAndInstallAppUpdate();
             }}
           />
         )}
@@ -802,7 +695,7 @@ interface DrawerHostProps {
   /** Auth state — drawer gates the upstream-activity strip on whether the user is signed in. */
   authStatus: AuthStatus | null;
   /** Centralized handler for the three Update result paths. */
-  onUpdateResult: (r: OriginUpdateResult) => void;
+  onUpdateResult: (r: SkillUpdateResult) => void;
   /** Open the per-skill ManageLinks modal. */
   onOpenManageLinks: (target: {
     name: string;
@@ -906,16 +799,13 @@ function DrawerHost({
         // skills get delete/keep only, including broken stragglers;
         // registered skills get the full three-action picker excluding
         // broken (Repair handles those).
-        const conflicts = isRegistered
-          ? installations.filter(
-              (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
-            )
-          : installations.filter((i) => i.kind !== "ours");
+        const { conflicts, allowReplaceWithSymlink } =
+          selectResolvableConflicts(installations, isRegistered);
         if (conflicts.length === 0) return;
         onOpenConflicts({
           name: selected.name,
           conflicts,
-          allowReplaceWithSymlink: isRegistered,
+          allowReplaceWithSymlink,
         });
         onClose();
       }}
@@ -933,7 +823,7 @@ function DrawerHost({
       onUpdate={
         caps.canUpdate
           ? async () => {
-              const r = await window.skillsBank.originUpdate(selected.name);
+              const r = await window.skillsBank.skillUpdate(selected.name);
               onUpdateResult(r);
               await refresh();
             }

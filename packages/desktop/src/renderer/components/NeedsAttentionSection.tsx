@@ -13,13 +13,20 @@ interface Props {
   onRepairBroken?: (group: InstalledGroup) => void;
   onResolveAllConflicts?: (groups: InstalledGroup[]) => void;
   onRepairAllBroken?: (groups: InstalledGroup[]) => void;
+  /**
+   * Forget a card whose registry folder is gone (`registry-folder-missing`
+   * / `forget-missing` primary) — drops the lingering manifest row.
+   */
+  onForgetMissing?: (group: InstalledGroup) => void;
 }
 
 /**
- * The "Needs attention" section of the Installed tab: conflicts and
- * broken links that block a skill from working cleanly. Each card
- * resolves inline (no drawer detour); the header offers bulk repair /
- * resolve when more than one group shares a primary action.
+ * The "Needs attention" section of the Installed tab: every Skill
+ * Diagnostic the classifier surfaces — conflicts and broken links that
+ * block a skill from working cleanly, plus registry-folder-missing
+ * skills that just need forgetting. Each card resolves inline (no
+ * drawer detour); the header offers bulk repair / resolve when more
+ * than one group shares a primary action.
  *
  * Rendered only when the slice is non-empty — the parent gates on that.
  */
@@ -31,6 +38,7 @@ export function NeedsAttentionSection({
   onRepairBroken,
   onResolveAllConflicts,
   onRepairAllBroken,
+  onForgetMissing,
 }: Props): React.ReactElement {
   // Bulk-resolve only applies to registered conflicts (the primary the
   // existing InstallCollisionModal can handle). It skips broken-symlink
@@ -56,9 +64,9 @@ export function NeedsAttentionSection({
             Needs attention <span className="count">({groups.length})</span>
           </h2>
           <p>
-            Conflicts or broken links that block the skill from working cleanly.
-            The action button on each card resolves it inline — no drawer
-            detour.
+            Conflicts, broken links, or missing registry folders that need your
+            attention. The action button on each card resolves it inline — no
+            drawer detour.
           </p>
         </div>
         <div className="row-center-6">
@@ -125,6 +133,11 @@ export function NeedsAttentionSection({
               classification.conflictCount + classification.brokenCount;
             inlineLabel = `Resolve ${totalInstalls} conflict${totalInstalls === 1 ? "" : "s"}`;
             inlineHandler = () => onResolveConflicts(g);
+          } else if (prim === "forget-missing" && onForgetMissing) {
+            // Registry folder is gone — nothing to repair or resolve,
+            // just drop the lingering manifest row.
+            inlineLabel = "Forget";
+            inlineHandler = () => onForgetMissing(g);
           }
           const inlineEnabled = inlineLabel !== null && inlineHandler !== null;
           const isBroken = prim === "repair-broken";
@@ -137,7 +150,9 @@ export function NeedsAttentionSection({
                   title={
                     isBroken
                       ? "Try to find a usable source elsewhere; otherwise prompt to delete."
-                      : `${classification.conflictCount} agent dir(s) have duplicate or stale entries — pick how to handle each.`
+                      : prim === "forget-missing"
+                        ? "The registry folder for this skill is gone. Forgetting drops the registry record so it stops appearing."
+                        : `${classification.conflictCount} agent dir(s) have duplicate or stale entries — pick how to handle each.`
                   }
                 >
                   <Icon name="alert-triangle" size="sm" />
