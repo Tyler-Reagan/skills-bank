@@ -502,9 +502,7 @@ interface SkillsBankAPI {
    */
   setSkillTrackingEnabled(enabled: boolean): Promise<SetTrackingResult>;
   /**
-   * Scan agent dirs (and optionally user-defined custom dirs) for
-   * installed skills. Custom dirs are absolute paths; non-existent
-   * entries and entries that duplicate a known agent dir are skipped.
+   * Scan the fixed Agent Directories for installed skills.
    */
   listInstalled(): Promise<InstalledSkill[]>;
   install(
