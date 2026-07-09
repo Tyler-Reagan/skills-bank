@@ -4133,19 +4133,6 @@ button:disabled {
   font-size: 13px;
 }
 
-/* ── ManifestImportConfirmModal ────────────────────────── */
-.manifest-confirm-hint {
-  font-size: 12px;
-  color: var(--text-2);
-  margin: 4px 0;
-}
-.manifest-confirm-error {
-  margin: 8px 0 0;
-  font-size: 11px;
-  color: var(--danger);
-  white-space: pre-wrap;
-}
-
 /* ── ManifestModal ─────────────────────────────────────── */
 .manifest-transport-toggle {
   display: flex;

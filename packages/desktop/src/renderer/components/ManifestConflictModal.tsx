@@ -71,10 +71,9 @@ function summarize(skill: ManifestSkill | null): string {
 }
 
 /**
- * Resolver for three-way manifest-merge conflicts. The metadata sibling
- * of `SyncConflictModal` (which resolves file-content sync collisions):
- * here each row compares the base/ours/theirs *intent* fields rather
- * than a file diff, and the arms are keep-mine / use-theirs /
+ * Resolver for three-way manifest-merge conflicts. Each row compares
+ * the base/ours/theirs *intent* fields (category, tags, origin) rather
+ * than raw file diffs, with resolution options: keep-mine / use-theirs /
  * keep-both. Thin domain wrapper over the shared `ConflictResolver`.
  */
 export function ManifestConflictModal({
