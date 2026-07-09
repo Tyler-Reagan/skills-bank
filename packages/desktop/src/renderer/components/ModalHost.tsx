@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import type { AgentId, InstalledSkill, RegistryEntry } from "@skills-bank/core";
 import { RegistrationPlanModal } from "./RegistrationPlanModal.js";
 import { ManageLinksModal } from "./ManageLinksModal.js";
@@ -6,6 +6,7 @@ import { InstallCollisionModal } from "./InstallCollisionModal.js";
 import { InstallConflictModal } from "./InstallConflictModal.js";
 import type { InstallConflictError } from "./InstallConflictModal.js";
 import { ManifestConflictModal } from "./ManifestConflictModal.js";
+import { ResolveAllConflictsModal } from "./ResolveAllConflictsModal.js";
 import { DeleteUnregisteredDialog } from "./DeleteUnregisteredDialog.js";
 import { SettingsModal } from "./SettingsModal.js";
 import { KeyboardShortcutsOverlay } from "./KeyboardShortcutsOverlay.js";
@@ -159,12 +160,6 @@ export function ModalHost({
   const { flash, flashError, dismissToast, pushAppError, dismissAppError } =
     useRegistryHost();
 
-  const [resolveAllRunning, setResolveAllRunning] = useState(false);
-  const [resolveAllErrors, setResolveAllErrors] = useState<Record<
-    string,
-    string[]
-  > | null>(null);
-
   const pickDestinationTarget =
     modal?.kind === "pickDestination" ? modal.target : null;
   const overwriteTarget = modal?.kind === "overwrite" ? modal.target : null;
@@ -299,118 +294,12 @@ export function ModalHost({
       )}
 
       {resolveAllTarget && (
-        <div role="dialog" aria-modal="true" className="modal-overlay">
-          <div className="resolve-all-body">
-            <h3 className="mt-0">
-              Resolve all conflicts ({resolveAllTarget.length})?
-            </h3>
-            <p className="text-muted text-13">
-              For each skill below, every duplicate or stale agent-dir entry
-              will be replaced with a symlink to the Skills Bank copy. This is
-              the same as picking "Replace with symlink" for each conflict.
-            </p>
-            <ul className="resolve-all-list">
-              {resolveAllTarget.map((g) => {
-                const skillErrors = resolveAllErrors?.[g.name];
-                return (
-                  <li key={g.name} className="resolve-all-list-item">
-                    <code
-                      className={
-                        skillErrors ? "resolve-all-skill-error" : "mono"
-                      }
-                    >
-                      {g.name}
-                    </code>{" "}
-                    <span className="text-subtle">
-                      — {g.conflicts.length} conflict
-                      {g.conflicts.length === 1 ? "" : "s"}
-                    </span>
-                    {skillErrors && (
-                      <ul className="resolve-all-errors-list">
-                        {skillErrors.map((m, i) => (
-                          <li key={i}>· {m}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="row-end">
-              <button
-                className="btn"
-                onClick={() => {
-                  setResolveAllTarget(null);
-                  setResolveAllErrors(null);
-                }}
-                disabled={resolveAllRunning}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn warn"
-                disabled={resolveAllRunning}
-                onClick={() => {
-                  void (async () => {
-                    setResolveAllRunning(true);
-                    setResolveAllErrors(null);
-                    let okCount = 0;
-                    let failCount = 0;
-                    const errs: Record<string, string[]> = {};
-                    for (const g of resolveAllTarget) {
-                      const decisions = g.conflicts.map((c) => ({
-                        agent: c.agent,
-                        action: "replace-with-symlink" as const,
-                      }));
-                      try {
-                        const r = await window.skillsBank.resolveSkillConflicts(
-                          g.name,
-                          decisions,
-                        );
-                        okCount += r.applied.length;
-                        failCount += r.errors.length;
-                        if (r.errors.length > 0) {
-                          errs[g.name] = r.errors.map(
-                            (e) => `${e.agent}: ${e.message}`,
-                          );
-                        }
-                      } catch (err) {
-                        failCount += 1;
-                        errs[g.name] = [(err as Error).message];
-                      }
-                    }
-                    setResolveAllRunning(false);
-                    if (failCount === 0) {
-                      setResolveAllTarget(null);
-                      flash(
-                        `Resolved ${okCount} conflict${okCount === 1 ? "" : "s"} across ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}.`,
-                      );
-                      await refresh();
-                    } else {
-                      setResolveAllErrors(errs);
-                      flash(
-                        okCount === 0
-                          ? `Couldn't resolve ${failCount} conflict${failCount === 1 ? "" : "s"} (see details)`
-                          : `Resolved ${okCount}; ${failCount} failed (see details)`,
-                      );
-                      await refresh();
-                    }
-                  })();
-                }}
-              >
-                {resolveAllRunning ? (
-                  <>
-                    <span className="spinner inline" /> Resolving
-                  </>
-                ) : resolveAllErrors ? (
-                  "Retry"
-                ) : (
-                  `Resolve ${resolveAllTarget.length} skill${resolveAllTarget.length === 1 ? "" : "s"}`
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ResolveAllConflictsModal
+          target={resolveAllTarget}
+          onClose={() => setResolveAllTarget(null)}
+          onFlash={flash}
+          refresh={refresh}
+        />
       )}
 
       {modal?.kind === "installConflict" && (
