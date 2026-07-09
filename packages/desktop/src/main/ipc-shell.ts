@@ -264,8 +264,10 @@ export function buildAppMenu(): Menu {
     {
       label: "View",
       submenu: [
-        { label: "Refresh", click: () => send("refresh") },
-        { label: "Sync skills", click: () => send("sync") },
+        {
+          label: "Check for Skill Updates",
+          click: () => send("checkSkillUpdates"),
+        },
         { type: "separator" },
         ...(app.isPackaged
           ? []

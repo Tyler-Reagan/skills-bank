@@ -31,7 +31,7 @@ import { ErrorPanel } from "./components/ErrorPanel.js";
 import { ModalHost, type ActiveModal } from "./components/ModalHost.js";
 import { useManifestImportProgress } from "./hooks/useManifestImportProgress.js";
 import { useModalRouter } from "./hooks/useModalRouter.js";
-import { useRescanController } from "./hooks/useRescanController.js";
+import { useOriginProbe } from "./hooks/useOriginProbe.js";
 import { useUpdateFeed } from "./hooks/useUpdateFeed.js";
 import {
   RegistryHostProvider,
@@ -297,11 +297,12 @@ function AppContent(): React.ReactElement {
     writeLS(LS_KEYS.tab, t);
   };
 
-  // Header Rescan button — the whole user-triggered rebuild + upstream-
-  // probe state machine, plus the probe-complete listener that drives
-  // the rate-limit toast and the "View" deep-link. Owns rescanState,
-  // userTriggeredProbeRef, and doneTimerRef internally.
-  const rescan = useRescanController({
+  // Header "Check for skill updates" button — the whole user-triggered
+  // rebuild + origin-probe state machine, plus the probe-complete
+  // listener that drives the rate-limit toast and the "View"
+  // deep-link. Owns originProbeState, userTriggeredProbeRef, and
+  // doneTimerRef internally.
+  const originProbe = useOriginProbe({
     refresh,
     flashError,
     setRegistryFilters,
@@ -312,7 +313,7 @@ function AppContent(): React.ReactElement {
     }, [dismissToast]),
   });
 
-  // Local-disk diagnostics state. Mirrors the rescan controller's
+  // Local-disk diagnostics state. Mirrors the origin-probe controller's
   // three-phase shape but stays inline since the scan is single-shot
   // (no async probe-complete event to coordinate).
   const [localScanState, setLocalScanState] = useState<LocalScanState>({
@@ -582,21 +583,20 @@ function AppContent(): React.ReactElement {
         case "openShortcuts":
           openModal({ kind: "shortcuts" });
           break;
-        case "refresh":
-          void rescan.onRefreshClick();
+        case "checkSkillUpdates":
+          void originProbe.onCheckSkillUpdates();
           break;
         case "checkForUpdates":
           checkForUpdates();
           break;
-        // Other actions (changeRegistry, mergeRegistry, signOut, sync) are
-        // no longer dispatched from any surface — the in-app dropdown that
-        // fired them is gone, the menubar doesn't include them, and "sync"
-        // was the curated-tarball-sync subsystem removed in v6 (#159). Kept
+        // Other actions (changeRegistry, mergeRegistry, signOut) are no
+        // longer dispatched from any surface — the in-app dropdown that
+        // fired them is gone and the menubar doesn't include them. Kept
         // in the union for back-compat with the IPC shape; the cases are
         // unreachable.
       }
     });
-  }, [rescan, checkForUpdates]);
+  }, [originProbe, checkForUpdates]);
 
   // Keep the drawer's entry up-to-date if the registry refreshes. Don't
   // close the drawer when no registry entry is found — the selection may
@@ -630,8 +630,8 @@ function AppContent(): React.ReactElement {
     return (
       <div className="app" aria-busy="true">
         <Header
-          rescanState={{ phase: "working" }}
-          onRefresh={() => undefined}
+          originProbeState={{ phase: "working" }}
+          onCheckSkillUpdates={() => undefined}
           theme={theme}
           onToggleTheme={toggleTheme}
           density={density}
@@ -645,7 +645,7 @@ function AppContent(): React.ReactElement {
           onShowUpdate={() => undefined}
           pendingSkillUpdates={0}
           onShowUpdates={() => undefined}
-          onViewRescanUpdates={() => undefined}
+          onViewSkillUpdates={() => undefined}
           importingManifest={false}
           onCancelImport={() => undefined}
           localScanState={{ phase: "idle" }}
@@ -676,8 +676,8 @@ function AppContent(): React.ReactElement {
   return (
     <div className="app">
       <Header
-        rescanState={rescan.state}
-        onRefresh={() => void rescan.onRefreshClick()}
+        originProbeState={originProbe.state}
+        onCheckSkillUpdates={() => void originProbe.onCheckSkillUpdates()}
         theme={theme}
         onToggleTheme={toggleTheme}
         density={density}
@@ -691,7 +691,7 @@ function AppContent(): React.ReactElement {
         onShowUpdate={openUpdateModal}
         pendingSkillUpdates={pendingSkillUpdates.length}
         onShowUpdates={() => openModal({ kind: "updates" })}
-        onViewRescanUpdates={rescan.onViewUpdates}
+        onViewSkillUpdates={originProbe.onViewSkillUpdates}
         importingManifest={importingManifest}
         onCancelImport={cancelManifestImport}
         localScanState={localScanState}

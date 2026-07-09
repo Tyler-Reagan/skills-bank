@@ -338,8 +338,7 @@ export type HeaderMenuAction =
   | "openSettings"
   | "openShortcuts"
   | "signOut"
-  | "refresh"
-  | "sync"
+  | "checkSkillUpdates"
   | "checkForUpdates";
 
 export type UpdateStatus =

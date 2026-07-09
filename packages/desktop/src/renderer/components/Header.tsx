@@ -19,7 +19,7 @@ export type Density = "comfortable" | "compact";
  * gates with a local `userTriggeredProbe` flag so background probes
  * stay silent.
  */
-export type RescanState =
+export type OriginProbeState =
   | { phase: "idle" }
   | { phase: "working" }
   | { phase: "done"; updates: number };
@@ -40,8 +40,8 @@ export type LocalScanState =
   | { phase: "done"; count: number };
 
 interface Props {
-  rescanState: RescanState;
-  onRefresh: () => void;
+  originProbeState: OriginProbeState;
+  onCheckSkillUpdates: () => void;
   theme: Theme;
   onToggleTheme: () => void;
   density: Density;
@@ -73,13 +73,13 @@ interface Props {
   pendingSkillUpdates: number;
   onShowUpdates: () => void;
   /**
-   * Invoked when the user clicks "View" in the Rescan done-state
-   * after a probe surfaces N>0 updates. The host is expected to
-   * switch to the Browse tab, flip the Updates chip on, and scroll
-   * the grid to the top. The button stays in done-state until this
-   * fires (or the user clicks Rescan again) — no auto-fade.
+   * Invoked when the user clicks "View" in the done-state after a
+   * probe surfaces N>0 updates. The host is expected to switch to
+   * the Browse tab, flip the Updates chip on, and scroll the grid to
+   * the top. The button stays in done-state until this fires (or the
+   * user clicks "Check for skill updates" again) — no auto-fade.
    */
-  onViewRescanUpdates: () => void;
+  onViewSkillUpdates: () => void;
   /**
    * True while a manifest import is in flight (initiated from
    * AccountModal but tracked at App.tsx so the indicator survives
@@ -118,8 +118,8 @@ interface Props {
 }
 
 export function Header({
-  rescanState,
-  onRefresh,
+  originProbeState,
+  onCheckSkillUpdates,
   theme,
   onToggleTheme,
   density,
@@ -133,7 +133,7 @@ export function Header({
   onShowUpdate,
   pendingSkillUpdates,
   onShowUpdates,
-  onViewRescanUpdates,
+  onViewSkillUpdates,
   importingManifest,
   onCancelImport,
   localScanState,
@@ -259,59 +259,60 @@ export function Header({
             </button>
           )}
           <button
-            className={`refresh-btn rescan-${rescanState.phase}${
-              rescanState.phase === "done" && rescanState.updates > 0
-                ? " rescan-done-actionable"
+            className={`refresh-btn origin-probe-${originProbeState.phase}${
+              originProbeState.phase === "done" && originProbeState.updates > 0
+                ? " origin-probe-done-actionable"
                 : ""
             }`}
-            disabled={rescanState.phase === "working"}
-            aria-busy={rescanState.phase === "working" || undefined}
+            disabled={originProbeState.phase === "working"}
+            aria-busy={originProbeState.phase === "working" || undefined}
             title={
-              rescanState.phase === "working"
+              originProbeState.phase === "working"
                 ? "Checking each skill's authoritative GitHub Origin for newer content"
-                : rescanState.phase === "done" && rescanState.updates > 0
-                  ? `${rescanState.updates} update${
-                      rescanState.updates === 1 ? "" : "s"
+                : originProbeState.phase === "done" &&
+                    originProbeState.updates > 0
+                  ? `${originProbeState.updates} update${
+                      originProbeState.updates === 1 ? "" : "s"
                     } available. Click to view in the registry.`
                   : "Check each skill's authoritative GitHub Origin for newer content. Surfaces available updates as chips on the cards — does not download anything. To apply an update, click the chip on the card itself."
             }
             aria-label={
-              rescanState.phase === "working"
-                ? "Checking for updates"
-                : rescanState.phase === "done"
-                  ? rescanState.updates === 0
+              originProbeState.phase === "working"
+                ? "Checking for skill updates"
+                : originProbeState.phase === "done"
+                  ? originProbeState.updates === 0
                     ? "Up to date"
-                    : `${rescanState.updates} update${rescanState.updates === 1 ? "" : "s"} available — view in registry`
-                  : "Check for updates"
+                    : `${originProbeState.updates} update${originProbeState.updates === 1 ? "" : "s"} available — view in registry`
+                  : "Check for skill updates"
             }
             onClick={
-              rescanState.phase === "done" && rescanState.updates > 0
-                ? onViewRescanUpdates
-                : onRefresh
+              originProbeState.phase === "done" && originProbeState.updates > 0
+                ? onViewSkillUpdates
+                : onCheckSkillUpdates
             }
           >
-            {rescanState.phase === "working" ? (
+            {originProbeState.phase === "working" ? (
               <>
                 <span className="spinner inline" aria-hidden="true" /> Checking
-                for updates…
+                for skill updates…
               </>
-            ) : rescanState.phase === "done" ? (
-              rescanState.updates === 0 ? (
+            ) : originProbeState.phase === "done" ? (
+              originProbeState.updates === 0 ? (
                 <>
                   <Icon name="check" size="md" /> Up to date
                 </>
               ) : (
                 <>
                   <Icon name="check" size="md" />{" "}
-                  {rescanState.updates === 1
+                  {originProbeState.updates === 1
                     ? "1 update"
-                    : `${rescanState.updates} updates`}
+                    : `${originProbeState.updates} updates`}
                   <span className="rescan-view-cta"> · View</span>
                 </>
               )
             ) : (
               <>
-                <Icon name="refresh" size="md" /> Check for updates
+                <Icon name="refresh" size="md" /> Check for skill updates
               </>
             )}
           </button>

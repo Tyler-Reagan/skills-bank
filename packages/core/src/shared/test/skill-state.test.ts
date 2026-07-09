@@ -136,8 +136,7 @@ const ROWS: Row[] = [
     },
   },
   {
-    label:
-      "skillUpdateAvailable + no drift → skill-update-available (Update)",
+    label: "skillUpdateAvailable + no drift → skill-update-available (Update)",
     entry: entry({ skillUpdateAvailable: true }),
     installed: [],
     isRegistered: true,

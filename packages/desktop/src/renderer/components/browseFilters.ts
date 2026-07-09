@@ -5,7 +5,7 @@ import type { RegistryEntry } from "@skills-bank/core";
  * chip strip rendered by `RegistryFilters.tsx`. Kept in its own module
  * (not the `.tsx` component) because the consumers are non-presentational:
  * `BrowseTab.tsx` applies these to derive the visible slice, and the
- * `useBrowseFilters` / `useRescanController` hooks reference the types and
+ * `useBrowseFilters` / `useOriginProbe` hooks reference the types and
  * seed the active set. A React component should not be the source these
  * import from.
  */

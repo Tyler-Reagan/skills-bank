@@ -587,7 +587,7 @@ export function ModalHost({
             closeModal();
             setSelected(entry);
           }}
-          onRefresh={async () => {
+          onCheckSkillUpdates={async () => {
             await window.skillsBank.originProbe();
             await refresh();
           }}

@@ -521,12 +521,12 @@ select {
   opacity: 0.6;
   cursor: not-allowed;
 }
-.refresh-btn.rescan-working {
+.refresh-btn.origin-probe-working {
   /* Working state keeps standard chrome but is undimmed —
      it's busy, not unavailable. */
   opacity: 1;
 }
-.refresh-btn.rescan-done {
+.refresh-btn.origin-probe-done {
   /* Brief positive confirmation. Lasts ~1.5s before reverting to
      idle. Border/color tint, not a fill — keeps the chrome quiet
      alongside the rest of the header. */
@@ -534,7 +534,7 @@ select {
   color: var(--accent);
   border-color: var(--accent-dim);
 }
-.refresh-btn.rescan-done-actionable {
+.refresh-btn.origin-probe-done-actionable {
   /* Updates>0: the button now hosts the View deep-link. Sits in
      done-state indefinitely until clicked, so give it a steady
      accent border so it reads as the active CTA in the header. */
