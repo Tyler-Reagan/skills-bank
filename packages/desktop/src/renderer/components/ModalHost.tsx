@@ -24,7 +24,7 @@ import { SkillDetailDrawer, type ReviewContext } from "./SkillDetailDrawer.js";
 // `build.ts` which imports `node:child_process` and blows up the
 // vite browser build. See `components/skillState.ts` for the shim.
 import { classifyDrawerState } from "./skillState.js";
-import type { InstalledGroup } from "./InstalledTab.js";
+import type { InstalledGroup } from "./installedGrouping.js";
 import { useRegistry } from "../RegistryContext.js";
 import { useRegisterSkill } from "../useRegisterSkill.js";
 import { useSettings } from "../SettingsContext.js";

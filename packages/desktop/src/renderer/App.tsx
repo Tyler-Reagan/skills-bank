@@ -8,10 +8,8 @@ import type {
   RegistryEntry,
 } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
-import {
-  InstalledTab,
-  type InstalledGroup,
-} from "./components/InstalledTab.js";
+import { InstalledTab } from "./components/InstalledTab.js";
+import type { InstalledGroup } from "./components/installedGrouping.js";
 import {
   Header,
   type Density,
@@ -235,7 +233,7 @@ function AppContent(): React.ReactElement {
   // Rescan controller flips it remotely via setRegistryFilters when the
   // user clicks "View updates" in the done-state banner.
   const [registryFilters, setRegistryFilters] = useState<
-    Set<import("./components/RegistryFilters.js").RegistryFilterTag>
+    Set<import("./components/browseFilters.js").RegistryFilterTag>
   >(() => new Set());
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
 
@@ -762,7 +760,7 @@ function AppContent(): React.ReactElement {
               onSwitchToBrowse={() => setTabPersisted("browse")}
               // Bulk registration always flows through the
               // RegistrationPlanModal — the per-row review-then-apply surface
-              // whose own scan walks every agent dir plus custom dirs. Shown
+              // whose own scan walks every agent dir. Shown
               // from both the empty state and the Unregistered header; with
               // nothing on disk the modal renders an empty list and points at
               // the header's Scan Local. The inline per-card Register button

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { RegistrySortState } from "../components/RegistryFilters.js";
+import type { RegistrySortState } from "../components/browseFilters.js";
 
 const LS_KEYS = {
   search: "skills-bank.searchQuery",

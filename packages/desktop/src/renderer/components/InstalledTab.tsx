@@ -1,7 +1,6 @@
 import React from "react";
 import { InfoTooltip } from "./primitives.js";
 import type {
-  AgentId,
   DiagnosticCategory,
   DiagnosticItem,
   DiagnosticReport,
@@ -9,97 +8,25 @@ import type {
   RegistryEntry,
 } from "@skills-bank/core";
 import { useRegistry } from "../RegistryContext.js";
-import { useSettings } from "../SettingsContext.js";
 import { SkillCard, type CardStatus } from "./SkillCard.js";
 import { Icon } from "./Icon.js";
 import { classifyDrawerState } from "./skillState.js";
+import {
+  aggregateByName,
+  type ClassifiedGroup,
+  type InstalledGroup,
+} from "./installedGrouping.js";
+import { NeedsAttentionSection } from "./NeedsAttentionSection.js";
 
 const INSTALLED_TOOLTIP =
   "Every skill linked into any agent directory on this machine — registered " +
   "in the registry or installed elsewhere.";
 
 const REGISTER_TOOLTIP =
-  "Registering lets the app manage the skill — cross-agent linking, labels, " +
-  "and sync — while leaving its files where they live. Skills in a custom " +
-  "directory always stay in place (and don't travel via sync), so a " +
-  "non-egressable work repo can be managed without moving it. To make a " +
-  'skill portable, turn on "Move skill files into Skills Bank" in Settings ' +
-  '(or use "Move into bank" in the drawer) to relocate it into your registry.';
-
-export interface InstalledGroup {
-  name: string;
-  agents: AgentId[];
-  representative: InstalledSkill;
-  /**
-   * Group-level status: "ours" if ANY installation is properly linked
-   * to the registry; otherwise the most actionable straggler kind in
-   * source-priority order (real-directory > foreign-symlink > broken).
-   * Was previously "first-encountered, only downgrades from ours" which
-   * stranded find-skills-style skills (registered + leftover real-dir
-   * elsewhere) in the Not-Registered section.
-   */
-  kind: InstalledSkill["kind"];
-  /**
-   * Non-ours installations of the same skill name in agent dirs other
-   * than the registry-symlink ones. Surfaced to the drawer as
-   * resolvable conflicts (duplicate real-dir, stale symlink, etc.).
-   */
-  conflicts: InstalledSkill[];
-}
-
-function aggregateByName(installed: InstalledSkill[]): InstalledGroup[] {
-  const map = new Map<string, InstalledGroup>();
-  for (const i of installed) {
-    const existing = map.get(i.name);
-    if (!existing) {
-      map.set(i.name, {
-        name: i.name,
-        agents: [i.agent],
-        representative: i,
-        kind: i.kind,
-        conflicts: i.kind === "ours" ? [] : [i],
-      });
-      continue;
-    }
-    if (!existing.agents.includes(i.agent)) existing.agents.push(i.agent);
-
-    // Upgrade group to "ours" if any entry is registry-managed —
-    // surfaces the skill in the Registered section even when stragglers
-    // exist elsewhere.
-    if (i.kind === "ours") {
-      if (existing.kind !== "ours") {
-        existing.kind = "ours";
-        existing.representative = i;
-      }
-    } else {
-      existing.conflicts.push(i);
-      // No upgrade. If existing already "ours", keep it. Otherwise pick
-      // the more actionable kind (real-directory beats foreign-symlink
-      // beats broken-symlink) so the card status reads usefully.
-      if (
-        existing.kind !== "ours" &&
-        kindRank(i.kind) > kindRank(existing.kind)
-      ) {
-        existing.kind = i.kind;
-        existing.representative = i;
-      }
-    }
-  }
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-}
-
-function kindRank(k: InstalledSkill["kind"]): number {
-  switch (k) {
-    case "real-directory":
-      return 3;
-    case "foreign-symlink":
-      return 2;
-    case "broken-symlink":
-      return 1;
-    default:
-      return 0;
-  }
-}
+  "Registering moves the skill's files into your registry so the app can " +
+  "manage it — cross-agent linking and labels. Its content lives under the " +
+  "registry from then on; each agent directory points at the registry copy " +
+  "by symlink.";
 
 interface Props {
   onSwitchToBrowse: () => void;
@@ -143,9 +70,9 @@ interface Props {
   onRepairAllBroken?: (groups: InstalledGroup[]) => void;
   /**
    * Inline shortcut for the Unregistered section's per-card primary
-   * action. Adopts the single non-ours installation into the registry
-   * (the common path). Foreign-symlink alternatives like Register-as-
-   * external remain reachable via the drawer's secondary button.
+   * action. Registers the single non-ours installation (the common
+   * path). Foreign-symlink alternatives like Register-as-external
+   * remain reachable via the drawer's secondary button.
    */
   onInlineRegister?: (group: InstalledGroup) => void;
   /**
@@ -229,7 +156,7 @@ export function InstalledTab({
     "resolve-conflicts",
     "resolve-registration-conflicts",
   ]);
-  const classified = groups.map((g) => {
+  const classified: ClassifiedGroup[] = groups.map((g) => {
     const registryHit = registryByName.get(g.name);
     const entry: RegistryEntry = registryHit ?? {
       name: g.name,
@@ -300,145 +227,17 @@ export function InstalledTab({
           onFix={onFixDiagnosticItem}
         />
       )}
-      {needsAttention.length > 0 &&
-        (() => {
-          // Bulk-resolve only applies to registered conflicts (the
-          // primary the existing InstallCollisionModal can handle). It
-          // skips broken-symlink groups (need source decisions) and
-          // unregistered-conflicts groups (need per-installation
-          // registration choices, not per-agent replace/delete/keep).
-          const bulkResolvable = needsAttention
-            .filter(
-              (c) =>
-                c.classification.capabilities.primary === "resolve-conflicts",
-            )
-            .map((c) => c.g);
-          const bulkRepairable = needsAttention
-            .filter(
-              (c) => c.classification.capabilities.primary === "repair-broken",
-            )
-            .map((c) => c.g);
-          return (
-            <section>
-              <header className="section-header">
-                <div>
-                  <h2 className="row-center-8">
-                    <span
-                      className="inline-center text-warn"
-                      aria-hidden="true"
-                    >
-                      <Icon name="alert-triangle" size="sm" />
-                    </span>
-                    Needs attention{" "}
-                    <span className="count">({needsAttention.length})</span>
-                  </h2>
-                  <p>
-                    Conflicts or broken links that block the skill from working
-                    cleanly. The action button on each card resolves it inline —
-                    no drawer detour.
-                  </p>
-                </div>
-                <div className="row-center-6">
-                  {bulkRepairable.length > 1 && onRepairAllBroken && (
-                    <button
-                      className="btn inline-center-6"
-                      onClick={() => onRepairAllBroken(bulkRepairable)}
-                      title={`Re-link the broken symlinks for ${bulkRepairable.length} skills in one step. If a link can't be repaired (the registry copy is gone) you'll be prompted to remove the dead links.`}
-                    >
-                      <Icon name="broken-link" size="sm" />
-                      Fix broken link(s) ({bulkRepairable.length})
-                    </button>
-                  )}
-                  {bulkResolvable.length > 1 && onResolveAllConflicts && (
-                    <button
-                      className="btn warn inline-center-6"
-                      onClick={() => onResolveAllConflicts(bulkResolvable)}
-                      title={`Replace duplicates with symlinks to Skills Bank for ${bulkResolvable.length} skills in one step.`}
-                    >
-                      <Icon name="alert-triangle" size="sm" />
-                      Resolve all ({bulkResolvable.length})
-                    </button>
-                  )}
-                </div>
-              </header>
-              <div className="skills-grid">
-                {needsAttention.map((c, i) => {
-                  const { g, classification, entry, registryHit } = c;
-                  const s = g.representative;
-                  const status: CardStatus =
-                    g.kind === "foreign-symlink"
-                      ? { kind: "external", targetLabel: s.target ?? "" }
-                      : g.kind === "real-directory"
-                        ? { kind: "real-directory" }
-                        : g.kind === "broken-symlink"
-                          ? { kind: "broken-symlink" }
-                          : { kind: "installed" };
-                  const onCardClick = () => {
-                    if (registryHit) onSelectIntegrated(registryHit);
-                    else onRegisterOne(s);
-                  };
-                  const prim = classification.capabilities.primary;
-                  let inlineLabel: string | null = null;
-                  let inlineHandler: (() => void) | null = null;
-                  if (prim === "repair-broken" && onRepairBroken) {
-                    const n = classification.brokenCount;
-                    inlineLabel = `Fix broken link${n === 1 ? "" : "s"} (${n})`;
-                    inlineHandler = () => onRepairBroken(g);
-                  } else if (
-                    prim === "resolve-conflicts" &&
-                    onResolveConflicts
-                  ) {
-                    const n = classification.conflictCount;
-                    inlineLabel = `Resolve ${n} conflict${n === 1 ? "" : "s"}`;
-                    inlineHandler = () => onResolveConflicts(g);
-                  } else if (
-                    prim === "resolve-registration-conflicts" &&
-                    onResolveConflicts
-                  ) {
-                    // Multi-install unregistered: route to InstallCollisionModal
-                    // in its level-pure mode (delete/keep only, no
-                    // replace-with-symlink, no adopt). After resolving,
-                    // the card lands in Unregistered where the separate
-                    // Register step lives. App.tsx's onResolveConflicts
-                    // derives the modal mode from registry membership.
-                    const totalInstalls =
-                      classification.conflictCount + classification.brokenCount;
-                    inlineLabel = `Resolve ${totalInstalls} conflict${totalInstalls === 1 ? "" : "s"}`;
-                    inlineHandler = () => onResolveConflicts(g);
-                  }
-                  const inlineEnabled =
-                    inlineLabel !== null && inlineHandler !== null;
-                  const isBroken = prim === "repair-broken";
-                  return (
-                    <div key={g.name} className="action-cell">
-                      {inlineEnabled && inlineHandler && (
-                        <button
-                          className="btn warn inline-center-6 fw-600"
-                          onClick={inlineHandler}
-                          title={
-                            isBroken
-                              ? "Try to find a usable source elsewhere; otherwise prompt to delete."
-                              : `${classification.conflictCount} agent dir(s) have duplicate or stale entries — pick how to handle each.`
-                          }
-                        >
-                          <Icon name="alert-triangle" size="sm" />
-                          {inlineLabel}
-                        </button>
-                      )}
-                      <SkillCard
-                        entry={entry}
-                        status={status}
-                        onSelect={onCardClick}
-                        index={i}
-                        agents={g.agents}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })()}
+      {needsAttention.length > 0 && (
+        <NeedsAttentionSection
+          groups={needsAttention}
+          onSelectIntegrated={onSelectIntegrated}
+          onRegisterOne={onRegisterOne}
+          onResolveConflicts={onResolveConflicts}
+          onRepairBroken={onRepairBroken}
+          onResolveAllConflicts={onResolveAllConflicts}
+          onRepairAllBroken={onRepairAllBroken}
+        />
+      )}
       {unintegrated.length > 0 && (
         <section>
           <header className="section-header">
@@ -481,7 +280,7 @@ export function InstalledTab({
                         <button
                           className="btn primary flex-1 inline-center-6 fw-600"
                           onClick={() => onInlineRegister(g)}
-                          title="Register this skill so the app can manage it (cross-agent links, labels, sync), leaving its files in place. A custom-directory skill always stays put; others move into the bank only when the Settings auto-move toggle is on. Relocate later via Move into bank in the drawer."
+                          title="Register this skill so the app can manage it — cross-agent links and labels. Its files move into your registry; each agent directory then points at the registry copy by symlink."
                         >
                           Register
                         </button>

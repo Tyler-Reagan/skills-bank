@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type RescanState } from "../components/Header.js";
-import { type RegistryFilterTag } from "../components/RegistryFilters.js";
+import { type RegistryFilterTag } from "../components/browseFilters.js";
 import { type TabId } from "../components/Tabs.js";
 
 type ToastAction = { label: string; onClick: () => void };
