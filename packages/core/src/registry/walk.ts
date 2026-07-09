@@ -54,25 +54,23 @@ export function resolveEntryPath(
 /**
  * Spatial categorization of a skill folder under `<root>/skills/`.
  *
- *   - `personal` — authored by the registry owner. In the canonical
- *     curation layer, these are skills whose `upstream` is
- *     self-referential (`repo === BUNDLED_REPO`), `kind: "none"`, or
- *     absent.
- *   - `vendored` — harvested from external authors' repos. `upstream`
- *     points at someone else's repo.
+ *   - `personal` — self-originated: Origin's `url` is `null` or matches
+ *     the active Linked Repo.
+ *   - `vendored` — external Origin, mirrored in from a third-party repo.
  *
- * The pattern is universal across registry types (curation layer,
- * linked repo, installed user bank). A specific registry may use only
- * one bucket as a matter of composition — post-v1.1 the curation
- * layer `Tyler-Reagan/skills-bank` uses only `vendored/`, because the
- * maintainer's authored skills live in their own linked repo
- * `Tyler-Reagan/skills`. The unused bucket simply isn't materialized
- * on disk; `walkSkills` tolerates missing buckets.
+ * Derived once from Origin at acquisition time (`bucketForOrigin`,
+ * ADR-0020) — the folder location is the durable record afterward, so
+ * re-linking to a different repo moves no files. A registry may use
+ * only one bucket as a matter of composition; the unused bucket simply
+ * isn't materialized on disk, and `walkSkills` tolerates missing
+ * buckets. This repo's own tree keeps `skills/vendored/` deliberately
+ * empty — the maintainer's authored skills live in the separate
+ * `Tyler-Reagan/skills` repo instead.
  *
- * Buckets are NOT stored in `.skills-bank.json` — they're purely a
- * path-level concept derived from where the folder lives on disk.
- * Moving a skill between buckets is a `git mv` plus an optional
- * marker update if origin attribution changed.
+ * Buckets are not stored in the manifest — they're purely a path-level
+ * concept derived from where the folder lives on disk. Moving a skill
+ * between buckets is `bucket-move.ts`'s job (a folder move, e.g. on
+ * Detach).
  */
 export type SkillBucket = "personal" | "vendored";
 

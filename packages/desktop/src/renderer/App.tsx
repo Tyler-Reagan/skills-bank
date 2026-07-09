@@ -19,9 +19,9 @@ import {
   type Theme,
 } from "./components/Header.js";
 // Phase 2 persona collapse: LoginScreen retired. Fresh installs land
-// directly on bundled-default; GitHub linking is reached via Settings
-// → Account → "Sign in with GitHub" (ConnectGithubModal, which owns
-// device-flow + resume).
+// on an empty registry (ADR-0017 — no bundled default); GitHub linking
+// is reached via Settings → Account → "Sign in with GitHub"
+// (ConnectGithubModal, which owns device-flow + resume).
 import {
   DEFAULT_SETTINGS,
   type AppSettings,
@@ -472,7 +472,7 @@ function AppContent(): React.ReactElement {
   );
 
   // Re-fetch from the currently linked GitHub repo, no picker.
-  const refreshLinkedRepo = useCallback(async () => {
+  const importLinkedRepo = useCallback(async () => {
     const r = await window.skillsBank.reposRefreshCurrent();
     if (r.ok) {
       flash(r.message);
@@ -571,7 +571,7 @@ function AppContent(): React.ReactElement {
   }, [latestUpdateStatus, flash]);
 
   // macOS menu-bar dispatch. The native menubar still fires a small
-  // set of actions (Settings, Refresh, Sync skills) — the in-app
+  // set of actions (Settings, Refresh, Check for updates) — the in-app
   // header dropdown is gone, but the menubar stays. Filter to the
   // actions the menubar actually dispatches; ignore the rest.
   useEffect(() => {
@@ -613,18 +613,11 @@ function AppContent(): React.ReactElement {
     }
   }, [registryByName, selected]);
 
-  // Pre-mount splash: render this until the renderer knows which top-
-  // level view to show. Without it, the app skeleton flashes for a beat
-  // before LoginScreen mounts on first launch.
+  // Pre-mount splash: render this until the initial `authStatus` fetch
+  // resolves, so the app skeleton doesn't flash before real chrome mounts.
   if (!authStatus) {
     return <SplashScreen />;
   }
-
-  // Phase 2 persona collapse: the `registrySource === null` case is
-  // unreachable. Main-process boot normalizes it to "local" before the
-  // renderer ever sees AuthStatus, so this gate would have stayed dead
-  // code if not removed. The legacy v1.2 path that routed here on
-  // first launch is in the CHANGELOG (v1.2.0, vocabulary rename).
 
   // Plain functions (not useCallback) — this code lives below early-return
   // gates above (no authStatus, persona unresolved). A hook here would be a
@@ -645,8 +638,8 @@ function AppContent(): React.ReactElement {
           onToggleTheme={toggleTheme}
           density={density}
           onToggleDensity={toggleDensity}
-          syncing={false}
-          onSync={() => undefined}
+          importingLinkedRepo={false}
+          onImportLinkedRepo={() => undefined}
           authStatus={null}
           onOpenAccount={() => undefined}
           onOpenSettings={() => undefined}
@@ -691,8 +684,8 @@ function AppContent(): React.ReactElement {
         onToggleTheme={toggleTheme}
         density={density}
         onToggleDensity={toggleDensity}
-        syncing={false}
-        onSync={() => void refreshLinkedRepo()}
+        importingLinkedRepo={false}
+        onImportLinkedRepo={() => void importLinkedRepo()}
         authStatus={authStatus}
         onOpenAccount={() => openModal({ kind: "account" })}
         onOpenSettings={() => openModal({ kind: "settings" })}
@@ -942,7 +935,7 @@ function AppContent(): React.ReactElement {
         setSelected={setSelected}
         importingManifest={importingManifest}
         cancelManifestImport={cancelManifestImport}
-        refreshLinkedRepo={refreshLinkedRepo}
+        importLinkedRepo={importLinkedRepo}
         latestUpdateStatus={latestUpdateStatus}
         setDismissedUpdateVersion={setDismissedUpdateVersion}
         resolveAllTarget={resolveAllTarget}

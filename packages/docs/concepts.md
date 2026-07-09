@@ -105,11 +105,9 @@ The **persisted, metadata-tagged collection of skills this app manages.** It's a
 
 The registry is **not** the only source of skills you can use. Skills installed from elsewhere (e.g. via [skills.sh](https://skills.sh/)) appear alongside in the **Installed** tab and can be registered into Skills Bank if you want this app to manage them.
 
-## Linked repo vs bundled default
+## Linked repo
 
-Every install starts on the **bundled default** — the app reads `Tyler-Reagan/skills-bank` at the unauthenticated GitHub rate limit (60/hr). Refresh pulls the latest. No GitHub account needed.
-
-Sign in via **Account** to either keep the bundled default at a higher rate limit (5000/hr authenticated, plus access to private repos) or **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with a `SKILL.md` — its YAML frontmatter carries the metadata) — its layout doesn't have to match anything specific.
+Every install starts empty — there's no default skill set. Add skills via the **Discover** tab, author them locally, or sign in via **Account** and **Link a GitHub repository** you own as your registry. The bank reads the linked repo's contents by file convention (any folder with a `SKILL.md` — its YAML frontmatter carries the metadata) — its layout doesn't have to match anything specific.
 
 Self-hosting (forking the entire app) remains a separate developer path; see [Self-hosting](/self-host).
 
@@ -171,15 +169,15 @@ The Installed tab uses these to decide which section a skill goes in (Registered
 
 ## Conflict
 
-A skill is in conflict when the same name has more than one non-`ours` installation across agent dirs — a real directory or foreign symlink alongside the registry copy, or multiple candidate copies with no registry entry yet. The detail dialog offers **Resolve conflicts**: replace each straggler with a symlink to the registry copy, keep it separate, or delete it. This is the only thing called a "conflict" in the app; the unrelated name-collision handling inside a Sync pull is a separate mechanism.
+A skill is in conflict when the same name has more than one non-`ours` installation across agent dirs — a real directory or foreign symlink alongside the registry copy, or multiple candidate copies with no registry entry yet. The detail dialog offers **Resolve conflicts**: replace each straggler with a symlink to the registry copy, keep it separate, or delete it. This is the only thing called a "conflict" in the app; the unrelated name-collision handling inside an Import is a separate mechanism.
 
 ## Detach
 
 Sever a skill's Origin while keeping its local content: sets Origin to `null`, re-baselines the drift hash so the now-local copy reads as clean, and moves the folder from `vendored` to `personal`. Surfaced as **"Keep my edits (detach)"** (from a drift state) or **"Keep local (detach)"** (from the Restore-origin modal when an upstream has gone unreachable). A detached skill is local-only until it's re-homed into your Linked repo via a pull request, which gives it a self-Origin again.
 
-## Sync
+## Import
 
-A one-click pull of updates from your Linked repo. Sync is a **three-way merge** (base, yours, theirs), not a blind overwrite — local-only skills are never read as "deleted upstream," and genuine divergences surface in a conflict modal where you choose keep-mine, use-theirs, or keep-both. Direct push is guarded against clobbering a diverged remote.
+A one-click pull of updates from your Linked repo. Import is a **three-way merge** (base, yours, theirs), not a blind overwrite — local-only skills are never read as "deleted upstream," and genuine divergences surface in a conflict modal where you choose keep-mine, use-theirs, or keep-both. Direct Export is guarded against clobbering a diverged remote.
 
 ## Finalize
 
@@ -189,6 +187,6 @@ Collapse a symlinked top-level agent dir (e.g. `~/.claude/skills` → `~/.agents
 
 A lightweight JSON snapshot of a registry's **origin pointers** — not the skill content itself. Each entry carries the skill's name, its Origin (URL + skill path + hash), and its curation labels (category + tags). On import, each skill is re-fetched from its origin, so transfers are tiny but require the origins to still be reachable.
 
-The manifest is the live record of what the registry manages — updated on every mutating operation — and also the transport layer for moving a registry's _metadata_ between machines or pushing it to a linked repo. Content transfers (the full skills tree as files) use the disk import flow instead.
+The manifest is the live record of what the registry manages — updated on every mutating operation — and also the transport layer for moving a registry's _metadata_ between machines, whether via a linked repo or a file on disk. Skill content itself is never in the payload; it's always re-fetched from Origin on import.
 
-The current schema is v6. A manifest exported from one machine can be pushed directly to your linked GitHub repo and pulled on another, closing the loop without manual file handling. See [Move your registry](/guides/manifest).
+The current schema is v6. Export it directly to your linked GitHub repo on one machine, then Import on another, closing the loop without manual file handling. See [Move your registry](/guides/manifest).

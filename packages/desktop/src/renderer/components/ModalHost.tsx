@@ -114,7 +114,7 @@ interface Props {
   setSelected: (e: RegistryEntry | null) => void;
   importingManifest: boolean;
   cancelManifestImport: () => void;
-  refreshLinkedRepo: () => Promise<void>;
+  importLinkedRepo: () => Promise<void>;
   latestUpdateStatus: UpdateStatus | null;
   setDismissedUpdateVersion: (v: string | null) => void;
   resolveAllTarget: InstalledGroup[] | null;
@@ -141,7 +141,7 @@ export function ModalHost({
   setSelected,
   importingManifest,
   cancelManifestImport,
-  refreshLinkedRepo,
+  importLinkedRepo,
   latestUpdateStatus,
   setDismissedUpdateVersion,
   resolveAllTarget,
@@ -501,7 +501,7 @@ export function ModalHost({
           }}
           onRefreshRegistry={async () => {
             closeModal();
-            await refreshLinkedRepo();
+            await importLinkedRepo();
           }}
           onOpenImportManifest={() =>
             openModal({ kind: "manifest", mode: "import" })

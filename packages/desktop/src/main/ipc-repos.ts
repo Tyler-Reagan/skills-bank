@@ -16,15 +16,13 @@ import {
   NO_ROOT_MSG,
   persistConfig,
   setLinkedRepo,
-  setRegistrySource,
 } from "./main-state.js";
 import { IPC, type LinkedRepoMetadata, type UserRepo } from "../shared/ipc.js";
 
 /**
- * v0.11.9 M8: commit the github-linked-mode flip atomically.
+ * Commit a newly-linked repo atomically: update state, then persist.
  */
 function commitGithubLinkage(meta: LinkedRepoMetadata): void {
-  setRegistrySource("github");
   setLinkedRepo(meta);
   persistConfig();
 }
@@ -67,10 +65,10 @@ export async function replaceRegistryWithRepo(fullName: string): Promise<{
     );
     applyRestoredLabels(restoredLabels);
     // Establish the merge base at link time (finding F3). Without this the
-    // first pull&merge runs with readMergeBase() === null → every co-present
+    // first Import runs with readMergeBase() === null → every co-present
     // skill reads as both-added and any signature diff becomes a spurious
-    // conflict; the direct-push guard would also see universal divergence.
-    // The fetched remote manifest is exactly that base — mirrors the pull
+    // conflict; the direct-commit guard would also see universal divergence.
+    // The fetched remote manifest is exactly that base — mirrors the Import
     // path (ipc-manifest runManifestMerge). syncedFromCommit stays unset:
     // fetchRemoteManifest carries no SHA and the guard compares manifests.
     writeMergeBase(registryRoot, remote.manifest);

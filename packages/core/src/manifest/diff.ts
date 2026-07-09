@@ -50,8 +50,8 @@ export function skillSignature(s: ManifestSkill): string {
  * Diff two manifests at skill granularity.
  *
  * Call convention:
- *   Push preview: diffManifests(local, remote)  — what changes in remote
- *   Pull preview: diffManifests(remote, local)  — what changes locally
+ *   Export preview: diffManifests(local, remote)  — what changes in remote
+ *   Import preview: diffManifests(remote, local)  — what changes locally
  */
 export function diffManifests(
   source: RegistryManifest,

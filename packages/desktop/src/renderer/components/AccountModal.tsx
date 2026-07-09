@@ -1,5 +1,5 @@
 import React from "react";
-import { BUNDLED_REPO, type AuthStatus } from "../../shared/ipc.js";
+import type { AuthStatus } from "../../shared/ipc.js";
 import { InfoTooltip } from "./primitives.js";
 import { Modal, ModalCloseButton, modalHeader } from "./modalStyles.js";
 
@@ -48,10 +48,9 @@ export function AccountModal({
   const user = authStatus?.user ?? null;
   const linkedRepo = authStatus?.linkedRepo ?? null;
   const isAuthed = Boolean(user);
-  const isBundledDefault = !linkedRepo || linkedRepo.fullName === BUNDLED_REPO;
-  const linkedLabel = isBundledDefault
-    ? `Bundled (${BUNDLED_REPO})`
-    : `github.com/${linkedRepo!.fullName}`;
+  const linkedLabel = linkedRepo
+    ? `github.com/${linkedRepo.fullName}`
+    : "Not linked";
 
   return (
     <Modal label="Account" onClose={onClose} width={560}>
@@ -118,11 +117,13 @@ export function AccountModal({
                 disabled={!isAuthed || importingManifest}
                 title={
                   isAuthed
-                    ? "Pick a different GitHub repo to mirror."
-                    : "Sign in with GitHub to pick a different repo."
+                    ? linkedRepo
+                      ? "Pick a different GitHub repo to mirror."
+                      : "Pick a GitHub repo to mirror."
+                    : "Sign in with GitHub to pick a repo."
                 }
               >
-                Change
+                {linkedRepo ? "Change" : "Link"}
               </button>
             </div>
           </div>

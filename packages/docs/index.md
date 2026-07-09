@@ -16,9 +16,9 @@ const agents = ['Claude Code', 'Cursor', 'Gemini', 'Copilot', 'Continue', 'Cline
 
 const features = [
   { title: 'One install, every agent', details: 'A single symlink-based registry keeps Claude Code, Cursor, Gemini, and four more agents in sync. Install once, done.' },
-  { title: 'Browse a curated registry', details: 'Skills are organized by function-oriented category (code review, diagnostics, planning, and more) in collapsible sections. Tag filters, full-text search, and an Installed-only toggle let you narrow further. No GitHub account required.' },
-  { title: 'Bring your own repo', details: 'Link any GitHub repo you own as your registry source. Refresh pulls the latest with a diff-before-apply preview.' },
-  { title: 'Push your registry anywhere', details: "Export a manifest of your registry's origin pointers and push it directly to your linked GitHub repo — or pull it on another machine. One click, no file management." },
+  { title: 'Browse your registry', details: 'Skills are organized by function-oriented category (code review, diagnostics, planning, and more) in collapsible sections. Tag filters, full-text search, and an Installed-only toggle let you narrow further. No GitHub account required.' },
+  { title: 'Bring your own repo', details: 'Link any GitHub repo you own as your registry source. Import fetches the latest with a diff-before-apply preview.' },
+  { title: 'Export your registry anywhere', details: "Export a manifest of your registry's origin pointers directly to your linked GitHub repo — or import it on another machine. One click, no file management." },
   { title: "Heal, don't delete", details: 'Explicit recovery flows for every bad state — install collisions, broken links, and missing files — with your choice at each step.' },
 ]
 </script>

@@ -13,7 +13,6 @@ import {
   IPC,
   type LinkedRepoMetadata,
   type OriginProbeCompleteEvent,
-  type RegistrySource,
 } from "../shared/ipc.js";
 import { getStoredToken } from "./auth.js";
 import {
@@ -21,7 +20,6 @@ import {
   readConfig,
   writeConfig,
   setRegistryRoot,
-  setRegistrySource,
   setLinkedRepo,
   setDismissedUpdateVersion,
   initProbeRunner,
@@ -89,15 +87,10 @@ function resolveBootRegistryRoot(): string {
   }
 }
 
-function resolveBootRegistrySource(): RegistrySource {
-  return readConfig().registrySource ?? "local";
-}
-
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 const bootRegistryRoot = resolveBootRegistryRoot();
 setRegistryRoot(bootRegistryRoot);
-setRegistrySource(resolveBootRegistrySource());
 setLinkedRepo(readConfig().linkedRepo);
 setDismissedUpdateVersion(readConfig().dismissedUpdateVersion);
 

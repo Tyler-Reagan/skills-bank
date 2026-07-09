@@ -6,8 +6,8 @@ import type {
   ConflictResolveDecision,
   ConflictResolveReport,
   DiagnosticReport,
-  ExportInfo,
-  ExportResult,
+  ExtractInfo,
+  ExtractResult,
   FinalizeResult,
   ImportRegistryManifestResult,
   ImportSkillOutcome,
@@ -59,8 +59,8 @@ export const IPC = {
   rebuildIndex: "skills:rebuildIndex",
   finalize: "skills:finalize",
   listTopLevelSymlinks: "agents:listTopLevelSymlinks",
-  exportInfo: "skills:exportInfo",
-  exportSkill: "skills:export",
+  extractInfo: "skills:extractInfo",
+  extractSkill: "skills:extract",
   readSkillMd: "skills:readSkillMd",
   openInFinder: "skills:openInFinder",
   getConfig: "skills:getConfig",
@@ -73,7 +73,6 @@ export const IPC = {
   dismissWeakStorageNotice: "app:dismissWeakStorageNotice",
   authStatus: "auth:status",
   authIsConfigured: "auth:isConfigured",
-  authSetRegistrySourceLocal: "auth:setRegistrySourceLocal",
   authStartDeviceFlow: "auth:startDeviceFlow",
   authPollDeviceFlow: "auth:pollDeviceFlow",
   authCancelDeviceFlow: "auth:cancelDeviceFlow",
@@ -88,8 +87,8 @@ export const IPC = {
   importManifest: "bank:importManifest",
   importManifestCancel: "bank:importManifestCancel",
   manifestImportProgress: "bank:manifestImportProgress",
-  previewManifestPush: "bank:previewManifestPush",
-  pushManifestToRepo: "bank:pushManifestToRepo",
+  previewManifestExport: "bank:previewManifestExport",
+  exportManifestToRepo: "bank:exportManifestToRepo",
   readManifestFromRepo: "bank:readManifestFromRepo",
   manifestImportRetrySkill: "bank:manifestImportRetrySkill",
   runManifestMerge: "bank:runManifestMerge",
@@ -279,7 +278,7 @@ interface SkillDiffFile {
 export interface SkillDiffResult {
   /** Human-readable label for the left side (e.g. "Yours"). */
   leftLabel: string;
-  /** Human-readable label for the right side (e.g. "Bundled"). */
+  /** Human-readable label for the right side (e.g. "Origin"). */
   rightLabel: string;
   files: SkillDiffFile[];
 }
@@ -290,29 +289,6 @@ export interface SkillDiffRequest {
   leftLabel: string;
   rightLabel: string;
 }
-
-/**
- * The canonical bundled-default repo. Every registry is linked to a
- * GitHub repo, and this one is the default — there is no separate
- * "local mode." A user is "on the bundled set" when `linkedRepo` is
- * either null (fresh install / migrated from the older local mode) or
- * equal to `BUNDLED_REPO`. Renderer code checks the `linkedRepo` field
- * on `AuthStatus` directly; no separate `mode()` helper, since every
- * relevant branch collapses to "do I have a non-bundled linkedRepo?"
- */
-export const BUNDLED_REPO = "Tyler-Reagan/skills-bank";
-
-/**
- * Legacy mode discriminator. Kept as a derived alias on `AuthStatus`
- * for one release as a migration safety net; new code should branch on
- * `linkedRepo` instead. Will be dropped in a follow-up release after
- * the migration has settled.
- *
- * Mapping today: `"github"` ⇒ `linkedRepo !== null`; `"local"` ⇒
- * `linkedRepo === null`; `null` is emitted only on fresh installs that
- * haven't completed onboarding (renderer routes to LoginScreen).
- */
-export type RegistrySource = "local" | "github";
 
 /**
  * Records which GitHub repo the user has linked, when it was last
@@ -330,7 +306,6 @@ export interface LinkedRepoMetadata {
 }
 
 export interface AuthStatus {
-  registrySource: RegistrySource | null;
   isAuthConfigured: boolean;
   user: {
     login: string;
@@ -445,7 +420,7 @@ interface UnregisterIPCResult extends IPCFailureFields {
   destinationPath?: string;
 }
 
-export type PreviewManifestPushResult =
+export type PreviewManifestExportResult =
   | {
       ok: true;
       diff: ManifestDiff;
@@ -455,7 +430,7 @@ export type PreviewManifestPushResult =
     }
   | { ok: false; message: string; rateLimit?: RateLimitInfo };
 
-export type PushManifestToRepoResult =
+export type ExportManifestToRepoResult =
   | {
       ok: true;
       commitSha: string;
@@ -466,8 +441,8 @@ export type PushManifestToRepoResult =
        * Non-blocking advisory. Set on the PR path when the remote has
        * diverged from the merge base (finding F4): the PR still opens —
        * human review is the backstop — but the caller should warn that the
-       * PR may not reflect the latest remote. Direct push hard-refuses on
-       * divergence instead (reason: "diverged").
+       * PR may not reflect the latest remote. A direct-commit Export
+       * hard-refuses on divergence instead (reason: "diverged").
        */
       warning?: string;
     }
@@ -656,17 +631,16 @@ interface SkillsBankAPI {
   listTopLevelSymlinks(): Promise<
     Array<{ agent: AgentId; resolvedTarget: string; exists: boolean }>
   >;
-  exportInfo(name: string): Promise<ExportInfo>;
-  exportSkill(
+  extractInfo(name: string): Promise<ExtractInfo>;
+  extractSkill(
     name: string,
-  ): Promise<{ ok: boolean; message: string; result?: ExportResult }>;
+  ): Promise<{ ok: boolean; message: string; result?: ExtractResult }>;
   readSkillMd(name: string): Promise<string | null>;
   openInFinder(absolutePath: string): Promise<void>;
   getConfig(): Promise<{
     registryRoot: string | null;
     configValid: boolean;
     isPackaged: boolean;
-    registrySource: RegistrySource | null;
     dismissedUpdateVersion: string | null;
     /**
      * Electron's currently-selected `safeStorage` backend. Possible
@@ -707,7 +681,6 @@ interface SkillsBankAPI {
   setDismissedUpdateVersion(version: string | null): Promise<void>;
   onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
   authStatus(): Promise<AuthStatus>;
-  authSetRegistrySourceLocal(): Promise<AuthStatus>;
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
   authPollDeviceFlow(flowId: string): Promise<AuthStatus>;
   authCancelDeviceFlow(flowId: string): Promise<void>;
@@ -761,16 +734,16 @@ interface SkillsBankAPI {
    * skills stay on disk. No-op when no import is running.
    */
   importManifestCancel(): Promise<{ ok: boolean }>;
-  /** Preview what a push would change in the linked repo's manifest. */
-  previewManifestPush(): Promise<PreviewManifestPushResult>;
-  /** Push the local manifest to the linked repo (direct commit or PR). */
-  pushManifestToRepo(opts: {
+  /** Preview what an export would change in the linked repo's manifest. */
+  previewManifestExport(): Promise<PreviewManifestExportResult>;
+  /** Export the local manifest to the linked repo (direct commit or PR). */
+  exportManifestToRepo(opts: {
     asPR: boolean;
-  }): Promise<PushManifestToRepoResult>;
+  }): Promise<ExportManifestToRepoResult>;
   /** Read the manifest from the linked repo and diff it against local. */
   readManifestFromRepo(): Promise<ReadManifestFromRepoResult>;
   /**
-   * Pull from the linked repo as a three-way merge: fetch the remote
+   * Import from the linked repo as a three-way merge: fetch the remote
    * manifest (`theirs`), load the stored merge base, export the local
    * registry (`ours`), and merge. A clean merge reconciles locally and
    * advances the base; conflicts are persisted and surfaced through the
@@ -788,8 +761,8 @@ interface SkillsBankAPI {
    * Apply the user's resolver decisions to the queued merge: fold each
    * choice into the merged manifest, reconcile the local registry
    * (import adds/restores, delete confirmed removals, fork `keep-both`),
-   * then clear the pending file. Pushing the merged manifest upstream is
-   * a separate action.
+   * then clear the pending file. Exporting the merged manifest upstream
+   * is a separate action.
    */
   resolveManifestConflicts(
     decisions: ManifestDecisions,

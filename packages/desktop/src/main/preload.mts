@@ -30,8 +30,8 @@ const api = {
   getRoot: () => ipcRenderer.invoke(IPC.getRoot),
   rebuildIndex: () => ipcRenderer.invoke(IPC.rebuildIndex),
   finalize: () => ipcRenderer.invoke(IPC.finalize),
-  exportInfo: (name: string) => ipcRenderer.invoke(IPC.exportInfo, name),
-  exportSkill: (name: string) => ipcRenderer.invoke(IPC.exportSkill, name),
+  extractInfo: (name: string) => ipcRenderer.invoke(IPC.extractInfo, name),
+  extractSkill: (name: string) => ipcRenderer.invoke(IPC.extractSkill, name),
   readSkillMd: (name: string) => ipcRenderer.invoke(IPC.readSkillMd, name),
   openInFinder: (absolutePath: string) =>
     ipcRenderer.invoke(IPC.openInFinder, absolutePath),
@@ -50,8 +50,6 @@ const api = {
     return () => ipcRenderer.removeListener(IPC.updateStatus, listener);
   },
   authStatus: () => ipcRenderer.invoke(IPC.authStatus),
-  authSetRegistrySourceLocal: () =>
-    ipcRenderer.invoke(IPC.authSetRegistrySourceLocal),
   authStartDeviceFlow: () => ipcRenderer.invoke(IPC.authStartDeviceFlow),
   authPollDeviceFlow: (flowId: string) =>
     ipcRenderer.invoke(IPC.authPollDeviceFlow, flowId),
@@ -68,9 +66,9 @@ const api = {
   exportManifest: () => ipcRenderer.invoke(IPC.exportManifest),
   importManifest: () => ipcRenderer.invoke(IPC.importManifest),
   importManifestCancel: () => ipcRenderer.invoke(IPC.importManifestCancel),
-  previewManifestPush: () => ipcRenderer.invoke(IPC.previewManifestPush),
-  pushManifestToRepo: (opts: { asPR: boolean }) =>
-    ipcRenderer.invoke(IPC.pushManifestToRepo, opts),
+  previewManifestExport: () => ipcRenderer.invoke(IPC.previewManifestExport),
+  exportManifestToRepo: (opts: { asPR: boolean }) =>
+    ipcRenderer.invoke(IPC.exportManifestToRepo, opts),
   readManifestFromRepo: () => ipcRenderer.invoke(IPC.readManifestFromRepo),
   runManifestMerge: () => ipcRenderer.invoke(IPC.runManifestMerge),
   getPendingManifestConflicts: () =>
@@ -81,8 +79,7 @@ const api = {
     ipcRenderer.invoke(IPC.resolveManifestConflicts, decisions),
   installFromManifestHint: (payload: unknown) =>
     ipcRenderer.invoke(IPC.installFromManifestHint, payload),
-  addFromGithub: (url: string) =>
-    ipcRenderer.invoke(IPC.addFromGithub, url),
+  addFromGithub: (url: string) => ipcRenderer.invoke(IPC.addFromGithub, url),
   repairBrokenLinks: (name: string) =>
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>

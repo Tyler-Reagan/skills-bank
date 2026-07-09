@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { DisclosureChevron, SkillTagList } from "../primitives.js";
 import type { ManifestConflict, ManifestDiff } from "@skills-bank/core";
 import type {
-  PreviewManifestPushResult,
+  PreviewManifestExportResult,
   ReadManifestFromRepoResult,
 } from "../../../shared/ipc.js";
 import type { LinkedRepoMetadata } from "../../../shared/ipc.js";
@@ -23,10 +23,10 @@ interface Props {
 }
 
 // The preview read is a useIpcQuery; these capture only the imperative
-// phases a user action drives on top of it (push / import).
+// phases a user action drives on top of it (export / import).
 type ExportAction =
   | { kind: "idle" }
-  | { kind: "pushing" }
+  | { kind: "exporting" }
   | {
       kind: "done";
       commitSha: string;
@@ -147,16 +147,16 @@ function ExportView({
   onExportComplete: (msg: string) => void;
   onError: (msg: string) => void;
 }): React.ReactElement {
-  const { data, loading } = useIpcQuery<PreviewManifestPushResult>(
-    () => window.skillsBank.previewManifestPush(),
+  const { data, loading } = useIpcQuery<PreviewManifestExportResult>(
+    () => window.skillsBank.previewManifestExport(),
     [],
   );
   const [asPR, setAsPR] = useState(false);
   const [action, setAction] = useState<ExportAction>({ kind: "idle" });
 
-  const push = async () => {
-    setAction({ kind: "pushing" });
-    const r = await window.skillsBank.pushManifestToRepo({ asPR });
+  const runExport = async () => {
+    setAction({ kind: "exporting" });
+    const r = await window.skillsBank.exportManifestToRepo({ asPR });
     if (!r.ok) {
       setAction({
         kind: "error",
@@ -173,16 +173,16 @@ function ExportView({
         warning: r.warning,
       });
       const label = r.prNumber
-        ? `Manifest pushed as PR #${r.prNumber}`
-        : `Manifest pushed — ${r.skillCount} skill${r.skillCount === 1 ? "" : "s"}`;
+        ? `Manifest exported as PR #${r.prNumber}`
+        : `Manifest exported — ${r.skillCount} skill${r.skillCount === 1 ? "" : "s"}`;
       onExportComplete(label);
     }
   };
 
-  if (action.kind === "pushing") {
+  if (action.kind === "exporting") {
     return (
       <div className="repo-transport-center">
-        <span className="spinner inline" /> Pushing…
+        <span className="spinner inline" /> Exporting…
       </div>
     );
   }
@@ -253,9 +253,9 @@ function ExportView({
         <button
           className="btn primary"
           type="button"
-          onClick={() => void push()}
+          onClick={() => void runExport()}
         >
-          {asPR ? "Push as PR" : "Commit directly"}
+          {asPR ? "Export as PR" : "Commit directly"}
         </button>
       </div>
     </div>
@@ -329,7 +329,7 @@ function ImportView({
       return (
         <div className="repo-transport-not-found">
           <div className="repo-transport-not-found-msg">
-            No manifest in repo yet — push one first.
+            No manifest in repo yet — export one first.
           </div>
         </div>
       );
@@ -358,7 +358,7 @@ function ImportView({
           type="button"
           onClick={() => void runMerge()}
         >
-          Pull &amp; merge
+          Import
         </button>
       </div>
     </div>

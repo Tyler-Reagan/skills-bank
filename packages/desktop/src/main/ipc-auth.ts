@@ -9,23 +9,15 @@ import {
   resumeDeviceFlow,
   startDeviceFlow,
 } from "./auth.js";
-import {
-  getLinkedRepo,
-  getRegistrySource,
-  persistConfig,
-  setLinkedRepo,
-  setRegistrySource,
-} from "./main-state.js";
+import { getLinkedRepo, persistConfig } from "./main-state.js";
 import { IPC, type AuthStatus } from "../shared/ipc.js";
 
 async function buildAuthStatus(): Promise<AuthStatus> {
-  // Identity is independent of registry mode: a token persists across
-  // mode switches (and is opportunistically used by local-bundled sync
-  // for rate-limit headroom), so `user` reflects token validity, not
-  // current mode.
+  // Identity is independent of the linked repo: a token persists across
+  // linking/unlinking, so `user` reflects token validity, not registry
+  // state.
   const user = await getCurrentUser();
   return {
-    registrySource: getRegistrySource(),
     isAuthConfigured: isAuthConfigured(),
     user,
     // Emit `linkedRepo` unconditionally so the renderer can render the
@@ -40,13 +32,6 @@ export { buildAuthStatus };
 export function registerAuthHandlers(): void {
   ipcMain.handle(IPC.authStatus, () => buildAuthStatus());
 
-  ipcMain.handle(IPC.authSetRegistrySourceLocal, async () => {
-    setRegistrySource("local");
-    setLinkedRepo(null);
-    persistConfig();
-    return buildAuthStatus();
-  });
-
   ipcMain.handle(IPC.authStartDeviceFlow, async () => {
     return startDeviceFlow();
   });
@@ -54,9 +39,8 @@ export function registerAuthHandlers(): void {
   ipcMain.handle(IPC.authPollDeviceFlow, async (_e, flowId: string) => {
     try {
       await pollDeviceFlow(flowId);
-      // Deferred: registrySource flips to "github" only when a repo is
-      // actually linked (see replaceRegistryWithRepo). Successful Device
-      // Flow alone just establishes identity.
+      // Successful Device Flow only establishes identity — linking a
+      // repo (see replaceRegistryWithRepo) is a separate, later step.
       return await buildAuthStatus();
     } catch (err) {
       if (err instanceof DeviceFlowError) {
@@ -75,9 +59,8 @@ export function registerAuthHandlers(): void {
   });
 
   ipcMain.handle(IPC.authLogout, async () => {
-    // Clear the token only — preserve `registrySource` and `linkedRepo`
-    // so the user stays in the app shell with anonymized identity rather
-    // than being kicked back to LoginScreen.
+    // Clear the token only — preserve `linkedRepo` so the user stays in
+    // the app shell with anonymized identity.
     clearStoredToken();
     persistConfig();
     return buildAuthStatus();

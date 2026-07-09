@@ -13,7 +13,7 @@ import { RestoreOriginModal } from "./RestoreOriginModal.js";
 type ActionState =
   | null
   | "installing"
-  | "exporting"
+  | "extracting"
   | "registering"
   | "unregistering"
   | "updating"
@@ -117,10 +117,10 @@ export function DrawerActions({
     }
   };
 
-  const exportSkill = async () => {
-    setAction("exporting");
+  const extractSkill = async () => {
+    setAction("extracting");
     try {
-      const r = await window.skillsBank.exportSkill(entry.name);
+      const r = await window.skillsBank.extractSkill(entry.name);
       await onChanged(r.message);
     } finally {
       setAction(null);
@@ -396,7 +396,7 @@ export function DrawerActions({
           "resolve-conflicts",
           "resolve-registration-conflicts",
         ].includes(caps.primary) &&
-          (caps.canManageLinks || caps.canExport) && (
+          (caps.canManageLinks || caps.canExtract) && (
             <div
               role="separator"
               aria-hidden="true"
@@ -486,18 +486,18 @@ export function DrawerActions({
             </button>
           )}
 
-        {caps.canExport && (
+        {caps.canExtract && (
           <button
             className="btn"
             disabled={action !== null}
-            onClick={() => void exportSkill()}
+            onClick={() => void extractSkill()}
           >
-            {action === "exporting" ? (
+            {action === "extracting" ? (
               <>
-                <span className="spinner inline" /> Exporting{" "}
+                <span className="spinner inline" /> Extracting{" "}
               </>
             ) : (
-              "Export"
+              "Extract"
             )}
           </button>
         )}

@@ -80,7 +80,7 @@ const ROWS: Row[] = [
       canInstall: true,
       canManageLinks: false,
       canUnregister: true,
-      canExport: true,
+      canExtract: true,
       // Drift "keep my edits" (ADR-0012).
       canDetachLocal: true,
     },
@@ -103,7 +103,7 @@ const ROWS: Row[] = [
       canInstall: false,
       canManageLinks: true,
       canUnregister: true,
-      canExport: true,
+      canExtract: true,
     },
   },
   {
@@ -117,7 +117,7 @@ const ROWS: Row[] = [
       canInstall: true,
       canManageLinks: false,
       canUnregister: true,
-      canExport: true,
+      canExtract: true,
     },
   },
   {
@@ -132,7 +132,7 @@ const ROWS: Row[] = [
       canInstall: false,
       canManageLinks: true,
       canUnregister: true,
-      canExport: true,
+      canExtract: true,
     },
   },
   {
