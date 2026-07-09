@@ -83,23 +83,10 @@ export function SettingsModal({
   const { settings, saveSettings: onSave } = useSettings();
   const [draft, setDraft] = useState<AppSettings>(settings);
 
-  // Top-level agent dir symlinks — drives the conditional "Collapse
-  // symlinked agent dirs" section. Loaded once on mount; refresh after
-  // a successful finalize so the section disappears.
-  const [finalizing, setFinalizing] = useState(false);
-  const [finalizeError, setFinalizeError] = useState<string | null>(null);
-
-  const { data: symlinkData, refetch: refetchSymlinks } = useIpcQuery(
-    () => window.skillsBank.listTopLevelSymlinks(),
-    [],
-    { initialData: [] },
-  );
-  const topLevelSymlinks = symlinkData ?? [];
-
   // Skill-usage tracking. This toggle is an immediate side effect (it
   // writes/removes the PreToolUse hook in ~/.claude/settings.json), so it
-  // acts on click like "Finalize now" — not deferred to the modal's Save.
-  // State is read back from the file, the single source of truth.
+  // acts on click right away — not deferred to the modal's Save. State is
+  // read back from the file, the single source of truth.
   const { data: tracking, refetch: refetchTracking } = useIpcQuery(
     () => window.skillsBank.getSkillTrackingStatus(),
     [],
@@ -119,25 +106,6 @@ export function SettingsModal({
       refetchTracking();
     } finally {
       setTrackingBusy(false);
-    }
-  };
-
-  const runFinalize = async () => {
-    setFinalizing(true);
-    setFinalizeError(null);
-    try {
-      const r = await window.skillsBank.finalize();
-      if (r.ok) {
-        refetchSymlinks();
-      } else {
-        setFinalizeError(
-          r.blockingEntries
-            ? `${r.message}\n${r.blockingEntries.map((n) => `  • ${n}`).join("\n")}`
-            : r.message,
-        );
-      }
-    } finally {
-      setFinalizing(false);
     }
   };
 
@@ -366,55 +334,6 @@ export function SettingsModal({
               </div>
             </div>
           </div>
-
-          {topLevelSymlinks.length > 0 && (
-            <div className="prefs-row prefs-row--stack">
-              <span className="prefs-sublabel">
-                Collapse symlinked agent dirs
-                <InfoTooltip
-                  label="About collapsing symlinked agent dirs"
-                  text="Finalize collapses each symlink into a real directory in place, moving content from the resolved target. Skills must be registered first — finalize refuses while real-directory entries remain unregistered."
-                />
-              </span>
-              <p className="settings-hint mt-0 mb-0">
-                {topLevelSymlinks.length === 1
-                  ? "One"
-                  : `${topLevelSymlinks.length}`}{" "}
-                agent skills directory
-                {topLevelSymlinks.length === 1 ? " is" : "s are"} symlinked to
-                another location:
-              </p>
-              <ul className="settings-list">
-                {topLevelSymlinks.map((tls) => (
-                  <li key={tls.agent} className="mb-2">
-                    <code>{tls.agent}</code> → <code>{tls.resolvedTarget}</code>
-                    {!tls.exists && (
-                      <span className="text-danger"> (missing)</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              <button
-                className="btn"
-                type="button"
-                disabled={finalizing}
-                onClick={() => void runFinalize()}
-              >
-                {finalizing ? (
-                  <>
-                    <span className="spinner inline" /> Finalizing
-                  </>
-                ) : (
-                  "Finalize now"
-                )}
-              </button>
-              {finalizeError && (
-                <pre className="mt-8 text-11 text-danger pre-wrap">
-                  {finalizeError}
-                </pre>
-              )}
-            </div>
-          )}
         </div>
       </div>
 

@@ -8,7 +8,6 @@ import type {
   DiagnosticReport,
   ExtractInfo,
   ExtractResult,
-  FinalizeResult,
   ImportRegistryManifestResult,
   ImportSkillOutcome,
   InstalledSkill,
@@ -57,8 +56,6 @@ export const IPC = {
   register: "skills:register",
   getRoot: "skills:getRoot",
   rebuildIndex: "skills:rebuildIndex",
-  finalize: "skills:finalize",
-  listTopLevelSymlinks: "agents:listTopLevelSymlinks",
   extractInfo: "skills:extractInfo",
   extractSkill: "skills:extract",
   readSkillMd: "skills:readSkillMd",
@@ -621,16 +618,6 @@ interface SkillsBankAPI {
   ): Promise<RegistrationResult[]>;
   getRoot(): Promise<string>;
   rebuildIndex(): Promise<{ ok: boolean; message: string; entries: number }>;
-  finalize(): Promise<FinalizeResult>;
-  /**
-   * Lightweight probe for "is any agent dir a symlink we could finalize?"
-   * Returns one entry per agent whose top-level skills dir is itself a
-   * symlink. Empty array when nothing is symlinked. Used by Settings to
-   * gate visibility of the Collapse symlinked agent dirs entry.
-   */
-  listTopLevelSymlinks(): Promise<
-    Array<{ agent: AgentId; resolvedTarget: string; exists: boolean }>
-  >;
   extractInfo(name: string): Promise<ExtractInfo>;
   extractSkill(
     name: string,

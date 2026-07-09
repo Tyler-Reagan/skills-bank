@@ -179,10 +179,6 @@ Sever a skill's Origin while keeping its local content: sets Origin to `null`, r
 
 A one-click pull of updates from your Linked repo. Import is a **three-way merge** (base, yours, theirs), not a blind overwrite — local-only skills are never read as "deleted upstream," and genuine divergences surface in a conflict modal where you choose keep-mine, use-theirs, or keep-both. Direct Export is guarded against clobbering a diverged remote.
 
-## Finalize
-
-Collapse a symlinked top-level agent dir (e.g. `~/.claude/skills` → `~/.agents/skills`) back into a real directory of its own. Used when you want each agent to own its skills independently after previously sharing.
-
 ## Manifest
 
 A lightweight JSON snapshot of a registry's **origin pointers** — not the skill content itself. Each entry carries the skill's name, its Origin (URL + skill path + hash), and its curation labels (category + tags). On import, each skill is re-fetched from its origin, so transfers are tiny but require the origins to still be reachable.

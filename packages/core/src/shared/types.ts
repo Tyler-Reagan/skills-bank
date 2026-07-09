@@ -94,15 +94,6 @@ export interface InstalledSkill {
   registryEntry?: RegistryEntry;
 }
 
-export interface TopLevelSymlinkInfo {
-  /** The agent whose top-level skills dir is itself a symlink. */
-  agent: import("./agents.js").AgentId;
-  /** Absolute path the agent's skills dir symlink resolves to. */
-  resolvedTarget: string;
-  /** Whether the resolved target exists and is a directory. */
-  exists: boolean;
-}
-
 export interface ScanReport {
   /** Map from AgentId → absolute skills dir path that was scanned. */
   agentDirs: Record<string, string>;
@@ -110,21 +101,6 @@ export interface ScanReport {
   claudeSkillsDir: string;
   registryRoot: string;
   entries: InstalledSkill[];
-  /**
-   * One per agent whose top-level skills dir is itself a symlink to
-   * another directory (e.g. ~/.claude/skills → ~/.agents/skills). The
-   * UI can offer to finalize each independently.
-   */
-  topLevelSymlinks: TopLevelSymlinkInfo[];
-}
-
-export interface FinalizeResult {
-  ok: boolean;
-  message: string;
-  /** When ok=true, the path the original symlink was renamed to. */
-  backupPath?: string;
-  /** When ok=false because of unregistered entries, list them. */
-  blockingEntries?: string[];
 }
 
 /**
