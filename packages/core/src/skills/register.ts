@@ -41,19 +41,15 @@ export function scanExistingInstalls(registryRoot: string): ScanReport {
   // so a stale on-disk index.json can't mislead either side.
   const index = buildRegistryIndex(registryRoot);
   const agentDirs: Record<string, string> = {};
-  const topLevelSymlinks: TopLevelSymlinkInfo[] = [];
   for (const agent of AGENTS) {
-    const dir = getAgentSkillsDir(agent);
-    agentDirs[agent.id] = dir;
-    const tls = detectTopLevelSymlink(agent, dir);
-    if (tls) topLevelSymlinks.push(tls);
+    agentDirs[agent.id] = getAgentSkillsDir(agent);
   }
   return {
     agentDirs,
     claudeSkillsDir: getAgentSkillsDir("claude"),
     registryRoot,
     entries: listInstalled(registryRoot, { index }),
-    topLevelSymlinks,
+    topLevelSymlinks: listTopLevelSymlinks(),
   };
 }
 
@@ -544,35 +540,9 @@ export function finalizeSkillsDir(opts: FinalizeOptions): FinalizeResult {
     };
   }
 
-  recordFinalize(opts.registryRoot, {
-    timestamp: new Date().toISOString(),
-    skillsDir,
-    backupPath,
-    originalTarget: resolved,
-    entries: snapshot,
-  });
-
   return {
     ok: true,
     message: `${skillsDir} is now a real directory; original symlink saved at ${backupPath}`,
     backupPath,
   };
-}
-
-interface FinalizeLogEntry {
-  timestamp: string;
-  skillsDir: string;
-  backupPath: string;
-  originalTarget: string;
-  entries: Array<{ name: string; isSymlink: boolean; target?: string }>;
-}
-
-function recordFinalize(registryRoot: string, entry: FinalizeLogEntry): void {
-  const dir = getStateDir(registryRoot);
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(
-    dir,
-    `finalize-${entry.timestamp.replace(/[:.]/g, "-")}.json`,
-  );
-  fs.writeFileSync(file, JSON.stringify(entry, null, 2) + "\n");
 }

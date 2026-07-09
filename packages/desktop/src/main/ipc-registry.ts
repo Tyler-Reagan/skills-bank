@@ -597,14 +597,14 @@ export function registerRegistryHandlers(): void {
   ipcMain.handle(IPC.finalize, () => {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    const report = scanExistingInstalls(registryRoot);
-    if (report.topLevelSymlinks.length === 0) {
+    const topLevelSymlinks = listTopLevelSymlinks();
+    if (topLevelSymlinks.length === 0) {
       return {
         ok: false,
         message: "No agent skills directories are top-level symlinks.",
       };
     }
-    const results = report.topLevelSymlinks.map((tls) =>
+    const results = topLevelSymlinks.map((tls) =>
       finalizeSkillsDir({
         registryRoot,
         agent: tls.agent,
@@ -614,7 +614,7 @@ export function registerRegistryHandlers(): void {
     const allOk = results.every((r) => r.ok);
     const summary = results
       .map((r, i) => {
-        const tls = report.topLevelSymlinks[i]!;
+        const tls = topLevelSymlinks[i]!;
         return `${tls.agent}: ${r.message}`;
       })
       .join("; ");
