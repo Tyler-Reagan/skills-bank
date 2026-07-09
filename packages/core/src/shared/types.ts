@@ -42,12 +42,12 @@ export interface RegistryEntry extends SkillMeta {
    * Heal axis: the linked upstream has a newer content hash than
    * what was recorded at last fetch. Set by the desktop runner's
    * probe pass (plan 03, PR 2) for skills with an `upstream` pointer.
-   * The classifier emits `origin-update-available` when true and
+   * The classifier emits `skill-update-available` when true and
    * `drift` is false; if both are true, `edited-with-origin`
    * takes priority (the Update heal flow surfaces the upstream
    * change inside the conflict-aware path).
    */
-  originUpdateAvailable?: boolean;
+  skillUpdateAvailable?: boolean;
   /**
    * Heal axis: this skill's origin probe has failed
    * `ORIGIN_UNREACHABLE_THRESHOLD` consecutive times — see
@@ -55,7 +55,7 @@ export interface RegistryEntry extends SkillMeta {
    * sidecar's `probeFailureCount`. The classifier emits
    * `origin-unreachable` when true and the skill has a GitHub origin.
    * Lower priority than drift (drift implies reachable-recently);
-   * higher than `originUpdateAvailable`. v1.4.
+   * higher than `skillUpdateAvailable`. v1.4.
    */
   originUnreachable?: boolean;
   /**

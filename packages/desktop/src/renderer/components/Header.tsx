@@ -66,7 +66,7 @@ interface Props {
   pendingUpdateVersion: string | null;
   onShowUpdate: () => void;
   /**
-   * Count of skills with `originUpdateAvailable === true` from the
+   * Count of skills with `skillUpdateAvailable === true` from the
    * latest probe. When non-zero, the header renders an aggregate
    * badge that opens the UpdatesModal. Click invokes `onShowUpdates`.
    */

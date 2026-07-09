@@ -143,7 +143,7 @@ export function RegistryProvider({
   // probe runner via the augmented listRegistry. Drives the header
   // aggregate badge and the UpdatesModal's content.
   const pendingSkillUpdates = useMemo(
-    () => registry.filter((e) => e.originUpdateAvailable === true),
+    () => registry.filter((e) => e.skillUpdateAvailable === true),
     [registry],
   );
 

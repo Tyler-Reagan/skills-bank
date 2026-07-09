@@ -145,7 +145,7 @@ const api = {
     return () =>
       ipcRenderer.removeListener(IPC.manifestImportProgress, listener);
   },
-  originUpdate: (name: string) => ipcRenderer.invoke(IPC.originUpdate, name),
+  skillUpdate: (name: string) => ipcRenderer.invoke(IPC.skillUpdate, name),
   originRepoMetadata: (repo: string) =>
     ipcRenderer.invoke(IPC.originRepoMetadata, repo),
   originLastCommit: (repo: string, skillPath: string) =>

@@ -20,9 +20,9 @@ function entry(name: string, over: Partial<RegistryEntry> = {}): RegistryEntry {
 
 describe("applyChipFilters", () => {
   const reg = [
-    entry("a", { bucket: "personal", originUpdateAvailable: true }),
+    entry("a", { bucket: "personal", skillUpdateAvailable: true }),
     entry("b", { bucket: "vendored", drift: true }),
-    entry("c", { bucket: "vendored", originUpdateAvailable: true }),
+    entry("c", { bucket: "vendored", skillUpdateAvailable: true }),
   ];
 
   test("empty active set passes everything through (same reference)", () => {

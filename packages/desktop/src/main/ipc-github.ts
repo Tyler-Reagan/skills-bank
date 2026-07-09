@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 import {
-  applyOriginUpdate as coreApplyOriginUpdate,
+  applySkillUpdate as coreApplySkillUpdate,
   fetchOriginTree,
   findFolderHash,
   folderPathFromSkillPath,
@@ -157,14 +157,14 @@ async function getLastCommit(
   }
 }
 
-// ─── Upstream update ─────────────────────────────────────────────────────────
+// ─── Skill update ─────────────────────────────────────────────────────────────
 
-async function applyUpstreamUpdate(
+async function applySkillUpdate(
   name: string,
-): Promise<import("../shared/ipc.js").OriginUpdateResult> {
+): Promise<import("../shared/ipc.js").SkillUpdateResult> {
   const registryRoot = getRegistryRoot();
   if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-  const result = await coreApplyOriginUpdate({
+  const result = await coreApplySkillUpdate({
     registryRoot,
     name,
     token: getStoredToken(),
@@ -176,9 +176,9 @@ async function applyUpstreamUpdate(
   return result;
 }
 
-// ─── Manual upstream picker ───────────────────────────────────────────────────
+// ─── Manual origin picker ─────────────────────────────────────────────────────
 
-async function setManualUpstream(
+async function setManualOrigin(
   name: string,
   choice: OriginManualChoice,
 ): Promise<{ ok: boolean; message: string }> {
@@ -207,7 +207,7 @@ async function setManualUpstream(
 
   if (choice.url === null) {
     upsertOrigin({ url: null });
-    return { ok: true, message: `Marked ${name} as not from any upstream.` };
+    return { ok: true, message: `Marked ${name} as local-only (no origin).` };
   }
   const { repo, skillPath } = choice;
   if (!repo || !skillPath) {
@@ -247,8 +247,8 @@ async function setManualUpstream(
 export function registerGithubHandlers(): void {
   ipcMain.handle(IPC.originProbe, async () => runUpstreamProbe());
 
-  ipcMain.handle(IPC.originUpdate, async (_e, name: string) =>
-    applyUpstreamUpdate(name),
+  ipcMain.handle(IPC.skillUpdate, async (_e, name: string) =>
+    applySkillUpdate(name),
   );
 
   ipcMain.handle(IPC.originRepoMetadata, async (_e, repo: string) =>
@@ -264,6 +264,6 @@ export function registerGithubHandlers(): void {
   ipcMain.handle(
     IPC.originSetManual,
     async (_e, name: string, choice: OriginManualChoice) =>
-      setManualUpstream(name, choice),
+      setManualOrigin(name, choice),
   );
 }

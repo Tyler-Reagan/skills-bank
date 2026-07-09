@@ -137,30 +137,30 @@ const ROWS: Row[] = [
   },
   {
     label:
-      "originUpdateAvailable + no drift → origin-update-available (Update)",
-    entry: entry({ originUpdateAvailable: true }),
+      "skillUpdateAvailable + no drift → skill-update-available (Update)",
+    entry: entry({ skillUpdateAvailable: true }),
     installed: [],
     isRegistered: true,
-    expectedState: "origin-update-available",
+    expectedState: "skill-update-available",
     expectedPrimary: "update",
     // Uninstalled → Install offered, nothing to manage-links.
     expectedCaps: { canUpdate: true, canInstall: true, canManageLinks: false },
   },
   {
     label:
-      "originUpdateAvailable + installed → manage-links granted, install not",
-    entry: entry({ originUpdateAvailable: true }),
+      "skillUpdateAvailable + installed → manage-links granted, install not",
+    entry: entry({ skillUpdateAvailable: true }),
     installed: [inst()],
     isRegistered: true,
-    expectedState: "origin-update-available",
+    expectedState: "skill-update-available",
     expectedPrimary: "update",
     expectedCaps: { canUpdate: true, canInstall: false, canManageLinks: true },
   },
   {
-    label: "drift + originUpdateAvailable → drift wins (edited-with-origin)",
+    label: "drift + skillUpdateAvailable → drift wins (edited-with-origin)",
     entry: entry({
       drift: true,
-      originUpdateAvailable: true,
+      skillUpdateAvailable: true,
       origin: {
         url: "https://github.com/u/r",
         skillPath: "skills/test/SKILL.md",
@@ -251,10 +251,10 @@ const ROWS: Row[] = [
   },
   {
     label:
-      "originUnreachable + originUpdateAvailable → unreachable wins (can't update what we can't probe)",
+      "originUnreachable + skillUpdateAvailable → unreachable wins (can't update what we can't probe)",
     entry: entry({
       originUnreachable: true,
-      originUpdateAvailable: true,
+      skillUpdateAvailable: true,
       origin: {
         url: "https://github.com/u/r",
         skillPath: "skills/test/SKILL.md",

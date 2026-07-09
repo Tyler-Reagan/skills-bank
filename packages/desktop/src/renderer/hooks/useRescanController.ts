@@ -89,7 +89,7 @@ export function useRescanController({
   }, [refresh]);
 
   // Main process completes an upstream probe → re-fetch registry so
-  // the new `upstreamUpdateAvailable` flags surface as card chips,
+  // the new `skillUpdateAvailable` flags surface as card chips,
   // surface rate-limit failures as a sticky error toast, and advance
   // the user-triggered Rescan button's state machine (working → done
   // → idle, or working → idle on rate-limit).

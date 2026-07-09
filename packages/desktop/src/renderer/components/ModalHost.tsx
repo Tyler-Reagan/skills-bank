@@ -32,7 +32,7 @@ import { useRegistryHost } from "../RegistryHostContext.js";
 import type {
   AuthStatus,
   OriginManualChoice,
-  OriginUpdateResult,
+  SkillUpdateResult,
   UpdateStatus,
 } from "../../shared/ipc.js";
 
@@ -168,7 +168,7 @@ export function ModalHost({
   const bulkRepairPrompt = modal?.kind === "bulkRepair" ? modal.target : null;
 
   const handleUpdateResult = useCallback(
-    (r: OriginUpdateResult) => {
+    (r: SkillUpdateResult) => {
       if (r.ok) {
         flash(r.message);
         return;
@@ -578,7 +578,7 @@ export function ModalHost({
           entries={pendingSkillUpdates}
           onClose={() => closeModal()}
           onUpdate={async (name) => {
-            const r = await window.skillsBank.originUpdate(name);
+            const r = await window.skillsBank.skillUpdate(name);
             handleUpdateResult(r);
             await refresh();
             return r;
@@ -802,7 +802,7 @@ interface DrawerHostProps {
   /** Auth state — drawer gates the upstream-activity strip on whether the user is signed in. */
   authStatus: AuthStatus | null;
   /** Centralized handler for the three Update result paths. */
-  onUpdateResult: (r: OriginUpdateResult) => void;
+  onUpdateResult: (r: SkillUpdateResult) => void;
   /** Open the per-skill ManageLinks modal. */
   onOpenManageLinks: (target: {
     name: string;
@@ -933,7 +933,7 @@ function DrawerHost({
       onUpdate={
         caps.canUpdate
           ? async () => {
-              const r = await window.skillsBank.originUpdate(selected.name);
+              const r = await window.skillsBank.skillUpdate(selected.name);
               onUpdateResult(r);
               await refresh();
             }

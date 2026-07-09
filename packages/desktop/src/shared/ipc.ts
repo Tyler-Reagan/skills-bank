@@ -115,7 +115,7 @@ export const IPC = {
   discoverStatus: "discover:status",
   headerMenuAction: "header:action",
   originProbe: "origin:probe",
-  originUpdate: "origin:update",
+  skillUpdate: "origin:update",
   originRepoMetadata: "origin:repoMetadata",
   originLastCommit: "origin:lastCommit",
   originSetManual: "origin:setManual",
@@ -129,7 +129,7 @@ export const IPC = {
 } as const;
 
 /**
- * Renderer → main payload for `upstream:setManual`. Either:
+ * Renderer → main payload for `origin:setManual`. Either:
  * - Stamp a GitHub upstream (`url` + `repo` + `skillPath`). Validated
  *   against `GET /repos/{repo}/contents/{folder}` before writing —
  *   invalid combos return an error and don't mutate.
@@ -141,14 +141,15 @@ export type OriginManualChoice =
   | { url: null };
 
 /**
- * Response for `upstream:update`. Carries structured rate-limit info
- * on 429 so the renderer can render a tailored, sticky error toast
- * with a "Sign in" affordance, instead of a generic transient flash.
+ * Response for `origin:update` (the skill-content-update channel).
+ * Carries structured rate-limit info on 429 so the renderer can
+ * render a tailored, sticky error toast with a "Sign in" affordance,
+ * instead of a generic transient flash.
  *
  * `rateLimit` mirrors core's `RateLimitInfo` shape. Inlined here so
  * the IPC surface doesn't depend on a separately-exported name.
  */
-export interface OriginUpdateResult {
+export interface SkillUpdateResult {
   ok: boolean;
   message: string;
   /** Populated only on rate-limit failures. */
@@ -181,7 +182,7 @@ interface RehomeIntoLinkedRepoIPCResult {
 }
 
 /**
- * Payload broadcast on the `upstream:probe` channel when the probe
+ * Payload broadcast on the `origin:probe` channel when the probe
  * runner finishes a pass. Always sent — when the pass had no
  * surfaceable issues the fields are undefined and the renderer
  * treats the event as a pure "refresh the registry" nudge.
@@ -193,7 +194,7 @@ interface RehomeIntoLinkedRepoIPCResult {
  * unauthenticated hits.
  *
  * Other call sites that emit on this channel purely to nudge a
- * registry refresh (e.g. applyUpstreamUpdate success, upstreamSetManual
+ * registry refresh (e.g. applySkillUpdate success, setManualOrigin
  * success) send an empty payload.
  */
 export interface OriginProbeCompleteEvent {
@@ -214,10 +215,10 @@ export interface OriginProbeCompleteEvent {
 }
 
 /**
- * Summary returned by `upstream:probe`. The renderer uses this to
+ * Summary returned by `origin:probe`. The renderer uses this to
  * surface progress in the UpdatesModal's manual-refresh control;
  * per-skill update state is surfaced via the augmented
- * `RegistryEntry.upstreamUpdateAvailable` field on `listRegistry`,
+ * `RegistryEntry.skillUpdateAvailable` field on `listRegistry`,
  * not through this payload.
  */
 export interface OriginProbeResult {
@@ -543,9 +544,9 @@ interface SkillsBankAPI {
    * Restore an unreachable origin by repointing it at a new GitHub URL
    * (ADR-0012). Parses the URL → repo + skillPath, re-fetches content,
    * and rewrites the origin pointer (rolling back to the prior marker on
-   * failure). Shares `OriginUpdateResult` with `originUpdate`.
+   * failure). Shares `SkillUpdateResult` with `skillUpdate`.
    */
-  repointOrigin(name: string, url: string): Promise<OriginUpdateResult>;
+  repointOrigin(name: string, url: string): Promise<SkillUpdateResult>;
   /**
    * Sever a skill's origin and rehome it as a local skill in `personal/`
    * (ADR-0012). The restore "keep it local" escape and the drift
@@ -793,7 +794,7 @@ interface SkillsBankAPI {
   manifestImportRetrySkill(
     skill: ManifestSkill,
   ): Promise<{ ok: boolean; outcome?: ImportSkillOutcome; message?: string }>;
-  originUpdate(name: string): Promise<OriginUpdateResult>;
+  skillUpdate(name: string): Promise<SkillUpdateResult>;
   originRepoMetadata(repo: string): Promise<OriginRepoMetadata>;
   originLastCommit(repo: string, skillPath: string): Promise<OriginLastCommit>;
   originSetManual(
