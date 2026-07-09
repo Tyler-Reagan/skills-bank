@@ -24,12 +24,10 @@ const api = {
   detachLocal: (name: string) => ipcRenderer.invoke(IPC.detachLocal, name),
   rehomeIntoLinkedRepo: (name: string, destPath: string) =>
     ipcRenderer.invoke(IPC.rehomeIntoLinkedRepo, name, destPath),
-  listTopLevelSymlinks: () => ipcRenderer.invoke(IPC.listTopLevelSymlinks),
   scan: () => ipcRenderer.invoke(IPC.scan),
   register: (items: unknown) => ipcRenderer.invoke(IPC.register, items),
   getRoot: () => ipcRenderer.invoke(IPC.getRoot),
   rebuildIndex: () => ipcRenderer.invoke(IPC.rebuildIndex),
-  finalize: () => ipcRenderer.invoke(IPC.finalize),
   extractInfo: (name: string) => ipcRenderer.invoke(IPC.extractInfo, name),
   extractSkill: (name: string) => ipcRenderer.invoke(IPC.extractSkill, name),
   readSkillMd: (name: string) => ipcRenderer.invoke(IPC.readSkillMd, name),

@@ -12,6 +12,10 @@ _Avoid_: Plugin, extension, tool
 The user's local collection of installed skills, sourced from one or more origins.
 _Avoid_: Library, catalog, store
 
+**Agent Directory**:
+The fixed directory a supported AI coding agent reads its skills from, one per agent under `$HOME` (e.g. `~/.claude/skills/`). `~/.agents/skills/` is one of these too — shared across tools rather than tied to one — and is the default destination Unregister sends files to, not a fallback for missing ones. A missing directory is skipped silently, never an error. The Registry only ever reaches these via a symlink (Install) or by classifying what's already sitting there (Installation kind) — the Registry itself is never stored here.
+_Avoid_: Agent folder, Skills folder, Tool directory
+
 **Linked Repo**:
 The single GitHub repository a user has configured as both the mirror source for their entire Registry _and_ the presumed home for their own collection of skills — a repo they own, not merely a sync target. The Registry reads this repo's `skills/` contents by convention, and it's the one write destination for pushing local changes back out (manifest export, adopt-and-push). Distinct from Origin, which tracks the upstream source of an individual skill and may point at a third-party repo the user doesn't own — a skill's Origin is often, but not always, the Linked Repo. When no Linked Repo is configured, the Registry is simply empty until the user links one or installs from Discover — there is no curated/bundled fallback set (retired in the origin-only provenance model, ADR-0020/0021, issue #159).
 _Avoid_: Linked registry, GitHub registry, registry source (when meaning this specific repo)
@@ -103,3 +107,17 @@ _Avoid_: Sync (retired, ADR-0017/0020), Adopt (reserved for Register), Update (r
 **Export**:
 Commit the Registry's pushed Manifest to the Linked Repo, guarded against a non-fast-forward push so a diverged remote is never silently clobbered (ADR-0009). Also available as a plain file via the Manifest modal's disk-transport tab, independent of any Linked Repo, for moving a Manifest's metadata between machines by hand.
 _Avoid_: Push (reads as Pull's inverse, but Pull is skill-content-scoped and Export never sends skill content anywhere)
+
+Metrics is a separate, self-contained domain — tracking how often skills fire, unrelated to the Registry/Manifest axes above.
+
+**Invocation**:
+One recorded use of a skill — either model-invoked (`PreToolUse`, tool `Skill`) or a user `/slash` command (`UserPromptExpansion`). Logged as a single JSONL line by the Hook; aggregated into per-skill counts and first/last-seen timestamps.
+_Avoid_: Usage event, Call
+
+**Tracking**:
+Whether skill usage is currently being recorded, and the history of when it has been on or off. Enabled by installing a Hook into Claude Code's `settings.json` plus a script that appends every Invocation to a log; disabled by removing the hook entry (the log and script stay, so history persists and re-enabling is instant). The on/off history comes from an explicit ledger of enable/disable periods, not from gaps in the invocation log — silence there could mean "not used" just as easily as "not tracked," so it can't answer the question by itself. If `settings.json` is edited by hand outside the app, Tracking notices next time it's checked and heals its own ledger with an approximate transition rather than losing track of what happened. Surfaced to the user as a tracked-since date and an on/off state.
+_Avoid_: Metrics (that's the tab showing Invocation stats, not the on/off state itself), Uptime, Coverage (both too generic on their own)
+
+**Hook**:
+Claude Code's own extensibility mechanism, not something this app invented — Skills Bank installs one entry under `PreToolUse` (model-invoked skills) and `UserPromptExpansion` (user `/slash` commands) in Claude Code's `settings.json`, pointing at a script that appends every Invocation to the log. "Installed" means our entry is present under any tracked event, not necessarily both.
+_Avoid_: Tracking (the state Hook backs; don't conflate installed-mechanism with on/off state)

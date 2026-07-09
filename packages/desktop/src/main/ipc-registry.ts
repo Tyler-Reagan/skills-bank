@@ -10,7 +10,6 @@ import {
   deleteUnregisteredSkill,
   detachOrigin,
   extractSkill,
-  finalizeSkillsDir,
   findSkillFolder,
   folderPathFromSkillPath,
   forgetMissingEntry,
@@ -24,7 +23,6 @@ import {
   isGithubUrl,
   linkSkillToAgents,
   listInstalled,
-  listTopLevelSymlinks,
   makeAppError,
   parseGithubSkillUrl,
   parseOwnerRepo,
@@ -507,10 +505,9 @@ export function registerRegistryHandlers(): void {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) {
       return {
-        claudeSkillsDir: "",
+        agentDirs: {},
         registryRoot: "",
         entries: [],
-        topLevelSymlink: null,
       };
     }
     return scanExistingInstalls(registryRoot);
@@ -592,42 +589,6 @@ export function registerRegistryHandlers(): void {
         entries: 0,
       };
     }
-  });
-
-  ipcMain.handle(IPC.finalize, () => {
-    const registryRoot = getRegistryRoot();
-    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
-    const report = scanExistingInstalls(registryRoot);
-    if (report.topLevelSymlinks.length === 0) {
-      return {
-        ok: false,
-        message: "No agent skills directories are top-level symlinks.",
-      };
-    }
-    const results = report.topLevelSymlinks.map((tls) =>
-      finalizeSkillsDir({
-        registryRoot,
-        agent: tls.agent,
-        confirmDestructive: true,
-      }),
-    );
-    const allOk = results.every((r) => r.ok);
-    const summary = results
-      .map((r, i) => {
-        const tls = report.topLevelSymlinks[i]!;
-        return `${tls.agent}: ${r.message}`;
-      })
-      .join("; ");
-    const blockingEntries = results.flatMap((r) => r.blockingEntries ?? []);
-    return {
-      ok: allOk,
-      message: summary,
-      ...(blockingEntries.length > 0 ? { blockingEntries } : {}),
-    };
-  });
-
-  ipcMain.handle(IPC.listTopLevelSymlinks, () => {
-    return listTopLevelSymlinks();
   });
 
   ipcMain.handle(IPC.extractInfo, (_e, name: string) => {
