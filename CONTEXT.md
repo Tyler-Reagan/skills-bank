@@ -114,10 +114,10 @@ Metrics is a separate, self-contained domain — tracking how often skills fire,
 One recorded use of a skill — either model-invoked (`PreToolUse`, tool `Skill`) or a user `/slash` command (`UserPromptExpansion`). Logged as a single JSONL line by the Hook; aggregated into per-skill counts and first/last-seen timestamps.
 _Avoid_: Usage event, Call
 
-**Hook**:
-The `PreToolUse`/`UserPromptExpansion` entries this app installs into Claude Code's `settings.json`, plus the script they invoke, that appends every Invocation to the log. "Installed" means any tracked event has our entry present, not necessarily all of them.
-_Avoid_: Tracking (the outcome; Hook is the installed mechanism itself)
+**Tracking**:
+Whether skill usage is currently being recorded, and the history of when it has been on or off. Enabled by installing a Hook into Claude Code's `settings.json` plus a script that appends every Invocation to a log; disabled by removing the hook entry (the log and script stay, so history persists and re-enabling is instant). The on/off history comes from an explicit ledger of enable/disable periods, not from gaps in the invocation log — silence there could mean "not used" just as easily as "not tracked," so it can't answer the question by itself. If `settings.json` is edited by hand outside the app, Tracking notices next time it's checked and heals its own ledger with an approximate transition rather than losing track of what happened. Surfaced to the user as a tracked-since date and an on/off state.
+_Avoid_: Metrics (that's the tab showing Invocation stats, not the on/off state itself), Uptime, Coverage (both too generic on their own)
 
-**Tracking coverage**:
-The derived on/off timeline for the Hook — built from an explicit ledger of enable/disable periods, not inferred from gaps in the invocation log, since silence there could mean "not used" just as easily as "not tracked." Exposes a tracked-since date and whether tracking is currently on; the underlying windows-and-gaps data supports a fuller timeline view later.
-_Avoid_: Uptime, History (too generic — this is specifically about Hook on/off state, not skill usage)
+**Hook**:
+Claude Code's own extensibility mechanism, not something this app invented — Skills Bank installs one entry under `PreToolUse` (model-invoked skills) and `UserPromptExpansion` (user `/slash` commands) in Claude Code's `settings.json`, pointing at a script that appends every Invocation to the log. "Installed" means our entry is present under any tracked event, not necessarily both.
+_Avoid_: Tracking (the state Hook backs; don't conflate installed-mechanism with on/off state)
