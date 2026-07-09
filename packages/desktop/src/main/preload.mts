@@ -9,7 +9,6 @@ import {
 const api = {
   listRegistry: () => ipcRenderer.invoke(IPC.listRegistry),
   listInstalled: () => ipcRenderer.invoke(IPC.listInstalled),
-  getSkillDiff: (req: unknown) => ipcRenderer.invoke(IPC.getSkillDiff, req),
   install: (name: string, force?: boolean, agents?: unknown) =>
     ipcRenderer.invoke(IPC.install, name, force, agents),
   uninstall: (name: string, agents?: unknown) =>

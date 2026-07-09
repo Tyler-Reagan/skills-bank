@@ -6,7 +6,6 @@ import {
   applyRegistration,
   buildRegistryIndex,
   classifySkillByName,
-  computeFolderDiff,
   deleteUnregisteredSkill,
   detachOrigin,
   extractSkill,
@@ -58,11 +57,7 @@ import {
   setRegistryRoot,
   persistConfig,
 } from "./main-state.js";
-import {
-  IPC,
-  type SkillDiffRequest,
-  type SkillDiffResult,
-} from "../shared/ipc.js";
+import { IPC } from "../shared/ipc.js";
 import { isSafeExternalUrl } from "./ipc-shell.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -209,18 +204,6 @@ export function registerRegistryHandlers(): void {
     const index = buildRegistryIndex(registryRoot);
     return listInstalled(registryRoot, { index });
   });
-
-  ipcMain.handle(
-    IPC.getSkillDiff,
-    async (_e, req: SkillDiffRequest): Promise<SkillDiffResult> => {
-      const files = computeFolderDiff(req.leftPath, req.rightPath);
-      return {
-        leftLabel: req.leftLabel,
-        rightLabel: req.rightLabel,
-        files,
-      };
-    },
-  );
 
   mutatingHandle(
     IPC.install,
