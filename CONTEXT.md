@@ -12,6 +12,10 @@ _Avoid_: Plugin, extension, tool
 The user's local collection of installed skills, sourced from one or more origins.
 _Avoid_: Library, catalog, store
 
+**Agent Directory**:
+The fixed, per-tool directory a supported AI coding agent reads its skills from — one per agent under `$HOME` (e.g. `~/.claude/skills/`), plus a shared fallback, `~/.agents/skills/`, for tools with no dedicated one. A missing directory is skipped silently, never an error. The Registry only ever reaches these via a symlink (Install) or by classifying what's already sitting there (Installation kind) — the Registry itself is never stored here.
+_Avoid_: Agent folder, Skills folder, Tool directory
+
 **Linked Repo**:
 The single GitHub repository a user has configured as both the mirror source for their entire Registry _and_ the presumed home for their own collection of skills — a repo they own, not merely a sync target. The Registry reads this repo's `skills/` contents by convention, and it's the one write destination for pushing local changes back out (manifest export, adopt-and-push). Distinct from Origin, which tracks the upstream source of an individual skill and may point at a third-party repo the user doesn't own — a skill's Origin is often, but not always, the Linked Repo. When no Linked Repo is configured, the Registry is simply empty until the user links one or installs from Discover — there is no curated/bundled fallback set (retired in the origin-only provenance model, ADR-0020/0021, issue #159).
 _Avoid_: Linked registry, GitHub registry, registry source (when meaning this specific repo)
@@ -78,6 +82,10 @@ _Avoid_: Remove (reserved for nothing — never use it for this or Unregister), 
 Classification of what sits at `<agentDir>/<name>`, computed by resolving the entry to its _final_ symlink target (not just one hop — a symlink-to-a-symlink into the Registry still classifies `ours`): `ours` (resolves into the Registry), `foreign-symlink` (resolves outside the Registry), `real-directory` (actual files, not a symlink — e.g. installed by another tool's CLI), `broken-symlink` (target doesn't exist). Drives both the Registered/Unregistered split and Conflict detection.
 _Avoid_: Installation type, Link kind
 
+**Finalize**:
+Collapse an Agent Directory that's currently a symlink (most often into the shared `~/.agents/skills/` fallback) back into a real directory of its own, so that agent stops sharing and owns its skills independently. Only runs when every entry inside the resolved target is itself a symlink — i.e. every skill there has already been adopted via Register — otherwise it refuses.
+_Avoid_: Detach (reserved for severing a skill's Origin — unrelated), Unlink (that's Uninstall/Unregister)
+
 **Conflict**:
 More than one non-`ours` Installation Kind entry for the same skill name across Agent Directories. Two related classifier states: `registered-conflicts` (stragglers alongside an already-registered, installed skill) and `unregistered-conflicts` (multiple candidate copies with no Registry entry yet, so the user must pick one before Registering). Resolved by replacing each straggler with a symlink to the canonical copy, deleting it, or keeping it. This is the **sole** meaning of "conflict" in the skills domain — the manifest-merge name-collision case (a manifest resolution: `keep-mine` / `use-theirs` / `keep-both`, surfaced during Import) is a separate concern that lives privately inside the merge machinery and is not called a "conflict" in shared vocabulary.
 _Avoid_: Duplicate, Collision
@@ -103,3 +111,17 @@ _Avoid_: Sync (retired, ADR-0017/0020), Adopt (reserved for Register), Update (r
 **Export**:
 Commit the Registry's pushed Manifest to the Linked Repo, guarded against a non-fast-forward push so a diverged remote is never silently clobbered (ADR-0009). Also available as a plain file via the Manifest modal's disk-transport tab, independent of any Linked Repo, for moving a Manifest's metadata between machines by hand.
 _Avoid_: Push (reads as Pull's inverse, but Pull is skill-content-scoped and Export never sends skill content anywhere)
+
+Metrics is a separate, self-contained domain — tracking how often skills fire, unrelated to the Registry/Manifest axes above.
+
+**Invocation**:
+One recorded use of a skill — either model-invoked (`PreToolUse`, tool `Skill`) or a user `/slash` command (`UserPromptExpansion`). Logged as a single JSONL line by the Hook; aggregated into per-skill counts and first/last-seen timestamps.
+_Avoid_: Usage event, Call
+
+**Hook**:
+The `PreToolUse`/`UserPromptExpansion` entries this app installs into Claude Code's `settings.json`, plus the script they invoke, that appends every Invocation to the log. "Installed" means any tracked event has our entry present, not necessarily all of them.
+_Avoid_: Tracking (the outcome; Hook is the installed mechanism itself)
+
+**Tracking coverage**:
+The derived on/off timeline for the Hook — built from an explicit ledger of enable/disable periods, not inferred from gaps in the invocation log, since silence there could mean "not used" just as easily as "not tracked." Exposes a tracked-since date and whether tracking is currently on; the underlying windows-and-gaps data supports a fuller timeline view later.
+_Avoid_: Uptime, History (too generic — this is specifically about Hook on/off state, not skill usage)
