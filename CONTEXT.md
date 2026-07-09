@@ -13,7 +13,7 @@ The user's local collection of installed skills, sourced from one or more origin
 _Avoid_: Library, catalog, store
 
 **Agent Directory**:
-The fixed, per-tool directory a supported AI coding agent reads its skills from — one per agent under `$HOME` (e.g. `~/.claude/skills/`), plus a shared fallback, `~/.agents/skills/`, for tools with no dedicated one. A missing directory is skipped silently, never an error. The Registry only ever reaches these via a symlink (Install) or by classifying what's already sitting there (Installation kind) — the Registry itself is never stored here.
+The fixed directory a supported AI coding agent reads its skills from, one per agent under `$HOME` (e.g. `~/.claude/skills/`). `~/.agents/skills/` is one of these too — shared across tools rather than tied to one — and is the default destination Unregister sends files to, not a fallback for missing ones. A missing directory is skipped silently, never an error. The Registry only ever reaches these via a symlink (Install) or by classifying what's already sitting there (Installation kind) — the Registry itself is never stored here.
 _Avoid_: Agent folder, Skills folder, Tool directory
 
 **Linked Repo**:
@@ -83,7 +83,7 @@ Classification of what sits at `<agentDir>/<name>`, computed by resolving the en
 _Avoid_: Installation type, Link kind
 
 **Finalize**:
-Collapse an Agent Directory that's currently a symlink (most often into the shared `~/.agents/skills/` fallback) back into a real directory of its own, so that agent stops sharing and owns its skills independently. Only runs when every entry inside the resolved target is itself a symlink — i.e. every skill there has already been adopted via Register — otherwise it refuses.
+Turn every Agent Directory that's currently a symlink (typically into the shared `~/.agents/skills/`) into its own real, independent directory — a single "Finalize now" action batches over all of them, not one at a time. For each: renames the old symlink to a timestamped backup rather than deleting it, creates a real directory in its place, and recreates each skill inside as a direct symlink into the Registry — one hop, not the old symlink-through-a-symlink chain. Afterward those agents no longer share storage with any other; edits to the shared directory no longer touch them. Refuses per-agent if any entry there isn't already a symlink — Finalize only ever recreates existing symlinks, never adopts foreign content — while still finalizing whichever other agents are clear to proceed.
 _Avoid_: Detach (reserved for severing a skill's Origin — unrelated), Unlink (that's Uninstall/Unregister)
 
 **Conflict**:
