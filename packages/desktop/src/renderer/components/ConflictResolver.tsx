@@ -2,17 +2,16 @@ import React, { useState } from "react";
 import { ConflictModal } from "./ConflictModal.js";
 import type { ConflictAdapter } from "./ConflictModal.js";
 
-// Generic conflict-resolver modal shared by the three resolver domains:
-//   - SyncConflictModal      — file-content sync collisions (per skill)
+// Generic conflict-resolver modal shared by the two resolver domains:
 //   - InstallCollisionModal  — agent-dir stragglers (per agent)
 //   - ManifestConflictModal  — manifest 3-way merge intent (per skill)
-// Each domain was a structural clone of the others (toolbar + rows +
-// action picker + tally + footer) differing only in row content, action
-// unions, and apply semantics — exactly the drift the old
-// BulkSelectToolbar comment warned about. The skeleton now lives here
-// once; domains own their picks state (controlled), row rendering, and
-// decision mapping. InstallConflictModal is NOT a resolver (it's a
-// pre-install gate with no per-row picks) and stays separate.
+// Each domain was a structural clone (toolbar + rows + action picker +
+// tally + footer) differing only in row content, action unions, and apply
+// semantics — exactly the drift the old BulkSelectToolbar comment warned
+// about. The skeleton now lives here once; domains own their picks state
+// (controlled), row rendering, and decision mapping. InstallConflictModal
+// is NOT a resolver (it's a pre-install gate with no per-row picks) and
+// stays separate.
 //
 // ConflictResolver is now a thin adapter-builder over ConflictModal —
 // it builds a ConflictAdapter encapsulating the bulk toolbar, scrollable
