@@ -24,7 +24,10 @@ import { SkillDetailDrawer, type ReviewContext } from "./SkillDetailDrawer.js";
 // `build.ts` which imports `node:child_process` and blows up the
 // vite browser build. See `components/skillState.ts` for the shim.
 import { classifyDrawerState } from "./skillState.js";
-import type { InstalledGroup } from "./installedGrouping.js";
+import {
+  selectResolvableConflicts,
+  type InstalledGroup,
+} from "./installedGrouping.js";
 import { useRegistry } from "../RegistryContext.js";
 import { useRegisterSkill } from "../useRegisterSkill.js";
 import { useSettings } from "../SettingsContext.js";
@@ -428,18 +431,19 @@ export function ModalHost({
             await refresh();
           }}
           onResolve={() => {
-            const conflicts = installed.filter(
-              (i) =>
-                i.name === modal.target.name &&
-                i.kind !== "ours" &&
-                i.kind !== "broken-symlink",
-            );
+            // Install-conflict resolution only ever reaches an already-
+            // registered skill, so this is the always-registered variant.
+            const { conflicts, allowReplaceWithSymlink } =
+              selectResolvableConflicts(
+                installed.filter((i) => i.name === modal.target.name),
+                true,
+              );
             openModal({
               kind: "conflict",
               target: {
                 name: modal.target.name,
                 conflicts,
-                allowReplaceWithSymlink: true,
+                allowReplaceWithSymlink,
               },
             });
           }}
@@ -906,16 +910,13 @@ function DrawerHost({
         // skills get delete/keep only, including broken stragglers;
         // registered skills get the full three-action picker excluding
         // broken (Repair handles those).
-        const conflicts = isRegistered
-          ? installations.filter(
-              (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
-            )
-          : installations.filter((i) => i.kind !== "ours");
+        const { conflicts, allowReplaceWithSymlink } =
+          selectResolvableConflicts(installations, isRegistered);
         if (conflicts.length === 0) return;
         onOpenConflicts({
           name: selected.name,
           conflicts,
-          allowReplaceWithSymlink: isRegistered,
+          allowReplaceWithSymlink,
         });
         onClose();
       }}

@@ -9,7 +9,11 @@ import type {
 } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
 import { InstalledTab } from "./components/InstalledTab.js";
-import type { InstalledGroup } from "./components/installedGrouping.js";
+import {
+  selectResolvableConflicts,
+  syntheticEntryFromInstall,
+  type InstalledGroup,
+} from "./components/installedGrouping.js";
 import {
   Header,
   type Density,
@@ -771,13 +775,9 @@ function AppContent(): React.ReactElement {
                 // entry so the user gets the same Register / Manage-links /
                 // Remove action surface as a registered skill — the two
                 // operations are now distinct buttons, not a radio group.
-                const synthetic: RegistryEntry = registryByName.get(s.name) ?? {
-                  name: s.name,
-                  description: s.target ?? s.linkPath,
-                  path: s.linkPath,
-                  origin: { url: null },
-                };
-                setSelected(synthetic);
+                setSelected(
+                  syntheticEntryFromInstall(s, registryByName.get(s.name)),
+                );
               }}
               onSelectIntegrated={(e) => setSelected(e)}
               onResolveConflicts={(g) => {
@@ -789,19 +789,14 @@ function AppContent(): React.ReactElement {
                 // have a dedicated Repair flow) but included for
                 // unregistered (the user picks a canonical and removes
                 // dead siblings in the same pass).
-                const isRegistered = registryByName.has(g.name);
-                const conflicts = isRegistered
-                  ? g.conflicts.filter(
-                      (c) => c.kind !== "ours" && c.kind !== "broken-symlink",
-                    )
-                  : g.conflicts.filter((c) => c.kind !== "ours");
+                const { conflicts, allowReplaceWithSymlink } =
+                  selectResolvableConflicts(
+                    g.conflicts,
+                    registryByName.has(g.name),
+                  );
                 openModal({
                   kind: "conflict",
-                  target: {
-                    name: g.name,
-                    conflicts,
-                    allowReplaceWithSymlink: isRegistered,
-                  },
+                  target: { name: g.name, conflicts, allowReplaceWithSymlink },
                 });
               }}
               onResolveAllConflicts={(gs) => setResolveAllTarget(gs)}

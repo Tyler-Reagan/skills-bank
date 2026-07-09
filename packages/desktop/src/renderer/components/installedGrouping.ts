@@ -6,11 +6,13 @@ import type {
 } from "@skills-bank/core";
 
 /**
- * Groups raw per-agent installations by skill name for the Installed
- * tab. Pure logic, kept out of `InstalledTab.tsx` because `InstalledGroup`
- * is also consumed by `App.tsx` and `ModalHost.tsx` (the resolve-all /
- * repair-all flows) — a presentational component should not be the type
- * source those import from.
+ * Pure logic for the Installed tab: grouping raw per-agent installations
+ * by skill name, classifying which installations are a resolvable
+ * Conflict, and building a stand-in registry entry for an unregistered
+ * skill. Kept out of `InstalledTab.tsx` because these are also consumed
+ * by `App.tsx` and `ModalHost.tsx` (the resolve-all / repair-all /
+ * drawer flows) — a presentational component should not be the source
+ * those import from.
  */
 
 export interface InstalledGroup {
@@ -99,4 +101,47 @@ function kindRank(k: InstalledSkill["kind"]): number {
     default:
       return 0;
   }
+}
+
+/**
+ * Which of a skill's installations count as a resolvable Conflict, and
+ * whether "replace with symlink to registry" can be offered. Registered
+ * skills exclude broken-symlink entries (Repair handles those
+ * separately) and can offer replace-with-symlink (there's a registry
+ * copy to point at); unregistered skills include broken entries (no
+ * separate repair path exists yet) and can't offer replace-with-symlink
+ * (nothing to point at until the user picks one to Register). Was
+ * duplicated identically across App.tsx's InstalledTab wiring and
+ * ModalHost's drawer + InstallConflictModal wiring.
+ */
+export function selectResolvableConflicts(
+  installations: InstalledSkill[],
+  isRegistered: boolean,
+): { conflicts: InstalledSkill[]; allowReplaceWithSymlink: boolean } {
+  const conflicts = isRegistered
+    ? installations.filter(
+        (i) => i.kind !== "ours" && i.kind !== "broken-symlink",
+      )
+    : installations.filter((i) => i.kind !== "ours");
+  return { conflicts, allowReplaceWithSymlink: isRegistered };
+}
+
+/**
+ * A stand-in `RegistryEntry` for a skill that isn't registered yet, so
+ * the drawer can render the same Register / Manage-links / Remove
+ * surface it shows for a real registry hit. Prefers the real hit when
+ * one exists (a registered skill with stragglers elsewhere).
+ */
+export function syntheticEntryFromInstall(
+  install: InstalledSkill,
+  registryHit: RegistryEntry | undefined,
+): RegistryEntry {
+  return (
+    registryHit ?? {
+      name: install.name,
+      description: install.target ?? install.linkPath,
+      path: install.linkPath,
+      origin: { url: null },
+    }
+  );
 }

@@ -13,6 +13,7 @@ import { Icon } from "./Icon.js";
 import { classifyDrawerState } from "./skillState.js";
 import {
   aggregateByName,
+  syntheticEntryFromInstall,
   type ClassifiedGroup,
   type InstalledGroup,
 } from "./installedGrouping.js";
@@ -158,12 +159,7 @@ export function InstalledTab({
   ]);
   const classified: ClassifiedGroup[] = groups.map((g) => {
     const registryHit = registryByName.get(g.name);
-    const entry: RegistryEntry = registryHit ?? {
-      name: g.name,
-      description: g.representative.target ?? g.representative.linkPath,
-      path: g.representative.linkPath,
-      origin: { url: null },
-    };
+    const entry = syntheticEntryFromInstall(g.representative, registryHit);
     return {
       g,
       classification: classifyDrawerState(entry, installed, !!registryHit),
