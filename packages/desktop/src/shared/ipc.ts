@@ -114,7 +114,6 @@ export const IPC = {
   discoverOpenTerminal: "discover:openTerminal",
   discoverStatus: "discover:status",
   headerMenuAction: "header:action",
-  getSkillDiff: "skills:getSkillDiff",
   originProbe: "origin:probe",
   originUpdate: "origin:update",
   originRepoMetadata: "origin:repoMetadata",
@@ -254,37 +253,6 @@ export interface OriginLastCommit {
   date: string | null;
   /** First line of the commit message. */
   message: string | null;
-}
-
-interface SkillDiffFile {
-  /** Relative path within the skill folder, e.g. "SKILL.md". */
-  path: string;
-  /** Lines present in right but not in left. */
-  added: number;
-  /** Lines present in left but not in right. */
-  removed: number;
-  /**
-   * Unified-diff body without the surrounding header. Empty string
-   * when both sides are byte-identical (file omitted from the result
-   * in that case).
-   */
-  unifiedDiff: string;
-  status: "modified" | "left-only" | "right-only" | "binary";
-}
-
-export interface SkillDiffResult {
-  /** Human-readable label for the left side (e.g. "Yours"). */
-  leftLabel: string;
-  /** Human-readable label for the right side (e.g. "Origin"). */
-  rightLabel: string;
-  files: SkillDiffFile[];
-}
-
-export interface SkillDiffRequest {
-  leftPath: string;
-  rightPath: string;
-  leftLabel: string;
-  rightLabel: string;
 }
 
 /**
@@ -539,23 +507,6 @@ interface SkillsBankAPI {
    * entries and entries that duplicate a known agent dir are skipped.
    */
   listInstalled(): Promise<InstalledSkill[]>;
-  /**
-   * Open a directory picker so the user can choose a personal skills
-   * folder to add to the Installed-tab scan list. Returns
-   * `{ ok: false, message: "canceled" }` if the user dismissed the
-   * picker. Persistence of the chosen path lives in the renderer's
-   * AppSettings; this IPC only resolves the picker dialog.
-   */
-  /**
-   * Compute a per-file unified diff between two on-disk skill folders.
-   * The two callers today are the sync-collision modal (left = local
-   * registry copy, right = incoming bundled tarball) and — when the
-   * drift drawer rebuild lands — the drift heal flow (left = local
-   * edited copy, right = synced-baseline content fetched at the
-   * recorded commit). Result shape is the same in both cases so the
-   * renderer-side DiffViewer component is reused.
-   */
-  getSkillDiff(req: SkillDiffRequest): Promise<SkillDiffResult>;
   install(
     name: string,
     force?: boolean,
