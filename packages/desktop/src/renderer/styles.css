@@ -542,7 +542,7 @@ select {
   background: var(--accent-dim);
   cursor: pointer;
 }
-.rescan-view-cta {
+.origin-probe-view-cta {
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -3265,38 +3265,6 @@ button:disabled {
 }
 .register-modal-result-msg--err {
   color: var(--danger);
-}
-
-/* ── LocalScan section ─────────────────────────────────── */
-.local-scan-category {
-  margin-bottom: 12px;
-}
-.local-scan-category-title {
-  margin: 8px 0 4px;
-  font-size: 13px;
-  color: var(--text-2);
-}
-.local-scan-item-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.local-scan-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  font-size: 12px;
-}
-.local-scan-item-name {
-  min-width: 0;
-  flex: 1;
 }
 
 /* ── SettingsModal section/group styles ─────────────────── */

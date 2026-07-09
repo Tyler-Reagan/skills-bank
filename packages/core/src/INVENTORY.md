@@ -113,17 +113,17 @@ colocated (`*.test.ts` / `test/*.test.ts`); entry criteria live in ADR-0001.
 
 ## `skills/` — operations on individual skills (lifecycle)
 
-| File             | LOC | Purpose                                                                                                                         | Consumed by                                          | Tests |
-| ---------------- | --- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ----- |
-| `install.ts`     | 317 | Symlink primitives: `linkSkillToAgents`, `unlinkSkillFromAgents`, `deleteFromBankSkill` (non-UI path)                           | `manifest/import.ts`, `unregister.ts` / desktop main | —     |
-| `register.ts`    | 560 | Registration: install scanning, `registerSkill` (moves files into the bank + records), agent-link reconcile, finalize           | — / desktop main, renderer (via IPC types)           | ✓     |
-| `classify.ts`    | 42  | Node-only `classifySkillByName`: joins the pure `shared/skill-state` classifier with build/installed for main-process callers   | — / desktop `ipc-registry.ts`                        | —     |
-| `conflicts.ts`   | 203 | Broken-link repair/remove + registry-vs-installed conflict resolution; owns the `isSymlink` util                                | — / desktop main, renderer (via IPC types)           | —     |
-| `installed.ts`   | 130 | Scan agent dirs; classify installs (ours / foreign-symlink / real-directory / broken-symlink)                                   | `classify`, `delete`, `diagnostics`, `register`      | ✓     |
-| `delete.ts`      | 118 | Delete unregistered skills from agent dirs (real dirs recursively; symlinks unlinked)                                           | — / desktop main                                     | —     |
-| `diagnostics.ts` | 136 | Aggregate local-disk anomalies into a `DiagnosticReport`                                                                        | — / desktop main                                     | ✓     |
-| `export.ts`      | 137 | Single-skill export to disk: standalone SKILL.md vs bundled zip decision + write                                                | — / desktop main                                     | —     |
-| `unregister.ts`  | 300 | Destructive-ladder step: move a registered skill's files out to a destination agent dir (collision + EXDEV) + drop manifest row | — / desktop main, renderer (via IPC types)           | ✓     |
+| File             | LOC | Purpose                                                                                                                         | Consumed by                                                                | Tests |
+| ---------------- | --- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----- |
+| `install.ts`     | 317 | Symlink primitives: `linkSkillToAgents`, `unlinkSkillFromAgents`, `deleteFromBankSkill` (non-UI path)                           | `manifest/import.ts`, `unregister.ts` / desktop main                       | —     |
+| `register.ts`    | 560 | Registration: install scanning, `registerSkill` (moves files into the bank + records), agent-link reconcile, finalize           | — / desktop main, renderer (via IPC types)                                 | ✓     |
+| `classify.ts`    | 42  | Node-only `classifySkillByName`: joins the pure `shared/skill-state` classifier with build/installed for main-process callers   | — / desktop `ipc-registry.ts`                                              | —     |
+| `conflicts.ts`   | 203 | Broken-link repair/remove + registry-vs-installed conflict resolution; owns the `isSymlink` util                                | — / desktop main, renderer (via IPC types)                                 | —     |
+| `installed.ts`   | 130 | Scan agent dirs; classify installs (ours / foreign-symlink / real-directory / broken-symlink)                                   | `classify`, `delete`, `diagnostics`, `register`                            | ✓     |
+| `delete.ts`      | 118 | Delete unregistered skills from agent dirs (real dirs recursively; symlinks unlinked)                                           | — / desktop main                                                           | —     |
+| `diagnostics.ts` | 136 | Aggregate local-disk anomalies into a `SkillDiagnosticReport`                                                                   | — (unused by desktop as of the local-scan retirement; kept as a primitive) | ✓     |
+| `export.ts`      | 137 | Single-skill export to disk: standalone SKILL.md vs bundled zip decision + write                                                | — / desktop main                                                           | —     |
+| `unregister.ts`  | 300 | Destructive-ladder step: move a registered skill's files out to a destination agent dir (collision + EXDEV) + drop manifest row | — / desktop main, renderer (via IPC types)                                 | ✓     |
 
 ## `manifest/` — the registry-manifest artifact
 

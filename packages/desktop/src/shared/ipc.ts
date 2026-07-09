@@ -5,7 +5,6 @@ import type {
   BrokenLinkRepairReport,
   ConflictResolveDecision,
   ConflictResolveReport,
-  DiagnosticReport,
   ExtractInfo,
   ExtractResult,
   ImportRegistryManifestResult,
@@ -96,7 +95,6 @@ export const IPC = {
   addFromGithub: "bank:addFromGithub",
   repairBrokenLinks: "skills:repairBrokenLinks",
   removeBrokenLinks: "skills:removeBrokenLinks",
-  localDiagnosticsScan: "diagnostics:scan",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   unregister: "skills:unregister",
   deleteUnregistered: "skills:deleteUnregistered",
@@ -744,13 +742,6 @@ interface SkillsBankAPI {
     name: string,
     agents: AgentId[],
   ): Promise<BrokenLinkRemoveReport>;
-  /**
-   * Local-disk diagnostics aggregator. Walks agent dirs + the registry
-   * index to surface "needs attention" items across four categories
-   * (unregistered installs, broken symlinks, external-target-missing,
-   * registry-folder-missing). Local-only — no network calls.
-   */
-  localDiagnosticsScan(): Promise<DiagnosticReport>;
   resolveSkillConflicts(
     name: string,
     decisions: ConflictResolveDecision[],

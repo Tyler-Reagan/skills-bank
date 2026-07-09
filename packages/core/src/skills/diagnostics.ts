@@ -1,5 +1,5 @@
 // Local-disk diagnostics aggregator. Walks agent dirs + the registry
-// index to surface "needs attention" items in three categories:
+// index to surface Skill Diagnostics in three categories:
 //   - unregistered installs in agent dirs (foreign-symlink + real-directory)
 //   - broken symlinks (symlink target gone)
 //   - registry-folder-missing (registered entries whose registry folder is gone)
@@ -10,21 +10,24 @@
 //   - `buildRegistryIndex` populates the `missing: true` flag on entries
 //     whose on-disk presence is gone.
 //
-// Renderer consumes the report to render a "Needs attention" section on
-// the Installed tab; per-item fix actions reuse the existing register /
-// deleteUnregistered / forgetMissing IPCs.
+// Not currently wired into the desktop renderer — the Installed tab's
+// "Needs attention" section computes the same three categories
+// continuously from the classifier instead of an on-demand scan (the
+// dedicated local-diagnostics IPC that used to feed a parallel section
+// was retired). Kept as a pure primitive in case a future consumer
+// (CLI, a different host) wants a point-in-time snapshot.
 
 import { buildRegistryIndex } from "../registry/build.js";
 import { listInstalled } from "./installed.js";
 import type { InstalledSkill } from "../shared/types.js";
 
-export type DiagnosticCategory =
+export type SkillDiagnosticCategory =
   | "unregistered-installs"
   | "broken-symlinks"
   | "registry-folder-missing";
 
-export interface DiagnosticItem {
-  category: DiagnosticCategory;
+export interface SkillDiagnosticItem {
+  category: SkillDiagnosticCategory;
   /** Skill name (or symlink basename for broken links). */
   name: string;
   /** One-line human-readable context. */
@@ -42,13 +45,15 @@ export interface DiagnosticItem {
   agent?: string;
 }
 
-export interface DiagnosticReport {
-  items: DiagnosticItem[];
+export interface SkillDiagnosticReport {
+  items: SkillDiagnosticItem[];
   scannedAt: string;
 }
 
-export function scanLocalDiagnostics(registryRoot: string): DiagnosticReport {
-  const items: DiagnosticItem[] = [];
+export function scanLocalDiagnostics(
+  registryRoot: string,
+): SkillDiagnosticReport {
+  const items: SkillDiagnosticItem[] = [];
   const scannedAt = new Date().toISOString();
 
   if (!registryRoot) {

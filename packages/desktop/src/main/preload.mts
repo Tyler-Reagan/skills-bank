@@ -82,7 +82,6 @@ const api = {
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>
     ipcRenderer.invoke(IPC.removeBrokenLinks, name, agents),
-  localDiagnosticsScan: () => ipcRenderer.invoke(IPC.localDiagnosticsScan),
   resolveSkillConflicts: (name: string, decisions: unknown) =>
     ipcRenderer.invoke(IPC.resolveSkillConflicts, name, decisions),
   discoverShow: (bounds: Bounds) =>

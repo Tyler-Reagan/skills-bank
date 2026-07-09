@@ -1,12 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SplashScreen } from "./components/primitives.js";
-import type {
-  AgentId,
-  DiagnosticItem,
-  DiagnosticReport,
-  InstalledSkill,
-  RegistryEntry,
-} from "@skills-bank/core";
+import type { AgentId, RegistryEntry } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
 import { InstalledTab } from "./components/InstalledTab.js";
 import {
@@ -14,12 +8,7 @@ import {
   syntheticEntryFromInstall,
   type InstalledGroup,
 } from "./components/installedGrouping.js";
-import {
-  Header,
-  type Density,
-  type LocalScanState,
-  type Theme,
-} from "./components/Header.js";
+import { Header, type Density, type Theme } from "./components/Header.js";
 // Phase 2 persona collapse: LoginScreen retired. Fresh installs land
 // on an empty registry (ADR-0017 — no bundled default); GitHub linking
 // is reached via Settings → Account → "Sign in with GitHub"
@@ -317,113 +306,22 @@ function AppContent(): React.ReactElement {
     }, [dismissToast]),
   });
 
-  // Local-disk diagnostics state. Mirrors the origin-probe controller's
-  // three-phase shape but stays inline since the scan is single-shot
-  // (no async probe-complete event to coordinate).
-  const [localScanState, setLocalScanState] = useState<LocalScanState>({
-    phase: "idle",
-  });
-  const [diagnostics, setDiagnostics] = useState<DiagnosticReport | null>(null);
-  const localScanDoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  useEffect(
-    () => () => {
-      if (localScanDoneTimerRef.current)
-        clearTimeout(localScanDoneTimerRef.current);
-    },
-    [],
-  );
-
-  const runLocalScan = useCallback(async () => {
-    if (localScanDoneTimerRef.current)
-      clearTimeout(localScanDoneTimerRef.current);
-    setLocalScanState({ phase: "working" });
-    try {
-      // The diagnostics scan + an installed-list refresh in parallel:
-      // the disk is already being hit, so we piggyback the installed
-      // rehydration onto the same wait. Goes through the registry
-      // context's refresh() now that it owns the installed snapshot.
-      const [report] = await Promise.all([
-        window.skillsBank.localDiagnosticsScan(),
-        refresh(),
-      ]);
-      setDiagnostics(report);
-      setLocalScanState({ phase: "done", count: report.items.length });
-      // Done-zero auto-fades after 1.5s; done-N>0 stays persistent so
-      // the user can click Review at their own pace.
-      if (report.items.length === 0) {
-        localScanDoneTimerRef.current = setTimeout(
-          () => setLocalScanState({ phase: "idle" }),
-          1500,
-        );
-      }
-    } catch {
-      setLocalScanState({ phase: "idle" });
-    }
-  }, [refresh]);
-
-  const refreshDiagnostics = useCallback(async () => {
-    try {
-      const report = await window.skillsBank.localDiagnosticsScan();
-      setDiagnostics(report);
-    } catch {
-      // Failure leaves the prior report visible; user can rescan
-      // manually via Button C.
-    }
-  }, []);
-
-  const onViewLocalScan = useCallback(() => {
-    if (localScanDoneTimerRef.current)
-      clearTimeout(localScanDoneTimerRef.current);
-    setTabPersisted("installed");
-    setLocalScanState({ phase: "idle" });
-    // Scroll content to top after React commits the tab change — the
-    // Needs-attention section lives at the top of InstalledTab.
-    setTimeout(() => {
-      const el = document.querySelector<HTMLElement>(".content");
-      if (el) el.scrollTo({ top: 0, behavior: "smooth" });
-    }, 0);
-  }, [setTabPersisted]);
-
-  const onFixDiagnosticItem = useCallback(
-    async (item: DiagnosticItem) => {
-      if (item.category === "unregistered-installs") {
-        // Open the unified detail drawer with a synthetic entry so
-        // the user picks the registration action (adopt vs external).
-        // Matches the InstalledTab card's onRegisterOne path.
-        const synthetic: RegistryEntry = registryByName.get(item.name) ?? {
-          name: item.name,
-          description: item.detail,
-          path: item.name,
-          origin: { url: null },
-        };
-        setSelected(synthetic);
-        return;
-      }
-      if (item.category === "broken-symlinks") {
-        const agent = (item.agent ?? "claude") as AgentId;
-        const r = await window.skillsBank.removeBrokenLinks(item.name, [agent]);
-        if (r.errors.length > 0) {
-          flashError(r.errors.map((e) => e.message).join("; "));
-        } else {
-          flash(`Removed broken link for ${item.name}`);
-        }
-        await refresh();
-        await refreshDiagnostics();
-        return;
-      }
-      // external-target-missing OR registry-folder-missing: same path.
-      const r = await window.skillsBank.forgetMissing(item.name);
+  // Forget a skill whose registry folder is gone — the one Skill
+  // Diagnostic category the classifier computes continuously but
+  // routes to a per-card MISSING badge rather than Needs Attention;
+  // folding it in gives NeedsAttentionSection's onForgetMissing branch
+  // a real action to call.
+  const onForgetMissing = useCallback(
+    async (group: InstalledGroup) => {
+      const r = await window.skillsBank.forgetMissing(group.name);
       if (r.ok) {
         flash(r.message);
       } else {
         flashError(r.message);
       }
       await refresh();
-      await refreshDiagnostics();
     },
-    [registryByName, flash, flashError, refresh, refreshDiagnostics],
+    [flash, flashError, refresh],
   );
 
   // Boot read for the ADR-0004 weak-storage notice: surfaced when the
@@ -652,9 +550,6 @@ function AppContent(): React.ReactElement {
           onViewSkillUpdates={() => undefined}
           importingManifest={false}
           onCancelImport={() => undefined}
-          localScanState={{ phase: "idle" }}
-          onLocalScan={() => undefined}
-          onViewLocalScan={() => undefined}
           manifestImportProgress={null}
         />
         <Tabs
@@ -698,9 +593,6 @@ function AppContent(): React.ReactElement {
         onViewSkillUpdates={originProbe.onViewSkillUpdates}
         importingManifest={importingManifest}
         onCancelImport={cancelManifestImport}
-        localScanState={localScanState}
-        onLocalScan={() => void runLocalScan()}
-        onViewLocalScan={onViewLocalScan}
         manifestImportProgress={
           manifestImportProgress
             ? {
@@ -766,9 +658,9 @@ function AppContent(): React.ReactElement {
               // RegistrationPlanModal — the per-row review-then-apply surface
               // whose own scan walks every agent dir. Shown
               // from both the empty state and the Unregistered header; with
-              // nothing on disk the modal renders an empty list and points at
-              // the header's Scan Local. The inline per-card Register button
-              // (onInlineRegister) stays the one-off path.
+              // nothing on disk the modal renders an empty list. The inline
+              // per-card Register button (onInlineRegister) stays the
+              // one-off path.
               onRegisterAll={() => openModal({ kind: "register" })}
               onRegisterOne={(s) => {
                 // Open the unified detail drawer with a synthetic registry
@@ -905,8 +797,7 @@ function AppContent(): React.ReactElement {
                   });
                 })();
               }}
-              diagnostics={diagnostics}
-              onFixDiagnosticItem={(item) => void onFixDiagnosticItem(item)}
+              onForgetMissing={(group) => void onForgetMissing(group)}
             />
           )}
           {tab === "metrics" && (
