@@ -506,7 +506,6 @@ export function registerRegistryHandlers(): void {
     if (!registryRoot) {
       return {
         agentDirs: {},
-        claudeSkillsDir: "",
         registryRoot: "",
         entries: [],
       };

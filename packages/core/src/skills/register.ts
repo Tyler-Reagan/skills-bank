@@ -27,7 +27,6 @@ export function scanExistingInstalls(registryRoot: string): ScanReport {
   }
   return {
     agentDirs,
-    claudeSkillsDir: getAgentSkillsDir("claude"),
     registryRoot,
     entries: listInstalled(registryRoot, { index }),
   };

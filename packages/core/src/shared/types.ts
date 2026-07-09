@@ -97,8 +97,6 @@ export interface InstalledSkill {
 export interface ScanReport {
   /** Map from AgentId → absolute skills dir path that was scanned. */
   agentDirs: Record<string, string>;
-  /** Kept for backward-compat with renderer code that displayed it. */
-  claudeSkillsDir: string;
   registryRoot: string;
   entries: InstalledSkill[];
 }
