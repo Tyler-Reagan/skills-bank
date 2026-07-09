@@ -12,6 +12,7 @@ import { SkillsGrid } from "./SkillsGrid.js";
 import { RegistryFilters } from "./RegistryFilters.js";
 import {
   applyChipFilters,
+  applyFilters,
   applySort,
   floatToTop,
   type RegistryFilterTag,
@@ -110,9 +111,10 @@ export function BrowseTab({
   // user's tag-like state filters; the search/tag/installedOnly pass
   // applies free-text + legacy filters; sort orders the survivors;
   // and when the user hasn't expressed any opinion (no chips, default
-  // name-asc), float pending-update cards to the top so the Rescan
-  // deep-link lands them in the obvious spot. Memoized so an unrelated
-  // re-render (e.g. a sibling tab's state changing) doesn't re-sort.
+  // name-asc), float pending-update cards to the top so the "Check for
+  // skill updates" deep-link lands them in the obvious spot. Memoized so
+  // an unrelated re-render (e.g. a sibling tab's state changing) doesn't
+  // re-sort.
   const filtered = useMemo(() => {
     const chipFiltered = applyChipFilters(registry, registryFilters);
     const filteredRaw = applyFilters(
@@ -241,10 +243,10 @@ export function BrowseTab({
           >
             {rebuilding ? (
               <>
-                <span className="spinner inline" /> Rescanning…
+                <span className="spinner inline" /> Rebuilding…
               </>
             ) : (
-              "Rescan"
+              "Rebuild"
             )}
           </button>
         </div>
@@ -497,13 +499,6 @@ interface CategorySectionProps {
   onSelect: (entry: RegistryEntry) => void;
   onSaveTags?: (name: string, next: string[]) => Promise<void> | void;
   effectiveTagsMap?: Map<string, string[]>;
-  selectMode?: boolean;
-  selectedNames?: ReadonlySet<string>;
-  onToggleSelect?: (name: string) => void;
-  isDisabled?: (entry: RegistryEntry) => boolean;
-  bulkStatus?: (
-    entry: RegistryEntry,
-  ) => "pending" | "installing" | "installed" | "failed" | undefined;
 }
 
 function CategorySection({
@@ -515,11 +510,6 @@ function CategorySection({
   onSelect,
   onSaveTags,
   effectiveTagsMap,
-  selectMode = false,
-  selectedNames,
-  onToggleSelect,
-  isDisabled,
-  bulkStatus,
 }: CategorySectionProps): React.ReactElement {
   const label =
     category === "Uncategorized"
@@ -545,69 +535,10 @@ function CategorySection({
             installed={installed}
             onSelect={onSelect}
             {...(effectiveTagsMap ? { effectiveTagsMap } : {})}
-            {...(onSaveTags && !selectMode ? { onSaveTags } : {})}
-            selectMode={selectMode}
-            selectedNames={selectedNames}
-            onToggleSelect={onToggleSelect}
-            isDisabled={isDisabled}
-            bulkStatus={bulkStatus}
+            {...(onSaveTags ? { onSaveTags } : {})}
           />
         </div>
       )}
     </section>
   );
-}
-
-interface LabelsFirstRunBannerProps {
-  onReview: () => void;
-  onDismiss: () => void;
-}
-
-function LabelsFirstRunBanner({
-  onReview,
-  onDismiss,
-}: LabelsFirstRunBannerProps): React.ReactElement {
-  return (
-    <div className="labels-banner" role="status">
-      <span className="labels-banner-text">
-        Skills are now organized by category and tag. Review to customize how
-        yours are grouped.
-      </span>
-      <div className="labels-banner-actions">
-        <button type="button" className="btn btn-sm" onClick={onReview}>
-          Review labels
-        </button>
-        <button
-          type="button"
-          className="labels-banner-dismiss"
-          aria-label="Dismiss"
-          onClick={onDismiss}
-        >
-          ✕
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function applyFilters(
-  registry: RegistryEntry[],
-  search: string,
-  selectedTags: string[],
-  installedOnly: boolean,
-  installedNames: Set<string>,
-  effectiveTagsMap: Map<string, string[]>,
-): RegistryEntry[] {
-  const q = search.trim().toLowerCase();
-  return registry.filter((e) => {
-    const tags = effectiveTagsMap.get(e.name) ?? e.tags ?? [];
-    if (installedOnly && !installedNames.has(e.name)) return false;
-    if (selectedTags.length > 0 && !selectedTags.some((t) => tags.includes(t)))
-      return false;
-    if (!q) return true;
-    if (e.name.toLowerCase().includes(q)) return true;
-    if (e.description.toLowerCase().includes(q)) return true;
-    if (tags.some((t) => t.toLowerCase().includes(q))) return true;
-    return false;
-  });
 }

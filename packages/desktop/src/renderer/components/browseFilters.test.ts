@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { RegistryEntry } from "@skills-bank/core";
 import {
   applyChipFilters,
+  applyFilters,
   applySort,
   floatToTop,
   type RegistryFilterTag,
@@ -83,6 +84,81 @@ describe("applySort", () => {
     expect(
       applySort(reg, { by: "age", direction: "desc" }).map((e) => e.name),
     ).toEqual(["new", "old", "none"]);
+  });
+});
+
+describe("applyFilters", () => {
+  const reg = [
+    entry("find-skills", { description: "locate a skill by keyword" }),
+    entry("qmk-config", { description: "keyboard firmware config" }),
+    entry("keyboard-shortcuts", { description: "unrelated" }),
+  ];
+  const noTags = new Map<string, string[]>();
+  const noInstalled = new Set<string>();
+
+  test("empty search with no other filters passes everything through", () => {
+    expect(
+      applyFilters(reg, "", [], false, noInstalled, noTags).map((e) => e.name),
+    ).toEqual(reg.map((e) => e.name));
+  });
+
+  test("search matches name, case-insensitively", () => {
+    expect(
+      applyFilters(reg, "QMK", [], false, noInstalled, noTags).map(
+        (e) => e.name,
+      ),
+    ).toEqual(["qmk-config"]);
+  });
+
+  test("search matches description when name doesn't match", () => {
+    expect(
+      applyFilters(reg, "firmware", [], false, noInstalled, noTags).map(
+        (e) => e.name,
+      ),
+    ).toEqual(["qmk-config"]);
+  });
+
+  test("search matches effective tags", () => {
+    const tags = new Map([["keyboard-shortcuts", ["hotkeys"]]]);
+    expect(
+      applyFilters(reg, "hotkeys", [], false, noInstalled, tags).map(
+        (e) => e.name,
+      ),
+    ).toEqual(["keyboard-shortcuts"]);
+  });
+
+  test("installedOnly excludes entries not in installedNames", () => {
+    const installed = new Set(["qmk-config"]);
+    expect(
+      applyFilters(reg, "", [], true, installed, noTags).map((e) => e.name),
+    ).toEqual(["qmk-config"]);
+  });
+
+  test("selectedTags requires at least one match (OR across selected tags)", () => {
+    const tags = new Map([
+      ["find-skills", ["search"]],
+      ["qmk-config", ["keyboard", "firmware"]],
+      ["keyboard-shortcuts", ["keyboard"]],
+    ]);
+    expect(
+      applyFilters(
+        reg,
+        "",
+        ["firmware", "search"],
+        false,
+        noInstalled,
+        tags,
+      ).map((e) => e.name),
+    ).toEqual(["find-skills", "qmk-config"]);
+  });
+
+  test("search and installedOnly compose (AND)", () => {
+    const installed = new Set(["qmk-config", "keyboard-shortcuts"]);
+    expect(
+      applyFilters(reg, "keyboard", [], true, installed, noTags).map(
+        (e) => e.name,
+      ),
+    ).toEqual(["qmk-config", "keyboard-shortcuts"]);
   });
 });
 

@@ -4680,43 +4680,6 @@ button:disabled {
   padding-top: var(--s3);
 }
 
-/* ── Labels first-run banner ──────────────────────────────────────────── */
-.labels-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s3);
-  padding: var(--s3) var(--s4);
-  margin-bottom: 10px;
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--text-2);
-}
-.labels-banner-text {
-  flex: 1;
-  margin-bottom: 10px;
-}
-.labels-banner-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  flex-shrink: 0;
-}
-.labels-banner-dismiss {
-  background: none;
-  border: none;
-  color: var(--text-3);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 4px;
-  line-height: 1;
-}
-.labels-banner-dismiss:hover {
-  color: var(--text-1);
-}
-
 /* ── ManageLabelsModal ───────────────────────────────────────────────────── */
 
 /* Filters row */

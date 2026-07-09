@@ -128,3 +128,31 @@ export function floatToTop(
   for (const e of entries) (priority(e) ? top : rest).push(e);
   return [...top, ...rest];
 }
+
+/**
+ * Free-text search + legacy tag/installed-only filters, applied after
+ * the chip strip narrows the registry. `effectiveTagsMap` carries the
+ * label-plane tags (falls back to the entry's own `tags` when a skill
+ * has no label override).
+ */
+export function applyFilters(
+  registry: RegistryEntry[],
+  search: string,
+  selectedTags: string[],
+  installedOnly: boolean,
+  installedNames: Set<string>,
+  effectiveTagsMap: Map<string, string[]>,
+): RegistryEntry[] {
+  const q = search.trim().toLowerCase();
+  return registry.filter((e) => {
+    const tags = effectiveTagsMap.get(e.name) ?? e.tags ?? [];
+    if (installedOnly && !installedNames.has(e.name)) return false;
+    if (selectedTags.length > 0 && !selectedTags.some((t) => tags.includes(t)))
+      return false;
+    if (!q) return true;
+    if (e.name.toLowerCase().includes(q)) return true;
+    if (e.description.toLowerCase().includes(q)) return true;
+    if (tags.some((t) => t.toLowerCase().includes(q))) return true;
+    return false;
+  });
+}
