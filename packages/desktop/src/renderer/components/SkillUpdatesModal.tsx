@@ -27,7 +27,7 @@ type RowState = "idle" | "updating" | "ok" | "err";
  * action with a small delay between rows so a failing row doesn't
  * block the queue.
  */
-export function UpdatesModal({
+export function SkillUpdatesModal({
   entries,
   onClose,
   onUpdate,

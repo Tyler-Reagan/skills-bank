@@ -28,7 +28,7 @@ import {
 
 interface AppConfig {
   registryRoot: string | null;
-  dismissedUpdateVersion: string | null;
+  dismissedAppUpdateVersion: string | null;
   linkedRepo: LinkedRepoMetadata | null;
   weakStorageNoticeDismissedFor: string[];
 }
@@ -36,7 +36,7 @@ interface AppConfig {
 function emptyConfig(): AppConfig {
   return {
     registryRoot: null,
-    dismissedUpdateVersion: null,
+    dismissedAppUpdateVersion: null,
     linkedRepo: null,
     weakStorageNoticeDismissedFor: [],
   };
@@ -50,14 +50,21 @@ export function readConfig(): AppConfig {
   const p = configFilePath();
   try {
     if (!fs.existsSync(p)) return emptyConfig();
-    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<AppConfig>;
+    const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<AppConfig> & {
+      // Pre-rename key. Fall back to it so a user who dismissed a
+      // specific release notice doesn't see it reappear once after
+      // upgrading past the App*-qualification rename.
+      dismissedUpdateVersion?: unknown;
+    };
     return {
       registryRoot:
         typeof raw.registryRoot === "string" ? raw.registryRoot : null,
-      dismissedUpdateVersion:
-        typeof raw.dismissedUpdateVersion === "string"
-          ? raw.dismissedUpdateVersion
-          : null,
+      dismissedAppUpdateVersion:
+        typeof raw.dismissedAppUpdateVersion === "string"
+          ? raw.dismissedAppUpdateVersion
+          : typeof raw.dismissedUpdateVersion === "string"
+            ? raw.dismissedUpdateVersion
+            : null,
       linkedRepo: readLinkedRepoFromRaw(raw.linkedRepo),
       weakStorageNoticeDismissedFor: Array.isArray(
         raw.weakStorageNoticeDismissedFor,
@@ -113,12 +120,12 @@ export function setLinkedRepo(v: LinkedRepoMetadata | null): void {
   _linkedRepo = v;
 }
 
-let _dismissedUpdateVersion: string | null = null;
-export function getDismissedUpdateVersion(): string | null {
-  return _dismissedUpdateVersion;
+let _dismissedAppUpdateVersion: string | null = null;
+export function getDismissedAppUpdateVersion(): string | null {
+  return _dismissedAppUpdateVersion;
 }
-export function setDismissedUpdateVersion(v: string | null): void {
-  _dismissedUpdateVersion = v;
+export function setDismissedAppUpdateVersion(v: string | null): void {
+  _dismissedAppUpdateVersion = v;
 }
 
 let _inFlightImportAbort: AbortController | null = null;
@@ -143,7 +150,7 @@ export function persistConfig(): void {
   const existing = readConfig();
   writeConfig({
     registryRoot: _registryRoot,
-    dismissedUpdateVersion: _dismissedUpdateVersion,
+    dismissedAppUpdateVersion: _dismissedAppUpdateVersion,
     linkedRepo: _linkedRepo,
     weakStorageNoticeDismissedFor: existing.weakStorageNoticeDismissedFor,
   });

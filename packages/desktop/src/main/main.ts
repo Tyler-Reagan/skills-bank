@@ -21,7 +21,7 @@ import {
   writeConfig,
   setRegistryRoot,
   setLinkedRepo,
-  setDismissedUpdateVersion,
+  setDismissedAppUpdateVersion,
   initProbeRunner,
   getRegistryRoot,
   getLinkedRepo,
@@ -92,7 +92,7 @@ function resolveBootRegistryRoot(): string {
 const bootRegistryRoot = resolveBootRegistryRoot();
 setRegistryRoot(bootRegistryRoot);
 setLinkedRepo(readConfig().linkedRepo);
-setDismissedUpdateVersion(readConfig().dismissedUpdateVersion);
+setDismissedAppUpdateVersion(readConfig().dismissedAppUpdateVersion);
 
 // True up the manifest against the folders on disk before the first
 // index build — the single manifest-write seam (ADR-0020/0021). A

@@ -12,8 +12,8 @@ import { KeyboardShortcutsOverlay } from "./KeyboardShortcutsOverlay.js";
 import { AccountModal } from "./AccountModal.js";
 import { ManifestModal } from "./manifest/ManifestModal.js";
 import { ConnectGithubModal } from "./ConnectGithubModal.js";
-import { UpdatesModal } from "./UpdatesModal.js";
-import { UpdateNotesModal } from "./UpdateNotesModal.js";
+import { SkillUpdatesModal } from "./SkillUpdatesModal.js";
+import { AppUpdateNotesModal } from "./AppUpdateNotesModal.js";
 import { RepoPickerModal } from "./RepoPickerModal.js";
 import { DestinationPickerDialog } from "./DestinationPickerDialog.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
@@ -30,10 +30,10 @@ import { useRegisterSkill } from "../useRegisterSkill.js";
 import { useSettings } from "../SettingsContext.js";
 import { useRegistryHost } from "../RegistryHostContext.js";
 import type {
+  AppUpdateStatus,
   AuthStatus,
   OriginManualChoice,
   SkillUpdateResult,
-  UpdateStatus,
 } from "../../shared/ipc.js";
 
 /**
@@ -115,11 +115,11 @@ interface Props {
   importingManifest: boolean;
   cancelManifestImport: () => void;
   importLinkedRepo: () => Promise<void>;
-  latestUpdateStatus: UpdateStatus | null;
-  setDismissedUpdateVersion: (v: string | null) => void;
+  latestAppUpdateStatus: AppUpdateStatus | null;
+  setDismissedAppUpdateVersion: (v: string | null) => void;
   resolveAllTarget: InstalledGroup[] | null;
   setResolveAllTarget: (v: InstalledGroup[] | null) => void;
-  checkForUpdates: () => void;
+  checkForAppUpdates: () => void;
   unregisterHintShown: () => boolean;
   markUnregisterHintShown: () => void;
   reviewContext?: ReviewContext | null;
@@ -142,11 +142,11 @@ export function ModalHost({
   importingManifest,
   cancelManifestImport,
   importLinkedRepo,
-  latestUpdateStatus,
-  setDismissedUpdateVersion,
+  latestAppUpdateStatus,
+  setDismissedAppUpdateVersion,
   resolveAllTarget,
   setResolveAllTarget,
-  checkForUpdates,
+  checkForAppUpdates,
   unregisterHintShown,
   markUnregisterHintShown,
   reviewContext,
@@ -483,7 +483,7 @@ export function ModalHost({
           onClose={() => closeModal()}
           isAuthed={Boolean(authStatus?.user)}
           appVersion="dev"
-          onCheckForUpdates={checkForUpdates}
+          onCheckForAppUpdates={checkForAppUpdates}
         />
       )}
 
@@ -574,7 +574,7 @@ export function ModalHost({
       )}
 
       {modal?.kind === "updates" && (
-        <UpdatesModal
+        <SkillUpdatesModal
           entries={pendingSkillUpdates}
           onClose={() => closeModal()}
           onUpdate={async (name) => {
@@ -729,26 +729,26 @@ export function ModalHost({
       />
 
       {modal?.kind === "updateNotes" &&
-        latestUpdateStatus &&
-        (latestUpdateStatus.kind === "available" ||
-          latestUpdateStatus.kind === "downloading" ||
-          latestUpdateStatus.kind === "downloaded") && (
-          <UpdateNotesModal
-            status={latestUpdateStatus}
+        latestAppUpdateStatus &&
+        (latestAppUpdateStatus.kind === "available" ||
+          latestAppUpdateStatus.kind === "downloading" ||
+          latestAppUpdateStatus.kind === "downloaded") && (
+          <AppUpdateNotesModal
+            status={latestAppUpdateStatus}
             onClose={() => closeModal()}
             onSkip={(version) => {
-              setDismissedUpdateVersion(version);
-              void window.skillsBank.setDismissedUpdateVersion(version);
+              setDismissedAppUpdateVersion(version);
+              void window.skillsBank.setDismissedAppUpdateVersion(version);
               closeModal();
             }}
             onDownload={() => {
-              void window.skillsBank.downloadUpdate().then((r) => {
+              void window.skillsBank.downloadAppUpdate().then((r) => {
                 if (!r.ok) flash(r.message);
               });
             }}
             onRestart={() => {
               closeModal();
-              void window.skillsBank.quitAndInstallUpdate();
+              void window.skillsBank.quitAndInstallAppUpdate();
             }}
           />
         )}

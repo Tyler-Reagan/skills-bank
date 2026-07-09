@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import type { UpdateStatus } from "../../shared/ipc.js";
+import type { AppUpdateStatus } from "../../shared/ipc.js";
 import { Modal } from "./modalStyles.js";
 
 // State machine for the modal. `available` is the awareness phase — bytes
@@ -10,7 +10,7 @@ import { Modal } from "./modalStyles.js";
 // confirmation state with an explicit Restart action. Skip and Later are
 // available throughout; Skip persists across launches via the main config.
 type ModalStatus = Extract<
-  UpdateStatus,
+  AppUpdateStatus,
   { kind: "available" | "downloading" | "downloaded" }
 >;
 
@@ -22,7 +22,7 @@ interface Props {
   onRestart: () => void;
 }
 
-export function UpdateNotesModal({
+export function AppUpdateNotesModal({
   status,
   onClose,
   onSkip,

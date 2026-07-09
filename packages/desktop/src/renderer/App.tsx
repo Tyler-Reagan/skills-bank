@@ -32,7 +32,7 @@ import { ModalHost, type ActiveModal } from "./components/ModalHost.js";
 import { useManifestImportProgress } from "./hooks/useManifestImportProgress.js";
 import { useModalRouter } from "./hooks/useModalRouter.js";
 import { useOriginProbe } from "./hooks/useOriginProbe.js";
-import { useUpdateFeed } from "./hooks/useUpdateFeed.js";
+import { useAppUpdateFeed } from "./hooks/useAppUpdateFeed.js";
 import {
   RegistryHostProvider,
   useRegistryHost,
@@ -45,7 +45,7 @@ import { SettingsProvider, useSettings } from "./SettingsContext.js";
 import { RegistryProvider, useRegistry } from "./RegistryContext.js";
 import { useRegisterSkill } from "./useRegisterSkill.js";
 import { LabelsProvider, useLabels } from "./LabelsContext.js";
-import type { AuthStatus, UpdateStatus } from "../shared/ipc.js";
+import type { AuthStatus, AppUpdateStatus } from "../shared/ipc.js";
 
 // Persistence keys still managed directly by App.tsx (tab + unregister hint).
 // Search/filter/sort state moved into useBrowseFilters.
@@ -219,14 +219,14 @@ function AppContent(): React.ReactElement {
       }
     : null;
   // Auto-update state + wiring (live feed, boot dismissal gate, derived
-  // badge). The "updateNotes" modal reads latestUpdateStatus directly so
-  // a render during `downloading` shows the live progress bar.
+  // badge). The "updateNotes" modal reads latestAppUpdateStatus directly
+  // so a render during `downloading` shows the live progress bar.
   const {
-    latestUpdateStatus,
-    setDismissedUpdateVersion,
-    isLiveUpdate,
-    pendingUpdateVersion,
-  } = useUpdateFeed();
+    latestAppUpdateStatus,
+    setDismissedAppUpdateVersion,
+    isLiveAppUpdate,
+    pendingAppUpdateVersion,
+  } = useAppUpdateFeed();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // registryFilters stays here (not in useBrowseFilters) because the
@@ -425,7 +425,7 @@ function AppContent(): React.ReactElement {
   // Boot read for the ADR-0004 weak-storage notice: surfaced when the
   // safeStorage backend resolved to `basic_text` (Linux without a
   // keyring) and the user hasn't already dismissed it. (The "Skip this
-  // version" choice is hydrated separately by useUpdateFeed.)
+  // version" choice is hydrated separately by useAppUpdateFeed.)
   useEffect(() => {
     void window.skillsBank.getConfig().then((cfg) => {
       if (cfg.showWeakStorageNotice) {
@@ -551,23 +551,23 @@ function AppContent(): React.ReactElement {
     void window.skillsBank.importManifestCancel();
   }, []);
 
-  // Convenience: "Check for updates" routes through the same path
+  // Convenience: "Check for app updates" routes through the same path
   // regardless of trigger — re-open the existing update modal if a
   // live update is known, otherwise kick off a fresh check.
-  const checkForUpdates = useCallback(() => {
+  const checkForAppUpdates = useCallback(() => {
     if (
-      latestUpdateStatus &&
-      (latestUpdateStatus.kind === "available" ||
-        latestUpdateStatus.kind === "downloading" ||
-        latestUpdateStatus.kind === "downloaded")
+      latestAppUpdateStatus &&
+      (latestAppUpdateStatus.kind === "available" ||
+        latestAppUpdateStatus.kind === "downloading" ||
+        latestAppUpdateStatus.kind === "downloaded")
     ) {
       openModal({ kind: "updateNotes" });
     } else {
-      void window.skillsBank.checkForUpdates().then((r) => {
+      void window.skillsBank.checkForAppUpdates().then((r) => {
         flash(r.ok ? "Checking for updates" : r.message);
       });
     }
-  }, [latestUpdateStatus, flash]);
+  }, [latestAppUpdateStatus, flash]);
 
   // macOS menu-bar dispatch. The native menubar still fires a small
   // set of actions (Settings, Refresh, Check for updates) — the in-app
@@ -586,8 +586,8 @@ function AppContent(): React.ReactElement {
         case "checkSkillUpdates":
           void originProbe.onCheckSkillUpdates();
           break;
-        case "checkForUpdates":
-          checkForUpdates();
+        case "checkForAppUpdates":
+          checkForAppUpdates();
           break;
         // Other actions (changeRegistry, mergeRegistry, signOut) are no
         // longer dispatched from any surface — the in-app dropdown that
@@ -596,7 +596,7 @@ function AppContent(): React.ReactElement {
         // unreachable.
       }
     });
-  }, [originProbe, checkForUpdates]);
+  }, [originProbe, checkForAppUpdates]);
 
   // Keep the drawer's entry up-to-date if the registry refreshes. Don't
   // close the drawer when no registry entry is found — the selection may
@@ -622,7 +622,7 @@ function AppContent(): React.ReactElement {
   // Rules-of-Hooks violation. None of the consumers memoize, so referential
   // stability isn't load-bearing.
   const openUpdateModal = () => {
-    if (isLiveUpdate) openModal({ kind: "updateNotes" });
+    if (isLiveAppUpdate) openModal({ kind: "updateNotes" });
   };
 
   // Initial loading — skeleton over real chrome.
@@ -641,10 +641,10 @@ function AppContent(): React.ReactElement {
           authStatus={null}
           onOpenAccount={() => undefined}
           onOpenSettings={() => undefined}
-          pendingUpdateVersion={null}
-          onShowUpdate={() => undefined}
+          pendingAppUpdateVersion={null}
+          onShowAppUpdate={() => undefined}
           pendingSkillUpdates={0}
-          onShowUpdates={() => undefined}
+          onShowSkillUpdates={() => undefined}
           onViewSkillUpdates={() => undefined}
           importingManifest={false}
           onCancelImport={() => undefined}
@@ -687,10 +687,10 @@ function AppContent(): React.ReactElement {
         authStatus={authStatus}
         onOpenAccount={() => openModal({ kind: "account" })}
         onOpenSettings={() => openModal({ kind: "settings" })}
-        pendingUpdateVersion={pendingUpdateVersion}
-        onShowUpdate={openUpdateModal}
+        pendingAppUpdateVersion={pendingAppUpdateVersion}
+        onShowAppUpdate={openUpdateModal}
         pendingSkillUpdates={pendingSkillUpdates.length}
-        onShowUpdates={() => openModal({ kind: "updates" })}
+        onShowSkillUpdates={() => openModal({ kind: "updates" })}
         onViewSkillUpdates={originProbe.onViewSkillUpdates}
         importingManifest={importingManifest}
         onCancelImport={cancelManifestImport}
@@ -934,11 +934,11 @@ function AppContent(): React.ReactElement {
         importingManifest={importingManifest}
         cancelManifestImport={cancelManifestImport}
         importLinkedRepo={importLinkedRepo}
-        latestUpdateStatus={latestUpdateStatus}
-        setDismissedUpdateVersion={setDismissedUpdateVersion}
+        latestAppUpdateStatus={latestAppUpdateStatus}
+        setDismissedAppUpdateVersion={setDismissedAppUpdateVersion}
         resolveAllTarget={resolveAllTarget}
         setResolveAllTarget={setResolveAllTarget}
-        checkForUpdates={checkForUpdates}
+        checkForAppUpdates={checkForAppUpdates}
         unregisterHintShown={() =>
           localStorage.getItem(LS_KEYS.unregisterHintShown) === "1"
         }

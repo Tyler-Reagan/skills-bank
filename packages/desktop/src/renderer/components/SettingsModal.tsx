@@ -66,7 +66,7 @@ interface Props {
    */
   isAuthed: boolean;
   appVersion: string;
-  onCheckForUpdates: () => void;
+  onCheckForAppUpdates: () => void;
 }
 
 /**
@@ -78,7 +78,7 @@ export function SettingsModal({
   onClose,
   isAuthed,
   appVersion,
-  onCheckForUpdates,
+  onCheckForAppUpdates,
 }: Props): React.ReactElement {
   const { settings, saveSettings: onSave } = useSettings();
   const [draft, setDraft] = useState<AppSettings>(settings);
@@ -341,8 +341,12 @@ export function SettingsModal({
         <span className="settings-hint">
           Version <code>{appVersion}</code>
         </span>
-        <button className="btn ghost" type="button" onClick={onCheckForUpdates}>
-          <Icon name="refresh" size="sm" /> Check for updates
+        <button
+          className="btn ghost"
+          type="button"
+          onClick={onCheckForAppUpdates}
+        >
+          <Icon name="refresh" size="sm" /> Check for app updates
         </button>
         <div className="prefs-footer-actions">
           <button className="btn ghost" type="button" onClick={onClose}>

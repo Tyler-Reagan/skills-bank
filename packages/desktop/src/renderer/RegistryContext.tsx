@@ -141,7 +141,7 @@ export function RegistryProvider({
 
   // Skills with an available upstream update — set by the main-process
   // probe runner via the augmented listRegistry. Drives the header
-  // aggregate badge and the UpdatesModal's content.
+  // aggregate badge and the SkillUpdatesModal's content.
   const pendingSkillUpdates = useMemo(
     () => registry.filter((e) => e.skillUpdateAvailable === true),
     [registry],

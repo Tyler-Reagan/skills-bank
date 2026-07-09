@@ -59,19 +59,19 @@ interface Props {
   onOpenSettings: () => void;
   /**
    * Version string of an app update that's been detected. When non-null,
-   * the badge renders next to the brand. Click invokes `onShowUpdate`.
+   * the badge renders next to the brand. Click invokes `onShowAppUpdate`.
    * The host decides what "detected" means (typically: latest update
    * status is `available` or `downloaded`, and not in the dismissed set).
    */
-  pendingUpdateVersion: string | null;
-  onShowUpdate: () => void;
+  pendingAppUpdateVersion: string | null;
+  onShowAppUpdate: () => void;
   /**
    * Count of skills with `skillUpdateAvailable === true` from the
    * latest probe. When non-zero, the header renders an aggregate
-   * badge that opens the UpdatesModal. Click invokes `onShowUpdates`.
+   * badge that opens the SkillUpdatesModal. Click invokes `onShowSkillUpdates`.
    */
   pendingSkillUpdates: number;
-  onShowUpdates: () => void;
+  onShowSkillUpdates: () => void;
   /**
    * Invoked when the user clicks "View" in the done-state after a
    * probe surfaces N>0 updates. The host is expected to switch to
@@ -129,10 +129,10 @@ export function Header({
   authStatus,
   onOpenAccount,
   onOpenSettings,
-  pendingUpdateVersion,
-  onShowUpdate,
+  pendingAppUpdateVersion,
+  onShowAppUpdate,
   pendingSkillUpdates,
-  onShowUpdates,
+  onShowSkillUpdates,
   onViewSkillUpdates,
   importingManifest,
   onCancelImport,
@@ -171,23 +171,23 @@ export function Header({
           <div className="header-brand" aria-hidden="true">
             skills<span>-</span>bank
           </div>
-          {pendingUpdateVersion && (
+          {pendingAppUpdateVersion && (
             <button
               type="button"
               className="update-badge"
-              onClick={onShowUpdate}
-              title={`Skills Bank ${pendingUpdateVersion} is ready. Click to review and install.`}
-              aria-label={`App update ${pendingUpdateVersion} available — open install dialog`}
+              onClick={onShowAppUpdate}
+              title={`Skills Bank ${pendingAppUpdateVersion} is ready. Click to review and install.`}
+              aria-label={`App update ${pendingAppUpdateVersion} available — open install dialog`}
             >
               <Icon name="download" size="sm" />
-              <span>Update {pendingUpdateVersion}</span>
+              <span>Update {pendingAppUpdateVersion}</span>
             </button>
           )}
           {pendingSkillUpdates > 0 && (
             <button
               type="button"
               className="updates-badge"
-              onClick={onShowUpdates}
+              onClick={onShowSkillUpdates}
               title={`${pendingSkillUpdates} skill${
                 pendingSkillUpdates === 1 ? "" : "s"
               } can be updated from Origin. Click to review.`}

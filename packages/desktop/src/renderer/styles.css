@@ -4256,7 +4256,7 @@ button:disabled {
   margin-bottom: 4px;
 }
 
-/* ── UpdateNotesModal ──────────────────────────────────── */
+/* ── AppUpdateNotesModal ───────────────────────────────── */
 .update-notes-scroll {
   flex: 1;
   overflow-y: auto;
@@ -4302,7 +4302,7 @@ button:disabled {
   text-align: right;
 }
 
-/* ── UpdatesModal ──────────────────────────────────────── */
+/* ── SkillUpdatesModal ─────────────────────────────────── */
 .updates-modal-count-badge {
   display: inline-block;
   margin-left: 6px;

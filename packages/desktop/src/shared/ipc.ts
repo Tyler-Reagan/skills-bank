@@ -62,11 +62,11 @@ export const IPC = {
   openInFinder: "skills:openInFinder",
   getConfig: "skills:getConfig",
   setRegistryRoot: "skills:setRegistryRoot",
-  checkForUpdates: "app:checkForUpdates",
-  downloadUpdate: "app:downloadUpdate",
-  quitAndInstallUpdate: "app:quitAndInstallUpdate",
-  updateStatus: "app:updateStatus",
-  setDismissedUpdateVersion: "app:setDismissedUpdateVersion",
+  checkForAppUpdates: "app:checkForUpdates",
+  downloadAppUpdate: "app:downloadUpdate",
+  quitAndInstallAppUpdate: "app:quitAndInstallUpdate",
+  appUpdateStatus: "app:updateStatus",
+  setDismissedAppUpdateVersion: "app:setDismissedUpdateVersion",
   dismissWeakStorageNotice: "app:dismissWeakStorageNotice",
   authStatus: "auth:status",
   authIsConfigured: "auth:isConfigured",
@@ -216,7 +216,7 @@ export interface OriginProbeCompleteEvent {
 
 /**
  * Summary returned by `origin:probe`. The renderer uses this to
- * surface progress in the UpdatesModal's manual-refresh control;
+ * surface progress in the SkillUpdatesModal's manual-refresh control;
  * per-skill update state is surfaced via the augmented
  * `RegistryEntry.skillUpdateAvailable` field on `listRegistry`,
  * not through this payload.
@@ -339,9 +339,9 @@ export type HeaderMenuAction =
   | "openShortcuts"
   | "signOut"
   | "checkSkillUpdates"
-  | "checkForUpdates";
+  | "checkForAppUpdates";
 
-export type UpdateStatus =
+export type AppUpdateStatus =
   | { kind: "idle" }
   | { kind: "checking" }
   | {
@@ -579,7 +579,7 @@ interface SkillsBankAPI {
     registryRoot: string | null;
     configValid: boolean;
     isPackaged: boolean;
-    dismissedUpdateVersion: string | null;
+    dismissedAppUpdateVersion: string | null;
     /**
      * Electron's currently-selected `safeStorage` backend. Possible
      * values include `keychain`, `dpapi`, `gnome_libsecret`, `kwallet`,
@@ -609,15 +609,19 @@ interface SkillsBankAPI {
      */
     warning?: string;
   }>;
-  checkForUpdates(): Promise<{
+  checkForAppUpdates(): Promise<{
     ok: boolean;
     message: string;
     error?: AppError;
   }>;
-  downloadUpdate(): Promise<{ ok: boolean; message: string; error?: AppError }>;
-  quitAndInstallUpdate(): Promise<void>;
-  setDismissedUpdateVersion(version: string | null): Promise<void>;
-  onUpdateStatus(cb: (status: UpdateStatus) => void): () => void;
+  downloadAppUpdate(): Promise<{
+    ok: boolean;
+    message: string;
+    error?: AppError;
+  }>;
+  quitAndInstallAppUpdate(): Promise<void>;
+  setDismissedAppUpdateVersion(version: string | null): Promise<void>;
+  onAppUpdateStatus(cb: (status: AppUpdateStatus) => void): () => void;
   authStatus(): Promise<AuthStatus>;
   authStartDeviceFlow(): Promise<DeviceFlowStartPayload>;
   authPollDeviceFlow(flowId: string): Promise<AuthStatus>;

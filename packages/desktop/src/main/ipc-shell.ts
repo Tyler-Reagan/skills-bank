@@ -16,11 +16,11 @@ import { fileURLToPath } from "node:url";
 import { fromCaught } from "@skills-bank/core";
 import { getStorageBackend } from "./auth.js";
 import {
-  getDismissedUpdateVersion,
+  getDismissedAppUpdateVersion,
   getRegistryRoot,
   persistConfig,
   readConfig,
-  setDismissedUpdateVersion,
+  setDismissedAppUpdateVersion,
 } from "./main-state.js";
 
 import {
@@ -28,7 +28,7 @@ import {
   type Bounds,
   type DiscoverStatus,
   type HeaderMenuAction,
-  type UpdateStatus,
+  type AppUpdateStatus,
 } from "../shared/ipc.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -153,9 +153,9 @@ let lastUpdateInfo: {
   releaseName: string | null;
 } | null = null;
 
-function broadcastUpdateStatus(status: UpdateStatus): void {
+function broadcastAppUpdateStatus(status: AppUpdateStatus): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send(IPC.updateStatus, status);
+    win.webContents.send(IPC.appUpdateStatus, status);
   }
 }
 
@@ -178,7 +178,7 @@ function normalizeNotes(
 export function wireAutoUpdater(): void {
   if (!app.isPackaged) return;
   autoUpdater.on("checking-for-update", () => {
-    broadcastUpdateStatus({ kind: "checking" });
+    broadcastAppUpdateStatus({ kind: "checking" });
   });
   autoUpdater.on("update-available", (info) => {
     lastUpdateInfo = {
@@ -186,16 +186,16 @@ export function wireAutoUpdater(): void {
       releaseNotes: normalizeNotes(info.releaseNotes ?? null),
       releaseName: info.releaseName ?? null,
     };
-    broadcastUpdateStatus({ kind: "available", ...lastUpdateInfo });
+    broadcastAppUpdateStatus({ kind: "available", ...lastUpdateInfo });
   });
   autoUpdater.on("update-not-available", (info) => {
-    broadcastUpdateStatus({
+    broadcastAppUpdateStatus({
       kind: "not-available",
       currentVersion: info.version,
     });
   });
   autoUpdater.on("download-progress", (p) => {
-    broadcastUpdateStatus({
+    broadcastAppUpdateStatus({
       kind: "downloading",
       percent: p.percent,
       version: lastUpdateInfo?.version ?? "",
@@ -209,10 +209,10 @@ export function wireAutoUpdater(): void {
       releaseNotes: normalizeNotes(info.releaseNotes ?? null),
       releaseName: info.releaseName ?? null,
     };
-    broadcastUpdateStatus({ kind: "downloaded", ...lastUpdateInfo });
+    broadcastAppUpdateStatus({ kind: "downloaded", ...lastUpdateInfo });
   });
   autoUpdater.on("error", (err) => {
-    broadcastUpdateStatus({
+    broadcastAppUpdateStatus({
       kind: "error",
       message: err.message ?? String(err),
     });
@@ -473,10 +473,10 @@ export function registerShellHandlers(): void {
 
   // ─── Auto-update handlers ──────────────────────────────────────────────────
 
-  ipcMain.handle(IPC.checkForUpdates, async () => {
+  ipcMain.handle(IPC.checkForAppUpdates, async () => {
     if (!app.isPackaged) {
       const reason = "auto-update is disabled in dev (not a packaged build)";
-      broadcastUpdateStatus({ kind: "disabled", reason });
+      broadcastAppUpdateStatus({ kind: "disabled", reason });
       return { ok: false, message: reason };
     }
     try {
@@ -484,15 +484,15 @@ export function registerShellHandlers(): void {
       return { ok: true, message: "checking for updates" };
     } catch (err) {
       const error = fromCaught("update.check-failed", err);
-      broadcastUpdateStatus({ kind: "error", message: error.message });
+      broadcastAppUpdateStatus({ kind: "error", message: error.message });
       return { ok: false, message: error.message, error };
     }
   });
 
-  ipcMain.handle(IPC.downloadUpdate, async () => {
+  ipcMain.handle(IPC.downloadAppUpdate, async () => {
     if (!app.isPackaged) {
       const reason = "auto-update is disabled in dev (not a packaged build)";
-      broadcastUpdateStatus({ kind: "disabled", reason });
+      broadcastAppUpdateStatus({ kind: "disabled", reason });
       return { ok: false, message: reason };
     }
     try {
@@ -500,20 +500,20 @@ export function registerShellHandlers(): void {
       return { ok: true, message: "download started" };
     } catch (err) {
       const error = fromCaught("update.download-failed", err);
-      broadcastUpdateStatus({ kind: "error", message: error.message });
+      broadcastAppUpdateStatus({ kind: "error", message: error.message });
       return { ok: false, message: error.message, error };
     }
   });
 
-  ipcMain.handle(IPC.quitAndInstallUpdate, () => {
+  ipcMain.handle(IPC.quitAndInstallAppUpdate, () => {
     if (!app.isPackaged) return;
     autoUpdater.quitAndInstall();
   });
 
   ipcMain.handle(
-    IPC.setDismissedUpdateVersion,
+    IPC.setDismissedAppUpdateVersion,
     (_e, version: string | null) => {
-      setDismissedUpdateVersion(
+      setDismissedAppUpdateVersion(
         typeof version === "string" && version.length > 0 ? version : null,
       );
       persistConfig();
@@ -556,7 +556,7 @@ export function registerShellHandlers(): void {
       registryRoot: getRegistryRoot(),
       configValid: getRegistryRoot() !== null,
       isPackaged: app.isPackaged,
-      dismissedUpdateVersion: getDismissedUpdateVersion(),
+      dismissedAppUpdateVersion: getDismissedAppUpdateVersion(),
       storageBackend: backend,
       showWeakStorageNotice,
     };
