@@ -209,8 +209,8 @@ export interface OriginProbeCompleteEvent {
   failedRepos?: string[];
   /** Skills whose upstream hash moved past what was recorded — i.e.
    *  how many Update Available chips this probe will produce. Used
-   *  by the Rescan button's "done" state copy. Undefined when the
-   *  event is a non-probe refresh nudge. */
+   *  by the "Check for skill updates" button's "done" state copy.
+   *  Undefined when the event is a non-probe refresh nudge. */
   updates?: number;
 }
 

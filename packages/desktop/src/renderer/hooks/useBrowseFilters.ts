@@ -49,7 +49,7 @@ export interface BrowseFilters {
  * search, selectedTags, and installedOnly. registrySort is session-
  * only (intentionally not persisted — stale sort state from a prior
  * session is rarely useful). registryFilters is excluded because the
- * Rescan controller flips it remotely; that slice stays in App.tsx.
+ * originProbe controller flips it remotely; that slice stays in App.tsx.
  */
 export function useBrowseFilters(): BrowseFilters {
   const [search, setSearchState] = useState<string>(() =>

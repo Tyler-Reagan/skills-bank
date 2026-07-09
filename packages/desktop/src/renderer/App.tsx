@@ -230,8 +230,8 @@ function AppContent(): React.ReactElement {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // registryFilters stays here (not in useBrowseFilters) because the
-  // Rescan controller flips it remotely via setRegistryFilters when the
-  // user clicks "View updates" in the done-state banner.
+  // originProbe controller flips it remotely via setRegistryFilters when
+  // the user clicks "View updates" in the done-state banner.
   const [registryFilters, setRegistryFilters] = useState<
     Set<import("./components/browseFilters.js").RegistryFilterTag>
   >(() => new Set());
