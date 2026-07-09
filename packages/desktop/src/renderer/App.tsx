@@ -8,10 +8,8 @@ import type {
   RegistryEntry,
 } from "@skills-bank/core";
 import { BrowseTab } from "./components/BrowseTab.js";
-import {
-  InstalledTab,
-  type InstalledGroup,
-} from "./components/InstalledTab.js";
+import { InstalledTab } from "./components/InstalledTab.js";
+import type { InstalledGroup } from "./components/installedGrouping.js";
 import {
   Header,
   type Density,
@@ -235,7 +233,7 @@ function AppContent(): React.ReactElement {
   // Rescan controller flips it remotely via setRegistryFilters when the
   // user clicks "View updates" in the done-state banner.
   const [registryFilters, setRegistryFilters] = useState<
-    Set<import("./components/RegistryFilters.js").RegistryFilterTag>
+    Set<import("./components/browseFilters.js").RegistryFilterTag>
   >(() => new Set());
   const [selected, setSelected] = useState<RegistryEntry | null>(null);
 

@@ -9,14 +9,14 @@ import {
 import { useLabels } from "../LabelsContext.js";
 import { Icon } from "./Icon.js";
 import { SkillsGrid } from "./SkillsGrid.js";
+import { RegistryFilters } from "./RegistryFilters.js";
 import {
-  RegistryFilters,
   applyChipFilters,
   applySort,
   floatToTop,
   type RegistryFilterTag,
   type RegistrySortState,
-} from "./RegistryFilters.js";
+} from "./browseFilters.js";
 import { useRegistry } from "../RegistryContext.js";
 import { useBrowseFilters } from "../hooks/useBrowseFilters.js";
 
