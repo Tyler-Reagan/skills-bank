@@ -19,12 +19,10 @@ const INSTALLED_TOOLTIP =
   "in the registry or installed elsewhere.";
 
 const REGISTER_TOOLTIP =
-  "Registering lets the app manage the skill — cross-agent linking, labels, " +
-  "and sync — while leaving its files where they live. Skills in a custom " +
-  "directory always stay in place (and don't travel via sync), so a " +
-  "non-egressable work repo can be managed without moving it. To make a " +
-  'skill portable, turn on "Move skill files into Skills Bank" in Settings ' +
-  '(or use "Move into bank" in the drawer) to relocate it into your registry.';
+  "Registering moves the skill's files into your registry so the app can " +
+  "manage it — cross-agent linking and labels. Its content lives under the " +
+  "registry from then on; each agent directory points at the registry copy " +
+  "by symlink.";
 
 export interface InstalledGroup {
   name: string;
@@ -143,9 +141,9 @@ interface Props {
   onRepairAllBroken?: (groups: InstalledGroup[]) => void;
   /**
    * Inline shortcut for the Unregistered section's per-card primary
-   * action. Adopts the single non-ours installation into the registry
-   * (the common path). Foreign-symlink alternatives like Register-as-
-   * external remain reachable via the drawer's secondary button.
+   * action. Registers the single non-ours installation (the common
+   * path). Foreign-symlink alternatives like Register-as-external
+   * remain reachable via the drawer's secondary button.
    */
   onInlineRegister?: (group: InstalledGroup) => void;
   /**
@@ -481,7 +479,7 @@ export function InstalledTab({
                         <button
                           className="btn primary flex-1 inline-center-6 fw-600"
                           onClick={() => onInlineRegister(g)}
-                          title="Register this skill so the app can manage it (cross-agent links, labels, sync), leaving its files in place. A custom-directory skill always stays put; others move into the bank only when the Settings auto-move toggle is on. Relocate later via Move into bank in the drawer."
+                          title="Register this skill so the app can manage it — cross-agent links and labels. Its files move into your registry; each agent directory then points at the registry copy by symlink."
                         >
                           Register
                         </button>

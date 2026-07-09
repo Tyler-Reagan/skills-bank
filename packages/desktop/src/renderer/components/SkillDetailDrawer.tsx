@@ -59,10 +59,8 @@ interface Props {
   isRegistered: boolean;
   /**
    * Trigger registration into the registry for a not-yet-registered
-   * entry. Records the skill in place (files stay at their origin); the
-   * host's shared hook chains a move-into-bank afterward only when the
-   * global auto-move toggle is on and the skill isn't a keep-in-place
-   * custom-dir source.
+   * entry. Register moves the skill's files into the bank and links the
+   * default agent set — one effect, no move-into-bank chain (ADR-0022).
    */
   onRegister?: () => Promise<void> | void;
   /**

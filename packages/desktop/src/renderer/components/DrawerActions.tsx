@@ -200,10 +200,9 @@ export function DrawerActions({
               )}
             </button>
             <p className="drawer-action-hint">
-              Records this skill in your registry while leaving its files where
-              they live. Cross-agent linkable. Files move into the bank only if
-              you turn on auto-adopt in Settings — or later, explicitly, via
-              Move into bank.
+              Moves this skill's files into your registry so the app can manage
+              it. Cross-agent linkable; each agent directory points at the
+              registry copy by symlink.
             </p>
           </>
         )}
@@ -284,7 +283,8 @@ export function DrawerActions({
             </button>
             <p className="drawer-action-hint">
               Severs the origin and keeps your local copy. It stops receiving
-              updates and won't sync until you adopt it into your linked repo.
+              updates and stays local-only — excluded from what's pushed to your
+              linked repo — until you re-home it there to regain a self-origin.
             </p>
           </>
         )}

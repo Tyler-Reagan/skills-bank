@@ -762,7 +762,7 @@ function AppContent(): React.ReactElement {
               onSwitchToBrowse={() => setTabPersisted("browse")}
               // Bulk registration always flows through the
               // RegistrationPlanModal — the per-row review-then-apply surface
-              // whose own scan walks every agent dir plus custom dirs. Shown
+              // whose own scan walks every agent dir. Shown
               // from both the empty state and the Unregistered header; with
               // nothing on disk the modal renders an empty list and points at
               // the header's Scan Local. The inline per-card Register button
