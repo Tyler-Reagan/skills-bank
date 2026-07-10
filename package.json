@@ -1,6 +1,6 @@
 {
   "name": "skills-bank",
-  "version": "1.25.1",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "description": "Central registry of Claude Code skills with TypeScript CLI and Electron desktop manager.",
