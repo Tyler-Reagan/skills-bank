@@ -3,6 +3,21 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v1.26.0
+
+Docs site refresh: theme/brand overhaul, homepage rebuild, sidebar IA regroup, and a terminology consistency sweep. No app-code changes.
+
+### Added
+
+- **Theme/brand override + homepage rebuild** ([#129](https://github.com/Tyler-Reagan/skills-bank/issues/129)) — `.vitepress/theme/{index.ts,custom.css}` establishes a real light/dark palette (neutral grays, green rationed to a genuine accent role) and Archivo/Onest typography, replacing the stock VitePress theme. Rebuilds `index.md`'s homepage with an asymmetric hero and row-list feature section.
+- **Sidebar IA regroup** — splits the flat Guides list into Everyday/Advanced groups (collapsible, Everyday open by default), surfaces the real sidebar on the homepage (`layout: page`), and removes a nav-level Reference dropdown that duplicated the sidebar.
+- **`.prettierrc.json`** pins today's Prettier defaults explicitly, and `pnpm run format:check` is now enforced in CI.
+- **CONTEXT.md glossary**: Linked Repo and Bundled Default settled as canonical terms, resolving a "linked repo" vs "linked registry" drift across the docs site.
+
+### Fixed
+
+- **Content consistency and stale UI references** — standardized "self-hosting"/"linked repo" terminology across guides; corrected several pages describing a removed in-app "account menu" dropdown (Settings and Account are separate header buttons, not menu items); removed a false claim about reaching keyboard shortcuts via the account menu.
+
 ## v1.25.1
 
 ### Fixed
