@@ -3,6 +3,109 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v2.3.0
+
+Renderer altitude decomposition: extracts pure logic out of oversized renderer files, stands up a desktop test harness, retires the redundant Local Scan feature, and closes out the Origin Probe/Pull vocabulary settlement.
+
+### Added
+
+- **Desktop vitest harness** — `packages/desktop` gets a minimal node-env vitest setup (mirroring core's), covering the newly-extracted pure modules. `pnpm test` now runs core (250) + desktop (27).
+- **`browseFilters.ts`, `installedGrouping.ts`, `NeedsAttentionSection.tsx`, `ResolveAllConflictsModal.tsx`** — pure filter/sort algebra and grouping logic extracted out of `RegistryFilters.tsx`/`InstalledTab.tsx`/`ModalHost.tsx`, each fixing a real reuse issue or layering inversion (e.g. a hook depending on a presentational component), not line-count alone.
+- **CONTEXT.md**: Origin Probe and Skill Diagnostic entries added; **Pull** renamed to **Origin Pull** (bare "pull" already carried two other senses in the glossary).
+
+### Changed
+
+- **`origin*` → `skill*` rename** for the update-applies-to-a-skill facet (`applySkillUpdate`, `SkillUpdateResult`, IPC `skillUpdate`); `origin*` retained for the provenance-pointer facet.
+- **`rescan`/`refresh` → `originProbe`** throughout (matches the mechanism already used internally); the dead "Sync skills" native menu item (dispatched an action the renderer never handled) is dropped.
+- **App-update surface gets an `App*` prefix** — `UpdatesModal`/`UpdateNotesModal` → `SkillUpdatesModal`/`AppUpdateNotesModal`, disambiguating two near-miss names that were already latent in the code.
+- Core's `Diagnostic{Report,Item,Category}` → `SkillDiagnostic*` for glossary consistency.
+
+### Removed
+
+- **Local Scan retired** — the Header button and its parallel `LocalScanResultsSection` ran a redundant second disk walk that mostly reconfirmed what the always-live, classifier-driven Needs-attention section already showed. The one category it uniquely computed (`registry-folder-missing`) is folded into Needs-attention directly; its one remaining unique job (catching disk changes made outside the app) is replaced by a plain "Recheck" action.
+- **Dead `getSkillDiff` IPC surface** (and core's `computeFolderDiff`) — zero renderer callers since its original consumers (`SyncConflictModal`, `DiffViewer`) were removed with the curated-tarball-sync subsystem. Also drops the now-unused `diff` npm dependency.
+- Dead `LabelsFirstRunBanner` (defined, never rendered) and its orphaned CSS; stale `SyncConflictModal`/`ManifestImportConfirmModal` references swept from comments and CSS.
+
+### Fixed
+
+- Duplicated pure-logic blocks (conflict-selection rule, synthetic-entry construction) across `App.tsx`/`ModalHost.tsx`/`InstalledTab.tsx` consolidated into `installedGrouping.ts`.
+- Several stale UI copy/comment references to the retired custom-dir/auto-adopt system and the retired rescan/refresh mechanism.
+
+## v2.2.0
+
+Domain-model vocabulary settlement: closes the remaining CONTEXT.md glossary gaps (#168–174), removes two dead pre-ADR-0017 remnants, and eliminates the unused Finalize feature entirely.
+
+### Changed
+
+- **Pull/Extract/Import/Export vocabulary settled.** Single-skill export renamed to **Extract** (`skills/export.ts` → `extract.ts`, `canExport` → `canExtract`) — displaced by the Header's "Pull from {repo}" button, which was actually an **Import** operation (`onSync`/`syncing` → `onImportLinkedRepo`/`importingLinkedRepo`). Manifest push renamed to **Export** throughout core, IPC, and the renderer. "Sync" retired as vocabulary — the subsystem it named was already gone.
+- **Agent Directory/metrics vocabulary settled** against real code naming: **Hook** → **Tracking** as the top-level term (every function/file name says Tracking; Hook is Claude Code's own extensibility mechanism, not this app's concept).
+
+### Removed
+
+- **`BUNDLED_REPO` and `RegistrySource`** — two remnants of a pre-ADR-0017 "collapse local/github mode" refactor that silently outlived the curated/bundled-default concept they supported. Neither drove any actual renderer behavior; confirmed via full-codebase search before removal.
+- **Finalize eliminated entirely** (`finalizeSkillsDir`, `listTopLevelSymlinks`, the Settings "Collapse symlinked agent dirs" section, its IPC channels) — nothing in the app ever creates the on-disk state it heals; the only path to that state is a user manually symlinking tool skill folders together outside the app. Same rationale as ADR-0022's custom-dir removal: a narrow, self-inflicted edge case with real maintenance surface.
+- **`ScanReport.claudeSkillsDir`** — a dead field kept "for backward-compat" with renderer code that no longer reads it.
+
+## v2.1.0
+
+Registry is adopted-only: a skill is Registered iff its files live under `<registryRoot>/skills/`. Collapses the in-place/custom-dir registration split introduced in ADR-0011. See [ADR-0022](docs/adr/ADR-0022-registry-is-adopted-only.md).
+
+### Changed
+
+- **Register now has one effect** — it moves the skill's files into `skills/<bucket>/` and records a manifest row. Unregister always moves them back out. The record-only `register` vs `move-into-bank` split is gone.
+- **Renames, no behavior change:** `registry/rehome.ts` → `bucket-move.ts`; `github/adopt.ts` → `rehome-into-linked-repo.ts` (`adoptIntoLinkedRepo` → `rehomeIntoLinkedRepo`); UI verbs settled ("Restore source" → "Restore origin", "Remove from registry" → "Unregister", "Install a skill from GitHub" → "Add from GitHub").
+- **`shared/conflict.ts` deleted** — its one live export (`resolveRenameTarget`) folded into `manifest/merge.ts`. "Conflict" now means one thing in the skills domain: agent-dir stragglers.
+
+### Removed
+
+- Custom-directory registration entirely: `registry/external.ts`, the `external.json` record system, `RegistryEntry.adopted`, the `customSkillsDirs`/`registerAdopts` settings and their Settings-tab UI, the `useRegisterSkill` chain, `repointExternalEntry`, and the "Move into bank" drawer action.
+
+### Fixed
+
+- **Unregister now correctly repoints agent-dir symlinks after the move** — it previously resolved each link via `fs.realpathSync`, which throws once the source directory has already been renamed away, silently skipping every repoint.
+- **Shared `repointAgentLinks` primitive** (`shared/agent-links.ts`) replaces two hand-rolled copies of the same sweep-and-repoint loop (`bucket-move.ts`, `unregister.ts`), fixing a latent path-canonicalization bug both copies shared: the stored symlink target is realpath'd but the computed "old dir" wasn't, so the exact-string comparison never matched and no link was ever repointed.
+- **Add-from-GitHub can no longer create a cross-bucket name collision that bricks the app** — mirroring into `skills/vendored/<name>` never checked whether `<name>` already existed in `skills/personal/`, which could crash boot via an unguarded `SkillNameCollisionError`. Now refuses the write with a `name-collision` reason instead, and `reconcileFoldersToManifestSafe` catches any pre-existing collision during boot reconcile rather than propagating.
+
+## v2.0.0
+
+**Breaking:** Origin-only provenance model. A skill's provenance is now a single nullable-URL `origin` — the `source` axis (`curated`/`user`/`vendored`), per-skill sidecar files, and the entire curated-tarball-sync subsystem are removed. Manifest schema bumps to v6 with no legacy coercion: a pre-v6 manifest is rejected outright rather than tolerantly read. See [ADR-0017](docs/adr/ADR-0017-curated-and-bundled-default-removed.md) through [ADR-0021](docs/adr/ADR-0021-manifest-is-the-live-skill-record.md).
+
+### Changed
+
+- **Manifest schema v6** — `ManifestOrigin = {url: string | null, skillPath?, hash?}` replaces the `source`/`origin` split. `url` pointing at the linked repo is a self-origin; any other URL is an external upstream; `url: null` is an explicit "local, no remote" stamp — a valid resting state, not an error.
+- **Manifest promoted to the live skill record** — per-skill sidecars (`.skills-bank.json`, hash, runtime files) are replaced by one gitignored runtime map (`registry/runtime-map.ts`) keyed by name. `reconcileFoldersToManifest` is the sole manifest-write seam.
+- **New installs are a blank slate** — the curated/"Bundled Default" skill set is removed entirely; there is no fallback content on first launch.
+- **Pull from a linked repo is an in-app 3-way merge** (`mergeManifests`), not an additive import; conflicts surface in `ManifestConflictModal`.
+
+### Removed
+
+- The entire curated-tarball-sync subsystem: `registry/sync.ts`, `registry/canon.ts`, `registry/reconcile.ts`, `registry/skill-record.ts`, `registry/discovery.ts`, `shared/skill-lock.ts`, the four `vendor-*`/`backfill-*` maintainer scripts, and the `tar` npm dependency.
+- The `CURATED` badge, hide/unhide affordances, curated-skills/dismissed-bundled settings panels, `SyncBanner`, `SyncConflictModal`, and their `DiffViewer`/`useAutoDismiss`/`useReducedMotion` dependencies.
+
+### Fixed
+
+- **BrowseTab crash on first import** (React #310) — the empty-registry early return sat before five hooks, so the component called a different hook count once the registry populated mid-mount, which is fatal and unmounts the whole app. Hooks now run unconditionally on every render.
+- **Phase 8 follow-ups (F1–F5)** surfaced during packaged-build validation: `origin.hash` excluded from change-detection diffing (F2); legacy pre-v6 sidecar origins are healed into v6 origins on upgrade instead of being flattened to `url: null` (F5); `.git`-suffixed origin URLs normalized so they don't diff against their bare form; a merge base is established on link/replace, eliminating a universal both-added conflict on first pull (F3); a soft, non-blocking divergence warning surfaces on PR push instead of no check at all (F4).
+
+### Notes
+
+- No data loss on upgrade: `reconcileFoldersToManifest` self-heals the local manifest from disk on first boot, and the F5 fix actively recovers provenance from old sidecars rather than discarding it. The break is to the manifest *wire format* — a v5 file is rejected outright, with no tolerant-read window — not to the user's actual registry content.
+
+## v1.26.0
+
+Docs site refresh: theme/brand overhaul, homepage rebuild, sidebar IA regroup, and a terminology consistency sweep. No app-code changes.
+
+### Added
+
+- **Theme/brand override + homepage rebuild** ([#129](https://github.com/Tyler-Reagan/skills-bank/issues/129)) — `.vitepress/theme/{index.ts,custom.css}` establishes a real light/dark palette (neutral grays, green rationed to a genuine accent role) and Archivo/Onest typography, replacing the stock VitePress theme. Rebuilds `index.md`'s homepage with an asymmetric hero and row-list feature section.
+- **Sidebar IA regroup** — splits the flat Guides list into Everyday/Advanced groups (collapsible, Everyday open by default), surfaces the real sidebar on the homepage (`layout: page`), and removes a nav-level Reference dropdown that duplicated the sidebar.
+- **`.prettierrc.json`** pins today's Prettier defaults explicitly, and `pnpm run format:check` is now enforced in CI.
+- **CONTEXT.md glossary**: Linked Repo and Bundled Default settled as canonical terms, resolving a "linked repo" vs "linked registry" drift across the docs site.
+
+### Fixed
+
+- **Content consistency and stale UI references** — standardized "self-hosting"/"linked repo" terminology across guides; corrected several pages describing a removed in-app "account menu" dropdown (Settings and Account are separate header buttons, not menu items); removed a false claim about reaching keyboard shortcuts via the account menu.
+
 ## v1.25.1
 
 ### Fixed
