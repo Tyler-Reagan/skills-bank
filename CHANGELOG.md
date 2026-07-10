@@ -89,7 +89,7 @@ Registry is adopted-only: a skill is Registered iff its files live under `<regis
 
 ### Notes
 
-- No data loss on upgrade: `reconcileFoldersToManifest` self-heals the local manifest from disk on first boot, and the F5 fix actively recovers provenance from old sidecars rather than discarding it. The break is to the manifest *wire format* — a v5 file is rejected outright, with no tolerant-read window — not to the user's actual registry content.
+- No data loss on upgrade: `reconcileFoldersToManifest` self-heals the local manifest from disk on first boot, and the F5 fix actively recovers provenance from old sidecars rather than discarding it. The break is to the manifest _wire format_ — a v5 file is rejected outright, with no tolerant-read window — not to the user's actual registry content.
 
 ## v1.26.0
 
