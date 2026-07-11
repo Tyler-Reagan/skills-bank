@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { installSkillFiles } from "./origin.js";
+import { installSkillFiles, resolveSkillFolderByName } from "./origin.js";
 
 /**
  * Pins the "no partial mutation" contract for `installSkillFiles`
@@ -285,5 +285,86 @@ describe("installSkillFiles — partial-failure invariant", () => {
     // here breaks the contract immediately.
     expect(fs.existsSync(path.join(destDir, ".skills-bank.json"))).toBe(false);
     expect(fs.existsSync(path.join(destDir, ".skills-bank-hash"))).toBe(false);
+  });
+});
+
+/**
+ * resolveSkillFolderByName is the tree-search behind pasting an
+ * `npx skills add … --skill <name>` command: it finds a skill by name
+ * wherever it lives in the repo, so a nested category folder resolves
+ * instead of 404-ing on a naive `skills/<name>` guess.
+ */
+function treeResponse(blobPaths: string[]): Response {
+  const tree = blobPaths.map((p) => ({
+    path: p,
+    mode: "100644",
+    type: "blob",
+    sha: `sha-${p}`,
+  }));
+  return new Response(
+    JSON.stringify({ sha: "rootsha", tree, truncated: false }),
+    { status: 200, headers: { "content-type": "application/json" } },
+  );
+}
+
+describe("resolveSkillFolderByName", () => {
+  test("resolves a skill nested under a category folder", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        treeResponse([
+          "skills/engineering/wayfinder/SKILL.md",
+          "skills/writing/prose/SKILL.md",
+          "README.md",
+        ]),
+      ),
+    );
+    const r = await resolveSkillFolderByName("owner/repo", "wayfinder", null);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.skillPath).toBe("skills/engineering/wayfinder/SKILL.md");
+  });
+
+  test("no match → not-found", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => treeResponse(["skills/other/SKILL.md"])),
+    );
+    const r = await resolveSkillFolderByName("owner/repo", "wayfinder", null);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.reason).toBe("not-found");
+    expect(r.message).toContain("wayfinder");
+  });
+
+  test("multiple matches → ambiguous with candidate folders", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        treeResponse([
+          "skills/engineering/wayfinder/SKILL.md",
+          "skills/legacy/wayfinder/SKILL.md",
+        ]),
+      ),
+    );
+    const r = await resolveSkillFolderByName("owner/repo", "wayfinder", null);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.reason).toBe("ambiguous");
+    expect(r.candidates).toEqual([
+      "skills/engineering/wayfinder",
+      "skills/legacy/wayfinder",
+    ]);
+  });
+
+  test("tree fetch failure → tree-error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => make404()),
+    );
+    const r = await resolveSkillFolderByName("owner/repo", "wayfinder", null);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.reason).toBe("tree-error");
   });
 });

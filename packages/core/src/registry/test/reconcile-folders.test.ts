@@ -52,6 +52,21 @@ function byName(root: string, name: string) {
   return readLiveManifest(root).skills.find((s) => s.name === name)!;
 }
 
+/**
+ * Pin the npx-lock read at a nonexistent fixture so these suites never
+ * pick up the developer's real ~/.agents/.skill-lock.json. The dedicated
+ * npx-backfill suite below passes a real fixture path instead.
+ */
+function noNpx() {
+  return { npxLockPath: path.join(scratch, "__no-npx-lock.json") };
+}
+function reconcile(root: string) {
+  return reconcileFoldersToManifest(root, noNpx());
+}
+function reconcileSafe(root: string) {
+  return reconcileFoldersToManifestSafe(root, noNpx());
+}
+
 describe("reconcileFoldersToManifest — F5 legacy-origin recovery", () => {
   test("heals a fresh orphan folder from its legacy sidecar", () => {
     makeSkillFolder("vendored", "mcp-builder", {
@@ -64,7 +79,7 @@ describe("reconcileFoldersToManifest — F5 legacy-origin recovery", () => {
         skillFolderHash: "abc123",
       },
     });
-    reconcileFoldersToManifest(scratch);
+    reconcile(scratch);
     const row = byName(scratch, "mcp-builder");
     expect(row.origin.url).toBe("https://github.com/anthropics/skills");
     expect(row.origin.skillPath).toBe("skills/mcp-builder/SKILL.md");
@@ -86,7 +101,7 @@ describe("reconcileFoldersToManifest — F5 legacy-origin recovery", () => {
         { name: "grilling", origin: { url: null }, category: null, tags: [] },
       ],
     });
-    reconcileFoldersToManifest(scratch);
+    reconcile(scratch);
     expect(byName(scratch, "grilling").origin.url).toBe(
       "https://github.com/some/repo",
     );
@@ -94,7 +109,7 @@ describe("reconcileFoldersToManifest — F5 legacy-origin recovery", () => {
 
   test("a folder with no sidecar stays the honest url:null", () => {
     makeSkillFolder("personal", "from-scratch");
-    reconcileFoldersToManifest(scratch);
+    reconcile(scratch);
     expect(byName(scratch, "from-scratch").origin).toEqual({ url: null });
   });
 
@@ -102,7 +117,7 @@ describe("reconcileFoldersToManifest — F5 legacy-origin recovery", () => {
     makeSkillFolder("personal", "local-only", {
       origin: { kind: "none", skillPath: "skills/local-only/SKILL.md" },
     });
-    reconcileFoldersToManifest(scratch);
+    reconcile(scratch);
     expect(byName(scratch, "local-only").origin).toEqual({ url: null });
   });
 });
@@ -119,9 +134,7 @@ describe("reconcileFoldersToManifest / Safe — cross-bucket collision", () => {
   test("the raw function throws SkillNameCollisionError", () => {
     makeSkillFolder("personal", "dup-name");
     makeSkillFolder("vendored", "dup-name");
-    expect(() => reconcileFoldersToManifest(scratch)).toThrow(
-      /appears in multiple buckets/,
-    );
+    expect(() => reconcile(scratch)).toThrow(/appears in multiple buckets/);
   });
 
   test("the Safe wrapper does not throw and leaves the manifest unchanged", () => {
@@ -129,14 +142,116 @@ describe("reconcileFoldersToManifest / Safe — cross-bucket collision", () => {
     makeSkillFolder("vendored", "dup-name");
     const before = readLiveManifest(scratch);
 
-    expect(() => reconcileFoldersToManifestSafe(scratch)).not.toThrow();
+    expect(() => reconcileSafe(scratch)).not.toThrow();
 
     expect(readLiveManifest(scratch)).toEqual(before);
   });
 
   test("the Safe wrapper still reconciles normally when there's no collision", () => {
     makeSkillFolder("personal", "no-conflict");
-    reconcileFoldersToManifestSafe(scratch);
+    reconcileSafe(scratch);
     expect(byName(scratch, "no-conflict")).toBeDefined();
+  });
+});
+
+/**
+ * #191 — origin backfill from npx's global lockfile. A url:null skill
+ * whose name matches an npx lock entry adopts that entry's origin; local
+ * / no-match / non-URL entries stay null; a sidecar wins over the
+ * lockfile; and reconcile never writes the lockfile.
+ */
+describe("reconcileFoldersToManifest — npx-lock origin backfill", () => {
+  function writeNpxLock(skills: Record<string, unknown>): string {
+    const p = path.join(scratch, "npx-lock.json");
+    fs.writeFileSync(p, JSON.stringify({ version: 3, skills }, null, 2));
+    return p;
+  }
+
+  test("backfills origin for a url:null orphan matching an npx entry", () => {
+    makeSkillFolder("personal", "qmk-keymap");
+    const npxLockPath = writeNpxLock({
+      "qmk-keymap": {
+        source: "someone/keebs",
+        sourceType: "github",
+        sourceUrl: "https://github.com/someone/keebs",
+        skillPath: "skills/qmk-keymap/SKILL.md",
+        skillFolderHash: "deadbeef",
+      },
+    });
+    reconcileFoldersToManifest(scratch, { npxLockPath });
+    const row = byName(scratch, "qmk-keymap");
+    expect(row.origin.url).toBe("https://github.com/someone/keebs");
+    expect(row.origin.skillPath).toBe("skills/qmk-keymap/SKILL.md");
+    expect(row.origin.hash).toBe("deadbeef");
+  });
+
+  test("a local-sourceType npx entry is not adopted (stays url:null)", () => {
+    makeSkillFolder("personal", "scratch-skill");
+    const npxLockPath = writeNpxLock({
+      "scratch-skill": { sourceType: "local", sourceUrl: "" },
+    });
+    reconcileFoldersToManifest(scratch, { npxLockPath });
+    expect(byName(scratch, "scratch-skill").origin).toEqual({ url: null });
+  });
+
+  test("adopts a non-GitHub sourceUrl (GitLab is a valid origin)", () => {
+    makeSkillFolder("personal", "gl-skill");
+    const npxLockPath = writeNpxLock({
+      "gl-skill": {
+        sourceType: "github",
+        sourceUrl: "https://gitlab.com/group/repo",
+      },
+    });
+    reconcileFoldersToManifest(scratch, { npxLockPath });
+    expect(byName(scratch, "gl-skill").origin.url).toBe(
+      "https://gitlab.com/group/repo",
+    );
+  });
+
+  test("no matching npx entry leaves the row url:null", () => {
+    makeSkillFolder("personal", "unmatched");
+    const npxLockPath = writeNpxLock({
+      "some-other-skill": {
+        sourceType: "github",
+        sourceUrl: "https://github.com/x/y",
+      },
+    });
+    reconcileFoldersToManifest(scratch, { npxLockPath });
+    expect(byName(scratch, "unmatched").origin).toEqual({ url: null });
+  });
+
+  test("an in-folder sidecar takes precedence over the npx lockfile", () => {
+    makeSkillFolder("vendored", "dual", {
+      origin: { kind: "github", sourceUrl: "https://github.com/from/sidecar" },
+    });
+    const npxLockPath = writeNpxLock({
+      dual: { sourceType: "github", sourceUrl: "https://github.com/from/npx" },
+    });
+    reconcileFoldersToManifest(scratch, { npxLockPath });
+    expect(byName(scratch, "dual").origin.url).toBe(
+      "https://github.com/from/sidecar",
+    );
+  });
+
+  test("reconcile never writes the npx lockfile (read-only invariant)", () => {
+    makeSkillFolder("personal", "qmk-keymap");
+    const npxLockPath = writeNpxLock({
+      "qmk-keymap": {
+        sourceType: "github",
+        sourceUrl: "https://github.com/someone/keebs",
+      },
+    });
+    const before = fs.readFileSync(npxLockPath, "utf8");
+    reconcileFoldersToManifest(scratch, { npxLockPath });
+    expect(fs.readFileSync(npxLockPath, "utf8")).toBe(before);
+  });
+
+  test("a missing npx lockfile is a no-op, not an error", () => {
+    makeSkillFolder("personal", "solo");
+    const npxLockPath = path.join(scratch, "does-not-exist.json");
+    expect(() =>
+      reconcileFoldersToManifest(scratch, { npxLockPath }),
+    ).not.toThrow();
+    expect(byName(scratch, "solo").origin).toEqual({ url: null });
   });
 });

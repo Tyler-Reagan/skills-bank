@@ -8,17 +8,17 @@ Source: [vercel-labs/skills](https://github.com/vercel-labs/skills) (npm package
 
 Full set, from `src/cli.ts`:
 
-| Command | Purpose |
-| --- | --- |
-| `add <package>` | Install a skill. Source can be `owner/repo`, a full GitHub/GitLab URL, a git URL, or a local path. |
-| `use <package>@<skill>` | Generate/run a skill without persisting it to disk. |
-| `remove` (`rm`) | Uninstall installed skill(s). |
-| `list` (`ls`) | List installed skills. |
-| `find [query]` | Interactive or keyword skill discovery. |
-| `update` | Refresh installed skills against their recorded source. |
-| `init [name]` | Scaffold a new skill. |
-| `experimental_install` | Restore the exact set/versions recorded in `skills-lock.json`. |
-| `experimental_sync` | Sync skills declared in `node_modules` (npm-package-distributed skills). |
+| Command                 | Purpose                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `add <package>`         | Install a skill. Source can be `owner/repo`, a full GitHub/GitLab URL, a git URL, or a local path. |
+| `use <package>@<skill>` | Generate/run a skill without persisting it to disk.                                                |
+| `remove` (`rm`)         | Uninstall installed skill(s).                                                                      |
+| `list` (`ls`)           | List installed skills.                                                                             |
+| `find [query]`          | Interactive or keyword skill discovery.                                                            |
+| `update`                | Refresh installed skills against their recorded source.                                            |
+| `init [name]`           | Scaffold a new skill.                                                                              |
+| `experimental_install`  | Restore the exact set/versions recorded in `skills-lock.json`.                                     |
+| `experimental_sync`     | Sync skills declared in `node_modules` (npm-package-distributed skills).                           |
 
 Common flags: `-g/--global` vs `-p/--project` scope, `-a/--agent <agents...>` (or `--agent '*'` for all detected agents), `-y/--yes` to skip prompts, `--copy` to force copy mode.
 
@@ -62,5 +62,5 @@ Manifest discovery: if a source repo has `.claude-plugin/marketplace.json` or `.
 
 ## What this means for the other tickets on this map
 
-- **[#185 — origin backfill](https://github.com/Tyler-Reagan/skills-bank/issues/185):** the lockfile's `sourceUrl` is a real, structured signal skills-bank could read to backfill `origin.url` for skills that were npx-installed outside skills-bank — not a "nothing to detect" situation. The open design question narrows to *where* to look (global `~/.agents/.skill-lock.json` vs. project `./skills-lock.json`, and precedence if both reference the same skill folder) and whether reading another tool's private lockfile format is a boundary skills-bank wants to depend on.
+- **[#185 — origin backfill](https://github.com/Tyler-Reagan/skills-bank/issues/185):** the lockfile's `sourceUrl` is a real, structured signal skills-bank could read to backfill `origin.url` for skills that were npx-installed outside skills-bank — not a "nothing to detect" situation. The open design question narrows to _where_ to look (global `~/.agents/.skill-lock.json` vs. project `./skills-lock.json`, and precedence if both reference the same skill folder) and whether reading another tool's private lockfile format is a boundary skills-bank wants to depend on.
 - **[#186 — install-path architecture](https://github.com/Tyler-Reagan/skills-bank/issues/186):** confirms the Discover-tab path and the real `npx skills add` are mechanically distinct today (GitHub-API mirror vs. clone + canonical-store + symlink + lockfile write) — any "replicate" approach would need to decide whether to also write a compatible lockfile entry, or accept that skills-bank-installed skills stay invisible to `npx skills list`/`update` and vice versa.

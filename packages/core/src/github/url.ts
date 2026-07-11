@@ -88,6 +88,33 @@ export function parseOwnerRepo(url: string | null | undefined): string | null {
   }
 }
 
+export interface ParsedNpxAdd {
+  /** GitHub `owner/repo`. */
+  repo: string;
+  /** The `--skill <name>` value — a skill's registry name, not a path. */
+  skillName: string;
+}
+
+/**
+ * Recognize the install command skills.sh copies to the clipboard:
+ *
+ *   npx skills add https://github.com/<owner>/<repo> --skill <skill-name>
+ *
+ * Returns `{repo, skillName}` or null if the input isn't that shape. Pure —
+ * never probes GitHub (preserves this module's "never touches the network"
+ * invariant that `manifest/import` and `probe` rely on). The skill's actual
+ * folder path is NOT derivable here: the repo tree must be searched by name
+ * in the main process (`resolveSkillFolderByName` in `origin.ts`), because
+ * the skill can live at any depth under a category folder.
+ */
+export function parseNpxSkillsAdd(raw: string): ParsedNpxAdd | null {
+  const m = raw.trim().match(/npx\s+skills\s+add\s+(\S+)\s+--skill\s+(\S+)/);
+  if (!m) return null;
+  const repo = parseOwnerRepo(m[1]);
+  if (!repo) return null;
+  return { repo, skillName: m[2]! };
+}
+
 export function parseGithubSkillUrl(
   url: string,
 ): ParsedSkillUrl | UrlParseError {
