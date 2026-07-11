@@ -94,8 +94,8 @@ const api = {
   discoverGoBack: () => ipcRenderer.invoke(IPC.discoverGoBack),
   discoverReload: () => ipcRenderer.invoke(IPC.discoverReload),
   discoverOpenExternal: () => ipcRenderer.invoke(IPC.discoverOpenExternal),
-  discoverOpenTerminal: (terminalApp?: string) =>
-    ipcRenderer.invoke(IPC.discoverOpenTerminal, terminalApp),
+  discoverOpenTerminal: (terminalApp?: string, installInput?: string) =>
+    ipcRenderer.invoke(IPC.discoverOpenTerminal, terminalApp, installInput),
   discoverNpxSkills: () => ipcRenderer.invoke(IPC.discoverNpxSkills),
   onDiscoverStatus: (cb: (status: DiscoverStatus) => void) => {
     const listener = (_e: unknown, status: DiscoverStatus) => cb(status);

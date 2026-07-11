@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest";
 import {
   parseGithubSkillUrl,
   parseNpxSkillsAdd,
+  buildNpxSkillsAddCommand,
+  buildTerminalHandoffCommand,
   normalizeOriginUrl,
 } from "./url.js";
 
@@ -163,6 +165,63 @@ describe("parseNpxSkillsAdd", () => {
     // A pure parse returns immediately; if this were async/probing it
     // would return a Promise. Guards the url.ts network-free invariant.
     const r = parseNpxSkillsAdd(
+      "npx skills add https://github.com/o/r --skill foo",
+    );
+    expect(r).not.toBeInstanceOf(Promise);
+  });
+});
+
+describe("buildNpxSkillsAddCommand", () => {
+  test("re-emits the canonical skills.sh command with the full repo URL", () => {
+    expect(
+      buildNpxSkillsAddCommand({
+        repo: "mattpocock/skills",
+        skillName: "wayfinder",
+      }),
+    ).toBe(
+      "npx skills add https://github.com/mattpocock/skills --skill wayfinder",
+    );
+  });
+});
+
+describe("buildTerminalHandoffCommand", () => {
+  test("rebuilds the canonical command from a pasted npx command", () => {
+    // Round-trips through parse → build, normalising a trailing repo slash
+    // and surrounding whitespace back to the canonical form.
+    expect(
+      buildTerminalHandoffCommand(
+        "  npx skills add https://github.com/o/r/ --skill foo  ",
+      ),
+    ).toBe("npx skills add https://github.com/o/r --skill foo");
+  });
+
+  test("hands a GitHub skill-folder URL to npx directly", () => {
+    expect(
+      buildTerminalHandoffCommand(
+        "https://github.com/o/r/tree/main/skills/engineering/wayfinder",
+      ),
+    ).toBe(
+      "npx skills add https://github.com/o/r/tree/main/skills/engineering/wayfinder",
+    );
+  });
+
+  test("returns null for empty / whitespace / missing input", () => {
+    expect(buildTerminalHandoffCommand("")).toBeNull();
+    expect(buildTerminalHandoffCommand("   ")).toBeNull();
+    expect(buildTerminalHandoffCommand(null)).toBeNull();
+    expect(buildTerminalHandoffCommand(undefined)).toBeNull();
+  });
+
+  test("returns null for a repo-root URL that isn't a skill folder", () => {
+    expect(buildTerminalHandoffCommand("https://github.com/o/r")).toBeNull();
+  });
+
+  test("returns null for unrecognised input", () => {
+    expect(buildTerminalHandoffCommand("just some text")).toBeNull();
+  });
+
+  test("does not touch the network (pure) — resolves synchronously", () => {
+    const r = buildTerminalHandoffCommand(
       "npx skills add https://github.com/o/r --skill foo",
     );
     expect(r).not.toBeInstanceOf(Promise);

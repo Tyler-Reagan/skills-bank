@@ -13,7 +13,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { fromCaught } from "@skills-bank/core";
+import { fromCaught, buildTerminalHandoffCommand } from "@skills-bank/core";
 import { getStorageBackend } from "./auth.js";
 import {
   getDismissedAppUpdateVersion,
@@ -406,70 +406,121 @@ export function registerShellHandlers(): void {
     await shell.openExternal(discoverCurrentUrl);
   });
 
-  ipcMain.handle(IPC.discoverOpenTerminal, async (_e, terminalApp?: string) => {
-    const cwd = getRegistryRoot() ?? undefined;
-    try {
-      if (process.platform === "darwin") {
-        const appName =
-          terminalApp === "iterm2"
-            ? "iTerm"
-            : terminalApp === "warp"
-              ? "Warp"
-              : terminalApp === "hyper"
-                ? "Hyper"
-                : terminalApp === "alacritty"
-                  ? "Alacritty"
-                  : terminalApp === "kitty"
-                    ? "kitty"
-                    : "Terminal";
-        const args = ["-a", appName];
-        if (cwd) args.push(cwd);
-        spawn("open", args, { detached: true, stdio: "ignore" }).unref();
-      } else if (process.platform === "win32") {
-        const safeCwd = cwd ? cwd.replace(/["\r\n]/g, "") : "";
-        const command = safeCwd
-          ? `start "" wt.exe -d "${safeCwd}" || start "" cmd.exe /K cd /D "${safeCwd}"`
-          : `start "" wt.exe || start "" cmd.exe`;
-        spawn("cmd.exe", ["/c", command], {
-          detached: true,
-          stdio: "ignore",
-        }).unref();
-      } else {
-        const candidates = [
-          "x-terminal-emulator",
-          "gnome-terminal",
-          "konsole",
-          "xterm",
-        ];
-        let launched = false;
-        for (const bin of candidates) {
-          try {
-            const child = spawn(bin, cwd ? ["--working-directory", cwd] : [], {
+  ipcMain.handle(
+    IPC.discoverOpenTerminal,
+    async (_e, terminalApp?: string, installInput?: string) => {
+      const cwd = getRegistryRoot() ?? undefined;
+      // The pre-fill command is the whole npx handoff (issue #194). Building it
+      // is pure/tested in core; the spawn below (and its one-time macOS
+      // Automation permission prompt) is the only manual-verify part, and
+      // per ADR-0003 this visible terminal is the sole sanctioned npx path —
+      // no silent npx spawn from the main process.
+      const handoff = buildTerminalHandoffCommand(installInput);
+      try {
+        if (process.platform === "darwin") {
+          const appName =
+            terminalApp === "iterm2"
+              ? "iTerm"
+              : terminalApp === "warp"
+                ? "Warp"
+                : terminalApp === "hyper"
+                  ? "Hyper"
+                  : terminalApp === "alacritty"
+                    ? "Alacritty"
+                    : terminalApp === "kitty"
+                      ? "kitty"
+                      : "Terminal";
+          // Only Terminal.app and iTerm expose a scriptable "run this command
+          // in a new window" surface we can reach via AppleScript. For any
+          // other terminal (or when there's no command to pre-fill) fall back
+          // to opening a bare shell at the registry root, as before.
+          if (handoff && (appName === "Terminal" || appName === "iTerm")) {
+            // `cd <root> && <handoff>` so the command runs in the registry;
+            // single-quote the path for the shell, then escape the whole line
+            // for the AppleScript double-quoted string literal.
+            const shellQuote = (s: string): string =>
+              `'${s.replace(/'/g, "'\\''")}'`;
+            const inner = cwd ? `cd ${shellQuote(cwd)} && ${handoff}` : handoff;
+            const asLiteral = inner.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+            const script =
+              appName === "iTerm"
+                ? [
+                    "-e",
+                    'tell application "iTerm"',
+                    "-e",
+                    "activate",
+                    "-e",
+                    "set w to (create window with default profile)",
+                    "-e",
+                    `tell current session of w to write text "${asLiteral}"`,
+                    "-e",
+                    "end tell",
+                  ]
+                : [
+                    "-e",
+                    'tell application "Terminal" to activate',
+                    "-e",
+                    `tell application "Terminal" to do script "${asLiteral}"`,
+                  ];
+            spawn("osascript", script, {
               detached: true,
               stdio: "ignore",
-            });
-            child.unref();
-            launched = true;
-            break;
-          } catch {
-            // try next candidate
+            }).unref();
+          } else {
+            const args = ["-a", appName];
+            if (cwd) args.push(cwd);
+            spawn("open", args, { detached: true, stdio: "ignore" }).unref();
+          }
+        } else if (process.platform === "win32") {
+          const safeCwd = cwd ? cwd.replace(/["\r\n]/g, "") : "";
+          const command = safeCwd
+            ? `start "" wt.exe -d "${safeCwd}" || start "" cmd.exe /K cd /D "${safeCwd}"`
+            : `start "" wt.exe || start "" cmd.exe`;
+          spawn("cmd.exe", ["/c", command], {
+            detached: true,
+            stdio: "ignore",
+          }).unref();
+        } else {
+          const candidates = [
+            "x-terminal-emulator",
+            "gnome-terminal",
+            "konsole",
+            "xterm",
+          ];
+          let launched = false;
+          for (const bin of candidates) {
+            try {
+              const child = spawn(
+                bin,
+                cwd ? ["--working-directory", cwd] : [],
+                {
+                  detached: true,
+                  stdio: "ignore",
+                },
+              );
+              child.unref();
+              launched = true;
+              break;
+            } catch {
+              // try next candidate
+            }
+          }
+          if (!launched) {
+            return {
+              ok: false,
+              message: "no terminal emulator found on PATH",
+            };
           }
         }
-        if (!launched) {
-          return {
-            ok: false,
-            message: "no terminal emulator found on PATH",
-          };
-        }
+        return { ok: true };
+      } catch (err) {
+        return (() => {
+          const error = fromCaught("ipc.unknown", err);
+          return { ok: false, message: error.message, error };
+        })();
       }
-      return { ok: true };
-    } catch (err) {
-      return (() => {
-        const error = fromCaught("ipc.unknown", err);
-        return { ok: false, message: error.message, error };
-      })();
-    }
-  });
+    },
+  );
 
   // ─── Auto-update handlers ──────────────────────────────────────────────────
 
