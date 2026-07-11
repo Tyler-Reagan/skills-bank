@@ -26,6 +26,7 @@ export * from "./shared/agent-links.js";
 export * from "./skills/delete.js";
 export * from "./registry/heal.js";
 export * from "./registry/reconcile-folders.js";
+export * from "./registry/npx-lock.js";
 export * from "./registry/bucket-move.js";
 export * from "./registry/runtime-map.js";
 export * from "./github/rehome-into-linked-repo.js";
