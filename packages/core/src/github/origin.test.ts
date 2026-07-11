@@ -358,7 +358,10 @@ describe("resolveSkillFolderByName", () => {
   });
 
   test("tree fetch failure → tree-error", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => make404()));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => make404()),
+    );
     const r = await resolveSkillFolderByName("owner/repo", "wayfinder", null);
     expect(r.ok).toBe(false);
     if (r.ok) return;

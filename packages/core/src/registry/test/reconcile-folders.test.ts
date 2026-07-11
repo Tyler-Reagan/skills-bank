@@ -134,9 +134,7 @@ describe("reconcileFoldersToManifest / Safe — cross-bucket collision", () => {
   test("the raw function throws SkillNameCollisionError", () => {
     makeSkillFolder("personal", "dup-name");
     makeSkillFolder("vendored", "dup-name");
-    expect(() => reconcile(scratch)).toThrow(
-      /appears in multiple buckets/,
-    );
+    expect(() => reconcile(scratch)).toThrow(/appears in multiple buckets/);
   });
 
   test("the Safe wrapper does not throw and leaves the manifest unchanged", () => {

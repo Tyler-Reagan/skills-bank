@@ -34,9 +34,7 @@ function recoverOrigin(
   dir: string | undefined,
   npxLock: NpxLock,
 ): ManifestOrigin | null {
-  return (
-    (dir ? readLegacyOrigin(dir) : null) ?? npxEntryOrigin(npxLock[name])
-  );
+  return (dir ? readLegacyOrigin(dir) : null) ?? npxEntryOrigin(npxLock[name]);
 }
 
 /**
