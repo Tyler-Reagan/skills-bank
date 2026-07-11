@@ -284,6 +284,14 @@ function registerSkill(
   // ANY <name> link to destDir (via realpathSync, so a dangling link
   // still gets repointed) AND recreate a link at the now-vacated source.
   // Convergence ≠ relocation, so the two don't share an implementation.
+  //
+  // Exception — the shared-agents dir (`.agents/skills/`) is npx's canonical
+  // store, read-only territory for skills-bank (#189 / spec #188 changes 1 &
+  // 5). Never create or repoint a link there at the registry copy: a link
+  // from npx's store into our tree invites `npx update` to clobber the moved
+  // skill (silent double-management). We only *sever* a stale link left
+  // pointing at the now-moved source, so npx's store isn't left dangling into
+  // a path we just emptied. This is why adopt (#193) needs no separate sever.
   const swept: string[] = [];
   for (const agent of AGENTS) {
     const linkPath = path.join(getAgentSkillsDir(agent), entry.name);
@@ -292,6 +300,19 @@ function registerSkill(
       stat = fs.lstatSync(linkPath);
     } catch {
       stat = null;
+    }
+
+    if (agent.id === "agents") {
+      // Sever any <name> symlink here, unconditionally — including one that
+      // (now) resolves to destDir transitively through another agent's
+      // freshly-repointed link. A symlink in npx's store that reaches our
+      // registry is precisely what the invariant forbids. Never recreate or
+      // repoint. A real directory is content — leave it for npx to own.
+      if (stat?.isSymbolicLink()) {
+        fs.unlinkSync(linkPath);
+        swept.push(agent.label);
+      }
+      continue;
     }
 
     if (!stat) {

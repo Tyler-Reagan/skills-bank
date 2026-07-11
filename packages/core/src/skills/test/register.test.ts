@@ -22,7 +22,13 @@ let fakeHome: string;
 const originalHomeOverride = process.env["SKILLS_BANK_HOME_OVERRIDE"];
 
 beforeEach(() => {
-  scratch = fs.mkdtempSync(path.join(os.tmpdir(), "skills-bank-register-"));
+  // realpath-normalized: register resolves the move source via realpathSync,
+  // so a raw macOS `mktemp` path (a symlink into /private/var) would diverge
+  // from the swept linkPath and mask register's vacated-source handling.
+  // Normalizing makes the sweep behave as it does on a real home path.
+  scratch = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), "skills-bank-register-")),
+  );
   registryRoot = path.join(scratch, "registry");
   fakeHome = path.join(scratch, "home");
   fs.mkdirSync(path.join(registryRoot, "skills", "personal"), {
@@ -96,6 +102,73 @@ describe("register", () => {
       (e) => e.name === "mover",
     );
     expect(indexed).toBeDefined();
+  });
+
+  test("never writes a symlink into npx's canonical store (.agents/skills/)", () => {
+    // npx symlink-mode layout: real content in .agents/skills/, agent dirs
+    // symlinked at it. `.agents` is read-only territory (#189/#200).
+    const canonical = writeRealSkill(agentDir("agents"), "npx-skill");
+    const claudeLink = path.join(agentDir("claude"), "npx-skill");
+    fs.symlinkSync(canonical, claudeLink, "dir");
+
+    const report = scanExistingInstalls(registryRoot);
+    const entry = report.entries.find(
+      (e) => e.name === "npx-skill" && e.agent === "agents",
+    )!;
+
+    const result = applyRegistration(
+      entry,
+      { type: "register", name: "npx-skill" },
+      { registryRoot, confirmDestructive: true },
+    );
+    expect(result.ok).toBe(true);
+
+    const dest = path.join(registryRoot, "skills", "personal", "npx-skill");
+
+    // Other agents converge on the in-bank copy…
+    expect(fs.realpathSync(claudeLink)).toBe(fs.realpathSync(dest));
+
+    // …but the shared-agents store is NOT repopulated with a link into the
+    // registry — nothing survives there at all (the real dir was moved out;
+    // register must not recreate a symlink in its place).
+    const sharedEntry = path.join(agentDir("agents"), "npx-skill");
+    let lstat: fs.Stats | null = null;
+    try {
+      lstat = fs.lstatSync(sharedEntry);
+    } catch {
+      lstat = null;
+    }
+    expect(lstat).toBeNull();
+  });
+
+  test("severs a stale shared-agents symlink instead of repointing it into the registry", () => {
+    // Source real dir lives in .claude; .agents holds a symlink pointing at it
+    // (a plausible prior fan-out). After the move, the .agents link would
+    // dangle — register must sever it, never repoint it at the bank copy.
+    const source = writeRealSkill(agentDir("claude"), "shared");
+    const sharedLink = path.join(agentDir("agents"), "shared");
+    fs.symlinkSync(source, sharedLink, "dir");
+
+    const report = scanExistingInstalls(registryRoot);
+    const entry = report.entries.find(
+      (e) => e.name === "shared" && e.agent === "claude",
+    )!;
+
+    const result = applyRegistration(
+      entry,
+      { type: "register", name: "shared" },
+      { registryRoot, confirmDestructive: true },
+    );
+    expect(result.ok).toBe(true);
+
+    // The .agents link is gone — not repointed at the registry copy.
+    let lstat: fs.Stats | null = null;
+    try {
+      lstat = fs.lstatSync(sharedLink);
+    } catch {
+      lstat = null;
+    }
+    expect(lstat).toBeNull();
   });
 
   test("refuses a broken-symlink source", () => {
