@@ -1,4 +1,5 @@
 import type {
+  AdoptableNpxSkill,
   AgentId,
   AppError,
   BrokenLinkRemoveReport,
@@ -111,6 +112,7 @@ export const IPC = {
   discoverOpenExternal: "discover:openExternal",
   discoverOpenTerminal: "discover:openTerminal",
   discoverStatus: "discover:status",
+  discoverNpxSkills: "discover:npxSkills",
   headerMenuAction: "header:action",
   originProbe: "origin:probe",
   skillUpdate: "origin:update",
@@ -773,6 +775,15 @@ interface SkillsBankAPI {
     terminalApp?: string,
   ): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
+  /**
+   * The "installed via npx, not yet in skills-bank's registry" set —
+   * the adoptable frontier the Discover tab surfaces (issue #192).
+   * A **read**, deliberately invoked on user view (never a boot sweep):
+   * auto-adopting would dismantle npx's canonical store behind the
+   * user's back. Display-only here; the one-click adopt action lands
+   * in #193.
+   */
+  discoverNpxSkills(): Promise<AdoptableNpxSkill[]>;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
   originProbe(): Promise<OriginProbeResult>;
   onOriginProbeComplete(
