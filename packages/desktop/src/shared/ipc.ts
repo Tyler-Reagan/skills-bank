@@ -773,6 +773,7 @@ interface SkillsBankAPI {
   discoverOpenExternal(): Promise<void>;
   discoverOpenTerminal(
     terminalApp?: string,
+    installInput?: string,
   ): Promise<{ ok: boolean; message?: string }>;
   onDiscoverStatus(cb: (status: DiscoverStatus) => void): () => void;
   /**

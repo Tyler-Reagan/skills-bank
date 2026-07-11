@@ -212,8 +212,11 @@ export function DiscoverTab({
   const onBack = () => void window.skillsBank.discoverGoBack();
   const onReload = () => void window.skillsBank.discoverReload();
   const onOpenExternal = () => void window.skillsBank.discoverOpenExternal();
+  // Hand the terminal the install form's current input so it opens pre-loaded
+  // with the resolved `npx skills add … --skill …` command (issue #194). Empty
+  // or unrecognised input falls back to a bare shell in the main process.
   const onOpenTerminal = () =>
-    void window.skillsBank.discoverOpenTerminal(terminalApp);
+    void window.skillsBank.discoverOpenTerminal(terminalApp, installUrl);
 
   const isError = status.kind === "error";
   const isLoading = status.kind === "loading";

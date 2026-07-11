@@ -115,6 +115,51 @@ export function parseNpxSkillsAdd(raw: string): ParsedNpxAdd | null {
   return { repo, skillName: m[2]! };
 }
 
+/**
+ * Rebuild the canonical `npx skills add <repo> --skill <name>` command from a
+ * parsed install input — the exact string the Discover tab's terminal handoff
+ * pre-fills so the user runs npx's universal-agent fan-out with one keystroke
+ * (issue #194). Pure and network-free: it re-emits the resolved `{repo,
+ * skillName}` in the shape skills.sh publishes, using the full repo URL npx
+ * expects. The `--skill` value stays a *name*, not a folder path — npx does
+ * its own tree crawl at install time (the same crawl `resolveSkillFolderByName`
+ * mirrors for skills-bank's own GUI Add), so no path resolution is needed here.
+ */
+export function buildNpxSkillsAddCommand(parsed: ParsedNpxAdd): string {
+  return `npx skills add https://github.com/${parsed.repo} --skill ${parsed.skillName}`;
+}
+
+/**
+ * Resolve the terminal-handoff command from whatever the user typed into the
+ * Discover install form, or null if it's neither recognised shape (so the
+ * caller falls back to a bare shell). Two accepted inputs, matching the form's
+ * placeholder:
+ *
+ *   - An `npx skills add … --skill …` command → re-emitted canonically via
+ *     `buildNpxSkillsAddCommand`.
+ *   - A GitHub skill-folder URL → handed to npx directly (`npx skills add
+ *     <url>`); npx accepts a folder URL as its acquire target.
+ *
+ * Pure and network-free (reuses only the pure parsers), so the whole handoff
+ * command builder is unit-testable in isolation — the actual terminal spawn is
+ * the only part left to manual verification (issue #194 / ADR-0003).
+ */
+export function buildTerminalHandoffCommand(
+  rawInput: string | null | undefined,
+): string | null {
+  if (typeof rawInput !== "string") return null;
+  const trimmed = rawInput.trim();
+  if (trimmed.length === 0) return null;
+
+  const npx = parseNpxSkillsAdd(trimmed);
+  if (npx) return buildNpxSkillsAddCommand(npx);
+
+  const url = parseGithubSkillUrl(trimmed);
+  if ("skillPath" in url) return `npx skills add ${trimmed}`;
+
+  return null;
+}
+
 export function parseGithubSkillUrl(
   url: string,
 ): ParsedSkillUrl | UrlParseError {
