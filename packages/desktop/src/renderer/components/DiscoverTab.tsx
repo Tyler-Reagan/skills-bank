@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { AdoptableNpxSkill } from "@skills-bank/core";
 import type { DiscoverStatus } from "../../shared/ipc.js";
 
 const HOME = "https://skills.sh";
@@ -51,6 +52,9 @@ export function DiscoverTab({
   const [installBusy, setInstallBusy] = useState(false);
   const [installError, setInstallError] = useState<string | null>(null);
   const [installBanner, setInstallBanner] = useState<string | null>(null);
+  // Skills installed via npx that skills-bank doesn't yet manage (#192).
+  // Fetched on view — deliberately not a boot sweep (see the IPC doc).
+  const [npxSkills, setNpxSkills] = useState<AdoptableNpxSkill[]>([]);
 
   const submitInstall = async () => {
     const resolved = parseInstallInput(installUrl);
@@ -169,6 +173,42 @@ export function DiscoverTab({
     }
   }, [modalOpen]);
 
+  // Discover npx-installed skills not yet under skills-bank management.
+  // Runs once when the tab mounts (i.e. on user view) — never a boot
+  // sweep. Failures degrade to an empty list; this is a passive nudge,
+  // not a blocking flow.
+  useEffect(() => {
+    let cancelled = false;
+    void window.skillsBank
+      .discoverNpxSkills()
+      .then((skills) => {
+        if (!cancelled) setNpxSkills(skills);
+      })
+      .catch(() => {
+        /* npx interop is best-effort — a read miss just hides the panel. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Re-push the embedded view's bounds when the npx panel appears or
+  // changes height: inserting it above `discover-host` shifts the host
+  // down without resizing it, so the ResizeObserver never fires. Skip
+  // while a modal is open (the view is hidden then).
+  useEffect(() => {
+    if (modalOpen) return;
+    const host = hostRef.current;
+    if (!host) return;
+    const r = host.getBoundingClientRect();
+    void window.skillsBank.discoverSetBounds({
+      x: r.left,
+      y: r.top,
+      width: r.width,
+      height: r.height,
+    });
+  }, [npxSkills, modalOpen]);
+
   const onBack = () => void window.skillsBank.discoverGoBack();
   const onReload = () => void window.skillsBank.discoverReload();
   const onOpenExternal = () => void window.skillsBank.discoverOpenExternal();
@@ -238,6 +278,36 @@ export function DiscoverTab({
           </div>
         )}
       </div>
+      {npxSkills.length > 0 && (
+        <section
+          className="discover-npx"
+          aria-label="Skills installed via npx you can adopt"
+        >
+          <div className="discover-npx-head">
+            <span className="discover-npx-title">
+              {npxSkills.length} skill{npxSkills.length === 1 ? "" : "s"}{" "}
+              installed via npx, not yet managed here
+            </span>
+            <p className="discover-npx-copy">
+              Adopt them into skills-bank for version control — a tracked
+              manifest row, cross-machine sync, and drift detection against
+              their upstream. npx installs stay put until you choose to adopt.
+            </p>
+          </div>
+          <ul className="discover-npx-list">
+            {npxSkills.map((s) => (
+              <li key={s.name} className="discover-npx-item">
+                <span className="discover-npx-name">{s.name}</span>
+                <span className="discover-npx-origin">
+                  {s.origin?.url
+                    ? formatUrl(s.origin.url)
+                    : "local install — no upstream recorded"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <div
         className="discover-chrome"
         role="toolbar"

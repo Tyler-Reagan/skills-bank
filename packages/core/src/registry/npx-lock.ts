@@ -99,3 +99,36 @@ export function npxEntryOrigin(
   }
   return origin;
 }
+
+/**
+ * An npx-installed skill that skills-bank could adopt: present in npx's
+ * lockfile but absent from skills-bank's registry. `origin` is the entry
+ * mapped through {@link npxEntryOrigin} — a real `{url, …}` when the
+ * lockfile records a usable source, or `null` for a genuinely-local
+ * entry (`sourceType: "local"` / no `sourceUrl`). A `null` origin does
+ * NOT disqualify adoption: the skill still comes under management (as a
+ * `url:null` local row); it just carries no upstream to re-fetch from.
+ */
+export interface AdoptableNpxSkill {
+  name: string;
+  origin: ManifestOrigin | null;
+}
+
+/**
+ * The "in npx, not in the registry" set. Given npx's lockfile map and the
+ * names already in skills-bank's registry, returns one entry per npx skill
+ * whose name is NOT already registered — the adoptable frontier the
+ * Discover tab surfaces (issue #192). Pure set difference by name; the
+ * actual adopt action (move-in + origin backfill) lands separately (#193).
+ * Result is sorted by name for stable rendering.
+ */
+export function adoptableNpxSkills(
+  npxLock: NpxLock,
+  existingRegistryNames: Iterable<string>,
+): AdoptableNpxSkill[] {
+  const registered = new Set(existingRegistryNames);
+  return Object.entries(npxLock)
+    .filter(([name]) => !registered.has(name))
+    .map(([name, entry]) => ({ name, origin: npxEntryOrigin(entry) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}

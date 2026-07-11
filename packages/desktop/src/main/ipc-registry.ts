@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  adoptableNpxSkills,
   AGENTS,
   applyRegistration,
   buildRegistryIndex,
@@ -27,6 +28,7 @@ import {
   parseNpxSkillsAdd,
   parseOwnerRepo,
   readLiveManifest,
+  readNpxLock,
   readSkillMeta,
   removeBrokenLinks,
   repairBrokenLinks,
@@ -194,6 +196,18 @@ export function registerRegistryHandlers(): void {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) return [];
     return augmentWithProbedUpdates(buildRegistryIndex(registryRoot).entries);
+  });
+
+  // The "installed via npx, not yet in the registry" set (issue #192).
+  // A read, invoked when the user opens the Discover tab — never a boot
+  // sweep (auto-adopt would silently dismantle npx's canonical store).
+  // skills-bank only ever reads npx's lockfile; it never writes it.
+  ipcMain.handle(IPC.discoverNpxSkills, () => {
+    const registryRoot = getRegistryRoot();
+    const existing = registryRoot
+      ? buildRegistryIndex(registryRoot).entries.map((e) => e.name)
+      : [];
+    return adoptableNpxSkills(readNpxLock(), existing);
   });
 
   ipcMain.handle(IPC.listInstalled, () => {

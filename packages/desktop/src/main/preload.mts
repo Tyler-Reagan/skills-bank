@@ -96,6 +96,7 @@ const api = {
   discoverOpenExternal: () => ipcRenderer.invoke(IPC.discoverOpenExternal),
   discoverOpenTerminal: (terminalApp?: string) =>
     ipcRenderer.invoke(IPC.discoverOpenTerminal, terminalApp),
+  discoverNpxSkills: () => ipcRenderer.invoke(IPC.discoverNpxSkills),
   onDiscoverStatus: (cb: (status: DiscoverStatus) => void) => {
     const listener = (_e: unknown, status: DiscoverStatus) => cb(status);
     ipcRenderer.on(IPC.discoverStatus, listener);
