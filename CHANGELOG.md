@@ -3,6 +3,24 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v2.4.0
+
+Positions Skills Bank as the **version-control / lifecycle layer over `npx skills` (skills.sh)** — a complement at a different altitude, not a competing installer. npx owns the acquire act (discovery, install, fan-out to 70+ agents); Skills Bank owns the manage-over-time layer npx lacks: adopt → manifest → cross-machine sync → drift detection → lifecycle. This release fixes where the two collided, adds a one-click path to bring npx-installed skills under management, and frames the whole relationship in the README and in-app copy.
+
+### Added
+
+- **Adopt npx-installed skills** — the Discover tab surfaces skills installed via `npx skills` that aren't yet managed here, with a one-click **Adopt** that moves the skill into the registry, repoints agent symlinks at Skills Bank's copy, and backfills its origin from npx's global lockfile (`~/.agents/.skill-lock.json`). A local-only npx install becomes a portable manifest row that re-fetches on another machine with no npx required. Deliberately a user-invoked action on view, never a boot-time sweep. (#192, #193)
+- **Terminal hand-off pre-filled with the resolved `npx skills add … --skill …` command** — the Discover tab's Open Terminal button opens the terminal pre-loaded with the exact command built from what you entered (AppleScript `do script` for Terminal.app, `osascript` for iTerm), instead of a bare shell. No silent npx spawn — the visible terminal is the sole sanctioned npx path (ADR-0003). (#194)
+- **README + in-app framing** — positions Skills Bank as the version-control enhancement layer over npx, with skills.sh embedded in Discover as the acquire front-end, plus a "don't double-manage an adopted skill via npx" note covering the accepted stale-lockfile edge. (#195)
+
+### Changed
+
+- **Skills Bank no longer writes symlinks into `.agents/skills/`** — npx's canonical store stays npx's, so `npx skills list`/`update` keep working and installing through Skills Bank doesn't hard-error on an npx-owned directory. The shared-agents entry is dropped from the default install write set, and `registerSkill` is guarded so it can never write there; `.agents/skills/` remains read-only territory for npx interop. Interop is one-way: Skills Bank reads npx's lockfile but never rewrites it. (#196, #200)
+
+### Fixed
+
+- **Pasting `npx skills add <repo> --skill <name>` no longer 404s** — the Discover install form now finds the named skill wherever it lives in the repo tree (any category depth), matching what real `npx skills add` would install, instead of guessing `skills/<name>`. Zero matches and multiple matches each fail with a clear, actionable message. Command-shape parsing stays pure and network-free; the tree search runs in the main process and folds into the add-from-GitHub call as a single round trip. (#196)
+
 ## v2.3.0
 
 Renderer altitude decomposition: extracts pure logic out of oversized renderer files, stands up a desktop test harness, retires the redundant Local Scan feature, and closes out the Origin Probe/Pull vocabulary settlement.
