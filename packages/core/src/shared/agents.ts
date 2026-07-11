@@ -32,9 +32,16 @@ export function getExistingAgents(): AgentDef[] {
  * Default install targets: every existing agent dir, plus Claude as a
  * fallback when no dirs exist (the "fresh-install user" case). The
  * fallback dir is created at install time by linkSkillToAgents itself.
+ *
+ * The shared-agents dir (`.agents/skills/`) is excluded from the default
+ * fan-out: it's the `npx skills` CLI's canonical store, and writing our
+ * symlinks into it fights npx over its own turf — hard-erroring on the
+ * real dirs npx owns and polluting its `list`/`update` view. It stays
+ * available for an explicit opt-in install (via `opts.agents`), just not
+ * by default. skills-bank complements npx; it doesn't seize its store.
  */
 export function getDefaultInstallAgents(): AgentDef[] {
-  const existing = getExistingAgents();
+  const existing = getExistingAgents().filter((a) => a.id !== "agents");
   if (existing.length > 0) return existing;
   return [getAgent("claude")];
 }
