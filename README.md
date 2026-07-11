@@ -16,6 +16,18 @@ One registry. Every AI agent on your machine.
 
 A **skill** is a folder with a `SKILL.md` — instructions plus metadata in YAML frontmatter — that an AI coding agent reads at runtime to gain a specialized capability. Skills Bank keeps your collection in sync across Claude Code, Cursor, Gemini, GitHub Copilot, Continue, Cline, and Codex — using symlinks, so there are no copies and no drift. Skills are organized by a function-oriented category (code review, diagnostics, planning, and more) and freeform tags, both manually assigned and editable per-skill from the detail drawer.
 
+## Skills Bank and `npx skills` (skills.sh)
+
+Skills Bank is the **version-control / lifecycle layer over [`npx skills`](https://skills.sh)** — a complement at a different altitude, not a competing installer. The two compose vertically:
+
+- **`npx skills` acquires.** It owns discovery, install, and the fan-out to 70+ agents — an install-time act. Skills Bank embeds skills.sh directly in its **Discover** tab as that acquire front-end, and the tab's terminal hand-off pre-fills the exact `npx skills add … --skill …` command when you want npx's universal-agent reach.
+- **Skills Bank manages over time.** It owns the layer npx structurally lacks: **adopt → manifest → cross-machine sync → drift detection → lifecycle**. A skill you installed through npx surfaces in Discover with a one-click **Adopt** — moving it into the registry, repointing agent symlinks at Skills Bank's copy, and backfilling its origin so it travels to your other machines with no npx required.
+
+Take npx away and Skills Bank still stands; take Skills Bank away and your npx skills lose their version-control layer. Neither wraps the other.
+
+> [!NOTE]
+> **Don't double-manage an adopted skill via npx.** Once you adopt a skill, Skills Bank owns updating it. Skills Bank reads npx's lockfile but never rewrites it — interop is one-way — so after adoption npx's entry for that skill goes stale, and running `npx skills update` on it won't reflect what Skills Bank tracks. Manage an adopted skill from Skills Bank, not npx.
+
 ## Get started
 
 ### Desktop app

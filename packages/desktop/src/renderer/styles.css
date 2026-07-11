@@ -2283,6 +2283,20 @@ button:disabled {
   padding: var(--s4) var(--gutter) var(--s5);
   gap: var(--s3);
 }
+.discover-intro {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.discover-intro strong {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.discover-intro code {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+}
 .discover-callout {
   display: flex;
   flex-wrap: wrap;

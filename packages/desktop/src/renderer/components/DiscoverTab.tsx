@@ -256,6 +256,13 @@ export function DiscoverTab({
 
   return (
     <div className="discover-tab">
+      <p className="discover-intro">
+        <strong>skills.sh</strong> (below) is where you acquire skills. Skills
+        Bank is the version-control layer over it — adopt, version, sync across
+        machines, and detect drift on what you add. Use <em>Open Terminal</em>{" "}
+        to hand off to <code>npx skills</code> for install across all 70+
+        agents.
+      </p>
       <div className="discover-callout" aria-label="Add a skill from GitHub">
         <span className="discover-callout-label">See a skill you want?</span>
         <div className="discover-callout-form">
@@ -325,7 +332,10 @@ export function DiscoverTab({
             <p className="discover-npx-copy">
               Adopt them into skills-bank for version control — a tracked
               manifest row, cross-machine sync, and drift detection against
-              their upstream. npx installs stay put until you choose to adopt.
+              their upstream. npx installs stay put until you choose to adopt;
+              once adopted, manage the skill here, not via npx — its npx entry
+              goes stale (skills-bank reads npx's lockfile but never rewrites
+              it).
             </p>
           </div>
           <ul className="discover-npx-list">
@@ -403,7 +413,7 @@ export function DiscoverTab({
           type="button"
           className="btn ghost"
           onClick={onOpenTerminal}
-          title="Run raw npx commands (advanced). Most users prefer Settings → Add a skill from GitHub."
+          title="Hand off to npx skills — installs across all 70+ agents. Pre-filled with the command from the box above when present."
         >
           Open Terminal ↗
         </button>
