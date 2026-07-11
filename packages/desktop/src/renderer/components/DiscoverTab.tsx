@@ -223,6 +223,15 @@ export function DiscoverTab({
     }
   };
 
+  // Dismiss adopt prompts without adopting — a UI-only hide (skills-bank never
+  // writes npx's lockfile). Covers a skill the user doesn't want managed here,
+  // or the odd stale row that slips past the on-disk filter. Session-scoped:
+  // the panel is repopulated from the live lockfile next time the tab mounts,
+  // so nothing genuinely adoptable is hidden for good.
+  const onDismiss = (name: string) =>
+    setNpxSkills((prev) => prev.filter((s) => s.name !== name));
+  const onDismissAll = () => setNpxSkills([]);
+
   // Re-push the embedded view's bounds when the npx panel appears or
   // changes height: inserting it above `discover-host` shifts the host
   // down without resizing it, so the ResizeObserver never fires. Skip
@@ -325,10 +334,21 @@ export function DiscoverTab({
           aria-label="Skills installed via npx you can adopt"
         >
           <div className="discover-npx-head">
-            <span className="discover-npx-title">
-              {npxSkills.length} skill{npxSkills.length === 1 ? "" : "s"}{" "}
-              installed via npx, not yet managed here
-            </span>
+            <div className="discover-npx-titlebar">
+              <span className="discover-npx-title">
+                {npxSkills.length} skill{npxSkills.length === 1 ? "" : "s"}{" "}
+                installed via npx, not yet managed here
+              </span>
+              <button
+                type="button"
+                className="btn ghost discover-npx-dismiss-all"
+                onClick={onDismissAll}
+                disabled={adoptingName !== null}
+                title="Hide these prompts — nothing is uninstalled, and skills-bank never touches npx's lockfile"
+              >
+                Dismiss all
+              </button>
+            </div>
             <p className="discover-npx-copy">
               Adopt them into skills-bank for version control — a tracked
               manifest row, cross-machine sync, and drift detection against
@@ -362,6 +382,16 @@ export function DiscoverTab({
                   ) : (
                     "Adopt"
                   )}
+                </button>
+                <button
+                  type="button"
+                  className="discover-npx-dismiss"
+                  onClick={() => onDismiss(s.name)}
+                  disabled={adoptingName !== null}
+                  aria-label={`Dismiss ${s.name}`}
+                  title="Hide this prompt (does not uninstall or touch npx)"
+                >
+                  ✕
                 </button>
                 {adoptError?.name === s.name && (
                   <p

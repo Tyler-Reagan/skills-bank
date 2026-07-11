@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  adoptableInstalledNames,
   adoptableNpxSkills,
   adoptNpxSkill,
   AGENTS,
@@ -205,10 +206,15 @@ export function registerRegistryHandlers(): void {
   // skills-bank only ever reads npx's lockfile; it never writes it.
   ipcMain.handle(IPC.discoverNpxSkills, () => {
     const registryRoot = getRegistryRoot();
-    const existing = registryRoot
-      ? buildRegistryIndex(registryRoot).entries.map((e) => e.name)
-      : [];
-    return adoptableNpxSkills(readNpxLock(), existing);
+    if (!registryRoot) return [];
+    const existing = buildRegistryIndex(registryRoot).entries.map(
+      (e) => e.name,
+    );
+    // Only surface skills that actually exist on disk as adoptable content —
+    // a stale npx lockfile row (skill npx recorded but no longer installed
+    // here) would otherwise list as adoptable and then fail adoption.
+    const onDisk = adoptableInstalledNames(scanExistingInstalls(registryRoot));
+    return adoptableNpxSkills(readNpxLock(), existing, onDisk);
   });
 
   // Adopt one npx-installed skill into the registry (issue #193). A

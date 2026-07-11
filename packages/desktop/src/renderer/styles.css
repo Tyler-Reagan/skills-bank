@@ -2385,10 +2385,21 @@ button:disabled {
   flex-direction: column;
   gap: 4px;
 }
+.discover-npx-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
 .discover-npx-title {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-1);
+}
+.discover-npx-dismiss-all {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 2px 8px;
 }
 .discover-npx-copy {
   margin: 0;
@@ -2403,6 +2414,11 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* Cap the panel so a long adoptable list scrolls internally instead of
+     growing the (non-scrolling) Discover tab and pushing the embedded
+     skills.sh view off-screen. */
+  max-height: min(240px, 34vh);
+  overflow-y: auto;
 }
 .discover-npx-item {
   display: flex;
@@ -2435,6 +2451,19 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.discover-npx-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+  line-height: 1;
+}
+.discover-npx-dismiss:hover:not(:disabled) {
+  color: var(--text-1);
 }
 .discover-npx-error {
   flex-basis: 100%;
@@ -4944,7 +4973,9 @@ button:disabled {
   border-radius: var(--r-sm);
   display: flex;
   align-items: center;
-  transition: opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  transition:
+    opacity var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
 }
 .manage-labels-row:hover .manage-labels-row-open {
   opacity: 1;
@@ -5193,7 +5224,9 @@ button:disabled {
   border: 1px dashed var(--border);
   border-radius: var(--r-sm);
   padding: 1px 6px;
-  transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  transition:
+    color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
 }
 .manage-labels-cat-edit-btn--empty:hover .manage-labels-cat-placeholder {
   color: var(--text);

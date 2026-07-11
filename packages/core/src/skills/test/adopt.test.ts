@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { adoptNpxSkill } from "../adopt.js";
+import { adoptNpxSkill, adoptableInstalledNames } from "../adopt.js";
+import { scanExistingInstalls } from "../register.js";
 import { buildRegistryIndex } from "../../registry/build.js";
 
 /**
@@ -120,5 +121,23 @@ describe("adoptNpxSkill", () => {
     const again = adoptNpxSkill(registryRoot, "adopt-me");
     expect(again.ok).toBe(false);
     expect(again.message).toMatch(/already in the registry/);
+  });
+});
+
+describe("adoptableInstalledNames", () => {
+  test("includes an npx-installed skill and excludes names with no on-disk content", () => {
+    installViaNpx("adopt-me");
+    const names = adoptableInstalledNames(scanExistingInstalls(registryRoot));
+    // Present on disk (real dir in the canonical store) → adoptable.
+    expect(names.has("adopt-me")).toBe(true);
+    // A lockfile-only ghost never appears in the scan → not adoptable.
+    expect(names.has("ghost")).toBe(false);
+  });
+
+  test("excludes a skill already registered in the bank (kind 'ours')", () => {
+    installViaNpx("adopt-me");
+    expect(adoptNpxSkill(registryRoot, "adopt-me").ok).toBe(true);
+    const names = adoptableInstalledNames(scanExistingInstalls(registryRoot));
+    expect(names.has("adopt-me")).toBe(false);
   });
 });

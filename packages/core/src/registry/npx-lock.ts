@@ -115,20 +115,24 @@ export interface AdoptableNpxSkill {
 }
 
 /**
- * The "in npx, not in the registry" set. Given npx's lockfile map and the
- * names already in skills-bank's registry, returns one entry per npx skill
- * whose name is NOT already registered — the adoptable frontier the
- * Discover tab surfaces (issue #192). Pure set difference by name; the
- * actual adopt action (move-in + origin backfill) lands separately (#193).
- * Result is sorted by name for stable rendering.
+ * The adoptable frontier the Discover tab surfaces (issue #192): npx skills
+ * that can actually be brought under management right now. An entry qualifies
+ * only when its name is (a) in npx's lockfile, (b) NOT already registered, and
+ * (c) present on disk as adoptable content (`adoptableOnDisk` — see
+ * `adoptableInstalledNames`). Condition (c) is the fix for stale lockfile
+ * rows: #192 filtered on (a)+(b) alone, so a skill npx once recorded but that
+ * no longer exists on disk here showed up "adoptable" yet failed adoption with
+ * "no installed skill found". Result is sorted by name for stable rendering.
  */
 export function adoptableNpxSkills(
   npxLock: NpxLock,
   existingRegistryNames: Iterable<string>,
+  adoptableOnDisk: Iterable<string>,
 ): AdoptableNpxSkill[] {
   const registered = new Set(existingRegistryNames);
+  const onDisk = new Set(adoptableOnDisk);
   return Object.entries(npxLock)
-    .filter(([name]) => !registered.has(name))
+    .filter(([name]) => !registered.has(name) && onDisk.has(name))
     .map(([name, entry]) => ({ name, origin: npxEntryOrigin(entry) }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }

@@ -1,5 +1,9 @@
 import { applyRegistration, scanExistingInstalls } from "./register.js";
-import type { InstalledKind, InstalledSkill } from "../shared/types.js";
+import type {
+  InstalledKind,
+  InstalledSkill,
+  ScanReport,
+} from "../shared/types.js";
 
 /**
  * Adopt an npx-installed skill into skills-bank's registry (issue #193 —
@@ -27,6 +31,34 @@ const KIND_RANK: Record<InstalledKind, number> = {
   "foreign-symlink": 2,
   "broken-symlink": 1,
 };
+
+/**
+ * The on-disk half of the adoptable frontier: names present in an agent dir
+ * as content skills-bank can actually move in — a `real-directory` (npx's
+ * canonical store) or a resolvable `foreign-symlink`. Excludes `ours`
+ * (already registered) and `broken-symlink` (no usable source), i.e. exactly
+ * the entries `adoptNpxSkill` would reject.
+ *
+ * The Discover tab intersects the npx lockfile with this set (#192 surfaced
+ * the lockfile alone, so a stale entry — a skill npx recorded but that no
+ * longer exists on disk here — showed up "adoptable" yet failed adoption with
+ * "no installed skill found"). Intersecting keeps the panel honest: every row
+ * it lists can actually be adopted.
+ */
+export function adoptableInstalledNames(report: ScanReport): Set<string> {
+  const best = new Map<string, InstalledKind>();
+  for (const e of report.entries) {
+    const cur = best.get(e.name);
+    if (!cur || KIND_RANK[e.kind] > KIND_RANK[cur]) best.set(e.name, e.kind);
+  }
+  const adoptable = new Set<string>();
+  for (const [name, kind] of best) {
+    if (kind === "real-directory" || kind === "foreign-symlink") {
+      adoptable.add(name);
+    }
+  }
+  return adoptable;
+}
 
 export function adoptNpxSkill(registryRoot: string, name: string): AdoptResult {
   const report = scanExistingInstalls(registryRoot);
