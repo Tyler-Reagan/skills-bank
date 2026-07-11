@@ -3,6 +3,19 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v2.4.1
+
+Patch — fixes the npx-adopt flow shipped in v2.4.0.
+
+### Fixed
+
+- **Adopting an npx skill no longer fails with "no installed skill found."** The Discover tab surfaced adoptable skills straight from npx's lockfile without checking they still existed on disk, so a stale lockfile row (a skill npx once recorded but no longer installed here) listed as adoptable and then failed adoption. The adoptable list is now intersected with skills actually present on disk as adoptable content — every row it shows can really be adopted.
+- **Discover tab vertical scrolling restored.** The npx adopt panel could grow unbounded and push the embedded skills.sh view (and anything below it) off the Discover tab, which has no scroll region. The adoptable list is now height-capped and scrolls internally.
+
+### Added
+
+- **Dismissable adopt prompts.** Each npx adopt row carries a ✕ to hide it, and the panel has a **Dismiss all** — a UI-only hide for skills you don't want managed here (or any stale row that slips through). skills-bank never writes npx's lockfile, so nothing is uninstalled; the prompt is session-scoped and reflects the live lockfile again next time the Discover tab opens.
+
 ## v2.4.0
 
 Positions Skills Bank as the **version-control / lifecycle layer over `npx skills` (skills.sh)** — a complement at a different altitude, not a competing installer. npx owns the acquire act (discovery, install, fan-out to 70+ agents); Skills Bank owns the manage-over-time layer npx lacks: adopt → manifest → cross-machine sync → drift detection → lifecycle. This release fixes where the two collided, adds a one-click path to bring npx-installed skills under management, and frames the whole relationship in the README and in-app copy.
