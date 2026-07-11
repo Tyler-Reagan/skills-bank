@@ -2392,18 +2392,26 @@ button:disabled {
 }
 .discover-npx-item {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--s3);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
   padding: 4px 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
 }
+.discover-npx-item-main {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  flex: 1;
+  min-width: 0;
+}
 .discover-npx-name {
   font-size: 12px;
   font-weight: 500;
   color: var(--text);
+  flex-shrink: 0;
 }
 .discover-npx-origin {
   font-size: 11px;
@@ -2413,6 +2421,12 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.discover-npx-error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 11px;
+  color: var(--danger);
 }
 
 /* ── Diff viewer (sync-collision modal + future drift drawer) ─── */

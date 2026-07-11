@@ -113,6 +113,7 @@ export const IPC = {
   discoverOpenTerminal: "discover:openTerminal",
   discoverStatus: "discover:status",
   discoverNpxSkills: "discover:npxSkills",
+  adoptNpxSkill: "discover:adoptNpxSkill",
   headerMenuAction: "header:action",
   originProbe: "origin:probe",
   skillUpdate: "origin:update",
@@ -785,6 +786,15 @@ interface SkillsBankAPI {
    * in #193.
    */
   discoverNpxSkills(): Promise<AdoptableNpxSkill[]>;
+  /**
+   * Adopt one npx-installed skill into the registry (issue #193 — the
+   * cross-machine hinge). Moves the skill's files in (ADR-0022 Register
+   * path), repoints agent symlinks at the in-bank copy, and severs npx's
+   * canonical-store link; the post-mutation reconcile then backfills the
+   * origin from npx's lockfile (#191), yielding a portable, syncable
+   * manifest row that re-fetches on another machine with no npx present.
+   */
+  adoptNpxSkill(name: string): Promise<{ ok: boolean; message: string }>;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
   originProbe(): Promise<OriginProbeResult>;
   onOriginProbeComplete(

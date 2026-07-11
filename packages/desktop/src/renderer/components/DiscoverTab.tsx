@@ -55,6 +55,12 @@ export function DiscoverTab({
   // Skills installed via npx that skills-bank doesn't yet manage (#192).
   // Fetched on view — deliberately not a boot sweep (see the IPC doc).
   const [npxSkills, setNpxSkills] = useState<AdoptableNpxSkill[]>([]);
+  // Name currently being adopted (#193), and the last per-skill adopt error.
+  const [adoptingName, setAdoptingName] = useState<string | null>(null);
+  const [adoptError, setAdoptError] = useState<{
+    name: string;
+    message: string;
+  } | null>(null);
 
   const submitInstall = async () => {
     const resolved = parseInstallInput(installUrl);
@@ -174,9 +180,9 @@ export function DiscoverTab({
   }, [modalOpen]);
 
   // Discover npx-installed skills not yet under skills-bank management.
-  // Runs once when the tab mounts (i.e. on user view) — never a boot
-  // sweep. Failures degrade to an empty list; this is a passive nudge,
-  // not a blocking flow.
+  // Runs when the tab mounts (i.e. on user view) — never a boot sweep.
+  // Failures degrade to an empty list; this is a passive nudge, not a
+  // blocking flow.
   useEffect(() => {
     let cancelled = false;
     void window.skillsBank
@@ -191,6 +197,31 @@ export function DiscoverTab({
       cancelled = true;
     };
   }, []);
+
+  // Adopt one npx skill into the registry (#193): move it in, repoint agent
+  // symlinks at the bank copy, backfill origin from the lockfile. On success
+  // it leaves the adoptable list and the host refreshes so it appears in
+  // Browse. Errors surface inline against the offending row.
+  const onAdopt = async (name: string) => {
+    setAdoptingName(name);
+    setAdoptError(null);
+    try {
+      const r = await window.skillsBank.adoptNpxSkill(name);
+      if (r.ok) {
+        setNpxSkills((prev) => prev.filter((s) => s.name !== name));
+        onInstalled();
+      } else {
+        setAdoptError({ name, message: r.message });
+      }
+    } catch (err) {
+      setAdoptError({
+        name,
+        message: err instanceof Error ? err.message : "Adopt failed.",
+      });
+    } finally {
+      setAdoptingName(null);
+    }
+  };
 
   // Re-push the embedded view's bounds when the npx panel appears or
   // changes height: inserting it above `discover-host` shifts the host
@@ -300,12 +331,37 @@ export function DiscoverTab({
           <ul className="discover-npx-list">
             {npxSkills.map((s) => (
               <li key={s.name} className="discover-npx-item">
-                <span className="discover-npx-name">{s.name}</span>
-                <span className="discover-npx-origin">
-                  {s.origin?.url
-                    ? formatUrl(s.origin.url)
-                    : "local install — no upstream recorded"}
-                </span>
+                <div className="discover-npx-item-main">
+                  <span className="discover-npx-name">{s.name}</span>
+                  <span className="discover-npx-origin">
+                    {s.origin?.url
+                      ? formatUrl(s.origin.url)
+                      : "local install — no upstream recorded"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => void onAdopt(s.name)}
+                  disabled={adoptingName !== null}
+                >
+                  {adoptingName === s.name ? (
+                    <>
+                      <span className="spinner inline" /> Adopting
+                    </>
+                  ) : (
+                    "Adopt"
+                  )}
+                </button>
+                {adoptError?.name === s.name && (
+                  <p
+                    role="alert"
+                    className="discover-npx-error"
+                    aria-live="polite"
+                  >
+                    {adoptError.message}
+                  </p>
+                )}
               </li>
             ))}
           </ul>

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   adoptableNpxSkills,
+  adoptNpxSkill,
   AGENTS,
   applyRegistration,
   buildRegistryIndex,
@@ -208,6 +209,18 @@ export function registerRegistryHandlers(): void {
       ? buildRegistryIndex(registryRoot).entries.map((e) => e.name)
       : [];
     return adoptableNpxSkills(readNpxLock(), existing);
+  });
+
+  // Adopt one npx-installed skill into the registry (issue #193). A
+  // mutatingHandle: the register move-in + link sever happen in the body,
+  // and the finally's snapshotAfterMutation → reconcile backfills the
+  // origin from npx's lockfile by name (#191). That reconcile IS the
+  // cross-machine hinge — it turns the moved-in orphan into a portable
+  // manifest row that re-fetches on another machine with no npx present.
+  mutatingHandle(IPC.adoptNpxSkill, (_e, name: string) => {
+    const registryRoot = getRegistryRoot();
+    if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
+    return adoptNpxSkill(registryRoot, name);
   });
 
   ipcMain.handle(IPC.listInstalled, () => {
