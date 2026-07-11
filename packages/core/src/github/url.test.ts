@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { parseGithubSkillUrl, normalizeOriginUrl } from "./url.js";
+import {
+  parseGithubSkillUrl,
+  parseNpxSkillsAdd,
+  normalizeOriginUrl,
+} from "./url.js";
 
 describe("normalizeOriginUrl", () => {
   test("strips a trailing .git", () => {
@@ -119,5 +123,48 @@ describe("parseGithubSkillUrl", () => {
       "  https://github.com/owner/repo/tree/main/skills/x  ",
     );
     expect("repo" in r && r.repo).toBe("owner/repo");
+  });
+});
+
+describe("parseNpxSkillsAdd", () => {
+  test("extracts {repo, skillName} from the skills.sh command", () => {
+    const r = parseNpxSkillsAdd(
+      "npx skills add https://github.com/mattpocock/skills --skill wayfinder",
+    );
+    expect(r).toEqual({ repo: "mattpocock/skills", skillName: "wayfinder" });
+  });
+
+  test("tolerates surrounding whitespace and a trailing repo slash", () => {
+    const r = parseNpxSkillsAdd(
+      "  npx skills add https://github.com/o/r/ --skill foo  ",
+    );
+    expect(r).toEqual({ repo: "o/r", skillName: "foo" });
+  });
+
+  test("returns null when there is no --skill flag", () => {
+    expect(
+      parseNpxSkillsAdd("npx skills add https://github.com/o/r"),
+    ).toBeNull();
+  });
+
+  test("returns null for a plain GitHub URL", () => {
+    expect(
+      parseNpxSkillsAdd("https://github.com/o/r/tree/main/skills/x"),
+    ).toBeNull();
+  });
+
+  test("returns null for a non-GitHub source", () => {
+    expect(
+      parseNpxSkillsAdd("npx skills add https://gitlab.com/o/r --skill foo"),
+    ).toBeNull();
+  });
+
+  test("does not touch the network (pure) — resolves synchronously", () => {
+    // A pure parse returns immediately; if this were async/probing it
+    // would return a Promise. Guards the url.ts network-free invariant.
+    const r = parseNpxSkillsAdd(
+      "npx skills add https://github.com/o/r --skill foo",
+    );
+    expect(r).not.toBeInstanceOf(Promise);
   });
 });

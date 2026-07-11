@@ -725,9 +725,24 @@ interface SkillsBankAPI {
    * ~/.agents/skills/ directory. No bank entry created; skill appears
    * as "unregistered" in the Installed tab.
    */
-  addFromGithub(url: string): Promise<
+  /**
+   * `input` is either a GitHub folder/blob URL or the
+   * `npx skills add <repo> --skill <name>` command skills.sh copies to
+   * the clipboard. For the npx form the main process resolves the skill's
+   * actual folder by searching the repo tree (it can live under any
+   * category folder), so `skill-resolve-error` covers not-found / ambiguous
+   * / tree-fetch failures.
+   */
+  addFromGithub(input: string): Promise<
     | { ok: true; name: string }
     | { ok: false; reason: "url-parse-error"; message: string }
+    | {
+        ok: false;
+        reason: "skill-resolve-error";
+        message: string;
+        candidates?: string[];
+        rateLimit?: RateLimitInfo;
+      }
     | {
         ok: false;
         reason: "mirror-failed";

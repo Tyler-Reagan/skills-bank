@@ -24,6 +24,7 @@ import {
   listInstalled,
   makeAppError,
   parseGithubSkillUrl,
+  parseNpxSkillsAdd,
   parseOwnerRepo,
   readLiveManifest,
   readSkillMeta,
@@ -31,6 +32,7 @@ import {
   repairBrokenLinks,
   repointOrigin as coreRepointOrigin,
   resolveSkillConflicts,
+  resolveSkillFolderByName,
   scanExistingInstalls,
   setRuntimeEntry,
   unregisterSkill,
@@ -692,8 +694,9 @@ export function registerRegistryHandlers(): void {
     },
   );
 
-  // Discover tab: install-from-GitHub
-  mutatingHandle(IPC.addFromGithub, async (_e, url: string) => {
+  // Discover tab: install-from-GitHub. `input` is either a GitHub
+  // folder/blob URL or an `npx skills add <repo> --skill <name>` command.
+  mutatingHandle(IPC.addFromGithub, async (_e, input: string) => {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) {
       return {
@@ -703,16 +706,45 @@ export function registerRegistryHandlers(): void {
       } as const;
     }
 
-    const parsed = parseGithubSkillUrl(url);
-    if ("kind" in parsed) {
-      return {
-        ok: false,
-        reason: "url-parse-error",
-        message: parsed.message,
-      } as const;
+    // Resolve the input to a concrete { repo, skillPath }. The npx-command
+    // form only carries a skill *name*, so its folder is found by searching
+    // the repo tree here in the main process (needs the GitHub token) — real
+    // npx does the same crawl, which is why it succeeds where the old
+    // renderer-side `skills/<name>` guess 404'd.
+    let repo: string;
+    let skillPath: string;
+    const npx = parseNpxSkillsAdd(input);
+    if (npx) {
+      const resolved = await resolveSkillFolderByName(
+        npx.repo,
+        npx.skillName,
+        getStoredToken(),
+      );
+      if (!resolved.ok) {
+        return {
+          ok: false,
+          reason: "skill-resolve-error",
+          message: resolved.message,
+          candidates: resolved.candidates,
+          rateLimit: resolved.rateLimit,
+        } as const;
+      }
+      repo = npx.repo;
+      skillPath = resolved.skillPath;
+    } else {
+      const parsed = parseGithubSkillUrl(input);
+      if ("kind" in parsed) {
+        return {
+          ok: false,
+          reason: "url-parse-error",
+          message: parsed.message,
+        } as const;
+      }
+      repo = parsed.repo;
+      skillPath = parsed.skillPath;
     }
 
-    const folderPath = folderPathFromSkillPath(parsed.skillPath);
+    const folderPath = folderPathFromSkillPath(skillPath);
     const provisionalName =
       folderPath.split("/").filter(Boolean).pop() ?? "skill";
     const destDir = path.join(
@@ -739,7 +771,7 @@ export function registerRegistryHandlers(): void {
     let mirror: Awaited<ReturnType<typeof installSkillFiles>>;
     try {
       mirror = await installSkillFiles(
-        parsed.repo,
+        repo,
         folderPath,
         destDir,
         getStoredToken(),
@@ -769,7 +801,7 @@ export function registerRegistryHandlers(): void {
       return {
         ok: false,
         reason: "no-skill-md",
-        message: `${parsed.repo}/${folderPath} doesn't contain a SKILL.md with frontmatter.`,
+        message: `${repo}/${folderPath} doesn't contain a SKILL.md with frontmatter.`,
       } as const;
     }
 
@@ -806,8 +838,8 @@ export function registerRegistryHandlers(): void {
     const row: ManifestSkill = {
       name: finalName,
       origin: {
-        url: `https://github.com/${parsed.repo}`,
-        skillPath: parsed.skillPath,
+        url: `https://github.com/${repo}`,
+        skillPath: skillPath,
         hash: mirror.folderHash,
       },
       category: null,

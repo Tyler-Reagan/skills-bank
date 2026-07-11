@@ -9,25 +9,15 @@ const HOME = "https://skills.sh";
  *
  *   npx skills add https://github.com/owner/repo --skill skill-name
  *
- * Returns the GitHub URL to pass to addFromGithub, or null if
- * the input doesn't match either recognised format.
+ * Returns the trimmed input to hand to addFromGithub verbatim, or null if
+ * it's neither recognised shape. The main process does the real parsing and
+ * resolution (the npx form's skill folder is found by searching the repo
+ * tree there) — the renderer no longer guesses a `skills/<name>` path.
  */
 function parseInstallInput(raw: string): string | null {
   const s = raw.trim();
-
-  // npx skills add <repo-url> --skill <skill-name>
-  const npxMatch = s.match(
-    /npx\s+skills\s+add\s+(https:\/\/github\.com\/[^\s]+)\s+--skill\s+(\S+)/,
-  );
-  if (npxMatch?.[1] && npxMatch[2]) {
-    const repoUrl = npxMatch[1].replace(/\/$/, "");
-    const skillName = npxMatch[2];
-    return `${repoUrl}/tree/main/skills/${skillName}`;
-  }
-
-  // Raw GitHub URL
+  if (/^npx\s+skills\s+add\s+\S+\s+--skill\s+\S+/.test(s)) return s;
   if (s.startsWith("https://github.com/")) return s;
-
   return null;
 }
 

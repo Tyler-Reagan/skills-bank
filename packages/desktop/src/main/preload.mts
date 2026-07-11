@@ -77,7 +77,8 @@ const api = {
     ipcRenderer.invoke(IPC.resolveManifestConflicts, decisions),
   installFromManifestHint: (payload: unknown) =>
     ipcRenderer.invoke(IPC.installFromManifestHint, payload),
-  addFromGithub: (url: string) => ipcRenderer.invoke(IPC.addFromGithub, url),
+  addFromGithub: (input: string) =>
+    ipcRenderer.invoke(IPC.addFromGithub, input),
   repairBrokenLinks: (name: string) =>
     ipcRenderer.invoke(IPC.repairBrokenLinks, name),
   removeBrokenLinks: (name: string, agents: unknown) =>

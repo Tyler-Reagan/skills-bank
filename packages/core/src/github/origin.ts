@@ -207,6 +207,92 @@ export function buildSkillFolderMap(tree: GitTreeEntry[]): Map<string, string> {
   return map;
 }
 
+export interface ResolveByNameOk {
+  ok: true;
+  /** SKILL.md path within the repo, e.g. `skills/engineering/wayfinder/SKILL.md`. */
+  skillPath: string;
+}
+
+export interface ResolveByNameErr {
+  ok: false;
+  /**
+   * `not-found` — no skill folder with that name anywhere in the tree.
+   * `ambiguous` — the name matches more than one folder; caller must
+   * disambiguate (candidates listed). `tree-error` — the tree fetch
+   * itself failed (network / rate limit / truncation).
+   */
+  reason: "not-found" | "ambiguous" | "tree-error";
+  message: string;
+  /** For `ambiguous`: the candidate folder paths, so the caller can list them. */
+  candidates?: string[];
+  rateLimit?: RateLimitInfo;
+}
+
+export type ResolveByNameResult = ResolveByNameOk | ResolveByNameErr;
+
+/**
+ * Resolve a skill's containing folder from its name by searching the repo's
+ * whole recursive tree — the same crawl real `npx skills add … --skill …`
+ * does, so pasting that command into skills-bank finds the skill wherever it
+ * lives (e.g. one category segment deeper than a naive `skills/<name>` guess)
+ * instead of 404-ing. Matches a folder whose leaf equals `skillName` and
+ * that directly contains a `SKILL.md`.
+ *
+ * No depth cap: `fetchOriginTree` already returns the full recursive tree in
+ * one API call, so there's no cost benefit to bounding the walk. Zero matches
+ * → `not-found`; multiple → `ambiguous` (with candidates) so the caller can
+ * tell the user to paste the exact folder URL instead.
+ */
+export async function resolveSkillFolderByName(
+  repo: string,
+  skillName: string,
+  token: string | null,
+  options: ProbeOptions = {},
+): Promise<ResolveByNameResult> {
+  const probe = await fetchOriginTree(repo, token, options);
+  if (!probe.ok) {
+    return {
+      ok: false,
+      reason: "tree-error",
+      message: probe.message,
+      rateLimit: probe.rateLimit,
+    };
+  }
+  if (probe.truncated) {
+    return {
+      ok: false,
+      reason: "tree-error",
+      message: `tree truncated for ${repo} — can't reliably resolve "${skillName}"`,
+    };
+  }
+
+  const matches: string[] = [];
+  for (const entry of probe.tree) {
+    if (entry.type !== "blob" || !entry.path.endsWith("/SKILL.md")) continue;
+    const folder = folderPathFromSkillPath(entry.path);
+    const leaf = folder.slice(folder.lastIndexOf("/") + 1);
+    if (leaf === skillName) matches.push(entry.path);
+  }
+
+  if (matches.length === 0) {
+    return {
+      ok: false,
+      reason: "not-found",
+      message: `No skill named "${skillName}" found in ${repo}.`,
+    };
+  }
+  if (matches.length > 1) {
+    const candidates = matches.map(folderPathFromSkillPath);
+    return {
+      ok: false,
+      reason: "ambiguous",
+      message: `Multiple skills named "${skillName}" in ${repo}: ${candidates.join(", ")}. Paste the exact folder URL instead.`,
+      candidates,
+    };
+  }
+  return { ok: true, skillPath: matches[0]! };
+}
+
 export interface MirrorResultOk {
   ok: true;
   /** SHA-1 git tree hash of the upstream folder — write this into the
