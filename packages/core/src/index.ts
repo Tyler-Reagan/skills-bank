@@ -6,6 +6,7 @@ export * from "./registry/walk.js";
 export * from "./skills/install.js";
 export * from "./skills/installed.js";
 export * from "./skills/register.js";
+export * from "./skills/adopt.js";
 export * from "./skills/conflicts.js";
 export * from "./skills/extract.js";
 export * from "./manifest/manifest.js";

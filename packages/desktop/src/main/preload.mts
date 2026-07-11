@@ -97,6 +97,8 @@ const api = {
   discoverOpenTerminal: (terminalApp?: string, installInput?: string) =>
     ipcRenderer.invoke(IPC.discoverOpenTerminal, terminalApp, installInput),
   discoverNpxSkills: () => ipcRenderer.invoke(IPC.discoverNpxSkills),
+  adoptNpxSkill: (name: string) =>
+    ipcRenderer.invoke(IPC.adoptNpxSkill, name),
   onDiscoverStatus: (cb: (status: DiscoverStatus) => void) => {
     const listener = (_e: unknown, status: DiscoverStatus) => cb(status);
     ipcRenderer.on(IPC.discoverStatus, listener);
