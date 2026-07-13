@@ -1,9 +1,12 @@
+import fs from "node:fs";
+import path from "node:path";
 import {
   readLiveManifest,
   writeLiveManifest,
   type RegistryManifest,
 } from "../manifest/manifest.js";
 import type { ManifestOrigin } from "../manifest/manifest.js";
+import { getStateDir } from "../shared/paths.js";
 import { effectiveLabels, type LabelsMap } from "./labels.js";
 import { readLegacyOrigin } from "./legacy-origin.js";
 import { npxEntryOrigin, readNpxLock, type NpxLock } from "./npx-lock.js";
@@ -14,6 +17,36 @@ import {
   walkSkills,
   type SkillFolderRef,
 } from "./walk.js";
+
+/**
+ * State files that no code anywhere reads or writes anymore, but that the
+ * app never deleted a pre-existing copy of (#204):
+ *   - `external.json` — the in-place-registration record, retired when
+ *     ADR-0022 made the registry adopted-only (every skill now lives in
+ *     the bank by construction; there is nothing left to be "external").
+ *   - `upstream-canon.json` — predates ADR-0017's canon-file removal.
+ * Verified dead by grep across packages/core and packages/desktop before
+ * listing here — don't add a name without the same check.
+ */
+const DEAD_STATE_FILES = ["external.json", "upstream-canon.json"];
+
+/**
+ * Opportunistically deletes confirmed-dead state files (see
+ * `DEAD_STATE_FILES`). Not a migration step — a correctness sweep that
+ * happens to heal old data, run from the same seam as folder reconcile
+ * (ADR-0021's "long-lived correctness invariant" convention). Missing
+ * files are a no-op.
+ */
+function sweepDeadStateFiles(registryRoot: string): void {
+  const dir = getStateDir(registryRoot);
+  for (const name of DEAD_STATE_FILES) {
+    try {
+      fs.unlinkSync(path.join(dir, name));
+    } catch {
+      // already absent, or state dir doesn't exist yet — nothing to sweep
+    }
+  }
+}
 
 export interface ReconcileFoldersOptions {
   /** Label overrides keyed by skill name (the app's `labels.json`). */
@@ -67,6 +100,9 @@ function recoverOrigin(
  * moved to the bucket its origin dictates (#205). Scoped to rows with a
  * known origin — a `url: null` folder's bucket is left alone.
  *
+ * Also sweeps confirmed-dead state files (#204) — see
+ * `DEAD_STATE_FILES` — from the same seam.
+ *
  * Refreshes every row's category/tags from the supplied `labels.json`
  * so the manifest tracks current curation state. Called at boot and
  * from the `snapshotAfterMutation` seam — never from `buildRegistryIndex`,
@@ -76,6 +112,7 @@ export function reconcileFoldersToManifest(
   registryRoot: string,
   opts: ReconcileFoldersOptions = {},
 ): RegistryManifest {
+  sweepDeadStateFiles(registryRoot);
   const manifest = readLiveManifest(registryRoot);
   const byName = new Map(manifest.skills.map((s) => [s.name, s]));
   const foldersByName = new Map<string, SkillFolderRef>(

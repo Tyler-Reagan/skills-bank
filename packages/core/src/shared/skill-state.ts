@@ -31,7 +31,8 @@ export type DrawerState =
   | "edited-with-origin"
   | "skill-update-available"
   | "origin-unreachable"
-  | "registry-folder-missing";
+  | "registry-folder-missing"
+  | "duplicate-origin-registration";
 
 /**
  * Consecutive probe-failure threshold at which a GitHub-origin
@@ -52,7 +53,8 @@ export type PrimaryAction =
   | "repair-broken"
   | "update"
   | "forget-missing"
-  | "restore-origin";
+  | "restore-origin"
+  | "resolve-duplicate-origin";
 
 export interface DrawerCapabilities {
   canInstall: boolean;
@@ -160,6 +162,33 @@ export function classifyDrawerState(
         canRevealInFinder: true,
         canForgetMissing: true,
         primary: "forget-missing",
+      },
+    };
+  }
+
+  // Data-integrity: the same upstream file is registered under two (or
+  // more) different local names (#204) — a mis-registration, not
+  // something the user asked for. Highest priority after missing-files:
+  // independent of on-disk drift/reachability, and resolving it (which
+  // name to keep) is a decision only the user can make — never
+  // auto-resolved by picking one row to delete.
+  if (
+    isRegistered &&
+    entry.duplicateOriginNames &&
+    entry.duplicateOriginNames.length > 0
+  ) {
+    return {
+      state: "duplicate-origin-registration",
+      brokenCount: 0,
+      conflictCount: 0,
+      capabilities: {
+        ...NEVER,
+        canRevealInFinder: true,
+        canInstall: !hasAnyInstallation,
+        canManageLinks: hasAnyInstallation,
+        canExtract: true,
+        canUnregister: true,
+        primary: "resolve-duplicate-origin",
       },
     };
   }

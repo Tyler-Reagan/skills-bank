@@ -65,6 +65,17 @@ export interface RegistryEntry extends SkillMeta {
    * having the entry silently disappear.
    */
   warnings?: string[];
+  /**
+   * Data-integrity axis (#204): names of OTHER registered skills sharing
+   * this entry's exact `origin.url` + `skillPath` — the same upstream
+   * file registered twice under different local names. Set in
+   * `buildRegistryIndex`'s cross-entry pass; empty/absent when this
+   * entry's origin is unique (or `url` is null — a local skill can't
+   * collide this way). The classifier emits
+   * `duplicate-origin-registration`; resolution is always a manual user
+   * choice (Unregister one), never automatic.
+   */
+  duplicateOriginNames?: string[];
 }
 
 export interface RegistryIndex {

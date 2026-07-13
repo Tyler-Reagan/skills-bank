@@ -342,3 +342,47 @@ describe("reconcileFoldersToManifest — bucket-placement drift", () => {
     ).toBe(true);
   });
 });
+
+/**
+ * #204 — dead state file sweep. `external.json` (retired by ADR-0022)
+ * and `upstream-canon.json` (predates ADR-0017's canon removal) are
+ * confirmed dead: nothing reads or writes them anymore. Reconcile
+ * opportunistically deletes pre-existing copies; a registry that never
+ * had them is unaffected.
+ */
+describe("reconcileFoldersToManifest — dead state file sweep", () => {
+  function stateDir(root: string): string {
+    return path.join(root, ".skills-bank");
+  }
+
+  test("deletes a pre-existing external.json", () => {
+    fs.mkdirSync(stateDir(scratch), { recursive: true });
+    fs.writeFileSync(path.join(stateDir(scratch), "external.json"), "[]");
+    reconcile(scratch);
+    expect(fs.existsSync(path.join(stateDir(scratch), "external.json"))).toBe(
+      false,
+    );
+  });
+
+  test("deletes a pre-existing upstream-canon.json", () => {
+    fs.mkdirSync(stateDir(scratch), { recursive: true });
+    fs.writeFileSync(path.join(stateDir(scratch), "upstream-canon.json"), "{}");
+    reconcile(scratch);
+    expect(
+      fs.existsSync(path.join(stateDir(scratch), "upstream-canon.json")),
+    ).toBe(false);
+  });
+
+  test("is a no-op when neither file exists", () => {
+    expect(() => reconcile(scratch)).not.toThrow();
+  });
+
+  test("leaves other state files untouched", () => {
+    fs.mkdirSync(stateDir(scratch), { recursive: true });
+    fs.writeFileSync(path.join(stateDir(scratch), "runtime.json"), "{}");
+    reconcile(scratch);
+    expect(fs.existsSync(path.join(stateDir(scratch), "runtime.json"))).toBe(
+      true,
+    );
+  });
+});
