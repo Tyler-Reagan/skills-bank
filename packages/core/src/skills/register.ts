@@ -7,6 +7,7 @@ import {
   type AgentId,
 } from "../shared/agents.js";
 import { getStateDir } from "../shared/paths.js";
+import { rotateFilesByPrefix } from "../shared/rotate-files.js";
 import { listInstalled } from "./installed.js";
 import { findSkillFolder } from "../registry/walk.js";
 import { buildRegistryIndex } from "../registry/build.js";
@@ -369,6 +370,9 @@ interface RegistrationLogEntry {
   linkPath: string;
 }
 
+// Audit trail, not crash-safety state (op-journal.ts is that).
+const REGISTRATION_LOG_KEEP = 50;
+
 function recordRegistration(
   registryRoot: string,
   entry: RegistrationLogEntry,
@@ -380,4 +384,5 @@ function recordRegistration(
     `registration-${entry.timestamp.replace(/[:.]/g, "-")}.json`,
   );
   fs.writeFileSync(file, JSON.stringify(entry, null, 2) + "\n");
+  rotateFilesByPrefix(dir, "registration-", REGISTRATION_LOG_KEEP);
 }

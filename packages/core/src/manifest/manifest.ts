@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { bucketForOrigin } from "../registry/source.js";
 import { walkSkills } from "../registry/walk.js";
+import { rotateFilesByPrefix } from "../shared/rotate-files.js";
 import { readRepoFile } from "../github/files.js";
 import { normalizeOriginUrl } from "../github/url.js";
 import type { RateLimitInfo } from "../github/http.js";
@@ -306,37 +307,10 @@ export function writeRegistrySnapshot(
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const dest = path.join(dir, `snapshot-${stamp}.json`);
     fs.writeFileSync(dest, serializeLiveManifest(opts.manifest));
-    const removed = rotateSnapshots(dir, keep);
+    const removed = rotateFilesByPrefix(dir, "snapshot-", keep);
     return { ok: true, path: dest, removed };
   } catch (err) {
     return { ok: false, message: (err as Error).message };
-  }
-}
-
-function rotateSnapshots(dir: string, keep: number): string[] {
-  const entries = fs
-    .readdirSync(dir)
-    .filter((n) => n.startsWith("snapshot-") && n.endsWith(".json"))
-    .map((n) => ({ name: n, mtimeMs: safeMtimeMs(path.join(dir, n)) }))
-    .sort((a, b) => b.mtimeMs - a.mtimeMs);
-  const removed: string[] = [];
-  for (const e of entries.slice(keep)) {
-    const p = path.join(dir, e.name);
-    try {
-      fs.unlinkSync(p);
-      removed.push(p);
-    } catch {
-      // best-effort rotation
-    }
-  }
-  return removed;
-}
-
-function safeMtimeMs(p: string): number {
-  try {
-    return fs.statSync(p).mtimeMs;
-  } catch {
-    return 0;
   }
 }
 

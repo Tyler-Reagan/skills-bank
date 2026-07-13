@@ -65,6 +65,8 @@ export interface RegistryEntry extends SkillMeta {
    * having the entry silently disappear.
    */
   warnings?: string[];
+  /** Names of other skills registered from this same origin.url + skillPath. */
+  duplicateOriginNames?: string[];
 }
 
 export interface RegistryIndex {

@@ -31,7 +31,8 @@ export type DrawerState =
   | "edited-with-origin"
   | "skill-update-available"
   | "origin-unreachable"
-  | "registry-folder-missing";
+  | "registry-folder-missing"
+  | "duplicate-origin-registration";
 
 /**
  * Consecutive probe-failure threshold at which a GitHub-origin
@@ -52,7 +53,8 @@ export type PrimaryAction =
   | "repair-broken"
   | "update"
   | "forget-missing"
-  | "restore-origin";
+  | "restore-origin"
+  | "resolve-duplicate-origin";
 
 export interface DrawerCapabilities {
   canInstall: boolean;
@@ -160,6 +162,30 @@ export function classifyDrawerState(
         canRevealInFinder: true,
         canForgetMissing: true,
         primary: "forget-missing",
+      },
+    };
+  }
+
+  // Same upstream file registered under another local name — checked
+  // right after missing-files since it's a data-integrity issue, not a
+  // heal state. Never auto-resolved: the user picks which name to keep.
+  if (
+    isRegistered &&
+    entry.duplicateOriginNames &&
+    entry.duplicateOriginNames.length > 0
+  ) {
+    return {
+      state: "duplicate-origin-registration",
+      brokenCount: 0,
+      conflictCount: 0,
+      capabilities: {
+        ...NEVER,
+        canRevealInFinder: true,
+        canInstall: !hasAnyInstallation,
+        canManageLinks: hasAnyInstallation,
+        canExtract: true,
+        canUnregister: true,
+        primary: "resolve-duplicate-origin",
       },
     };
   }

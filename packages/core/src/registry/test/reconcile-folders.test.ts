@@ -60,8 +60,11 @@ function byName(root: string, name: string) {
 function noNpx() {
   return { npxLockPath: path.join(scratch, "__no-npx-lock.json") };
 }
-function reconcile(root: string) {
-  return reconcileFoldersToManifest(root, noNpx());
+function reconcile(
+  root: string,
+  opts: Parameters<typeof reconcileFoldersToManifest>[1] = {},
+) {
+  return reconcileFoldersToManifest(root, { ...noNpx(), ...opts });
 }
 function reconcileSafe(root: string) {
   return reconcileFoldersToManifestSafe(root, noNpx());
@@ -253,5 +256,133 @@ describe("reconcileFoldersToManifest — npx-lock origin backfill", () => {
       reconcileFoldersToManifest(scratch, { npxLockPath }),
     ).not.toThrow();
     expect(byName(scratch, "solo").origin).toEqual({ url: null });
+  });
+});
+
+/**
+ * #205 — bucket-placement drift correction. A row's folder should live in
+ * bucketForOrigin(origin.url, linkedRepo); existing rows can drift out of
+ * sync with a real origin (e.g. registered before the derivation was wired
+ * correctly). Reconcile heals this on every pass, scoped to rows with a
+ * known (non-null) origin — url:null placement is left untouched.
+ */
+describe("reconcileFoldersToManifest — bucket-placement drift", () => {
+  test("moves an externally-originated skill out of personal/ into vendored/", () => {
+    makeSkillFolder("personal", "misplaced-vendor");
+    writeLiveManifest(scratch, {
+      schemaVersion: 6,
+      skills: [
+        {
+          name: "misplaced-vendor",
+          origin: { url: "https://github.com/someone/upstream" },
+          category: null,
+          tags: [],
+        },
+      ],
+    });
+    reconcile(scratch);
+    expect(
+      fs.existsSync(
+        path.join(scratch, "skills", "vendored", "misplaced-vendor"),
+      ),
+    ).toBe(true);
+    expect(
+      fs.existsSync(
+        path.join(scratch, "skills", "personal", "misplaced-vendor"),
+      ),
+    ).toBe(false);
+  });
+
+  test("moves a self-originated skill out of vendored/ into personal/", () => {
+    makeSkillFolder("vendored", "misplaced-personal");
+    writeLiveManifest(scratch, {
+      schemaVersion: 6,
+      skills: [
+        {
+          name: "misplaced-personal",
+          origin: { url: "https://github.com/Tyler-Reagan/skills" },
+          category: null,
+          tags: [],
+        },
+      ],
+    });
+    reconcile(scratch, { linkedRepo: "Tyler-Reagan/skills" });
+    expect(
+      fs.existsSync(
+        path.join(scratch, "skills", "personal", "misplaced-personal"),
+      ),
+    ).toBe(true);
+  });
+
+  test("a url:null folder's bucket is left untouched even if it looks misplaced", () => {
+    makeSkillFolder("vendored", "hand-copied");
+    reconcile(scratch);
+    expect(
+      fs.existsSync(path.join(scratch, "skills", "vendored", "hand-copied")),
+    ).toBe(true);
+    expect(byName(scratch, "hand-copied").origin).toEqual({ url: null });
+  });
+
+  test("a correctly-placed externally-originated skill is left alone", () => {
+    makeSkillFolder("vendored", "already-right");
+    writeLiveManifest(scratch, {
+      schemaVersion: 6,
+      skills: [
+        {
+          name: "already-right",
+          origin: { url: "https://github.com/someone/upstream" },
+          category: null,
+          tags: [],
+        },
+      ],
+    });
+    reconcile(scratch);
+    expect(
+      fs.existsSync(path.join(scratch, "skills", "vendored", "already-right")),
+    ).toBe(true);
+  });
+});
+
+/**
+ * #204 — dead state file sweep. `external.json` (retired by ADR-0022)
+ * and `upstream-canon.json` (predates ADR-0017's canon removal) are
+ * confirmed dead: nothing reads or writes them anymore. Reconcile
+ * opportunistically deletes pre-existing copies; a registry that never
+ * had them is unaffected.
+ */
+describe("reconcileFoldersToManifest — dead state file sweep", () => {
+  function stateDir(root: string): string {
+    return path.join(root, ".skills-bank");
+  }
+
+  test("deletes a pre-existing external.json", () => {
+    fs.mkdirSync(stateDir(scratch), { recursive: true });
+    fs.writeFileSync(path.join(stateDir(scratch), "external.json"), "[]");
+    reconcile(scratch);
+    expect(fs.existsSync(path.join(stateDir(scratch), "external.json"))).toBe(
+      false,
+    );
+  });
+
+  test("deletes a pre-existing upstream-canon.json", () => {
+    fs.mkdirSync(stateDir(scratch), { recursive: true });
+    fs.writeFileSync(path.join(stateDir(scratch), "upstream-canon.json"), "{}");
+    reconcile(scratch);
+    expect(
+      fs.existsSync(path.join(stateDir(scratch), "upstream-canon.json")),
+    ).toBe(false);
+  });
+
+  test("is a no-op when neither file exists", () => {
+    expect(() => reconcile(scratch)).not.toThrow();
+  });
+
+  test("leaves other state files untouched", () => {
+    fs.mkdirSync(stateDir(scratch), { recursive: true });
+    fs.writeFileSync(path.join(stateDir(scratch), "runtime.json"), "{}");
+    reconcile(scratch);
+    expect(fs.existsSync(path.join(stateDir(scratch), "runtime.json"))).toBe(
+      true,
+    );
   });
 });

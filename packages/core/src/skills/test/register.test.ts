@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { applyRegistration, scanExistingInstalls } from "../register.js";
 import { buildRegistryIndex } from "../../registry/build.js";
+import { getStateDir } from "../../shared/paths.js";
 import type { InstalledSkill } from "../../shared/types.js";
 
 /**
@@ -169,6 +170,32 @@ describe("register", () => {
       lstat = null;
     }
     expect(lstat).toBeNull();
+  });
+
+  test("rotates registration-*.json audit logs, keeping only the newest 50 (#204)", () => {
+    const stateDir = getStateDir(registryRoot);
+    fs.mkdirSync(stateDir, { recursive: true });
+    for (let i = 0; i < 50; i++) {
+      const p = path.join(stateDir, `registration-old-${i}.json`);
+      fs.writeFileSync(p, "{}");
+      const t = (Date.now() - (100 - i) * 1000) / 1000;
+      fs.utimesSync(p, t, t);
+    }
+
+    writeRealSkill(agentDir("agents"), "rotator");
+    const report = scanExistingInstalls(registryRoot);
+    const entry = report.entries.find((e) => e.name === "rotator")!;
+    const result = applyRegistration(
+      entry,
+      { type: "register", name: "rotator", agent: entry.agent },
+      { registryRoot },
+    );
+    expect(result.ok).toBe(true);
+
+    const logs = fs
+      .readdirSync(stateDir)
+      .filter((n) => n.startsWith("registration-"));
+    expect(logs.length).toBe(50);
   });
 
   test("refuses a broken-symlink source", () => {

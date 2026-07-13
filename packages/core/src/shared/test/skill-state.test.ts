@@ -64,6 +64,40 @@ const ROWS: Row[] = [
     expectedCaps: { canForgetMissing: true },
   },
   {
+    label: "duplicate origin (#204) → duplicate-origin-registration",
+    entry: entry({ duplicateOriginNames: ["other-name"] }),
+    installed: [],
+    isRegistered: true,
+    expectedState: "duplicate-origin-registration",
+    expectedPrimary: "resolve-duplicate-origin",
+    expectedCaps: {
+      canUnregister: true,
+      canRevealInFinder: true,
+      canExtract: true,
+      canInstall: true,
+      canManageLinks: false,
+    },
+  },
+  {
+    label:
+      "missing-folder still wins over duplicate origin (nothing to reveal/unregister for gone files)",
+    entry: entry({ missing: true, duplicateOriginNames: ["other-name"] }),
+    installed: [],
+    isRegistered: true,
+    expectedState: "registry-folder-missing",
+    expectedPrimary: "forget-missing",
+    expectedCaps: { canForgetMissing: true },
+  },
+  {
+    label: "empty duplicateOriginNames does not trigger the state",
+    entry: entry({ duplicateOriginNames: [] }),
+    installed: [inst()],
+    isRegistered: true,
+    expectedState: "registered-healthy",
+    expectedPrimary: "manage-links",
+    expectedCaps: { canManageLinks: true },
+  },
+  {
     label: "drift + github origin → edited-with-origin",
     entry: entry({
       drift: true,

@@ -114,6 +114,9 @@ export function buildRegistryIndex(
   const manifest = readLiveManifest(registryRoot);
   const manifestByName = new Map(manifest.skills.map((s) => [s.name, s]));
   const runtimeMap = readRuntimeMap(registryRoot);
+  // Keyed by manifest/folder name, not the built entry's `.name` (see
+  // duplicateOriginNamesByRow).
+  const duplicateOriginByRowName = duplicateOriginNamesByRow(manifest.skills);
 
   if (fs.existsSync(skillsDir)) {
     const allRefs = walkSkills(registryRoot);
@@ -133,6 +136,8 @@ export function buildRegistryIndex(
       if (built) {
         built.bucket = ref.bucket;
         applyRuntimeState(built, ref.dir, runtimeMap[ref.name]);
+        const dup = duplicateOriginByRowName.get(ref.name);
+        if (dup) built.duplicateOriginNames = dup;
         entries.push(built);
       }
     }
@@ -169,6 +174,36 @@ export function buildRegistryIndex(
   }
 
   return index;
+}
+
+/**
+ * For each manifest row sharing a non-null `origin.url` + `skillPath`
+ * with another row, maps its name to the other name(s) in that group.
+ * Keyed by manifest name, not entry.name, so it's immune to two folders
+ * sharing one frontmatter name. Detection only; never merges rows.
+ */
+function duplicateOriginNamesByRow(
+  manifestSkills: { name: string; origin: ManifestOrigin }[],
+): Map<string, string[]> {
+  const groups = new Map<string, string[]>();
+  for (const s of manifestSkills) {
+    if (!s.origin.url) continue;
+    const key = s.origin.url + "\u0000" + (s.origin.skillPath ?? "");
+    const names = groups.get(key);
+    if (names) names.push(s.name);
+    else groups.set(key, [s.name]);
+  }
+  const result = new Map<string, string[]>();
+  for (const names of groups.values()) {
+    if (names.length < 2) continue;
+    for (const n of names) {
+      result.set(
+        n,
+        names.filter((x) => x !== n),
+      );
+    }
+  }
+  return result;
 }
 
 /**
@@ -262,9 +297,15 @@ function buildOneEntry(
     }
   }
 
+  // entry.name is always the folder name — renderer lookups key on it as
+  // a stable identity, so a stale/duplicate frontmatter name must not
+  // silently override it.
   if (!meta.name) {
     warnings.push("missing name (using folder name)");
-    meta.name = folderName;
+  } else if (meta.name !== folderName) {
+    warnings.push(
+      `SKILL.md declares name "${meta.name}" but is registered as "${folderName}" -- using "${folderName}"`,
+    );
   }
   if (!meta.description) {
     warnings.push("missing description");
@@ -272,7 +313,7 @@ function buildOneEntry(
   }
 
   const entry: RegistryEntry = {
-    name: meta.name,
+    name: folderName,
     description: meta.description,
     ...(meta.tags ? { tags: meta.tags } : {}),
     ...(meta.version ? { version: meta.version } : {}),
