@@ -60,8 +60,11 @@ function byName(root: string, name: string) {
 function noNpx() {
   return { npxLockPath: path.join(scratch, "__no-npx-lock.json") };
 }
-function reconcile(root: string) {
-  return reconcileFoldersToManifest(root, noNpx());
+function reconcile(
+  root: string,
+  opts: Parameters<typeof reconcileFoldersToManifest>[1] = {},
+) {
+  return reconcileFoldersToManifest(root, { ...noNpx(), ...opts });
 }
 function reconcileSafe(root: string) {
   return reconcileFoldersToManifestSafe(root, noNpx());
@@ -253,5 +256,89 @@ describe("reconcileFoldersToManifest — npx-lock origin backfill", () => {
       reconcileFoldersToManifest(scratch, { npxLockPath }),
     ).not.toThrow();
     expect(byName(scratch, "solo").origin).toEqual({ url: null });
+  });
+});
+
+/**
+ * #205 — bucket-placement drift correction. A row's folder should live in
+ * bucketForOrigin(origin.url, linkedRepo); existing rows can drift out of
+ * sync with a real origin (e.g. registered before the derivation was wired
+ * correctly). Reconcile heals this on every pass, scoped to rows with a
+ * known (non-null) origin — url:null placement is left untouched.
+ */
+describe("reconcileFoldersToManifest — bucket-placement drift", () => {
+  test("moves an externally-originated skill out of personal/ into vendored/", () => {
+    makeSkillFolder("personal", "misplaced-vendor");
+    writeLiveManifest(scratch, {
+      schemaVersion: 6,
+      skills: [
+        {
+          name: "misplaced-vendor",
+          origin: { url: "https://github.com/someone/upstream" },
+          category: null,
+          tags: [],
+        },
+      ],
+    });
+    reconcile(scratch);
+    expect(
+      fs.existsSync(
+        path.join(scratch, "skills", "vendored", "misplaced-vendor"),
+      ),
+    ).toBe(true);
+    expect(
+      fs.existsSync(
+        path.join(scratch, "skills", "personal", "misplaced-vendor"),
+      ),
+    ).toBe(false);
+  });
+
+  test("moves a self-originated skill out of vendored/ into personal/", () => {
+    makeSkillFolder("vendored", "misplaced-personal");
+    writeLiveManifest(scratch, {
+      schemaVersion: 6,
+      skills: [
+        {
+          name: "misplaced-personal",
+          origin: { url: "https://github.com/Tyler-Reagan/skills" },
+          category: null,
+          tags: [],
+        },
+      ],
+    });
+    reconcile(scratch, { linkedRepo: "Tyler-Reagan/skills" });
+    expect(
+      fs.existsSync(
+        path.join(scratch, "skills", "personal", "misplaced-personal"),
+      ),
+    ).toBe(true);
+  });
+
+  test("a url:null folder's bucket is left untouched even if it looks misplaced", () => {
+    makeSkillFolder("vendored", "hand-copied");
+    reconcile(scratch);
+    expect(
+      fs.existsSync(path.join(scratch, "skills", "vendored", "hand-copied")),
+    ).toBe(true);
+    expect(byName(scratch, "hand-copied").origin).toEqual({ url: null });
+  });
+
+  test("a correctly-placed externally-originated skill is left alone", () => {
+    makeSkillFolder("vendored", "already-right");
+    writeLiveManifest(scratch, {
+      schemaVersion: 6,
+      skills: [
+        {
+          name: "already-right",
+          origin: { url: "https://github.com/someone/upstream" },
+          category: null,
+          tags: [],
+        },
+      ],
+    });
+    reconcile(scratch);
+    expect(
+      fs.existsSync(path.join(scratch, "skills", "vendored", "already-right")),
+    ).toBe(true);
   });
 });

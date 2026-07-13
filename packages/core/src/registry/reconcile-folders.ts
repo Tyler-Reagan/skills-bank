@@ -7,12 +7,18 @@ import type { ManifestOrigin } from "../manifest/manifest.js";
 import { effectiveLabels, type LabelsMap } from "./labels.js";
 import { readLegacyOrigin } from "./legacy-origin.js";
 import { npxEntryOrigin, readNpxLock, type NpxLock } from "./npx-lock.js";
-import { SkillNameCollisionError, walkSkills } from "./walk.js";
+import { bucketForOrigin } from "./source.js";
+import { moveSkillBucket } from "./bucket-move.js";
+import {
+  SkillNameCollisionError,
+  walkSkills,
+  type SkillFolderRef,
+} from "./walk.js";
 
 export interface ReconcileFoldersOptions {
   /** Label overrides keyed by skill name (the app's `labels.json`). */
   labels?: LabelsMap;
-  /** Active linked repo `owner/name` — reserved for future bucket checks. */
+  /** Active linked repo `owner/name` — used to correct bucket drift. */
   linkedRepo?: string;
   /**
    * Override the npx global-lockfile path. Production leaves this unset
@@ -56,6 +62,11 @@ function recoverOrigin(
  * it's no longer a candidate, and neither source is mutated (the npx
  * lockfile is read-only — see `npx-lock.ts`).
  *
+ * Also corrects bucket-placement drift: a row whose folder location
+ * disagrees with `bucketForOrigin(origin.url, linkedRepo)` gets physically
+ * moved to the bucket its origin dictates (#205). Scoped to rows with a
+ * known origin — a `url: null` folder's bucket is left alone.
+ *
  * Refreshes every row's category/tags from the supplied `labels.json`
  * so the manifest tracks current curation state. Called at boot and
  * from the `snapshotAfterMutation` seam — never from `buildRegistryIndex`,
@@ -67,18 +78,18 @@ export function reconcileFoldersToManifest(
 ): RegistryManifest {
   const manifest = readLiveManifest(registryRoot);
   const byName = new Map(manifest.skills.map((s) => [s.name, s]));
-  const dirByName = new Map(
-    walkSkills(registryRoot).map((r) => [r.name, r.dir]),
+  const foldersByName = new Map<string, SkillFolderRef>(
+    walkSkills(registryRoot).map((r) => [r.name, r]),
   );
   // Read npx's global lockfile once, up front — keeps reconcile
   // synchronous and disk-only (no async in the boot / post-mutation path).
   const npxLock = readNpxLock(opts.npxLockPath);
 
-  for (const [name, dir] of dirByName) {
+  for (const [name, ref] of foldersByName) {
     if (!byName.has(name)) {
       const row = {
         name,
-        origin: readLegacyOrigin(dir) ?? { url: null },
+        origin: readLegacyOrigin(ref.dir) ?? { url: null },
         category: null,
         tags: [],
       };
@@ -95,10 +106,39 @@ export function reconcileFoldersToManifest(
     if (skill.origin.url !== null) continue;
     const recovered = recoverOrigin(
       skill.name,
-      dirByName.get(skill.name),
+      foldersByName.get(skill.name)?.dir,
       npxLock,
     );
     if (recovered) skill.origin = recovered;
+  }
+
+  // Bucket-placement drift correction (ADR-0020). A row's folder should
+  // live in bucketForOrigin(origin.url, linkedRepo) — the acquisition-time
+  // derivation. Rows can drift out of sync with a real origin (registered
+  // before the derivation was wired correctly, or before this repo's own
+  // linked-repo comparison existed) — heal it here so the drift doesn't
+  // persist silently across every future boot. Scoped to rows with a known
+  // (non-null) origin only: a url:null folder's bucket is a placement
+  // someone made deliberately (or an orphan reconcile just discovered) and
+  // is not this pass's business to relocate.
+  for (const skill of manifest.skills) {
+    if (!skill.origin.url) continue;
+    const ref = foldersByName.get(skill.name);
+    if (!ref) continue;
+    const expectedBucket = bucketForOrigin(skill.origin.url, opts.linkedRepo);
+    if (ref.bucket === expectedBucket) continue;
+    const result = moveSkillBucket(registryRoot, skill.name, expectedBucket);
+    if (result.ok && result.newDir) {
+      foldersByName.set(skill.name, {
+        ...ref,
+        bucket: expectedBucket,
+        dir: result.newDir,
+      });
+    } else {
+      console.warn(
+        `[skills-bank] could not correct bucket drift for ${skill.name}: ${result.message}`,
+      );
+    }
   }
 
   for (const skill of manifest.skills) {
