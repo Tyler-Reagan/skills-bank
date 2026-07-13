@@ -1,6 +1,6 @@
 {
   "name": "@skills-bank/desktop",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "private": true,
   "type": "module",
   "description": "Desktop manager for skills-bank",

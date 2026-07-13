@@ -3,6 +3,17 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v2.4.2
+
+Patch — registry data-integrity fixes for long-lived registries.
+
+### Fixed
+
+- **A skill folder whose bucket (`personal`/`vendored`) disagreed with its recorded origin is now corrected automatically** on the next reconcile pass, with agent symlinks repointed to match. (#205)
+- **Registered skills that share the same upstream file under two different local names are now flagged** with a DUPLICATE badge instead of silently duplicating in the UI; resolving which name to keep is always a manual choice, never automatic. (#204)
+- **A skill's displayed name is now always its registered folder name**, not whatever `SKILL.md` frontmatter happens to say — a stale or duplicated frontmatter `name:` could previously make one of two distinct registered skills unreachable in the UI. A mismatch now surfaces as a warning instead.
+- **`registration-*.json` audit logs now rotate** (keep the newest 50) instead of accumulating forever, and two confirmed-dead state files (`external.json`, `upstream-canon.json`) are swept opportunistically.
+
 ## v2.4.1
 
 Patch — fixes the npx-adopt flow shipped in v2.4.0.
