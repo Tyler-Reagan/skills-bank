@@ -315,9 +315,23 @@ function buildOneEntry(
     }
   }
 
+  // Identity is the folder/manifest name, always -- entry.name is the
+  // key every renderer lookup (registryByName, installed-name matching,
+  // etc.) treats as unique and stable. SKILL.md's frontmatter `name:` is
+  // informational only: authors can drift it, and two folders can even
+  // carry an IDENTICAL frontmatter name (a stray copy that kept the
+  // wrong header). Trusting frontmatter for entry.name let exactly that
+  // happen -- two distinct registered skills ("diagnose" and
+  // "diagnosing-bugs") silently collapsed onto one displayed entry,
+  // making one of them unreachable in every name-keyed lookup (#204
+  // follow-up). A mismatch is surfaced as a warning instead of silently
+  // relabeling the skill.
   if (!meta.name) {
     warnings.push("missing name (using folder name)");
-    meta.name = folderName;
+  } else if (meta.name !== folderName) {
+    warnings.push(
+      `SKILL.md declares name "${meta.name}" but is registered as "${folderName}" -- using "${folderName}"`,
+    );
   }
   if (!meta.description) {
     warnings.push("missing description");
@@ -325,7 +339,7 @@ function buildOneEntry(
   }
 
   const entry: RegistryEntry = {
-    name: meta.name,
+    name: folderName,
     description: meta.description,
     ...(meta.tags ? { tags: meta.tags } : {}),
     ...(meta.version ? { version: meta.version } : {}),

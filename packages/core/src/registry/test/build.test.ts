@@ -57,6 +57,32 @@ describe("buildRegistryIndex — description warning convergence", () => {
     expect(entry!.warnings ?? []).toEqual([]);
   });
 
+  test("entry.name is always the folder name, even when frontmatter disagrees", () => {
+    // A skill folder registered as "renamed-folder" whose SKILL.md still
+    // declares the old name — e.g. a hand-renamed folder that wasn't
+    // re-authored. entry.name must track the folder (the identity every
+    // renderer lookup keys on), with the mismatch surfaced as a warning
+    // instead of silently trusting the stale frontmatter.
+    const dir = path.join(registryRoot, "skills", "personal", "renamed-folder");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, "SKILL.md"),
+      "---\nname: old-name\ndescription: still works\n---\n",
+    );
+
+    const index = buildRegistryIndex(registryRoot);
+    expect(index.entries.find((e) => e.name === "old-name")).toBeUndefined();
+    const entry = index.entries.find((e) => e.name === "renamed-folder");
+    expect(entry).toBeDefined();
+    expect(
+      entry!.warnings?.some(
+        (w) =>
+          w.includes('declares name "old-name"') &&
+          w.includes('registered as "renamed-folder"'),
+      ),
+    ).toBe(true);
+  });
+
   test("SKILL.md without frontmatter emits missing-name and missing-description warnings", () => {
     const dir = path.join(registryRoot, "skills", "personal", "beta");
     fs.mkdirSync(dir, { recursive: true });
@@ -187,14 +213,21 @@ describe("buildRegistryIndex — duplicate-origin detection", () => {
     });
 
     const index = buildRegistryIndex(registryRoot);
-    const flagged = index.entries.filter(
-      (e) => (e.duplicateOriginNames ?? []).length > 0,
+    // entry.name is always the folder/manifest name (#204 follow-up) —
+    // both entries must be independently reachable, not collapsed onto
+    // one displayed "diagnosing-bugs".
+    const diagnose = index.entries.find((e) => e.name === "diagnose");
+    const diagnosingBugs = index.entries.find(
+      (e) => e.name === "diagnosing-bugs",
     );
-    // Both built entries display as "diagnosing-bugs" (frontmatter
-    // override), but both must still carry a non-empty
-    // duplicateOriginNames — the bug this test pins is silently getting
-    // zero flagged entries.
-    expect(flagged.length).toBe(2);
+    expect(diagnose).toBeDefined();
+    expect(diagnosingBugs).toBeDefined();
+    expect(diagnose!.duplicateOriginNames).toEqual(["diagnosing-bugs"]);
+    expect(diagnosingBugs!.duplicateOriginNames).toEqual(["diagnose"]);
+    // The stray frontmatter is surfaced as a warning, not silently trusted.
+    expect(
+      diagnose!.warnings?.some((w) => w.includes('registered as "diagnose"')),
+    ).toBe(true);
   });
 
   test("does not flag rows with the same url but a different skillPath", () => {
