@@ -18,25 +18,10 @@ import {
   type SkillFolderRef,
 } from "./walk.js";
 
-/**
- * State files that no code anywhere reads or writes anymore, but that the
- * app never deleted a pre-existing copy of (#204):
- *   - `external.json` — the in-place-registration record, retired when
- *     ADR-0022 made the registry adopted-only (every skill now lives in
- *     the bank by construction; there is nothing left to be "external").
- *   - `upstream-canon.json` — predates ADR-0017's canon-file removal.
- * Verified dead by grep across packages/core and packages/desktop before
- * listing here — don't add a name without the same check.
- */
+/** Confirmed dead: no code reads or writes these anymore (verify by grep before adding a name). */
 const DEAD_STATE_FILES = ["external.json", "upstream-canon.json"];
 
-/**
- * Opportunistically deletes confirmed-dead state files (see
- * `DEAD_STATE_FILES`). Not a migration step — a correctness sweep that
- * happens to heal old data, run from the same seam as folder reconcile
- * (ADR-0021's "long-lived correctness invariant" convention). Missing
- * files are a no-op.
- */
+/** Deletes DEAD_STATE_FILES if present. Missing files are a no-op. */
 function sweepDeadStateFiles(registryRoot: string): void {
   const dir = getStateDir(registryRoot);
   for (const name of DEAD_STATE_FILES) {
@@ -95,13 +80,9 @@ function recoverOrigin(
  * it's no longer a candidate, and neither source is mutated (the npx
  * lockfile is read-only — see `npx-lock.ts`).
  *
- * Also corrects bucket-placement drift: a row whose folder location
- * disagrees with `bucketForOrigin(origin.url, linkedRepo)` gets physically
- * moved to the bucket its origin dictates (#205). Scoped to rows with a
- * known origin — a `url: null` folder's bucket is left alone.
- *
- * Also sweeps confirmed-dead state files (#204) — see
- * `DEAD_STATE_FILES` — from the same seam.
+ * Also re-homes a row whose folder bucket disagrees with
+ * `bucketForOrigin(origin.url, linkedRepo)`, and sweeps
+ * `DEAD_STATE_FILES`.
  *
  * Refreshes every row's category/tags from the supplied `labels.json`
  * so the manifest tracks current curation state. Called at boot and
@@ -149,15 +130,8 @@ export function reconcileFoldersToManifest(
     if (recovered) skill.origin = recovered;
   }
 
-  // Bucket-placement drift correction (ADR-0020). A row's folder should
-  // live in bucketForOrigin(origin.url, linkedRepo) — the acquisition-time
-  // derivation. Rows can drift out of sync with a real origin (registered
-  // before the derivation was wired correctly, or before this repo's own
-  // linked-repo comparison existed) — heal it here so the drift doesn't
-  // persist silently across every future boot. Scoped to rows with a known
-  // (non-null) origin only: a url:null folder's bucket is a placement
-  // someone made deliberately (or an orphan reconcile just discovered) and
-  // is not this pass's business to relocate.
+  // Re-home rows whose bucket disagrees with their origin (ADR-0020).
+  // url:null skips — that bucket is a deliberate placement, not drift.
   for (const skill of manifest.skills) {
     if (!skill.origin.url) continue;
     const ref = foldersByName.get(skill.name);

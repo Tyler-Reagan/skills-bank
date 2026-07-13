@@ -166,12 +166,9 @@ export function classifyDrawerState(
     };
   }
 
-  // Data-integrity: the same upstream file is registered under two (or
-  // more) different local names (#204) — a mis-registration, not
-  // something the user asked for. Highest priority after missing-files:
-  // independent of on-disk drift/reachability, and resolving it (which
-  // name to keep) is a decision only the user can make — never
-  // auto-resolved by picking one row to delete.
+  // Same upstream file registered under another local name — checked
+  // right after missing-files since it's a data-integrity issue, not a
+  // heal state. Never auto-resolved: the user picks which name to keep.
   if (
     isRegistered &&
     entry.duplicateOriginNames &&

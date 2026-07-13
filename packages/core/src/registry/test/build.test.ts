@@ -58,11 +58,6 @@ describe("buildRegistryIndex — description warning convergence", () => {
   });
 
   test("entry.name is always the folder name, even when frontmatter disagrees", () => {
-    // A skill folder registered as "renamed-folder" whose SKILL.md still
-    // declares the old name — e.g. a hand-renamed folder that wasn't
-    // re-authored. entry.name must track the folder (the identity every
-    // renderer lookup keys on), with the mismatch surfaced as a warning
-    // instead of silently trusting the stale frontmatter.
     const dir = path.join(registryRoot, "skills", "personal", "renamed-folder");
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
@@ -172,14 +167,7 @@ describe("buildRegistryIndex — duplicate-origin detection", () => {
   });
 
   test("keys off the manifest/folder name, not the frontmatter name (#204 real-world shape)", () => {
-    // The actual diagnose/diagnosing-bugs bug: both folders' SKILL.md
-    // frontmatter reads `name: diagnosing-bugs` (a stray copy carried the
-    // frontmatter along), so buildOneEntry's displayed `.name` collapses
-    // both onto "diagnosing-bugs" even though they're two distinct
-    // manifest rows ("diagnose" and "diagnosing-bugs"). Detection must
-    // still find the pair by the manifest/folder name, not the (collided)
-    // displayed name — grouping by displayed name would make every name
-    // in the group filter itself out and produce an empty duplicate list.
+    // Both folders' SKILL.md declares the same frontmatter name.
     for (const folder of ["diagnose", "diagnosing-bugs"]) {
       const dir = path.join(registryRoot, "skills", "vendored", folder);
       fs.mkdirSync(dir, { recursive: true });
@@ -213,9 +201,7 @@ describe("buildRegistryIndex — duplicate-origin detection", () => {
     });
 
     const index = buildRegistryIndex(registryRoot);
-    // entry.name is always the folder/manifest name (#204 follow-up) —
-    // both entries must be independently reachable, not collapsed onto
-    // one displayed "diagnosing-bugs".
+    // Both must be independently reachable, not collapsed onto one entry.
     const diagnose = index.entries.find((e) => e.name === "diagnose");
     const diagnosingBugs = index.entries.find(
       (e) => e.name === "diagnosing-bugs",

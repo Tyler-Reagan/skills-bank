@@ -114,16 +114,8 @@ export function buildRegistryIndex(
   const manifest = readLiveManifest(registryRoot);
   const manifestByName = new Map(manifest.skills.map((s) => [s.name, s]));
   const runtimeMap = readRuntimeMap(registryRoot);
-  // Keyed by manifest/folder name (#204) — NOT the built entry's `.name`,
-  // which `buildOneEntry` overwrites from SKILL.md frontmatter when
-  // present. Two folders can be registered under different names but
-  // ship a frontmatter `name:` that reads identically (exactly the
-  // diagnose/diagnosing-bugs case this was written for — both folders'
-  // frontmatter says `name: diagnosing-bugs`), which would otherwise
-  // collapse both entries onto one displayed name and make every name in
-  // the group filter itself out, silently producing an empty duplicate
-  // list. Computed from `manifest.skills` up front, before any
-  // frontmatter override happens.
+  // Keyed by manifest/folder name, not the built entry's `.name` (see
+  // duplicateOriginNamesByRow).
   const duplicateOriginByRowName = duplicateOriginNamesByRow(manifest.skills);
 
   if (fs.existsSync(skillsDir)) {
@@ -185,20 +177,10 @@ export function buildRegistryIndex(
 }
 
 /**
- * Cross-row pass (#204): groups manifest rows by non-null `origin.url` +
- * `skillPath` and returns, for every row in a group of 2+, the OTHER
- * row name(s) it collides with — the same upstream file registered
- * twice under different local (folder/manifest) names. Keyed by the
- * manifest/folder name, NOT the built entry's `.name` (which
- * `buildOneEntry` overwrites from SKILL.md frontmatter when present) --
- * two folders can be registered under different names but ship
- * identical frontmatter `name:` values, which would otherwise collapse
- * both entries onto one displayed name and make every name in the
- * group filter itself out, silently producing an empty duplicate list.
- * A `url: null` origin can never collide this way (every local skill is
- * independently authored) so it's excluded. Detection only -- never
- * deletes or merges either row; resolution is always a manual user
- * choice.
+ * For each manifest row sharing a non-null `origin.url` + `skillPath`
+ * with another row, maps its name to the other name(s) in that group.
+ * Keyed by manifest name, not entry.name, so it's immune to two folders
+ * sharing one frontmatter name. Detection only; never merges rows.
  */
 function duplicateOriginNamesByRow(
   manifestSkills: { name: string; origin: ManifestOrigin }[],
@@ -315,17 +297,9 @@ function buildOneEntry(
     }
   }
 
-  // Identity is the folder/manifest name, always -- entry.name is the
-  // key every renderer lookup (registryByName, installed-name matching,
-  // etc.) treats as unique and stable. SKILL.md's frontmatter `name:` is
-  // informational only: authors can drift it, and two folders can even
-  // carry an IDENTICAL frontmatter name (a stray copy that kept the
-  // wrong header). Trusting frontmatter for entry.name let exactly that
-  // happen -- two distinct registered skills ("diagnose" and
-  // "diagnosing-bugs") silently collapsed onto one displayed entry,
-  // making one of them unreachable in every name-keyed lookup (#204
-  // follow-up). A mismatch is surfaced as a warning instead of silently
-  // relabeling the skill.
+  // entry.name is always the folder name — renderer lookups key on it as
+  // a stable identity, so a stale/duplicate frontmatter name must not
+  // silently override it.
   if (!meta.name) {
     warnings.push("missing name (using folder name)");
   } else if (meta.name !== folderName) {

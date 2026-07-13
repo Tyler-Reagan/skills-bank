@@ -370,10 +370,7 @@ interface RegistrationLogEntry {
   linkPath: string;
 }
 
-// Audit trail, not crash-safety state (that's op-journal.ts) — a generous
-// keep-N so normal use retains months of history while an install that
-// registers skills constantly still stops accreting files forever
-// (ADR-0021).
+// Audit trail, not crash-safety state (op-journal.ts is that).
 const REGISTRATION_LOG_KEEP = 50;
 
 function recordRegistration(

@@ -1,14 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/**
- * Deletes all but the newest `keep` files in `dir` whose name starts with
- * `prefix` and ends with `.json`, ordered by mtime. Best-effort: a file
- * that can't be stat'd sorts oldest, and an unlink failure is swallowed
- * rather than aborting the rest of the sweep. Shared by every timestamped
- * per-operation log this repo writes (registry snapshots, registration
- * audit entries, ...) so they stop accreting one file forever (ADR-0021).
- */
+/** Deletes all but the newest `keep` `<prefix>*.json` files in `dir`, by mtime. Best-effort. */
 export function rotateFilesByPrefix(
   dir: string,
   prefix: string,

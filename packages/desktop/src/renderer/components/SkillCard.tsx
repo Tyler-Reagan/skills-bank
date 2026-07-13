@@ -286,11 +286,8 @@ export function agentsForSkill(
  * Single badge per card. Actionable state badges override provenance
  * when present. Priority order, highest wins:
  *
- *   1. DUPLICATE   — entry.duplicateOriginNames: the same upstream file
- *                    is also registered under another name (#204). A
- *                    mis-registration, independent of on-disk state —
- *                    checked first. Open drawer to review and Unregister
- *                    whichever copy you don't want to keep.
+ *   1. DUPLICATE   — entry.duplicateOriginNames: also registered under
+ *                    another name. Open to review and Unregister one.
  *   2. MISSING     — entry.missing: files gone. Open drawer to forget.
  *   3. UNREACHABLE — origin hasn't answered the last few probes; the
  *                    local copy is intact.
