@@ -56,13 +56,22 @@ export function npxGlobalLockPath(): string {
 /**
  * Read + parse the global lockfile's `skills` map. Returns `{}` on any
  * miss — file absent, unreadable, malformed JSON, or no `skills` object
- * — so callers treat "no npx lockfile" and "empty lockfile" alike.
+ * — so callers treat "no npx lockfile" and "empty lockfile" alike. A
+ * file that exists but fails to read/parse still logs (issue #210):
+ * unlike absence, that's evidence real origins were recorded and lost,
+ * not a genuinely-empty lockfile — the caller's honest `url:null`
+ * fallback is unchanged either way, but the loss shouldn't be silent.
  */
 export function readNpxLock(lockPath: string = npxGlobalLockPath()): NpxLock {
   let raw: string;
   try {
     raw = fs.readFileSync(lockPath, "utf8");
-  } catch {
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      console.error(
+        `[skills-bank] npx lockfile unreadable, origins may be lost: ${lockPath}: ${(err as Error).message}`,
+      );
+    }
     return {};
   }
   try {
@@ -70,7 +79,10 @@ export function readNpxLock(lockPath: string = npxGlobalLockPath()): NpxLock {
     return parsed.skills && typeof parsed.skills === "object"
       ? parsed.skills
       : {};
-  } catch {
+  } catch (err) {
+    console.error(
+      `[skills-bank] npx lockfile unparseable, origins may be lost: ${lockPath}: ${(err as Error).message}`,
+    );
     return {};
   }
 }

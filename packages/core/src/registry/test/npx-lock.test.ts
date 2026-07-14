@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -121,10 +121,13 @@ describe("adoptableNpxSkills", () => {
 });
 
 describe("readNpxLock", () => {
-  test("returns {} when the lockfile is absent", () => {
+  test("returns {} when the lockfile is absent, silently", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(
       readNpxLock(path.join(os.tmpdir(), "does-not-exist-lock.json")),
     ).toEqual({});
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 
   test("reads and parses the skills map from a fixture path", () => {
@@ -142,13 +145,17 @@ describe("readNpxLock", () => {
     }
   });
 
-  test("returns {} on malformed JSON", () => {
+  test("returns {} on malformed JSON, but logs the corruption (issue #210)", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "npx-lock-"));
     const lockPath = path.join(dir, ".skill-lock.json");
     fs.writeFileSync(lockPath, "{ not json", "utf8");
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       expect(readNpxLock(lockPath)).toEqual({});
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.mock.calls[0]?.[0]).toContain("unparseable");
     } finally {
+      spy.mockRestore();
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
