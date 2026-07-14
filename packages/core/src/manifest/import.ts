@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { buildRegistryIndex } from "../registry/build.js";
 import { hashSkillFolder } from "../registry/heal.js";
+import { reconcileFoldersToManifest } from "../registry/reconcile-folders.js";
 import { setRuntimeEntry } from "../registry/runtime-map.js";
 import { findSkillFolder } from "../registry/walk.js";
 import { isGithubUrl, parseOwnerRepo } from "../github/url.js";
@@ -290,7 +291,9 @@ export async function importRegistryManifest(
   if (opts.removeNames && opts.removeNames.length > 0) {
     removed = opts.removeNames.map((name) => {
       if (!findSkillFolder(registryRoot, name)) {
-        // Already gone — the deletion has nothing left to propagate.
+        // Folder already gone — reconcile drops the orphaned manifest
+        // row the folder-presence check above can't see past.
+        reconcileFoldersToManifest(registryRoot);
         return { name, ok: true, message: `${name} not in registry` };
       }
       const res = deleteFromBankSkill(name, { registryRoot });

@@ -15,6 +15,8 @@ const api = {
     ipcRenderer.invoke(IPC.uninstall, name, agents),
   unregister: (name: string, destination: string, force?: boolean) =>
     ipcRenderer.invoke(IPC.unregister, name, destination, force),
+  removeFromRegistry: (name: string) =>
+    ipcRenderer.invoke(IPC.removeFromRegistry, name),
   deleteUnregistered: (name: string) =>
     ipcRenderer.invoke(IPC.deleteUnregistered, name),
   forgetMissing: (name: string) => ipcRenderer.invoke(IPC.forgetMissing, name),

@@ -18,7 +18,8 @@
  */
 export type SuggestedActionKind =
   | "open-unregister-destination-settings"
-  | "unregister-force-overwrite";
+  | "unregister-force-overwrite"
+  | "remove-from-registry";
 
 /**
  * Next-step affordance the renderer can render as a button.

@@ -12,6 +12,7 @@ import { readLegacyOrigin } from "./legacy-origin.js";
 import { npxEntryOrigin, readNpxLock, type NpxLock } from "./npx-lock.js";
 import { bucketForOrigin } from "./source.js";
 import { moveSkillBucket } from "./bucket-move.js";
+import { removeRuntimeEntry } from "./runtime-map.js";
 import {
   SkillNameCollisionError,
   walkSkills,
@@ -69,6 +70,13 @@ function recoverOrigin(
  * origin for an orphan: `url: null` is the only honest answer reconcile
  * can give, and the manual origin picker is the null→url escape.
  *
+ * Bidirectional: also drops any row whose folder no longer exists,
+ * clearing its runtime entry alongside it. This is what lets every
+ * removal path (unregister, purge, import-removal) call this one
+ * function after mutating disk instead of hand-maintaining its own
+ * copy of the folder⇔row invariant — a prior source of drift (issue
+ * #209/#211/#213).
+ *
  * Two exceptions — recovery, not invention: a `url: null` candidate (a
  * fresh orphan or an existing null row) adopts an origin from either a
  * surviving pre-#159 `.skills-bank.json` sidecar (finding F5) or npx's
@@ -115,6 +123,17 @@ export function reconcileFoldersToManifest(
       manifest.skills.push(row);
     }
   }
+
+  // The reverse direction: a row whose folder is gone (moved out,
+  // deleted) no longer belongs in the manifest. Drop it and its
+  // runtime entry together so neither outlives the other.
+  for (const name of [...byName.keys()]) {
+    if (!foldersByName.has(name)) {
+      byName.delete(name);
+      removeRuntimeEntry(registryRoot, name);
+    }
+  }
+  manifest.skills = manifest.skills.filter((s) => byName.has(s.name));
 
   // Heal every url:null row from a legacy sidecar or npx's lockfile if
   // either has a real origin. This loop re-examines every null row —

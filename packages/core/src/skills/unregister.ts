@@ -4,23 +4,11 @@ import path from "node:path";
 import { getAgentSkillsDir, type AgentId } from "../shared/agents.js";
 import { repointAgentLinks } from "../shared/agent-links.js";
 import { type AppError, fromCaught, makeAppError } from "../shared/errors.js";
-import { readLiveManifest, writeLiveManifest } from "../manifest/manifest.js";
-import { removeRuntimeEntry } from "../registry/runtime-map.js";
 import type { RegistryEntry } from "../shared/types.js";
 import type { UnlinkTargetResult } from "./install.js";
 import { buildRegistryIndex } from "../registry/build.js";
-
-/** Drop a skill's manifest row + runtime entry — the reciprocal of
- *  `reconcileFoldersToManifest`'s add, called whenever a skill's
- *  registry entry is removed for good. */
-function removeManifestRow(registryRoot: string, name: string): void {
-  const manifest = readLiveManifest(registryRoot);
-  const next = manifest.skills.filter((s) => s.name !== name);
-  if (next.length !== manifest.skills.length) {
-    writeLiveManifest(registryRoot, { ...manifest, skills: next });
-  }
-  removeRuntimeEntry(registryRoot, name);
-}
+import { reconcileFoldersToManifest } from "../registry/reconcile-folders.js";
+import { findSkillFolder } from "../registry/walk.js";
 
 export interface UnregisterOptions {
   registryRoot: string;
@@ -117,9 +105,10 @@ function moveOutOfBank(
     };
   }
   if (!fs.existsSync(sourceDir)) {
-    // Files already gone — registry-folder-missing heal state. Drop the
-    // manifest row anyway so the user can re-register from another
-    // location if needed.
+    // Files already gone — registry-folder-missing heal state. Reconcile
+    // drops the now-orphaned manifest row so the user can re-register
+    // from another location if needed.
+    reconcileFoldersToManifest(opts.registryRoot);
     const idxPath = path.join(opts.registryRoot, "index.json");
     if (fs.existsSync(idxPath)) {
       buildRegistryIndex(opts.registryRoot, {
@@ -127,7 +116,6 @@ function moveOutOfBank(
         writeFile: true,
       });
     }
-    removeManifestRow(opts.registryRoot, name);
     return {
       ok: true,
       name,
@@ -202,7 +190,14 @@ function moveOutOfBank(
         const error = makeAppError({
           code: "unregister.force-overwrite-failed",
           message: `failed to remove existing folder at ${destDir}: ${(err as Error).message}`,
-          copyableDetails: { destDir, stack: (err as Error).stack ?? "" },
+          suggestedActions: [
+            {
+              kind: "remove-from-registry",
+              label: "Remove from registry instead",
+              tone: "danger",
+            },
+          ],
+          copyableDetails: { name, destDir, stack: (err as Error).stack ?? "" },
         });
         return {
           ok: false,
@@ -226,6 +221,11 @@ function moveOutOfBank(
           {
             kind: "unregister-force-overwrite",
             label: "Overwrite existing",
+            tone: "danger",
+          },
+          {
+            kind: "remove-from-registry",
+            label: "Remove from registry instead",
             tone: "danger",
           },
         ],
@@ -252,11 +252,23 @@ function moveOutOfBank(
       fs.cpSync(sourceDir, destDir, { recursive: true });
       fs.rmSync(sourceDir, { recursive: true, force: true });
     } else {
-      const error = fromCaught("unregister.move-failed", err);
+      const caught = fromCaught("unregister.move-failed", err);
+      const error = makeAppError({
+        code: caught.code,
+        message: `move failed: ${caught.message}`,
+        suggestedActions: [
+          {
+            kind: "remove-from-registry",
+            label: "Remove from registry instead",
+            tone: "danger",
+          },
+        ],
+        copyableDetails: { ...caught.copyableDetails, name },
+      });
       return {
         ok: false,
         name,
-        message: `move failed: ${error.message}`,
+        message: error.message,
         rewrites: [],
         errors: [error],
         error,
@@ -291,7 +303,7 @@ function moveOutOfBank(
     );
   }
 
-  removeManifestRow(opts.registryRoot, name);
+  reconcileFoldersToManifest(opts.registryRoot);
   // Rebuild the index so the now-unregistered skill drops out.
   buildRegistryIndex(opts.registryRoot, {
     includeGitInfo: true,
@@ -306,6 +318,49 @@ function moveOutOfBank(
     rewrites,
     errors,
   };
+}
+
+export interface PurgeFromRegistryResult {
+  ok: boolean;
+  name: string;
+  message: string;
+  error?: AppError;
+}
+
+/**
+ * Recovery action for a skill stranded in the registry after an
+ * `unregisterSkill` call couldn't complete (e.g. a destination
+ * collision the user doesn't want to resolve by picking another
+ * destination or overwriting). Deletes the skill's on-disk folder
+ * from the registry — no move, no destination — and reconciles the
+ * manifest, which drops its now-orphaned row. Any agent-dir symlinks
+ * still pointing at the old
+ * registry copy are left as broken links for the existing
+ * broken-symlink repair flow to pick up, same as any other
+ * registry-copy removal.
+ */
+export function purgeSkillFromRegistry(
+  registryRoot: string,
+  name: string,
+): PurgeFromRegistryResult {
+  const folder = findSkillFolder(registryRoot, name);
+  if (!folder) {
+    const error = makeAppError({
+      code: "purge.not-in-registry",
+      message: `${name} is not in the registry`,
+      copyableDetails: { name },
+    });
+    return { ok: false, name, message: error.message, error };
+  }
+  try {
+    fs.rmSync(folder.dir, { recursive: true, force: true });
+  } catch (err) {
+    const error = fromCaught("purge.remove-failed", err);
+    return { ok: false, name, message: error.message, error };
+  }
+  reconcileFoldersToManifest(registryRoot);
+  buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
+  return { ok: true, name, message: `${name} removed from the registry` };
 }
 
 function tildeify(p: string): string {

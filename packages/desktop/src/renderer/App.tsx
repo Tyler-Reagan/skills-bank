@@ -169,6 +169,15 @@ function AppContent(): React.ReactElement {
       openModal({ kind: "overwrite", target: { errorId: id, name, destDir } });
       return;
     }
+    if (kind === "remove-from-registry") {
+      const name = detailString(error, "name");
+      if (!name) {
+        flash("Couldn't retry — original target name was lost.");
+        return;
+      }
+      openModal({ kind: "removeFromRegistry", target: { errorId: id, name } });
+      return;
+    }
   };
   // Bulk "Resolve all" confirmation list. Each entry's conflicts will
   // be replaced with symlinks to the registry copy. Broken-symlink

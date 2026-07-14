@@ -8,9 +8,8 @@ import {
   getDefaultInstallAgents,
 } from "../shared/agents.js";
 import { buildRegistryIndex } from "../registry/build.js";
+import { reconcileFoldersToManifest } from "../registry/reconcile-folders.js";
 import { findEntry, resolveEntryPath } from "../registry/walk.js";
-import { readLiveManifest, writeLiveManifest } from "../manifest/manifest.js";
-import { removeRuntimeEntry } from "../registry/runtime-map.js";
 
 export interface LinkToAgentsOptions {
   /** If true, replace an existing symlink at the target. Defaults to false. */
@@ -283,12 +282,7 @@ export function deleteFromBankSkill(
     };
   }
 
-  const manifest = readLiveManifest(opts.registryRoot);
-  const nextSkills = manifest.skills.filter((s) => s.name !== name);
-  if (nextSkills.length !== manifest.skills.length) {
-    writeLiveManifest(opts.registryRoot, { ...manifest, skills: nextSkills });
-  }
-  removeRuntimeEntry(opts.registryRoot, name);
+  reconcileFoldersToManifest(opts.registryRoot);
 
   // Rewrite index.json so subsequent listRegistry calls don't return the
   // stale entry. Without this the renderer would still see the deleted

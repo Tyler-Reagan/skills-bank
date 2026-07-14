@@ -98,6 +98,7 @@ export const IPC = {
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   unregister: "skills:unregister",
+  removeFromRegistry: "skills:removeFromRegistry",
   deleteUnregistered: "skills:deleteUnregistered",
   forgetMissing: "skills:forgetMissing",
   repointOrigin: "skills:repointOrigin",
@@ -386,6 +387,10 @@ interface UnregisterIPCResult extends IPCFailureFields {
   destinationPath?: string;
 }
 
+interface RemoveFromRegistryIPCResult extends IPCFailureFields {
+  ok: boolean;
+}
+
 export type PreviewManifestExportResult =
   | {
       ok: true;
@@ -524,6 +529,15 @@ interface SkillsBankAPI {
     destination: AgentId,
     force?: boolean,
   ): Promise<UnregisterIPCResult>;
+  /**
+   * Recovery action for a skill stranded in the registry by an
+   * `unregister` call that couldn't complete (destination collision,
+   * overwrite failure, cross-device move failure). Deletes the
+   * skill's registry-copy folder and manifest row directly — no
+   * destination involved. Surfaced via the `remove-from-registry`
+   * suggestedAction on those unregister errors.
+   */
+  removeFromRegistry(name: string): Promise<RemoveFromRegistryIPCResult>;
   /**
    * M9b: delete an unregistered skill's on-disk presence. Refuses
    * if the skill is still registered (the registered → unregister
