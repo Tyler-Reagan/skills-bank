@@ -353,7 +353,13 @@ function AppContent(): React.ReactElement {
       }
       await refresh();
     },
-    [settings.unregisterDestinationAgent, flash, flashError, pushAppError, refresh],
+    [
+      settings.unregisterDestinationAgent,
+      flash,
+      flashError,
+      pushAppError,
+      refresh,
+    ],
   );
   const onDismissUnregisterFailure = useCallback(
     async (name: string) => {

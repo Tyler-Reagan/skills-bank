@@ -142,8 +142,9 @@ describe("reconcileFoldersToManifest — drops rows whose folder is gone", () =>
       ],
     });
     reconcile(scratch);
-    expect(readLiveManifest(scratch).skills.find((s) => s.name === "vanished"))
-      .toBeUndefined();
+    expect(
+      readLiveManifest(scratch).skills.find((s) => s.name === "vanished"),
+    ).toBeUndefined();
   });
 
   test("drops the runtime entry alongside the row", () => {

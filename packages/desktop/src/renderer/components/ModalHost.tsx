@@ -554,8 +554,8 @@ export function ModalHost({
           <>
             <p className="mt-0 mb-0">
               This deletes <code>{removeFromRegistryTarget?.name}</code>
-              &rsquo;s folder from the registry and its manifest entry,
-              without moving the files anywhere first.
+              &rsquo;s folder from the registry and its manifest entry, without
+              moving the files anywhere first.
             </p>
             <p className="confirm-dialog-secondary">This cannot be undone.</p>
           </>

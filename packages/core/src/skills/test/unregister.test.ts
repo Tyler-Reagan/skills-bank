@@ -136,20 +136,15 @@ describe("unregister — Unregister Failure marker", () => {
     expect(result.error?.code).toBe("unregister.destination-collision");
 
     // The row and folder are exactly as they were before the attempt.
-    const bankDir = path.join(
-      registryRoot,
-      "skills",
-      "personal",
-      "collide-me",
-    );
+    const bankDir = path.join(registryRoot, "skills", "personal", "collide-me");
     expect(fs.existsSync(bankDir)).toBe(true);
     const manifest = readLiveManifest(registryRoot);
     expect(manifest.skills.some((s) => s.name === "collide-me")).toBe(true);
 
     // But the marker is set.
-    expect(getRuntimeEntry(registryRoot, "collide-me").unregisterFailedAt).toEqual(
-      expect.any(String),
-    );
+    expect(
+      getRuntimeEntry(registryRoot, "collide-me").unregisterFailedAt,
+    ).toEqual(expect.any(String));
   });
 
   test("a successful retry clears the marker along with the dropped row", () => {
