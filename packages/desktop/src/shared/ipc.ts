@@ -98,8 +98,10 @@ export const IPC = {
   removeBrokenLinks: "skills:removeBrokenLinks",
   resolveSkillConflicts: "skills:resolveSkillConflicts",
   unregister: "skills:unregister",
+  removeFromRegistry: "skills:removeFromRegistry",
   deleteUnregistered: "skills:deleteUnregistered",
   forgetMissing: "skills:forgetMissing",
+  dismissUnregisterFailure: "skills:dismissUnregisterFailure",
   repointOrigin: "skills:repointOrigin",
   detachLocal: "skills:detachLocal",
   rehomeIntoLinkedRepo: "skills:rehomeIntoLinkedRepo",
@@ -386,6 +388,10 @@ interface UnregisterIPCResult extends IPCFailureFields {
   destinationPath?: string;
 }
 
+interface RemoveFromRegistryIPCResult extends IPCFailureFields {
+  ok: boolean;
+}
+
 export type PreviewManifestExportResult =
   | {
       ok: true;
@@ -525,6 +531,15 @@ interface SkillsBankAPI {
     force?: boolean,
   ): Promise<UnregisterIPCResult>;
   /**
+   * Recovery action for a skill stranded in the registry by an
+   * `unregister` call that couldn't complete (destination collision,
+   * overwrite failure, cross-device move failure). Deletes the
+   * skill's registry-copy folder and manifest row directly — no
+   * destination involved. Surfaced via the `remove-from-registry`
+   * suggestedAction on those unregister errors.
+   */
+  removeFromRegistry(name: string): Promise<RemoveFromRegistryIPCResult>;
+  /**
    * M9b: delete an unregistered skill's on-disk presence. Refuses
    * if the skill is still registered (the registered → unregister
    * → delete ladder is enforced server-side).
@@ -538,6 +553,12 @@ interface SkillsBankAPI {
   forgetMissing(
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  /**
+   * Dismiss a skill's Unregister Failure marker without retrying — the
+   * skill stays registered exactly as it was; only the "last attempt
+   * failed" reminder is cleared (issue #211/#212/#215).
+   */
+  dismissUnregisterFailure(name: string): Promise<{ ok: boolean }>;
   /**
    * Restore an unreachable origin by repointing it at a new GitHub URL
    * (ADR-0012). Parses the URL → repo + skillPath, re-fetches content,

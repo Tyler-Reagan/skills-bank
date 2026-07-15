@@ -158,9 +158,8 @@ async function writeManifestToDisk(): Promise<{
     if (result.canceled || !result.filePath) {
       return { ok: false, message: "export cancelled" };
     }
-    const manifest = exportRegistryManifest(
-      registryRoot,
-      manifestExportContext(),
+    const manifest = toPushedProjection(
+      exportRegistryManifest(registryRoot, manifestExportContext()),
     );
     fs.writeFileSync(result.filePath, JSON.stringify(manifest, null, 2) + "\n");
     return {
@@ -289,7 +288,9 @@ export function registerManifestHandlers(): void {
         };
       const branch = linkedRepo.defaultBranch ?? "main";
       const root = registryRoot;
-      const manifest = exportRegistryManifest(root, manifestExportContext());
+      const manifest = toPushedProjection(
+        exportRegistryManifest(root, manifestExportContext()),
+      );
       const content = serializeManifest(manifest);
       const commitMessage = "chore: update registry manifest";
 
@@ -355,9 +356,6 @@ export function registerManifestHandlers(): void {
       // branch hard-refuses when the remote moved; here we don't block
       // (PR review is the backstop) but attach a non-blocking warning so
       // the caller can flag that the PR may not reflect the latest remote.
-      // NOTE: the pushed projection drops url:null rows — whether those
-      // rows belong in the committed repo manifest is deferred to the
-      // registration-rework PR, not resolved here.
       let warning: string | undefined;
       {
         const remote = await fetchRemoteManifest(

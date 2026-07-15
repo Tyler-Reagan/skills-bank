@@ -10,6 +10,7 @@ import {
   readLiveManifest,
   writeLiveManifest,
 } from "../../manifest/manifest.js";
+import { getRuntimeEntry, setRuntimeEntry } from "../runtime-map.js";
 
 /**
  * Pins the F5 recovery invariant: reconcile heals a `url:null` candidate
@@ -122,6 +123,46 @@ describe("reconcileFoldersToManifest — F5 legacy-origin recovery", () => {
     });
     reconcile(scratch);
     expect(byName(scratch, "local-only").origin).toEqual({ url: null });
+  });
+});
+
+/**
+ * Bidirectional reconciliation (issue #209/#211/#213): a manifest row
+ * whose folder is gone is dropped, alongside its runtime entry, so every
+ * removal path (unregister, purge, import-removal) can call this one
+ * function after mutating disk instead of hand-maintaining its own copy
+ * of the folder⇔row invariant.
+ */
+describe("reconcileFoldersToManifest — drops rows whose folder is gone", () => {
+  test("removes the manifest row for a name with no folder on disk", () => {
+    writeLiveManifest(scratch, {
+      schemaVersion: 6,
+      skills: [
+        { name: "vanished", origin: { url: null }, category: null, tags: [] },
+      ],
+    });
+    reconcile(scratch);
+    expect(
+      readLiveManifest(scratch).skills.find((s) => s.name === "vanished"),
+    ).toBeUndefined();
+  });
+
+  test("drops the runtime entry alongside the row", () => {
+    writeLiveManifest(scratch, {
+      schemaVersion: 6,
+      skills: [
+        { name: "vanished", origin: { url: null }, category: null, tags: [] },
+      ],
+    });
+    setRuntimeEntry(scratch, "vanished", { syncedHash: "deadbeef" });
+    reconcile(scratch);
+    expect(getRuntimeEntry(scratch, "vanished")).toEqual({});
+  });
+
+  test("leaves rows with a matching folder untouched", () => {
+    makeSkillFolder("personal", "still-here");
+    reconcile(scratch);
+    expect(byName(scratch, "still-here")).toBeDefined();
   });
 });
 

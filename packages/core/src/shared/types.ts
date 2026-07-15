@@ -59,6 +59,15 @@ export interface RegistryEntry extends SkillMeta {
    */
   originUnreachable?: boolean;
   /**
+   * Heal axis: the skill's most recent Unregister attempt failed
+   * (destination collision, force-overwrite failure, or move failure)
+   * and hasn't been resolved since — a retry, or dismissal, clears it.
+   * Not a data defect: the folder and manifest row are exactly as they
+   * were before the attempt (issue #211's "Unregister Failure"). Set in
+   * `buildRegistryIndex` from the runtime map's `unregisterFailedAt`.
+   */
+  unregisterFailed?: boolean;
+  /**
    * Non-fatal issues found while building this entry — for example a
    * meta.json that fails schema validation or a folder that only has
    * SKILL.md. Surface in the UI so users can fix metadata without

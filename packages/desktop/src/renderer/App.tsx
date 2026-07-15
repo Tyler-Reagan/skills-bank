@@ -169,6 +169,15 @@ function AppContent(): React.ReactElement {
       openModal({ kind: "overwrite", target: { errorId: id, name, destDir } });
       return;
     }
+    if (kind === "remove-from-registry") {
+      const name = detailString(error, "name");
+      if (!name) {
+        flash("Couldn't retry — original target name was lost.");
+        return;
+      }
+      openModal({ kind: "removeFromRegistry", target: { errorId: id, name } });
+      return;
+    }
   };
   // Bulk "Resolve all" confirmation list. Each entry's conflicts will
   // be replaced with symlinks to the registry copy. Broken-symlink
@@ -322,6 +331,42 @@ function AppContent(): React.ReactElement {
       await refresh();
     },
     [flash, flashError, refresh],
+  );
+
+  // Unregister Failure badge actions (issue #211/#212/#215). Retry
+  // re-invokes Unregister with the current destination setting — same
+  // call the drawer's Unregister button makes — and routes a repeat
+  // failure to the same persistent ErrorPanel so suggestedActions still
+  // work. Dismiss clears the marker without retrying.
+  const onRetryUnregister = useCallback(
+    async (name: string) => {
+      const r = await window.skillsBank.unregister(
+        name,
+        settings.unregisterDestinationAgent as AgentId,
+      );
+      if (r.ok) {
+        flash(r.message);
+      } else if (r.error) {
+        pushAppError(r.error);
+      } else {
+        flashError(r.message);
+      }
+      await refresh();
+    },
+    [
+      settings.unregisterDestinationAgent,
+      flash,
+      flashError,
+      pushAppError,
+      refresh,
+    ],
+  );
+  const onDismissUnregisterFailure = useCallback(
+    async (name: string) => {
+      await window.skillsBank.dismissUnregisterFailure(name);
+      await refresh();
+    },
+    [refresh],
   );
 
   // Boot read for the ADR-0004 weak-storage notice: surfaced when the
@@ -798,6 +843,10 @@ function AppContent(): React.ReactElement {
                 })();
               }}
               onForgetMissing={(group) => void onForgetMissing(group)}
+              onRetryUnregister={(name) => void onRetryUnregister(name)}
+              onDismissUnregisterFailure={(name) =>
+                void onDismissUnregisterFailure(name)
+              }
             />
           )}
           {tab === "metrics" && (

@@ -96,6 +96,10 @@ export type ActiveModal =
       target: { errorId: number; name: string; destDir: string };
     }
   | {
+      kind: "removeFromRegistry";
+      target: { errorId: number; name: string };
+    }
+  | {
       kind: "bulkRepair";
       target: {
         repaired: number;
@@ -163,6 +167,8 @@ export function ModalHost({
   const pickDestinationTarget =
     modal?.kind === "pickDestination" ? modal.target : null;
   const overwriteTarget = modal?.kind === "overwrite" ? modal.target : null;
+  const removeFromRegistryTarget =
+    modal?.kind === "removeFromRegistry" ? modal.target : null;
   const bulkRepairPrompt = modal?.kind === "bulkRepair" ? modal.target : null;
 
   const handleUpdateResult = useCallback(
@@ -208,7 +214,9 @@ export function ModalHost({
   const handleUnregisterResult = useCallback(
     async (
       errorId: number,
-      r: Awaited<ReturnType<typeof window.skillsBank.unregister>>,
+      r:
+        | Awaited<ReturnType<typeof window.skillsBank.unregister>>
+        | Awaited<ReturnType<typeof window.skillsBank.removeFromRegistry>>,
     ) => {
       if (r.ok) {
         dismissAppError(errorId);
@@ -535,6 +543,31 @@ export function ModalHost({
             settings.unregisterDestinationAgent,
             true,
           );
+          await handleUnregisterResult(target.errorId, r);
+        }}
+      />
+
+      <ConfirmDialog
+        open={removeFromRegistryTarget !== null}
+        title="Remove from registry?"
+        body={
+          <>
+            <p className="mt-0 mb-0">
+              This deletes <code>{removeFromRegistryTarget?.name}</code>
+              &rsquo;s folder from the registry and its manifest entry, without
+              moving the files anywhere first.
+            </p>
+            <p className="confirm-dialog-secondary">This cannot be undone.</p>
+          </>
+        }
+        confirmLabel="Remove from registry"
+        tone="danger"
+        onCancel={() => closeModal()}
+        onConfirm={async () => {
+          if (!removeFromRegistryTarget) return;
+          const target = removeFromRegistryTarget;
+          closeModal();
+          const r = await window.skillsBank.removeFromRegistry(target.name);
           await handleUnregisterResult(target.errorId, r);
         }}
       />

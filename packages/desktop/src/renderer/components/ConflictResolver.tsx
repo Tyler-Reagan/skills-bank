@@ -42,7 +42,7 @@ interface PickerProps<T extends string> {
  * Radio list of action options used inside each conflict row. Also
  * consumed standalone by ManageLabelsModal for its scope/skills picks.
  */
-export function ConflictActionPicker<T extends string>({
+function ConflictActionPicker<T extends string>({
   name,
   options,
   value,

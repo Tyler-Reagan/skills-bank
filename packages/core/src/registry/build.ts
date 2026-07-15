@@ -208,12 +208,13 @@ function duplicateOriginNamesByRow(
 
 /**
  * Fold the runtime map's volatile state into a built entry: drift
- * (live hash vs the recorded `syncedHash` baseline) and
- * origin-unreachable (probe-failure counter saturated for a
- * GitHub-capable origin). Drift only fires once a baseline is
- * recorded — an acquired skill (`origin.url` set) or a detached one
- * (rebaselined at detach time) always has one; a from-scratch local
- * skill with no baseline yet is never flagged.
+ * (live hash vs the recorded `syncedHash` baseline), origin-unreachable
+ * (probe-failure counter saturated for a GitHub-capable origin), and
+ * unregister-failed (a marker left by the most recent failed Unregister
+ * attempt). Drift only fires once a baseline is recorded — an acquired
+ * skill (`origin.url` set) or a detached one (rebaselined at detach
+ * time) always has one; a from-scratch local skill with no baseline
+ * yet is never flagged.
  */
 function applyRuntimeState(
   entry: RegistryEntry,
@@ -230,6 +231,9 @@ function applyRuntimeState(
     (runtime.probeFailureCount ?? 0) >= ORIGIN_UNREACHABLE_THRESHOLD
   ) {
     entry.originUnreachable = true;
+  }
+  if (runtime.unregisterFailedAt) {
+    entry.unregisterFailed = true;
   }
 }
 

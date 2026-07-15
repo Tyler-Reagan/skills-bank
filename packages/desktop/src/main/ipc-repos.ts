@@ -35,7 +35,7 @@ function commitGithubLinkage(meta: LinkedRepoMetadata): void {
  * confirmed removals via the pushed-projection removal basis), then
  * commits the linkage.
  */
-export async function replaceRegistryWithRepo(fullName: string): Promise<{
+async function replaceRegistryWithRepo(fullName: string): Promise<{
   ok: boolean;
   message: string;
   importedCount?: number;

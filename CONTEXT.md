@@ -45,7 +45,7 @@ A skill's single nullable-URL provenance: the GitHub URL it was mirrored from, o
 _Avoid_: Source (the old provenance-axis term, retired), upstream (kept only as a description of what an Origin URL points at)
 
 **Manifest**:
-The registry's metadata record for every skill it manages — Origin, Category, Tags — never skill content itself, which is always re-fetched from Origin on import. Two projections exist (ADR-0021): the live manifest carries every row, including `url: null` local-only skills; the pushed manifest drops those rows before anything is committed to the Linked Repo, diffed, or merged, so a local-only skill can never be misread by a pull as "deleted upstream."
+The registry's metadata record for every skill it manages — Origin, Category, Tags — never skill content itself, which is always re-fetched from Origin on import. Two projections exist (ADR-0021): the live manifest carries every row, including `url: null` local-only skills; the pushed manifest drops those rows before anything is committed to the Linked Repo, diffed, or merged, so a local-only skill can never be misread by a pull as "deleted upstream." Reaffirmed (issue #210): no real use case has surfaced for exposing local-only skills in a pushed manifest, and doing so would reintroduce the "deleted upstream?" ambiguity the exclusion exists to prevent — the blanket exclusion stays a hard rule, not a policy to make conditional. That guarantee rests on `url: null` being an honest signal; the two provenance readers that could otherwise conflate "genuinely local" with "origin lost to a corrupted file" (`readLegacyOrigin`, `readNpxLock`) now log rather than silently swallow a parse/read failure, so a corrupted sidecar or npx lockfile surfaces instead of being mistaken for a local skill.
 _Avoid_: Registry (the managed collection itself; Manifest is its metadata artifact), Skill record, Sidecar (retired provenance mechanism, ADR-0021)
 
 **Runtime Map**:
@@ -69,6 +69,10 @@ _Avoid_: Adopt / Move into bank (retired — registering _is_ moving into the ba
 **Unregister**:
 Register's inverse: move a skill's files out of the bank to the `unregisterDestinationAgent` directory (default the shared `~/.agents/skills/`) and rewrite every agent symlink that pointed at the bank copy to the new location, then drop the manifest row. User-facing button: "Unregister." Mid-tier on the destructive-action ladder — stops short of deleting files (see the Installed tab's Delete, reachable only on already-unregistered skills).
 _Avoid_: Remove (ambiguous with Uninstall — never use "Remove" in prose for either action), Deregister
+
+**Unregister Failure** (issue #211):
+A persisted marker, not a distinct skill state — records that a skill's most recent Unregister attempt didn't complete (destination collision, force-overwrite failure, move failure), surfaced as a warning on its otherwise-ordinary Registered/not-yet-installed row. All of Unregister's failure paths return before touching the folder or manifest row, so a failed attempt leaves the skill exactly as it was beforehand; there is no on-disk shape to detect after the fact, only the fact that the attempt happened. Cleared by a successful retry or explicit dismissal. Never becomes its own `SkillDiagnosticCategory` — there's nothing for a diagnostic scan to find.
+_Avoid_: Stranded/Orphaned (implies a distinct, detectable data state; this is a remembered failed attempt, not one — contrast with the genuine data defect `registry-folder-missing` covers, see Skill Diagnostic)
 
 **Install**:
 Symlink a Registry skill's canonical folder into one or more Agent Directories. Button label: "Install" (or "Reinstall" when repairing broken links, or "Install (will prompt for conflicts)" when stragglers exist). Multi-agent by default — installs to every Agent Directory that exists on disk.

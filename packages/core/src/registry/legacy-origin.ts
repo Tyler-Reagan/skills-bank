@@ -38,7 +38,15 @@ export function readLegacyOrigin(skillDir: string): ManifestOrigin | null {
   let parsed: { origin?: LegacySidecarOrigin };
   try {
     parsed = JSON.parse(fs.readFileSync(p, "utf8"));
-  } catch {
+  } catch (err) {
+    // The sidecar's presence proves a real origin was once recorded —
+    // unlike "no sidecar", this is corruption, not absence. Surface it
+    // (issue #210) rather than silently collapsing into the same honest
+    // url:null a genuinely local skill gets; still can't invent the URL
+    // from unreadable JSON, so the resting state is the same either way.
+    console.error(
+      `[skills-bank] legacy sidecar unreadable, origin may be lost: ${p}: ${(err as Error).message}`,
+    );
     return null;
   }
   const o = parsed.origin;

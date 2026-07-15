@@ -10,6 +10,8 @@ import {
   buildRegistryIndex,
   classifySkillByName,
   deleteUnregisteredSkill,
+  dismissUnregisterFailure,
+  purgeSkillFromRegistry,
   detachOrigin,
   extractSkill,
   findSkillFolder,
@@ -316,6 +318,14 @@ export function registerRegistryHandlers(): void {
     }
   });
 
+  mutatingHandle(IPC.dismissUnregisterFailure, (_e, name: string) => {
+    const registryRoot = getRegistryRoot();
+    if (!registryRoot) return { ok: false };
+    dismissUnregisterFailure(registryRoot, name);
+    buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
+    return { ok: true };
+  });
+
   mutatingHandle(IPC.repointOrigin, async (_e, name: string, url: string) => {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
@@ -488,6 +498,29 @@ export function registerRegistryHandlers(): void {
       }
     },
   );
+
+  mutatingHandle(IPC.removeFromRegistry, (_e, name: string) => {
+    const registryRoot = getRegistryRoot();
+    if (!registryRoot) {
+      const error = makeAppError({
+        code: "config.no-registry-root",
+        message: NO_ROOT_MSG,
+      });
+      return { ok: false, message: NO_ROOT_MSG, errors: [error], error };
+    }
+    try {
+      const r = purgeSkillFromRegistry(registryRoot, name);
+      return {
+        ok: r.ok,
+        message: r.message,
+        errors: r.error ? [r.error] : [],
+        error: r.error,
+      };
+    } catch (err) {
+      const error = fromCaught("remove-from-registry.unknown", err);
+      return { ok: false, message: error.message, errors: [error], error };
+    }
+  });
 
   mutatingHandle(IPC.uninstall, (_e, name: string, agents?: AgentId[]) => {
     try {
