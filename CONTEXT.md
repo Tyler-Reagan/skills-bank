@@ -70,6 +70,10 @@ _Avoid_: Adopt / Move into bank (retired — registering _is_ moving into the ba
 Register's inverse: move a skill's files out of the bank to the `unregisterDestinationAgent` directory (default the shared `~/.agents/skills/`) and rewrite every agent symlink that pointed at the bank copy to the new location, then drop the manifest row. User-facing button: "Unregister." Mid-tier on the destructive-action ladder — stops short of deleting files (see the Installed tab's Delete, reachable only on already-unregistered skills).
 _Avoid_: Remove (ambiguous with Uninstall — never use "Remove" in prose for either action), Deregister
 
+**Unregister Failure** (issue #211):
+A persisted marker, not a distinct skill state — records that a skill's most recent Unregister attempt didn't complete (destination collision, force-overwrite failure, move failure), surfaced as a warning on its otherwise-ordinary Registered/not-yet-installed row. All of Unregister's failure paths return before touching the folder or manifest row, so a failed attempt leaves the skill exactly as it was beforehand; there is no on-disk shape to detect after the fact, only the fact that the attempt happened. Cleared by a successful retry or explicit dismissal. Never becomes its own `SkillDiagnosticCategory` — there's nothing for a diagnostic scan to find.
+_Avoid_: Stranded/Orphaned (implies a distinct, detectable data state; this is a remembered failed attempt, not one — contrast with the genuine data defect `registry-folder-missing` covers, see Skill Diagnostic)
+
 **Install**:
 Symlink a Registry skill's canonical folder into one or more Agent Directories. Button label: "Install" (or "Reinstall" when repairing broken links, or "Install (will prompt for conflicts)" when stragglers exist). Multi-agent by default — installs to every Agent Directory that exists on disk.
 _Avoid_: Add, Enable

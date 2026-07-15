@@ -83,6 +83,9 @@ interface Props {
    * own inline action button, same as repair/resolve.
    */
   onForgetMissing?: (group: InstalledGroup) => void;
+  /** Unregister Failure badge actions on a Registered card (issue #215). */
+  onRetryUnregister?: (name: string) => void;
+  onDismissUnregisterFailure?: (name: string) => void;
 }
 
 export function InstalledTab({
@@ -97,6 +100,8 @@ export function InstalledTab({
   onInlineRegister,
   onInlineDelete,
   onForgetMissing,
+  onRetryUnregister,
+  onDismissUnregisterFailure,
 }: Props): React.ReactElement {
   const { installed, registry, refresh } = useRegistry();
   const registerTooltip = REGISTER_TOOLTIP;
@@ -318,6 +323,16 @@ export function InstalledTab({
                   onSelect={() => onSelectIntegrated(entry)}
                   index={i}
                   agents={g.agents}
+                  onRetryUnregister={
+                    onRetryUnregister
+                      ? () => onRetryUnregister(entry.name)
+                      : undefined
+                  }
+                  onDismissUnregisterFailure={
+                    onDismissUnregisterFailure
+                      ? () => onDismissUnregisterFailure(entry.name)
+                      : undefined
+                  }
                 />
               );
             })}

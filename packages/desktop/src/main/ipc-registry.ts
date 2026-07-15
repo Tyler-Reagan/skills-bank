@@ -10,6 +10,7 @@ import {
   buildRegistryIndex,
   classifySkillByName,
   deleteUnregisteredSkill,
+  dismissUnregisterFailure,
   purgeSkillFromRegistry,
   detachOrigin,
   extractSkill,
@@ -315,6 +316,14 @@ export function registerRegistryHandlers(): void {
         return { ok: false, message: error.message, error };
       })();
     }
+  });
+
+  mutatingHandle(IPC.dismissUnregisterFailure, (_e, name: string) => {
+    const registryRoot = getRegistryRoot();
+    if (!registryRoot) return { ok: false };
+    dismissUnregisterFailure(registryRoot, name);
+    buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
+    return { ok: true };
   });
 
   mutatingHandle(IPC.repointOrigin, async (_e, name: string, url: string) => {

@@ -333,6 +333,36 @@ function AppContent(): React.ReactElement {
     [flash, flashError, refresh],
   );
 
+  // Unregister Failure badge actions (issue #211/#212/#215). Retry
+  // re-invokes Unregister with the current destination setting — same
+  // call the drawer's Unregister button makes — and routes a repeat
+  // failure to the same persistent ErrorPanel so suggestedActions still
+  // work. Dismiss clears the marker without retrying.
+  const onRetryUnregister = useCallback(
+    async (name: string) => {
+      const r = await window.skillsBank.unregister(
+        name,
+        settings.unregisterDestinationAgent as AgentId,
+      );
+      if (r.ok) {
+        flash(r.message);
+      } else if (r.error) {
+        pushAppError(r.error);
+      } else {
+        flashError(r.message);
+      }
+      await refresh();
+    },
+    [settings.unregisterDestinationAgent, flash, flashError, pushAppError, refresh],
+  );
+  const onDismissUnregisterFailure = useCallback(
+    async (name: string) => {
+      await window.skillsBank.dismissUnregisterFailure(name);
+      await refresh();
+    },
+    [refresh],
+  );
+
   // Boot read for the ADR-0004 weak-storage notice: surfaced when the
   // safeStorage backend resolved to `basic_text` (Linux without a
   // keyring) and the user hasn't already dismissed it. (The "Skip this
@@ -807,6 +837,10 @@ function AppContent(): React.ReactElement {
                 })();
               }}
               onForgetMissing={(group) => void onForgetMissing(group)}
+              onRetryUnregister={(name) => void onRetryUnregister(name)}
+              onDismissUnregisterFailure={(name) =>
+                void onDismissUnregisterFailure(name)
+              }
             />
           )}
           {tab === "metrics" && (

@@ -101,6 +101,7 @@ export const IPC = {
   removeFromRegistry: "skills:removeFromRegistry",
   deleteUnregistered: "skills:deleteUnregistered",
   forgetMissing: "skills:forgetMissing",
+  dismissUnregisterFailure: "skills:dismissUnregisterFailure",
   repointOrigin: "skills:repointOrigin",
   detachLocal: "skills:detachLocal",
   rehomeIntoLinkedRepo: "skills:rehomeIntoLinkedRepo",
@@ -552,6 +553,12 @@ interface SkillsBankAPI {
   forgetMissing(
     name: string,
   ): Promise<{ ok: boolean; message: string; error?: AppError }>;
+  /**
+   * Dismiss a skill's Unregister Failure marker without retrying — the
+   * skill stays registered exactly as it was; only the "last attempt
+   * failed" reminder is cleared (issue #211/#212/#215).
+   */
+  dismissUnregisterFailure(name: string): Promise<{ ok: boolean }>;
   /**
    * Restore an unreachable origin by repointing it at a new GitHub URL
    * (ADR-0012). Parses the URL → repo + skillPath, re-fetches content,

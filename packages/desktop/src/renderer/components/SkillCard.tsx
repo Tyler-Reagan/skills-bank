@@ -52,6 +52,15 @@ interface Props {
   disableSelect?: boolean;
   onToggleSelect?: () => void;
   bulkInstallStatus?: "pending" | "installing" | "installed" | "failed";
+  /**
+   * Unregister Failure badge actions (issue #211/#212/#215). Retry
+   * re-invokes Unregister with the same options as the original
+   * attempt; dismiss clears the marker without retrying. Both are
+   * absent (no badge interaction) when the caller doesn't wire them —
+   * e.g. bulk-install/select-mode cards.
+   */
+  onRetryUnregister?: () => void;
+  onDismissUnregisterFailure?: () => void;
 }
 
 export function SkillCard({
@@ -66,6 +75,8 @@ export function SkillCard({
   disableSelect = false,
   onToggleSelect,
   bulkInstallStatus,
+  onRetryUnregister,
+  onDismissUnregisterFailure,
 }: Props): React.ReactElement {
   const fresh = freshness(entry.lastCommit);
   const visibleTags = (entry.tags ?? []).slice(0, 3);
@@ -156,7 +167,11 @@ export function SkillCard({
                   : "•"}
           </span>
         )}
-        <StateBadge entry={entry} />
+        <StateBadge
+          entry={entry}
+          onRetryUnregister={onRetryUnregister}
+          onDismissUnregisterFailure={onDismissUnregisterFailure}
+        />
         <StatusChip status={status} warnings={entry.warnings?.length ?? 0} />
       </div>
 
@@ -286,13 +301,21 @@ export function agentsForSkill(
  * Single badge per card. Actionable state badges override provenance
  * when present. Priority order, highest wins:
  *
- *   1. DUPLICATE   — entry.duplicateOriginNames: also registered under
- *                    another name. Open to review and Unregister one.
- *   2. MISSING     — entry.missing: files gone. Open drawer to forget.
- *   3. UNREACHABLE — origin hasn't answered the last few probes; the
- *                    local copy is intact.
- *   4. UPDATE      — entry.skillUpdateAvailable: upstream changed,
- *                    local content is clean. Open drawer to apply.
+ *   1. DUPLICATE          — entry.duplicateOriginNames: also registered
+ *                           under another name. Open to review and
+ *                           Unregister one.
+ *   2. MISSING            — entry.missing: files gone. Open drawer to forget.
+ *   3. UNREGISTER FAILED  — entry.unregisterFailed: the last Unregister
+ *                           attempt didn't complete. Not a data defect —
+ *                           the skill is otherwise perfectly ordinary
+ *                           registered state (issue #211) — so it's the
+ *                           only badge with its own click (retry) and
+ *                           dismiss (×) affordances, rather than routing
+ *                           through the detail drawer.
+ *   4. UNREACHABLE        — origin hasn't answered the last few probes;
+ *                           the local copy is intact.
+ *   5. UPDATE             — entry.skillUpdateAvailable: upstream changed,
+ *                           local content is clean. Open drawer to apply.
  *
  * The CURATED badge (source: curated) and the EDITED drift badge were
  * both removed — v6 (#159) dropped the `source` axis (and with it the
@@ -302,8 +325,12 @@ export function agentsForSkill(
  */
 function StateBadge({
   entry,
+  onRetryUnregister,
+  onDismissUnregisterFailure,
 }: {
   entry: RegistryEntry;
+  onRetryUnregister?: () => void;
+  onDismissUnregisterFailure?: () => void;
 }): React.ReactElement | null {
   if (entry.duplicateOriginNames && entry.duplicateOriginNames.length > 0) {
     return (
@@ -322,6 +349,43 @@ function StateBadge({
         title="This skill's files are gone. Open to forget the entry or repoint it."
       >
         MISSING
+      </span>
+    );
+  }
+  if (entry.unregisterFailed) {
+    return (
+      <span
+        className="skill-state-badge unregister-failed"
+        title="The last Unregister attempt didn't complete. Click to retry, or dismiss to leave it registered."
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRetryUnregister?.();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            onRetryUnregister?.();
+          }
+        }}
+      >
+        UNREGISTER FAILED
+        {onDismissUnregisterFailure && (
+          <button
+            type="button"
+            className="skill-state-badge-dismiss"
+            aria-label="Dismiss unregister failure"
+            title="Leave it registered — stop reminding me"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismissUnregisterFailure();
+            }}
+          >
+            <Icon name="x" size="sm" />
+          </button>
+        )}
       </span>
     );
   }

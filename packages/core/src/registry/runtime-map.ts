@@ -27,6 +27,15 @@ export interface RuntimeEntry {
   probeFailureCount?: number;
   /** ISO-8601 timestamp of the most recent probe failure. Diagnostic. */
   lastProbeFailureAt?: string;
+  /**
+   * ISO-8601 timestamp of the skill's most recent failed Unregister
+   * attempt (issue #211/#215: "Unregister Failure"). Not a data-state
+   * flag — the folder and manifest row are untouched by a failed
+   * attempt, so this is the only record that it happened. Cleared on a
+   * successful Unregister (the row/runtime entry are dropped together
+   * by `reconcileFoldersToManifest`) or by explicit dismissal.
+   */
+  unregisterFailedAt?: string;
 }
 
 export type RuntimeMap = Record<string, RuntimeEntry>;
@@ -66,6 +75,9 @@ function normalizeEntry(v: unknown): RuntimeEntry {
   }
   if (typeof r.lastProbeFailureAt === "string") {
     out.lastProbeFailureAt = r.lastProbeFailureAt;
+  }
+  if (typeof r.unregisterFailedAt === "string") {
+    out.unregisterFailedAt = r.unregisterFailedAt;
   }
   return out;
 }

@@ -8,7 +8,23 @@ import type { RegistryEntry } from "../shared/types.js";
 import type { UnlinkTargetResult } from "./install.js";
 import { buildRegistryIndex } from "../registry/build.js";
 import { reconcileFoldersToManifest } from "../registry/reconcile-folders.js";
+import { setRuntimeEntry } from "../registry/runtime-map.js";
 import { findSkillFolder } from "../registry/walk.js";
+
+/**
+ * Record that this skill's most recent Unregister attempt failed
+ * (issue #211's "Unregister Failure"). Every failure path this marks
+ * returns before touching the folder or manifest row, so the row
+ * itself is unchanged — this timestamp is the only trace that the
+ * attempt happened. Cleared by a successful Unregister (the row and
+ * this runtime entry are dropped together by `reconcileFoldersToManifest`)
+ * or by `dismissUnregisterFailure`.
+ */
+function markUnregisterFailed(registryRoot: string, name: string): void {
+  setRuntimeEntry(registryRoot, name, {
+    unregisterFailedAt: new Date().toISOString(),
+  });
+}
 
 export interface UnregisterOptions {
   registryRoot: string;
@@ -132,6 +148,7 @@ function moveOutOfBank(
   try {
     fs.mkdirSync(destBase, { recursive: true });
   } catch (err) {
+    markUnregisterFailed(opts.registryRoot, name);
     const error = makeAppError({
       code: "unregister.cannot-create-destination",
       message: `cannot create destination ${destBase}: ${(err as Error).message}`,
@@ -187,6 +204,7 @@ function moveOutOfBank(
       try {
         fs.rmSync(destDir, { recursive: true, force: true });
       } catch (err) {
+        markUnregisterFailed(opts.registryRoot, name);
         const error = makeAppError({
           code: "unregister.force-overwrite-failed",
           message: `failed to remove existing folder at ${destDir}: ${(err as Error).message}`,
@@ -209,6 +227,7 @@ function moveOutOfBank(
         };
       }
     } else {
+      markUnregisterFailed(opts.registryRoot, name);
       const error = makeAppError({
         code: "unregister.destination-collision",
         message: `Can't move ${name} to ${destDir} — a folder already exists there.`,
@@ -252,6 +271,7 @@ function moveOutOfBank(
       fs.cpSync(sourceDir, destDir, { recursive: true });
       fs.rmSync(sourceDir, { recursive: true, force: true });
     } else {
+      markUnregisterFailed(opts.registryRoot, name);
       const caught = fromCaught("unregister.move-failed", err);
       const error = makeAppError({
         code: caught.code,
@@ -361,6 +381,19 @@ export function purgeSkillFromRegistry(
   reconcileFoldersToManifest(registryRoot);
   buildRegistryIndex(registryRoot, { includeGitInfo: true, writeFile: true });
   return { ok: true, name, message: `${name} removed from the registry` };
+}
+
+/**
+ * Clear a skill's Unregister Failure marker without retrying the
+ * operation — the "leave it registered, stop reminding me" escape
+ * (issue #212). The skill stays exactly as registered as it already
+ * was; only the runtime marker is dropped.
+ */
+export function dismissUnregisterFailure(
+  registryRoot: string,
+  name: string,
+): void {
+  setRuntimeEntry(registryRoot, name, { unregisterFailedAt: undefined });
 }
 
 function tildeify(p: string): string {
