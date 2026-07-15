@@ -38,6 +38,21 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      # Fail fast if the tag and the shippable version disagree. electron-builder
+      # reads packages/desktop/package.json for ${version} (artifact names + the
+      # runtime app.getVersion()); the root/core package versions are not read by
+      # the build. Guarding here means a forgotten desktop bump dies in seconds
+      # instead of shipping a mislabeled DMG after a 30-min sign+notarize pass.
+      - name: Verify desktop version matches tag
+        run: |
+          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+          EXPECTED="${TAG#v}"
+          ACTUAL=$(node -p "require('./packages/desktop/package.json').version")
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::Tag $TAG expects version $EXPECTED but packages/desktop/package.json is $ACTUAL"
+            exit 1
+          fi
+          echo "✓ desktop version $ACTUAL matches tag $TAG"
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - name: Build DMGs + ZIPs (both archs)
