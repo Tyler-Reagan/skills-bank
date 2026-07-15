@@ -3,6 +3,20 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v2.5.0
+
+Minor — skill-removal lifecycle fixes and manifest provenance consolidation.
+
+### Added
+
+- **Unregister Failure marker** — when unregistering a skill fails (e.g., due to locked files or permissions), a persistent marker now surfaces in the UI so you know the operation didn't complete and can retry or investigate.
+
+### Fixed
+
+- **Corrupted or legacy sidecar reads now surface instead of silently returning null**, exposing stale `~/.claude/skills/<name>/npx-lockfile` or schema mismatches that would have been invisible before.
+- **Manifest-row removal is now a single reconciled seam**, not three hand-rolled copies scattered through the codebase — reduces risk of drift and makes the removal intent explicit and auditable.
+- **Orphaned vendored skill folders are now cleaned up during unregister**, preventing stale sidecars from accumulating when skills are removed but the cleanup missed a folder.
+
 ## v2.4.2
 
 Patch — registry data-integrity fixes for long-lived registries.
