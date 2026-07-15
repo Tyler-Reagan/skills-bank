@@ -27,8 +27,6 @@ async function buildAuthStatus(): Promise<AuthStatus> {
   };
 }
 
-export { buildAuthStatus };
-
 export function registerAuthHandlers(): void {
   ipcMain.handle(IPC.authStatus, () => buildAuthStatus());
 

@@ -216,7 +216,7 @@ export function manifestExportContext(): {
 
 // ─── Labels file helpers ─────────────────────────────────────────────────────
 
-export function labelsFilePath(): string {
+function labelsFilePath(): string {
   return path.join(app.getPath("userData"), "labels.json");
 }
 
