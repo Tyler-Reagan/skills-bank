@@ -361,7 +361,10 @@ export async function fetchRemoteManifest(
   });
   if (!res.ok) {
     if (res.status === 404)
-      return { ok: true, manifest: await withPluginSkills(empty, repo, branch, token) };
+      return {
+        ok: true,
+        manifest: await withPluginSkills(empty, repo, branch, token),
+      };
     return res.rateLimit
       ? {
           ok: false,
@@ -377,7 +380,10 @@ export async function fetchRemoteManifest(
   } catch {
     manifest = empty;
   }
-  return { ok: true, manifest: await withPluginSkills(manifest, repo, branch, token) };
+  return {
+    ok: true,
+    manifest: await withPluginSkills(manifest, repo, branch, token),
+  };
 }
 
 /** Fold in plugin.json-declared skills absent from `manifest`, if the repo has one. */

@@ -38,7 +38,10 @@ export async function fetchClaudePluginManifest(
   });
   if (!res.ok) return null;
   try {
-    const parsed = JSON.parse(res.content) as { name?: unknown; skills?: unknown };
+    const parsed = JSON.parse(res.content) as {
+      name?: unknown;
+      skills?: unknown;
+    };
     if (!Array.isArray(parsed.skills)) return null;
     const skills = parsed.skills.filter(
       (s): s is string => typeof s === "string",
@@ -84,7 +87,9 @@ export function mergePluginDeclaredSkills(
       .map((s) => s.origin.skillPath)
       .filter((p): p is string => Boolean(p)),
   );
-  const namesInUse = new Map(manifest.skills.map((s) => [s.name, s.origin.url]));
+  const namesInUse = new Map(
+    manifest.skills.map((s) => [s.name, s.origin.url]),
+  );
 
   const additions: ManifestSkill[] = [];
   for (const declared of plugin.skills) {
