@@ -7,6 +7,10 @@ import { readRepoFile } from "../github/files.js";
 import { normalizeOriginUrl } from "../github/url.js";
 import type { RateLimitInfo } from "../github/http.js";
 import {
+  fetchClaudePluginManifest,
+  mergePluginDeclaredSkills,
+} from "./plugin-manifest.js";
+import {
   effectiveLabels,
   type LabelsMap,
   type SkillLabelOverride,
@@ -332,6 +336,13 @@ export type FetchRemoteManifestResult =
  * projection). A 404 or unparseable body resolves to an EMPTY manifest so
  * the merge reads every local skill as an add; only a real read/rate-limit
  * failure surfaces as `ok: false`.
+ *
+ * On every `ok: true` outcome, also folds in the repo's
+ * `.claude-plugin/plugin.json` (if any) via `mergePluginDeclaredSkills` —
+ * a linked repo doubling as a Claude Code plugin can gain skills directly
+ * (outside this app's export flow) that would otherwise never appear in
+ * `registry-manifest.json`. Best-effort: absence or failure of plugin.json
+ * never changes the outcome of this function.
  */
 export async function fetchRemoteManifest(
   repo: string,
@@ -349,7 +360,11 @@ export async function fetchRemoteManifest(
     token,
   });
   if (!res.ok) {
-    if (res.status === 404) return { ok: true, manifest: empty };
+    if (res.status === 404)
+      return {
+        ok: true,
+        manifest: await withPluginSkills(empty, repo, branch, token),
+      };
     return res.rateLimit
       ? {
           ok: false,
@@ -359,12 +374,28 @@ export async function fetchRemoteManifest(
         }
       : { ok: false, reason: "read-failed", message: res.message };
   }
+  let manifest: RegistryManifest;
   try {
-    return {
-      ok: true,
-      manifest: coerceManifestToCurrent(JSON.parse(res.content)),
-    };
+    manifest = coerceManifestToCurrent(JSON.parse(res.content));
   } catch {
-    return { ok: true, manifest: empty };
+    manifest = empty;
   }
+  return {
+    ok: true,
+    manifest: await withPluginSkills(manifest, repo, branch, token),
+  };
+}
+
+/** Fold in plugin.json-declared skills absent from `manifest`, if the repo has one. */
+async function withPluginSkills(
+  manifest: RegistryManifest,
+  repo: string,
+  branch: string,
+  token: string,
+): Promise<RegistryManifest> {
+  const plugin = await fetchClaudePluginManifest(repo, branch, token);
+  if (!plugin) return manifest;
+  const repoUrl = normalizeOriginUrl(`https://github.com/${repo}`);
+  if (!repoUrl) return manifest;
+  return mergePluginDeclaredSkills(manifest, plugin, repoUrl);
 }
