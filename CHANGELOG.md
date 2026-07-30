@@ -3,6 +3,14 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v2.5.1
+
+Patch — plugin-declared skill sync fix.
+
+### Fixed
+
+- **Pull now picks up skills a linked repo's `.claude-plugin/plugin.json` declares but its `registry-manifest.json` never learned about.** Skills added straight to a linked repo (outside skills-bank's own export flow) could land in `plugin.json` without making it into the manifest, silently stranding them from every link/pull/push/preview flow. `fetchRemoteManifest` now folds in plugin.json-declared skills absent from the manifest, so the existing merge/reconcile path picks them up automatically. (#217)
+
 ## v2.5.0
 
 Minor — skill-removal lifecycle fixes and manifest provenance consolidation.
