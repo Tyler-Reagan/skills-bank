@@ -4,6 +4,7 @@ import type {
   AppError,
   BrokenLinkRemoveReport,
   BrokenLinkRepairReport,
+  ClaudePluginSkill,
   ConflictResolveDecision,
   ConflictResolveReport,
   ExtractInfo,
@@ -116,6 +117,7 @@ export const IPC = {
   discoverStatus: "discover:status",
   discoverNpxSkills: "discover:npxSkills",
   adoptNpxSkill: "discover:adoptNpxSkill",
+  discoverClaudePluginSkills: "discover:claudePluginSkills",
   headerMenuAction: "header:action",
   originProbe: "origin:probe",
   skillUpdate: "origin:update",
@@ -816,6 +818,14 @@ interface SkillsBankAPI {
    * manifest row that re-fetches on another machine with no npx present.
    */
   adoptNpxSkill(name: string): Promise<{ ok: boolean; message: string }>;
+  /**
+   * Skills exposed by installed Claude Code plugins — read-only,
+   * informational visibility only. Unlike the npx panel, there is no
+   * adopt action: plugin state is entirely Claude Code's, and a name
+   * collision with a registry skill is surfaced (in the renderer) as a
+   * plain badge, never auto-resolved.
+   */
+  discoverClaudePluginSkills(): Promise<ClaudePluginSkill[]>;
   onHeaderMenuAction(cb: (action: HeaderMenuAction) => void): () => void;
   originProbe(): Promise<OriginProbeResult>;
   onOriginProbeComplete(
