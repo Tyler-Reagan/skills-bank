@@ -672,6 +672,7 @@ function AppContent(): React.ReactElement {
           modalOpen={anyModalOpen}
           terminalApp={settings.terminalApp}
           onInstalled={() => void refresh()}
+          registryByName={registryByName}
         />
       ) : (
         <div

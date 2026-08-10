@@ -103,6 +103,8 @@ const api = {
   discoverNpxSkills: () => ipcRenderer.invoke(IPC.discoverNpxSkills),
   adoptNpxSkill: (name: string) =>
     ipcRenderer.invoke(IPC.adoptNpxSkill, name),
+  discoverClaudePluginSkills: () =>
+    ipcRenderer.invoke(IPC.discoverClaudePluginSkills),
   onDiscoverStatus: (cb: (status: DiscoverStatus) => void) => {
     const listener = (_e: unknown, status: DiscoverStatus) => cb(status);
     ipcRenderer.on(IPC.discoverStatus, listener);

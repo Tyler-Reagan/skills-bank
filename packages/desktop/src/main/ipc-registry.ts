@@ -26,6 +26,7 @@ import {
   installSkillFiles,
   isGithubUrl,
   linkSkillToAgents,
+  listClaudePluginSkills,
   listInstalled,
   makeAppError,
   parseGithubSkillUrl,
@@ -229,6 +230,15 @@ export function registerRegistryHandlers(): void {
     const registryRoot = getRegistryRoot();
     if (!registryRoot) return { ok: false, message: NO_ROOT_MSG };
     return adoptNpxSkill(registryRoot, name);
+  });
+
+  // Skills exposed by installed Claude Code plugins — read-only,
+  // informational only (no adopt path). skills-bank never touches any
+  // plugin state; this just reads Claude Code's own installed_plugins.json
+  // + each plugin's plugin.json fresh on every call, same as the npx read
+  // above — invoked on Discover tab mount, never a boot sweep.
+  ipcMain.handle(IPC.discoverClaudePluginSkills, () => {
+    return listClaudePluginSkills();
   });
 
   ipcMain.handle(IPC.listInstalled, () => {

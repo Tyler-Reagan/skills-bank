@@ -1,6 +1,17 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { AdoptableNpxSkill } from "@skills-bank/core";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type {
+  AdoptableNpxSkill,
+  ClaudePluginSkill,
+  RegistryEntry,
+} from "@skills-bank/core";
 import type { DiscoverStatus } from "../../shared/ipc.js";
+import { DisclosureChevron } from "./primitives.js";
 
 const HOME = "https://skills.sh";
 
@@ -41,12 +52,15 @@ interface Props {
   terminalApp?: string;
   /** Called after a successful install so the host can refresh the registry. */
   onInstalled: () => void;
+  /** Current registry, keyed by name — used only to flag a plugin-skill name that overlaps a managed skill. */
+  registryByName: Map<string, RegistryEntry>;
 }
 
 export function DiscoverTab({
   modalOpen,
   terminalApp,
   onInstalled,
+  registryByName,
 }: Props): React.ReactElement {
   const [installUrl, setInstallUrl] = useState("");
   const [installBusy, setInstallBusy] = useState(false);
@@ -61,6 +75,17 @@ export function DiscoverTab({
     name: string;
     message: string;
   } | null>(null);
+  // Skills exposed by installed Claude Code plugins — read-only visibility
+  // only, no adopt action. Fetched on view, same as the npx list; a name
+  // colliding with a registry entry is just flagged inline, never resolved.
+  const [pluginSkills, setPluginSkills] = useState<ClaudePluginSkill[]>([]);
+  // Which plugin groups are expanded, keyed by "pluginName@marketplaceName".
+  // Starts empty (everything collapsed) — a flat 50-60 skill list across a
+  // handful of plugins is unscannable; collapsed group headers turn it back
+  // into a glanceable summary, and the user opts into detail per plugin.
+  const [expandedPluginGroups, setExpandedPluginGroups] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const submitInstall = async () => {
     const resolved = parseInstallInput(installUrl);
@@ -198,6 +223,79 @@ export function DiscoverTab({
     };
   }, []);
 
+  // Discover skills exposed by installed Claude Code plugins. Read-only,
+  // display-only — mirrors the npx fetch above but with no adopt affordance.
+  useEffect(() => {
+    let cancelled = false;
+    void window.skillsBank
+      .discoverClaudePluginSkills()
+      .then((skills) => {
+        if (!cancelled) setPluginSkills(skills);
+      })
+      .catch(() => {
+        /* best-effort — a read miss just hides the panel. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const onDismissPlugin = (skillPath: string) =>
+    setPluginSkills((prev) => prev.filter((s) => s.skillPath !== skillPath));
+  const onDismissAllPlugins = () => setPluginSkills([]);
+
+  // Group by "pluginName@marketplaceName" — the same identity Claude Code
+  // itself uses in installed_plugins.json — preserving first-seen order so
+  // the group list doesn't reshuffle as the underlying list is dismissed
+  // from.
+  const pluginGroups = useMemo(() => {
+    const order: string[] = [];
+    const byKey = new Map<
+      string,
+      {
+        key: string;
+        pluginName: string;
+        marketplaceName: string;
+        skills: ClaudePluginSkill[];
+      }
+    >();
+    for (const s of pluginSkills) {
+      const key = `${s.pluginName}@${s.marketplaceName}`;
+      let group = byKey.get(key);
+      if (!group) {
+        group = {
+          key,
+          pluginName: s.pluginName,
+          marketplaceName: s.marketplaceName,
+          skills: [],
+        };
+        byKey.set(key, group);
+        order.push(key);
+      }
+      group.skills.push(s);
+    }
+    return order.map((key) => byKey.get(key)!);
+  }, [pluginSkills]);
+
+  const allPluginGroupsExpanded =
+    pluginGroups.length > 0 &&
+    pluginGroups.every((g) => expandedPluginGroups.has(g.key));
+
+  const togglePluginGroup = (key: string) =>
+    setExpandedPluginGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const toggleAllPluginGroups = () =>
+    setExpandedPluginGroups(
+      allPluginGroupsExpanded
+        ? new Set()
+        : new Set(pluginGroups.map((g) => g.key)),
+    );
+
   // Adopt one npx skill into the registry (#193): move it in, repoint agent
   // symlinks at the bank copy, backfill origin from the lockfile. On success
   // it leaves the adoptable list and the host refreshes so it appears in
@@ -247,7 +345,7 @@ export function DiscoverTab({
       width: r.width,
       height: r.height,
     });
-  }, [npxSkills, modalOpen]);
+  }, [npxSkills, pluginSkills, expandedPluginGroups, modalOpen]);
 
   const onBack = () => void window.skillsBank.discoverGoBack();
   const onReload = () => void window.skillsBank.discoverReload();
@@ -405,6 +503,109 @@ export function DiscoverTab({
               </li>
             ))}
           </ul>
+        </section>
+      )}
+      {pluginSkills.length > 0 && (
+        <section
+          className="discover-plugins"
+          aria-label="Skills available via installed Claude Code plugins"
+        >
+          <div className="discover-plugins-head">
+            <div className="discover-plugins-titlebar">
+              <span className="discover-plugins-title">
+                {pluginSkills.length} skill
+                {pluginSkills.length === 1 ? "" : "s"} across{" "}
+                {pluginGroups.length} installed Claude Code plugin
+                {pluginGroups.length === 1 ? "" : "s"}
+              </span>
+              <div className="discover-plugins-head-actions">
+                {pluginGroups.length >= 2 && (
+                  <button
+                    type="button"
+                    className={`expand-collapse-btn${allPluginGroupsExpanded ? " all-collapsed" : ""}`}
+                    onClick={toggleAllPluginGroups}
+                  >
+                    <DisclosureChevron open={!allPluginGroupsExpanded} />
+                    {allPluginGroupsExpanded ? "Collapse all" : "Expand all"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn ghost discover-plugins-dismiss-all"
+                  onClick={onDismissAllPlugins}
+                  title="Hide these — nothing is changed, skills-bank never manages plugin state"
+                >
+                  Dismiss all
+                </button>
+              </div>
+            </div>
+            <p className="discover-plugins-copy">
+              Informational only — skills-bank doesn't manage plugin skills or
+              merge them into your registry. A skill also present in your
+              registry is flagged below; nothing is resolved automatically.
+            </p>
+          </div>
+          <div className="discover-plugins-groups">
+            {pluginGroups.map((group) => {
+              const open = expandedPluginGroups.has(group.key);
+              return (
+                <div key={group.key} className="discover-plugins-group">
+                  <button
+                    type="button"
+                    className="discover-plugins-group-header"
+                    aria-expanded={open}
+                    onClick={() => togglePluginGroup(group.key)}
+                  >
+                    <DisclosureChevron open={open} />
+                    <span className="discover-plugins-group-name">
+                      {group.pluginName}
+                    </span>
+                    <span className="discover-plugins-group-marketplace">
+                      @{group.marketplaceName}
+                    </span>
+                    <span className="discover-plugins-group-count">
+                      {group.skills.length}
+                    </span>
+                  </button>
+                  {open && (
+                    <ul className="discover-plugins-list">
+                      {group.skills.map((s) => (
+                        <li key={s.skillPath} className="discover-plugins-item">
+                          <div className="discover-plugins-item-main">
+                            <span className="discover-plugins-name">
+                              {s.name}
+                            </span>
+                            {s.description && (
+                              <span className="discover-plugins-description">
+                                {s.description}
+                              </span>
+                            )}
+                          </div>
+                          {registryByName.has(s.name) && (
+                            <span
+                              className="discover-plugins-overlap"
+                              title="A skill with this name is also in your skills-bank registry"
+                            >
+                              also in registry
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            className="discover-plugins-dismiss"
+                            onClick={() => onDismissPlugin(s.skillPath)}
+                            aria-label={`Dismiss ${s.name}`}
+                            title="Hide this row (does not uninstall or touch the plugin)"
+                          >
+                            ✕
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </section>
       )}
       <div
