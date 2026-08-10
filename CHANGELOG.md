@@ -3,6 +3,14 @@
 All notable changes to Skills Bank. Format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## v2.6.0
+
+Minor — Claude Code plugin skill visibility in Discover.
+
+### Added
+
+- **Discover tab now surfaces skills exposed by your installed Claude Code plugins**, read-only. Reads `~/.claude/plugins/installed_plugins.json` and each plugin's `.claude-plugin/plugin.json` (falling back to Claude Code's own `skills/*/SKILL.md` convention scan when a plugin declares no explicit `skills` array), and lists the result grouped by plugin, collapsed by default with an expand/collapse-all toggle. Nothing is adopted or merged into the registry — a skill name that collides with one already managed here just gets a plain inline badge. (#218)
+
 ## v2.5.1
 
 Patch — plugin-declared skill sync fix.
