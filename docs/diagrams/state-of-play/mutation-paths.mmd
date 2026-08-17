@@ -1,0 +1,42 @@
+%%{init: {"flowchart": {"nodeSpacing": 36, "rankSpacing": 64, "curve": "linear"}}}%%
+flowchart TB
+    classDef acquire fill:#cfe2ff,stroke:#0d6efd,color:#084298
+    classDef github fill:#e9d5ff,stroke:#7c3aed,color:#3b0764
+    classDef foreign fill:#f8d7da,stroke:#dc3545,color:#842029
+    classDef state fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+    classDef group fill:#f8fafc,stroke:#94a3b8,color:#334155
+
+    GHOrigin["GitHub URL or pasted npx add"]:::acquire
+    Unmanaged["Unmanaged on agent disk"]:::state
+    NpxInstalled["npx skills add\nnpx owns lock + canonical writes"]:::acquire
+    PluginSkill["Claude plugin skill\nread-only Discover list"]:::foreign
+    GHOrigin -->|write agent dir only| Unmanaged
+    GHOrigin -->|npx writes SB does not| NpxInstalled
+    GHOrigin -.->|no write| PluginSkill
+
+    Bank["Registered in bank"]:::state
+    Unmanaged -->|write folder + row| Bank
+    NpxInstalled -->|read lock then write folder + origin| Bank
+
+    Life["from registered"]:::group
+    Sync["linked-repo GitHub"]:::group
+    Bank --> Life
+    Bank --> Sync
+
+    Installed["Installed ours"]:::state
+    Unregistered["Unregistered"]:::state
+    LocalNull["Local origin url null"]:::state
+    SelfOrigin["Self-origin"]:::state
+    Life -->|write ours-symlinks| Installed
+    Life -->|move out drop row| Unregistered
+    Life -->|write url null| LocalNull
+    LocalNull -->|write GitHub PR| SelfOrigin
+
+    Pull["Pull / Import\nwrite folders + live record\nread origins and plugin.json"]:::github
+    Push["Push / Export\nwrite pushed projection\nurl-null rows stay local"]:::github
+    Probe["Origin probe\nwrite runtime.json only"]:::github
+    Update["Update\nwrite folder via tarball"]:::github
+    Sync --> Pull
+    Sync --> Push
+    Sync --> Probe
+    Probe --> Update

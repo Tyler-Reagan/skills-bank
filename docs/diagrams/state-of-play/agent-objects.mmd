@@ -1,0 +1,57 @@
+flowchart TB
+    classDef sb fill:#d4edda,stroke:#198754,color:#0f5132
+    classDef read fill:#cfe2ff,stroke:#0d6efd,color:#084298
+    classDef none fill:#f8d7da,stroke:#dc3545,color:#842029
+    classDef agent fill:#fff3cd,stroke:#d97706,color:#664d03
+
+    SB["Skills Bank"]:::sb
+
+    subgraph Claude["Claude"]
+        direction TB
+        CC["Claude Code\nterminal CLI and any GUI that\nshare ~/.claude/"]:::agent
+        CSkills["~/.claude/skills/name\nSB writes ours-symlinks\nscans all install kinds"]:::sb
+        CPlugMan["~/.claude/plugins/installed_plugins.json\nSB reads flatten name@marketplace"]:::read
+        CPlugJson["installPath/.claude-plugin/plugin.json\nSB reads skills list or convention"]:::read
+        CPlugSkill["plugin skill folders\nDiscover list only\nnever adopts or writes"]:::read
+        CSettings["~/.claude/settings.json\nSB writes PreToolUse and slash hooks"]:::sb
+        CDesk["Claude Desktop chat app\nMCP config tree — not modeled"]:::none
+        CC --> CSkills
+        CC --> CPlugMan --> CPlugJson --> CPlugSkill
+        CC --> CSettings
+    end
+
+    subgraph Cursor["Cursor"]
+        direction TB
+        Cur["Cursor IDE"]:::agent
+        CurSkills["~/.cursor/skills/name\nSB writes ours-symlinks\nscans all install kinds"]:::sb
+        CurRules[".cursor/rules mdc files\nnot modeled"]:::none
+        CurMcp["Cursor MCP and plugins\nnot modeled"]:::none
+        Cur --> CurSkills
+        Cur -.-> CurRules
+        Cur -.-> CurMcp
+    end
+
+    subgraph Npx["npx skills / skills.sh"]
+        direction TB
+        CLI["npx skills CLI\nnever spawned in packaged app"]:::agent
+        Canon["~/.agents/skills/name\ncanonical store\nSB default fan-out skips this"]:::read
+        Lock["~/.agents/.skill-lock.json\nSB reads for Adopt origin"]:::read
+        Sh["skills.sh embed\nbrowse only"]:::read
+        Term["User terminal handoff\nprefilled npx skills add"]:::agent
+        CLI --> Canon
+        CLI --> Lock
+        Sh --> Term --> CLI
+    end
+
+    subgraph Other["Other agent sinks — same symlink model"]
+        O1["~/.gemini/skills"]:::sb
+        O2["~/.copilot/skills"]:::sb
+        O3["~/.continue/skills"]:::sb
+        O4["~/.cline/skills"]:::sb
+        O5["~/.codex/skills"]:::sb
+    end
+
+    SB --> Claude
+    SB --> Cursor
+    SB --> Npx
+    SB --> Other

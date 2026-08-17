@@ -1,0 +1,85 @@
+classDiagram
+    direction TB
+
+    class RegistryManifest {
+        +int schemaVersion
+        +ManifestSkill[] skills
+    }
+    class ManifestSkill {
+        +string name
+        +ManifestOrigin origin
+        +string category
+        +string[] tags
+    }
+    class ManifestOrigin {
+        +string url
+        +string skillPath
+        +string hash
+    }
+    class RuntimeEntry {
+        +string syncedHash
+        +string fetchedAt
+        +int probeFailureCount
+        +string lastProbeFailureAt
+        +string unregisterFailedAt
+    }
+    class RegistryEntry {
+        +string name
+        +ManifestOrigin origin
+        +string bucket
+        +bool missing
+        +bool drift
+        +bool skillUpdateAvailable
+        +bool originUnreachable
+    }
+    class InstalledSkill {
+        +string name
+        +AgentId agent
+        +string linkPath
+        +string target
+        +InstalledKind kind
+    }
+    class AgentDef {
+        +AgentId id
+        +string label
+        +string relativePath
+    }
+    class DrawerState {
+        <<enumeration>>
+        registered-healthy
+        unregistered
+        edited-with-origin
+        skill-update-available
+        origin-unreachable
+        registry-folder-missing
+    }
+    class AdoptableNpxSkill {
+        +string name
+        +ManifestOrigin origin
+    }
+    class ClaudePluginSkill {
+        +string name
+        +string pluginName
+        +string marketplaceName
+        +string skillPath
+    }
+    class AppConfig {
+        +string registryRoot
+        +LinkedRepoMetadata linkedRepo
+    }
+    class LabelsMap {
+        +SkillLabelOverride byName
+    }
+
+    RegistryManifest *-- ManifestSkill
+    ManifestSkill *-- ManifestOrigin
+    RegistryEntry --> ManifestOrigin : copied from row
+    RegistryEntry ..> RuntimeEntry : join at index build
+    InstalledSkill --> AgentDef
+    InstalledSkill --> RegistryEntry : when kind is ours
+    DrawerState ..> RegistryEntry : classifyDrawerState
+    DrawerState ..> InstalledSkill
+    AdoptableNpxSkill --> ManifestOrigin : backfill on Adopt
+    ClaudePluginSkill ..> ManifestSkill : display only
+    AppConfig --> RegistryManifest : linkedRepo is self-origin
+    LabelsMap --> ManifestSkill : folded in at export

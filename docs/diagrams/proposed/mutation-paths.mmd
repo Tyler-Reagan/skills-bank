@@ -1,0 +1,32 @@
+%%{init: {"flowchart": {"nodeSpacing": 36, "rankSpacing": 64, "curve": "linear"}}}%%
+flowchart TB
+    classDef acquire fill:#cfe2ff,stroke:#0d6efd,color:#084298
+    classDef github fill:#e9d5ff,stroke:#7c3aed,color:#3b0764
+    classDef state fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+    classDef group fill:#f8fafc,stroke:#94a3b8,color:#334155
+    classDef pkg fill:#e9d5ff,stroke:#7c3aed,color:#3b0764
+
+    Source["GitHub URL or skills.sh"]:::acquire
+    Canon["Canonical npx store\nlock + ~/.agents/skills"]:::state
+    Source -->|npx add writes store| Canon
+
+    Project["project to harnesses"]:::group
+    Port["across machines"]:::group
+    Canon --> Project
+    Canon --> Port
+
+    ClaudeInst["Claude installation\nprojected skills + plugins"]:::pkg
+    CursorInst["Cursor installation\nprojected skills + plugins"]:::pkg
+    Project --> ClaudeInst
+    Project --> CursorInst
+    ClaudeInst --> Port
+    CursorInst --> Port
+
+    Update["Update\nnpx update semantics on lock hash"]:::acquire
+    Remove["Remove\nnpx remove + unproject"]:::state
+    Canon --> Update
+    Canon --> Remove
+
+    Snap["Export / import snapshots\nnpx · Claude · Cursor"]:::github
+    Port --> Snap
+    Snap -->|restore on another machine| Canon

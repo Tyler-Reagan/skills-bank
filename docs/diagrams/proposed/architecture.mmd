@@ -1,0 +1,44 @@
+%%{init: {"flowchart": {"nodeSpacing": 30, "rankSpacing": 50, "curve": "linear"}}}%%
+flowchart TB
+    classDef write fill:#d4edda,stroke:#198754,color:#0f5132
+    classDef read fill:#cfe2ff,stroke:#0d6efd,color:#084298
+    classDef hdr fill:#e2e8f0,stroke:#64748b,color:#0f172a
+    classDef pkg fill:#e9d5ff,stroke:#7c3aed,color:#3b0764
+
+    SB["Skills Bank"]:::hdr
+    UI["desktop · UI"]:::hdr
+    Core["core · npx control"]:::hdr
+    Claude["claude package"]:::pkg
+    Cursor["cursor package"]:::pkg
+    Port["portability"]:::hdr
+    SB --> UI
+    SB --> Core
+    SB --> Claude
+    SB --> Cursor
+    SB --> Port
+
+    Discover["Discover · skills.sh"]
+    UI --> Discover
+    Discover --> Core
+
+    Canon[("~/.agents/skills")]:::write
+    Lock[(".skill-lock.json")]:::write
+    Core -->|write lock + content| Canon
+    Core -->|write| Lock
+
+    CProj[("~/.claude/skills projection")]:::write
+    CPlug[("plugins / marketplace")]:::write
+    Claude -->|project from canon| CProj
+    Claude -->|own + snapshot| CPlug
+
+    CurProj[("~/.cursor/skills projection")]:::write
+    CurPlug[("Cursor plugins")]:::write
+    Cursor -->|project from canon| CurProj
+    Cursor -->|own + snapshot| CurPlug
+
+    SnapNpx["npx installation snapshot"]:::write
+    SnapClaude["Claude installation snapshot"]:::write
+    SnapCur["Cursor installation snapshot"]:::write
+    Port --> SnapNpx
+    Port --> SnapClaude
+    Port --> SnapCur

@@ -1,0 +1,50 @@
+sequenceDiagram
+    participant UI as Renderer
+    participant Main as Main process
+    participant Core as packages/core
+    participant Disk as Local registry
+    participant GH as GitHub API
+    participant Origin as Origin repo trees
+
+    Note over UI,Disk: Boot
+    UI->>Main: app ready
+    Main->>Core: reconcileFoldersToManifest
+    Core->>Disk: stamp url-null rows for orphan folders
+    Main->>Core: buildRegistryIndex folders x manifest x runtime
+    Main->>Core: initProbeRunner
+
+    Note over UI,Origin: Pull from linked repo
+    UI->>Main: Import / Pull
+    Main->>Core: fetchRemoteManifest
+    Core->>GH: GET registry-manifest.json
+    Core->>GH: GET .claude-plugin/plugin.json optional
+    Core->>Core: mergePluginDeclaredSkills
+    Core->>Core: toPushedProjection then mergeManifests base ours theirs
+    alt conflicts
+        Core-->>UI: ManifestConflictModal
+        UI->>Main: keep-mine / use-theirs / keep-both
+    end
+    loop each restorable skill
+        Core->>Origin: mirror skill folder from origin.url
+        Core->>Disk: write skills/bucket/name
+        Core->>Disk: write live manifest row + runtime hash
+    end
+
+    Note over UI,GH: Push to linked repo
+    UI->>Main: Export / Push
+    Main->>Core: exportRegistryManifest fold labels
+    Core->>Core: serializeManifest drops url-null rows
+    Core->>GH: GET current file SHA
+    alt fast-forward safe
+        Core->>GH: PUT registry-manifest.json commit or PR branch
+    else diverged remote
+        Core-->>UI: refuse to clobber
+    end
+
+    Note over UI,Origin: Origin probe and Update
+    Main->>Core: probe scheduled
+    Core->>Origin: recursive tree SHA
+    Core->>Disk: runtime.json probeFailureCount or skillUpdateAvailable
+    UI->>Main: Update
+    Main->>Core: applySkillUpdate tarball swap
+    Note right of Core: Does not shell npx skills update

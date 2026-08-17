@@ -1,0 +1,50 @@
+%%{init: {"flowchart": {"nodeSpacing": 30, "rankSpacing": 50, "curve": "linear"}}}%%
+flowchart TB
+    classDef write fill:#d4edda,stroke:#198754,color:#0f5132
+    classDef read fill:#cfe2ff,stroke:#0d6efd,color:#084298
+    classDef derived fill:#fff3cd,stroke:#d97706,color:#664d03
+    classDef hdr fill:#e2e8f0,stroke:#64748b,color:#0f172a
+
+    SB["Skills Bank"]:::hdr
+    Renderer["desktop · Renderer"]:::hdr
+    Registry["registry"]:::hdr
+    Skills["skills"]:::hdr
+    Manifest["manifest"]:::hdr
+    Github["github"]:::hdr
+    Metrics["metrics"]:::hdr
+    SB --> Renderer
+    SB --> Registry
+    SB --> Skills
+    SB --> Manifest
+    SB --> Github
+    SB --> Metrics
+
+    Preload["preload"]
+    Main["Main process\nwrite userData · handoff terminal"]
+    Discover["Discover view\nembeds skills.sh"]
+    Renderer --> Preload --> Main --> Discover
+
+    Index["RegistryIndex\nfolders × manifest × runtime"]:::derived
+    Folders[("skills/personal|vendored")]:::write
+    Runtime[("runtime.json")]:::write
+    NpxLock[("npx lockfile")]:::read
+    CPlug[("Claude plugins")]:::read
+    Registry --> Index
+    Index -.-> Folders
+    Folders -.-> Runtime
+    Runtime -.-> NpxLock
+    NpxLock -.-> CPlug
+
+    Sinks[("agent skill dirs")]:::write
+    Skills -->|write / scan| Sinks
+
+    LiveMan[("registry-manifest.json")]:::write
+    Manifest -->|write| LiveMan
+
+    GHLinked[("GitHub linked repo")]:::write
+    GHOrigin[("GitHub origin trees")]:::read
+    Github -->|write / read| GHLinked
+    GHLinked -.-> GHOrigin
+
+    CSet[("Claude settings.json\n+ invocation log")]:::write
+    Metrics -->|write| CSet

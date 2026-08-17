@@ -1,0 +1,36 @@
+%%{init: {"flowchart": {"nodeSpacing": 30, "rankSpacing": 50, "curve": "linear"}}}%%
+flowchart TB
+    classDef write fill:#d4edda,stroke:#198754,color:#0f5132
+    classDef read fill:#cfe2ff,stroke:#0d6efd,color:#084298
+    classDef hdr fill:#e2e8f0,stroke:#64748b,color:#0f172a
+    classDef pkg fill:#e9d5ff,stroke:#7c3aed,color:#3b0764
+    classDef none fill:#f8d7da,stroke:#dc3545,color:#842029
+
+    SB["Skills Bank"]:::hdr
+    Npx["npx skills · canonical"]:::hdr
+    Claude["claude package"]:::pkg
+    Cursor["cursor package"]:::pkg
+    SB --> Npx
+    SB --> Claude
+    SB --> Cursor
+
+    Canon[("~/.agents/skills")]:::write
+    Lock[("~/.agents/.skill-lock.json")]:::write
+    Sh["skills.sh Discover"]:::read
+    Npx -->|write| Canon
+    Npx -->|write| Lock
+    Sh --> Npx
+
+    CSkills[("~/.claude/skills projection")]:::write
+    CPlug[("plugins / marketplace")]:::write
+    CSet[("settings.json hooks")]:::write
+    Claude -->|project| CSkills
+    Claude -->|own| CPlug
+    Claude -->|own| CSet
+
+    CurSkills[("~/.cursor/skills projection")]:::write
+    CurPlug[("Cursor plugins")]:::write
+    Cursor -->|project| CurSkills
+    Cursor -->|own| CurPlug
+
+    Dropped["gemini copilot continue\ncline codex · dropped"]:::none
