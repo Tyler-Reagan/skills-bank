@@ -137,3 +137,17 @@ Consequence: skills "installed" via dev are not visible to your real Claude Code
 **Isolation seam — `shared/home.ts`.** Two functions capture the isolation intent explicitly: `getIsolatedHome()` (returns `SKILLS_BANK_HOME_OVERRIDE ?? os.homedir()`, used everywhere that should redirect in dev) and `getRealHome()` (always `os.homedir()`, used only for intentional real-path carveouts: metrics, Claude settings, and the CLI lock file). Prefer these over `os.homedir()` directly so carveout intent is visible at the call site.
 
 `rm -rf ~/.skills-bank-dev/` is the one-line full dev-state reset.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `Tyler-Reagan/skills-bank`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five roles, matching label names. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context. See `docs/agents/domain.md` and `CONTEXT-MAP.md`.
