@@ -1,6 +1,6 @@
 # ADR-0019 — `source` removed; `origin` is the sole authority on provenance
 
-**Status:** Accepted
+**Status:** Accepted. The `source` axis stays gone. The leftover ADR-0012 content this ADR left in force (`isSelfOrigin`, adopt into linked repo) does not survive the inversion; see [ADR-0025](./ADR-0025-origin-on-the-lock.md).
 
 ## Context
 

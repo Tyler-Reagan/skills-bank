@@ -1,6 +1,6 @@
 # ADR-0020 — Origin is a nullable URL; manifest schema v6
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0025](./ADR-0025-origin-on-the-lock.md) — Origin still exists; it persists as Lock provenance fields, not a Manifest v6 row. There is no Bucket.
 
 ## Context
 

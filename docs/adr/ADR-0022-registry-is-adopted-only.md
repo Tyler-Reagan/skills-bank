@@ -1,6 +1,6 @@
 # ADR-0022 — The registry is adopted-only; in-place registration and custom dirs removed
 
-**Status:** Accepted (supersedes ADR-0011)
+**Status:** Superseded by [ADR-0027](./ADR-0027-add-and-delete-replace-register.md) — Register is dead; Add and Delete are the writer verbs. In-place tracking and custom dirs stay gone. This ADR still supersedes [ADR-0011](./ADR-0011-register-vs-move-into-bank-primitive-split.md).
 
 ## Context
 

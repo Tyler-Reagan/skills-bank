@@ -7,9 +7,11 @@ never-mint-at-runtime rule, and the preserve-curated-across-sync-mount special c
 superseded by [ADR-0017](./ADR-0017-curated-and-bundled-default-removed.md). Its references to
 `origin: { kind: "none" }` (the detach stamp and the manifest-export exclusion) are superseded by
 [ADR-0018](./ADR-0018-origin-kind-narrowed-no-undefined-state.md), which renames that value to
-`"local"`. What remains in force: `isSelfOrigin` as the self-vs-third-party decider, and the
-two-path origin-restore design (repoint / adopt into linked repo) — both already operate on
-`origin`, not `source`.
+`"local"`. The leftover "in force" paragraph does **not** remain: `isSelfOrigin` compared Origin
+to Linked Repo, and "adopt into linked repo" is a Linked Repo restore path. Linked Repo is
+retired. Repoint is writing Origin on the Lock. See [ADR-0025](./ADR-0025-origin-on-the-lock.md),
+[ADR-0028](./ADR-0028-first-boot-one-shot-import-hard-cutover.md), and
+[ADR-0029](./ADR-0029-manifest-merge-retired.md). This ADR does not define a new self-origin rule.
 
 ## Context
 

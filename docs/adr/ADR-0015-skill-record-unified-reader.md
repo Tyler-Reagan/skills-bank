@@ -1,6 +1,6 @@
 # ADR-0015 — SkillRecord: unified per-skill sidecar reader
 
-**Status:** Accepted (v1.25.0)
+**Status:** Superseded by [ADR-0024](./ADR-0024-lock-is-the-live-skill-record.md) — the live record is the Lock, not sidecars or a Manifest.
 
 ## Context
 

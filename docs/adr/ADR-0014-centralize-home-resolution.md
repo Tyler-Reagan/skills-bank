@@ -1,6 +1,6 @@
 # ADR-0014 — Centralize OS home resolution in shared/home.ts
 
-**Status:** Accepted (v1.24.0)
+**Status:** Accepted (v1.24.0). The `getIsolatedHome` / `getRealHome` seam stays. [ADR-0023](./ADR-0023-compatible-lock-writer.md) withdraws the `defaultSkillLockPath()` → `getRealHome()` carveout: the Lock writer injects home. Metrics home is [ADR-0032](./ADR-0032-metrics-home-harness-consumer.md): real `~/.skills-bank/`, not the Store.
 
 ## Context
 

@@ -1,6 +1,6 @@
 # ADR-0017 — Curated skills and Bundled Default removed
 
-**Status:** Accepted
+**Status:** Accepted. Curated and Bundled Default stay gone. The sentence that left ADR-0012's `isSelfOrigin` and adopt-into-linked-repo "in force" is withdrawn; see [ADR-0025](./ADR-0025-origin-on-the-lock.md).
 
 ## Context
 

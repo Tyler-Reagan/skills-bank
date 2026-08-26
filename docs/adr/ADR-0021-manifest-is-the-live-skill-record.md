@@ -1,6 +1,6 @@
 # ADR-0021 — The manifest is the live skill record; per-skill sidecars removed
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0024](./ADR-0024-lock-is-the-live-skill-record.md) — the Lock is the live skill record. There is no Manifest.
 
 ## Context
 

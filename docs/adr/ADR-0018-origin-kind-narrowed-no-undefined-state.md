@@ -1,10 +1,10 @@
 # ADR-0018 — `OriginKind` narrowed to `github | local`; no undefined state
 
 **Status:** Accepted; enum shape amended by
-[ADR-0020](./ADR-0020-origin-is-a-nullable-url-manifest-v6.md), which replaces
-`"github" | "local"` with a single nullable URL. The core invariant this ADR establishes — every
-indexed skill has an explicitly stamped origin answer, never an undefined state — survives
-unchanged (`url: null` is the explicit stamp).
+[ADR-0020](./ADR-0020-origin-is-a-nullable-url-manifest-v6.md), which
+[ADR-0025](./ADR-0025-origin-on-the-lock.md) supersedes. The definedness invariant survives in
+ADR-0025: every Store skill has an explicit Origin stamp (`sourceType: "local"` is the no-remote
+stamp).
 
 ## Context
 

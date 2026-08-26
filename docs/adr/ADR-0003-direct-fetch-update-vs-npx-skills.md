@@ -1,6 +1,6 @@
 # ADR-0003 — Direct-fetch Update vs `npx skills update`
 
-**Status:** Accepted (v0.11.7, ratifying v0.11.2 decision)
+**Status:** Superseded by [ADR-0023](./ADR-0023-compatible-lock-writer.md) — the packaged app still never spawns `npx`, but it is now a Lock writer, not a tarball-into-registry updater.
 
 ## Context
 

@@ -1,6 +1,6 @@
 # ADR-0009 — Multi-master registry sync via in-app 3-way manifest merge
 
-**Status:** Accepted (v1.17.0)
+**Status:** Superseded by [ADR-0029](./ADR-0029-manifest-merge-retired.md) — there is no git-synced Manifest to merge.
 
 ## Context
 
